@@ -101,11 +101,11 @@ export default function TownFeed() {
   const { state } = useGame();
   const [filter, setFilter] = useState("hepsi"); // hepsi | lokasyon | önemli
 
-  const player = state?.player || {};
-  const npcs = state?.world?.npcs || [];
+  const player    = state?.player || {};
+  const npcs      = useMemo(() => state?.world?.npcs || [], [state?.world?.npcs]);
   const locations = state?.world?.locations || [];
-  const events = state?.events || [];
-  const turn = state?.turn || 0;
+  const events    = useMemo(() => state?.events || [], [state?.events]);
+  const turn      = state?.turn || 0;
 
   const playerLoc = locations.find(l => l.id === player.location_id);
 

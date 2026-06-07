@@ -201,11 +201,11 @@ export default function Marry() {
   const { state, setState } = useGame();
   const [busy, setBusy] = useState(null);
 
-  const player     = state?.player || {};
-  const relationships = state?.relationships || {};
-  const playerAge  = player.age || 0;
-  const spouseId   = player.spouse_id;
-  const childrenIds = player.children_ids || [];
+  const player        = useMemo(() => state?.player || {}, [state?.player]);
+  const relationships = useMemo(() => state?.relationships || {}, [state?.relationships]);
+  const playerAge     = player.age || 0;
+  const spouseId      = player.spouse_id;
+  const childrenIds   = useMemo(() => player.children_ids || [], [player.children_ids]);
 
   // Eşi bul (ölmüşse de göster)
   const spouse = useMemo(() => {

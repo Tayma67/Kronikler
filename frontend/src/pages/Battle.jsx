@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -272,7 +272,7 @@ export default function Battle() {
   const [busy,           setBusy]           = useState(false);
   const logRef = useRef(null);
 
-  const player     = state?.player || {};
+  const player     = useMemo(() => state?.player || {}, [state?.player]);
   const playerAge  = player.age ?? 0;
   const tooYoung   = playerAge < 13;
   const tooWeak    = player.health < 20;

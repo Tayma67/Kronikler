@@ -515,7 +515,7 @@ export default function Generation() {
   const [selectedHeirId, setSelectedHeirId] = useState(null);
 
   const player     = state?.player || {};
-  const npcs       = state?.world?.npcs || [];
+  const npcs       = useMemo(() => state?.world?.npcs || [], [state?.world?.npcs]);
   const factions   = state?.world?.factions || [];
   const generation = state?.generation || 1;
   const legacyHistory = state?.legacy_history || [];

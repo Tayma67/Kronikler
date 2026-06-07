@@ -689,8 +689,8 @@ export default function Trade() {
   const [caravanLoading, setCaravanLoading] = useState(false);
   const [resultEvent, setResultEvent] = useState(null);
 
-  const player = state?.player || {};
-  const locations = state?.world?.locations || [];
+  const player    = state?.player || {};
+  const locations = useMemo(() => state?.world?.locations || [], [state?.world?.locations]);
   const playerLoc = locations.find(l => l.id === player.location_id);
   const inventory = player.inventory || {};
 
