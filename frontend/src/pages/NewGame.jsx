@@ -65,26 +65,26 @@ export default function NewGame() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-950 flex items-center justify-center p-6">
-      <div className="card-frame max-w-2xl w-full p-10 rise-in">
+    <div className="min-h-screen bg-stone-950 flex items-start justify-center p-4 py-8 overflow-y-auto">
+      <div className="card-frame max-w-2xl w-full p-6 sm:p-10 rise-in my-auto">
         <div className="flex items-center gap-3 mb-6">
           <Flame className="w-8 h-8 text-orange-600 ember-flicker" />
           <h1 className="font-heading text-3xl text-stone-100">Yeni Yolculuk</h1>
         </div>
         <div className="divider-ash mb-6" />
-        <p className="text-stone-300 leading-relaxed mb-4">
+        <p className="text-stone-300 leading-relaxed mb-3 text-sm sm:text-base">
           Bu, kahramanların değil <span className="text-orange-400">çocukların</span> hikâyesi.
           Yedi yaşındasın. Külleri savrulmuş bu dünyada bir köyde annenle babanın yanında
           doğdun. Zayıf bir kolun, küçük bir aklın var; üstünde köylü giysisi, heybende
           iki dilim ekmek. Hayat seni bekliyor.
         </p>
-        <p className="text-stone-300 leading-relaxed mb-4">
+        <p className="text-stone-300 leading-relaxed mb-3 text-sm sm:text-base">
           1 tur = 1 hafta. 48 hafta sonra bir yaş büyüyeceksin.
           Her kış sandığın incelecek, her yaz tarlalar dolacak. Aç kalırsan zayıflarsın,
           aç bırakmazsan büyürsün. Çocukken yaptığın her şey —ne kadar tahta sopa salladığın,
           kaç kez pazarda pazarlık ettiğin— büyüyünce <span className="text-amber-400">kalıcı statlara</span> dönüşecek.
         </p>
-        <p className="text-stone-400 italic text-sm mb-8">
+        <p className="text-stone-400 italic text-xs sm:text-sm mb-6">
           13 yaşında dünya sana açılacak: meslek, savaş, ticaret, evlilik. O zamana kadar
           ailenin görevleri yolun olsun.
         </p>
