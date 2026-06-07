@@ -2,12 +2,77 @@ import { useEffect, useState, useCallback } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { useActionRedirect } from "@/hooks/useActionRedirect";
 import {
   Zap, Coins, Shield, Clock, RefreshCw,
   CheckCircle, XCircle, ChevronRight,
   Sword, Users, Star, AlertTriangle, Skull,
   Loader2, TrendingUp, Heart,
 } from "lucide-react";
+
+// ── Urgency helpers — Adım 15 ────────────────────────────────────────────────
+
+/**
+ * Kaç hafta kaldı? expires_at - currentTurn
+ * Negatif = süresi geçmiş (UI'da gösterilmez zaten)
+ */
+export function weeksRemaining(opp, currentTurn) {
+  if (opp.expires_at == null) return null;
+  return opp.expires_at - (currentTurn || 0);
+}
+
+/**
+ * Urgency tier:
+ *   "critical"  → 1 hafta kaldı (kırmızı, pulse)
+ *   "warning"   → 2 hafta kaldı (turuncu)
+ *   "info"      → 3+ hafta kaldı (taş/gri)
+ *   null        → expires_at yok
+ */
+export function urgencyTier(weeks) {
+  if (weeks == null) return null;
+  if (weeks <= 1)   return "critical";
+  if (weeks === 2)  return "warning";
+  return "info";
+}
+
+const URGENCY_STYLES = {
+  critical: {
+    badge:  "bg-red-950 border border-red-700 text-red-300",
+    pulse:  true,
+    prefix: "⏳ SON HAFTA",
+    card:   "ring-1 ring-red-800",
+  },
+  warning: {
+    badge:  "bg-orange-950 border border-orange-800 text-orange-300",
+    pulse:  false,
+    prefix: "⏳",
+    card:   "ring-1 ring-orange-900",
+  },
+  info: {
+    badge:  "bg-stone-900 border border-stone-700 text-stone-400",
+    pulse:  false,
+    prefix: "⏳",
+    card:   "",
+  },
+};
+
+function UrgencyBadge({ weeks }) {
+  const tier = urgencyTier(weeks);
+  if (!tier) return null;
+  const s = URGENCY_STYLES[tier];
+  const label =
+    tier === "critical"
+      ? "Son Hafta!"
+      : `${weeks} hafta kaldı`;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[9px] font-heading tracking-wider uppercase px-1.5 py-0.5 rounded-sm ${s.badge} ${s.pulse ? "animate-pulse" : ""}`}
+    >
+      ⏳ {label}
+    </span>
+  );
+}
 
 // ── Category config ──────────────────────────────────────────────────────────
 
@@ -70,7 +135,7 @@ function RewardRow({ gold, rep, rel }) {
   );
 }
 
-function OpportunityCard({ opp, onAccept, onDecline, onComplete, busy }) {
+function OpportunityCard({ opp, onAccept, onDecline, onComplete, busy, currentTurn }) {
   const cat = CAT[opp.category] || CAT["iş"];
   const risk = RISK[opp.risk_level] || RISK["orta"];
   const CatIcon = cat.icon;
@@ -80,11 +145,16 @@ function OpportunityCard({ opp, onAccept, onDecline, onComplete, busy }) {
   const isAccepted = opp.status === "kabul_edildi";
   const isDone     = ["tamamlandı", "reddedildi", "başarısız"].includes(opp.status);
 
+  // Adım 15: aciliyet
+  const weeks = isOpen ? weeksRemaining(opp, currentTurn) : null;
+  const tier  = urgencyTier(weeks);
+  const ringClass = tier ? URGENCY_STYLES[tier].card : "";
+
   return (
     <div
       className={`card-frame p-4 flex flex-col gap-3 transition-all ${
         isDone ? "opacity-50" : ""
-      } ${cat.bg} border ${cat.border}`}
+      } ${cat.bg} border ${cat.border} ${ringClass}`}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
@@ -92,7 +162,9 @@ function OpportunityCard({ opp, onAccept, onDecline, onComplete, busy }) {
           <CatIcon className={`w-4 h-4 shrink-0 ${cat.color}`} />
           <h3 className={`font-heading text-sm ${cat.color} truncate`}>{opp.title}</h3>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          {/* Urgency badge — Adım 15 */}
+          {isOpen && <UrgencyBadge weeks={weeks} />}
           {/* Risk badge */}
           <span className={`flex items-center gap-1 text-[9px] font-heading tracking-wider uppercase ${risk.color}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${risk.dot}`} />
@@ -234,6 +306,7 @@ function ResultOverlay({ result, onClose }) {
 
 export default function Opportunities() {
   const { state, setState } = useGame();
+  const withRedirect = useActionRedirect("Fırsatlar");
   const [opps, setOpps]         = useState([]);
   const [loading, setLoading]   = useState(true);
   const [busy, setBusy]         = useState(null);
@@ -242,7 +315,8 @@ export default function Opportunities() {
   const [refreshing, setRefreshing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
-  const playerAge = state?.player?.age ?? 0;
+  const playerAge  = state?.player?.age ?? 0;
+  const currentTurn = state?.turn ?? 0;  // Adım 15
 
   const load = useCallback(async () => {
     try {
@@ -258,7 +332,6 @@ export default function Opportunities() {
   useEffect(() => { load(); }, [load]);
 
   const handleAccept = async (id) => {
-    // Yaş kısıtlaması: fırsatın min_age'ini kontrol et
     const opp = opps.find(o => o.id === id);
     if (opp?.min_age && playerAge < opp.min_age) {
       toast.error("Bu görevi üstlenmek için çok küçüksün.");
@@ -266,10 +339,13 @@ export default function Opportunities() {
     }
     setBusy(id);
     try {
-      const { data } = await api.post("/game/opportunities/accept", { opportunity_id: id });
-      setOpps(prev => prev.map(o => o.id === id ? data.opportunity : o));
-      if (data.state) setState(data.state);
-      toast.success("Fırsat kabul edildi.");
+      await withRedirect(async () => {
+        const { data } = await api.post("/game/opportunities/accept", { opportunity_id: id });
+        setOpps(prev => prev.map(o => o.id === id ? data.opportunity : o));
+        if (data.state) setState(data.state);
+        toast.success("Fırsat kabul edildi.");
+        return data;
+      });
     } catch (e) {
       toast.error(e.response?.data?.detail || "Hata");
     } finally {
@@ -298,12 +374,15 @@ export default function Opportunities() {
   const handleComplete = async (id) => {
     setBusy(id);
     try {
-      const { data } = await api.post("/game/opportunities/complete", { opportunity_id: id });
-      if (data.state) {
-        setState(data.state);
-        setOpps(data.state.opportunities || []);
-      }
-      setResult(data);
+      await withRedirect(async () => {
+        const { data } = await api.post("/game/opportunities/complete", { opportunity_id: id });
+        if (data.state) {
+          setState(data.state);
+          setOpps(data.state.opportunities || []);
+        }
+        setResult(data);
+        return data;
+      });
     } catch (e) {
       toast.error(e.response?.data?.detail || "Hata");
     } finally {
@@ -329,9 +408,23 @@ export default function Opportunities() {
   const acceptedOpps= opps.filter(o => o.status === "kabul_edildi");
   const historyOpps = opps.filter(o => ["tamamlandı","reddedildi","başarısız"].includes(o.status));
 
-  const filteredOpen = filter === "all"
-    ? openOpps
-    : openOpps.filter(o => o.category === filter);
+  // Adım 15: sırala — en acil önce (az hafta kaldı = üstte)
+  const sortByUrgency = (list) =>
+    [...list].sort((a, b) => {
+      const wa = a.expires_at ?? Infinity;
+      const wb = b.expires_at ?? Infinity;
+      return wa - wb;
+    });
+
+  const filteredOpen = sortByUrgency(
+    filter === "all" ? openOpps : openOpps.filter(o => o.category === filter)
+  );
+
+  // Adım 15: "Son Şans" — bu hafta veya gelecek hafta kapanan fırsatlar
+  const criticalOpps = filteredOpen.filter(o => {
+    const w = weeksRemaining(o, currentTurn);
+    return w != null && w <= 1;
+  });
 
   return (
     <div className="space-y-6 rise-in">
@@ -369,6 +462,28 @@ export default function Opportunities() {
         </div>
       </div>
 
+      {/* Adım 15: "Son Şans" — bu hafta kapanacak fırsatlar */}
+      {criticalOpps.length > 0 && (
+        <div className="space-y-2">
+          <div className="label-tiny flex items-center gap-2 text-red-400">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            Son Şans — Bu Hafta Kapanıyor
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {criticalOpps.map(o => (
+              <OpportunityCard
+                key={o.id} opp={o}
+                onAccept={handleAccept}
+                onDecline={handleDecline}
+                onComplete={handleComplete}
+                busy={busy}
+                currentTurn={currentTurn}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Active accepted opps highlight */}
       {acceptedOpps.length > 0 && (
         <div className="space-y-2">
@@ -384,6 +499,7 @@ export default function Opportunities() {
                 onDecline={handleDecline}
                 onComplete={handleComplete}
                 busy={busy}
+                currentTurn={currentTurn}
               />
             ))}
           </div>
@@ -432,6 +548,7 @@ export default function Opportunities() {
                 onDecline={handleDecline}
                 onComplete={handleComplete}
                 busy={busy}
+                currentTurn={currentTurn}
               />
             ))}
           </div>
@@ -458,6 +575,7 @@ export default function Opportunities() {
                   onDecline={handleDecline}
                   onComplete={handleComplete}
                   busy={busy}
+                  currentTurn={currentTurn}
                 />
               ))}
             </div>

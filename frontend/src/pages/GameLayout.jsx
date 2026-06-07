@@ -18,7 +18,7 @@ const PRIMARY_NAV = [
   { to: "/oyun",            label: "Ana Sayfa", icon: Flame,     end: true, testid: "nav-world" },
   { to: "/oyun/karakter",   label: "Karakter",  icon: User,      testid: "nav-character" },
   { to: "/oyun/harita",     label: "Şehir",     icon: Map,       testid: "nav-map" },
-  { to: "/oyun/gorevler",   label: "Görevler",  icon: ListChecks,testid: "nav-quests" },
+  { to: "/oyun/iliskiler",  label: "İlişkiler", icon: Users,     testid: "nav-relationships" },
 ];
 
 // Alt bardan kaldırılan öğeler — "Daha Fazla" menüsünde gösterilecek
@@ -28,7 +28,6 @@ const SECONDARY_NAV = [
   { to: "/oyun/tarih",          label: "Tarih",       icon: Scroll,    testid: "nav-history" },
   { to: "/oyun/firsatlar",      label: "Fırsatlar",   icon: Zap,       testid: "nav-opportunities" },
   { to: "/oyun/dunya-haberleri",label: "Haberler",    icon: Newspaper, testid: "nav-world-news" },
-  { to: "/oyun/aile",           label: "Aile",        icon: Baby,      testid: "nav-family" },
   { to: "/oyun/mektep",         label: "Mektep",      icon: GraduationCap, testid: "nav-school" },
   { to: "/oyun/savas",          label: "Savaş",       icon: Sword,     testid: "nav-battle" },
   { to: "/oyun/npcler",         label: "Yakınındakiler", icon: Users,  testid: "nav-npcs" },
@@ -151,7 +150,7 @@ function MoreMenu({ items, state, onClose }) {
 }
 
 export default function GameLayout() {
-  const { state, fetchState, advance } = useGame() || {};
+  const { state, fetchState, advance, lastActionPage, clearLastActionPage } = useGame() || {};
   const navigate = useNavigate();
   const [advancing, setAdvancing] = useState(false);
   const [showInheritance, setShowInheritance] = useState(false);
@@ -426,6 +425,25 @@ export default function GameLayout() {
           state={state}
           onClose={() => setShowMore(false)}
         />
+      )}
+
+      {/* Adım 14 — "Geri Dön" butonu: aksiyon sonrası aktif, mobilde nav barın üstünde */}
+      {lastActionPage && (
+        <button
+          data-testid="geri-don-btn"
+          onClick={() => {
+            const path = lastActionPage.path;
+            clearLastActionPage();
+            navigate(path);
+          }}
+          className="fixed bottom-20 right-4 z-40 flex items-center gap-1.5
+                     text-xs font-heading tracking-wider px-3 py-2
+                     bg-stone-900 border border-stone-700 rounded-sm
+                     text-stone-300 hover:text-stone-100 hover:border-stone-500
+                     shadow-lg transition-all"
+        >
+          ↩ {lastActionPage.label}
+        </button>
       )}
 
       {/* Miras ekranı */}

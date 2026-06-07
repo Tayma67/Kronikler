@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { useActionRedirect } from "@/hooks/useActionRedirect";
 import {
   Eye, Coins, AlertTriangle, ShieldAlert, Lock, CheckCircle,
   XCircle, Loader2, Skull, TrendingDown, ChevronRight, Users, Sword, Star,
@@ -337,6 +338,7 @@ function EskiyaPanel({ state, onResult, busy, setBusy, setState }) {
 // ─── Ana Sayfa ────────────────────────────────────────────────────────────────
 export default function Crime() {
   const { state, setState } = useGame();
+  const withRedirect = useActionRedirect("Gölge");
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
@@ -361,9 +363,12 @@ export default function Crime() {
     if (!selected) { toast.error("Bir suç türü seç."); return; }
     setBusy(true);
     try {
-      const { data } = await api.post("/game/crime", { crime_type: selected });
-      if (data.state) setState(data.state);
-      setResult(data.outcome);
+      await withRedirect(async () => {
+        const { data } = await api.post("/game/crime", { crime_type: selected });
+        if (data.state) setState(data.state);
+        setResult(data.outcome);
+        return data;
+      });
     } catch (e) {
       toast.error(e.response?.data?.detail || "Suç gerçekleştirilemedi.");
     } finally {

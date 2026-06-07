@@ -8,6 +8,7 @@ export function GameProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [lastCaravanEvent, setLastCaravanEvent] = useState(null);
   const [lastWorldEvent, setLastWorldEvent] = useState(null);   // Adım 9
+  const [lastActionPage, setLastActionPage] = useState(null);   // Adım 14
 
   const fetchState = useCallback(async () => {
     setLoading(true);
@@ -95,6 +96,8 @@ export function GameProvider({ children }) {
         state, setState, loading, fetchState, newGame, deleteGame, advance, action,
         lastCaravanEvent, clearCaravanEvent: () => setLastCaravanEvent(null),
         lastWorldEvent, clearWorldEvent: () => setLastWorldEvent(null),   // Adım 9
+        lastActionPage, setLastActionPage,                                // Adım 14
+        clearLastActionPage: () => setLastActionPage(null),              // Adım 14
       }}
     >
       {children}

@@ -15,6 +15,37 @@ from npc_profile import (
 from rumors import auto_rumors_from_events, seasonal_rumors
 from world_events import tick_world_events
 
+# Yiyecek öncelik sırası — en yüksek açlık giderenden başla
+_FOOD_PRIORITY = ["et", "ekmek", "şarap", "buğday"]
+# Hangi envanter öğeleri yiyecek sayılır
+_FOOD_ITEMS = {"et", "ekmek", "buğday", "şarap"}
+
+
+def _has_food(player):
+    """Oyuncunun envanterinde yenebilir yiyecek var mı?"""
+    inv = player.get("inventory") or {}
+    return any(inv.get(k, 0) > 0 for k in _FOOD_ITEMS)
+
+
+def _auto_eat(state, day):
+    """
+    Açlık 70'in altına düşünce envanterden otomatik yiyecek tüket.
+    Yenilen öğeyi döndürür, yoksa None.
+    """
+    from items import apply_use_effects
+    player = state["player"]
+    if player.get("hunger", 100) >= 70:
+        return None
+    inv = player.setdefault("inventory", {})
+    for food_key in _FOOD_PRIORITY:
+        if inv.get(food_key, 0) > 0:
+            inv[food_key] -= 1
+            if inv[food_key] == 0:
+                del inv[food_key]
+            apply_use_effects(player, food_key, qty=1)
+            return food_key
+    return None
+
 
 PRODUCTION = {
     "çiftçi": ("buğday", 10),
@@ -884,7 +915,8 @@ def advance_time(state, weeks=1, days=None):
         # Legacy days input
         weeks = max(1, int(round(days / 7)))
     weeks = max(1, int(weeks))
-    for _ in range(weeks):
+    state.pop("advance_early_stop", None)  # önceki erken durma temizle
+    for week_i in range(weeks):
         state["turn"] = state.get("turn", 0) + 1
         state["day"] = state["turn"]
         day = state["turn"]
@@ -905,6 +937,20 @@ def advance_time(state, weeks=1, days=None):
         _family_support_tick(state, day)
         _invasion_check(state, day)
         _player_tick(state)
+        # Otomatik yeme: açlık 70 altına düşünce envanterden yiyecek tüket
+        eaten = _auto_eat(state, day)
+        if eaten:
+            _push_event(state, day, "iyileşme",
+                        f"Acıkınca envanterinden {eaten} yedin.")
+        # Erken durma: açlık kritik (< 20) ve yiyecek kalmadı
+        player = state["player"]
+        if player.get("hunger", 100) < 20 and not _has_food(player) and weeks > 1:
+            state["advance_early_stop"] = {
+                "week_done": week_i + 1,
+                "total": weeks,
+                "reason": "Yiyecek stoğun tükendi ve açlık kritik seviyeye düştü. Zaman atlaması durduruldu.",
+            }
+            break
         # Life Event tetikleme (%30 ihtimalle haftalık)
         try:
             from life_events import maybe_trigger_life_event

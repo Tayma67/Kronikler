@@ -13,8 +13,6 @@ import NPCList from "@/pages/NPCList";
 import NPCDetail from "@/pages/NPCDetail";
 import Relationships from "@/pages/Relationships";
 import Chronicle from "@/pages/Chronicle";
-import Quests from "@/pages/Quests";
-import FamilyQuests from "@/pages/FamilyQuests";
 import Battle from "@/pages/Battle";
 import School from "@/pages/School";
 import Opportunities from "@/pages/Opportunities";
@@ -47,8 +45,9 @@ export default function App() {
             <Route path="npc/:id" element={<NPCDetail />} />
             <Route path="iliskiler" element={<Relationships />} />
             <Route path="tarih" element={<Chronicle />} />
-            <Route path="gorevler" element={<Quests />} />
-            <Route path="aile" element={<FamilyQuests />} />
+            {/* GDD §20: gorevler ve aile sayfaları kaldırıldı, redirect */}
+            <Route path="gorevler" element={<Navigate to="/oyun/firsatlar" replace />} />
+            <Route path="aile" element={<Navigate to="/oyun/iliskiler" replace />} />
             <Route path="savas" element={<Battle />} />
             <Route path="mektep" element={<School />} />
             <Route path="firsatlar" element={<Opportunities />} />

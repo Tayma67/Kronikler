@@ -4,9 +4,9 @@ import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import LifeEventModal from "@/components/LifeEventModal";
+import PerkChoiceModal from "@/components/PerkChoiceModal";
 import {
-  Heart, Apple, Flame, Clock, Scroll,
-  AlertTriangle, TrendingUp, TrendingDown, Minus,
+  Heart, Apple, Flame, Scroll, AlertTriangle,
   Hourglass, Loader2, Swords, Crown, ChevronRight,
   Shield, Landmark, ChevronDown,
   Globe, Leaf, ShoppingBag, Users, Sun, Sword, Newspaper,
@@ -44,6 +44,7 @@ const EVENT_ICONS = {
   suç: "🗡️", suç_yakalandı: "🚨", dedikodu: "🗣️", başlangıç: "🌅",
   okul: "📚", beceri: "⭐", ilişki: "🤝", haydut_baskını: "💥",
   isyan: "🔥", hastalık: "🤒", iyileşme: "💚",
+  kariyer_terfi: "🏆",
 };
 
 const EVENT_COLORS = {
@@ -68,6 +69,7 @@ const EVENT_COLORS = {
   yolculuk:          "border-stone-500",
   suç:               "border-red-800",
   suç_yakalandı:     "border-red-700",
+  kariyer_terfi:     "border-amber-400",
   enforcement:       "border-amber-700",
   starvation_warning:"border-orange-700",
 };
@@ -264,69 +266,20 @@ function WorldAlerts({ state }) {
   );
 }
 
-function DiffModal({ diff, triggers, onClose }) {
-  const safeDiff     = Array.isArray(diff)     ? diff     : [];
-  const safeTriggers = Array.isArray(triggers) ? triggers : [];
-  const positives    = safeDiff.filter(d => d?.positive);
-  const negatives    = safeDiff.filter(d => d && !d.positive);
-  const urgentTriggers = safeTriggers.filter(t => t?.urgent);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-stone-950/90 flex items-center justify-center p-4">
-      <div className="bg-stone-950 border border-stone-800 w-full max-w-sm rounded-sm">
-        <div className="px-5 pt-5 pb-3 border-b border-stone-800">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-amber-500" />
-            <span className="font-heading text-stone-200 tracking-wider text-sm">HAFTA GEÇTİ</span>
-          </div>
-        </div>
-        <div className="p-5 space-y-4">
-          {urgentTriggers.map((t, i) => (
-            <div key={i} className="flex items-start gap-3 px-4 py-3 border border-red-800 bg-red-950/30 text-red-300 rounded-sm">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span className="text-sm">{t.text}</span>
-            </div>
-          ))}
-          {(positives.length + negatives.length) > 0 ? (
-            <div className="space-y-1.5">
-              {[...positives, ...negatives].map((d, i) => (
-                <div key={i} className={`flex items-center gap-2 text-sm ${d.positive ? "text-emerald-400" : "text-red-400"}`}>
-                  {d.positive
-                    ? <TrendingUp  className="w-3.5 h-3.5 shrink-0" />
-                    : <TrendingDown className="w-3.5 h-3.5 shrink-0" />}
-                  {d.label}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-sm text-stone-500">
-              <Minus className="w-3.5 h-3.5" />
-              Kayda değer bir değişiklik olmadı.
-            </div>
-          )}
-        </div>
-        <div className="px-5 pb-5">
-          <button onClick={onClose} className="w-full btn-ember py-2.5 font-heading text-xs tracking-widest">
-            Devam Et →
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── main ──────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { state, advance, lastWorldEvent, clearWorldEvent } = useGame() || {};
   const navigate = useNavigate();
   const [advancing, setAdvancing]           = useState(false);
-  const [diffData, setDiffData]             = useState(null);
   const [showPeriod, setShowPeriod]         = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(PERIODS[0]);
   const [advProgress, setAdvProgress]       = useState(null);
   const [lastAdvNewCount, setLastAdvNewCount] = useState(0);
   const [yearSummary, setYearSummary]       = useState(null);
   const [showLifeEvent, setShowLifeEvent]   = useState(false);
+  const [showPerkChoice, setShowPerkChoice] = useState(false);
+  const [syntheticEvents, setSyntheticEvents] = useState([]); // diff'ten üretilen anlatı olayları
+  const [periodStartTurn, setPeriodStartTurn] = useState(-1); // son atlamadan önceki turn (-1: tümünü göster)
   const [activeWorldEvents, setActiveWorldEvents] = useState([]); // Adım 9
   const [eventFilter, setEventFilter]       = useState("karakter"); // "karakter" | "dünya"
 
@@ -337,6 +290,11 @@ export default function Dashboard() {
   // Aktif görevler & fırsatlar
   const activeQuests  = (state?.quests || []).filter(q => ["açık", "kabul_edildi"].includes(q.status));
   const acceptedOpps  = (state?.opportunities || []).filter(o => o.status === "kabul_edildi");
+  // Adım 15: bu hafta kapanacak açık fırsatlar
+  const currentTurn   = state?.turn ?? 0;
+  const criticalOpps  = (state?.opportunities || []).filter(o =>
+    o.status === "açık" && o.expires_at != null && (o.expires_at - currentTurn) <= 1
+  );
 
   // Adım 9: Aktif dünya olayları (state üzerinden)
   const activeWorldEventsFromState = (state?.world_events || []).filter(ev => ev.active);
@@ -346,6 +304,7 @@ export default function Dashboard() {
   if ((player?.health ?? 100) < 25)  alerts.push({ type: "urgent", icon: "❤️",  text: "Sağlığın kritik! Dinlen veya tedavi ol." });
   if ((player?.hunger ?? 100) < 25)  alerts.push({ type: "urgent", icon: "🍞", text: "Çok acıktın. Yemezsen güçten düşersin." });
   if ((player?.crime  ?? 0)   > 60)  alerts.push({ type: "high",   icon: "⚖️",  text: "Suç puanın yüksek. Yetkililer seni izliyor." });
+  if (criticalOpps.length > 0)       alerts.push({ type: "urgent", icon: "⏳", text: `${criticalOpps.length} fırsat bu hafta kapanıyor — kaçırma!` });
   if (acceptedOpps.length > 0)       alerts.push({ type: "normal", icon: "⚡",  text: `${acceptedOpps.length} üstlenilmiş fırsat seni bekliyor.` });
   if (activeQuests.some(q => q.status === "kabul_edildi"))
     alerts.push({ type: "normal", icon: "✅", text: "Devam eden görevin var. Bitirmeyi unutma." });
@@ -366,43 +325,112 @@ export default function Dashboard() {
     "isyan", "vergi_artışı", "vergi_indirimi", "savunma_yatırımı",
     "isyan_bastırma", "haydut_baskını",
   ]);
-  const allEvents = [...safeHistory].reverse().slice(0, 60);
+
+  // Oyuncu aile adları (doğum filtresi için)
+  const playerFamilyNames = new Set();
+  if (player?.name) playerFamilyNames.add(player.name);
+  if (player?.spouse_id) {
+    const spouseNpc = (state?.world?.npcs || []).find(n => n.id === player.spouse_id);
+    if (spouseNpc?.name) playerFamilyNames.add(spouseNpc.name);
+  }
+  // Ebeveyn adları (karakter başlangıç olayı için)
+  if (player?.parent_ids?.length) {
+    player.parent_ids.forEach(pid => {
+      const p = (state?.world?.npcs || []).find(n => n.id === pid);
+      if (p?.name) playerFamilyNames.add(p.name);
+    });
+  }
+
+  // Sadece son atlamadan bu yana gelen olayları göster (-1 ise tüm geçmiş)
+  const periodEvents = periodStartTurn < 0
+    ? safeHistory
+    : safeHistory.filter(ev => (ev.day ?? 0) > periodStartTurn);
+
+  // Doğum olayları: sadece aile üyelerini göster
+  const isFamilyRelated = (ev) => {
+    if (ev.type !== "doğum") return true;
+    if (playerFamilyNames.size === 0) return true; // henüz aile bilgisi yoksa hepsini göster
+    return [...playerFamilyNames].some(name => (ev.text || "").includes(name));
+  };
+
+  const allEvents = [...periodEvents].reverse();
   const recentEvents = allEvents
     .filter(ev => eventFilter === "karakter" ? KARAKTER_TYPES.has(ev.type) : DUNYA_TYPES.has(ev.type))
+    .filter(isFamilyRelated)
     .slice(0, 30);
 
   const handleAdvance = async () => {
     const totalWeeks    = selectedPeriod.weeks;
     const histLenBefore = (state?.history || []).length;
+    const turnBefore    = state?.turn ?? 0;
     setAdvancing(true);
     setShowPeriod(false);
     setYearSummary(null);
-    setAdvProgress(totalWeeks > 1 ? { cur: 0, total: totalWeeks } : null);
+    setSyntheticEvents([]);
+    setAdvProgress(null); // tek istek — progress bar yerine spinner yeterli
     try {
       if (!advance) return;
-      let lastResult    = null;
-      const allNewEvents = [];
-      for (let i = 0; i < totalWeeks; i++) {
-        if (totalWeeks > 1) setAdvProgress({ cur: i + 1, total: totalWeeks });
-        const result = await advance(1);
-        lastResult = result;
-        if (result?.player?.dead) return;
-        // Her haftanın yeni olaylarını topla
-        const hist = Array.isArray(result?.history) ? result.history : [];
-        const sliceFrom = histLenBefore + allNewEvents.length;
-        allNewEvents.push(...hist.slice(sliceFrom));
-      }
+      // Tüm haftaları tek API isteğinde gönder (backend zaten toplu işliyor)
+      const result = await advance(totalWeeks);
+      if (!result) return;
+      if (result?.player?.dead) return;
+
+      // Yeni olayları hesapla
+      const finalHist = Array.isArray(result?.history) ? result.history : [];
+      const allNewEvents = finalHist.slice(histLenBefore);
+
       // Kaç yeni olay geldi — highlight için
-      const finalHist = Array.isArray(lastResult?.history) ? lastResult.history : [];
-      setLastAdvNewCount(Math.max(0, finalHist.length - histLenBefore));
+      setLastAdvNewCount(allNewEvents.length);
+      // Dönem başlangıcını güncelle — sadece bu periyottaki olaylar görünsün
+      setPeriodStartTurn(turnBefore);
       // Yıl özeti
       if (totalWeeks >= 52 && allNewEvents.length > 0) {
         setYearSummary({ totalWeeks, events: allNewEvents });
       }
-      const diff     = Array.isArray(lastResult?.advance_diff) ? lastResult.advance_diff : [];
-      const triggers = Array.isArray(lastResult?.triggers)     ? lastResult.triggers     : [];
-      if (diff.length > 0 || triggers.some(t => t?.urgent)) {
-        setDiffData({ diff, triggers });
+      const diff     = Array.isArray(result?.advance_diff) ? result?.advance_diff : [];
+      const triggers = Array.isArray(result?.triggers)     ? result?.triggers     : [];
+
+      // Diff öğelerini hikayesel anlatıya çevir ve olaylar bölümüne ekle
+      const FIELD_NARRATIVES = {
+        money:      { pos: (d) => `Kasana ${Math.abs(d).toFixed(0)} altın girdi.`,        neg: (d) => `Harcamalar ${Math.abs(d).toFixed(0)} altın götürdü.` },
+        hunger:     { pos: (d) => `Karın doydu; vücut dinç hissediyor.`,                  neg: (d) => `Açlık çekildi; bu hafta yemek bulmak güçtü.` },
+        health:     { pos: (d) => `Sağlık biraz toparladı.`,                              neg: (d) => `Sağlık geriledi; yorgunluk ağır basmaya başladı.` },
+        reputation: { pos: (d) => `İtibarın arttı; insanlar seni daha saygıyla karşılıyor.`, neg: (d) => `İtibarın biraz sarsıldı.` },
+        crime:      { pos: (d) => `Suç kaydın ağırlaştı; yetkililer gözünü dikmiş durumda.`,  neg: (d) => `Suç kaydın hafifçe silindi.` },
+      };
+      const currentTurnAfter = result?.turn ?? (turnBefore + totalWeeks);
+      const newSynthetics = diff
+        .filter(d => d?.field && FIELD_NARRATIVES[d.field])
+        .map((d, i) => ({
+          type: d.positive ? "iyileşme" : "hastalık",
+          day: currentTurnAfter,
+          text: d.positive
+            ? FIELD_NARRATIVES[d.field].pos(Math.abs(d.delta))
+            : FIELD_NARRATIVES[d.field].neg(Math.abs(d.delta)),
+          _synthetic: true,
+        }));
+
+      // Acil uyarılar da olaylara ekle
+      triggers.filter(t => t?.urgent).forEach(t => {
+        newSynthetics.push({ type: "enforcement", day: currentTurnAfter, text: t.text, _synthetic: true });
+      });
+
+      if (newSynthetics.length > 0) setSyntheticEvents(newSynthetics);
+
+      // Erken durma kontrolü — açlık/yiyeceksizlik
+      const earlyStop = result?.advance_early_stop;
+      if (earlyStop) {
+        // Sentetik uyarı olayı ekle
+        setSyntheticEvents(prev => [...prev, {
+          type: "starvation_warning",
+          day: currentTurnAfter,
+          text: `🍞 Yiyecek stoğun tükendi ve açlık kritik seviyeye düştü. ${earlyStop.week_done} hafta geçti — devam etmedi.`,
+          _synthetic: true,
+        }]);
+        toast.error("Yiyecek stoğun tükendi, çok açsın! Zaman atlaması durduruldu.", {
+          duration: 7000,
+          description: `${earlyStop.week_done} / ${earlyStop.total} hafta tamamlandı.`,
+        });
       } else {
         toast.success(
           totalWeeks === 1 ? "Bir hafta geçti."
@@ -411,7 +439,7 @@ export default function Dashboard() {
         );
       }
       // Kervan olayı bildirimi
-      const ce = lastResult?.caravan_event;
+      const ce = result?.caravan_event;
       if (ce) {
         if (ce.type === "arrived") {
           const profitStr = ce.profit != null
@@ -425,7 +453,7 @@ export default function Dashboard() {
         }
       }
       // Dünya olayı bildirimi (Adım 9)
-      const we = lastResult?.new_world_events?.[0];
+      const we = result?.new_world_events?.[0];
       if (we) {
         const CAT_EMOJIS = {
           tehlike: "⚠️", doğa: "🌿", ekonomi: "📈", sosyal: "🎉", haber: "📰",
@@ -449,6 +477,13 @@ export default function Dashboard() {
       } catch {
         // Sessizce geç
       }
+      // Pending perk seçimi kontrolü (Adım 16)
+      try {
+        const perkRes = await api.get("/perk/pending");
+        if (perkRes.data.pending_perk) setShowPerkChoice(true);
+      } catch {
+        // Sessizce geç
+      }
     }
   };
 
@@ -464,6 +499,16 @@ export default function Dashboard() {
         onComplete={() => {
           setShowLifeEvent(false);
           // Stat değişimlerini yansıtmak için state yenile
+          if (advance) advance(0).catch(() => {});
+        }}
+      />
+
+      {/* Perk Seçim Popup — Adım 16 */}
+      <PerkChoiceModal
+        open={showPerkChoice && !showLifeEvent}
+        onClose={() => setShowPerkChoice(false)}
+        onComplete={() => {
+          setShowPerkChoice(false);
           if (advance) advance(0).catch(() => {});
         }}
       />
@@ -581,17 +626,15 @@ export default function Dashboard() {
       </div>
 
       {/* ── 4. Olaylar akışı — Bitlife tarzı ── */}
-      {(recentEvents.length > 0 || yearSummary) && (
+      {(recentEvents.length > 0 || syntheticEvents.length > 0 || yearSummary) && (
         <div>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Scroll className="w-3.5 h-3.5 text-stone-600" />
               <span className="label-tiny">Olaylar</span>
-              {lastAdvNewCount > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-900/60 text-amber-400 font-heading">
-                  +{lastAdvNewCount} yeni
-                </span>
-              )}
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-stone-800 text-stone-500 font-heading">
+                {selectedPeriod.label}
+              </span>
             </div>
             <Link to="/oyun/tarih" className="text-[10px] text-stone-600 hover:text-amber-400 font-heading tracking-wider">
               TÜM TARİH →
@@ -628,15 +671,27 @@ export default function Dashboard() {
                 <YearSummaryCard summary={yearSummary} onDismiss={() => setYearSummary(null)} />
               </div>
             )}
+            {/* Sentetik anlatı olayları (diff'ten üretilen) — sadece karakter sekmesinde */}
+            {eventFilter === "karakter" && syntheticEvents.length > 0 && (
+              <div className="divide-y divide-stone-900/60 border-b border-stone-800">
+                {syntheticEvents.map((ev, i) => (
+                  <EventCard key={`syn-${i}`} event={ev} isNew={true} />
+                ))}
+              </div>
+            )}
             {/* Olay akışı */}
             <div className="divide-y divide-stone-900/60">
-              {recentEvents.map((ev, i) => (
+              {recentEvents.length > 0 ? recentEvents.map((ev, i) => (
                 <EventCard
                   key={i}
                   event={ev}
                   isNew={i < lastAdvNewCount}
                 />
-              ))}
+              )) : (
+                <div className="px-4 py-6 text-center text-stone-600 text-xs font-heading tracking-wider">
+                  Bu dönemde kayda değer bir olay yaşanmadı.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -655,9 +710,7 @@ export default function Dashboard() {
       {/* ── 6. Faction Rank & Yönetici HUD ── */}
       <FactionGovernorHUD player={player} world={state?.world} />
 
-      {diffData && (
-        <DiffModal diff={diffData.diff} triggers={diffData.triggers} onClose={() => setDiffData(null)} />
-      )}
+
     </div>
   );
 }

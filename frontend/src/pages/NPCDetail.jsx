@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { useActionRedirect } from "@/hooks/useActionRedirect";
 import {
   ArrowLeft, Crown, Skull, Heart, MessageCircle,
   ChevronRight, X, Swords, Brain, Gift, Coins,
@@ -252,6 +253,7 @@ function ModalShell({ children, onClose, title, tall = false }) {
 export default function NPCDetail() {
   const { id } = useParams();
   const { state, setState } = useGame();
+  const withRedirect = useActionRedirect("NPC");
   const navigate = useNavigate();
 
   const [modal, setModal] = useState(null); // null | "chat" | "gift" | "money"
@@ -279,6 +281,28 @@ export default function NPCDetail() {
     : null;
   const children = (npc.children_ids || []).filter(c => c !== "PLAYER")
     .map(cid => state.world.npcs.find(n => n.id === cid)).filter(Boolean);
+
+  // GDD §20.2: Bu NPC oyuncunun ebeveyni mi?
+  const isPlayerParent = (player.parent_ids || []).includes(npc.id);
+  const currentTurn = state.turn || 0;
+  const alreadyHelpedThisWeek = player.parent_help_done?.[npc.id] === currentTurn;
+
+  const handleHelpParent = async () => {
+    setBusy(true);
+    try {
+      await withRedirect(async () => {
+        const { data } = await api.post("/game/help-parent", { parent_id: npc.id });
+        setState(data.state);
+        setResult({
+          text: data.event?.summary || "Ebeveynine yardım ettin.",
+          gain: null, consequences: [], cascade: [], npcMood: null,
+        });
+        return data;
+      });
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Bir hata oluştu.");
+    } finally { setBusy(false); }
+  };
 
   const handleAction = async (type, payload = {}) => {
     setBusy(true);
@@ -531,6 +555,36 @@ export default function NPCDetail() {
           </div>
         )}
       </div>
+
+      {/* ── GDD §20.2: Aile Yardımı (13 yaş altı + ebeveyn NPC) ── */}
+      {isPlayerParent && (player.age || 0) < 13 && (
+        <div className="card-frame p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-base">👨‍👩‍👦</span>
+            <span className="label-tiny">Aile</span>
+          </div>
+          <button
+            onClick={handleHelpParent}
+            disabled={busy || alreadyHelpedThisWeek}
+            className={`w-full py-2.5 text-sm font-heading tracking-wider rounded-sm border flex items-center justify-center gap-2 transition-all ${
+              alreadyHelpedThisWeek
+                ? "border-stone-800 text-stone-600 bg-stone-950/30 cursor-not-allowed"
+                : "btn-ember"
+            }`}
+          >
+            {alreadyHelpedThisWeek
+              ? "✓ Bu hafta yardım ettin"
+              : busy
+              ? <span className="text-xs">...</span>
+              : "Yardım Et"}
+          </button>
+          {alreadyHelpedThisWeek && (
+            <p className="text-[10px] text-stone-600 italic text-center">
+              Haftaya tekrar yardım edebilirsin.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* ── Etkileşim Menüsü ── */}
       <div className="card-frame overflow-hidden">

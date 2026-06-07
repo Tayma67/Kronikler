@@ -258,6 +258,34 @@ function AileCard({ p }) {
         <div className="flex items-center gap-2 text-stone-200 capitalize">
           <Briefcase className="w-3 h-3 text-stone-500" /> {p.profession}
         </div>
+        {/* Kariyer aşaması ve ilerleme */}
+        {p.career && (
+          <div className="mt-2">
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span className="text-amber-400 font-medium">⚡ {p.career.title}</span>
+              {p.career.next_stage && (
+                <span className="text-stone-500 text-[10px]">
+                  → {p.career.next_stage.title}
+                </span>
+              )}
+            </div>
+            {p.career.next_stage ? (
+              <div className="w-full bg-stone-700 rounded-full h-1.5">
+                <div
+                  className="bg-amber-500 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, p.career.progress_pct || 0)}%` }}
+                />
+              </div>
+            ) : (
+              <div className="text-[10px] text-amber-600">✦ Zirve</div>
+            )}
+            <div className="text-[10px] text-stone-500 mt-0.5">
+              {p.career.next_stage
+                ? `${p.career.job_xp || 0} / ${p.career.next_stage?.xp_required || "?"} iş xp`
+                : "En yüksek kariyer aşamasındasın"}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

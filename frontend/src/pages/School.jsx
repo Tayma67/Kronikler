@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { useActionRedirect } from "@/hooks/useActionRedirect";
 import {
   BookOpen, Dumbbell, Users, Star, Calendar,
   ChevronRight, Lock, CheckCircle2, AlertCircle,
@@ -305,10 +306,81 @@ function ExamHistory({ history }) {
   );
 }
 
+// ─── lesson event modal ───────────────────────────────────────────────────
+function LessonEventModal({ event, lessonId, onChoice, busy }) {
+  const [chosen, setChosen] = useState(null);
+
+  if (!event) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/85 backdrop-blur">
+      <div className="card-frame max-w-md w-full border border-amber-800 bg-stone-950 overflow-hidden">
+        {/* Header */}
+        <div className="bg-amber-950/40 border-b border-amber-900/50 px-5 py-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">{event.icon}</span>
+            <span className="font-heading text-amber-400 text-xs tracking-widest">
+              {event.lesson_name.toUpperCase()} · DERS OLAYI
+            </span>
+          </div>
+        </div>
+
+        {/* Scene */}
+        <div className="px-5 py-5">
+          <p className="text-stone-200 text-sm leading-relaxed italic">
+            "{event.scene}"
+          </p>
+        </div>
+
+        {/* Choices */}
+        <div className="px-5 pb-5 space-y-2">
+          <div className="text-[10px] font-heading text-stone-500 tracking-widest mb-3">
+            NE YAPIYORSUN?
+          </div>
+          {event.choices.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => {
+                setChosen(c.id);
+                onChoice(event.id, c.id);
+              }}
+              disabled={busy || chosen !== null}
+              className={`w-full text-left px-4 py-3 border rounded-sm transition-all
+                ${chosen === c.id
+                  ? "border-amber-600 bg-amber-950/30 text-amber-300"
+                  : chosen !== null
+                  ? "border-stone-800 text-stone-600 opacity-50"
+                  : "border-stone-700 hover:border-amber-700 hover:bg-amber-950/20 text-stone-300 hover:text-stone-100"
+                }
+                disabled:cursor-not-allowed
+              `}
+            >
+              <div className="font-heading text-[11px] tracking-wider mb-0.5">
+                {c.label}
+              </div>
+              {c.hint && (
+                <div className="text-[10px] text-stone-500">{c.hint}</div>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {busy && (
+          <div className="px-5 pb-4 text-center text-xs text-stone-500 font-heading animate-pulse">
+            Sonuç bekleniyor…
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── result toast modal ────────────────────────────────────────────────────
 function ResultModal({ result, onClose }) {
   if (!result) return null;
   const { result: r } = result;
+  const evRes = r.event_resolved;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur">
       <div className="card-frame p-6 max-w-sm w-full border border-amber-800 bg-stone-950">
@@ -323,16 +395,29 @@ function ResultModal({ result, onClose }) {
 
         <p className="text-stone-300 text-sm text-center italic mb-4">"{r.flavor}"</p>
 
+        {/* Olay sonucu varsa XP'yi birleşik göster */}
+        {evRes && (
+          <div className="mb-3 p-3 bg-stone-900/60 border border-stone-800 rounded-sm">
+            <div className="text-[10px] text-stone-500 font-heading mb-1.5">DERS OLAYI XP</div>
+            <XpBadge stat_xp={evRes.xp_gained?.stat_xp} skill_xp={evRes.xp_gained?.skill_xp} />
+            {evRes.teacher_rel_delta !== 0 && (
+              <div className={`mt-1.5 text-[10px] font-heading ${evRes.teacher_rel_delta > 0 ? "text-amber-400" : "text-red-400"}`}>
+                Hoca ilişkisi {evRes.teacher_rel_delta > 0 ? `+${evRes.teacher_rel_delta}` : evRes.teacher_rel_delta}
+              </div>
+            )}
+          </div>
+        )}
+
         {r.xp_gained && (
           <div className="mb-4">
-            <div className="text-[10px] text-stone-500 font-heading mb-1">KAZANILAN XP</div>
+            <div className="text-[10px] text-stone-500 font-heading mb-1">DERS TEMEL XP</div>
             <XpBadge stat_xp={r.xp_gained.stat_xp} skill_xp={r.xp_gained.skill_xp} />
           </div>
         )}
 
-        {r.money_bonus > 0 && (
+        {(r.money_bonus > 0 || evRes?.money_bonus > 0) && (
           <div className="text-center text-amber-400 font-heading text-sm mb-3">
-            +{r.money_bonus} Altın 💰
+            +{r.money_bonus || evRes?.money_bonus} Altın 💰
           </div>
         )}
 
@@ -364,9 +449,11 @@ function ResultModal({ result, onClose }) {
 // ─── main page ─────────────────────────────────────────────────────────────
 export default function School() {
   const { state } = useGame();
+  const withRedirect = useActionRedirect("Mektep");
   const [summary, setSummary] = useState(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
+  const [lessonEvent, setLessonEvent] = useState(null); // pending lesson event
   const [tab, setTab] = useState("dersler"); // dersler | kulüpler | aktiviteler
 
   const player = state?.player;
@@ -381,17 +468,58 @@ export default function School() {
   const onAction = async (type, id) => {
     setBusy(true);
     try {
-      let res;
-      if (type === "lesson")      res = await api.post(`/game/school/lesson/${id}`);
-      else if (type === "join_club")  res = await api.post(`/game/school/club/${id}/join`);
-      else if (type === "leave_club") res = await api.post(`/game/school/club/${id}/leave`);
-      else if (type === "seasonal")   res = await api.post(`/game/school/seasonal/${id}`);
-      else if (type === "event")      res = await api.post(`/game/school/event/${id}`);
-
-      if (res?.data?.result) setResult(res.data);
-      loadSummary();
+      if (type === "lesson") {
+        // Step 1: attempt lesson — may return event that needs a choice
+        const res = await api.post(`/game/school/lesson/${id}`);
+        if (res?.data?.result?.needs_event_choice) {
+          // Pause — show event modal, don't redirect yet
+          setLessonEvent({ ...res.data.result.lesson_event, _lessonId: id });
+          setBusy(false);
+          return;
+        }
+        // No event — normal redirect flow
+        await withRedirect(async () => {
+          if (res?.data?.result) setResult(res.data);
+          loadSummary();
+          return res?.data ?? null;
+        });
+      } else {
+        await withRedirect(async () => {
+          let res;
+          if (type === "join_club")  res = await api.post(`/game/school/club/${id}/join`);
+          else if (type === "leave_club") res = await api.post(`/game/school/club/${id}/leave`);
+          else if (type === "seasonal")   res = await api.post(`/game/school/seasonal/${id}`);
+          else if (type === "event")      res = await api.post(`/game/school/event/${id}`);
+          if (res?.data?.result) setResult(res.data);
+          loadSummary();
+          return res?.data ?? null;
+        });
+      }
     } catch (e) {
       toast.error(e?.response?.data?.detail || "Bir hata oluştu.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onLessonChoice = async (eventId, choiceId) => {
+    if (!lessonEvent) return;
+    const lessonId = lessonEvent._lessonId;
+    setBusy(true);
+    try {
+      await withRedirect(async () => {
+        const res = await api.post(`/game/school/lesson/${lessonId}/choice`, {
+          event_id: eventId,
+          choice_id: choiceId,
+        });
+        setLessonEvent(null);
+        if (res?.data?.result) setResult(res.data);
+        loadSummary();
+        return res?.data ?? null;
+      });
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Bir hata oluştu.");
+      setLessonEvent(null);
     } finally {
       setBusy(false);
     }
@@ -505,6 +633,16 @@ export default function School() {
             </>
           )}
         </>
+      )}
+
+      {/* lesson event modal */}
+      {lessonEvent && (
+        <LessonEventModal
+          event={lessonEvent}
+          lessonId={lessonEvent._lessonId}
+          onChoice={onLessonChoice}
+          busy={busy}
+        />
       )}
 
       {/* result modal */}

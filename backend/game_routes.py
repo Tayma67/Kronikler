@@ -21,6 +21,8 @@ from items import ITEMS, EQUIPMENT_SLOTS, apply_use_effects, equipment_bonuses, 
 from skills import (
     JOB_REQUIREMENTS, check_job_eligible, list_eligible_jobs,
     apply_work_training, unlocked_perks, get_age_group, SKILL_PERKS, SKILL_KEYS, STAT_KEYS,
+    add_job_xp, get_current_career_stage, get_next_career_stage,
+    get_career_progress_pct, get_career_stages, CAREER_STAGES,
 )
 from family_quests import make_family_quests, unlock_age_appropriate, progress_quest
 from inheritance import begin_inheritance, get_heir_options, has_heir
@@ -33,7 +35,8 @@ from npc_interactions import (
     do_flirt, do_propose, do_gossip, do_kidnap,
 )
 from school import (
-    ensure_school_state, attend_lesson, join_club, leave_club,
+    ensure_school_state, attend_lesson, attend_lesson_with_choice,
+    join_club, leave_club,
     do_seasonal_activity, do_special_event, get_school_summary,
     weekly_school_tick, LESSONS, CLUBS,
 )
@@ -65,7 +68,180 @@ REBELLION_AGE = 18      # İsyan başlatmak için minimum yaş
 TEEN_AGE = 13           # Genç aktivitelerine erişim yaşı (kavga vb.)
 
 
-# -------- Pydantic --------
+# ──────────────────────────────────────────────
+# Hikayeli iş olayı metni üretici
+# ──────────────────────────────────────────────
+
+# Her meslek için çalışma anlatı şablonları
+# {name} = oyuncu adı, {title} = kariyer unvanı, {income} = kazanç, {loc} = lokasyon adı
+_WORK_NARRATIVES = {
+    "çiftçi": [
+        "{name} sabah erkenden tarlaya çıktı. Güneş tam tepedeyken beli ağrımaya başladı ama dur diyemedi — mahsul beklemez. Günün sonunda {income} akçelik ürün pazara gitti.",
+        "Toprak bugün işbirliği yapmak istemedi. {name} kazma ile uğraşırken komşu çocuklar şarkı söylüyordu. Yine de {income} akçe kazandı — emek boşa gitmedi.",
+        "Mevsim tam zamanında geldi. {name}'in tarlasından bu hafta iyi mahsul çıktı. Alıcılar güldü, kasa {income} akçe şişti.",
+        "Yağmur beklenmiyordu — ama yağdı. {name} can havliyle hasatı toplamaya koştu. Islandı, yoruldu, ama {income} akçeyi kurtardı.",
+        "Sabahın erken saatinde tarlaya varan {name}, hayvanların bir kısmının sınırı aştığını fark etti. Komşuyla kısa bir tartışma yaşandı. Ama gün sonunda iş tamam: {income} akçe.",
+    ],
+    "demirci": [
+        "Körük gürüldedi, demir kıpkırmızı oldu. {name} çekici indirdi — bir, iki, üç. Günün sonunda sipariş hazır, {income} akçe cepte.",
+        "Bugün kasabın bıçak siparişi vardı. {name} özenle çalıştı — işinde gurur var. Müşteri memnun gitti, {income} akçe bıraktı.",
+        "Duman ve ateş. {title} {name} bir kez daha ocağın başında. Zırh plakası neredeyse tamam — birkaç gün daha gerek. Bugün {income} akçelik iş teslim edildi.",
+        "Köydeki çocuklar pencereden içeriye baktı — körüğün sesini merak ettiler. {name} hiç fark etmedi. Kafası işte. {income} akçe bugünün karşılığı.",
+        "Lord'un sarayından birisi geldi, pahalı bir kılıç sipariş etti. {name} usulca fiyatı söyledi. Adam itiraz etmedi. Ön ödeme {income} akçe.",
+    ],
+    "tüccar": [
+        "Piyasa bugün hareketliydi. {title} {name} fiyatları takip etti, doğru anı bekledi, hamleyi yaptı. {income} akçe kâr.",
+        "{name} bugün iki tüccarın arasında kalmak zorunda kaldı. İkisine de güler yüz gösterdi — ikisinden de para kazandı. {income} akçe.",
+        "Sabah erken çarşıya giren {name}, buğday fiyatının düştüğünü gördü. Topladı, depolattı. Öğleden sonra fiyat yükseldi. {income} akçe kâr.",
+        "Uzak bir tüccarla tanıştı {name}. Dili farklıydı ama altının dili evrensel. Anlaşma oldu: {income} akçe.",
+        "Bugün kötü bir gündü. Bir müşteri kandırmaya çalıştı — ama {title} {name} kuyumcu gözünü çoktan geliştirmişti. Fark etti, reddetti. Yine de {income} akçe kaldı günün sonunda.",
+    ],
+    "asker": [
+        "Talim ağır geçti. {name} diğerlerinden önce bitirdi. Subayın gözü artık onda. {income} akçe maaş.",
+        "{name} bugün nöbet tuttu. Soğuktu, uzundu, sıkıcıydı — ama iş böyle. {income} akçe bu günün bedeli.",
+        "Küçük bir çete yakınlarda görüldü. {title} {name} ekibiyle harekete geçti. Çarpışma olmadı — çete kaçtı. {income} akçe ikramiye verildi.",
+        "Yeni erler geldi. {name} onlara kılıç tutmayı gösterdi. Bir gün bu çocuklar işe yarayacak belki. Bugün {income} akçe.",
+        "Komutan toplandı dedi. {name} dinledi. Savaş değil — gösteri yürüyüşü. Halk seyirdi, lordlar izledi. {income} akçe.",
+    ],
+    "avcı": [
+        "Orman sessizdi bugün. Çok sessiz. {name} saatlerce bekledi — sonunda geyiği gördü. Bir ok, bir hayvan, {income} akçe.",
+        "İz peşinden koşmak yorucu. {name} ormanda kayboldu, sonra buldu, sonra avını buldu. {income} akçe.",
+        "Tuzakların üçü boştu, biri doluydu. Yine de {income} akçe etti. Yarın daha iyi.",
+        "{name} bugün avcılığın en güzel yanını yaşadı: sabır. Saatler geçti, an geldi, gerisi kolaydı. {income} akçe.",
+        "Lord'un adamı av için çağırdı {name}'i. Büyük av, büyük bedel. {income} akçe bugünün kazancı.",
+    ],
+    "haydut": [
+        "{name} yolu gözledi. Kervan geldi, geçti. Ama arkasındaki küçük tüccar gafil yakalandı. {income} akçe.",
+        "Gece operasyonu. {name} ve ekibi hızlı davrandı. Kimse görmedi, kimse duymadı. {income} akçe.",
+        "Bugün hedef yoktu. {name} kasabada dolaşıp fırsatı kolladı. Küçük bir iş çıktı — {income} akçe.",
+        "Zanaat bu. {title} {name} planı hazırladı, ekibi konuşlandırdı. Sonuç: {income} akçe, sıfır iz.",
+        "Bir tüccar direndi. Kötü fikir. {name} ikna etti. {income} akçe — fazlasıyla.",
+    ],
+    "zanaatkar": [
+        "{name} bugün tüm gün atölyede geçirdi. Eller çalıştı, kafa çalıştı. Sipariş hazır: {income} akçe.",
+        "Müşteri iyi bir fiyat istedi. {title} {name} gülümsedi ve 'hayır' dedi. Müşteri kabul etti. {income} akçe.",
+        "Malzeme geldi, iş başladı. {name} özenle çalıştı — bu iş aceleye gelmez. {income} akçe günün sonu.",
+        "Çırak bugün yardım etti. Bir şey kırdı da. Ama genel olarak {income} akçelik iş çıktı.",
+        "Lordun özel siparişi var. {name} dikkatlice ölçtü, kesti, şekillendirdi. İlk ödeme: {income} akçe.",
+    ],
+    "şifacı": [
+        "{name} bugün beş hastayı karşıladı. Birine iyi geldi, birine kötü, üçü iyileşti. {income} akçe.",
+        "Çocuk ateşliydi. {name} gece boyunca uğraştı. Sabah ateş düştü. Anne ellerini öptü, {income} akçe bıraktı.",
+        "Salgın söylentisi var kasabada. {title} {name} hazırlık yapmaya başladı. Bugün {income} akçe — ileride daha fazla olacak.",
+        "Basit bir kırık. {name} sardı, konuştu, sakinleştirdi. {income} akçe.",
+        "Yaşlı adam her hafta geliyor. Şikâyeti değişiyor ama {name} artık anlıyor. {income} akçe ve teşekkür.",
+    ],
+    "katip": [
+        "{name} bugün üç belge yazdı. Hepsi önemli — biri çok önemli. {income} akçe.",
+        "Lordun yazışmaları. {title} {name} her kelimeye dikkat etti. Bir harf bile yanlış olmaz. {income} akçe.",
+        "Şikâyet dilekçesi, vergi belgesi, bir vasiyet. {name} hepsini yazdı. {income} akçe.",
+        "Mürekkep tükendi tam işin ortasında. {name} hızlıca temin etti ve devam etti. {income} akçe.",
+        "Önemli bir anlaşma belgesi. {name}'nin imzası da var artık — tanık olarak. {income} akçe.",
+    ],
+    "rahip": [
+        "{name} bugün vaaz verdi. Cemaat dinledi. Biri ağladı. Biri uyudu. Herkes çıkarken selam verdi. {income} akçe bağış.",
+        "Cenaze töreni vardı bugün. {title} {name} duayı okudu, aileyi teselli etti. Ağır bir gün. {income} akçe.",
+        "Genç çift nikâh için geldi. {name} evlendirdi. Mutlu yüzler. {income} akçe.",
+        "Biri itiraf etmek istedi. Uzun bir itiraf. {name} dinledi, söz vermedi. {income} akçe bağış.",
+        "Cuma namazı. {name} önde, herkes arkada. Hutbe iyi geçti. {income} akçe.",
+    ],
+    "köylü": [
+        "{name} bugün ne bulduysa onu yaptı. Odun kesti, taş taşıdı, tarla sürdü. {income} akçe.",
+        "Komşunun işine yardım etti {name}. Karşılıklı. {income} akçe ve bir öğün yemek.",
+        "Sıradan bir gün. {name} çalıştı, yoruldu, eve döndü. {income} akçe.",
+        "Küçük bir iş çıktı — kilit tamir, çit onar. {name} halletti. {income} akçe.",
+        "Pazara mal götürdü {name}. Fazlasını satamadı ama yine de {income} akçe.",
+    ],
+    "şövalye": [
+        "Lord dün müsabaka düzenledi. {title} {name} rakibini üç turda yıktı. {income} akçe ödül.",
+        "Devriye görevi. {name} sınırı kontrol etti. Sorun yok — bu sefer. {income} akçe.",
+        "Genç askerler {name}'den ders istedi. Birebir eğitim verdi. Unvan gösterişli ama öğretmek güzel. {income} akçe.",
+        "Lord'u bizzat korudu {name} bugün. Tehlike yoktu ama hazır olunmalıydı. {income} akçe.",
+        "Turnuva haberi geldi. {title} {name} hazırlanıyor. Bugün antrenman, {income} akçe maaş.",
+    ],
+    "lord": [
+        "{name} bugün vergi toplattı. Yönetim böyle — kimse mutlu değil ama kasaya giriyor. {income} akçe.",
+        "Üç anlaşmazlık. {title} {name} ikisini çözdü, biri hâlâ bekliyor. {income} akçe gelir.",
+        "Tacir loncasından heyet geldi. {name} konuştu, dinledi, pazarlık etti. Taraflar memnun ayrıldı. {income} akçe.",
+        "Toprak verimli bu mevsim. {name} memnun. Köylüler çalışıyor. {income} akçe vergi geliyor.",
+        "Küçük bir isyan söylentisi vardı. {title} {name} hızlı hareket etti. Söndürüldü. {income} akçe kaldı günün sonunda.",
+    ],
+    "demirci çırağı": [
+        "Usta bugün sert davrandı. {name} yanlış yaptı, tekrar yaptı, doğru oldu. {income} akçe.",
+        "Körük işletmek zor — eller yanıyor. {name} alışıyor yavaş yavaş. {income} akçe.",
+        "Bugün ilk kez ustasız çiviyi tek başına yaptı {name}. Küçük ama önemli. {income} akçe.",
+        "Usta gülümsedi bugün. Az olur bu. {name} doğru bir şey yapmış olmalı. {income} akçe.",
+        "Sıcak, dumanlı, ağır. {name} bunu seçti ve pişman değil. {income} akçe.",
+    ],
+    "işsiz": [
+        "{name} bugün işsiz gezdi. Kasabada bir şeyler olup bitti ama dahli olmadı.",
+        "Uzun bir gün. {name} hiçbir şey yapmadı — ya da yapmaya fırsat bulamadı.",
+        "Fırsatlar var — ama {name} henüz hazır değil gibi hissediyor.",
+    ],
+}
+
+# Mevsim bazlı ek cümleler
+_SEASON_WORK_SUFFIX = {
+    "İlkbahar": " Hava iyiydi — çalışmak güzeldi bugün.",
+    "Yaz": " Sıcak eziyetti ama iş bitti.",
+    "Sonbahar": " Hava serinledi. İş yerinde durduruyor insanı.",
+    "Kış": " Soğuk içe işledi ama kimse durmadı.",
+}
+
+
+def _generate_work_narrative(player, profession, career_stage, income, loc) -> str:
+    """Meslek, kariyer aşaması ve bağlama göre hikayeli iş metni üret."""
+    templates = _WORK_NARRATIVES.get(profession, [
+        "{name} bugün {title} olarak çalıştı ve {income} akçe kazandı."
+    ])
+    template = random.choice(templates)
+
+    loc_name = loc["name"] if loc else "kasabada"
+    season = ""
+    try:
+        from calendar_tr import current_calendar
+        cal = current_calendar(player.get("birth_year", 1), player.get("age", 20))
+        season = _SEASON_WORK_SUFFIX.get(cal.get("season", ""), "")
+    except Exception:
+        pass
+
+    text = template.format(
+        name=player.get("name", "Kahraman"),
+        title=career_stage.get("title", profession),
+        income=income,
+        loc=loc_name,
+    )
+    return text + season
+
+
+# Meslek geçiş metinleri: (eski meslek, yeni meslek) → metin şablonu
+_JOB_TRANSITIONS = {
+    ("tüccar", "haydut"):      "{name} uzun zaman önce kervancıydı. Artık değil. Yolda çok şey kaybetti — malını, güvenini, belki bir kısmını da kendini. Bıçak artık beline daha yakın.",
+    ("haydut", "asker"):       "{name} çetenin dağılmasıyla yalnız kaldı. Bir subay onu gördü ve teklif etti. 'Şiddet biliyorsun — bunu devlet için kullan.' Düşündü. Kabul etti.",
+    ("asker", "rahip"):        "{name} savaşta gördükleri onu değiştirdi. Kılıcı bıraktı, kitabı aldı. Kimse sormadı neden — ama herkes anladı.",
+    ("çiftçi", "tüccar"):      "{name} bir pazarda fırsatı gördü. Küçük bir borçla başladı. Toprak yerinde duracak — ama para hareket eder.",
+    ("demirci çırağı", "demirci"): "{name} ustanın atölyesinde yıllar geçirdi. Artık kendi ocağını kuruyor. İlk çekiç vuruşu farklı hissettirdi.",
+    ("köylü", "çiftçi"):       "{name} artık sadece çalışmıyor — kendi toprağını işliyor. Fark büyük.",
+    ("zanaatkar", "demirci"):  "{name} zanaat bilgisini daha sert bir alana taşıdı. Demir, tahtadan farklı konuşur.",
+}
+
+_JOB_TRANSITION_DEFAULT = [
+    "{name} bir sabah kalktı ve artık {old_job} olmak istemediğine karar verdi. {new_job} olmak kolay başlangıç değildi — ama başlangıçtı.",
+    "{name}'in hayatında yeni bir sayfa açıldı. {new_job} olmak kararı ani değildi — uzun zamandır içinde büyümüştü.",
+    "Herkes bir gün {old_job} olmaktan usanır. {name}'in zamanı gelmişti. {new_job} yolu onun için açıktı artık.",
+    "{name} {old_job} olarak iyi gün de gördü, kötü de. Ama {new_job} olmak başka bir şeydi — denemeye değer.",
+]
+
+
+def _generate_job_transition_text(player, old_profession: str, new_profession: str) -> str:
+    name = player.get("name", "Kahraman")
+    key = (old_profession, new_profession)
+    if key in _JOB_TRANSITIONS:
+        return _JOB_TRANSITIONS[key].format(
+            name=name, old_job=old_profession, new_job=new_profession
+        )
+    template = random.choice(_JOB_TRANSITION_DEFAULT)
+    return template.format(name=name, old_job=old_profession, new_job=new_profession)
 class ChatIn(BaseModel):
     npc_id: str
     topic: str
@@ -177,6 +353,18 @@ def _decorate(state):
     state["coming_of_age_pending"] = state["player"].get("coming_of_age_pending")
     # Toplumsal itibar özeti
     state["player"]["social"] = social_summary(state["player"])
+
+    # ── Kariyer bilgisi ──
+    career_stage = get_current_career_stage(state["player"])
+    next_stage = get_next_career_stage(state["player"])
+    state["player"]["career"] = {
+        "stage": career_stage,
+        "next_stage": next_stage,
+        "job_xp": state["player"].get("job_xp", 0),
+        "progress_pct": get_career_progress_pct(state["player"]),
+        "title": career_stage.get("title", state["player"].get("profession", "")),
+    }
+
     # FIX-14: Oyuncunun faction durumunu view'a ekle
     player_faction_id = state["player"].get("faction_id")
     if player_faction_id:
@@ -373,6 +561,10 @@ def build_game_router(db):
             result["caravan_event"] = caravan_event
         if new_world_events:
             result["new_world_events"] = new_world_events
+        # Erken durma bilgisi (açlık/yiyeceksizlik)
+        early_stop = state.pop("advance_early_stop", None)
+        if early_stop:
+            result["advance_early_stop"] = early_stop
         return result
 
     # ---------- chat ----------
@@ -577,7 +769,25 @@ def build_game_router(db):
     @router.get("/jobs")
     async def list_jobs(user: dict = Depends(get_current_user)):
         state = await _load_state(db, user["_id"])
-        return {"jobs": list_eligible_jobs(state["player"])}
+        player = state["player"]
+        jobs = list_eligible_jobs(player)
+        # Her mesleğe kariyer hattı ekle
+        for j in jobs:
+            stages = get_career_stages(j["job"])
+            j["career_stages"] = stages
+            j["max_stage_title"] = stages[-1]["title"] if stages else j["job"]
+        current = get_current_career_stage(player)
+        next_s = get_next_career_stage(player)
+        return {
+            "jobs": jobs,
+            "current_career": {
+                "profession": player.get("profession"),
+                "stage": current,
+                "next_stage": next_s,
+                "job_xp": player.get("job_xp", 0),
+                "progress_pct": get_career_progress_pct(player),
+            }
+        }
 
     @router.post("/job")
     async def change_job(body: JobIn, user: dict = Depends(get_current_user)):
@@ -593,18 +803,33 @@ def build_game_router(db):
         if not ok:
             raise HTTPException(status_code=400,
                                 detail="Bu meslek için yeterli değilsin: " + "; ".join(reasons))
+
+        old_profession = state["player"].get("profession", "işsiz")
         state["player"]["profession"] = body.profession
-        _push_event(state, state["turn"], "meslek_değişimi",
-                    f"{state['player']['name']} artık bir {body.profession}.")
+        # Yeni mesleğe geçince job_xp sıfırlanır (yeni kariyer hattı başlar)
+        state["player"]["job_xp"] = 0
+
+        # Hikayeli meslek geçiş metni
+        transition_text = _generate_job_transition_text(
+            state["player"], old_profession, body.profession
+        )
+        _push_event(state, state["turn"], "meslek_değişimi", transition_text)
         await _save_state(db, user["_id"], state)
-        return _decorate(state)
+        decorated = _decorate(state)
+        decorated["job_transition_text"] = transition_text
+        return decorated
 
     @router.post("/work")
     async def work(user: dict = Depends(get_current_user)):
         state = await _load_state(db, user["_id"])
         _require_alive(state)
         player = state["player"]
-        # Income per DAY scales with stats and skills
+        prof = player["profession"]
+
+        # ── Kariyer aşaması bazlı taban gelir ──
+        career_stage = get_current_career_stage(player)
+        income_mult = career_stage.get("income_multiplier", 1.0)
+
         daily_income_map = {
             "işsiz": (0, 0),
             "köylü": (0, 2), "çiftçi": (1, 4), "asker": (2, 5),
@@ -613,19 +838,24 @@ def build_game_router(db):
             "lord": (15, 70), "şövalye": (6, 18), "şifacı": (3, 10),
             "katip": (2, 7), "rahip": (2, 8),
         }
-        prof = player["profession"]
         lo, hi = daily_income_map.get(prof, (0, 1))
-        # Skill bonus
+
+        # Skill bonusu
         skills = player.get("skills", {})
         if prof in ("tüccar", "demirci"):
             bonus = 1 + skills.get("trade", 0) * 0.05 + skills.get("crafting", 0) * 0.05
             lo, hi = int(lo * bonus), int(hi * bonus)
+
+        # Kariyer çarpanı uygula
+        lo = max(0, int(lo * income_mult))
+        hi = max(lo, int(hi * income_mult))
         income = random.randint(lo, hi) if hi > lo else lo
+
         player["money"] = round(player["money"] + income, 1)
         player["health"] = max(20, player["health"] - random.randint(0, 2))
         player["hunger"] = max(0, player.get("hunger", 100) - 1)
 
-        # Production at current location (small per-day)
+        # Lokasyon üretimi
         loc = next((l for l in state["world"]["locations"] if l["id"] == player["location_id"]), None)
         if loc:
             from simulation import PRODUCTION
@@ -636,11 +866,14 @@ def build_game_router(db):
                 loc["market"][good]["supply"] += max(1, amt // 2)
                 _recompute_prices(loc)
 
-        # Faction contribution: her iş günü +1
+        # Faction katkısı
         if player.get("faction_id"):
             player["faction_contribution"] = player.get("faction_contribution", 0) + 1
 
-        # Track work units; 7 units = 1 week passes
+        # ── Job XP ekle ve kariyer ilerlemesini kontrol et ──
+        career_promotion = add_job_xp(player, xp=1)
+
+        # Haftalık döngü
         player["work_units"] = player.get("work_units", 0) + 1
         progress_quest(state, "work")
         leveled = []
@@ -649,26 +882,43 @@ def build_game_router(db):
         if player["work_units"] >= 7:
             week_passed = True
             player["work_units"] = 0
-            # Skill/stat training accumulates at end of week
             leveled = apply_work_training(player, prof)
-            # Now advance a full week
             advance_time(state, weeks=1)
-        else:
-            # Manually advance just 1 day's hunger/age effects (no full simulation tick)
-            # We just bump a sub-tracker; calendar stays the same.
-            pass
 
-        if income > 0:
-            _push_event(state, state["turn"], "çalışma",
-                        f"{player['name']} bir gün {prof} olarak çalıştı, {income} altın.")
-        # No event for işsiz boş günler (gereksiz spam)
+        # ── Hikayeli iş olayı metni ──
+        work_narrative = _generate_work_narrative(player, prof, career_stage, income, loc)
+        if income > 0 or prof == "işsiz":
+            _push_event(state, state["turn"], "çalışma", work_narrative)
+
+        # ── Kariyer terfi bildirimi ──
+        if career_promotion:
+            new_stage = career_promotion["new_stage"]
+            trf_text = (
+                f"🎉 {player['name']} yeni bir unvana kavuştu: **{new_stage['title']}**! "
+                f"{new_stage['desc']}"
+            )
+            _push_event(state, state["turn"], "kariyer_terfi", trf_text)
 
         outcome = soldier_check(state) if week_passed else None
         await _save_state(db, user["_id"], state)
+
+        # Kariyer bilgisi döndür
+        current_stage = get_current_career_stage(player)
+        next_stage = get_next_career_stage(player)
+        career_info = {
+            "current_stage": current_stage,
+            "next_stage": next_stage,
+            "job_xp": player.get("job_xp", 0),
+            "progress_pct": get_career_progress_pct(player),
+            "promoted": career_promotion is not None,
+        }
+
         return {"state": _decorate(state), "enforcement": outcome,
                 "income": income, "leveled": leveled,
                 "days_passed": days_passed, "week_passed": week_passed,
-                "work_units": player["work_units"]}
+                "work_units": player["work_units"],
+                "career": career_info,
+                "work_narrative": work_narrative}
 
     # ---------- crime / attack ----------
     @router.post("/crime")
@@ -820,14 +1070,19 @@ def build_game_router(db):
     @router.get("/skills")
     async def skills(user: dict = Depends(get_current_user)):
         state = await _load_state(db, user["_id"])
+        from skills import SKILL_PERK_CHOICES, get_pending_perk_choice
+        player = state["player"]
         return {
-            "stats": state["player"].get("stats", {}),
-            "stat_xp": state["player"].get("stat_xp", {}),
-            "skills": state["player"].get("skills", {}),
-            "skill_xp": state["player"].get("skill_xp", {}),
-            "perks": unlocked_perks(state["player"]),
-            "tree": SKILL_PERKS,
-            "stat_points": state["player"].get("stat_points", 0),
+            "stats": player.get("stats", {}),
+            "stat_xp": player.get("stat_xp", {}),
+            "skills": player.get("skills", {}),
+            "skill_xp": player.get("skill_xp", {}),
+            "perks": unlocked_perks(player),
+            "chosen_perks": player.get("chosen_perks", []),
+            "pending_perk_queue": player.get("pending_perk_queue", []),
+            "perk_choices": SKILL_PERK_CHOICES,  # 3-seçenekli yeni sistem
+            "tree": SKILL_PERKS,  # Geriye dönük uyumluluk
+            "stat_points": player.get("stat_points", 0),
         }
 
     # FIX-13: stat_points harcama endpoint'i
@@ -862,6 +1117,97 @@ def build_game_router(db):
     async def get_family_quests(user: dict = Depends(get_current_user)):
         state = await _load_state(db, user["_id"])
         return {"quests": state.get("family_quests", []), "player_age": state["player"]["age"]}
+
+    # ---------- aile yardımı (GDD §20.2) ----------
+    @router.post("/help-parent")
+    async def help_parent(body: dict, user: dict = Depends(get_current_user)):
+        """13 yaşından küçük oyuncu ebeveynine haftalık yardım eder."""
+        import random
+        state = await _load_state(db, user["_id"])
+        player = state["player"]
+        parent_id = body.get("parent_id")
+        if not parent_id:
+            raise HTTPException(400, "parent_id gerekli")
+        if player.get("age", 0) >= 13:
+            raise HTTPException(400, "13 yaş altı oyuncular için geçerlidir")
+        parent_ids = player.get("parent_ids", [])
+        if parent_id not in parent_ids:
+            raise HTTPException(400, "Bu kişi ebeveynin değil")
+        current_turn = state.get("turn", 0)
+        help_done = player.setdefault("parent_help_done", {})
+        last_help = help_done.get(parent_id)
+        if last_help == current_turn:
+            raise HTTPException(400, "Bu hafta zaten yardım ettin")
+        # Ebeveyn bul
+        npc = next((n for n in state["world"]["npcs"] if n["id"] == parent_id), None)
+        if not npc:
+            raise HTTPException(404, "Ebeveyn bulunamadı")
+        # Meslek belirle (anne mi baba mı?)
+        is_mother = npc.get("gender") == "female" or npc.get("role") == "mother"
+        profession = npc.get("profession", "çiftçi").lower()
+        # Stat/XP bonus
+        if is_mother:
+            player["stats"]["STA"] = player["stats"].get("STA", 0) + 1
+            player["stats"]["CHA"] = player["stats"].get("CHA", 0) + 1
+            skill_key = "sosyal"
+        else:
+            player["stats"]["STR"] = player["stats"].get("STR", 0) + 1
+            player["stats"]["STA"] = player["stats"].get("STA", 0) + 1
+            if "demirci" in profession or "silah" in profession:
+                skill_key = "zanaatkarlık"
+            elif "çiftçi" in profession or "köylü" in profession:
+                skill_key = "doğa"
+            else:
+                skill_key = "zanaatkarlık"
+        skills = player.setdefault("skills", {})
+        skills[skill_key] = skills.get(skill_key, 0) + 1
+        # Hikayeli metin — mevsim + meslek bağlamı
+        cal = current_calendar(state)
+        season = cal.get("season", "ilkbahar")
+        season_tr = {"ilkbahar": "İlkbahar", "yaz": "Yaz", "sonbahar": "Sonbahar", "kış": "Kış"}.get(season, season)
+        if is_mother:
+            texts_by_season = {
+                "kış": f"Annen mutfakta saatlerce çalışmıştı. Odun bitmişti, eller üşümüştü. Hiç sormadan kalktın, odunu taşıdın. Bir şey söylemedi — sadece omzuna dokundu. Bazen bu yeterlidir.",
+                "yaz": f"Çarşıdan dönünce annen ağır sepetlerle boğuşuyordu. Koştun, aldın elinden. 'Büyüdün sen' dedi. Küçük bir cümleydi ama içinde bir şeyler ısındı.",
+                "ilkbahar": f"Annen bahçede bir başına uğraşıyordu. Yanına gidip yardımına koştun. Birlikte çalışınca iş bitmez gibi gelen görev çabucak tükendi.",
+                "sonbahar": f"Hasat mevsimiydi ve annen yorgun düşmüştü. Sessizce yanına oturuldu, elle tutuldu, omuz verildi. Akşam yemeğini ikisi de sessiz yediler — ama bu sessizlik huzurluydu.",
+            }
+        else:
+            texts_by_profession = {
+                "demirci": f"Baban dükkanını kapatırken buldu seni orada. Sessizce yanında çalıştın, araçları topladın, yeri süpürdün. Akşam eve dönerken omzuna eli geldi: 'İyi çocuksun.' Demirciler az konuşur ama her kelime ağır basar.",
+                "çiftçi": f"Tarla {season_tr} güneşinde kavuruyordu. Baban sabahtan beri eğilip kalkıyordu. Yanına gidip başladın. Öğleden sonra ikili çalışmanın verimi birinin iki katıydı. Akşam yorgun ama memnun döndünüz.",
+            }
+            text = None
+            for key in texts_by_profession:
+                if key in profession:
+                    text = texts_by_profession[key]
+                    break
+            texts_by_season = {
+                "kış": text or f"Baban soğukta dışarıda çalışıyordu. Yanına gittin, elimden tut dedirdin. Beraber döndünüzde ocakta ısındınız. 'Adam oluyorsun' dedi sadece.",
+                "yaz": text or f"Baban sıcakta yorulmuştu. İş bitmemişti ama gücü tükenmişti. Kolunu sıvayıp yardıma koştun. 'Bazen bir el yeter' dedi.",
+                "ilkbahar": text or f"Babanın işi yoğundu. 'Gel' dedi, 'öğren.' İlk kez yanında çalıştın. Ellerin acıdı ama gözleri gülüyordu.",
+                "sonbahar": text or f"Sonbahar yorgunluğunda babanın yanındaydın. Az konuştunuz, çok çalıştınız. Dönüşte sana baktı: 'Güvenilirsin.' Fazlası gerekmiyordu.",
+            }
+        event_text = texts_by_season.get(season, texts_by_season.get("yaz", "Ebeveynine yardım ettin."))
+        # Kayıt
+        help_done[parent_id] = current_turn
+        # Olay ekle
+        event = {
+            "id": f"parent_help_{current_turn}_{parent_id[:4]}",
+            "turn": current_turn,
+            "type": "aile",
+            "summary": event_text,
+            "icon": "👨‍👩‍👦",
+        }
+        state.setdefault("events", []).insert(0, event)
+        await _save_state(db, user["_id"], state)
+        return {
+            "success": True,
+            "event": event,
+            "skill_gain": {skill_key: 1},
+            "stat_gain": {"STA": 1, "CHA": 1} if is_mother else {"STR": 1, "STA": 1},
+            "state": _decorate(state),
+        }
 
     # ---------- quests (general world) ----------
     @router.post("/quest/accept")
@@ -1283,6 +1629,31 @@ def build_game_router(db):
         if state["player"]["age"] >= 13:
             raise HTTPException(status_code=403, detail="Artık mektep çağında değilsin.")
         result = attend_lesson(state, lesson_id)
+        if not result["ok"]:
+            raise HTTPException(status_code=400, detail=result["error"])
+        # Olay varsa henüz kaydetme/ilerletme — seçim bekleniyor
+        if result.get("needs_event_choice"):
+            return {"result": result, "state": _decorate(state)}
+        # Normal akış
+        advance_time(state, weeks=1)
+        await _save_state(db, user["_id"], state)
+        return {"result": result, "state": _decorate(state)}
+
+    @router.post("/school/lesson/{lesson_id}/choice")
+    async def school_lesson_choice(
+        lesson_id: str,
+        body: dict,
+        user: dict = Depends(get_current_user)
+    ):
+        """İki adımlı ders akışı: olay seçimi tamamlandı."""
+        state = await _load_state(db, user["_id"])
+        if state["player"]["age"] >= 13:
+            raise HTTPException(status_code=403, detail="Artık mektep çağında değilsin.")
+        event_id = body.get("event_id")
+        choice_id = body.get("choice_id")
+        if not event_id or not choice_id:
+            raise HTTPException(status_code=400, detail="event_id ve choice_id gerekli.")
+        result = attend_lesson_with_choice(state, lesson_id, event_id, choice_id)
         if not result["ok"]:
             raise HTTPException(status_code=400, detail=result["error"])
         advance_time(state, weeks=1)
@@ -2265,6 +2636,53 @@ def build_game_router(db):
             result = apply_life_event_choice(state, event_id, int(choice_index))
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
+        await _save_state(db, user["_id"], state)
+        return result
+
+
+    # ─── Perk / Skill-up Seçim Sistemi (Adım 16) ───────────────────────────
+
+    @router.get("/perk/pending")
+    async def get_pending_perk(user: dict = Depends(get_current_user)):
+        """Bekleyen perk seçimini döndürür (skill seviye atladıktan sonra)."""
+        state = await _load_state(db, user["_id"])
+        from skills import get_pending_perk_choice
+        pending = get_pending_perk_choice(state["player"])
+        return {"pending_perk": pending}
+
+    @router.post("/perk/choose")
+    async def choose_perk(
+        body: dict = Body(default={}),
+        user: dict = Depends(get_current_user),
+    ):
+        """
+        Oyuncunun perk seçimini uygular.
+        Body: { "skill": str, "level": int, "perk_key": str }
+        """
+        state = await _load_state(db, user["_id"])
+        skill = body.get("skill")
+        level = body.get("level")
+        perk_key = body.get("perk_key")
+        if not skill or level is None or not perk_key:
+            raise HTTPException(status_code=400, detail="skill, level ve perk_key zorunludur.")
+        from skills import apply_perk_choice, SKILL_NAMES_TR
+        result = apply_perk_choice(state["player"], skill, int(level), perk_key)
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Bilinmeyen hata"))
+        # Olaylar bölümüne perk olayı ekle
+        skill_name_tr = SKILL_NAMES_TR.get(skill, skill)
+        event_text = (
+            f"⚡ {skill_name_tr} seviye {level}: "{result['perk_name']}" yeteneğini seçtin. "
+            f"{result['perk_desc']}"
+        )
+        state.setdefault("events", []).insert(0, {
+            "week": state.get("week", 1),
+            "text": event_text,
+            "type": "perk_unlock",
+            "skill": skill,
+            "perk_key": perk_key,
+            "perk_name": result["perk_name"],
+        })
         await _save_state(db, user["_id"], state)
         return result
 

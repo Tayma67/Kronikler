@@ -284,6 +284,539 @@ SPECIAL_EVENTS = [
 ]
 
 # ──────────────────────────────────────────────
+# DERS İÇİ OLAYLAR — Adım 17
+# Her ders için olay havuzu. Ders katılımında %60 şansla biri seçilir.
+# Her olay: id, senaryo metni (soru), 2-3 seçim seçeneği.
+# Her seçenek: id, label, flavor (sonuç metni), stat/skill etkileri.
+# ──────────────────────────────────────────────
+LESSON_EVENTS = {
+    "din": [
+        {
+            "id": "hoca_soru",
+            "scene": "Hoca Efendi gözlerini sınıfta gezdirdi — ve parmağını sana doğrultu. \"Söyle bakalım, bugün anlattıklarımdan ne anladın?\" Herkes sana bakıyor.",
+            "icon": "📖",
+            "choices": [
+                {
+                    "id": "cevapla",
+                    "label": "Cevapla",
+                    "hint": "Aklında kalanları söyle",
+                    "stat_check": {"stat": "intelligence", "threshold": 3},
+                    "success": {
+                        "flavor": "Söylediklerini hoca başını hafifçe sallayarak dinledi. \"Güzel.\" dedi. Kalbinde ufak bir ışık yandı.",
+                        "stat_xp": {"intelligence": 12, "charisma": 8},
+                        "skill_xp": {"social": 5},
+                        "teacher_rel": 8,
+                    },
+                    "failure": {
+                        "flavor": "Dilinden doğru kelimeler çıkmadı. Hoca sabırla bekledi. \"Bir dahaki derse daha dikkatli ol\" dedi.",
+                        "stat_xp": {"intelligence": 6},
+                        "skill_xp": {},
+                        "teacher_rel": -2,
+                    },
+                },
+                {
+                    "id": "sus",
+                    "label": "Sessiz kal",
+                    "hint": "Başını eğ, geçmesini bekle",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "Sessiz kaldın. Hoca bir süre bekledi, sonra başka birine döndü. Rahatladın — ama bir şeyleri kaçırdığını hissediyorsun.",
+                        "stat_xp": {"intelligence": 4},
+                        "skill_xp": {},
+                        "teacher_rel": -1,
+                    },
+                    "failure": None,
+                },
+                {
+                    "id": "yanindakinden_sor",
+                    "label": "Yanındakinden sor",
+                    "hint": "Fısılda, belki duyulmaz",
+                    "stat_check": {"stat": "charisma", "threshold": 3},
+                    "success": {
+                        "flavor": "Yanındaki arkadaşın kulağına fısıldadı. Hoca fark etmedi. Cevap doğruydu — ama bu sefer başkasının sayesinde.",
+                        "stat_xp": {"charisma": 8},
+                        "skill_xp": {"social": 6},
+                        "teacher_rel": 0,
+                    },
+                    "failure": {
+                        "flavor": "\"Orada ne fısıldıyorsunuz?\" Hoca seni gördü. Yüzün kızardı. Bir dahaki sefere dikkatli olursun.",
+                        "stat_xp": {"charisma": 3},
+                        "skill_xp": {},
+                        "teacher_rel": -6,
+                    },
+                },
+            ],
+        },
+        {
+            "id": "arkadas_ezber",
+            "scene": "Sıradaki arkadaşın bugün dersini hiç çalışmamış. Ezber okutma sırası yaklaşıyor; gözlerinde panik var, senden yardım umut ediyor.",
+            "icon": "🤝",
+            "choices": [
+                {
+                    "id": "yardim_et",
+                    "label": "Fısıldayarak yardım et",
+                    "hint": "Arkadaşlık önemli",
+                    "stat_check": {"stat": "charisma", "threshold": 2},
+                    "success": {
+                        "flavor": "Sayfayı gösterdin, o okudu, geçti. Akşam \"Sağ ol\" dedi — gözlerinde gerçek bir minnet vardı.",
+                        "stat_xp": {"charisma": 10},
+                        "skill_xp": {"social": 8},
+                        "teacher_rel": 0,
+                    },
+                    "failure": {
+                        "flavor": "Hoca gördü. İkiniz de uyarı aldınız. Arkadaşın mahçup, sen de.",
+                        "stat_xp": {"charisma": 4},
+                        "skill_xp": {"social": 2},
+                        "teacher_rel": -5,
+                    },
+                },
+                {
+                    "id": "gozden_uzak_kal",
+                    "label": "Görmezden gel",
+                    "hint": "Senin derdin değil",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "Öne baktın. Arkadaşın kekeleyerek geçti; hoca duymazdan geldi. Ama arkadaşın sana bakmadı.",
+                        "stat_xp": {"intelligence": 5},
+                        "skill_xp": {},
+                        "teacher_rel": 0,
+                    },
+                    "failure": None,
+                },
+                {
+                    "id": "hocaya_soyle",
+                    "label": "Hocaya söyle",
+                    "hint": "Kural kuraldır",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "Hoca durumu anlayarak arkadaşına ek süre verdi. Ama o, sana soğuk baktı. Doğruyu yaptın mıydın?",
+                        "stat_xp": {"intelligence": 6},
+                        "skill_xp": {"social": -3},
+                        "teacher_rel": 7,
+                    },
+                    "failure": None,
+                },
+            ],
+        },
+    ],
+    "matematik": [
+        {
+            "id": "zor_hesap",
+            "scene": "Hoca tahtaya bir hesap problemi yazdı. \"Kim çözebilir?\" diye sordu. Kimse kalkmıyor — gözler seni tarıyor.",
+            "icon": "🔢",
+            "choices": [
+                {
+                    "id": "tahtaya_cik",
+                    "label": "Tahtaya çık",
+                    "hint": "Riske gir",
+                    "stat_check": {"stat": "intelligence", "threshold": 4},
+                    "success": {
+                        "flavor": "Tebeşiri aldın, adımları yazdın, sonucu buldun. Hoca \"Doğru\" dedi. Sınıfın sessizliği saygıdan geliyordu.",
+                        "stat_xp": {"intelligence": 15, "charisma": 8},
+                        "skill_xp": {"trade": 5, "social": 4},
+                        "teacher_rel": 10,
+                    },
+                    "failure": {
+                        "flavor": "Tebeşirle yazdın — ama bir yerde hata yaptın. Hoca nazikçe düzeltti. \"Deneme cesareti de bir erdemdir\" dedi.",
+                        "stat_xp": {"intelligence": 8, "charisma": 4},
+                        "skill_xp": {"trade": 2},
+                        "teacher_rel": 4,
+                    },
+                },
+                {
+                    "id": "gozle_izle",
+                    "label": "Gözle izle",
+                    "hint": "Nasıl çözüldüğünü öğren",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "Bir başkası kalktı. Sen adımları dikkatle takip ettin. Anlamak bazen seyretmekle başlar.",
+                        "stat_xp": {"intelligence": 7},
+                        "skill_xp": {"trade": 3},
+                        "teacher_rel": 0,
+                    },
+                    "failure": None,
+                },
+                {
+                    "id": "dürüst_ol",
+                    "label": "\"Bilmiyorum\" de",
+                    "hint": "Dürüstlük de bir erdem",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "\"Bilmiyorum, ama öğrenmek istiyorum\" dedin. Hoca hafifçe güldü. \"En azından dürüstsün\" dedi ve açıkladı.",
+                        "stat_xp": {"intelligence": 6, "charisma": 6},
+                        "skill_xp": {"social": 4},
+                        "teacher_rel": 5,
+                    },
+                    "failure": None,
+                },
+            ],
+        },
+        {
+            "id": "kopya",
+            "scene": "Sınav esnasında arkadaşın yanına yaklaştı, fısıldadı: \"Bir soruya takıldım, cevabını göster.\" Hoca dönük, ama her an bakabilir.",
+            "icon": "📝",
+            "choices": [
+                {
+                    "id": "izin_ver",
+                    "label": "Cevabı göster",
+                    "hint": "Arkadaşını kurtar",
+                    "stat_check": {"stat": "charisma", "threshold": 3},
+                    "success": {
+                        "flavor": "Hoca fark etmedi. Arkadaşın geçti. Sana minnetle baktı. Ama kendi cevabından emin miydin?",
+                        "stat_xp": {"charisma": 9},
+                        "skill_xp": {"social": 7},
+                        "teacher_rel": 0,
+                    },
+                    "failure": {
+                        "flavor": "Hoca döndü. İkisi de kağıt iptal. Arkadaşın \"Ben istemedim\" dedi. Bir ihanet mi, yoksa paniği mi?",
+                        "stat_xp": {"intelligence": 3},
+                        "skill_xp": {},
+                        "teacher_rel": -10,
+                    },
+                },
+                {
+                    "id": "reddet",
+                    "label": "Hayır, kendi çöz",
+                    "hint": "Bu sefer değil",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "\"Hayır\" dedin sessizce. Arkadaşın surat asti. Ama sınav bitti, sen rahat geçtin.",
+                        "stat_xp": {"intelligence": 8},
+                        "skill_xp": {},
+                        "teacher_rel": 2,
+                    },
+                    "failure": None,
+                },
+                {
+                    "id": "baska_sor",
+                    "label": "\"Öbür soruya bak\"",
+                    "hint": "Yön ver ama kopya verme",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "\"Üçüncü soruyu kontrol et\" dedin. Başka bir şey söylemedin. Arkadaşın anladı; biraz kızgın, ama tamamen yıkılmadı.",
+                        "stat_xp": {"intelligence": 7, "charisma": 5},
+                        "skill_xp": {"social": 3},
+                        "teacher_rel": 1,
+                    },
+                    "failure": None,
+                },
+            ],
+        },
+    ],
+    "edebiyat": [
+        {
+            "id": "siir_oku",
+            "scene": "Hoca bugün gönüllü şiir okutacak. Sınıf sessiz, kimse kalkacak gibi görünmüyor. Hoca gözlerini dolduruyor.",
+            "icon": "📜",
+            "choices": [
+                {
+                    "id": "gonullu_ol",
+                    "label": "Gönüllü ol",
+                    "hint": "Herkesin önünde oku",
+                    "stat_check": {"stat": "charisma", "threshold": 3},
+                    "success": {
+                        "flavor": "Kalktın, aldın kitabı. Sesi titremeden okudun. Hoca bir şeyler not etti. Sınıf sessizdi — o iyi bir sessizlikti.",
+                        "stat_xp": {"charisma": 14, "intelligence": 8},
+                        "skill_xp": {"social": 8},
+                        "teacher_rel": 10,
+                    },
+                    "failure": {
+                        "flavor": "Sesi biraz titredi, bir kelimeye takıldın. Hoca nazikçe tamamladı. \"Bir dahaki sefere daha iyi olacak\" dedi.",
+                        "stat_xp": {"charisma": 7, "intelligence": 5},
+                        "skill_xp": {"social": 4},
+                        "teacher_rel": 4,
+                    },
+                },
+                {
+                    "id": "sessiz_kal",
+                    "label": "Sessiz kal",
+                    "hint": "Bu kadar dikkat istemiyorsun",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "Başkası kalktı. Dinledin. Şiir güzeldi. Belki bir gün sen de okursun.",
+                        "stat_xp": {"intelligence": 6, "charisma": 3},
+                        "skill_xp": {},
+                        "teacher_rel": 0,
+                    },
+                    "failure": None,
+                },
+                {
+                    "id": "arkadasi_oner",
+                    "label": "Arkadaşını öner",
+                    "hint": "\"O iyi okur\" de",
+                    "stat_check": {"stat": "charisma", "threshold": 2},
+                    "success": {
+                        "flavor": "\"Hocam, Yusuf iyi okur\" dedin. Arkadaşın korkuyla kalktı — ama güzel okudu. Sana teşekkür etti.",
+                        "stat_xp": {"charisma": 10},
+                        "skill_xp": {"social": 9},
+                        "teacher_rel": 3,
+                    },
+                    "failure": {
+                        "flavor": "Arkadaşını işaret ettin ama o hazır değildi. Kekeleyerek geçti. Sana dargın baktı.",
+                        "stat_xp": {"charisma": 4},
+                        "skill_xp": {"social": -2},
+                        "teacher_rel": 0,
+                    },
+                },
+            ],
+        },
+        {
+            "id": "eski_kitap",
+            "scene": "Mektep raflarında tozlu bir hikaye kitabı buldun — kimse okumamış. İçinde eski diyarlardan hikayeler, kahramanlar, savaşlar var.",
+            "icon": "📚",
+            "choices": [
+                {
+                    "id": "gece_oku",
+                    "label": "Gece lambası yanında oku",
+                    "hint": "Bütün gece bitir",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "Sabah gözlerin yanıyordu. Ama zihnin doluydu — kahramanların isimleri, yollar, kararlar. Bazı şeyler uykudan değerlidir.",
+                        "stat_xp": {"intelligence": 14},
+                        "skill_xp": {"social": 3, "trade": 2},
+                        "teacher_rel": 0,
+                    },
+                    "failure": None,
+                },
+                {
+                    "id": "arkadas_paylas",
+                    "label": "Arkadaşınla paylaş",
+                    "hint": "İyi şeyleri birlikte yaşa",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "Birlikte okudunuz, dönüşümlü sayfalar. Konuşmanız geç vakitlere uzadı. Kitap bitti, ama söyleşi bitmedi.",
+                        "stat_xp": {"intelligence": 9, "charisma": 7},
+                        "skill_xp": {"social": 8},
+                        "teacher_rel": 0,
+                    },
+                    "failure": None,
+                },
+                {
+                    "id": "sat",
+                    "label": "Çarşıya götür, sat",
+                    "hint": "Parasal değeri daha büyük olabilir",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "Bir bakkalın rafına koydu. 3 akçe verdi. Kitap gitti. Bir şeylerin para etmediğini daha sonra anlayacaksın.",
+                        "stat_xp": {"intelligence": 3},
+                        "skill_xp": {"trade": 6},
+                        "teacher_rel": 0,
+                        "money_bonus": 3,
+                    },
+                    "failure": None,
+                },
+            ],
+        },
+    ],
+    "beden": [
+        {
+            "id": "zorbalik",
+            "scene": "Beden dersinin ortasında sınıfın kabadayısı önünü kesti. \"Bugün benimle güreşirsin\" dedi. Herkes izliyor.",
+            "icon": "💪",
+            "choices": [
+                {
+                    "id": "karsilik_ver",
+                    "label": "Güreş",
+                    "hint": "Kaçma, karşı dur",
+                    "stat_check": {"stat": "strength", "threshold": 3},
+                    "success": {
+                        "flavor": "Döndün, tutundu, devirmek için hamle yaptın. Bir adım attı — senin zeminin daha sağlamdı. Yere serdin. Sınıf \"Oh!\" dedi.",
+                        "stat_xp": {"strength": 14, "stamina": 8},
+                        "skill_xp": {"combat": 10},
+                        "teacher_rel": 3,
+                    },
+                    "failure": {
+                        "flavor": "Tutundun ama devirilemedi. O kuvvetliydi. Düştün. Ama kalktın ve sürdürdün. Hoca \"Vazgeçmedi\" dedi alçak sesle.",
+                        "stat_xp": {"strength": 8, "stamina": 6},
+                        "skill_xp": {"combat": 5},
+                        "teacher_rel": 2,
+                    },
+                },
+                {
+                    "id": "goz_ardi",
+                    "label": "Göz ardı et",
+                    "hint": "Zamanını harcama",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "\"Seninle uğraşmam\" deyip geçtin. O gülümsedi. Bazıları saygı duydu, bazıları eğlendi. Savaşlara değil, hedeflere odaklandın.",
+                        "stat_xp": {"intelligence": 6, "charisma": 4},
+                        "skill_xp": {"social": 2},
+                        "teacher_rel": 0,
+                    },
+                    "failure": None,
+                },
+                {
+                    "id": "hocaya_sikayet",
+                    "label": "Hocaya şikâyet et",
+                    "hint": "Kuralı uygulat",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "Hoca durdu, ikisini de uyardı. Kabadayı ceza aldı. Ama bazı çocuklar \"muhbir\" diye mırıldandı.",
+                        "stat_xp": {"intelligence": 5, "charisma": 3},
+                        "skill_xp": {"social": -2},
+                        "teacher_rel": 8,
+                    },
+                    "failure": None,
+                },
+            ],
+        },
+        {
+            "id": "turnuva",
+            "scene": "Hoca ani bir duyuru yaptı: \"Bu hafta güreş turnuvası! Katılmak isteyen var mı?\" Birkaç el kalktı. Seni de bekliyor.",
+            "icon": "🏆",
+            "choices": [
+                {
+                    "id": "katil",
+                    "label": "Katıl",
+                    "hint": "Meydana çık",
+                    "stat_check": {"stat": "strength", "threshold": 3},
+                    "success": {
+                        "flavor": "İlk rakibini geçtin. İkincisi zordu. Finale kalmadın ama üçüncü oldun. Hoca adını duyurdu. Gurur acı değil, tatlıydı.",
+                        "stat_xp": {"strength": 16, "stamina": 10, "charisma": 6},
+                        "skill_xp": {"combat": 12},
+                        "teacher_rel": 8,
+                    },
+                    "failure": {
+                        "flavor": "İlk turda düştün. Ağrıyordu. Ama herkes orada seni gördü. Kaçmadın — bu bile bir zaferdi.",
+                        "stat_xp": {"strength": 8, "stamina": 6},
+                        "skill_xp": {"combat": 6},
+                        "teacher_rel": 3,
+                    },
+                },
+                {
+                    "id": "izle_ogren",
+                    "label": "İzle ve öğren",
+                    "hint": "Tekniklerini gözlemle",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "Kenardan her hamleti, her manevrayı gözlemledin. Zihninde not aldın. Bir dahaki turnuva farklı olacak.",
+                        "stat_xp": {"intelligence": 8, "stamina": 4},
+                        "skill_xp": {"combat": 7},
+                        "teacher_rel": 1,
+                    },
+                    "failure": None,
+                },
+                {
+                    "id": "antrenman_teklifi",
+                    "label": "\"Sonraki için antrenman yaparım\"",
+                    "hint": "Hazır olmak istemiyorsun ama istiyorsun",
+                    "stat_check": None,
+                    "success": {
+                        "flavor": "Hoca duydu: \"Güzel karar\" dedi. Sana özel bir antrenman programı verecek — bir sonraki turnuvada daha hazır olacaksın.",
+                        "stat_xp": {"stamina": 8, "intelligence": 5},
+                        "skill_xp": {"combat": 4},
+                        "teacher_rel": 6,
+                    },
+                    "failure": None,
+                },
+            ],
+        },
+    ],
+}
+
+# EVENT_TRIGGER_CHANCE — ders başına olay tetiklenme olasılığı
+LESSON_EVENT_CHANCE = 0.65
+
+
+def pick_lesson_event(state, lesson_id):
+    """
+    Ders için rastgele bir olay seç (%LESSON_EVENT_CHANCE şansla).
+    Returns event dict or None.
+    """
+    if random.random() > LESSON_EVENT_CHANCE:
+        return None
+    events = LESSON_EVENTS.get(lesson_id, [])
+    if not events:
+        return None
+    # Aynı haftada aynı olay tekrarlanmasın (hafızalı)
+    player = state["player"]
+    school = player.get("school", {})
+    seen_this_week = set(school.get("events_seen_this_week", []))
+    available = [e for e in events if e["id"] not in seen_this_week]
+    if not available:
+        available = events  # Hepsi görüldüyse hepsinden seçilebilir
+    return random.choice(available)
+
+
+def resolve_lesson_event(state, lesson_id, event_id, choice_id):
+    """
+    Oyuncu bir ders olayında seçimini yaptı. Sonucu hesapla ve uygula.
+    attend_lesson ile birlikte çağrılır.
+    """
+    events = LESSON_EVENTS.get(lesson_id, [])
+    event = next((e for e in events if e["id"] == event_id), None)
+    if not event:
+        return {"ok": False, "error": "Olay bulunamadı."}
+    choice = next((c for c in event["choices"] if c["id"] == choice_id), None)
+    if not choice:
+        return {"ok": False, "error": "Seçenek bulunamadı."}
+
+    player = state["player"]
+    school = player.get("school", {})
+
+    # Stat check varsa başarı/başarısızlık belirle
+    outcome = choice["success"]
+    stat_check = choice.get("stat_check")
+    if stat_check:
+        stat_val = player.get("stats", {}).get(stat_check["stat"], 1)
+        roll = random.random()
+        chance = min(0.90, 0.35 + stat_val * 0.12)
+        if roll > chance and choice.get("failure"):
+            outcome = choice["failure"]
+
+    # XP uygula
+    leveled = _apply_xp(
+        player,
+        outcome.get("stat_xp"),
+        outcome.get("skill_xp") if (outcome.get("skill_xp") or {}) else None,
+    )
+
+    # Negatif social skill xp varsa uygula
+    for skill, xp in (outcome.get("skill_xp") or {}).items():
+        if xp < 0:
+            from skills import add_skill_xp
+            add_skill_xp(player, skill, xp)  # negatif XP
+
+    # Para bonusu
+    money = outcome.get("money_bonus", 0)
+    if money:
+        player["money"] = round(player.get("money", 0) + money, 1)
+
+    # Hoca ilişkisi
+    teacher_delta = outcome.get("teacher_rel", 0)
+    if teacher_delta:
+        rel = school.get("teacher_relations", {}).get(lesson_id, 0)
+        school.setdefault("teacher_relations", {})[lesson_id] = max(-20, min(100, rel + teacher_delta))
+
+    # Bu haftaki görülen olaylar
+    seen = school.get("events_seen_this_week", [])
+    if event_id not in seen:
+        seen.append(event_id)
+    school["events_seen_this_week"] = seen
+
+    from simulation import _push_event
+    lesson_name = LESSONS.get(lesson_id, {}).get("name", lesson_id)
+    _push_event(
+        state, state.get("turn", 0), "ders_olay",
+        f"{player['name']} — {lesson_name}: {event['scene'][:60]}… [{choice['label']}]"
+    )
+
+    return {
+        "ok": True,
+        "event_id": event_id,
+        "choice_id": choice_id,
+        "flavor": outcome["flavor"],
+        "xp_gained": {
+            "stat_xp": {k: v for k, v in (outcome.get("stat_xp") or {}).items() if v > 0},
+            "skill_xp": {k: v for k, v in (outcome.get("skill_xp") or {}).items() if v > 0},
+        },
+        "money_bonus": money,
+        "leveled": leveled,
+        "teacher_rel_delta": teacher_delta,
+    }
+
+
+# ──────────────────────────────────────────────
 # EK AİLE GÖREVLERİ (Mektep topluluklarından açılır)
 # ──────────────────────────────────────────────
 SCHOOL_FAMILY_QUESTS = [
@@ -355,10 +888,12 @@ def ensure_school_state(state):
         "activity_log": [],              # Son 10 aktivite
         "special_event_this_week": None, # Bu hafta tamamlanan özel etkinlik id'si
         "seasonal_done_this_week": [],   # Bu hafta yapılan mevsimsel aktivite id'leri (list, MongoDB uyumlu)
+        "events_seen_this_week": [],     # Bu hafta görülen ders olayı id'leri
     })
     # Migration: eski kayıtlara yeni alanları ekle
     school = p["school"]
     school.setdefault("special_event_this_week", None)
+    school.setdefault("events_seen_this_week", [])
     if "seasonal_done_this_week" not in school:
         school["seasonal_done_this_week"] = []
     # set olarak kaydedilmiş eski veriyi düzelt
@@ -414,8 +949,12 @@ def _apply_xp(player, stat_xp=None, skill_xp=None):
 
 def attend_lesson(state, lesson_id):
     """
-    Oyuncu bir ders işler.
-    Returns: {ok, xp_gained, leveled, flavor, already_done_today}
+    Oyuncu derse gidiyor.
+    Eğer olay tetiklenirse:
+      returns {ok: True, needs_event_choice: True, lesson_event: {...}}
+      → Henüz XP verilmez, state kaydedilmez. Frontend seçim modalını açar.
+    Olay yoksa normal akış:
+      returns {ok: True, lesson: ..., xp_gained: ..., leveled: ..., flavor: ..., exam_result: ...}
     """
     ensure_school_state(state)
     player = state["player"]
@@ -432,7 +971,44 @@ def attend_lesson(state, lesson_id):
     if school["lessons_this_week"] >= 1:
         return {"ok": False, "error": "Bu hafta zaten bir ders işledin. Bir sonraki haftaya kadar bekle."}
 
-    # XP ver
+    # Ders olayı tetikle?
+    event = pick_lesson_event(state, lesson_id)
+    if event:
+        # Olayın choice'larını frontend için hazırla (stat_check bilgisini gizle)
+        safe_choices = []
+        for c in event["choices"]:
+            safe_choices.append({
+                "id": c["id"],
+                "label": c["label"],
+                "hint": c.get("hint", ""),
+            })
+        return {
+            "ok": True,
+            "needs_event_choice": True,
+            "lesson_event": {
+                "id": event["id"],
+                "scene": event["scene"],
+                "icon": event.get("icon", "📖"),
+                "lesson_id": lesson_id,
+                "lesson_name": lesson["name"],
+                "choices": safe_choices,
+            },
+        }
+
+    # Olay yok → normal akış
+    return _complete_lesson(state, lesson_id)
+
+
+def _complete_lesson(state, lesson_id, event_result=None):
+    """
+    Dersi tamamla: XP ver, sayaçları ilerlet, sınav kontrol et.
+    event_result: resolve_lesson_event'ten gelen sonuç (varsa)
+    """
+    player = state["player"]
+    school = player["school"]
+    lesson = LESSONS[lesson_id]
+
+    # Base ders XP'si
     leveled = _apply_xp(player, lesson["stat_xp"], lesson["skill_xp"])
 
     # Sayaçlar
@@ -440,10 +1016,11 @@ def attend_lesson(state, lesson_id):
     school["total_lessons"] += 1
     school["lesson_counts"][lesson_id] = school["lesson_counts"].get(lesson_id, 0) + 1
     school["exam_week_counter"] += 1
+    school.setdefault("events_seen_this_week", [])  # migration
 
-    # Hoca ilişkisi
+    # Hoca ilişkisi (base dersten küçük bonus)
     rel = school["teacher_relations"].get(lesson_id, 0)
-    school["teacher_relations"][lesson_id] = min(100, rel + random.randint(2, 5))
+    school["teacher_relations"][lesson_id] = min(100, rel + random.randint(1, 3))
 
     flavor = random.choice(lesson["flavor_lines"])
 
@@ -460,14 +1037,14 @@ def attend_lesson(state, lesson_id):
         "type": "ders",
         "lesson": lesson_id,
         "lesson_name": lesson["name"],
-        "flavor": flavor,
+        "flavor": event_result["flavor"] if event_result else flavor,
     })
 
     from simulation import _push_event
     _push_event(state, state.get("turn", 0), "ders",
                 f"{player['name']} {lesson['name']} dersi işledi.")
 
-    return {
+    result = {
         "ok": True,
         "lesson": lesson["name"],
         "xp_gained": {"stat_xp": lesson["stat_xp"], "skill_xp": lesson["skill_xp"]},
@@ -476,6 +1053,44 @@ def attend_lesson(state, lesson_id):
         "exam_result": exam_result,
         "teacher_relation": school["teacher_relations"][lesson_id],
     }
+
+    # Olay sonucunu birleştir
+    if event_result:
+        result["event_resolved"] = event_result
+        result["flavor"] = event_result["flavor"]
+        # Olay XP'sini de leveled listesine ekle
+        result["leveled"] = list(set(leveled + event_result.get("leveled", [])))
+        # Para bonusunu birleştir
+        if event_result.get("money_bonus"):
+            result["money_bonus"] = event_result["money_bonus"]
+
+    return result
+
+
+def attend_lesson_with_choice(state, lesson_id, event_id, choice_id):
+    """
+    İki adımlı akış: Olay seçimi yapıldı, şimdi dersi tamamla.
+    """
+    ensure_school_state(state)
+    player = state["player"]
+    school = player["school"]
+    age = player_age(state)
+    lesson = LESSONS.get(lesson_id)
+
+    if not lesson:
+        return {"ok": False, "error": "Geçersiz ders."}
+    if age >= 13:
+        return {"ok": False, "error": "Artık mektep çağında değilsin."}
+    if school["lessons_this_week"] >= 1:
+        return {"ok": False, "error": "Bu hafta zaten bir ders işledin."}
+
+    # Olayı çöz
+    event_result = resolve_lesson_event(state, lesson_id, event_id, choice_id)
+    if not event_result["ok"]:
+        return event_result
+
+    # Dersi tamamla
+    return _complete_lesson(state, lesson_id, event_result=event_result)
 
 
 def _run_exam(state, lesson_id):
@@ -667,6 +1282,7 @@ def weekly_school_tick(state):
     school["lessons_this_week"] = 0
     school["special_event_this_week"] = None
     school["seasonal_done_this_week"] = []
+    school["events_seen_this_week"] = []
 
     # Kulüp pasif XP
     for club_id in school.get("clubs", []):

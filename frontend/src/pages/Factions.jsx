@@ -13,6 +13,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { useActionRedirect } from "@/hooks/useActionRedirect";
 import {
   Shield, Swords, Crown, Users, Coins, AlertTriangle,
   Loader2, MapPin, LogIn, LogOut, Plus, X, Star,
@@ -932,6 +933,7 @@ function TabBar({ active, onChange, warCount }) {
 // ─── Ana Bileşen ──────────────────────────────────────────────────────────────
 export default function Factions() {
   const { state, setState } = useGame();
+  const withRedirect = useActionRedirect("Faction");
   const [factions, setFactions] = useState([]);
   const [wars,     setWars]     = useState([]);
   const [clues,    setClues]    = useState([]);
@@ -1021,13 +1023,17 @@ export default function Factions() {
   const handleJoin = async (factionId) => {
     setBusy(factionId);
     try {
-      const { data } = await api.post("/game/factions/join", { faction_id: factionId });
-      if (data.success) {
-        toast.success(`${data.faction?.name || "Örgüt"}'e katıldın.`);
-        await load(); await refreshState();
-      } else {
-        toast.error(data.reason || data.message || "Katılamadın.");
-      }
+      await withRedirect(async () => {
+        const { data } = await api.post("/game/factions/join", { faction_id: factionId });
+        if (data.success) {
+          toast.success(`${data.faction?.name || "Örgüt"}'e katıldın.`);
+          await load(); await refreshState();
+          return data;
+        } else {
+          toast.error(data.reason || data.message || "Katılamadın.");
+          return null; // hata durumunda yönlendirme yapma
+        }
+      });
     } catch (e) {
       toast.error(e.response?.data?.detail || "Hata");
     } finally { setBusy(null); }
