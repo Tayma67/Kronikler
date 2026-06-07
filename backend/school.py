@@ -634,8 +634,11 @@ def do_special_event(state, event_id):
     if money:
         player["money"] = round(player.get("money", 0) + money, 1)
 
-    # Bu haftanın etkinliğini kaydet
+    # Bu haftanın etkinliğini kaydet + tamamlananlar listesine ekle
     school["special_event_this_week"] = event_id
+    completed = school.setdefault("completed_special_events", [])
+    if event_id not in completed:
+        completed.append(event_id)
 
     _add_activity_log(state, {"type": "ozel_olay", "id": event_id, "name": event["name"]})
     from simulation import _push_event
@@ -676,11 +679,16 @@ def weekly_school_tick(state):
 
     # Rastgele özel olay tetikle (%20 şans)
     age = player_age(state)
+    school = player.get("school", {})
+    done_events = set(school.get("completed_special_events", []))
     if random.random() < 0.20:
-        eligible = [e for e in SPECIAL_EVENTS if e.get("min_age", 7) <= age]
+        eligible = [
+            e for e in SPECIAL_EVENTS
+            if e.get("min_age", 7) <= age
+            and e["id"] not in done_events  # Aynı özel olay ikinci kez tetiklenemesin
+        ]
         if eligible:
             event = random.choice(eligible)
-            # Sadece history'e ekle, oyuncu kabul edecek
             state.setdefault("pending_special_event", event["id"])
 
 

@@ -28,9 +28,9 @@ export default function Register() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-stone-950">
+    <div className="relative h-screen overflow-hidden bg-stone-950">
       <div className="absolute inset-0 bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950" />
-      <div className="relative z-10 flex min-h-screen items-center justify-center p-6">
+      <div className="relative z-10 flex h-screen items-center justify-center p-6">
         <div className="card-frame w-full max-w-md p-8 rise-in">
           <div className="flex items-center gap-3 mb-6">
             <Flame className="w-7 h-7 text-orange-600 ember-flicker" />

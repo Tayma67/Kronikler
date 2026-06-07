@@ -565,7 +565,7 @@ function CaravanResultModal({ event, onClose }) {
     : { icon: <XCircle className="w-4 h-4 text-red-500" />, title: "Kervan Yağmalandı", color: "text-red-500",     bg: "border-red-900/40 bg-red-950/15" };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <div className="w-full max-w-sm card-frame p-5 space-y-5 rise-in">
 
         {/* Başlık */}

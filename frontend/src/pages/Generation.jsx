@@ -53,7 +53,7 @@ function InvestModal({ child, playerMoney, onClose, onConfirm, busy }) {
   const [selected, setSelected] = useState(null);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div className="w-full max-w-sm card-frame rounded-sm space-y-4 p-5 rise-in">
         <div className="flex items-center justify-between">
           <div>
@@ -120,7 +120,7 @@ function SetProfessionModal({ child, onClose, onConfirm, busy }) {
   const finalProfession = custom.trim() || profession;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div className="w-full max-w-sm card-frame rounded-sm space-y-4 p-5 rise-in">
         <div className="flex items-center justify-between">
           <div>
@@ -187,7 +187,7 @@ function ChildDetailModal({ child, isHeir, playerMoney, factions, onClose, onSet
   const [showProfession, setShowProfession] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/80 p-4">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 p-4">
       {/* Invest modal üstte */}
       {showInvest && (
         <InvestModal

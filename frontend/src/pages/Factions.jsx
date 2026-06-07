@@ -205,7 +205,7 @@ function WarDecisionModal({ warDetail, onClose, onDecide, busy }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/80">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
       <div className="card-frame p-5 max-w-sm w-full space-y-4">
         {/* Başlık */}
         <div className="flex items-center justify-between">
@@ -289,7 +289,7 @@ function WarOutcomeModal({ result, onClose }) {
   const { Icon } = cfg;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/85">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85">
       <div className="card-frame p-5 max-w-sm w-full space-y-4">
         {/* Sonuç Başlık */}
         <div className={`card-frame p-3 border ${cfg.bg} flex items-center gap-3`}>

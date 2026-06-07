@@ -328,6 +328,7 @@ export default function Dashboard() {
   const [yearSummary, setYearSummary]       = useState(null);
   const [showLifeEvent, setShowLifeEvent]   = useState(false);
   const [activeWorldEvents, setActiveWorldEvents] = useState([]); // Adım 9
+  const [eventFilter, setEventFilter]       = useState("karakter"); // "karakter" | "dünya"
 
   const player = state?.player || {};
   const cal    = state?.calendar || { season: "Bilinmiyor", month_name: "", year: 0 };
@@ -349,9 +350,26 @@ export default function Dashboard() {
   if (activeQuests.some(q => q.status === "kabul_edildi"))
     alerts.push({ type: "normal", icon: "✅", text: "Devam eden görevin var. Bitirmeyi unutma." });
 
-  // Olaylar — tip filtresi yok, tüm geçmiş gösterilir; en yeni üstte
-  const safeHistory   = Array.isArray(state?.history) ? state.history : [];
-  const recentEvents  = [...safeHistory].reverse().slice(0, 30);
+  // Olaylar — iki kategoriye ayrılır
+  const safeHistory = Array.isArray(state?.history) ? state.history : [];
+  const KARAKTER_TYPES = new Set([
+    "doğum", "ölüm", "evlilik", "nesil_devri", "miras",
+    "çalışma", "ticaret", "yolculuk", "meslek_değişimi",
+    "suç", "suç_yakalandı", "dedikodu", "başlangıç",
+    "okul", "beceri", "ilişki", "haydut_baskını",
+    "misilleme", "kaçırma", "starvation_warning", "enforcement",
+    "görev_tamamlandı", "iyileşme", "hastalık", "ozel_olay",
+  ]);
+  const DUNYA_TYPES = new Set([
+    "savaş_ilanı", "barış", "kıtlık", "şenlik", "kral_değişimi",
+    "tahta_çıkış", "savaş_zaferi", "faction_savaş", "ittifak",
+    "isyan", "vergi_artışı", "vergi_indirimi", "savunma_yatırımı",
+    "isyan_bastırma", "haydut_baskını",
+  ]);
+  const allEvents = [...safeHistory].reverse().slice(0, 60);
+  const recentEvents = allEvents
+    .filter(ev => eventFilter === "karakter" ? KARAKTER_TYPES.has(ev.type) : DUNYA_TYPES.has(ev.type))
+    .slice(0, 30);
 
   const handleAdvance = async () => {
     const totalWeeks    = selectedPeriod.weeks;
@@ -578,6 +596,29 @@ export default function Dashboard() {
             <Link to="/oyun/tarih" className="text-[10px] text-stone-600 hover:text-amber-400 font-heading tracking-wider">
               TÜM TARİH →
             </Link>
+          </div>
+          {/* Filtre butonları */}
+          <div className="flex gap-2 mb-2">
+            <button
+              onClick={() => setEventFilter("karakter")}
+              className={`flex-1 py-1.5 text-[10px] font-heading tracking-wider rounded-sm border transition-colors ${
+                eventFilter === "karakter"
+                  ? "border-orange-700 bg-orange-950/40 text-orange-300"
+                  : "border-stone-800 text-stone-500 hover:text-stone-300"
+              }`}
+            >
+              👤 Karakter & Aile
+            </button>
+            <button
+              onClick={() => setEventFilter("dünya")}
+              className={`flex-1 py-1.5 text-[10px] font-heading tracking-wider rounded-sm border transition-colors ${
+                eventFilter === "dünya"
+                  ? "border-violet-700 bg-violet-950/40 text-violet-300"
+                  : "border-stone-800 text-stone-500 hover:text-stone-300"
+              }`}
+            >
+              🌍 Dünya
+            </button>
           </div>
 
           <div className="card-frame overflow-hidden max-h-96 overflow-y-auto">

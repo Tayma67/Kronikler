@@ -30,17 +30,14 @@ body {
     background-color: var(--bg);
     color: var(--text);
     height: 100%;
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
+    overflow: hidden;  /* body scroll olmaz */
 }
 
 #root {
     background-color: var(--bg);
     color: var(--text);
     height: 100%;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden;  /* root da scroll olmaz — scroll sadece iç alanlarda */
 }
 
 body {

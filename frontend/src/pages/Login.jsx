@@ -30,13 +30,13 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative h-screen overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${BG_IMG})` }}
       />
       <div className="absolute inset-0 bg-stone-950/85" />
-      <div className="relative z-10 flex min-h-screen items-center justify-center p-6">
+      <div className="relative z-10 flex h-screen items-center justify-center p-6">
         <div className="card-frame w-full max-w-md p-8 rise-in">
           <div className="flex items-center gap-3 mb-6">
             <Flame className="w-7 h-7 text-orange-600 ember-flicker" />

@@ -237,7 +237,7 @@ export default function GameLayout() {
   const pulseNews = (state.world_events || []).some(e => e.active);
 
   return (
-    <div className="min-h-screen bg-stone-950 text-stone-200 flex">
+    <div className="h-screen bg-stone-950 text-stone-200 flex overflow-hidden">
       <div className="grain-overlay" />
       <Toaster theme="dark" position="top-center" />
 

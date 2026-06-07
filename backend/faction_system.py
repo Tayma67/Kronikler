@@ -1104,6 +1104,16 @@ def _faction_ai_decision(fac: dict, state: dict, turn: int):
         elif action == "ittifak_kur":
             if len(fac.get("at_war_with", [])) > 0:
                 score += 0.20  # savaştayken ittifak kritik
+            # Zaten müttefiki varsa çok sık ittifak kurma
+            ally_count = sum(1 for v in fac.get("diplomacy", {}).values() if v == "müttefik")
+            if ally_count >= 2:
+                score -= 0.40  # zaten yeterli müttefik var
+            elif ally_count >= 1:
+                score -= 0.20
+            # Son 10 turda ittifak kurduysa tekrar kurmasın
+            last_turn = fac.get("last_action_turn", -99)
+            if fac.get("last_action") == "ittifak_kur" and (turn - last_turn) < 10:
+                score -= 0.50
         elif action == "bölgeye_yatırım":
             if fac["economy_level"] < 40:
                 score += 0.25
@@ -1168,11 +1178,24 @@ def _execute_faction_action(fac: dict, action: str, score: float, state: dict, t
                        fac["id"])
 
     elif action == "ittifak_kur":
+        # Faction tipi uyumluluk tablosu — kimler kimle ittifak kurabilir
+        COMPATIBLE_TYPES = {
+            "krallık_ordusu":  {"krallık_ordusu", "paralı_asker", "dini_tarikat", "şehir_devleti"},
+            "dini_tarikat":    {"dini_tarikat", "krallık_ordusu", "şehir_devleti", "tuccar_loncasi"},
+            "tuccar_loncasi":  {"tuccar_loncasi", "dini_tarikat", "şehir_devleti", "krallık_ordusu"},
+            "paralı_asker":    {"paralı_asker", "krallık_ordusu", "eskiya_cetesi"},
+            "eskiya_cetesi":   {"eskiya_cetesi", "paralı_asker", "gizli_cemiyet"},
+            "gizli_cemiyet":   {"gizli_cemiyet", "eskiya_cetesi"},
+            "şehir_devleti":   {"şehir_devleti", "tuccar_loncasi", "dini_tarikat", "krallık_ordusu"},
+        }
+        fac_type = fac.get("type", "")
+        allowed = COMPATIBLE_TYPES.get(fac_type, set())
         candidates = [
             f for f in state["world"].get("factions", [])
             if f["id"] != fac["id"]
             and fac["diplomacy"].get(f["id"]) == "tarafsız"
             and f["id"] not in fac.get("at_war_with", [])
+            and f.get("type", "") in allowed
         ]
         if candidates:
             partner = max(candidates, key=lambda f: f["reputation"])
