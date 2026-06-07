@@ -30,8 +30,8 @@ body {
     background-color: var(--bg);
     color: var(--text);
     height: 100%;
-    overflow: hidden;   /* Sayfa kendisi kaymaz */
-    position: fixed;    /* iOS Safari için sabitler */
+    overflow: hidden;
+    position: fixed;
     width: 100%;
 }
 
@@ -39,7 +39,8 @@ body {
     background-color: var(--bg);
     color: var(--text);
     height: 100%;
-    overflow: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 body {

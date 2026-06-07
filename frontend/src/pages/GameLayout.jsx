@@ -360,7 +360,7 @@ export default function GameLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 relative z-[2] flex flex-col overflow-hidden">
+      <main className="flex-1 relative z-[2] flex flex-col min-h-0">
         {/* Mobile header — sabit kalır */}
         <header className="lg:hidden sticky top-0 z-20 bg-stone-950/90 backdrop-blur border-b border-stone-800 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">

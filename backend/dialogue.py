@@ -1320,11 +1320,12 @@ DIALOG_TOPICS = [
 ]
 
 def relationship_delta(npc, topic, player, repeat_count):
-    if repeat_count >= 4:
+    # Aynı hafta içinde 7'den az tekrarda ceza yok
+    if repeat_count >= 9:
         return -4
-    if repeat_count == 3:
+    if repeat_count == 8:
         return -2
-    if repeat_count == 2:
+    if repeat_count == 7:
         return -1
 
     if topic == "selam":

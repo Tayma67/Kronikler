@@ -392,9 +392,25 @@ def build_game_router(db):
                 "hostile": True,
             }
 
+        npc.setdefault("interactions", {})
+        current_turn = state.get("turn", 0)
+
+        # Haftalık sayacı sıfırla — her yeni turda temiz başla
+        turn_interactions = npc.get("turn_interactions", {})
+        last_interaction_turn = npc.get("last_interaction_turn", -1)
+        if last_interaction_turn != current_turn:
+            turn_interactions = {}
+        turn_interactions[body.topic] = turn_interactions.get(body.topic, 0) + 1
+        npc["turn_interactions"] = turn_interactions
+        npc["last_interaction_turn"] = current_turn
+
+        # Toplam sayaç (hafıza/emotinal stage için)
         npc["interactions"][body.topic] = npc["interactions"].get(body.topic, 0) + 1
         npc["turn_counter"] = npc.get("turn_counter", 0) + 1
+
+        # Ceza hesabında haftalık sayacı kullan — 7'den az tekrarda ceza yok
         repeat = npc["interactions"][body.topic]
+        weekly_repeat = turn_interactions[body.topic]
         stage = emotional_stage(repeat)
 
         # Merchant supply signal
@@ -419,7 +435,7 @@ def build_game_router(db):
             state["history"], state["turn"], npc["turn_counter"], state=state,
         )
 
-        delta = relationship_delta(npc, body.topic, state["player"], repeat)
+        delta = relationship_delta(npc, body.topic, state["player"], weekly_repeat)
         new_rel = max(-100, min(100, rel + delta))
         state["relationships"][npc["id"]] = new_rel
 
