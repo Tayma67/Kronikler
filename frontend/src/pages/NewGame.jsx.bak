@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useGame } from "@/lib/GameContext";
 import { useNavigate } from "react-router-dom";
 import { Flame, Loader2, Shield, Sparkles } from "lucide-react";
@@ -11,22 +11,9 @@ export default function NewGame() {
   const [gender, setGender]       = useState("");   // "erkek" | "kadın"
   const [busy, setBusy]           = useState(false);
   const [error, setError]         = useState("");
-  // Eğer backend uyanmıyorsa 10 saniye sonra formu göster
-  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
-  const [slowBackend, setSlowBackend]         = useState(false);
 
   useEffect(() => {
     fetchState();
-
-    // 5 saniye sonra "backend uyanıyor" uyarısı göster
-    const warnTimer = setTimeout(() => setSlowBackend(true), 5000);
-    // 12 saniye sonra state hâlâ null ise formu göster
-    const timeoutTimer = setTimeout(() => setLoadingTimedOut(true), 12000);
-
-    return () => {
-      clearTimeout(warnTimer);
-      clearTimeout(timeoutTimer);
-    };
   }, [fetchState]);
 
   useEffect(() => {
@@ -69,17 +56,10 @@ export default function NewGame() {
     }
   };
 
-  if (state === null && !loadingTimedOut) {
+  if (state === null) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-stone-500">
+      <div className="min-h-screen flex items-center justify-center text-stone-500">
         <Loader2 className="w-6 h-6 animate-spin" />
-        {slowBackend && (
-          <div className="text-center text-xs text-stone-600 max-w-xs">
-            <p className="text-stone-400 mb-1">Sunucu uyanıyor…</p>
-            <p>Railway backend uyku modunda olabilir.</p>
-            <p>Lütfen biraz bekle (30–60 saniye sürebilir).</p>
-          </div>
-        )}
       </div>
     );
   }

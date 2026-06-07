@@ -2672,7 +2672,7 @@ def build_game_router(db):
         # Olaylar bölümüne perk olayı ekle
         skill_name_tr = SKILL_NAMES_TR.get(skill, skill)
         event_text = (
-            f"⚡ {skill_name_tr} seviye {level}: "{result['perk_name']}" yeteneğini seçtin. "
+            f"⚡ {skill_name_tr} seviye {level}: '{result['perk_name']}' yeteneğini seçtin. "
             f"{result['perk_desc']}"
         )
         state.setdefault("events", []).insert(0, {
