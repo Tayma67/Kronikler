@@ -75,19 +75,12 @@ export default function CityDetail() {
       .catch(() => {});
   }, [id]);
 
-  if (!loc) {
-    return (
-      <div className="text-stone-400">
-        Konum bulunamadı. <Link to="/oyun" className="text-orange-500">Geri dön</Link>
-      </div>
-    );
-  }
-
-  const kingdom = state.world.kingdoms.find((k) => k.id === loc.kingdom_id);
-
-  const notableNpcs = state.world.npcs
-    .filter((n) => n.location_id === loc.id && n.alive)
-    .slice(0, 8);
+  const notableNpcs = useMemo(() => {
+    if (!loc) return [];
+    return state.world.npcs
+      .filter((n) => n.location_id === loc.id && n.alive)
+      .slice(0, 8);
+  }, [loc, state.world.npcs]);
 
   const sortedNpcs = useMemo(() => {
     return [...notableNpcs].sort((a, b) => {
@@ -102,6 +95,16 @@ export default function CityDetail() {
       return b.wealth - a.wealth;
     });
   }, [notableNpcs, state.relationships]);
+
+  if (!loc) {
+    return (
+      <div className="text-stone-400">
+        Konum bulunamadı. <Link to="/oyun" className="text-orange-500">Geri dön</Link>
+      </div>
+    );
+  }
+
+  const kingdom = state.world.kingdoms.find((k) => k.id === loc.kingdom_id);
 
   const isHere = state.player.location_id === loc.id;
   const player = state.player;
