@@ -115,12 +115,12 @@ function EventCard({ event, pinned = false }) {
   const isWorld = event?.type === "_world_alert";
   const isKriz  = event?.type === "_kriz_alert";
   return (
-    <div className={`flex gap-3 px-4 py-3 border-l-2 ${color} transition-colors
-      ${pinned ? "bg-amber-950/15" : ""}
-      ${isAlert ? "bg-red-950/15" : ""}
-      ${isWorld ? "bg-violet-950/15" : ""}
-      ${isKriz  ? "bg-red-950/25" : ""}
-      ${!pinned && !isAlert && !isWorld && !isKriz ? "bg-stone-900/20" : ""}
+    <div className={`flex gap-3 px-3 py-3 mx-3 my-2 rounded-sm border border-l-4 ${color} transition-colors
+      ${pinned ? "bg-amber-950/20 border-r-amber-900/20 border-t-amber-900/20 border-b-amber-900/20" : ""}
+      ${isAlert ? "bg-red-950/20 border-r-red-900/15 border-t-red-900/15 border-b-red-900/15" : ""}
+      ${isWorld ? "bg-violet-950/20 border-r-violet-900/15 border-t-violet-900/15 border-b-violet-900/15" : ""}
+      ${isKriz  ? "bg-red-950/30 border-r-red-900/20 border-t-red-900/20 border-b-red-900/20" : ""}
+      ${!pinned && !isAlert && !isWorld && !isKriz ? "bg-stone-900/30 border-r-stone-800/40 border-t-stone-800/40 border-b-stone-800/40" : ""}
     `}>
       <span className="text-base shrink-0 leading-none mt-0.5">{icon}</span>
       <div className="flex-1 min-w-0">
@@ -685,7 +685,7 @@ export default function Dashboard() {
           </div>
 
           {/* Kaydırılabilir olay listesi — tam geri kalan yükseklik */}
-          <div className="flex-1 overflow-y-auto divide-y divide-amber-900/10" style={{background: 'linear-gradient(180deg, rgba(20,14,8,0) 0%, rgba(15,10,6,0.6) 100%)'}}>
+          <div className="flex-1 overflow-y-auto" style={{background: 'linear-gradient(180deg, rgba(20,14,8,0) 0%, rgba(15,10,6,0.6) 100%)'}}>
 
             {/* Yıl özeti */}
             {yearSummary && (
