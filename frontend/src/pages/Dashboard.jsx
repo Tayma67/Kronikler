@@ -652,7 +652,7 @@ export default function Dashboard() {
         <StatusStrip player={player} world={state?.world} />
 
         {/* ── OLAY AKIŞI — esnek yükseklik ── */}
-        <div className="flex flex-col flex-1 min-h-0 pb-20">
+        <div className="flex flex-col flex-1 min-h-0 pb-28 mx-2 mb-2 rounded-sm border border-stone-700/50 overflow-hidden" style={{boxShadow: 'inset 0 0 0 1px rgba(120,80,30,0.08), 0 2px 12px rgba(0,0,0,0.4)'}}>
 
           {/* Filtre + başlık */}
           <div className="shrink-0 flex items-center gap-0 border-b border-amber-900/30 bg-stone-950/50">
@@ -722,8 +722,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── YAPIŞIK ALT BAR — sabit, her zaman görünür ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-amber-900/40 bg-stone-950/97 backdrop-blur-sm" style={{boxShadow: '0 -2px 20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(180,100,20,0.07)'}}>
+      {/* ── YAPIŞIK ALT BAR — sabit, nav barın üstünde ── */}
+      {/* Not: GameLayout main z-[2] stacking context'i nedeniyle z-40 çalışmıyor;
+           bottom offset ile nav'ın üstüne alınıyor */}
+      <div className="fixed left-0 right-0 z-40 border-t border-amber-900/40 bg-stone-950/97 backdrop-blur-sm" style={{bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)', boxShadow: '0 -2px 20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(180,100,20,0.07)'}}>
         <div className="max-w-2xl mx-auto px-3 py-2.5">
 
           {/* İlerleme bar — çok haftalı atlamada */}

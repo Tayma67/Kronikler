@@ -1129,10 +1129,11 @@ function TabBar({ active, onChange, warCount }) {
 
 // ─── Faction Tipi Grupları (kategori başlıkları) ──────────────────────────────
 const FACTION_TYPE_GROUPS = [
-  { key: "lonca",   label: "Loncalar",          types: ["tuccar_loncasi", "zanaatkar_loncasi", "sifaci_birligi"] },
-  { key: "askeri",  label: "Askeri & Paralı",   types: ["krallık_ordusu", "paralı_asker"] },
-  { key: "din",     label: "Dini & Gizli",      types: ["dini_tarikat", "gizli_cemiyet"] },
-  { key: "diger",   label: "Diğer Örgütler",    types: ["ilim_cemiyeti", "oyuncu_kumpanya", "eskiya_cetesi"] },
+  { key: "lonca",   label: "Esnaf Loncaları",    types: ["tuccar_loncasi", "zanaatkar_loncasi", "sifaci_birligi"] },
+  { key: "askeri",  label: "Silahlı Örgütler",   types: ["krallık_ordusu", "paralı_asker"] },
+  { key: "dini",    label: "Dini Tarikatlar",     types: ["dini_tarikat"] },
+  { key: "yeralti", label: "Yeraltı Örgütleri",  types: ["gizli_cemiyet", "eskiya_cetesi"] },
+  { key: "ilim",    label: "İlim ve Kültür",      types: ["ilim_cemiyeti", "oyuncu_kumpanya"] },
 ];
 
 function FactionGroupSection({

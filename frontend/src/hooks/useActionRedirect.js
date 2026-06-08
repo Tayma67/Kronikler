@@ -20,11 +20,19 @@ import { useGame } from "@/lib/GameContext";
 export function useActionRedirect(label) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setLastActionPage } = useGame();
+  const { setLastActionPage, setState } = useGame();
 
   return async function withRedirect(actionFn) {
     const result = await actionFn();
     if (result !== null && result !== undefined) {
+      // ── Aksiyon sonucu state içeriyorsa anında GameContext'e yaz ──
+      // Böylece Dashboard'daki olaylar feed'i yeni event'leri gösterir
+      if (result?.state) {
+        setState(result.state);
+      } else if (result?.world) {
+        // Bazı endpoint'ler state yerine doğrudan world döndürür
+        setState(result);
+      }
       // Sadece başarılı aksiyonlarda yönlendir
       setLastActionPage({ path: location.pathname, label });
       navigate("/oyun");
