@@ -10,6 +10,7 @@ export function GameProvider({ children }) {
   const [lastWorldEvent, setLastWorldEvent] = useState(null);   // Adım 9
   const [lastCrisisEvents, setLastCrisisEvents] = useState([]);   // GDD v4 Bölüm 5.4
   const [lastActionPage, setLastActionPage] = useState(null);   // Adım 14
+  const [freshEvents, setFreshEvents] = useState([]);           // Anlık eylem olayları
 
   const fetchState = useCallback(async () => {
     setLoading(true);
@@ -104,6 +105,8 @@ export function GameProvider({ children }) {
         lastCrisisEvents, clearCrisisEvents: () => setLastCrisisEvents([]),   // GDD v4
         lastActionPage, setLastActionPage,                                // Adım 14
         clearLastActionPage: () => setLastActionPage(null),              // Adım 14
+        freshEvents, setFreshEvents,                                       // Anlık eylem olayları
+        clearFreshEvents: () => setFreshEvents([]),
       }}
     >
       {children}

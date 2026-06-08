@@ -1042,7 +1042,7 @@ def _complete_lesson(state, lesson_id, event_result=None):
 
     from simulation import _push_event
     _push_event(state, state.get("turn", 0), "ders",
-                f"{player['name']} {lesson['name']} dersi işledi.")
+                flavor or f"{player['name']}, {lesson['name']} dersini işledi.")
 
     result = {
         "ok": True,
@@ -1167,7 +1167,7 @@ def join_club(state, club_id):
     _add_activity_log(state, {"type": "kulup_katilim", "club": club_id, "club_name": club["name"]})
     from simulation import _push_event
     _push_event(state, state.get("turn", 0), "kulup",
-                f"{player['name']} {club['name']} kulübüne katıldı.")
+                f"{player['name']}, {club['name']}'na adımını attı. Yeni bir topluluk, yeni bir başlangıç.")
 
     return {"ok": True, "club": club["name"], "flavor": f"{club['name']}'a hoş geldin!"}
 
@@ -1210,7 +1210,8 @@ def do_seasonal_activity(state, activity_id):
 
     _add_activity_log(state, {"type": "mevsimsel", "id": activity_id, "name": act["name"]})
     from simulation import _push_event
-    _push_event(state, state.get("turn", 0), "aktivite", f"{player['name']}: {act['name']}.")
+    _push_event(state, state.get("turn", 0), "aktivite",
+                act.get("flavor") or f"{player['name']}, {act['name']} aktivitesine katıldı.")
 
     return {
         "ok": True,

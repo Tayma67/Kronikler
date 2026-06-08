@@ -1375,7 +1375,7 @@ def build_game_router(db):
             player["health"] = 5
             player["money"] = round(player["money"] * 0.7, 1)
             log.append("Yenildin. Bilincin yerine geldiğinde paranın bir kısmı çalınmıştı.")
-            _push_event(state, state["turn"], "savaş_kaybı", f"{player['name']} bir çatışmada yenildi.")
+            _push_event(state, state["turn"], "savaş_kaybı", f"{player['name']} yenilgiyle geri çekildi. Yaralar derin, onur zedelenmiş.")
         elif enemy_hp <= 0:
             outcome = "zafer"
             loot = random.randint(20, 120)
@@ -1387,7 +1387,7 @@ def build_game_router(db):
             if rank_loot:
                 loot_msg += f" (Rütbe bonusu: +{rank_loot} altın)"
             log.append(loot_msg)
-            _push_event(state, state["turn"], "savaş_zaferi", f"{player['name']} bir {enemy_name}'ı yendi.")
+            _push_event(state, state["turn"], "savaş_zaferi", f"{player['name']}, {enemy_name}'ı devirdi. Zafer kazanıldı, düşman dağıldı.")
             from skills import add_skill_xp, add_stat_xp
             add_skill_xp(player, "combat", 3)
             add_stat_xp(player, "strength", 1)
@@ -1397,7 +1397,7 @@ def build_game_router(db):
             outcome = "kaçış"
             player["health"] = max(10, player["health"] - 5)
             log.append(f"Uzun süren çatışmada güçler tükendi. {enemy_name} geri çekildi, sen de sağ kurtuldun.")
-            _push_event(state, state["turn"], "savaş_kaçış", f"{player['name']} uzun soluklu bir çatışmadan sağ çıktı.")
+            _push_event(state, state["turn"], "savaş_kaçış", f"{player['name']} ölümle dans etti — ama bugün değil. Savaş meydanından sağ çekildi.")
 
         advance_time(state, weeks=1)
         await _save_state(db, user["_id"], state)
@@ -1526,7 +1526,7 @@ def build_game_router(db):
             player["health"] = 5
             player["money"] = round(player["money"] * 0.7, 1)
             log.append("Yenildin. Bilincin yerine geldiğinde paranın bir kısmı çalınmıştı.")
-            _push_event(state, state["turn"], "savaş_kaybı", f"{player['name']} bir çatışmada yenildi.")
+            _push_event(state, state["turn"], "savaş_kaybı", f"{player['name']} yenilgiyle geri çekildi. Yaralar derin, onur zedelenmiş.")
         elif enemy_hp <= 0:
             outcome = "zafer"
             loot = random.randint(20, 120)
@@ -1540,7 +1540,7 @@ def build_game_router(db):
                 loot_msg += f" (Rütbe bonusu: +{rank_loot_bonus} altın)"
             log.append(loot_msg)
             _push_event(state, state["turn"], "savaş_zaferi",
-                        f"{player['name']} bir {enemy_name}'ı yendi.")
+                        f"{player['name']}, {enemy_name}'ı devirdi. Zafer kazanıldı, düşman dağıldı.")
             from skills import add_skill_xp, add_stat_xp
             add_skill_xp(player, "combat", 3)
             add_stat_xp(player, "strength", 1)
@@ -1549,7 +1549,7 @@ def build_game_router(db):
             outcome = "kaçış"
             player["health"] = max(10, player["health"] - 5)
             log.append(f"Uzun süren çatışmada güçler tükendi. {enemy_name} geri çekildi, sen de sağ kurtuldun.")
-            _push_event(state, state["turn"], "savaş_kaçış", f"{player['name']} uzun soluklu bir çatışmadan sağ çıktı.")
+            _push_event(state, state["turn"], "savaş_kaçış", f"{player['name']} ölümle dans etti — ama bugün değil. Savaş meydanından sağ çekildi.")
         advance_time(state, weeks=1)
         await _save_state(db, user["_id"], state)
         return {"log": log, "outcome": outcome, "state": _decorate(state)}

@@ -30,69 +30,161 @@ const PERIODS = [
 ];
 
 const EVENT_ICONS = {
-  doğum: "👶", ölüm: "💀", evlilik: "💍", savaş_ilanı: "⚔️", barış: "🕊️",
-  kıtlık: "🌵", şenlik: "🎉", kral_değişimi: "👑", tahta_çıkış: "👑",
-  görev_tamamlandı: "✅", savaş_zaferi: "🏆", faction_savaş: "⚔️",
-  enforcement: "⚖️", starvation_warning: "🍞", misilleme: "😤",
-  kaçırma: "⛓️", nesil_devri: "🌿", miras: "📜",
+  // Hayat olayları
+  doğum: "👶", ölüm: "💀", evlilik: "💍", nesil_devri: "🌿", miras: "📜",
+  evlilik_teklifi: "💌", çıkma_teklifi: "💘",
+  // Dünya
+  savaş_ilanı: "⚔️", barış: "🕊️", kıtlık: "🌵", şenlik: "🎉",
+  kral_değişimi: "👑", tahta_çıkış: "👑", savaş_zaferi: "🏆",
+  faction_savaş: "⚔️", isyan: "🔥", halk_isyanı: "🔥",
+  istikrar_artışı: "🌟", lord_düşüşü: "⚠️", yeni_lord: "👑",
+  göç: "🚶", kıtlık_etkisi: "🌾", savaş_hareketi: "🗺️",
+  // Karakter eylemleri
   çalışma: "🔨", ticaret: "🪙", yolculuk: "🚶", meslek_değişimi: "🔄",
-  suç: "🗡️", suç_yakalandı: "🚨", dedikodu: "🗣️", başlangıç: "🌅",
-  okul: "📚", beceri: "⭐", ilişki: "🤝", haydut_baskını: "💥",
-  isyan: "🔥", hastalık: "🤒", iyileşme: "💚",
-  kariyer_terfi: "🏆",
-  // uyarı tipleri (feed'e gömülü)
+  meslek_edinme: "🎯", kariyer_terfi: "🏆",
+  suç: "🗡️", suç_yakalandı: "🚨", hırsızlık: "🤫", cinayet: "🩸",
+  hapis: "⛓️", yakalandı: "🚨",
+  dedikodu: "🗣️", başlangıç: "🌅",
+  // Mektep / çocukluk
+  okul: "📚", ders: "📖", kulup: "🎵", aktivite: "🌿", sinav: "📝",
+  cocuk_yatirim: "🌱", cocuk_meslek: "🎯",
+  // İlişkiler / sosyal
+  beceri: "⭐", ilişki: "🤝", iltifat: "🌸", hediye: "🎁",
+  para_verme: "💰", hakaret: "😠", kaçırma: "⛓️",
+  // Savaş
+  savaş_zaferi: "🏆", savaş_kaybı: "💔", savaş_kaçış: "💨",
+  // Görevler
+  görev_tamamlandı: "✅", görev_başarısız: "❌",
+  aile_görevi: "👨‍👩‍👦", aile_görevi_açıldı: "📜", aile_destek: "🤲",
+  adaylık: "🏛️", faction_kontrol: "🛡️",
+  // Kervan
+  kervan: "🐫", kervan_varış: "🏁", kervan_saldırı: "⚔️",
+  // Sağlık / durum
+  enforcement: "⚖️", starvation_warning: "🍞", misilleme: "😤",
+  hastalık: "🤒", iyileşme: "💚",
+  rank_bonusu: "💰", ödül: "🎖️", kuşanma: "🛡️", kullanım: "✋",
+  vergi_ödeme: "💸", vergi_ödendi: "💸", vergi_gecikme: "⚠️",
+  isyan_riski: "🔥", asayis_baskisi: "🚔", asayis_gozaltisi: "⛓️",
+  darbe_yaklasıyor: "⚠️", darbe_icra: "⚔️",
+  darbe_basarili: "🏆", darbe_basarisiz: "💔",
+  haydut_baskını: "💥",
+  // Özel
+  ozel_olay: "✨",
+  // Uyarılar
   _alert_urgent: "🚨", _alert_high: "⚠️", _alert_normal: "💬",
-  _world_alert: "🌍",
-  _kriz_alert: "🔥",
+  _world_alert: "🌍", _kriz_alert: "🔥",
 };
 
 const EVENT_COLORS = {
-  ölüm:              "border-red-500",
-  savaş_ilanı:       "border-red-600",
-  faction_savaş:     "border-red-700",
-  savaş_zaferi:      "border-amber-500",
-  kral_değişimi:     "border-amber-400",
-  tahta_çıkış:       "border-amber-400",
-  evlilik:           "border-pink-500",
-  doğum:             "border-emerald-500",
-  nesil_devri:       "border-emerald-600",
-  görev_tamamlandı:  "border-blue-500",
-  miras:             "border-violet-500",
-  kaçırma:           "border-purple-600",
-  misilleme:         "border-orange-600",
-  başlangıç:         "border-orange-500",
-  barış:             "border-sky-500",
-  şenlik:            "border-yellow-500",
-  çalışma:           "border-stone-600",
-  ticaret:           "border-emerald-700",
-  yolculuk:          "border-stone-500",
-  suç:               "border-red-800",
-  suç_yakalandı:     "border-red-700",
-  kariyer_terfi:     "border-amber-400",
-  enforcement:       "border-amber-700",
-  starvation_warning:"border-orange-700",
-  _alert_urgent:     "border-red-600",
-  _alert_high:       "border-amber-600",
-  _alert_normal:     "border-stone-600",
-  _world_alert:      "border-violet-600",
-  _kriz_alert:       "border-red-700",
+  // Hayat
+  ölüm: "border-red-500", doğum: "border-emerald-500",
+  evlilik: "border-pink-500", nesil_devri: "border-emerald-600",
+  miras: "border-violet-500", evlilik_teklifi: "border-pink-400",
+  çıkma_teklifi: "border-pink-300",
+  // Dünya
+  savaş_ilanı: "border-red-600", faction_savaş: "border-red-700",
+  savaş_zaferi: "border-amber-500", savaş_kaybı: "border-red-600",
+  savaş_kaçış: "border-orange-500", savaş_hareketi: "border-stone-500",
+  kral_değişimi: "border-amber-400", tahta_çıkış: "border-amber-400",
+  isyan: "border-red-700", halk_isyanı: "border-red-700",
+  istikrar_artışı: "border-emerald-600", lord_düşüşü: "border-amber-600",
+  yeni_lord: "border-amber-500", göç: "border-stone-500",
+  kıtlık: "border-orange-600", kıtlık_etkisi: "border-orange-500",
+  barış: "border-sky-500", şenlik: "border-yellow-500",
+  // Eylemler
+  çalışma: "border-stone-600", ticaret: "border-emerald-700",
+  yolculuk: "border-stone-500", meslek_değişimi: "border-blue-600",
+  meslek_edinme: "border-blue-500", kariyer_terfi: "border-amber-400",
+  // Suç
+  suç: "border-red-800", suç_yakalandı: "border-red-700",
+  hırsızlık: "border-red-800", cinayet: "border-red-900",
+  hapis: "border-red-700", yakalandı: "border-red-700",
+  kaçırma: "border-purple-600",
+  // Sosyal
+  ilişki: "border-sky-500", iltifat: "border-pink-400",
+  hediye: "border-amber-400", para_verme: "border-amber-500",
+  hakaret: "border-red-500", dedikodu: "border-stone-500",
+  misilleme: "border-orange-600",
+  // Mektep
+  ders: "border-blue-500", kulup: "border-purple-500",
+  aktivite: "border-emerald-500", sinav: "border-amber-500",
+  okul: "border-blue-500", cocuk_yatirim: "border-emerald-400",
+  cocuk_meslek: "border-blue-400",
+  // Görevler
+  görev_tamamlandı: "border-blue-500", görev_başarısız: "border-red-500",
+  aile_görevi: "border-amber-500", aile_görevi_açıldı: "border-amber-400",
+  aile_destek: "border-amber-400", adaylık: "border-amber-500",
+  faction_kontrol: "border-orange-500",
+  // Kervan
+  kervan: "border-amber-600", kervan_varış: "border-emerald-600",
+  kervan_saldırı: "border-red-600",
+  // Sağlık
+  hastalık: "border-red-400", iyileşme: "border-emerald-500",
+  // Darbe & vergi
+  vergi_ödeme: "border-amber-700", vergi_ödendi: "border-amber-700",
+  vergi_gecikme: "border-orange-600", isyan_riski: "border-red-600",
+  asayis_baskisi: "border-orange-500", asayis_gozaltisi: "border-red-600",
+  darbe_yaklasıyor: "border-red-500", darbe_icra: "border-red-700",
+  darbe_basarili: "border-amber-500", darbe_basarisiz: "border-red-600",
+  // Diğer
+  rank_bonusu: "border-amber-400", ödül: "border-amber-500",
+  kuşanma: "border-stone-500", kullanım: "border-stone-500",
+  haydut_baskını: "border-orange-600", başlangıç: "border-orange-500",
+  ozel_olay: "border-amber-400",
+  enforcement: "border-amber-700", starvation_warning: "border-orange-700",
+  _alert_urgent: "border-red-600", _alert_high: "border-amber-600",
+  _alert_normal: "border-stone-600", _world_alert: "border-violet-600",
+  _kriz_alert: "border-red-700",
 };
 
 const KARAKTER_TYPES = new Set([
+  // Hayat olayları
   "doğum", "ölüm", "evlilik", "nesil_devri", "miras",
-  "çalışma", "ticaret", "yolculuk", "meslek_değişimi",
-  "suç", "suç_yakalandı", "dedikodu", "başlangıç",
-  "okul", "beceri", "ilişki", "haydut_baskını",
-  "misilleme", "kaçırma", "starvation_warning", "enforcement",
-  "görev_tamamlandı", "iyileşme", "hastalık", "ozel_olay",
+  "evlilik_teklifi", "çıkma_teklifi",
+  // Günlük eylemler
+  "çalışma", "ticaret", "yolculuk", "meslek_değişimi", "meslek_edinme",
+  "kariyer_terfi", "rank_bonusu", "ödül",
+  // Mektep / çocukluk
+  "okul", "ders", "kulup", "aktivite", "sinav",
+  "cocuk_yatirim", "cocuk_meslek",
+  // Sosyal / ilişki
+  "beceri", "ilişki", "iltifat", "hediye", "para_verme",
+  "hakaret", "dedikodu", "başlangıç",
+  // Suç & ceza
+  "suç", "suç_yakalandı", "hırsızlık", "cinayet",
+  "hapis", "yakalandı", "kaçırma", "misilleme",
+  // Savaş (oyuncu perspektifli)
+  "savaş_zaferi", "savaş_kaybı", "savaş_kaçış",
+  // Görevler
+  "görev_tamamlandı", "görev_başarısız",
+  "aile_görevi", "aile_görevi_açıldı", "aile_destek",
+  // Kervan
+  "kervan", "kervan_varış", "kervan_saldırı",
+  // Faction & yönetim
+  "adaylık", "faction_kontrol",
+  // Sağlık
+  "iyileşme", "hastalık",
+  // Darbe & güvenlik
+  "asayis_baskisi", "asayis_gozaltisi",
+  "darbe_yaklasıyor", "darbe_icra", "darbe_basarili", "darbe_basarisiz",
+  // Vergi
+  "vergi_ödeme", "vergi_ödendi", "vergi_gecikme", "isyan_riski",
+  // Ekipman
+  "kuşanma", "kullanım",
+  // Özel & uyarılar
+  "ozel_olay", "starvation_warning", "enforcement",
   "_alert_urgent", "_alert_high", "_alert_normal",
+  "haydut_baskını",
 ]);
 
 const DUNYA_TYPES = new Set([
-  "savaş_ilanı", "barış", "kıtlık", "şenlik", "kral_değişimi",
-  "tahta_çıkış", "savaş_zaferi", "faction_savaş", "ittifak",
-  "isyan", "vergi_artışı", "vergi_indirimi", "savunma_yatırımı",
-  "isyan_bastırma", "haydut_baskını", "_world_alert", "_kriz_alert",
+  "savaş_ilanı", "barış", "kıtlık", "kıtlık_etkisi", "şenlik",
+  "kral_değişimi", "tahta_çıkış", "savaş_zaferi", "savaş_hareketi",
+  "faction_savaş", "ittifak", "isyan", "halk_isyanı",
+  "istikrar_artışı", "lord_düşüşü", "yeni_lord", "göç",
+  "vergi_artışı", "vergi_indirimi", "savunma_yatırımı",
+  "isyan_bastırma", "haydut_baskını",
+  "_world_alert", "_kriz_alert",
 ]);
 
 // ── sub-components ────────────────────────────────────────────────────────
@@ -108,7 +200,7 @@ function StatPill({ icon: Icon, value, warn = false, color = "text-stone-300" })
 }
 
 // BitLife tarzı olay kartı
-function EventCard({ event, pinned = false }) {
+function EventCard({ event, pinned = false, fresh = false }) {
   const icon  = EVENT_ICONS[event?.type]  || "📜";
   const color = EVENT_COLORS[event?.type] || "border-stone-700";
   const isAlert = event?.type?.startsWith("_alert");
@@ -116,22 +208,54 @@ function EventCard({ event, pinned = false }) {
   const isKriz  = event?.type === "_kriz_alert";
   return (
     <div className={`flex gap-3 px-3 py-3 mx-3 my-2 rounded-sm border border-l-4 ${color} transition-colors
-      ${pinned ? "bg-amber-950/20 border-r-amber-900/20 border-t-amber-900/20 border-b-amber-900/20" : ""}
+      ${fresh  ? "bg-emerald-950/15 border-r-emerald-900/20 border-t-emerald-900/20 border-b-emerald-900/20" : ""}
+      ${pinned && !fresh ? "bg-amber-950/20 border-r-amber-900/20 border-t-amber-900/20 border-b-amber-900/20" : ""}
       ${isAlert ? "bg-red-950/20 border-r-red-900/15 border-t-red-900/15 border-b-red-900/15" : ""}
       ${isWorld ? "bg-violet-950/20 border-r-violet-900/15 border-t-violet-900/15 border-b-violet-900/15" : ""}
       ${isKriz  ? "bg-red-950/30 border-r-red-900/20 border-t-red-900/20 border-b-red-900/20" : ""}
-      ${!pinned && !isAlert && !isWorld && !isKriz ? "bg-stone-900/30 border-r-stone-800/40 border-t-stone-800/40 border-b-stone-800/40" : ""}
+      ${!pinned && !fresh && !isAlert && !isWorld && !isKriz ? "bg-stone-900/30 border-r-stone-800/40 border-t-stone-800/40 border-b-stone-800/40" : ""}
     `}>
       <span className="text-base shrink-0 leading-none mt-0.5">{icon}</span>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm leading-snug ${isAlert ? "text-amber-200" : isWorld ? "text-violet-200" : isKriz ? "text-red-300" : "text-stone-200"}`}>
+        <p className={`text-sm leading-snug ${fresh ? "text-emerald-100" : isAlert ? "text-amber-200" : isWorld ? "text-violet-200" : isKriz ? "text-red-300" : "text-stone-200"}`}>
           {event?.text || "Bilinmeyen olay"}
         </p>
-        {pinned && (
+        {fresh && (
+          <span className="text-[9px] text-emerald-700 font-heading tracking-wider uppercase mt-0.5 inline-block">YENİ</span>
+        )}
+        {pinned && !fresh && (
           <span className="text-[9px] text-stone-600 font-heading tracking-wider uppercase mt-0.5 inline-block">
             {isKriz ? "Son Kriz" : "Aktif"}
           </span>
         )}
+      </div>
+    </div>
+  );
+}
+
+
+// ── Anlık Eylem Paneli (BitLife tarzı: eylemden hemen sonra görünür) ────
+function FreshEventsPanel({ events, onDismiss }) {
+  if (!events || events.length === 0) return null;
+  return (
+    <div className="border-b border-emerald-900/50 bg-emerald-950/15 animate-in slide-in-from-top duration-300">
+      <div className="flex items-center justify-between px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <span className="text-base">⚡</span>
+          <div>
+            <div className="font-heading text-emerald-400 text-xs tracking-wider">SON EYLEM</div>
+            <div className="text-[10px] text-stone-500">{events.length} yeni olay</div>
+          </div>
+        </div>
+        <button
+          onClick={onDismiss}
+          className="text-stone-600 hover:text-stone-400 text-lg leading-none px-1"
+        >×</button>
+      </div>
+      <div className="divide-y divide-emerald-950/60 border-t border-emerald-900/30">
+        {events.map((ev, i) => (
+          <EventCard key={`fresh-${i}`} event={ev} pinned={false} fresh />
+        ))}
       </div>
     </div>
   );
@@ -276,7 +400,7 @@ function buildWorldAlertEvents(state) {
 
 // ── main ──────────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const { state, advance, lastWorldEvent, clearWorldEvent } = useGame() || {};
+  const { state, advance, lastWorldEvent, clearWorldEvent, freshEvents, clearFreshEvents } = useGame() || {};
   const navigate = useNavigate();
   const [advancing, setAdvancing]             = useState(false);
 
@@ -686,6 +810,11 @@ export default function Dashboard() {
 
           {/* Kaydırılabilir olay listesi — tam geri kalan yükseklik */}
           <div className="flex-1 overflow-y-auto" style={{background: 'linear-gradient(180deg, rgba(20,14,8,0) 0%, rgba(15,10,6,0.6) 100%)'}}>
+
+            {/* Anlık Eylem Paneli (eylemden dönerken göster) */}
+            {eventFilter === "karakter" && freshEvents?.length > 0 && (
+              <FreshEventsPanel events={freshEvents} onDismiss={() => clearFreshEvents && clearFreshEvents()} />
+            )}
 
             {/* Yıl özeti */}
             {yearSummary && (
