@@ -436,7 +436,7 @@ export default function GameLayout() {
             clearLastActionPage();
             navigate(path);
           }}
-          className="fixed bottom-20 right-4 z-40 flex items-center gap-1.5
+          className="fixed bottom-28 right-4 z-40 flex items-center gap-1.5
                      text-xs font-heading tracking-wider px-3 py-2
                      bg-stone-900 border border-stone-700 rounded-sm
                      text-stone-300 hover:text-stone-100 hover:border-stone-500

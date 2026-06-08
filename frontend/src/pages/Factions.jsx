@@ -17,7 +17,7 @@ import { useActionRedirect } from "@/hooks/useActionRedirect";
 import {
   Shield, Swords, Crown, Users, Coins, AlertTriangle,
   Loader2, MapPin, LogIn, LogOut, Plus, X, Star,
-  ChevronRight, TrendingUp, TrendingDown, Minus, Eye, Flame, BookOpen,
+  ChevronRight, ChevronDown, TrendingUp, TrendingDown, Minus, Eye, Flame, BookOpen,
   Heart, Church, Music, Skull, Lock, Landmark, Search, Unlock,
   Zap, Clock, Activity, ArrowRight, CheckCircle2, XCircle,
   Sword, Shield as ShieldIcon, Wind, Trophy, Crosshair,
@@ -1126,6 +1126,99 @@ function TabBar({ active, onChange, warCount }) {
   );
 }
 
+
+// ─── Faction Tipi Grupları (kategori başlıkları) ──────────────────────────────
+const FACTION_TYPE_GROUPS = [
+  { key: "lonca",   label: "Loncalar",          types: ["tuccar_loncasi", "zanaatkar_loncasi", "sifaci_birligi"] },
+  { key: "askeri",  label: "Askeri & Paralı",   types: ["krallık_ordusu", "paralı_asker"] },
+  { key: "din",     label: "Dini & Gizli",      types: ["dini_tarikat", "gizli_cemiyet"] },
+  { key: "diger",   label: "Diğer Örgütler",    types: ["ilim_cemiyeti", "oyuncu_kumpanya", "eskiya_cetesi"] },
+];
+
+function FactionGroupSection({
+  group, factions, clues, playerFactionId, playerAge,
+  canJoin, joinBlocked, joinWeeksLeft,
+  onJoin, onLeave, onRebel, onInfluence, onDonate,
+  onDarbaBaslat, onDarbaIptal, onMisyonerGonder,
+  busy, locations, player, warDetail, onOpenDecision, allFactions,
+}) {
+  const groupFactions = factions.filter(f => group.types.includes(f.type));
+  if (groupFactions.length === 0) return null;
+
+  const [open, setOpen] = useState(false);
+  const activeCount = groupFactions.filter(f => f.active).length;
+  const playerInGroup = groupFactions.some(f => f.id === playerFactionId);
+
+  return (
+    <div className="rounded-sm border border-stone-800/60 overflow-hidden">
+      {/* Grup başlığı — tıklanabilir */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors
+          ${open ? "bg-stone-900/60" : "bg-stone-950/40 hover:bg-stone-900/40"}`}
+      >
+        <div className="flex items-center gap-2">
+          <span className="font-heading text-sm text-stone-200">{group.label}</span>
+          {playerInGroup && (
+            <span className="text-[9px] font-heading uppercase px-1.5 py-0.5 rounded-sm border border-orange-800/60 bg-orange-950/30 text-orange-400">
+              Üyesin
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-stone-500">
+            {activeCount} / {groupFactions.length}
+          </span>
+          {open
+            ? <ChevronDown className="w-4 h-4 text-stone-500" />
+            : <ChevronRight className="w-4 h-4 text-stone-500" />
+          }
+        </div>
+      </button>
+
+      {/* Grup içeriği */}
+      {open && (
+        <div className="divide-y divide-stone-800/40">
+          {groupFactions.map(f => {
+            if (!f.active) return (
+              <div key={f.id} className="px-3 py-2">
+                <DormantFactionCard faction={f} />
+              </div>
+            );
+            if (f.is_secret) {
+              const clueEntry = clues.find(c => c.faction_id === f.id) || {};
+              return (
+                <div key={f.id} className="px-3 py-3">
+                  <SecretSocietyCard faction={f}
+                    clueCount={clueEntry.clue_count || 0}
+                    threshold={clueEntry.threshold || 5}
+                    onInvestigate={() => {}} onReveal={() => {}} busy={busy} />
+                </div>
+              );
+            }
+            return (
+              <div key={f.id} className="px-3 py-3">
+                <FactionCard faction={f}
+                  playerFactionId={playerFactionId} playerAge={playerAge}
+                  canJoin={canJoin} joinBlocked={joinBlocked} joinWeeksLeft={joinWeeksLeft}
+                  onJoin={onJoin} onLeave={onLeave} onRebel={onRebel}
+                  onInfluence={onInfluence} onDonate={onDonate}
+                  onDarbaBaslat={onDarbaBaslat} onDarbaIptal={onDarbaIptal}
+                  onMisyonerGonder={onMisyonerGonder}
+                  busy={busy} locations={locations} player={player}
+                  warDetail={f.id === playerFactionId ? warDetail : null}
+                  onOpenDecision={onOpenDecision}
+                  allFactions={allFactions}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Ana Bileşen ──────────────────────────────────────────────────────────────
 export default function Factions() {
   const { state, setState } = useGame();
@@ -1469,39 +1562,42 @@ export default function Factions() {
       {/* ── ÖRGÜTLER TAB ── */}
       {tab === "factions" && (
         <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {factions.map((f) => {
-              if (!f.active) return <DormantFactionCard key={f.id} faction={f} />;
-              if (f.is_secret) {
-                const clueEntry = clues.find(c => c.faction_id === f.id) || {};
-                return (
-                  <SecretSocietyCard key={f.id} faction={f}
-                    clueCount={clueEntry.clue_count || 0} threshold={clueEntry.threshold || 5}
-                    onInvestigate={handleInvestigate} onReveal={handleReveal} busy={busy} />
-                );
-              }
-              return (
-                <FactionCard key={f.id} faction={f}
-                  playerFactionId={playerFactionId} playerAge={playerAge}
-                  canJoin={canJoin} joinBlocked={joinBlocked} joinWeeksLeft={joinWeeksLeft}
-                  onJoin={handleJoin} onLeave={handleLeave} onRebel={handleRebel}
-                  onInfluence={handleInfluenceOpen} onDonate={handleDonate}
-                  onDarbaBaslat={handleDarbaBaslat} onDarbaIptal={handleDarbaIptal}
+          {factions.length === 0 ? (
+            <div className="card-frame p-8 text-center text-stone-500">
+              <Shield className="w-8 h-8 mx-auto mb-2 opacity-20" />
+              <p className="text-sm">Henüz örgüt oluşmamış.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {FACTION_TYPE_GROUPS.map(group => (
+                <FactionGroupSection
+                  key={group.key}
+                  group={group}
+                  factions={factions}
+                  clues={clues}
+                  playerFactionId={playerFactionId}
+                  playerAge={playerAge}
+                  canJoin={canJoin}
+                  joinBlocked={joinBlocked}
+                  joinWeeksLeft={joinWeeksLeft}
+                  onJoin={handleJoin}
+                  onLeave={handleLeave}
+                  onRebel={handleRebel}
+                  onInfluence={handleInfluenceOpen}
+                  onDonate={handleDonate}
+                  onDarbaBaslat={handleDarbaBaslat}
+                  onDarbaIptal={handleDarbaIptal}
                   onMisyonerGonder={handleMisyonerGonder}
-                  busy={busy} locations={locations} player={player}
-                  warDetail={f.id === playerFactionId ? warDetail : null}
+                  busy={busy}
+                  locations={locations}
+                  player={player}
+                  warDetail={warDetail}
                   onOpenDecision={() => setShowDecision(true)}
                   allFactions={factions}
                 />
-              );
-            })}
-            {factions.length === 0 && (
-              <div className="card-frame p-8 text-center text-stone-500 col-span-2">
-                <Shield className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                <p className="text-sm">Henüz örgüt oluşmamış.</p>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
 
           {!playerFactionId && playerAge >= 16 ? (
             <button onClick={() => setShowCreate(true)}

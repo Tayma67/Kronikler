@@ -5,10 +5,10 @@
 @tailwind utilities;
 
 :root {
-    --bg: #0f0b08;
-    --surface: #1e1812;
-    --surface-2: #2a2118;
-    --border: #2a2118;
+    --bg: #1e1812;
+    --surface: #2c2418;
+    --surface-2: #3a3020;
+    --border: #3a3020;
     --border-strong: #4a3c2e;
     --text: #ede8e0;
     --text-muted: #b5a898;
@@ -29,8 +29,8 @@ html,
 body {
     background-color: var(--bg);
     background-image:
-        radial-gradient(ellipse at 50% 0%, rgba(120, 60, 10, 0.18) 0%, transparent 65%),
-        radial-gradient(ellipse at 50% 100%, rgba(80, 30, 5, 0.12) 0%, transparent 60%);
+        radial-gradient(ellipse at 50% 0%, rgba(160, 90, 20, 0.22) 0%, transparent 65%),
+        radial-gradient(ellipse at 50% 100%, rgba(110, 55, 10, 0.15) 0%, transparent 60%);
     color: var(--text);
     height: 100%;
     overflow: hidden;  /* body scroll olmaz */
@@ -67,7 +67,7 @@ body {
     inset: 0;
     pointer-events: none;
     z-index: 1;
-    opacity: 0.28;
+    opacity: 0.14;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.12 0 0 0 0 0.07 0 0 0 0.65 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
     mix-blend-mode: overlay;
 }
