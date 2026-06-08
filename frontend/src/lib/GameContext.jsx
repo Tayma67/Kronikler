@@ -8,6 +8,7 @@ export function GameProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [lastCaravanEvent, setLastCaravanEvent] = useState(null);
   const [lastWorldEvent, setLastWorldEvent] = useState(null);   // Adım 9
+  const [lastCrisisEvents, setLastCrisisEvents] = useState([]);   // GDD v4 Bölüm 5.4
   const [lastActionPage, setLastActionPage] = useState(null);   // Adım 14
 
   const fetchState = useCallback(async () => {
@@ -66,6 +67,10 @@ export function GameProvider({ children }) {
       if (data?.new_world_events?.length > 0) {
         setLastWorldEvent(data.new_world_events[0]);
       }
+      // GDD v4: kriz olayları
+      if (data?.crisis_events?.length > 0) {
+        setLastCrisisEvents(data.crisis_events);
+      }
       return data;
     } catch (error) {
       alert("İlerleme hatası: " + error.message);
@@ -96,6 +101,7 @@ export function GameProvider({ children }) {
         state, setState, loading, fetchState, newGame, deleteGame, advance, action,
         lastCaravanEvent, clearCaravanEvent: () => setLastCaravanEvent(null),
         lastWorldEvent, clearWorldEvent: () => setLastWorldEvent(null),   // Adım 9
+        lastCrisisEvents, clearCrisisEvents: () => setLastCrisisEvents([]),   // GDD v4
         lastActionPage, setLastActionPage,                                // Adım 14
         clearLastActionPage: () => setLastActionPage(null),              // Adım 14
       }}

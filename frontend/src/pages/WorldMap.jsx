@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useGame } from "@/lib/GameContext";
 import {
   Crown, MapPin, ShieldCheck, Coins, Castle, Tent,
-  Building2, Swords, User, ChevronRight, AlertTriangle, Layers,
+  Building2, Swords, User, ChevronRight, AlertTriangle, Layers, Map, Users,
 } from "lucide-react";
 
 // ─── Faction nüfuz renkleri ───────────────────────────────────────────────────
@@ -40,7 +40,6 @@ const KINGDOM_PALETTES = [
   },
 ];
 
-// Tekrarlanabilir sahte rastgele konumlar (ID hash)
 function hashCode(str) {
   let h = 5381;
   for (let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
@@ -57,12 +56,10 @@ function getLocPos(loc, kingdoms, mapW, mapH, idx, totalInKingdom) {
   const innerW = zoneW - pad.x * 2;
   const innerH = mapH - pad.y * 2;
 
-  // Use hash to place within zone
   const h = hashCode(loc.id);
   const tx = (h % 1000) / 1000;
   const ty = ((h >> 10) % 1000) / 1000;
 
-  // City is center-top, castles mid, villages scattered
   let x, y;
   if (loc.kind === "şehir") {
     x = baseX + zoneW * 0.5;
@@ -82,8 +79,8 @@ const NODE_SIZE = { şehir: 10, kale: 7, köy: 5 };
 const LOC_ICONS = { şehir: Building2, kale: Castle, köy: Tent };
 
 // ─── SVG Harita ───────────────────────────────────────────────────────────────
-function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = [], showInfluence = false }) {
-  const [hovered, setHovered] = useState(null);
+function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = [], showInfluence = false, regionsSlim = [] }) {
+  const [selected, setSelected] = useState(null);
   const MAP_W = 660;
   const MAP_H = 340;
 
@@ -105,7 +102,6 @@ function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = 
     return m;
   }, [locations, kingdoms]);
 
-  // Faction nüfuz haritası: loc_id → {color, pct, name}
   const influenceMap = useMemo(() => {
     if (!showInfluence || !factions.length) return {};
     const m = {};
@@ -141,17 +137,16 @@ function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = 
     return pairs;
   }, [kingdoms]);
 
-  // Her krallık için capital bul
   const capitalPos = useMemo(() => {
     const m = {};
     for (const k of kingdoms) {
-      const cap = locations.find((l) => l.kingdom_id === k.id && l.kind === "şehir");
+      const cap = locations.find((l) => l.kind === "şehir" && l.kingdom_id === k.id);
       if (cap && posMap[cap.id]) m[k.id] = posMap[cap.id];
     }
     return m;
   }, [kingdoms, locations, posMap]);
 
-  const hoveredLoc = hovered ? locations.find((l) => l.id === hovered) : null;
+  const selectedLoc = selected ? locations.find((l) => l.id === selected) : null;
 
   return (
     <div className="relative w-full">
@@ -159,6 +154,7 @@ function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = 
         viewBox={`0 0 ${MAP_W} ${MAP_H}`}
         className="w-full rounded-sm border border-stone-800/60"
         style={{ background: "linear-gradient(180deg, #0f0e0d 0%, #141210 100%)" }}
+        onClick={() => setSelected(null)}
       >
         {/* Grain doku */}
         <defs>
@@ -192,7 +188,6 @@ function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = 
                 fill={palette.zone}
                 rx="2"
               />
-              {/* Dikey sınır çizgisi */}
               {idx > 0 && (
                 <line
                   x1={x}
@@ -205,7 +200,6 @@ function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = 
                   opacity="0.6"
                 />
               )}
-              {/* Krallık adı */}
               <text
                 x={x + zoneW / 2}
                 y={22}
@@ -271,15 +265,16 @@ function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = 
           const palette = KINGDOM_PALETTES[kIdx % KINGDOM_PALETTES.length];
           const r = NODE_SIZE[loc.kind] || 5;
           const isPlayer = loc.id === playerLocId;
-          const isHovered = hovered === loc.id;
+          const isSelected = selected === loc.id;
 
           return (
             <g
               key={loc.id}
               style={{ cursor: "pointer" }}
-              onMouseEnter={() => setHovered(loc.id)}
-              onMouseLeave={() => setHovered(null)}
-              onClick={() => onLocClick(loc.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelected(prev => prev === loc.id ? null : loc.id);
+              }}
             >
               {/* Faction nüfuz halkası */}
               {showInfluence && influenceMap[loc.id] && (() => {
@@ -323,8 +318,8 @@ function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = 
                 </circle>
               )}
 
-              {/* Hover halkası */}
-              {isHovered && !isPlayer && (
+              {/* Seçili halka */}
+              {isSelected && !isPlayer && (
                 <circle
                   cx={pos.x}
                   cy={pos.y}
@@ -340,9 +335,9 @@ function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = 
               <circle
                 cx={pos.x}
                 cy={pos.y}
-                r={isHovered ? r + 2 : r}
+                r={isSelected ? r + 2 : r}
                 fill={isPlayer ? "#f97316" : palette.node}
-                opacity={isHovered ? 1 : 0.85}
+                opacity={isSelected ? 1 : 0.85}
                 style={{ transition: "r 0.2s ease" }}
               />
 
@@ -372,7 +367,7 @@ function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = 
                 fontSize={loc.kind === "şehir" ? "8" : "7"}
                 fontFamily="Cinzel, serif"
                 fill={isPlayer ? "#f97316" : "#a8a29e"}
-                opacity={isHovered ? 1 : 0.75}
+                opacity={isSelected ? 1 : 0.75}
                 letterSpacing="0.5"
               >
                 {loc.name}
@@ -382,24 +377,39 @@ function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = 
         })}
       </svg>
 
-      {/* Hover tooltip */}
-      {hoveredLoc && (() => {
-        const kIdx = kingdoms.findIndex((k) => k.id === hoveredLoc.kingdom_id);
+      {/* Seçili lokasyon tooltip */}
+      {selectedLoc && (() => {
+        const kIdx = kingdoms.findIndex((k) => k.id === selectedLoc.kingdom_id);
         const palette = KINGDOM_PALETTES[kIdx % KINGDOM_PALETTES.length];
+        const reg = regionsSlim.find((r) => r.location_id === selectedLoc.id);
+        const ALTYAPI = { 1: "Mezra", 2: "Köy", 3: "Kasaba", 4: "Şehir", 5: "Büyük Şehir" };
         return (
           <div className="absolute bottom-2 left-2 right-2 pointer-events-none">
-            <div className="card-frame p-2 text-xs flex items-center gap-3">
-              <span className={`font-heading ${palette.text}`}>{hoveredLoc.name}</span>
-              <span className="text-stone-500 capitalize">{hoveredLoc.kind}</span>
+            <div className="card-frame p-2.5 text-xs flex items-center gap-3 flex-wrap">
+              <span className={`font-heading ${palette.text}`}>{selectedLoc.name}</span>
+              <span className="text-stone-500 capitalize">{selectedLoc.kind}</span>
+              {reg && (
+                <>
+                  <span className="flex items-center gap-1 text-stone-400">
+                    <Users className="w-3 h-3" /> {reg.nufus.toLocaleString()}
+                  </span>
+                  <span className="text-stone-600 text-[10px] font-heading tracking-wider uppercase">
+                    {ALTYAPI[reg.altyapi_seviyesi] || `Lv${reg.altyapi_seviyesi}`}
+                  </span>
+                </>
+              )}
               <span className="flex items-center gap-1 text-stone-400">
-                <Coins className="w-3 h-3" /> {hoveredLoc.wealth}
+                <Coins className="w-3 h-3" /> {selectedLoc.wealth}
               </span>
               <span className="flex items-center gap-1 text-stone-400">
-                <ShieldCheck className="w-3 h-3" /> {hoveredLoc.security}
+                <ShieldCheck className="w-3 h-3" /> {selectedLoc.security}
               </span>
-              <span className="ml-auto text-orange-500 font-heading text-[10px] tracking-wider">
-                → gitmek için tıkla
-              </span>
+              <button
+                onClick={(e) => { e.stopPropagation(); onLocClick(selectedLoc.id); }}
+                className="ml-auto px-2 py-1 text-[10px] font-heading tracking-wider border border-orange-800 text-orange-400 hover:bg-orange-950/40 rounded-sm pointer-events-auto"
+              >
+                Git →
+              </button>
             </div>
           </div>
         );
@@ -510,6 +520,7 @@ export default function WorldMap() {
   const { state } = useGame();
   const navigate = useNavigate();
   const [showInfluence, setShowInfluence] = useState(false);
+  const [view, setView] = useState("harita");
 
   const locationsByKingdom = useMemo(() => {
     const m = {};
@@ -539,72 +550,113 @@ export default function WorldMap() {
         </p>
       </div>
 
-      {/* Konum durumu */}
-      {playerLoc && (
-        <div className="flex items-center gap-2 text-xs text-stone-400 border border-stone-800/50 rounded-sm px-3 py-2">
-          <MapPin className="w-3.5 h-3.5 text-orange-500" />
-          <span>Şu an:</span>
-          <Link
-            to={`/oyun/sehir/${playerLoc.id}`}
-            className="text-orange-400 font-heading hover:text-orange-300"
+      {/* Oyuncu konum hero kartı */}
+      {playerLoc && (() => {
+        const pk = state.world.kingdoms.find(k => k.id === playerLoc.kingdom_id);
+        return (
+          <div className="card-frame p-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="label-tiny mb-0.5 flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-orange-500" /> Bulunduğun Yer
+              </div>
+              <div className="font-heading text-xl text-stone-100 truncate">{playerLoc.name}</div>
+              <div className="text-xs text-stone-500 mt-0.5">
+                {playerLoc.kind} · {pk?.name}
+                <span className="mx-1.5 text-stone-700">·</span>
+                <span className="text-stone-400">
+                  <Coins className="w-2.5 h-2.5 inline mr-0.5" />{playerLoc.wealth}
+                </span>
+                <span className="mx-1 text-stone-700">·</span>
+                <span className="text-stone-400">
+                  <ShieldCheck className="w-2.5 h-2.5 inline mr-0.5" />{playerLoc.security}
+                </span>
+              </div>
+            </div>
+            <Link
+              to={`/oyun/sehir/${playerLoc.id}`}
+              className="shrink-0 btn-ember px-3 py-2 text-[11px] font-heading tracking-wider"
+            >
+              Şehre Git →
+            </Link>
+          </div>
+        );
+      })()}
+
+      {/* Harita / Liste toggle */}
+      <div className="flex gap-1 border-b border-stone-800 pb-0">
+        {[
+          { id: "harita", label: "Harita", icon: Map },
+          { id: "liste",  label: "Liste",  icon: Layers },
+        ].map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setView(id)}
+            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-heading tracking-wider border-b-2 transition-all ${
+              view === id
+                ? "border-orange-500 text-orange-400"
+                : "border-transparent text-stone-500 hover:text-stone-300"
+            }`}
           >
-            {playerLoc.name}
-          </Link>
-          <span className="text-stone-600">({playerLoc.kind})</span>
+            <Icon className="w-3 h-3" /> {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Harita view */}
+      {view === "harita" && (
+        <div className="relative">
+          <div className="flex items-center justify-end mb-2">
+            <button
+              onClick={() => setShowInfluence(v => !v)}
+              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-sm border font-heading tracking-wider transition-all ${
+                showInfluence
+                  ? "border-violet-800 bg-stone-900 text-violet-400"
+                  : "border-stone-800 text-stone-500 hover:text-stone-300"
+              }`}
+            >
+              <Layers className="w-3 h-3" />
+              Faction Nüfuz Katmanı
+            </button>
+          </div>
+          <WorldSvgMap
+            kingdoms={state.world.kingdoms}
+            locations={state.world.locations}
+            playerLocId={playerLocId}
+            onLocClick={(locId) => navigate(`/oyun/sehir/${locId}`)}
+            factions={state.world.factions || []}
+            showInfluence={showInfluence}
+            regionsSlim={state.world.regions_slim || []}
+          />
+          {showInfluence && (state.world.factions || []).length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {(state.world.factions || []).slice(0, 8).map((f, idx) => (
+                <div key={f.id} className="flex items-center gap-1.5 text-[10px] text-stone-400">
+                  <span
+                    className="w-3 h-3 rounded-full inline-block"
+                    style={{ backgroundColor: FACTION_COLORS[idx % FACTION_COLORS.length], opacity: 0.7 }}
+                  />
+                  {f.name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* SVG Harita */}
-      <div className="relative">
-        {/* Nüfuz katmanı toggle */}
-        <div className="flex items-center justify-end mb-2">
-          <button
-            onClick={() => setShowInfluence(v => !v)}
-            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-sm border font-heading tracking-wider transition-all ${
-              showInfluence
-                ? "border-violet-800 bg-stone-900 text-violet-400"
-                : "border-stone-800 text-stone-500 hover:text-stone-300"
-            }`}
-          >
-            <Layers className="w-3 h-3" />
-            Faction Nüfuz Katmanı
-          </button>
+      {/* Liste view */}
+      {view === "liste" && (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {state.world.kingdoms.map((k, kIdx) => (
+            <KingdomCard
+              key={k.id}
+              kingdom={k}
+              locs={locationsByKingdom[k.id] || []}
+              king={kingFor(k.id)}
+              kIdx={kIdx}
+            />
+          ))}
         </div>
-        <WorldSvgMap
-          kingdoms={state.world.kingdoms}
-          locations={state.world.locations}
-          playerLocId={playerLocId}
-          onLocClick={(locId) => navigate(`/oyun/sehir/${locId}`)}
-          factions={state.world.factions || []}
-          showInfluence={showInfluence}
-        />
-        {showInfluence && (state.world.factions || []).length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {(state.world.factions || []).slice(0, 8).map((f, idx) => (
-              <div key={f.id} className="flex items-center gap-1.5 text-[10px] text-stone-400">
-                <span
-                  className="w-3 h-3 rounded-full inline-block"
-                  style={{ backgroundColor: FACTION_COLORS[idx % FACTION_COLORS.length], opacity: 0.7 }}
-                />
-                {f.name}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Krallık kartları */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {state.world.kingdoms.map((k, kIdx) => (
-          <KingdomCard
-            key={k.id}
-            kingdom={k}
-            locs={locationsByKingdom[k.id] || []}
-            king={kingFor(k.id)}
-            kIdx={kIdx}
-          />
-        ))}
-      </div>
+      )}
     </div>
   );
 }

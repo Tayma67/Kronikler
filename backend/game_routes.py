@@ -398,6 +398,32 @@ def _decorate(state):
     state["player"].setdefault("faction_leave_count", 0)
     state["player"].setdefault("faction_kicked_count", 0)
     state["player"].setdefault("faction_rebel_count", 0)
+
+    # ── Bölge özeti (frontend nüfus / altyapı / inanç gösterimi için) ──
+    regions_slim = []
+    for r in state["world"].get("regions", []):
+        yerlesim = r.get("yerlesim", {})
+        regions_slim.append({
+            "id": r["id"],
+            "location_id": r.get("location_id"),
+            "nufus": yerlesim.get("nufus", r.get("population", 0)),
+            "nufus_max": yerlesim.get("nufus_max", 5000),
+            "gelir_carpan": round(r.get("gelir_carpan", 1.0), 2),
+            "altyapi_seviyesi": r.get("altyapi_seviyesi", 1),
+            "inanc_dagilimi": r.get("inanc_dagilimi", {}),
+        })
+    state["world"]["regions_slim"] = regions_slim
+
+    # ── Son kriz olayları (son 20 tarihten, frontend uyarıları için) ──
+    KRIZ_TYPES = {"kriz_kuraklik", "kriz_veba", "kriz_yangin"}
+    history = state.get("history", [])
+    recent_crises = [
+        {"type": e["type"], "text": e["text"], "day": e["day"]}
+        for e in reversed(history[-20:])
+        if e.get("type") in KRIZ_TYPES
+    ][:5]
+    state["recent_crises"] = recent_crises
+
     return state
 
 
@@ -561,6 +587,14 @@ def build_game_router(db):
             result["caravan_event"] = caravan_event
         if new_world_events:
             result["new_world_events"] = new_world_events
+        # Kriz olayları (GDD v4 Bölüm 5.4): bu turda oluşan kriz eventleri
+        KRIZ_TYPES = {"kriz_kuraklik", "kriz_veba", "kriz_yangin"}
+        crisis_events = [
+            e for e in state.get("history", [])
+            if e.get("type") in KRIZ_TYPES and e.get("day") == current_turn
+        ]
+        if crisis_events:
+            result["crisis_events"] = crisis_events
         # Erken durma bilgisi (açlık/yiyeceksizlik)
         early_stop = state.pop("advance_early_stop", None)
         if early_stop:
@@ -2070,7 +2104,7 @@ def build_game_router(db):
         active = get_active_world_events(state)
         all_events = get_all_world_events(state, limit=40)
         # KRİTİK EVENTLER: tahta çıkış, savaş ilanı, barış, göç pinli göster
-        PINNED_TYPES = {"tahta_çıkış", "savaş_ilanı", "barış", "savaş_hareketi", "göç", "ölüm"}
+        PINNED_TYPES = {"tahta_çıkış", "savaş_ilanı", "barış", "savaş_hareketi", "göç", "ölüm", "kriz_kuraklik", "kriz_veba", "kriz_yangin"}
         history = state.get("history", [])
         # Son 50 history eventinden pinlenecekleri topla
         pinned = [
@@ -2778,5 +2812,180 @@ def build_game_router(db):
         if event:
             await _save_state(db, user["_id"], state)
         return {"event": event}
+
+    @router.get("/factions")
+    async def faction_list(user: dict = Depends(get_current_user)):
+        """Tüm aktif factionların özet listesini döndürür (GDD v4 Bölüm 6/8)."""
+        state = await _load_state(db, user["_id"])
+        factions = state["world"].get("factions", [])
+        result = []
+        for fac in factions:
+            if not fac.get("active"):
+                continue
+            result.append({
+                "id":             fac["id"],
+                "name":           fac["name"],
+                "type":           fac["type"],
+                "leader_id":      fac.get("leader_id"),
+                "military_power": fac.get("military_power", 0),
+                "treasury":       fac.get("treasury", 0),
+                "reputation":     fac.get("reputation", 0),
+                "stability":      fac.get("stability", 0),
+                "uye_sayisi":     fac.get("uye_sayisi", 1),
+                "darbe_plani":    fac.get("darbe_plani"),
+                "at_war_with":    fac.get("at_war_with", []),
+                "altinda_koalisyon": fac.get("altinda_koalisyon", []),
+            })
+        return {"factions": result, "count": len(result)}
+
+    @router.get("/factions/{faction_id}/darbe-status")
+    async def faction_darbe_status(faction_id: str, user: dict = Depends(get_current_user)):
+        """Bir factionın darbe planı durumunu döndürür (GDD v4 Bölüm 5 — Darbe Sistemi)."""
+        state = await _load_state(db, user["_id"])
+        fac = next((f for f in state["world"].get("factions", []) if f["id"] == faction_id), None)
+        if not fac:
+            raise HTTPException(status_code=404, detail="Faction bulunamadı")
+        plan = fac.get("darbe_plani")
+        if not plan:
+            return {"darbe_plani": None, "mesaj": "Aktif darbe planı yok."}
+        # Hedef faction adını ekle
+        hedef = next((f for f in state["world"].get("factions", []) if f["id"] == plan.get("hedef_id")), None)
+        return {
+            "darbe_plani": plan,
+            "hedef_adi":   hedef["name"] if hedef else "Bilinmiyor",
+            "planlayan":   fac["name"],
+        }
+
+    @router.get("/factions/uye-istatistik")
+    async def faction_uye_istatistik(user: dict = Depends(get_current_user)):
+        """Tüm factionların üye sayısı istatistiklerini döndürür (GDD v4 Bölüm 6)."""
+        state = await _load_state(db, user["_id"])
+        factions = state["world"].get("factions", [])
+        stats = [
+            {
+                "faction_id":   fac["id"],
+                "name":         fac["name"],
+                "uye_sayisi":   fac.get("uye_sayisi", 1),
+                "military_power": fac.get("military_power", 0),
+                "son_uye_kazan_tur": fac.get("son_uye_kazan_tur", 0),
+            }
+            for fac in factions if fac.get("active")
+        ]
+        stats.sort(key=lambda x: x["uye_sayisi"], reverse=True)
+        return {"istatistik": stats}
+
+    @router.post("/factions/darbe/baslat")
+    async def player_darbe_baslat(body: dict, user: dict = Depends(get_current_user)):
+        """
+        Oyuncu kendi factionı adına darbe planı başlatır (GDD v4 Bölüm 5).
+        body: { hedef_faction_id: str }
+        """
+        state  = await _load_state(db, user["_id"])
+        player = state["player"]
+        fac_id = player.get("faction_id")
+        if not fac_id:
+            raise HTTPException(400, "Bir örgüte üye değilsin.")
+        hedef_id = body.get("hedef_faction_id")
+        if not hedef_id:
+            raise HTTPException(400, "hedef_faction_id gerekli.")
+        from faction_system import _get_faction, FACTION_ACTIONS, _clamp
+        fac   = _get_faction(state, fac_id)
+        hedef = _get_faction(state, hedef_id)
+        if not fac or not hedef:
+            raise HTTPException(404, "Faction bulunamadı.")
+        if fac.get("darbe_plani") is not None:
+            raise HTTPException(400, "Zaten aktif bir darbe planı var.")
+        meta    = FACTION_ACTIONS["darbe_hazirlik_baslat"]
+        maliyet = meta["maliyet"]
+        if fac["treasury"] < maliyet:
+            raise HTTPException(400, f"Hazine yetersiz. Gerekli: {maliyet} altın.")
+        turn = state.get("turn", 1)
+        fac["treasury"] -= maliyet
+        fac["darbe_plani"] = {
+            "hedef_id":             hedef_id,
+            "faz":                  1,
+            "faz_baslangic_tur":    turn,
+            "halk_destegi_skoru":   0.0,
+            "askeri_birlik_skoru":  0.0,
+            "hazine_ele_gecirildi": False,
+            "ifsa_riski":           0.05,
+            "oyuncu_baslatti":      True,
+        }
+        await _save_state(db, user["_id"], state)
+        return {
+            "success": True,
+            "message": f"{hedef['name']} hedef alınarak darbe planı başlatıldı. Faz 1: Propaganda.",
+            "darbe_plani": fac["darbe_plani"],
+        }
+
+    @router.post("/factions/darbe/iptal")
+    async def player_darbe_iptal(user: dict = Depends(get_current_user)):
+        """Oyuncu aktif darbe planını iptal eder."""
+        state  = await _load_state(db, user["_id"])
+        player = state["player"]
+        fac_id = player.get("faction_id")
+        if not fac_id:
+            raise HTTPException(400, "Bir örgüte üye değilsin.")
+        from faction_system import _get_faction
+        fac = _get_faction(state, fac_id)
+        if not fac or not fac.get("darbe_plani"):
+            raise HTTPException(400, "Aktif darbe planı yok.")
+        fac["darbe_plani"] = None
+        await _save_state(db, user["_id"], state)
+        return {"success": True, "message": "Darbe planı iptal edildi."}
+
+    @router.post("/factions/misyoner-gonder")
+    async def player_misyoner_gonder(body: dict, user: dict = Depends(get_current_user)):
+        """
+        Oyuncu Dini Tarikat üyesi olarak bir bölgeye misyoner gönderir (GDD v4 Bölüm 4).
+        body: { location_id: str }
+        """
+        state  = await _load_state(db, user["_id"])
+        player = state["player"]
+        fac_id = player.get("faction_id")
+        if not fac_id:
+            raise HTTPException(400, "Bir örgüte üye değilsin.")
+        from faction_system import _get_faction, _get_region, _clamp, _log_event
+        fac = _get_faction(state, fac_id)
+        if not fac or fac.get("type") != "dini_tarikat":
+            raise HTTPException(400, "Yalnızca Dini Tarikat üyeleri misyoner gönderebilir.")
+        loc_id = body.get("location_id")
+        if not loc_id:
+            raise HTTPException(400, "location_id gerekli.")
+        # location_id ile bölgeyi bul
+        region = next(
+            (r for r in state["world"].get("regions", []) if r.get("location_id") == loc_id),
+            None
+        )
+        if not region:
+            raise HTTPException(404, "Bölge bulunamadı.")
+        maliyet = 40
+        if fac["treasury"] < maliyet:
+            raise HTTPException(400, f"Hazine yetersiz. Gerekli: {maliyet} altın.")
+        import random
+        turn = state.get("turn", 1)
+        fac["treasury"] -= maliyet
+        basari = random.random() < 0.70
+        if basari:
+            fac["inanc_etkisi"] = _clamp(fac.get("inanc_etkisi", 0) + 8, -50, 50)
+            inanc_dag = region.setdefault("inanc_dagilimi", {})
+            fac_inanc = fac.get("name", "bilinmeyen")
+            inanc_dag[fac_inanc] = min(100, inanc_dag.get(fac_inanc, 0) + 6)
+            # Geleneksel biraz düşer
+            if "geleneksel" in inanc_dag and inanc_dag["geleneksel"] > 10:
+                inanc_dag["geleneksel"] = max(10, inanc_dag["geleneksel"] - 3)
+            fac["reputation"] = min(100, fac.get("reputation", 50) + 3)
+            _log_event(state, turn, "misyoner_gönderimi",
+                       f"[{fac['name']}] oyuncu girişimiyle {region['name']}'e misyoner gönderdi. "
+                       f"İnanç etkisi → {fac['inanc_etkisi']}.", fac["id"])
+            msg = f"Misyonerler {region['name']}'de kabul gördü. İnanç etkisi arttı."
+        else:
+            msg = "Misyonerler yerel halk tarafından reddedildi. Altın harcandı."
+        await _save_state(db, user["_id"], state)
+        return {
+            "success": basari,
+            "message": msg,
+            "inanc_etkisi": fac.get("inanc_etkisi", 0),
+        }
 
     return router

@@ -548,10 +548,51 @@ function InfluenceMap({ cityInfluence, locations }) {
 }
 
 // ─── Faction Kartı ────────────────────────────────────────────────────────────
+// ─── Darbe Planı Badge (GDD v4 Bölüm 5) ──────────────────────────────────────
+const FAZ_LABELS = ["Propaganda", "Askeri", "Hazine", "Eylem"];
+const FAZ_COLORS = ["text-yellow-400", "text-orange-400", "text-red-400", "text-red-500"];
+
+function DarbePlaniBadge({ darbePlani, factions }) {
+  if (!darbePlani) return null;
+  const faz = darbePlani.faz ?? 1;
+  const hedef = factions?.find(f => f.id === darbePlani.hedef_id);
+  return (
+    <div className="rounded-sm border border-red-900/50 bg-red-950/20 px-2 py-1.5 space-y-1">
+      <div className="flex items-center gap-1.5">
+        <Crosshair className="w-3 h-3 text-red-400 shrink-0" />
+        <span className="label-tiny text-red-400">Darbe Planı Aktif</span>
+      </div>
+      <div className="text-[10px] text-stone-400">
+        Hedef: <span className="text-stone-200">{hedef?.name ?? "?"}</span>
+      </div>
+      <div className="flex gap-1 mt-1">
+        {FAZ_LABELS.map((label, i) => (
+          <div
+            key={i}
+            className={"flex-1 rounded-sm py-0.5 text-center text-[9px] font-heading " +
+              (i + 1 < faz ? "bg-red-900/60 text-red-300" :
+               i + 1 === faz ? "bg-red-700/70 " + FAZ_COLORS[i] + " ring-1 ring-red-500/50" :
+               "bg-stone-900/60 text-stone-600")}
+          >
+            {label}
+          </div>
+        ))}
+      </div>
+      {darbePlani.ifsa_riski > 0 && (
+        <div className="flex items-center gap-1 text-[10px] text-amber-500">
+          <AlertTriangle className="w-3 h-3" /> İfşa riski: {Math.round(darbePlani.ifsa_riski * 100)}%
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FactionCard({
   faction, playerFactionId, playerAge, canJoin, joinBlocked, joinWeeksLeft,
-  onJoin, onLeave, onRebel, onInfluence, onDonate, busy, locations, player,
-  warDetail, onOpenDecision,
+  onJoin, onLeave, onRebel, onInfluence, onDonate,
+  onDarbaBaslat, onDarbaIptal, onMisyonerGonder,
+  busy, locations, player,
+  warDetail, onOpenDecision, allFactions,
 }) {
   const cfg = ftCfg(faction.type);
   const { Icon } = cfg;
@@ -560,6 +601,10 @@ function FactionCard({
   const [expanded, setExpanded] = useState(false);
   const [donateAmount, setDonateAmount] = useState(10);
   const [donateMsg, setDonateMsg] = useState(null);
+  const [showDarbaPanel, setShowDarbaPanel] = useState(false);
+  const [darbaHedefId, setDarbaHedefId] = useState("");
+  const [showMisyonerPanel, setShowMisyonerPanel] = useState(false);
+  const [misyonerLocId, setMisyonerLocId] = useState("");
   const atWar = faction.at_war_with?.length > 0;
 
   return (
@@ -607,7 +652,7 @@ function FactionCard({
               <Minus className="w-3 h-3" />
             </span>
           )}
-          <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {faction.member_count ?? faction.members?.length ?? 0}</span>
+          <span className="flex items-center gap-1 text-stone-400" title="Üye sayısı"><Users className="w-3 h-3" /> {faction.uye_sayisi ?? faction.member_count ?? faction.members?.length ?? 0}</span>
         </div>
       </div>
 
@@ -635,6 +680,34 @@ function FactionCard({
       {/* Hedef */}
       {faction.primary_goal && (
         <div className="text-[10px] text-stone-500 italic border-l-2 border-stone-800 pl-2">{faction.primary_goal}</div>
+      )}
+
+      {/* Darbe Planı (GDD v4 Bölüm 5) */}
+      {faction.darbe_plani && (
+        <DarbePlaniBadge darbePlani={faction.darbe_plani} factions={allFactions} />
+      )}
+
+      {/* İnanç Etkisi (GDD v4 Bölüm 4 — sadece dini tarikat) */}
+      {faction.type === "dini_tarikat" && faction.inanc_etkisi !== undefined && (
+        <div className={`flex items-center justify-between px-2 py-1.5 rounded-sm border text-xs
+          ${faction.inanc_etkisi >= 30
+            ? "border-purple-800 bg-purple-950/20"
+            : faction.inanc_etkisi >= 0
+            ? "border-stone-800 bg-stone-900/40"
+            : "border-red-900/60 bg-red-950/20"}`}
+        >
+          <span className="text-stone-400 flex items-center gap-1">
+            <Church className="w-3 h-3 text-purple-500" /> İnanç Etkisi
+          </span>
+          <span className={`font-heading ${
+            faction.inanc_etkisi >= 30 ? "text-purple-300"
+            : faction.inanc_etkisi >= 0 ? "text-stone-400"
+            : "text-red-400"}`}
+          >
+            {faction.inanc_etkisi > 0 ? `+${faction.inanc_etkisi}` : faction.inanc_etkisi}
+            {faction.inanc_etkisi >= 20 && <span className="text-[9px] ml-1 text-purple-400">→ gelir bonusu</span>}
+          </span>
+        </div>
       )}
 
       {/* Nüfuz Haritası */}
@@ -672,6 +745,129 @@ function FactionCard({
           </div>
           {donateMsg && (
             <div className={`text-xs ${donateMsg.ok ? "text-green-400" : "text-red-400"}`}>{donateMsg.text}</div>
+          )}
+        </div>
+      )}
+
+      {/* ── Darbe Başlatma Paneli (oyuncu factionı, darbe yoksa) ── */}
+      {isPlayerFaction && !faction.darbe_plani && playerAge >= 18 && (
+        <div className="border-t border-stone-900 pt-3">
+          {!showDarbaPanel ? (
+            <button
+              onClick={() => setShowDarbaPanel(true)}
+              className="flex items-center gap-1.5 text-[10px] text-stone-600 hover:text-red-400 transition-colors font-heading tracking-wide"
+            >
+              <Crosshair className="w-3 h-3" /> Darbe Planı Başlat
+            </button>
+          ) : (
+            <div className="space-y-2 rounded-sm border border-red-900/40 bg-red-950/10 p-2.5">
+              <div className="label-tiny text-red-400 flex items-center gap-1">
+                <Crosshair className="w-3 h-3" /> Darbe Hedefi Seç
+              </div>
+              <select
+                value={darbaHedefId}
+                onChange={e => setDarbaHedefId(e.target.value)}
+                className="w-full bg-stone-900 border border-stone-700 text-stone-200 text-xs rounded-sm px-2 py-1.5 focus:outline-none focus:border-red-700"
+              >
+                <option value="">— Hedef faction seç —</option>
+                {(allFactions || [])
+                  .filter(f => f.id !== faction.id && f.active)
+                  .map(f => (
+                    <option key={f.id} value={f.id}>{f.name}</option>
+                  ))}
+              </select>
+              <p className="text-[10px] text-stone-600">
+                Maliyet: 200 altın · 4 fazlı süreç · Her an ifşa riski var.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    if (!darbaHedefId) return;
+                    await onDarbaBaslat(darbaHedefId);
+                    setShowDarbaPanel(false);
+                    setDarbaHedefId("");
+                  }}
+                  disabled={!darbaHedefId || isBusy}
+                  className="btn-ember py-1 px-3 text-xs font-heading tracking-wider disabled:opacity-50"
+                >
+                  {isBusy ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : null}
+                  Planı Başlat
+                </button>
+                <button
+                  onClick={() => { setShowDarbaPanel(false); setDarbaHedefId(""); }}
+                  className="btn-ghost-ash py-1 px-3 text-xs font-heading"
+                >
+                  Vazgeç
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Aktif Darbe — iptal butonu ── */}
+      {isPlayerFaction && faction.darbe_plani?.oyuncu_baslatti && (
+        <div className="flex justify-end pt-1">
+          <button
+            onClick={onDarbaIptal}
+            disabled={isBusy}
+            className="text-[10px] text-red-600 hover:text-red-400 font-heading flex items-center gap-1 disabled:opacity-50"
+          >
+            <X className="w-3 h-3" /> Planı İptal Et
+          </button>
+        </div>
+      )}
+
+      {/* ── Misyoner Gönderme Paneli (Dini Tarikat üyesi) ── */}
+      {isPlayerFaction && faction.type === "dini_tarikat" && (
+        <div className="border-t border-stone-900 pt-3">
+          {!showMisyonerPanel ? (
+            <button
+              onClick={() => setShowMisyonerPanel(true)}
+              className="flex items-center gap-1.5 text-[10px] text-stone-600 hover:text-purple-400 transition-colors font-heading tracking-wide"
+            >
+              <Church className="w-3 h-3" /> Misyoner Gönder
+            </button>
+          ) : (
+            <div className="space-y-2 rounded-sm border border-purple-900/40 bg-purple-950/10 p-2.5">
+              <div className="label-tiny text-purple-400 flex items-center gap-1">
+                <Church className="w-3 h-3" /> Misyoner Hedef Bölge
+              </div>
+              <select
+                value={misyonerLocId}
+                onChange={e => setMisyonerLocId(e.target.value)}
+                className="w-full bg-stone-900 border border-stone-700 text-stone-200 text-xs rounded-sm px-2 py-1.5 focus:outline-none focus:border-purple-700"
+              >
+                <option value="">— Bölge seç —</option>
+                {(locations || []).map(loc => (
+                  <option key={loc.id} value={loc.id}>{loc.name}</option>
+                ))}
+              </select>
+              <p className="text-[10px] text-stone-600">
+                Maliyet: 40 altın · %70 başarı şansı · İnanç etkisi +8
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    if (!misyonerLocId) return;
+                    await onMisyonerGonder(misyonerLocId);
+                    setShowMisyonerPanel(false);
+                    setMisyonerLocId("");
+                  }}
+                  disabled={!misyonerLocId || isBusy}
+                  className="py-1 px-3 text-xs font-heading tracking-wider border border-purple-800 text-purple-300 hover:bg-purple-950/30 rounded-sm disabled:opacity-50 transition-all"
+                >
+                  {isBusy ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : null}
+                  Gönder
+                </button>
+                <button
+                  onClick={() => { setShowMisyonerPanel(false); setMisyonerLocId(""); }}
+                  className="btn-ghost-ash py-1 px-3 text-xs font-heading"
+                >
+                  Vazgeç
+                </button>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -1146,6 +1342,42 @@ export default function Factions() {
     } finally { setBusy(null); }
   };
 
+  const handleDarbaBaslat = async (hedefFactionId) => {
+    setBusy(playerFactionId);
+    try {
+      const { data } = await api.post("/game/factions/darbe/baslat", { hedef_faction_id: hedefFactionId });
+      if (data.success) { await load(); toast.success(data.message); }
+      else toast.error(data.message || "Darbe planı başlatılamadı.");
+      return data;
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Darbe başlatma hatası.");
+      return { success: false };
+    } finally { setBusy(null); }
+  };
+
+  const handleDarbaIptal = async () => {
+    setBusy(playerFactionId);
+    try {
+      const { data } = await api.post("/game/factions/darbe/iptal");
+      if (data.success) { await load(); toast.success("Darbe planı iptal edildi."); }
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "İptal hatası.");
+    } finally { setBusy(null); }
+  };
+
+  const handleMisyonerGonder = async (locationId) => {
+    setBusy(playerFactionId);
+    try {
+      const { data } = await api.post("/game/factions/misyoner-gonder", { location_id: locationId });
+      if (data.success) { await load(); toast.success(data.message); }
+      else toast.error(data.message || "Misyoner gönderilemedi.");
+      return data;
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Misyoner hatası.");
+      return { success: false };
+    } finally { setBusy(null); }
+  };
+
   // Savaşlar tabı için savaş kartına geçmiş çatışmaları ekle
   const warsWithLog = wars.map(w => ({
     ...w,
@@ -1254,9 +1486,12 @@ export default function Factions() {
                   canJoin={canJoin} joinBlocked={joinBlocked} joinWeeksLeft={joinWeeksLeft}
                   onJoin={handleJoin} onLeave={handleLeave} onRebel={handleRebel}
                   onInfluence={handleInfluenceOpen} onDonate={handleDonate}
+                  onDarbaBaslat={handleDarbaBaslat} onDarbaIptal={handleDarbaIptal}
+                  onMisyonerGonder={handleMisyonerGonder}
                   busy={busy} locations={locations} player={player}
                   warDetail={f.id === playerFactionId ? warDetail : null}
                   onOpenDecision={() => setShowDecision(true)}
+                  allFactions={factions}
                 />
               );
             })}

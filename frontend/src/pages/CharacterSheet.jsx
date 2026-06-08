@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -8,18 +8,15 @@ import {
   Heart, Coins, ShieldAlert, Briefcase, Sword,
   Users, Sparkles, Baby, Apple,
   Star, Flame, Eye, Crown,
-  Link as LinkIcon,
   Package, Shirt, Hand, Footprints, ShieldHalf, FlaskRound,
-  Award,
+  Award, Scroll,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 // ── Karakter Sekmeleri ──────────────────────────────────────────────────────
 const TABS = [
-  { id: "ozellikler", label: "Özellikler",       icon: Sparkles },
-  { id: "iliskiler",  label: "İlişkiler",         icon: Heart },
-  { id: "envanter",   label: "Envanter",          icon: Package },
-  { id: "unvanlar",   label: "Ünvanlar",          icon: Award },
+  { id: "ozellikler", label: "Özellikler", icon: Sparkles, badge: null },
+  { id: "dunya",      label: "Dünya",      icon: Users,    badge: null },
+  { id: "seruven",    label: "Serüven",    icon: Award,    badge: "perk" },
 ];
 
 // ── Stat meta ───────────────────────────────────────────────────────────────
@@ -39,6 +36,36 @@ const BANDS = [
   { id: "düşman",   label: "Düşmanlar", test: (s) => s <= -50,            cls: "border-red-800 text-red-400" },
 ];
 
+// ── Stat flavor sıfatlar ─────────────────────────────────────────────────────
+const STAT_FLAVOR = {
+  1:  { label: "Sefil",     color: "text-red-500" },
+  2:  { label: "Kırık",     color: "text-red-400" },
+  3:  { label: "Zayıf",     color: "text-orange-500" },
+  4:  { label: "Vasat",     color: "text-orange-400" },
+  5:  { label: "Ortalama",  color: "text-stone-400" },
+  6:  { label: "Yetkin",    color: "text-stone-300" },
+  7:  { label: "Güçlü",     color: "text-emerald-400" },
+  8:  { label: "Üstün",     color: "text-emerald-300" },
+  9:  { label: "Usta",      color: "text-amber-400" },
+  10: { label: "Efsanevi",  color: "text-amber-200" },
+};
+
+// ── İlişki skoru etiketleri ──────────────────────────────────────────────────
+const REL_FLAVOR = [
+  { min: 80,        label: "Sadık",       color: "text-emerald-300" },
+  { min: 50,        label: "Güvenilir",   color: "text-emerald-400" },
+  { min: 20,        label: "Dost",        color: "text-emerald-500" },
+  { min: 5,         label: "Yakın",       color: "text-stone-300" },
+  { min: -4,        label: "Nötr",        color: "text-stone-500" },
+  { min: -19,       label: "Soğuk",       color: "text-orange-500" },
+  { min: -49,       label: "Düşman",      color: "text-red-400" },
+  { min: -Infinity, label: "Kan Davası",  color: "text-red-500" },
+];
+
+function getRelFlavor(score) {
+  return REL_FLAVOR.find(r => score >= r.min) ?? REL_FLAVOR[REL_FLAVOR.length - 1];
+}
+
 // ── Envanter slot meta ──────────────────────────────────────────────────────
 const SLOT_META = [
   { key: "head",   label: "Baş",      icon: Crown },
@@ -57,6 +84,18 @@ const TYPE_ICON = {
   armor:      Shirt,
 };
 
+// ── Tarihi Başarı türleri ────────────────────────────────────────────────────
+const MILESTONE_TYPES = {
+  savaş_zaferi:    { icon: "🏆", label: "Savaş Zaferi" },
+  evlilik:         { icon: "💍", label: "Evlendi" },
+  doğum:           { icon: "👶", label: "Çocuk Sahibi Oldu" },
+  meslek_değişimi: { icon: "🔄", label: "Meslek Değiştirdi" },
+  kariyer_terfi:   { icon: "⭐", label: "Kariyer Terfisi" },
+  nesil_devri:     { icon: "🌿", label: "Nesil Devri" },
+  miras:           { icon: "📜", label: "Miras Aldı" },
+  okul:            { icon: "📚", label: "Eğitim Tamamladı" },
+};
+
 // ── Küçük bileşenler ────────────────────────────────────────────────────────
 function Bar({ value, max = 10, fill = "bg-orange-700", small = false }) {
   const w = Math.max(0, Math.min(100, (value / max) * 100));
@@ -67,17 +106,6 @@ function Bar({ value, max = 10, fill = "bg-orange-700", small = false }) {
   );
 }
 
-function KpiBlock({ icon: Icon, label, value, color = "text-stone-200" }) {
-  return (
-    <div>
-      <div className="flex items-center gap-1 label-tiny mb-1">
-        <Icon className="w-3 h-3" />
-        {label}
-      </div>
-      <div className={`font-heading text-2xl ${color}`}>{value}</div>
-    </div>
-  );
-}
 
 function SocialBar({ icon: Icon, label, value, max, displayVal, color, iconColor }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
@@ -100,20 +128,113 @@ function SocialBar({ icon: Icon, label, value, max, displayVal, color, iconColor
   );
 }
 
+// ── [3.1] HeroCard ───────────────────────────────────────────────────────────
+function HeroCard({ p }) {
+  const repColor =
+    (p.social?.reputation ?? 0) >= 30  ? "border-emerald-600 text-emerald-300 bg-emerald-900/30" :
+    (p.social?.reputation ?? 0) >= 10  ? "border-stone-400  text-stone-200  bg-stone-700/40"    :
+    (p.social?.reputation ?? 0) >= -10 ? "border-stone-600  text-stone-400  bg-stone-800/30"    :
+    (p.social?.reputation ?? 0) >= -30 ? "border-orange-600 text-orange-300 bg-orange-900/30"   :
+                                          "border-red-600    text-red-300    bg-red-900/30";
+
+  return (
+    <div className="card-frame p-5 space-y-4">
+      {/* Üst satır: isim + itibar badge */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="label-tiny mb-1">Karakter</div>
+          <h1
+            data-testid="char-name"
+            className="font-heading text-3xl text-stone-100 leading-tight truncate"
+          >
+            {p.name}
+          </h1>
+          {/* Kimlik satırı */}
+          <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-1 text-stone-400 text-sm">
+            <span data-testid="char-age">{p.age} yaşında</span>
+            <span className="text-stone-700">·</span>
+            <span className="capitalize">{p.gender}</span>
+            <span className="text-stone-700">·</span>
+            <span>{p.culture}</span>
+            <span className="text-stone-700">·</span>
+            <span>{p.religion}</span>
+          </div>
+          {/* Çocuk badge */}
+          {p.is_child && (
+            <span className="inline-flex items-center gap-1 mt-2 text-[10px] uppercase tracking-wider
+                             text-amber-400 border border-amber-900 px-1.5 py-0.5 rounded-sm">
+              <Baby className="w-3 h-3" /> Çocuk · 13 yaşında özgürleşeceksin
+            </span>
+          )}
+        </div>
+
+        {/* İtibar badge — sağ üst */}
+        {p.social?.reputation_label && (
+          <div className="shrink-0 text-right">
+            <div className="label-tiny mb-1">İtibar</div>
+            <span className={`text-xs font-heading px-2 py-1 rounded-sm border ${repColor}`}>
+              {p.social.reputation_label}
+            </span>
+            <div className="text-[10px] text-stone-500 mt-0.5">
+              {p.social.reputation > 0 ? "+" : ""}{p.social.reputation}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Meslek + Kariyer */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Briefcase className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+        <span className="text-stone-200 capitalize text-sm">{p.profession}</span>
+        {p.career?.title && (
+          <>
+            <span className="text-stone-700 text-xs">→</span>
+            <span className="text-amber-400 text-xs font-heading">{p.career.title}</span>
+          </>
+        )}
+        {/* Kariyer progress bar — sadece next_stage varsa */}
+        {p.career?.next_stage && (
+          <div className="flex items-center gap-1.5 ml-auto">
+            <div className="w-16 bg-stone-800 rounded-full h-1">
+              <div
+                className="bg-amber-500 h-1 rounded-full"
+                style={{ width: `${Math.min(100, p.career.progress_pct || 0)}%` }}
+              />
+            </div>
+            <span className="text-[10px] text-stone-500">
+              {p.career.job_xp || 0}/{p.career.next_stage.xp_required}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="divider-ash" />
+
+      {/* Alt KPI satırı: 4 vital */}
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { icon: Coins,       label: "Altın",  value: p.money,         color: "text-amber-400",   warn: false },
+          { icon: Heart,       label: "Sağlık", value: p.health,        color: "text-emerald-400", warn: (p.health ?? 100) < 30 },
+          { icon: Apple,       label: "Açlık",  value: p.hunger ?? 100, color: "text-orange-300",  warn: (p.hunger ?? 100) < 25 },
+          { icon: ShieldAlert, label: "Suç",    value: p.crime || 0,    color: "text-red-400",     warn: (p.crime || 0) > 20 },
+        ].map(({ icon: Icon, label, value, color, warn }) => (
+          <div key={label} className={`text-center p-2 rounded-sm border ${warn ? "border-red-900/60 bg-red-950/20" : "border-stone-800 bg-stone-900/40"}`}>
+            <Icon className={`w-3.5 h-3.5 mx-auto mb-0.5 ${warn ? "text-red-400" : "text-stone-500"}`} />
+            <div className={`font-heading text-sm ${warn ? "text-red-300" : color}`}>{value}</div>
+            <div className="text-[9px] text-stone-600 uppercase tracking-wider">{label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Özellikler sekmesi ──────────────────────────────────────────────────────
 function TabOzellikler({ p, skillsData }) {
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Stats + Skill Tree */}
       <div className="card-frame p-5 lg:col-span-2 space-y-5">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <KpiBlock icon={Coins}      label="Altın"  value={p.money}            color="text-amber-400" />
-          <KpiBlock icon={Heart}      label="Sağlık" value={p.health}           color="text-emerald-400" />
-          <KpiBlock icon={Apple}      label="Açlık"  value={p.hunger ?? 100}    color={(p.hunger ?? 100) < 25 ? "text-red-400" : "text-orange-300"} />
-          <KpiBlock icon={ShieldAlert}label="Suç"    value={p.crime || 0}       color="text-red-400" />
-        </div>
-        <div className="divider-ash" />
-
         <div>
           <div className="label-tiny mb-3">Temel Yetenekler (1-10)</div>
           <div className="grid grid-cols-2 gap-4">
@@ -129,13 +250,30 @@ function TabOzellikler({ p, skillsData }) {
                       <Icon className={`w-3 h-3 ${s.color}`} />
                       <span className={s.color}>{s.label}</span>
                     </span>
-                    <span className="text-stone-300 font-heading">{v}/10</span>
+                    <span className="flex items-center gap-1.5">
+                      <span className={`text-[10px] font-heading italic ${STAT_FLAVOR[v]?.color ?? "text-stone-400"}`}>
+                        {STAT_FLAVOR[v]?.label ?? ""}
+                      </span>
+                      <span className="text-stone-500 font-heading">{v}/10</span>
+                    </span>
                   </div>
                   <Bar value={v} max={10} fill={s.fill} />
                   <div className="text-[10px] text-stone-500 mt-0.5">XP: {xp}/{next}</div>
                 </div>
               );
             })}
+          </div>
+
+          {/* [3.2] Stat Dağıt linki */}
+          <div className="flex justify-end mt-2">
+            <Link
+              to="/oyun/statlar"
+              className="text-[11px] font-heading tracking-wider text-orange-500 hover:text-orange-400
+                         border border-orange-900/50 hover:border-orange-700 px-2 py-1 rounded-sm
+                         transition-colors"
+            >
+              Stat Dağıt →
+            </Link>
           </div>
         </div>
 
@@ -193,8 +331,7 @@ function TabOzellikler({ p, skillsData }) {
           </div>
         )}
 
-        {/* Aile */}
-        <AileCard p={p} />
+        {/* AileCard KALDIRILDI — Dünya sekmesine taşındı */}
       </div>
     </div>
   );
@@ -254,7 +391,16 @@ function AileCard({ p }) {
       </div>
       <div className="divider-ash" />
       <div>
-        <div className="label-tiny mb-1">Meslek</div>
+        {/* [3.3] Meslek Değiştir linki */}
+        <div className="flex items-center justify-between mb-1">
+          <div className="label-tiny">Meslek</div>
+          <Link
+            to="/oyun/meslek"
+            className="text-[10px] text-stone-500 hover:text-orange-400 transition-colors font-heading tracking-wider"
+          >
+            Değiştir →
+          </Link>
+        </div>
         <div className="flex items-center gap-2 text-stone-200 capitalize">
           <Briefcase className="w-3 h-3 text-stone-500" /> {p.profession}
         </div>
@@ -291,9 +437,11 @@ function AileCard({ p }) {
   );
 }
 
-// ── İlişkiler sekmesi ───────────────────────────────────────────────────────
-function TabIliskiler() {
+// ── Dünya sekmesi (Aile + İlişkiler) ────────────────────────────────────────
+function TabDunya() {
   const { state } = useGame();
+  const p = state.player;
+
   const grouped = useMemo(() => {
     const out = {};
     for (const band of BANDS) out[band.id] = [];
@@ -312,41 +460,81 @@ function TabIliskiler() {
   const total = Object.values(grouped).reduce((s, a) => s + a.length, 0);
 
   return (
-    <div className="space-y-4">
-      <p className="text-stone-400 text-sm">
-        {total === 0 ? "Henüz kimseyle bağ kurmadın." : `${total} kişiyle bir ilişkin var.`}
-      </p>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {BANDS.map((band) => (
-          <div key={band.id} className="card-frame p-4">
-            <div className={`text-xs px-2 py-1 inline-block border rounded-sm font-heading tracking-wider ${band.cls}`}>
-              {band.label} ({grouped[band.id].length})
-            </div>
-            <ul className="mt-3 space-y-1.5">
-              {grouped[band.id].map(({ npc, score }) => (
-                <li key={npc.id} className="flex justify-between text-sm">
-                  <Link to={`/oyun/npc/${npc.id}`} className="text-stone-200 hover:text-orange-400 truncate mr-2" data-testid={`rel-${npc.id}`}>
-                    {npc.name}
-                  </Link>
-                  <span className="text-stone-500 text-xs shrink-0">{score > 0 ? `+${score}` : score}</span>
-                </li>
+    <div className="space-y-6">
+      {/* Aile */}
+      <AileCard p={p} />
+
+      {/* İlişkiler başlığı */}
+      <div>
+        <div className="label-tiny mb-3 flex items-center gap-2">
+          <Heart className="w-3 h-3 text-stone-400" /> İlişkiler
+        </div>
+
+        {/* Özet satırı */}
+        <div className="flex items-center flex-wrap gap-2 text-xs mb-4">
+          <span className="text-stone-400">
+            {total === 0 ? "Henüz kimseyle bağ kurmadın." : `${total} kişiyle ilişkin var`}
+          </span>
+          {total > 0 && (
+            <>
+              <span className="text-stone-700">·</span>
+              {BANDS.filter(b => grouped[b.id].length > 0).map(band => (
+                <span key={band.id} className={`font-heading tracking-wider border px-1.5 py-0.5 rounded-sm ${band.cls}`}>
+                  {grouped[band.id].length} {band.label}
+                </span>
               ))}
-              {grouped[band.id].length === 0 && (
-                <li className="text-stone-600 text-xs italic">—</li>
-              )}
-            </ul>
-          </div>
-        ))}
+            </>
+          )}
+        </div>
+
+        {/* Band grid */}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {BANDS.map((band) => (
+            <div key={band.id} className="card-frame p-4">
+              <div className={`text-xs px-2 py-1 inline-block border rounded-sm font-heading tracking-wider ${band.cls}`}>
+                {band.label} ({grouped[band.id].length})
+              </div>
+              <ul className="mt-3 space-y-1.5">
+                {grouped[band.id].map(({ npc, score }) => (
+                  <li key={npc.id} className="flex justify-between items-center text-sm">
+                    <Link to={`/oyun/npc/${npc.id}`} className="text-stone-200 hover:text-orange-400 truncate mr-2" data-testid={`rel-${npc.id}`}>
+                      {npc.name}
+                    </Link>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={`text-[10px] font-heading italic ${getRelFlavor(score).color}`}>
+                        {getRelFlavor(score).label}
+                      </span>
+                      <span className="text-stone-600 text-xs">{score > 0 ? `+${score}` : score}</span>
+                    </div>
+                  </li>
+                ))}
+                {grouped[band.id].length === 0 && (
+                  <li className="text-stone-600 text-xs italic">—</li>
+                )}
+              </ul>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
 // ── Envanter sekmesi ─────────────────────────────────────────────────────────
+// [3.4] Filtre sabitleri
+const FILTERS = [
+  { key: "hepsi",  label: "Hepsi" },
+  { key: "food",   label: "Yiyecek" },
+  { key: "weapon", label: "Silah" },
+  { key: "armor",  label: "Zırh" },
+  { key: "other",  label: "Diğer" },
+];
+
 function TabEnvanter() {
   const { state, setState } = useGame();
   const [items, setItems]   = useState({});
   const [busy, setBusy]     = useState(false);
+  const [filter, setFilter] = useState("hepsi"); // [3.4]
 
   useEffect(() => {
     api.get("/game/items").then(({ data }) => setItems(data.items || {}));
@@ -356,6 +544,16 @@ function TabEnvanter() {
   const equipment  = state.player.equipment   || {};
   const bonuses    = state.player.equipment_bonuses || { attack: 0, defense: 0, charisma: 0 };
   const invEntries = Object.entries(inv).filter(([, q]) => q > 0);
+
+  // [3.4] Filtre mantığı
+  const filteredEntries = invEntries.filter(([key]) => {
+    if (filter === "hepsi") return true;
+    const item = items[key];
+    if (!item) return filter === "other";
+    if (filter === "other") return !["food", "drink", "consumable", "weapon", "armor"].includes(item.type);
+    if (filter === "food") return ["food", "drink", "consumable"].includes(item.type);
+    return item.type === filter;
+  });
 
   const currentLoc = state.world.locations.find((l) => l.id === state.player.location_id);
   const netWorth   = useMemo(() => {
@@ -463,11 +661,32 @@ function TabEnvanter() {
           <h2 className="font-heading text-lg flex items-center gap-2 text-stone-100"><Package className="w-4 h-4" /> Eşyalarım</h2>
           <div className="text-xs text-stone-500">Toplam Değer: <span className="text-amber-400">{netWorth} altın</span></div>
         </div>
-        {invEntries.length === 0 ? (
-          <div className="text-stone-500 text-sm">Heyben bomboş.</div>
+
+        {/* [3.4] Filtre bar */}
+        <div className="flex gap-1 flex-wrap mb-3">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`px-2 py-1 text-[10px] font-heading tracking-wider rounded-sm border transition-colors ${
+                filter === f.key
+                  ? "border-orange-700 bg-orange-950/40 text-orange-400"
+                  : "border-stone-800 text-stone-500 hover:text-stone-300 hover:border-stone-600"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* [3.4] filteredEntries kullan */}
+        {filteredEntries.length === 0 ? (
+          <div className="text-stone-500 text-sm">
+            {filter === "hepsi" ? "Heyben bomboş." : `${FILTERS.find(f => f.key === filter)?.label} türünde eşya yok.`}
+          </div>
         ) : (
           <ul className="divide-y divide-stone-900">
-            {invEntries.map(([key, qty]) => {
+            {filteredEntries.map(([key, qty]) => {
               const item     = items[key];
               const TypeIcon = item ? (TYPE_ICON[item.type] || Package) : Package;
               const canUse   = item && (item.type === "food" || item.type === "drink" || item.type === "consumable");
@@ -509,9 +728,35 @@ function TabEnvanter() {
   );
 }
 
+// ── Serüven sekmesi (Envanter + Ünvanlar) ────────────────────────────────────
+function TabSeruven({ p, skillsData }) {
+  return (
+    <div className="space-y-8">
+      {/* Envanter bölümü */}
+      <div>
+        <div className="label-tiny mb-3 flex items-center gap-2">
+          <Package className="w-3 h-3 text-stone-400" /> Envanter
+        </div>
+        <TabEnvanter />
+      </div>
+
+      <div className="divider-ash" />
+
+      {/* Ünvanlar bölümü */}
+      <div>
+        <div className="label-tiny mb-3 flex items-center gap-2">
+          <Award className="w-3 h-3 text-stone-400" /> Ünvanlar & Başarılar
+        </div>
+        <TabUnvanlar p={p} skillsData={skillsData} />
+      </div>
+    </div>
+  );
+}
+
 // ── Ünvanlar sekmesi ─────────────────────────────────────────────────────────
 function TabUnvanlar({ p, skillsData }) {
-  // Açılmış perks'leri göster
+  const { state } = useGame();
+
   const perks   = p.perks   || {};
   const skills  = p.skills  || {};
 
@@ -525,8 +770,15 @@ function TabUnvanlar({ p, skillsData }) {
     }
   }
 
-  // Reputation label badge
   const repLabel = p.social?.reputation_label;
+
+  // [3.6] Tarihi Başarılar
+  const milestones = useMemo(() => {
+    const seen = new Set();
+    return (state.events || [])
+      .filter(ev => MILESTONE_TYPES[ev.type] && !seen.has(ev.type) && seen.add(ev.type))
+      .slice(0, 12);
+  }, [state.events]);
 
   return (
     <div className="space-y-6">
@@ -585,6 +837,31 @@ function TabUnvanlar({ p, skillsData }) {
           </div>
         )}
       </div>
+
+      {/* [3.6] Tarihi Başarılar */}
+      <div className="card-frame p-5">
+        <div className="label-tiny mb-4 flex items-center gap-2">
+          <Scroll className="w-3 h-3 text-stone-400" /> Tarihi Başarılar
+        </div>
+        {milestones.length === 0 ? (
+          <p className="text-stone-500 text-sm">Henüz önemli bir olay yaşanmadı.</p>
+        ) : (
+          <div className="space-y-2">
+            {milestones.map((ev, i) => {
+              const m = MILESTONE_TYPES[ev.type];
+              return (
+                <div key={i} className="flex items-start gap-3 py-2 border-b border-stone-900 last:border-0">
+                  <span className="text-base shrink-0">{m.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-heading text-stone-300">{m.label}</div>
+                    <div className="text-[11px] text-stone-500 truncate">{ev.text}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -606,22 +883,13 @@ export default function CharacterSheet() {
   if (!state) return null;
   const p = state.player;
 
+  // [3.2] Bekleyen perk seçimi badge'i
+  const hasPerkChoice = (skillsData?.perk_choices?.length ?? 0) > 0;
+
   return (
     <div className="space-y-6 rise-in">
-      {/* Başlık */}
-      <div>
-        <div className="label-tiny">Karakter</div>
-        <h1 className="font-heading text-3xl text-stone-100">{p.name}</h1>
-        <p className="text-stone-400 text-sm flex items-center flex-wrap gap-x-2">
-          <span>{p.gender}</span>·<span data-testid="char-age">{p.age} yaşında</span>
-          {p.is_child && (
-            <span className="text-[10px] uppercase tracking-wider text-amber-400 border border-amber-900 px-1.5 py-0.5 rounded-sm flex items-center gap-1">
-              <Baby className="w-3 h-3" /> Çocuk · 13 yaşında özgürleşeceksin
-            </span>
-          )}
-          <span>·</span><span>{p.culture}</span>·<span>{p.religion}</span>
-        </p>
-      </div>
+      {/* HeroCard */}
+      <HeroCard p={p} />
 
       {/* Tab bar */}
       <div className="flex gap-1 border-b border-stone-800 overflow-x-auto pb-0">
@@ -631,7 +899,7 @@ export default function CharacterSheet() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-heading tracking-wider border-b-2 transition-all whitespace-nowrap ${
+              className={`relative flex items-center gap-1.5 px-4 py-2 text-xs font-heading tracking-wider border-b-2 transition-all whitespace-nowrap ${
                 tab === t.id
                   ? "border-orange-500 text-orange-400"
                   : "border-transparent text-stone-500 hover:text-stone-300"
@@ -639,6 +907,9 @@ export default function CharacterSheet() {
             >
               <Icon className="w-3 h-3" />
               {t.label}
+              {t.badge === "perk" && hasPerkChoice && (
+                <span className="absolute top-1.5 right-1 w-1.5 h-1.5 rounded-full bg-red-500 ring-1 ring-stone-950" />
+              )}
             </button>
           );
         })}
@@ -647,9 +918,8 @@ export default function CharacterSheet() {
       {/* Tab içeriği */}
       <div>
         {tab === "ozellikler" && <TabOzellikler p={p} skillsData={skillsData} />}
-        {tab === "iliskiler"  && <TabIliskiler />}
-        {tab === "envanter"   && <TabEnvanter />}
-        {tab === "unvanlar"   && <TabUnvanlar p={p} skillsData={skillsData} />}
+        {tab === "dunya"      && <TabDunya />}
+        {tab === "seruven"    && <TabSeruven p={p} skillsData={skillsData} />}
       </div>
     </div>
   );

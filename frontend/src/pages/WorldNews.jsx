@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useGame } from "@/lib/GameContext";
 import {
-  Newspaper, Loader2, Sun, Cloud, Flame, Sword, ShoppingBag,
+  Newspaper, Loader2, Sun, Cloud, Flame, Sword, ShoppingBag, Crosshair,
   Heart, Users, Star, AlertTriangle, Leaf, Gem, Drumstick,
   Globe, Clock, CheckCircle, Crown, Handshake, ArrowRightLeft,
 } from "lucide-react";
@@ -15,6 +15,7 @@ const CAT_CONFIG = {
   ekonomi: { label: "Ekonomi", color: "text-sky-400",      bg: "bg-sky-900/30",     border: "border-sky-800",     icon: ShoppingBag },
   tehlike: { label: "Tehlike", color: "text-red-400",      bg: "bg-red-900/30",     border: "border-red-800",     icon: AlertTriangle },
   haber:   { label: "Haber",   color: "text-purple-400",   bg: "bg-purple-900/30",  border: "border-purple-800",  icon: Star },
+  kriz:    { label: "Kriz",    color: "text-red-400",      bg: "bg-red-900/30",     border: "border-red-800",     icon: AlertTriangle },
 };
 
 const TYPE_ICON = {
@@ -37,6 +38,13 @@ const TYPE_ICON = {
   barış:              Handshake,
   göç:                ArrowRightLeft,
   meslek_edinme:      Star,
+  // GDD v4 Kriz Olayları
+  kriz_kuraklik:      Sun,
+  kriz_veba:          AlertTriangle,
+  kriz_yangin:        Flame,
+  uye_kazanildi:      Users,
+  darbe_hazırlık:     Crosshair,
+  faction_aktif:      Star,
 };
 
 // ─── Bileşenler ──────────────────────────────────────────────────────────────
@@ -148,12 +156,59 @@ function ActiveEventsBanner({ events }) {
 const FILTER_OPTIONS = [
   { key: "all",     label: "Tümü" },
   { key: "active",  label: "Aktif" },
+  { key: "kriz",    label: "🔥 Kriz" },
   { key: "doğa",    label: "Doğa" },
   { key: "sosyal",  label: "Sosyal" },
   { key: "ekonomi", label: "Ekonomi" },
   { key: "tehlike", label: "Tehlike" },
   { key: "haber",   label: "Haber" },
 ];
+
+// Kriz event tipini category'ye map et
+function resolveCategory(event) {
+  const KRIZ_TYPES = new Set(["kriz_kuraklik", "kriz_veba", "kriz_yangin"]);
+  if (KRIZ_TYPES.has(event.type)) return "kriz";
+  return event.category || "haber";
+}
+
+// Kriz için okunabilir başlık
+const KRIZ_BASLIK = {
+  kriz_kuraklik: "☀️ Kuraklık Felaketi",
+  kriz_veba:     "💀 Veba Salgını",
+  kriz_yangin:   "🔥 Büyük Yangın",
+};
+
+// ─── Kriz Banner (GDD v4 Bölüm 5.4) ─────────────────────────────────────────
+function CrisisBanner({ crisisEvents }) {
+  if (!crisisEvents || crisisEvents.length === 0) return null;
+  const KRIZ_STYLE = {
+    kriz_kuraklik: { bg: "bg-amber-950/30", border: "border-amber-800/60", color: "text-amber-400", Icon: Sun },
+    kriz_veba:     { bg: "bg-purple-950/30", border: "border-purple-800/60", color: "text-purple-400", Icon: AlertTriangle },
+    kriz_yangin:   { bg: "bg-red-950/30",    border: "border-red-800/60",    color: "text-red-400",    Icon: Flame },
+  };
+  return (
+    <div className="space-y-2">
+      <div className="label-tiny text-red-400 flex items-center gap-1.5">
+        <AlertTriangle className="w-3 h-3" /> AKTİF KRİZ OLAYLARI
+      </div>
+      {crisisEvents.map((ev) => {
+        const style = KRIZ_STYLE[ev.type] || KRIZ_STYLE.kriz_yangin;
+        const { Icon } = style;
+        const baslik = KRIZ_BASLIK[ev.type] || "Kriz";
+        return (
+          <div key={ev.id} className={`flex items-start gap-3 p-3 rounded-sm border ${style.border} ${style.bg}`}>
+            <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${style.color}`} />
+            <div className="flex-1 min-w-0">
+              <div className={`text-sm font-heading ${style.color}`}>{baslik}</div>
+              <div className="text-xs text-stone-300 leading-snug mt-0.5">{ev.text}</div>
+            </div>
+            <span className="text-[10px] text-stone-600 shrink-0">T{ev.day}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function WorldNews() {
   const { state } = useGame() || {};
@@ -216,30 +271,42 @@ export default function WorldNews() {
       {/* Aktif olaylar banner */}
       <ActiveEventsBanner events={active_events} />
 
-      {/* Kritik olaylar — tahta çıkış, savaş, barış, göç */}
-      {pinned_events.length > 0 && (
-        <div className="card-frame p-4 border border-red-900/60 bg-red-950/20">
-          <div className="label-tiny text-red-400 mb-3 flex items-center gap-1.5">
-            <Crown className="w-3 h-3" /> KRİTİK HABERLER
+      {/* Kriz Olayları Banner (GDD v4 Bölüm 5.4) */}
+      {(() => {
+        const KRIZ_TYPES = new Set(["kriz_kuraklik", "kriz_veba", "kriz_yangin"]);
+        const crisisEvs = pinned_events.filter(e => KRIZ_TYPES.has(e.type));
+        return crisisEvs.length > 0 ? <CrisisBanner crisisEvents={crisisEvs} /> : null;
+      })()}
+
+      {/* Kritik olaylar — tahta çıkış, savaş, barış, göç (kriz hariç, ayrı gösterildi) */}
+      {(() => {
+        const KRIZ_TYPES = new Set(["kriz_kuraklik", "kriz_veba", "kriz_yangin"]);
+        const nonCrisisPinned = pinned_events.filter(e => !KRIZ_TYPES.has(e.type));
+        if (nonCrisisPinned.length === 0) return null;
+        return (
+          <div className="card-frame p-4 border border-red-900/60 bg-red-950/20">
+            <div className="label-tiny text-red-400 mb-3 flex items-center gap-1.5">
+              <Crown className="w-3 h-3" /> KRİTİK HABERLER
+            </div>
+            <div className="space-y-2">
+              {nonCrisisPinned.map((ev) => {
+                const IconComp = TYPE_ICON[ev.type] || Globe;
+                const isWar   = ev.type === "savaş_ilanı" || ev.type === "savaş_hareketi";
+                const isPeace = ev.type === "barış";
+                const isThrone = ev.type === "tahta_çıkış";
+                const colCls  = isWar ? "text-red-400" : isPeace ? "text-emerald-400" : isThrone ? "text-amber-400" : "text-purple-400";
+                return (
+                  <div key={ev.id} className="flex items-start gap-2 text-sm">
+                    <IconComp className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${colCls}`} />
+                    <span className="text-stone-300 leading-snug">{ev.text}</span>
+                    <span className="text-[10px] text-stone-600 shrink-0 ml-auto">T{ev.day}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="space-y-2">
-            {pinned_events.map((ev) => {
-              const IconComp = TYPE_ICON[ev.type] || Globe;
-              const isWar   = ev.type === "savaş_ilanı" || ev.type === "savaş_hareketi";
-              const isPeace = ev.type === "barış";
-              const isThrone = ev.type === "tahta_çıkış";
-              const colCls  = isWar ? "text-red-400" : isPeace ? "text-emerald-400" : isThrone ? "text-amber-400" : "text-purple-400";
-              return (
-                <div key={ev.id} className="flex items-start gap-2 text-sm">
-                  <IconComp className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${colCls}`} />
-                  <span className="text-stone-300 leading-snug">{ev.text}</span>
-                  <span className="text-[10px] text-stone-600 shrink-0 ml-auto">T{ev.day}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Boş durum */}
       {active_events.length === 0 && (

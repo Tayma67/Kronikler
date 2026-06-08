@@ -85,8 +85,8 @@ export default function NewGame() {
   }
 
   return (
-    <div className="h-screen bg-stone-950 flex items-center justify-center p-4 overflow-hidden">
-      <div className="card-frame max-w-2xl w-full p-6 sm:p-10 rise-in overflow-y-auto max-h-full">
+    <div className="min-h-screen bg-stone-950 flex items-start justify-center p-4 py-8 overflow-y-auto">
+      <div className="card-frame max-w-2xl w-full p-6 sm:p-10 rise-in">
         <div className="flex items-center gap-3 mb-6">
           <Flame className="w-8 h-8 text-orange-600 ember-flicker" />
           <h1 className="font-heading text-3xl text-stone-100">Yeni Yolculuk</h1>
