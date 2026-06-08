@@ -1142,12 +1142,12 @@ function FactionGroupSection({
   onDarbaBaslat, onDarbaIptal, onMisyonerGonder,
   busy, locations, player, warDetail, onOpenDecision, allFactions,
 }) {
-  const groupFactions = factions.filter(f => group.types.includes(f.type));
-  if (groupFactions.length === 0) return null;
-
   const [open, setOpen] = useState(false);
+  const groupFactions = factions.filter(f => group.types.includes(f.type));
   const activeCount = groupFactions.filter(f => f.active).length;
   const playerInGroup = groupFactions.some(f => f.id === playerFactionId);
+
+  if (groupFactions.length === 0) return null;
 
   return (
     <div className="rounded-sm border border-stone-800/60 overflow-hidden">
