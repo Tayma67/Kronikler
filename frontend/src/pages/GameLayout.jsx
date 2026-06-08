@@ -361,7 +361,7 @@ export default function GameLayout() {
       {/* Main content */}
       <main className="flex-1 relative z-[2] flex flex-col min-h-0">
         {/* Mobile header — sabit kalır */}
-        <header className="lg:hidden sticky top-0 z-20 bg-stone-950/90 backdrop-blur border-b border-stone-800 px-4 py-3 flex items-center justify-between">
+        <header className="lg:hidden sticky top-0 z-20 bg-stone-950/95 backdrop-blur border-b border-amber-900/40 px-4 py-3 flex items-center justify-between" style={{boxShadow: '0 2px 12px rgba(0,0,0,0.5), inset 0 -1px 0 rgba(120,60,10,0.1)'}}>
           <div className="flex items-center gap-2 min-w-0">
             <Flame className="w-5 h-5 text-orange-600 ember-flicker shrink-0" />
             <div className="min-w-0">
@@ -397,7 +397,7 @@ export default function GameLayout() {
       </main>
 
       {/* Mobil alt navigation — 4 ana + "Menü" */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 border-t border-stone-800 bg-stone-950/95 backdrop-blur-sm flex pb-safe">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 border-t border-amber-900/40 bg-stone-950/97 backdrop-blur-sm flex pb-safe" style={{boxShadow: '0 -2px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(180,100,20,0.06)'}}>
         {visiblePrimary.map((n) => (
           <MobileNavItem
             key={n.to} {...n}

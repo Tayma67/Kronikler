@@ -100,8 +100,8 @@ const DUNYA_TYPES = new Set([
 // Kompakt stat pill (tek satır için)
 function StatPill({ icon: Icon, value, warn = false, color = "text-stone-300" }) {
   return (
-    <div className={`flex items-center gap-1 px-2 py-1 rounded-sm bg-stone-900/60 border ${warn ? "border-red-900/60" : "border-stone-800/60"}`}>
-      <Icon className={`w-3 h-3 shrink-0 ${warn ? "text-red-400" : "text-stone-500"}`} />
+    <div className={`flex items-center gap-1 px-2 py-1 rounded-sm border ${warn ? "bg-red-950/30 border-red-900/50" : "bg-amber-950/20 border-amber-900/30"}`}>
+      <Icon className={`w-3 h-3 shrink-0 ${warn ? "text-red-400" : "text-amber-800"}`} />
       <span className={`text-[11px] font-heading tabular-nums ${warn ? "text-red-300" : color}`}>{value}</span>
     </div>
   );
@@ -116,10 +116,11 @@ function EventCard({ event, pinned = false }) {
   const isKriz  = event?.type === "_kriz_alert";
   return (
     <div className={`flex gap-3 px-4 py-3 border-l-2 ${color} transition-colors
-      ${pinned ? "bg-stone-900/40" : ""}
-      ${isAlert ? "bg-red-950/10" : ""}
-      ${isWorld ? "bg-violet-950/10" : ""}
-      ${isKriz  ? "bg-red-950/20" : ""}
+      ${pinned ? "bg-amber-950/15" : ""}
+      ${isAlert ? "bg-red-950/15" : ""}
+      ${isWorld ? "bg-violet-950/15" : ""}
+      ${isKriz  ? "bg-red-950/25" : ""}
+      ${!pinned && !isAlert && !isWorld && !isKriz ? "bg-stone-900/20" : ""}
     `}>
       <span className="text-base shrink-0 leading-none mt-0.5">{icon}</span>
       <div className="flex-1 min-w-0">
@@ -589,23 +590,23 @@ export default function Dashboard() {
       <div className="flex flex-col max-w-2xl mx-auto" style={{ minHeight: "calc(100dvh - 56px)" }}>
 
         {/* ── ÜST BAŞLIK — kompakt, sabit ── */}
-        <div className="shrink-0 border-b border-stone-800/80 bg-stone-950/80 backdrop-blur-sm">
+        <div className="shrink-0 border-b border-amber-900/40 bg-gradient-to-b from-stone-900/90 to-stone-950/95 backdrop-blur-sm" style={{boxShadow: '0 2px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(180,120,40,0.08)'}}>
 
           {/* Karakter satırı */}
           <div className="flex items-center justify-between px-4 pt-3 pb-2 gap-3">
             {/* Sol: isim + yaş/tarih */}
             <div className="min-w-0">
               <div className="flex items-baseline gap-2 min-w-0">
-                <h1 className="font-heading text-xl text-stone-100 leading-none truncate">
+                <h1 className="font-heading text-xl text-amber-100 leading-none truncate" style={{textShadow: '0 0 20px rgba(180,100,20,0.4)'}}>
                   {player?.name || "İsimsiz"}
                 </h1>
                 {player?.is_child && (
-                  <span className="text-[9px] text-amber-500 font-heading border border-amber-900 px-1 shrink-0">ÇOCUK</span>
+                  <span className="text-[9px] text-amber-500 font-heading border border-amber-900/60 bg-amber-950/30 px-1 shrink-0">ÇOCUK</span>
                 )}
               </div>
               <div className="text-[11px] text-stone-500 mt-0.5 truncate">
                 {player?.age || 0} yaş
-                <span className="mx-1.5 text-stone-700">·</span>
+                <span className="mx-1.5 text-amber-900/70">·</span>
                 {cal.season} · {cal.month_name} {cal.year}
               </div>
             </div>
@@ -654,7 +655,7 @@ export default function Dashboard() {
         <div className="flex flex-col flex-1 min-h-0 pb-20">
 
           {/* Filtre + başlık */}
-          <div className="shrink-0 flex items-center gap-0 border-b border-stone-800/60">
+          <div className="shrink-0 flex items-center gap-0 border-b border-amber-900/30 bg-stone-950/50">
             <button
               onClick={() => setEventFilter("karakter")}
               className={`flex-1 py-2.5 text-[11px] font-heading tracking-wider transition-colors border-b-2 ${
@@ -684,7 +685,7 @@ export default function Dashboard() {
           </div>
 
           {/* Kaydırılabilir olay listesi — tam geri kalan yükseklik */}
-          <div className="flex-1 overflow-y-auto divide-y divide-stone-900/60">
+          <div className="flex-1 overflow-y-auto divide-y divide-amber-900/10" style={{background: 'linear-gradient(180deg, rgba(20,14,8,0) 0%, rgba(15,10,6,0.6) 100%)'}}>
 
             {/* Yıl özeti */}
             {yearSummary && (
@@ -722,7 +723,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── YAPIŞIK ALT BAR — sabit, her zaman görünür ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-stone-800 bg-stone-950/95 backdrop-blur-sm">
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-amber-900/40 bg-stone-950/97 backdrop-blur-sm" style={{boxShadow: '0 -2px 20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(180,100,20,0.07)'}}>
         <div className="max-w-2xl mx-auto px-3 py-2.5">
 
           {/* İlerleme bar — çok haftalı atlamada */}
