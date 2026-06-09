@@ -113,67 +113,6 @@ function mapChronicleEvent(ev, currentTurn) {
 }
 
 // ── STAT CARD ────────────────────────────────────────────────────────────────
-function StatCard({ icon, value, label, barColor, isLast }) {
-  const pct = Math.min(100, Math.max(0, (value / (label === 'AKÇE' ? 500 : 100)) * 100));
-  return (
-    <div
-      className="flex-1 flex flex-col items-center justify-center relative"
-      style={{
-        padding: '0.55rem 0.3rem 0.45rem',
-        background: 'var(--color-card)',
-        borderRight: isLast ? 'none' : '1px solid var(--color-border)',
-        boxShadow: `inset 0 1px 6px rgba(0,0,0,0.4)`,
-      }}
-    >
-      <div style={{
-        position: 'absolute', top: 0, left: '20%', right: '20%', height: '1px',
-        background: `linear-gradient(to right, transparent, ${barColor}44, transparent)`,
-      }} />
-      <div style={{
-        width: '1.8rem', height: '1.8rem', borderRadius: '50%',
-        background: `radial-gradient(circle, ${barColor}18 0%, transparent 70%)`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: '0.12rem',
-      }}>
-        <span style={{ fontSize: '1.1rem', lineHeight: 1, filter: `drop-shadow(0 0 4px ${barColor}88)` }}>
-          {icon}
-        </span>
-      </div>
-      <div className="font-display font-bold leading-none"
-        style={{
-          fontSize: '1.05rem',
-          color: 'var(--color-parchment)',
-          letterSpacing: '0.02em',
-          textShadow: `0 0 12px ${barColor}44, 0 1px 3px rgba(0,0,0,0.8)`,
-          marginBottom: '0.15rem',
-        }}>
-        {label === 'AKÇE' ? `${value}A` : value}
-      </div>
-      <div className="font-display uppercase"
-        style={{
-          fontSize: '0.48rem',
-          color: 'var(--color-parchment-muted)',
-          letterSpacing: '0.13em',
-          marginBottom: '0.4rem',
-        }}>
-        {label}
-      </div>
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: '3px',
-        background: 'rgba(0,0,0,0.5)',
-      }}>
-        <div style={{
-          height: '100%', width: `${pct}%`,
-          background: `linear-gradient(to right, ${barColor}77, ${barColor}EE)`,
-          boxShadow: `0 0 8px ${barColor}99, 0 0 3px ${barColor}`,
-          borderRadius: '0 2px 2px 0',
-          transition: 'width 0.6s ease',
-        }} />
-      </div>
-    </div>
-  );
-}
-
 // ── EVENT CARD ────────────────────────────────────────────────────────────────
 function EventCard({ event, isLast }) {
   const IconComp = event.icon;
@@ -426,15 +365,62 @@ export default function Dashboard() {
         }}>
           <div className="flex items-start justify-between">
 
-            {/* Avatar */}
-            <div style={{
-              width: '3.2rem', height: '3.2rem', borderRadius: '50%', flexShrink: 0,
-              border: '2px solid var(--color-gold)',
-              boxShadow: '0 0 0 3px rgba(201,168,76,0.15), 0 0 16px rgba(201,168,76,0.45)',
-              background: 'linear-gradient(135deg, #3A2010 0%, #2A1808 50%, #1A0E06 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ fontSize: '1.3rem' }}>👤</span>
+            {/* Avatar + Compact Stats */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+
+              {/* Avatar circle */}
+              <div style={{
+                width: '3.2rem', height: '3.2rem', borderRadius: '50%',
+                border: '2px solid var(--color-gold)',
+                boxShadow: '0 0 0 3px rgba(201,168,76,0.15), 0 0 16px rgba(201,168,76,0.45)',
+                background: 'linear-gradient(135deg, #3A2010 0%, #2A1808 50%, #1A0E06 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: '1.3rem' }}>👤</span>
+              </div>
+
+              {/* Mini stats */}
+              <div style={{
+                background: 'rgba(8,5,2,0.62)',
+                border: '1px solid rgba(201,168,76,0.16)',
+                borderRadius: '8px',
+                padding: '0.32rem 0.4rem',
+                backdropFilter: 'blur(8px)',
+                width: '3.6rem',
+                display: 'flex', flexDirection: 'column', gap: '0.26rem',
+              }}>
+                {[
+                  { icon: '❤', value: stats.health, color: '#C84040', max: 100,  suffix: '' },
+                  { icon: '🍎', value: stats.hunger, color: '#4A9A5A', max: 100,  suffix: '' },
+                  { icon: '💰', value: stats.money,  color: '#C9A84C', max: 500,  suffix: 'A' },
+                  { icon: '👑', value: stats.fame,   color: '#7B4FAF', max: 100,  suffix: '' },
+                ].map(({ icon, value, color, max, suffix }) => (
+                  <div key={icon} style={{ display: 'flex', alignItems: 'center', gap: '0.22rem' }}>
+                    <span style={{ fontSize: '0.55rem', lineHeight: 1, flexShrink: 0 }}>{icon}</span>
+                    <div style={{
+                      flex: 1, height: '2px',
+                      background: 'rgba(255,255,255,0.07)',
+                      borderRadius: '1px', overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${Math.min(100, Math.max(0, (value / max) * 100))}%`,
+                        background: `linear-gradient(to right, ${color}bb, ${color})`,
+                        boxShadow: `0 0 4px ${color}77`,
+                        borderRadius: '1px',
+                        transition: 'width 0.6s ease',
+                      }} />
+                    </div>
+                    <span style={{
+                      fontSize: '0.42rem', color: 'var(--color-parchment-dim)',
+                      minWidth: '1.4rem', textAlign: 'right',
+                      fontFamily: 'Cinzel, serif', fontWeight: 600, lineHeight: 1,
+                    }}>
+                      {value}{suffix}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Name / Title / Meta */}
@@ -518,21 +504,6 @@ export default function Dashboard() {
         </div>
 
         <div className="hero-sep" />
-      </div>
-
-      {/* ── STATS BAR ──────────────────────────────────────────────────────── */}
-      <div style={{
-        display: 'flex',
-        background: 'var(--color-surface)',
-        borderTop: '1px solid var(--color-border)',
-        borderBottom: '1px solid var(--color-border)',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
-        flexShrink: 0,
-      }}>
-        <StatCard icon="❤"  value={stats.health} label="SAĞLIK"  barColor="#C84040" />
-        <StatCard icon="🍎" value={stats.hunger} label="TOKLUK"  barColor="#4A9A5A" />
-        <StatCard icon="💰" value={stats.money}  label="AKÇE"    barColor="#C9A84C" />
-        <StatCard icon="👑" value={stats.fame}   label="TANINMA" barColor="#7B4FAF" isLast />
       </div>
 
       {/* ── SCROLLABLE CONTENT ─────────────────────────────────────────────── */}
