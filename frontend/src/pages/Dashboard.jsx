@@ -319,7 +319,7 @@ function HeroScene({ player, cal, rep }) {
   return (
     <div
       className="relative w-full shrink-0 overflow-hidden"
-      style={{ height: "44vw", maxHeight: "260px", minHeight: "185px" }}
+      style={{ height: "56vw", maxHeight: "320px", minHeight: "220px" }}
     >
       {/* ─ Görsel ─ */}
       <img
@@ -329,55 +329,61 @@ function HeroScene({ player, cal, rep }) {
         draggable={false}
       />
 
-      {/* ─ Üst koyu geçiş (isim/rep okunabilirliği) ─ */}
+      {/* ─ Üst koyu geçiş ─ */}
       <div className={`absolute inset-0 bg-gradient-to-b ${topGrad} pointer-events-none`} />
 
-      {/* ─ Alt koyu geçiş (stat pills okunabilirliği) ─ */}
-      <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/55 to-transparent pointer-events-none" />
+      {/* ─ Alt koyu geçiş — daha derin, stat pill satırını kaplar ─ */}
+      <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/65 to-transparent pointer-events-none" />
 
-      {/* ─ Üst katman: isim + tarih (sol) · itibar (sağ) ─ */}
-      <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-4 pt-3 pointer-events-none">
+      {/* ─ Üst katman: isim + tarih (sol) · itibar badge (sağ) ─ */}
+      <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-3 pt-3">
+        {/* Sol: isim + yaş */}
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h1
-              className="font-heading text-xl text-amber-100 leading-none"
-              style={{ textShadow: "0 2px 14px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.6)" }}
+              className="font-heading text-[19px] text-amber-100 leading-none tracking-wide"
+              style={{ textShadow: "0 2px 14px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.7)" }}
             >
               {player?.name || "İsimsiz"}
             </h1>
             {player?.is_child && (
-              <span className="text-[9px] text-amber-400 font-heading border border-amber-600/50 bg-black/50 backdrop-blur-sm px-1.5 py-0.5">
+              <span className="text-[9px] text-amber-400 font-heading border border-amber-600/50 bg-black/55 backdrop-blur-sm px-1.5 py-0.5 tracking-widest">
                 ÇOCUK
               </span>
             )}
           </div>
           <div
-            className="text-[11px] text-stone-300/90 mt-0.5"
-            style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
+            className="text-[11px] text-stone-300/85 mt-1 font-heading tracking-wide"
+            style={{ textShadow: "0 1px 6px rgba(0,0,0,0.95)" }}
           >
-            {age} yaş · {cal?.season} · {cal?.month_name} {cal?.year}
+            📅 {age} yaş &nbsp;·&nbsp; {cal?.season} &nbsp;·&nbsp; {cal?.month_name} {cal?.year}
           </div>
         </div>
-        <div className="text-right shrink-0 ml-2">
-          <div
-            className={`font-heading text-sm ${rep.color}`}
-            style={{ textShadow: "0 1px 8px rgba(0,0,0,0.9)" }}
-          >
-            {rep.label}
+
+        {/* Sağ: itibar rozeti — mockup tarzı kutu */}
+        <div className="shrink-0 ml-2 flex items-center gap-2 bg-black/50 backdrop-blur-sm border border-stone-600/30 rounded-sm px-2.5 py-1.5">
+          <div className="w-7 h-7 rounded-full bg-stone-800/80 border border-stone-600/50 flex items-center justify-center">
+            <User className="w-3.5 h-3.5 text-stone-400" />
           </div>
-          <div className="text-[10px] text-stone-400/80">
-            {player?.reputation > 0 ? "+" : ""}{player?.reputation || 0}
+          <div className="text-right">
+            <div className={`font-heading text-[11px] tracking-wider uppercase ${rep.color}`}
+              style={{ textShadow: "0 1px 8px rgba(0,0,0,0.9)" }}>
+              {rep.label}
+            </div>
+            <div className="text-[10px] text-stone-400/80 font-heading tabular-nums">
+              {player?.reputation || 0}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ─ Alt katman: stat pills ─ */}
-      <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <StatPill glass icon={Heart}  value={player?.health || 0}      warn={(player?.health || 0) < 25}   color="text-emerald-400" />
-          <StatPill glass icon={Apple}  value={player?.hunger ?? 100}     warn={(player?.hunger ?? 100) < 25} color="text-orange-400" />
-          <StatPill glass icon={Flame}  value={`${player?.money || 0}A`}                                      color="text-amber-400" />
-          <StatPill glass icon={Scroll} value={player?.crime || 0}        warn={(player?.crime || 0) > 50}    color={(player?.crime || 0) > 50 ? "text-red-400" : "text-stone-400"} />
+      {/* ─ Alt katman: stat pills — tam satır, 4 eşit genişlik ─ */}
+      <div className="absolute bottom-0 left-0 right-0 px-3 pb-3">
+        <div className="flex items-stretch gap-1.5">
+          <StatPill glass label="SAĞLIK"  icon={Heart}  value={player?.health || 0}      warn={(player?.health || 0) < 25}   color="text-red-400" />
+          <StatPill glass label="TOKLUK"  icon={Apple}  value={player?.hunger ?? 100}     warn={(player?.hunger ?? 100) < 25} color="text-orange-400" />
+          <StatPill glass label="AKÇE"    icon={Flame}  value={`${player?.money || 0}A`}                                      color="text-amber-400" />
+          <StatPill glass label="TANINMA" icon={Crown}  value={player?.reputation || 0}                                        color="text-stone-300" />
         </div>
       </div>
     </div>
@@ -385,8 +391,23 @@ function HeroScene({ player, cal, rep }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// glass=true → hero görseli üstündeki yarı saydam varyant
-function StatPill({ icon: Icon, value, warn = false, color = "text-stone-300", glass = false }) {
+// label= varsa hero-style dikey pill (büyük sayı + alt etiket), yoksa kompakt yatay pill
+function StatPill({ icon: Icon, value, warn = false, color = "text-stone-300", glass = false, label = null }) {
+  if (glass && label) {
+    return (
+      <div className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1.5 py-2 rounded-sm border backdrop-blur-sm ${
+        warn
+          ? "bg-red-950/65 border-red-700/55"
+          : "bg-black/50 border-stone-600/30"
+      }`}>
+        <div className="flex items-center gap-1">
+          <Icon className={`w-3 h-3 shrink-0 ${warn ? "text-red-400" : "text-amber-500"}`} />
+          <span className={`text-[13px] font-heading tabular-nums leading-none ${warn ? "text-red-300" : color}`}>{value}</span>
+        </div>
+        <span className="text-[8px] text-stone-500 font-heading tracking-widest uppercase mt-0.5">{label}</span>
+      </div>
+    );
+  }
   return (
     <div className={`flex items-center gap-1 px-2 py-1 rounded-sm border ${
       warn
@@ -401,8 +422,8 @@ function StatPill({ icon: Icon, value, warn = false, color = "text-stone-300", g
   );
 }
 
-// BitLife tarzı olay kartı — flavor text ile hikayeleştirilmiş
-function EventCard({ event, pinned = false, fresh = false }) {
+// BitLife tarzı olay kartı — icon kutusu, zaman damgası, sağda ok
+function EventCard({ event, pinned = false, fresh = false, timeAgo = null }) {
   const icon    = EVENT_ICONS[event?.type]  || "📜";
   const color   = EVENT_COLORS[event?.type] || "border-stone-700";
   const isAlert = event?.type?.startsWith("_alert");
@@ -419,52 +440,59 @@ function EventCard({ event, pinned = false, fresh = false }) {
     : isKriz  ? "text-red-300"
     : "text-stone-200";
 
+  const rowBg = fresh  ? "bg-emerald-950/10"
+    : pinned && !fresh ? "bg-amber-950/10"
+    : isAlert          ? "bg-red-950/10"
+    : isWorld          ? "bg-violet-950/10"
+    : isKriz           ? "bg-red-950/20"
+    : "";
+
+  const iconBoxBg = fresh  ? "bg-emerald-950/60 border-emerald-800/40"
+    : isAlert              ? "bg-amber-950/60 border-amber-800/40"
+    : isWorld              ? "bg-violet-950/60 border-violet-800/40"
+    : isKriz               ? "bg-red-950/60 border-red-800/40"
+    : "bg-stone-800/70 border-stone-700/40";
+
+  const badgeEl = fresh ? (
+    <span className="text-[9px] text-emerald-500 font-heading tracking-wider uppercase">YENİ</span>
+  ) : pinned && !fresh ? (
+    <span className={`text-[9px] font-heading tracking-wider uppercase ${
+      isKriz || isAlert ? "text-red-400" : "text-amber-600"
+    }`}>AKTİF</span>
+  ) : null;
+
   return (
-    <div className={`flex gap-3 px-3 py-3 mx-3 my-2 rounded-sm border border-l-4 ${color} transition-colors
-      ${fresh  ? "bg-emerald-950/15 border-r-emerald-900/20 border-t-emerald-900/20 border-b-emerald-900/20" : ""}
-      ${pinned && !fresh ? "bg-amber-950/20 border-r-amber-900/20 border-t-amber-900/20 border-b-amber-900/20" : ""}
-      ${isAlert ? "bg-red-950/20 border-r-red-900/15 border-t-red-900/15 border-b-red-900/15" : ""}
-      ${isWorld ? "bg-violet-950/20 border-r-violet-900/15 border-t-violet-900/15 border-b-violet-900/15" : ""}
-      ${isKriz  ? "bg-red-950/30 border-r-red-900/20 border-t-red-900/20 border-b-red-900/20" : ""}
-      ${!pinned && !fresh && !isAlert && !isWorld && !isKriz ? "bg-stone-900/30 border-r-stone-800/40 border-t-stone-800/40 border-b-stone-800/40" : ""}
-    `}>
-      <span className="text-base shrink-0 leading-none mt-0.5">{icon}</span>
+    <div className={`flex items-center gap-2.5 px-3 py-2.5 border-b border-stone-800/30 border-l-4 ${color} ${rowBg}`}>
+
+      {/* İkon kutusu */}
+      <div className={`w-8 h-8 shrink-0 rounded-sm flex items-center justify-center text-sm border ${iconBoxBg}`}>
+        {icon}
+      </div>
+
+      {/* Ana içerik */}
       <div className="flex-1 min-w-0">
-        {/* Narrative: kişisel, atmosferik ana anlatı (narrative_engine'den) */}
         {narrative ? (
-          <p className={`text-sm leading-relaxed ${mainTextColor}`}>
-            {narrative}
-          </p>
+          <p className={`text-[13px] leading-snug ${mainTextColor}`}>{narrative}</p>
         ) : (
           <>
-            {/* Atmosfer satırı — kısa, italik, soluk (FLAVOR_LINES fallback) */}
+            <p className={`text-[13px] leading-snug ${mainTextColor}`}>{event?.text || "Bilinmeyen olay"}</p>
             {flavor && (
-              <p className={`text-[11px] leading-snug mb-1 italic
-                ${fresh ? "text-emerald-400/80" : isKriz ? "text-red-400/70" : "text-stone-500"}
-              `}>
-                {flavor}
-              </p>
+              <p className="text-[11px] leading-snug mt-0.5 italic text-stone-500">{flavor}</p>
             )}
-            {/* Ana olay metni */}
-            <p className={`text-sm leading-snug ${mainTextColor}`}>
-              {event?.text || "Bilinmeyen olay"}
-            </p>
           </>
         )}
-        {/* Narrative varsa flat text'i küçük göster — datası gerekli ama ön plana çıkmasın */}
         {narrative && event?.text && (
-          <p className="text-[10px] text-stone-700 mt-1 leading-snug">
-            {event.text}
-          </p>
+          <p className="text-[10px] text-stone-700 mt-0.5 leading-snug">{event.text}</p>
         )}
-        {fresh && (
-          <span className="text-[9px] text-emerald-700 font-heading tracking-wider uppercase mt-0.5 inline-block">YENİ</span>
+        {badgeEl && <div className="mt-0.5">{badgeEl}</div>}
+      </div>
+
+      {/* Zaman damgası + ok */}
+      <div className="shrink-0 flex items-center gap-0.5 text-stone-600">
+        {timeAgo && (
+          <span className="text-[10px] font-heading text-stone-500 tabular-nums">{timeAgo}</span>
         )}
-        {pinned && !fresh && (
-          <span className="text-[9px] text-stone-600 font-heading tracking-wider uppercase mt-0.5 inline-block">
-            {isKriz ? "Son Kriz" : "Aktif"}
-          </span>
-        )}
+        <ChevronRight className="w-3.5 h-3.5 text-stone-700 shrink-0" />
       </div>
     </div>
   );
@@ -491,7 +519,7 @@ function FreshEventsPanel({ events, onDismiss }) {
       </div>
       <div className="divide-y divide-emerald-950/60 border-t border-emerald-900/30">
         {events.map((ev, i) => (
-          <EventCard key={`fresh-${i}`} event={ev} pinned={false} fresh />
+          <EventCard key={`fresh-${i}`} event={ev} pinned={false} fresh timeAgo={i === 0 ? "Yeni" : null} />
         ))}
       </div>
     </div>
@@ -1042,28 +1070,30 @@ export default function Dashboard() {
         {/* ── OLAY AKIŞI — esnek yükseklik ── */}
         <div className="flex flex-col flex-1 min-h-0 pb-40 mx-2 mb-2 rounded-sm border border-stone-700/50 overflow-hidden bg-amber-950/10" style={{boxShadow: 'inset 0 0 0 1px rgba(120,80,30,0.08), 0 2px 12px rgba(0,0,0,0.4)'}}>
 
-          {/* Filtre + başlık */}
-          <div className="shrink-0 flex items-center gap-0 border-b border-amber-900/30 bg-stone-950/50">
-            <button
-              onClick={() => setEventFilter("karakter")}
-              className={`flex-1 py-2.5 text-[11px] font-heading tracking-wider transition-colors border-b-2 ${
-                eventFilter === "karakter"
-                  ? "border-orange-600 text-orange-300 bg-orange-950/20"
-                  : "border-transparent text-stone-500 hover:text-stone-300"
-              }`}
-            >
-              👤 Karakter
-            </button>
-            <button
-              onClick={() => setEventFilter("dünya")}
-              className={`flex-1 py-2.5 text-[11px] font-heading tracking-wider transition-colors border-b-2 ${
-                eventFilter === "dünya"
-                  ? "border-violet-600 text-violet-300 bg-violet-950/20"
-                  : "border-transparent text-stone-500 hover:text-stone-300"
-              }`}
-            >
-              🌍 Dünya
-            </button>
+        {/* Filtre + başlık — "SON OLAYLAR" mockup tarzı header */}
+          <div className="shrink-0 flex items-center justify-between border-b border-amber-900/30 bg-stone-950/50">
+            <div className="flex items-center flex-1">
+              <button
+                onClick={() => setEventFilter("karakter")}
+                className={`flex-1 py-2.5 text-[11px] font-heading tracking-wider transition-colors border-b-2 ${
+                  eventFilter === "karakter"
+                    ? "border-orange-600 text-orange-300 bg-orange-950/20"
+                    : "border-transparent text-stone-500 hover:text-stone-300"
+                }`}
+              >
+                👤 Karakter
+              </button>
+              <button
+                onClick={() => setEventFilter("dünya")}
+                className={`flex-1 py-2.5 text-[11px] font-heading tracking-wider transition-colors border-b-2 ${
+                  eventFilter === "dünya"
+                    ? "border-violet-600 text-violet-300 bg-violet-950/20"
+                    : "border-transparent text-stone-500 hover:text-stone-300"
+                }`}
+              >
+                🌍 Dünya
+              </button>
+            </div>
             <Link
               to="/oyun/tarih"
               className="px-4 py-2.5 text-[10px] text-stone-600 hover:text-amber-400 font-heading tracking-wider border-b-2 border-transparent shrink-0"
@@ -1087,17 +1117,23 @@ export default function Dashboard() {
 
             {/* Sabitlenmiş uyarılar (üstte) */}
             {pinnedFeedEvents.map((ev, i) => (
-              <EventCard key={`pin-${i}`} event={ev} pinned />
+              <EventCard key={`pin-${i}`} event={ev} pinned timeAgo="Şimdi" />
             ))}
 
             {/* Sentetik anlatı (diff'ten) — sadece karakter sekmesinde */}
             {eventFilter === "karakter" && syntheticEvents.map((ev, i) => (
-              <EventCard key={`syn-${i}`} event={ev} />
+              <EventCard key={`syn-${i}`} event={ev} timeAgo={i === 0 ? "Yeni" : null} />
             ))}
 
             {/* Geçmiş olaylar */}
             {historyEvents.length > 0
-              ? historyEvents.map((ev, i) => <EventCard key={i} event={ev} />)
+              ? historyEvents.map((ev, i) => (
+                  <EventCard
+                    key={i}
+                    event={ev}
+                    timeAgo={i === 0 && syntheticEvents.length === 0 ? "Yeni" : null}
+                  />
+                ))
               : (
                 <div className="px-4 py-12 text-center">
                   <div className="text-2xl mb-2 opacity-30">
