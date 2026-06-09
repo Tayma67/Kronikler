@@ -320,7 +320,7 @@ function HeroScene({ player, cal, rep }) {
   return (
     <div
       className="relative w-full shrink-0 overflow-hidden"
-      style={{ height: "56vw", maxHeight: "320px", minHeight: "220px" }}
+      style={{ height: "52vw", maxHeight: "270px", minHeight: "190px" }}
     >
       {/* ─ Görsel ─ */}
       <img
@@ -337,7 +337,7 @@ function HeroScene({ player, cal, rep }) {
       <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/65 to-transparent pointer-events-none" />
 
       {/* ─ Üst katman: isim + tarih (sol) · itibar badge (sağ) ─ */}
-      <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-3 pt-3">
+      <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-3 pt-2">
         {/* Sol: isim + yaş */}
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -1175,9 +1175,6 @@ export default function Dashboard() {
 
         {/* ── HERO SAHNE — mevsim + yaş grubuna göre değişen görsel ── */}
         <HeroScene player={player} cal={cal} rep={rep} />
-
-        {/* ── HAYATİN paneli — mockup sol panel ── */}
-        <LifePanel player={player} state={state} />
 
         {/* Faction/Yönetici strip — varsa */}
         <StatusStrip player={player} world={state?.world} />
