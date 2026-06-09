@@ -219,6 +219,8 @@ const FLAVOR_LINES = {
 function getFlavorText(event) {
   if (!event?.type) return null;
   if (event.type.startsWith("_")) return null;   // uyarılar hikayeleştirilmez
+  // narrative alanı varsa FLAVOR_LINES kullanma — EventCard ayrı gösterecek
+  if (event.narrative) return null;
   if (event._synthetic && !FLAVOR_LINES[event.type]) return null;
   const lines = FLAVOR_LINES[event.type];
   if (!lines || lines.length === 0) return null;
@@ -295,7 +297,9 @@ function EventCard({ event, pinned = false, fresh = false }) {
   const isAlert = event?.type?.startsWith("_alert");
   const isWorld = event?.type === "_world_alert";
   const isKriz  = event?.type === "_kriz_alert";
-  const flavor  = getFlavorText(event);
+  const flavor   = getFlavorText(event);
+  // Narrative: zengin, kişisel, bağlamsal metin (narrative_engine'den)
+  const narrative = event?.narrative || null;
 
   const mainTextColor = fresh
     ? "text-emerald-100"
@@ -315,18 +319,33 @@ function EventCard({ event, pinned = false, fresh = false }) {
     `}>
       <span className="text-base shrink-0 leading-none mt-0.5">{icon}</span>
       <div className="flex-1 min-w-0">
-        {/* Atmosfer satırı — kısa, italik, soluk */}
-        {flavor && (
-          <p className={`text-[11px] leading-snug mb-1 italic
-            ${fresh ? "text-emerald-400/80" : isKriz ? "text-red-400/70" : "text-stone-500"}
-          `}>
-            {flavor}
+        {/* Narrative: kişisel, atmosferik ana anlatı (narrative_engine'den) */}
+        {narrative ? (
+          <p className={`text-sm leading-relaxed ${mainTextColor}`}>
+            {narrative}
+          </p>
+        ) : (
+          <>
+            {/* Atmosfer satırı — kısa, italik, soluk (FLAVOR_LINES fallback) */}
+            {flavor && (
+              <p className={`text-[11px] leading-snug mb-1 italic
+                ${fresh ? "text-emerald-400/80" : isKriz ? "text-red-400/70" : "text-stone-500"}
+              `}>
+                {flavor}
+              </p>
+            )}
+            {/* Ana olay metni */}
+            <p className={`text-sm leading-snug ${mainTextColor}`}>
+              {event?.text || "Bilinmeyen olay"}
+            </p>
+          </>
+        )}
+        {/* Narrative varsa flat text'i küçük göster — datası gerekli ama ön plana çıkmasın */}
+        {narrative && event?.text && (
+          <p className="text-[10px] text-stone-700 mt-1 leading-snug">
+            {event.text}
           </p>
         )}
-        {/* Ana olay metni */}
-        <p className={`text-sm leading-snug ${mainTextColor}`}>
-          {event?.text || "Bilinmeyen olay"}
-        </p>
         {fresh && (
           <span className="text-[9px] text-emerald-700 font-heading tracking-wider uppercase mt-0.5 inline-block">YENİ</span>
         )}
@@ -966,7 +985,7 @@ export default function Dashboard() {
         <StatusStrip player={player} world={state?.world} />
 
         {/* ── OLAY AKIŞI — esnek yükseklik ── */}
-        <div className="flex flex-col flex-1 min-h-0 pb-40 mx-2 mb-2 rounded-sm border border-stone-700/50 overflow-hidden" style={{boxShadow: 'inset 0 0 0 1px rgba(120,80,30,0.08), 0 2px 12px rgba(0,0,0,0.4)'}}>
+        <div className="flex flex-col flex-1 min-h-0 pb-40 mx-2 mb-2 rounded-sm border border-stone-700/50 overflow-hidden bg-amber-950/10" style={{boxShadow: 'inset 0 0 0 1px rgba(120,80,30,0.08), 0 2px 12px rgba(0,0,0,0.4)'}}>
 
           {/* Filtre + başlık */}
           <div className="shrink-0 flex items-center gap-0 border-b border-amber-900/30 bg-stone-950/50">
@@ -999,7 +1018,7 @@ export default function Dashboard() {
           </div>
 
           {/* Kaydırılabilir olay listesi — tam geri kalan yükseklik */}
-          <div className="flex-1 overflow-y-auto" style={{background: 'linear-gradient(180deg, rgba(20,14,8,0) 0%, rgba(15,10,6,0.6) 100%)'}}>
+          <div className="flex-1 overflow-y-auto" style={{background: 'linear-gradient(180deg, rgba(35,22,10,0.18) 0%, rgba(28,18,8,0.45) 100%)'}}>
 
             {/* Anlık Eylem Paneli (eylemden dönerken göster) */}
             {eventFilter === "karakter" && freshEvents?.length > 0 && (

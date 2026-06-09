@@ -3,6 +3,8 @@ chronicle_summary.py
 Oyuncunun tarihçesinden anlamlı bir haftalık/genel özet üretir.
 """
 from collections import Counter
+from narrative_engine import generate_year_story
+from calendar_tr import WEEKS_PER_YEAR
 
 
 # Olay tiplerinin Türkçe etiketi
@@ -71,19 +73,10 @@ def weekly_summary(state):
     name  = player.get("name", "Karakter")
     profession = player.get("profession", "")
 
-    # Kısa düz metin özet (frontier için de kullanılabilir)
+    # Kısa düz metin özet — narrative_engine ile zenginleştirilmiş
     def _brief():
-        parts = []
-        if not alive:
-            parts.append(f"{name} hayatını kaybetti.")
-        else:
-            parts.append(f"{name}, {age} yaşında, {profession}.")
-        if important:
-            labels = [EVENT_LABELS.get(e.get("type",""), e.get("type","")) for e in important[-3:]]
-            parts.append("Öne çıkan: " + ", ".join(labels) + ".")
-        if recent:
-            parts.append(f"Bu hafta {len(recent)} olay yaşandı.")
-        return " ".join(parts)
+        recent_events = [e for e in events if e.get("day", 0) >= max(0, turn - WEEKS_PER_YEAR)]
+        return generate_year_story(recent_events, player)
 
     return {
         # Sayısal meta
@@ -116,14 +109,16 @@ def weekly_summary(state):
 def full_chronicle(state, limit=50):
     """
     Kronik sayfası için tüm geçmişi yapılandırılmış döndür.
+    Her yıl için generate_year_story ile anlatılı özet eklenir.
     """
+    player = state.get("player", {})
     events = state.get("chronicle", state.get("history", []))
     recent = list(reversed(events[-limit:]))
 
     # Ay/dönem grupla
     grouped = {}
     for ev in recent:
-        day  = ev.get("day", 0)
+        day    = ev.get("day", 0)
         period = f"Turn {(day // 4) * 4 + 1}–{(day // 4) * 4 + 4}"
         grouped.setdefault(period, []).append(ev)
 
@@ -132,8 +127,26 @@ def full_chronicle(state, limit=50):
         for p, evs in grouped.items()
     ]
 
+    # Yıllık hikaye özetleri — her oyun yılı için bir paragraf
+    year_stories = []
+    for year_idx in range(max(0, state.get("turn", 0) // WEEKS_PER_YEAR) + 1):
+        year_start = year_idx * WEEKS_PER_YEAR
+        year_end   = year_start + WEEKS_PER_YEAR
+        year_evs   = [e for e in events if year_start <= e.get("day", 0) < year_end]
+        if year_evs or year_idx == 0:
+            # Oyuncunun o yıldaki yaşını tahmin et
+            year_player = dict(player)
+            year_player["age"] = player.get("base_age", 7) + year_idx
+            year_stories.append({
+                "year_idx":   year_idx,
+                "year_label": f"Yıl {year_idx + 1}",
+                "story":      generate_year_story(year_evs, year_player),
+                "event_count": len(year_evs),
+            })
+
     return {
-        "total":   len(events),
-        "periods": periods,
-        "brief":   weekly_summary(state)["brief"],
+        "total":       len(events),
+        "periods":     periods,
+        "brief":       weekly_summary(state)["brief"],
+        "year_stories": list(reversed(year_stories)),  # En yeni yıl önce
     }

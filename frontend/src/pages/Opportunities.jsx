@@ -7,27 +7,17 @@ import {
   Zap, Coins, Shield, Clock, RefreshCw,
   CheckCircle, XCircle, ChevronRight,
   Sword, Users, Star, AlertTriangle, Skull,
-  Loader2, TrendingUp, Heart,
+  Loader2, TrendingUp, Heart, X, Play, Target,
+  Dumbbell, Swords, TrendingDown, Sparkles,
 } from "lucide-react";
 
-// ── Urgency helpers — Adım 15 ────────────────────────────────────────────────
+// ── Urgency helpers ───────────────────────────────────────────────────────────
 
-/**
- * Kaç hafta kaldı? expires_at - currentTurn
- * Negatif = süresi geçmiş (UI'da gösterilmez zaten)
- */
 export function weeksRemaining(opp, currentTurn) {
   if (opp.expires_at == null) return null;
   return opp.expires_at - (currentTurn || 0);
 }
 
-/**
- * Urgency tier:
- *   "critical"  → 1 hafta kaldı (kırmızı, pulse)
- *   "warning"   → 2 hafta kaldı (turuncu)
- *   "info"      → 3+ hafta kaldı (taş/gri)
- *   null        → expires_at yok
- */
 export function urgencyTier(weeks) {
   if (weeks == null) return null;
   if (weeks <= 1)   return "critical";
@@ -39,19 +29,16 @@ const URGENCY_STYLES = {
   critical: {
     badge:  "bg-red-950 border border-red-700 text-red-300",
     pulse:  true,
-    prefix: "⏳ SON HAFTA",
     card:   "ring-1 ring-red-800",
   },
   warning: {
     badge:  "bg-orange-950 border border-orange-800 text-orange-300",
     pulse:  false,
-    prefix: "⏳",
     card:   "ring-1 ring-orange-900",
   },
   info: {
     badge:  "bg-stone-900 border border-stone-700 text-stone-400",
     pulse:  false,
-    prefix: "⏳",
     card:   "",
   },
 };
@@ -60,11 +47,7 @@ function UrgencyBadge({ weeks }) {
   const tier = urgencyTier(weeks);
   if (!tier) return null;
   const s = URGENCY_STYLES[tier];
-  const label =
-    tier === "critical"
-      ? "Son Hafta!"
-      : `${weeks} hafta kaldı`;
-
+  const label = tier === "critical" ? "Son Hafta!" : `${weeks} hafta kaldı`;
   return (
     <span
       className={`inline-flex items-center gap-1 text-[9px] font-heading tracking-wider uppercase px-1.5 py-0.5 rounded-sm ${s.badge} ${s.pulse ? "animate-pulse" : ""}`}
@@ -74,20 +57,40 @@ function UrgencyBadge({ weeks }) {
   );
 }
 
-// ── Category config ──────────────────────────────────────────────────────────
+// ── Skill map ─────────────────────────────────────────────────────────────────
+
+const SKILL_MAP = {
+  combat:  { label: "Dövüş",        icon: Sword,    color: "text-red-400",     barColor: "bg-red-500"     },
+  social:  { label: "Sosyal",       icon: Users,    color: "text-emerald-400", barColor: "bg-emerald-500" },
+  trade:   { label: "Ticaret",      icon: Coins,    color: "text-amber-400",   barColor: "bg-amber-500"   },
+  stamina: { label: "Dayanıklılık", icon: Dumbbell, color: "text-sky-400",     barColor: "bg-sky-500"     },
+};
+
+/** Mirrors backend formula: chance = min(0.92, risk_mult + skill * 0.07) */
+function calcDifficulty(opp, playerSkills) {
+  const skillVal = (playerSkills || {})[opp.skill_check] || 0;
+  const riskMult = { düşük: 0.80, orta: 0.60, yüksek: 0.40 }[opp.risk_level] ?? 0.60;
+  const chance   = Math.min(0.92, riskMult + skillVal * 0.07);
+  const pct      = Math.round(chance * 100);
+  if (chance >= 0.75) return { label: "Kolay", color: "text-emerald-400", barColor: "bg-emerald-500", pct };
+  if (chance >= 0.55) return { label: "Orta",  color: "text-amber-400",   barColor: "bg-amber-500",   pct };
+  return                     { label: "Zor",   color: "text-red-400",     barColor: "bg-red-500",     pct };
+}
+
+// ── Category & risk config ────────────────────────────────────────────────────
 
 const CAT = {
-  iş:      { label: "İş",       color: "text-amber-400",   border: "border-amber-900/60",  bg: "bg-amber-950/30",  icon: Coins  },
-  suç:     { label: "Suç",      color: "text-red-400",     border: "border-red-900/60",    bg: "bg-red-950/30",    icon: Skull  },
-  sosyal:  { label: "Sosyal",   color: "text-emerald-400", border: "border-emerald-900/60",bg: "bg-emerald-950/20",icon: Users  },
-  macera:  { label: "Macera",   color: "text-orange-400",  border: "border-orange-900/60", bg: "bg-orange-950/30", icon: Sword  },
-  kişisel: { label: "Kişisel",  color: "text-pink-400",    border: "border-pink-900/60",   bg: "bg-pink-950/20",   icon: Heart  },
+  iş:      { label: "İş",      color: "text-amber-400",   border: "border-amber-900/60",   bg: "bg-amber-950/30",  icon: Coins  },
+  suç:     { label: "Suç",     color: "text-red-400",     border: "border-red-900/60",     bg: "bg-red-950/30",    icon: Skull  },
+  sosyal:  { label: "Sosyal",  color: "text-emerald-400", border: "border-emerald-900/60", bg: "bg-emerald-950/20",icon: Users  },
+  macera:  { label: "Macera",  color: "text-orange-400",  border: "border-orange-900/60",  bg: "bg-orange-950/30", icon: Sword  },
+  kişisel: { label: "Kişisel", color: "text-pink-400",    border: "border-pink-900/60",    bg: "bg-pink-950/20",   icon: Heart  },
 };
 
 const RISK = {
-  düşük:   { label: "Düşük Risk",  color: "text-emerald-400", dot: "bg-emerald-500" },
-  orta:    { label: "Orta Risk",   color: "text-amber-400",   dot: "bg-amber-500"   },
-  yüksek:  { label: "Yüksek Risk", color: "text-red-400",     dot: "bg-red-500"     },
+  düşük:  { label: "Düşük Risk",  color: "text-emerald-400", dot: "bg-emerald-500" },
+  orta:   { label: "Orta Risk",   color: "text-amber-400",   dot: "bg-amber-500"   },
+  yüksek: { label: "Yüksek Risk", color: "text-red-400",     dot: "bg-red-500"     },
 };
 
 const STATUS_LABELS = {
@@ -98,7 +101,7 @@ const STATUS_LABELS = {
   başarısız:    "Başarısız",
 };
 
-// ── Sub-components ──────────────────────────────────────────────────────────
+// ── Sub-components ────────────────────────────────────────────────────────────
 
 function TagChip({ tag }) {
   return (
@@ -110,7 +113,7 @@ function TagChip({ tag }) {
 
 function RewardRow({ gold, rep, rel }) {
   return (
-    <div className="flex items-center gap-3 text-xs mt-2">
+    <div className="flex items-center gap-3 text-xs mt-2 flex-wrap">
       {gold > 0 && (
         <span className="flex items-center gap-1 text-amber-400">
           <Coins className="w-3 h-3" /> {gold} altın
@@ -123,7 +126,7 @@ function RewardRow({ gold, rep, rel }) {
       )}
       {rep < 0 && (
         <span className="flex items-center gap-1 text-red-400">
-          <TrendingUp className="w-3 h-3 rotate-180" /> {rep} itibar
+          <TrendingDown className="w-3 h-3" /> {rep} itibar
         </span>
       )}
       {rel > 0 && (
@@ -135,20 +138,150 @@ function RewardRow({ gold, rep, rel }) {
   );
 }
 
-function OpportunityCard({ opp, onAccept, onDecline, onComplete, busy, currentTurn }) {
-  const cat = CAT[opp.category] || CAT["iş"];
-  const risk = RISK[opp.risk_level] || RISK["orta"];
+// ── Task Execution Modal ──────────────────────────────────────────────────────
+
+function TaskExecutionModal({ opp, player, onConfirm, onClose, busy }) {
+  const cat        = CAT[opp.category] || CAT["iş"];
+  const CatIcon    = cat.icon;
+  const risk       = RISK[opp.risk_level] || RISK["orta"];
+  const skillCfg   = SKILL_MAP[opp.skill_check] || SKILL_MAP.social;
+  const SkillIcon  = skillCfg.icon;
+  const skillVal   = (player?.skills || {})[opp.skill_check] || 0;
+  const difficulty = calcDifficulty(opp, player?.skills);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm">
+      <div
+        className={`w-full max-w-lg sm:mx-4 rounded-t-2xl sm:rounded-xl border ${cat.border} bg-stone-950 overflow-hidden flex flex-col max-h-[90vh]`}
+      >
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-stone-800 shrink-0">
+          <div className="flex items-center gap-2">
+            <CatIcon className={`w-4 h-4 ${cat.color}`} />
+            <span className={`font-heading text-sm ${cat.color}`}>{opp.title}</span>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={busy}
+            className="text-stone-500 hover:text-stone-300 transition-colors p-1 rounded disabled:opacity-40"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* ── Scrollable body ── */}
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+
+          {/* Description */}
+          <p className="text-stone-300 text-sm leading-relaxed">{opp.description}</p>
+
+          {/* Skill check panel */}
+          <div className="rounded-lg bg-stone-900 border border-stone-800 p-3 space-y-2">
+            <div className="label-tiny text-stone-500">Gereken Beceri</div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <SkillIcon className={`w-4 h-4 ${skillCfg.color}`} />
+                <span className={`text-sm font-heading ${skillCfg.color}`}>{skillCfg.label}</span>
+              </div>
+              <span className="text-stone-400 text-xs tabular-nums">
+                Seviye <span className="text-stone-200 font-heading">{skillVal}</span>
+              </span>
+            </div>
+            <div className="w-full h-1.5 rounded-full bg-stone-800">
+              <div
+                className={`h-1.5 rounded-full ${skillCfg.barColor} transition-all`}
+                style={{ width: `${Math.min(100, skillVal * 10)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Success estimate */}
+          <div className="rounded-lg bg-stone-900 border border-stone-800 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="label-tiny text-stone-500">Başarı Tahmini</div>
+              <span className={`font-heading text-xs ${difficulty.color}`}>{difficulty.label}</span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-stone-800">
+              <div
+                className={`h-2 rounded-full ${difficulty.barColor} transition-all`}
+                style={{ width: `${difficulty.pct}%` }}
+              />
+            </div>
+            <div className="text-stone-600 text-[10px] tabular-nums">
+              Tahmini oran: ~%{difficulty.pct}
+            </div>
+          </div>
+
+          {/* Risk note */}
+          <div className="flex items-start gap-2 text-xs">
+            <AlertTriangle className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${risk.color}`} />
+            <div>
+              <span className={`font-heading ${risk.color}`}>{risk.label} — </span>
+              <span className="text-stone-400">{opp.risk}</span>
+            </div>
+          </div>
+
+          {/* Rewards at stake */}
+          <div className="rounded-lg border border-stone-800 p-3">
+            <div className="label-tiny text-stone-500 mb-1">Başarırsan Kazanırsın</div>
+            <RewardRow gold={opp.reward_gold} rep={opp.reward_reputation} rel={opp.reward_relation} />
+          </div>
+
+          {/* Penalty note for high-risk */}
+          {opp.risk_level === "yüksek" && (
+            <div className="flex items-center gap-2 text-[11px] text-red-400/70 border border-red-900/40 rounded-lg px-3 py-2 bg-red-950/20">
+              <Skull className="w-3 h-3 shrink-0" />
+              Başarısız olursan itibar kaybeder, sağlığın zarar görebilir.
+            </div>
+          )}
+        </div>
+
+        {/* ── Footer ── */}
+        <div className="px-5 py-4 border-t border-stone-800 flex gap-3 shrink-0">
+          <button
+            onClick={onClose}
+            disabled={busy}
+            className="btn-ghost-ash px-4 py-2.5 text-sm disabled:opacity-40"
+          >
+            Geri Dön
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={busy}
+            className="btn-ember flex-1 py-2.5 text-sm font-heading tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {busy ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Gerçekleştiriliyor…</>
+            ) : (
+              <><Play className="w-4 h-4" /> Görevi Gerçekleştir</>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Opportunity Card ──────────────────────────────────────────────────────────
+
+function OpportunityCard({ opp, playerSkills, onAccept, onDecline, onExecute, busy, currentTurn }) {
+  const cat     = CAT[opp.category] || CAT["iş"];
+  const risk    = RISK[opp.risk_level] || RISK["orta"];
   const CatIcon = cat.icon;
-  const isBusy = busy === opp.id;
+  const isBusy  = busy === opp.id;
 
   const isOpen     = opp.status === "açık";
   const isAccepted = opp.status === "kabul_edildi";
   const isDone     = ["tamamlandı", "reddedildi", "başarısız"].includes(opp.status);
 
-  // Adım 15: aciliyet
-  const weeks = isOpen ? weeksRemaining(opp, currentTurn) : null;
-  const tier  = urgencyTier(weeks);
+  const weeks     = isOpen ? weeksRemaining(opp, currentTurn) : null;
+  const tier      = urgencyTier(weeks);
   const ringClass = tier ? URGENCY_STYLES[tier].card : "";
+
+  // Skill & difficulty info for accepted card preview
+  const skillCfg   = SKILL_MAP[opp.skill_check] || SKILL_MAP.social;
+  const SkillIcon  = skillCfg.icon;
+  const difficulty = calcDifficulty(opp, playerSkills);
 
   return (
     <div
@@ -163,9 +296,7 @@ function OpportunityCard({ opp, onAccept, onDecline, onComplete, busy, currentTu
           <h3 className={`font-heading text-sm ${cat.color} truncate`}>{opp.title}</h3>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-          {/* Urgency badge — Adım 15 */}
           {isOpen && <UrgencyBadge weeks={weeks} />}
-          {/* Risk badge */}
           <span className={`flex items-center gap-1 text-[9px] font-heading tracking-wider uppercase ${risk.color}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${risk.dot}`} />
             {risk.label}
@@ -192,29 +323,61 @@ function OpportunityCard({ opp, onAccept, onDecline, onComplete, busy, currentTu
         </div>
       )}
 
-      {/* Status / Actions */}
+      {/* ── Status / Actions ── */}
       {isDone ? (
         <div className={`text-xs font-heading tracking-wider uppercase text-center py-1 ${
           opp.status === "tamamlandı" ? "text-emerald-400" :
-          opp.status === "başarısız"  ? "text-red-400" : "text-stone-500"
+          opp.status === "başarısız"  ? "text-red-400"     : "text-stone-500"
         }`}>
           {STATUS_LABELS[opp.status]}
         </div>
+
       ) : isAccepted ? (
-        <div className="flex gap-2">
-          <div className="text-[10px] font-heading text-orange-400 uppercase tracking-wider flex items-center gap-1">
-            <CheckCircle className="w-3 h-3" /> Kabul Edildi
+        // ── Accepted state: show skill preview + execute button ──
+        <div className="space-y-2.5 pt-1 border-t border-stone-800/60">
+          {/* Skill + difficulty mini row */}
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 text-stone-400">
+              <SkillIcon className={`w-3 h-3 ${skillCfg.color}`} />
+              <span>{skillCfg.label} sınavı</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className={`w-1.5 h-1.5 rounded-full ${difficulty.barColor}`} />
+              <span className={`font-heading text-[10px] tracking-wider ${difficulty.color}`}>
+                {difficulty.label}
+              </span>
+            </div>
           </div>
-          <button
-            onClick={() => onComplete(opp.id)}
-            disabled={isBusy}
-            className="btn-ember flex-1 py-1.5 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-50"
-          >
-            {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ChevronRight className="w-3.5 h-3.5" />}
-            Tamamlamayı Dene
-          </button>
+
+          {/* Slim success bar */}
+          <div className="w-full h-1 rounded-full bg-stone-800">
+            <div
+              className={`h-1 rounded-full ${difficulty.barColor}`}
+              style={{ width: `${difficulty.pct}%` }}
+            />
+          </div>
+
+          {/* Action row */}
+          <div className="flex items-center gap-2">
+            <div className="text-[9px] font-heading text-orange-400 uppercase tracking-wider flex items-center gap-1 shrink-0">
+              <CheckCircle className="w-3 h-3" /> Kabul Edildi
+            </div>
+            <button
+              onClick={() => onExecute(opp)}
+              disabled={isBusy}
+              className="btn-ember flex-1 py-1.5 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              {isBusy
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Target className="w-3.5 h-3.5" />
+              }
+              Görevi Yürüt
+            </button>
+          </div>
         </div>
+
       ) : (
+        // ── Open state: accept / decline ──
         <div className="flex gap-2">
           <button
             onClick={() => onDecline(opp.id)}
@@ -237,11 +400,11 @@ function OpportunityCard({ opp, onAccept, onDecline, onComplete, busy, currentTu
   );
 }
 
-// ── Filter bar ───────────────────────────────────────────────────────────────
+// ── Filter bar ────────────────────────────────────────────────────────────────
 
 const FILTERS = [
   { key: "all",     label: "Tümü"    },
-  { key: "iş",     label: "İş"      },
+  { key: "iş",     label: "İş"       },
   { key: "suç",    label: "Suç"      },
   { key: "sosyal",  label: "Sosyal"  },
   { key: "macera",  label: "Macera"  },
@@ -272,28 +435,43 @@ function FilterBar({ active, onChange }) {
   );
 }
 
-// ── Result overlay ───────────────────────────────────────────────────────────
+// ── Result overlay ────────────────────────────────────────────────────────────
 
 function ResultOverlay({ result, onClose }) {
   if (!result) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
       <div className={`card-frame p-6 max-w-sm w-full text-center ${
         result.success ? "border-emerald-900" : "border-red-900"
       }`}>
         {result.success
           ? <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
-          : <XCircle    className="w-10 h-10 text-red-400 mx-auto mb-3" />
+          : <XCircle     className="w-10 h-10 text-red-400     mx-auto mb-3" />
         }
         <h2 className={`font-heading text-lg mb-2 ${result.success ? "text-emerald-300" : "text-red-300"}`}>
           {result.success ? "Başarılı!" : "Başarısız"}
         </h2>
-        <p className="text-stone-300 text-sm mb-4">{result.message}</p>
-        {result.success && result.gold_gained > 0 && (
-          <div className="flex items-center justify-center gap-2 text-amber-400 font-heading text-sm mb-4">
-            <Coins className="w-4 h-4" /> +{result.gold_gained} Altın
-          </div>
-        )}
+        <p className="text-stone-300 text-sm mb-4 leading-relaxed">{result.message}</p>
+
+        {/* Stat changes */}
+        <div className="flex items-center justify-center gap-4 flex-wrap mb-4">
+          {result.gold_gained > 0 && (
+            <div className="flex items-center gap-1.5 text-amber-400 font-heading text-sm">
+              <Coins className="w-4 h-4" /> +{result.gold_gained} Altın
+            </div>
+          )}
+          {result.rep_gained > 0 && (
+            <div className="flex items-center gap-1.5 text-sky-400 font-heading text-sm">
+              <Star className="w-4 h-4" /> +{result.rep_gained} İtibar
+            </div>
+          )}
+          {result.rep_gained < 0 && (
+            <div className="flex items-center gap-1.5 text-red-400 font-heading text-sm">
+              <TrendingDown className="w-4 h-4" /> {result.rep_gained} İtibar
+            </div>
+          )}
+        </div>
+
         <button onClick={onClose} className="btn-ember px-6 py-2 text-sm font-heading tracking-wider">
           Devam
         </button>
@@ -302,27 +480,29 @@ function ResultOverlay({ result, onClose }) {
   );
 }
 
-// ── Main page ────────────────────────────────────────────────────────────────
+// ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function Opportunities() {
-  const { state, setState } = useGame();
-  const withRedirect = useActionRedirect("Fırsatlar");
-  const [opps, setOpps]         = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [busy, setBusy]         = useState(null);
-  const [filter, setFilter]     = useState("all");
-  const [result, setResult]     = useState(null);
+  const { state, setState }         = useGame();
+  const withRedirect                = useActionRedirect("Fırsatlar");
+  const [opps, setOpps]             = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [busy, setBusy]             = useState(null);
+  const [filter, setFilter]         = useState("all");
+  const [result, setResult]         = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [executingOpp, setExecutingOpp] = useState(null); // Task Execution Modal
 
-  const playerAge  = state?.player?.age ?? 0;
-  const currentTurn = state?.turn ?? 0;  // Adım 15
+  const playerAge   = state?.player?.age    ?? 0;
+  const currentTurn = state?.turn           ?? 0;
+  const player      = state?.player         ?? {};
 
   const load = useCallback(async () => {
     try {
       const { data } = await api.get("/game/opportunities");
       setOpps(data.opportunities || []);
-    } catch (e) {
+    } catch {
       toast.error("Fırsatlar yüklenemedi.");
     } finally {
       setLoading(false);
@@ -371,7 +551,13 @@ export default function Opportunities() {
     }
   };
 
-  const handleComplete = async (id) => {
+  /**
+   * Called from TaskExecutionModal's confirm button.
+   * Uses executingOpp.id so we don't need to pass it explicitly.
+   */
+  const handleComplete = async () => {
+    if (!executingOpp) return;
+    const id = executingOpp.id;
     setBusy(id);
     try {
       await withRedirect(async () => {
@@ -380,6 +566,7 @@ export default function Opportunities() {
           setState(data.state);
           setOpps(data.state.opportunities || []);
         }
+        setExecutingOpp(null);
         setResult(data);
         return data;
       });
@@ -403,31 +590,35 @@ export default function Opportunities() {
     }
   };
 
-  // Filtered display
-  const openOpps    = opps.filter(o => o.status === "açık");
-  const acceptedOpps= opps.filter(o => o.status === "kabul_edildi");
-  const historyOpps = opps.filter(o => ["tamamlandı","reddedildi","başarısız"].includes(o.status));
+  // Grouping
+  const openOpps     = opps.filter(o => o.status === "açık");
+  const acceptedOpps = opps.filter(o => o.status === "kabul_edildi");
+  const historyOpps  = opps.filter(o => ["tamamlandı", "reddedildi", "başarısız"].includes(o.status));
 
-  // Adım 15: sırala — en acil önce (az hafta kaldı = üstte)
   const sortByUrgency = (list) =>
-    [...list].sort((a, b) => {
-      const wa = a.expires_at ?? Infinity;
-      const wb = b.expires_at ?? Infinity;
-      return wa - wb;
-    });
+    [...list].sort((a, b) => (a.expires_at ?? Infinity) - (b.expires_at ?? Infinity));
 
   const filteredOpen = sortByUrgency(
     filter === "all" ? openOpps : openOpps.filter(o => o.category === filter)
   );
 
-  // Adım 15: "Son Şans" — bu hafta veya gelecek hafta kapanan fırsatlar
   const criticalOpps = filteredOpen.filter(o => {
     const w = weeksRemaining(o, currentTurn);
     return w != null && w <= 1;
   });
 
+  const cardProps = {
+    playerSkills: player.skills,
+    onAccept:     handleAccept,
+    onDecline:    handleDecline,
+    onExecute:    setExecutingOpp,
+    busy,
+    currentTurn,
+  };
+
   return (
     <div className="space-y-6 rise-in">
+
       {/* Header */}
       <div>
         <div className="label-tiny">Dünya Haberleri</div>
@@ -440,29 +631,23 @@ export default function Opportunities() {
           )}
         </h1>
         <div className="flex items-center gap-3 mt-1 text-xs text-stone-500">
-          <span>
-            <span className="text-amber-400 font-heading">{openOpps.length}</span> açık
-          </span>
+          <span><span className="text-amber-400 font-heading">{openOpps.length}</span> açık</span>
           {acceptedOpps.length > 0 && (
             <>
               <span className="text-stone-700">·</span>
-              <span>
-                <span className="text-orange-400 font-heading">{acceptedOpps.length}</span> üstlenildi
-              </span>
+              <span><span className="text-orange-400 font-heading">{acceptedOpps.length}</span> üstlenildi</span>
             </>
           )}
           {historyOpps.length > 0 && (
             <>
               <span className="text-stone-700">·</span>
-              <span>
-                <span className="text-stone-400 font-heading">{historyOpps.length}</span> geçmiş
-              </span>
+              <span><span className="text-stone-400 font-heading">{historyOpps.length}</span> geçmiş</span>
             </>
           )}
         </div>
       </div>
 
-      {/* Adım 15: "Son Şans" — bu hafta kapanacak fırsatlar */}
+      {/* Critical / Son Şans section */}
       {criticalOpps.length > 0 && (
         <div className="space-y-2">
           <div className="label-tiny flex items-center gap-2 text-red-400">
@@ -470,21 +655,12 @@ export default function Opportunities() {
             Son Şans — Bu Hafta Kapanıyor
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {criticalOpps.map(o => (
-              <OpportunityCard
-                key={o.id} opp={o}
-                onAccept={handleAccept}
-                onDecline={handleDecline}
-                onComplete={handleComplete}
-                busy={busy}
-                currentTurn={currentTurn}
-              />
-            ))}
+            {criticalOpps.map(o => <OpportunityCard key={o.id} opp={o} {...cardProps} />)}
           </div>
         </div>
       )}
 
-      {/* Active accepted opps highlight */}
+      {/* Accepted / Üstlenilen */}
       {acceptedOpps.length > 0 && (
         <div className="space-y-2">
           <div className="label-tiny flex items-center gap-2">
@@ -492,16 +668,7 @@ export default function Opportunities() {
             Üstlenilen Fırsatlar
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {acceptedOpps.map(o => (
-              <OpportunityCard
-                key={o.id} opp={o}
-                onAccept={handleAccept}
-                onDecline={handleDecline}
-                onComplete={handleComplete}
-                busy={busy}
-                currentTurn={currentTurn}
-              />
-            ))}
+            {acceptedOpps.map(o => <OpportunityCard key={o.id} opp={o} {...cardProps} />)}
           </div>
         </div>
       )}
@@ -541,21 +708,12 @@ export default function Opportunities() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {filteredOpen.map(o => (
-              <OpportunityCard
-                key={o.id} opp={o}
-                onAccept={handleAccept}
-                onDecline={handleDecline}
-                onComplete={handleComplete}
-                busy={busy}
-                currentTurn={currentTurn}
-              />
-            ))}
+            {filteredOpen.map(o => <OpportunityCard key={o.id} opp={o} {...cardProps} />)}
           </div>
         )}
       </div>
 
-      {/* History toggle */}
+      {/* History */}
       {historyOpps.length > 0 && (
         <div className="space-y-2">
           <button
@@ -568,19 +726,21 @@ export default function Opportunities() {
           </button>
           {showHistory && (
             <div className="grid gap-3 sm:grid-cols-2">
-              {historyOpps.map(o => (
-                <OpportunityCard
-                  key={o.id} opp={o}
-                  onAccept={handleAccept}
-                  onDecline={handleDecline}
-                  onComplete={handleComplete}
-                  busy={busy}
-                  currentTurn={currentTurn}
-                />
-              ))}
+              {historyOpps.map(o => <OpportunityCard key={o.id} opp={o} {...cardProps} />)}
             </div>
           )}
         </div>
+      )}
+
+      {/* Task Execution Modal */}
+      {executingOpp && (
+        <TaskExecutionModal
+          opp={executingOpp}
+          player={player}
+          onConfirm={handleComplete}
+          onClose={() => !busy && setExecutingOpp(null)}
+          busy={busy === executingOpp.id}
+        />
       )}
 
       {/* Result overlay */}

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback } from "react";
-import { api } from "@/lib/api";
+import { api, extractErrorMessage } from "@/lib/api";
 
 const GameContext = createContext(null);
 
@@ -58,25 +58,38 @@ export function GameProvider({ children }) {
   }, []);
 
   const advance = useCallback(async (weeks = 1) => {
-    try {
-      const { data } = await api.post(`/game/advance?weeks=${weeks}`);
-      setState(data);
-      if (data?.caravan_event) {
-        setLastCaravanEvent(data.caravan_event);
+    const MAX_RETRIES = 2;
+    let lastError = null;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const { data } = await api.post(`/game/advance?weeks=${weeks}`);
+        setState(data);
+        if (data?.caravan_event) {
+          setLastCaravanEvent(data.caravan_event);
+        }
+        // Adım 9: dünya olayı
+        if (data?.new_world_events?.length > 0) {
+          setLastWorldEvent(data.new_world_events[0]);
+        }
+        // GDD v4: kriz olayları
+        if (data?.crisis_events?.length > 0) {
+          setLastCrisisEvents(data.crisis_events);
+        }
+        return data;
+      } catch (error) {
+        lastError = error;
+        const isNetwork = error.message === "Network Error" || !error.response;
+        if (isNetwork && attempt < MAX_RETRIES) {
+          // Railway uyanma süresi için kısa bekle, sonra tekrar dene
+          await new Promise(res => setTimeout(res, 1200 * (attempt + 1)));
+          continue;
+        }
+        break;
       }
-      // Adım 9: dünya olayı
-      if (data?.new_world_events?.length > 0) {
-        setLastWorldEvent(data.new_world_events[0]);
-      }
-      // GDD v4: kriz olayları
-      if (data?.crisis_events?.length > 0) {
-        setLastCrisisEvents(data.crisis_events);
-      }
-      return data;
-    } catch (error) {
-      alert("İlerleme hatası: " + error.message);
-      return null;
     }
+    const msg = extractErrorMessage(lastError);
+    alert("İlerleme hatası: " + msg);
+    return null;
   }, []);
 
   const action = useCallback(async (path, body = null) => {

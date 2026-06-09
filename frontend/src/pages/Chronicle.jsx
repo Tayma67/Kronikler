@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
-import { ScrollText, Star, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { ScrollText, Star, Loader2, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
 
 const TYPE_LABEL = {
   başlangıç: "Başlangıç", ölüm: "Ölüm", doğum: "Doğum",
@@ -49,7 +49,15 @@ function EventRow({ event }) {
         <span className={`text-xs px-2 py-0.5 border rounded-sm font-heading tracking-wider ${colorClass}`}>
           {label}
         </span>
-        <div className="text-sm text-stone-200 mt-1.5">{event.text}</div>
+        {/* Narrative varsa onu göster (zengin, kişisel metin) */}
+        {event.narrative ? (
+          <>
+            <div className="text-sm text-stone-200 mt-1.5 leading-relaxed">{event.narrative}</div>
+            <div className="text-[10px] text-stone-700 mt-1">{event.text}</div>
+          </>
+        ) : (
+          <div className="text-sm text-stone-200 mt-1.5">{event.text}</div>
+        )}
       </div>
     </div>
   );
@@ -75,6 +83,33 @@ function PeriodGroup({ period, events, defaultOpen = false }) {
       {open && (
         <div className="space-y-1 p-2">
           {events.map(e => <EventRow key={e.id} event={e} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function YearStory({ yearData, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border border-stone-800 rounded-sm overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-stone-900/60 hover:bg-stone-900 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+          <span className="font-heading text-xs text-stone-300 tracking-wider">{yearData.year_label}</span>
+          <span className="text-[10px] text-stone-600">{yearData.event_count} olay</span>
+        </div>
+        {open
+          ? <ChevronUp className="w-3.5 h-3.5 text-stone-600" />
+          : <ChevronDown className="w-3.5 h-3.5 text-stone-600" />
+        }
+      </button>
+      {open && (
+        <div className="px-4 py-3 bg-stone-950/30 border-t border-stone-800">
+          <p className="text-sm text-stone-300 leading-relaxed italic">{yearData.story}</p>
         </div>
       )}
     </div>
@@ -148,40 +183,53 @@ export default function Chronicle() {
         </div>
       )}
 
-      {/* Özet Kutusu */}
-      {summary && (
-        <div className="card-frame p-4 space-y-3">
+      {/* ── Yılın Özeti (narrative_engine'den) ── */}
+      {summary?.brief && (
+        <div className="card-frame p-4 space-y-2 border-amber-900/30 bg-amber-950/5">
           <div className="flex items-center gap-2">
             <Star className="w-3.5 h-3.5 text-amber-500" />
-            <span className="font-heading text-stone-300 text-sm tracking-wider">HAFTALIK ÖZET</span>
+            <span className="font-heading text-stone-300 text-sm tracking-wider">BU YIL — HİKAYEN</span>
           </div>
-          <p className="text-sm text-stone-400">{summary.brief}</p>
-          {summary.important_events?.length > 0 && (
-            <div className="space-y-1 pt-1 border-t border-stone-800">
-              <div className="label-tiny mt-2">Önemli Olaylar</div>
-              {summary.important_events.map((e, i) => (
-                <div key={i} className="flex items-start gap-2 text-xs text-stone-300 py-1 border-b border-stone-900 last:border-0">
-                  <span className={`shrink-0 px-1.5 py-0.5 border rounded-sm font-heading ${TYPE_COLOR[e.type] || "border-stone-700 text-stone-500"}`}>
-                    {TYPE_LABEL[e.type] || e.type}
-                  </span>
-                  <span>{e.text}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {summary.top_event_types?.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {summary.top_event_types.map(({ label, count }) => (
-                <span key={label} className="text-[10px] border border-stone-700 text-stone-500 px-2 py-0.5 rounded-sm font-heading">
-                  {label} ×{count}
-                </span>
-              ))}
-            </div>
-          )}
+          <p className="text-sm text-stone-300 leading-relaxed">{summary.brief}</p>
         </div>
       )}
 
-      {/* Dönem Gruplu Tam Geçmiş */}
+      {/* ── Önemli Anlar ── */}
+      {summary?.important_events?.length > 0 && (
+        <div className="card-frame p-4 space-y-2">
+          <div className="label-tiny">Öne Çıkan Anlar</div>
+          {summary.important_events.map((e, i) => (
+            <div key={i} className="py-2 border-b border-stone-900 last:border-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`text-xs px-1.5 py-0.5 border rounded-sm font-heading ${TYPE_COLOR[e.type] || "border-stone-700 text-stone-500"}`}>
+                  {TYPE_LABEL[e.type] || e.type}
+                </span>
+                <span className="text-[10px] text-stone-600">Gün {e.day}</span>
+              </div>
+              {/* Narrative varsa onu göster */}
+              <p className="text-sm text-stone-300 leading-relaxed">
+                {e.narrative || e.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Yıllara Göre Hayat Hikayesi ── */}
+      {full?.year_stories?.length > 0 && (
+        <div className="space-y-2">
+          <div className="label-tiny">Hayat Hikayesi — Yıllara Göre</div>
+          {full.year_stories.map((ys, i) => (
+            <YearStory
+              key={ys.year_idx}
+              yearData={ys}
+              defaultOpen={i === 0}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── Dönem Gruplu Tam Geçmiş ── */}
       {full?.periods?.length > 0 ? (
         <div className="space-y-2">
           <div className="label-tiny">Tüm Geçmiş ({full.total} olay)</div>

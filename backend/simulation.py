@@ -6,6 +6,11 @@ from world_gen import (
     new_id, MALE_NAMES, FEMALE_NAMES, SURNAMES, GOODS, GOOD_BASE_PRICES,
     PROFESSIONS_COMMON, PERSONALITY_TRAITS,
 )
+from narrative_engine import (
+    narrate_death, narrate_birth, narrate_marriage,
+    narrate_war, narrate_peace, narrate_famine,
+    narrate_raid, narrate_festival, narrate_revolt, narrate_throne,
+)
 from calendar_tr import (
     WEEKS_PER_YEAR, SEASON_EFFECTS, season_for_turn, current_calendar, player_age,
 )
@@ -71,13 +76,15 @@ PROFESSION_NEEDS = {
 
 HISTORY_MAX = 300  # Son N event tutulur, eskisi atilir
 
-def _push_event(state, day, etype, text):
+def _push_event(state, day, etype, text, narrative=None):
     event = {
         "id": new_id(),
         "day": day,
         "type": etype,
         "text": text,
     }
+    if narrative:
+        event["narrative"] = narrative  # Zengin, kişisel anlatı metni
     state["history"].append(event)
     # Uzun oyunlarda sismemeyi onle
     if len(state["history"]) > HISTORY_MAX:
@@ -222,7 +229,8 @@ def _age_and_die(state, day):
                 if fam:
                     push_recent_event(fam, "spouse_lost" if fam.get("spouse_id") == npc["id"] else "friend_died", day)
             _push_event(state, day, "ölüm",
-                        f"{npc['name']} ({npc['age']}) {npc['location_name']}'de hayata gözlerini yumdu.")
+                        f"{npc['name']} ({npc['age']}) {npc['location_name']}'de hayata gözlerini yumdu.",
+                        narrative=narrate_death(npc, state["player"], state, day))
             # Mark relatives' personal events
             for rid in [npc["spouse_id"]] + list(npc["children_ids"]) + list(npc["parent_ids"]):
                 if not rid or rid == "PLAYER":
@@ -313,7 +321,8 @@ def _marry_and_birth(state, day):
             push_recent_event(b, "spouse_married", day, a["name"])
             used.add(a["id"]); used.add(b["id"])
             _push_event(state, day, "evlilik",
-                        f"{a['name']} ile {b['name']}, {a['location_name']}'de dünya evine girdi.")
+                        f"{a['name']} ile {b['name']}, {a['location_name']}'de dünya evine girdi.",
+                        narrative=narrate_marriage(a, b, state["player"], state))
             break
 
     couples_seen = set()
@@ -358,7 +367,8 @@ def _marry_and_birth(state, day):
             push_recent_event(partner, "child_born", day, child["name"])
             state["world"]["npcs"].append(child)
             _push_event(state, day, "doğum",
-                        f"{a['name']} ve {partner['name']}'in çocuğu {child['name']} doğdu.")
+                        f"{a['name']} ve {partner['name']}'in çocuğu {child['name']} doğdu.",
+                        narrative=narrate_birth(child, a, state["player"], state, day))
 
 
 # ---------- Economy ----------
@@ -481,7 +491,8 @@ def _random_events(state, day):
         loc = random.choice(state["world"]["locations"])
         loc["security"] = max(5, loc["security"] - random.randint(5, 20))
         _push_event(state, day, "haydut_baskını",
-                    f"Haydutlar {loc['name']}'i bastı. Güvenlik düştü.")
+                    f"Haydutlar {loc['name']}'i bastı. Güvenlik düştü.",
+                    narrative=narrate_raid(loc["name"]))
     if random.random() < 0.05:
         loc = random.choice([l for l in state["world"]["locations"] if l["kind"] != "kale"])
         loc["wealth"] = max(5, loc["wealth"] - random.randint(5, 15))
@@ -489,14 +500,16 @@ def _random_events(state, day):
         loc["market"]["buğday"]["supply"] = max(0, loc["market"]["buğday"]["supply"] - 20)
         _recompute_prices(loc)
         _push_event(state, day, "kıtlık",
-                    f"{loc['name']}'de kötü hasat: buğday arzı düştü, fiyatlar yükseldi.")
+                    f"{loc['name']}'de kötü hasat: buğday arzı düştü, fiyatlar yükseldi.",
+                    narrative=narrate_famine(loc["name"]))
     if random.random() < 0.04 and len(state["world"]["kingdoms"]) > 1:
         k1, k2 = random.sample(state["world"]["kingdoms"], 2)
         if k2["id"] not in k1["at_war_with"]:
             k1["at_war_with"].append(k2["id"])
             k2["at_war_with"].append(k1["id"])
             _push_event(state, day, "savaş_ilanı",
-                        f"{k1['name']} ile {k2['name']} arasında savaş ilan edildi!")
+                        f"{k1['name']} ile {k2['name']} arasında savaş ilan edildi!",
+                        narrative=narrate_war(k1["name"], k2["name"]))
             # War drives weapon demand
             for loc in state["world"]["locations"]:
                 if loc["kingdom_id"] in (k1["id"], k2["id"]):
@@ -527,7 +540,8 @@ def _random_events(state, day):
                 k1["at_war_with"] = [x for x in k1["at_war_with"] if x != k2_id]
                 k2["at_war_with"] = [x for x in k2["at_war_with"] if x != k1["id"]]
                 _push_event(state, day, "barış",
-                            f"{k1['name']} ile {k2['name']} arasında barış imzalandı.")
+                            f"{k1['name']} ile {k2['name']} arasında barış imzalandı.",
+                            narrative=narrate_peace(k1["name"], k2["name"]))
                 # Barış: askerleri kendi krallık topraklarına geri çek
                 for home_k in (k1, k2):
                     home_locs = [l for l in state["world"]["locations"]
@@ -545,7 +559,8 @@ def _random_events(state, day):
         k = random.choice(state["world"]["kingdoms"])
         k["stability"] = max(10, k["stability"] - random.randint(5, 20))
         _push_event(state, day, "isyan",
-                    f"{k['name']}'de bir lord isyan etti. İstikrar sarsıldı.")
+                    f"{k['name']}'de bir lord isyan etti. İstikrar sarsıldı.",
+                    narrative=narrate_revolt(k["name"]))
 
     # ── Doğal istikrar toparlanması ──
     # Savaşta olmayan krallıklar yavaşça toparlanır; uzun oyunlarda min'e yuvarlanmayı önler.
@@ -565,7 +580,8 @@ def _random_events(state, day):
         loc = random.choice(state["world"]["locations"])
         loc["prosperity"] = min(100, loc["prosperity"] + random.randint(2, 10))
         _push_event(state, day, "şenlik",
-                    f"{loc['name']}'de bir şenlik düzenlendi. Halk neşelendi.")
+                    f"{loc['name']}'de bir şenlik düzenlendi. Halk neşelendi.",
+                    narrative=narrate_festival(loc["name"]))
 
     # NPC GÖÇÜ: Güvenliği düşük şehirlerden yetişkinler daha güvenli yerlere taşınır
     unsafe = [l for l in state["world"]["locations"] if l["security"] < 25]

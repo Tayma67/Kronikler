@@ -54,11 +54,11 @@ from social_reputation import (
 SCHEMA_VERSION = "v3"
 
 WORLD_DEFAULTS = {
-    "n_kingdoms": 3,
-    "n_cities": 3,
-    "n_villages": 10,
-    "n_castles": 5,
-    "n_npcs": 100,
+    "n_kingdoms": 5,
+    "n_cities": 8,
+    "n_villages": 22,
+    "n_castles": 12,
+    "n_npcs": 1000,
 }
 
 # Child can do these (everything else gated until age 13)

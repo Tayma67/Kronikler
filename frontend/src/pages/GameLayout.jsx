@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useGame } from "@/lib/GameContext";
 import {
@@ -152,6 +152,8 @@ function MoreMenu({ items, state, onClose }) {
 export default function GameLayout() {
   const { state, fetchState, advance, lastActionPage, clearLastActionPage } = useGame() || {};
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDashboard = location.pathname === "/oyun" || location.pathname === "/oyun/";
   const [advancing, setAdvancing] = useState(false);
   const [showInheritance, setShowInheritance] = useState(false);
   const [inheritanceData, setInheritanceData] = useState(null);
@@ -360,7 +362,8 @@ export default function GameLayout() {
 
       {/* Main content */}
       <main className="flex-1 relative z-[2] flex flex-col min-h-0">
-        {/* Mobile header — sabit kalır */}
+        {/* Mobile header — dashboard dışındaki sayfalarda göster */}
+        {!isDashboard && (
         <header className="lg:hidden sticky top-0 z-20 bg-stone-950/95 backdrop-blur border-b border-amber-900/40 px-4 py-3 flex items-center justify-between" style={{boxShadow: '0 2px 12px rgba(0,0,0,0.5), inset 0 -1px 0 rgba(120,60,10,0.1)'}}>
           <div className="flex items-center gap-2 min-w-0">
             <Flame className="w-5 h-5 text-orange-600 ember-flicker shrink-0" />
@@ -389,6 +392,7 @@ export default function GameLayout() {
             {advancing ? "…" : "HAFTA"}
           </button>
         </header>
+        )}
 
         {/* Sadece bu alan scroll eder */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-32 lg:pb-6">

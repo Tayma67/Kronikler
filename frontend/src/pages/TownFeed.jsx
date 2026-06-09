@@ -5,6 +5,7 @@ import {
   Users, Heart, Sword, MessageSquare, Skull, Star,
   Baby, MapPin, Clock, Filter, AlertCircle, Flame,
 } from "lucide-react";
+import NPCList from "@/components/NPCList";
 
 const EVENT_TYPE_ICONS = {
   "savaş": { icon: Sword, color: "text-red-400", bg: "bg-red-950/20", border: "border-red-900/30" },
@@ -115,7 +116,7 @@ export default function TownFeed() {
       n.alive !== false &&
       n.location_id === player.location_id &&
       n.id !== "PLAYER"
-    ).slice(0, 20);
+    );
   }, [npcs, player.location_id]);
 
   // All NPCs with relationships to player
@@ -202,17 +203,12 @@ export default function TownFeed() {
         </div>
       )}
 
-      {/* Yakınındakiler */}
-      {localNPCs.length > 0 && (
-        <div className="space-y-2">
-          <div className="label-tiny">Aynı Lokasyondaki İnsanlar</div>
-          <div className="grid gap-1.5 sm:grid-cols-2">
-            {localNPCs.map(npc => (
-              <NPCCard key={npc.id} npc={npc} />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Yakınındakiler — paginated & filtered */}
+      <NPCList
+        npcs={localNPCs}
+        title="Aynı Lokasyondaki İnsanlar"
+        locationName={playerLoc?.name}
+      />
 
       {/* İlişkiler */}
       {relationships.length > 0 && (
