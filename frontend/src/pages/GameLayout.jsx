@@ -76,18 +76,32 @@ function MobileNavItem({ to, label, icon: Icon, end, testid, pulse }) {
       end={end}
       data-testid={`m-${testid}`}
       className={({ isActive }) =>
-        `flex flex-col items-center justify-center gap-1 py-2 flex-1 transition-colors ${
-          isActive ? "text-orange-400" : "text-stone-500 hover:text-stone-300"
+        `flex flex-col items-center justify-center gap-1 py-2 flex-1 transition-all relative ${
+          isActive
+            ? "text-amber-400"
+            : "text-stone-500 hover:text-stone-300"
         }`
       }
     >
-      <div className="relative">
-        <Icon className="w-6 h-6" />
-        {pulse && (
-          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-        )}
-      </div>
-      <span className="text-[10px] font-heading tracking-wider leading-none">{label}</span>
+      {({ isActive }) => (
+        <>
+          {/* Aktif göstergesi — üst amber çizgi */}
+          <div className={`absolute top-0 left-2 right-2 h-0.5 rounded-full transition-all ${
+            isActive ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" : "bg-transparent"
+          }`} />
+          <div className="relative">
+            <Icon className={`w-6 h-6 transition-all ${
+              isActive ? "drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]" : ""
+            }`} />
+            {pulse && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+            )}
+          </div>
+          <span className={`text-[10px] font-heading tracking-wider leading-none ${
+            isActive ? "text-amber-400" : ""
+          }`}>{label}</span>
+        </>
+      )}
     </NavLink>
   );
 }

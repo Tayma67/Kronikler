@@ -586,6 +586,117 @@ const FACTION_TYPE_LABELS = {
   gizli_cemiyet:     "Gizli Cemiyet",
 };
 
+// ─────────────────────────────────────────────────────────────────────────
+// HAYATİN paneli — mockup'taki sol panel, hero'nun hemen altında
+const SKILL_LABELS_TR = { combat: "Dövüş", trade: "Ticaret", crafting: "El Sanatı", social: "Sosyal" };
+const GOAL_LABELS_TR = {
+  "büyümek":      "Büyü, öğren ve kendi hikayeni yaz.",
+  "toprak_sahibi":"Toprak ve mülk edin.",
+  "zengin":       "Servet ve refah kazan.",
+  "şöhret":       "Adını tarihe yazdır.",
+  "güçlü":        "Güç ve nüfuz kazan.",
+};
+
+function LifePanel({ player, state }) {
+  const npcs = state?.world?.npcs || [];
+  const parentNpcs = (player?.parent_ids || []).map(pid => npcs.find(n => n.id === pid)).filter(Boolean);
+  const mother = parentNpcs.find(n => n.gender === "kadın") || parentNpcs.find(n => n.gender === "female");
+  const father = parentNpcs.find(n => n !== mother) || parentNpcs[0];
+
+  const currentLoc = (state?.world?.locations || []).find(l => l.id === player?.location_id);
+
+  const topSkills = Object.entries(player?.skills || {})
+    .filter(([, v]) => v > 15)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 2)
+    .map(([k]) => SKILL_LABELS_TR[k] || k);
+
+  const goalText = GOAL_LABELS_TR[player?.goal] || player?.goal || "Henüz belirsiz.";
+
+  return (
+    <div className="shrink-0 border-b border-stone-800/50 bg-gradient-to-b from-stone-950/60 to-stone-950/30">
+      <div className="px-3.5 pt-2.5 pb-2">
+        {/* Başlık */}
+        <div className="flex items-center gap-2 mb-2">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-amber-900/40" />
+          <span className="text-[9px] font-heading text-amber-700/70 tracking-[0.25em] uppercase">Hayatın</span>
+          <div className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-900/40" />
+        </div>
+
+        {/* 2 sütun grid */}
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+          {/* AİLEN */}
+          <div className="flex items-start gap-1.5 min-w-0">
+            <span className="text-sm shrink-0">👨‍👩‍👦</span>
+            <div className="min-w-0">
+              <div className="text-[8px] text-stone-600 font-heading tracking-widest uppercase">Ailen</div>
+              <div className="text-[11px] text-stone-300 leading-snug">
+                {mother?.name
+                  ? <><span className="text-stone-500">Anne:</span> {mother.name.split(" ")[0]}</>
+                  : <span className="text-stone-600 italic">Bilinmiyor</span>}
+              </div>
+              {father && (
+                <div className="text-[11px] text-stone-300 leading-snug">
+                  <span className="text-stone-500">Baba:</span> {father.name.split(" ")[0]}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* YAŞADIĞIN YER */}
+          <div className="flex items-start gap-1.5 min-w-0">
+            <span className="text-sm shrink-0">🏠</span>
+            <div className="min-w-0">
+              <div className="text-[8px] text-stone-600 font-heading tracking-widest uppercase">Yaşadığın Yer</div>
+              <div className="text-[11px] text-stone-300 leading-snug truncate">
+                {currentLoc?.name || <span className="text-stone-600 italic">Bilinmiyor</span>}
+              </div>
+              {currentLoc?.type && (
+                <div className="text-[9px] text-stone-600 capitalize">{currentLoc.type}</div>
+              )}
+            </div>
+          </div>
+
+          {/* MESLEĞİN */}
+          <div className="flex items-start gap-1.5 min-w-0">
+            <span className="text-sm shrink-0">⚒️</span>
+            <div className="min-w-0">
+              <div className="text-[8px] text-stone-600 font-heading tracking-widest uppercase">Mesleğin</div>
+              <div className="text-[11px] text-stone-300 leading-snug">
+                {player?.profession
+                  ? <span className="capitalize">{player.profession}</span>
+                  : <span className="text-stone-600 italic">Henüz bir mesleğin yok</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* BECERİLERİN */}
+          <div className="flex items-start gap-1.5 min-w-0">
+            <span className="text-sm shrink-0">⭐</span>
+            <div className="min-w-0">
+              <div className="text-[8px] text-stone-600 font-heading tracking-widest uppercase">Becerilerin</div>
+              <div className="text-[11px] text-stone-300 leading-snug">
+                {topSkills.length > 0
+                  ? topSkills.join(", ")
+                  : <span className="text-stone-600 italic">Henüz keşfedilmedi</span>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* HAYAT HEDEFİN — amber vurgulu alt bant */}
+        <div className="mt-2.5 pt-2 border-t border-stone-800/50 flex items-start gap-1.5">
+          <span className="text-sm shrink-0">🎯</span>
+          <div>
+            <div className="text-[8px] text-amber-700/80 font-heading tracking-widest uppercase mb-0.5">Hayat Hedefin</div>
+            <p className="text-[11px] text-amber-400/75 leading-snug">{goalText}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StatusStrip({ player, world }) {
   const factionId = player?.faction_id;
   const factions  = world?.factions || [];
@@ -1064,42 +1175,51 @@ export default function Dashboard() {
         {/* ── HERO SAHNE — mevsim + yaş grubuna göre değişen görsel ── */}
         <HeroScene player={player} cal={cal} rep={rep} />
 
+        {/* ── HAYATİN paneli — mockup sol panel ── */}
+        <LifePanel player={player} state={state} />
+
         {/* Faction/Yönetici strip — varsa */}
         <StatusStrip player={player} world={state?.world} />
 
         {/* ── OLAY AKIŞI — esnek yükseklik ── */}
         <div className="flex flex-col flex-1 min-h-0 pb-40 mx-2 mb-2 rounded-sm border border-stone-700/50 overflow-hidden bg-amber-950/10" style={{boxShadow: 'inset 0 0 0 1px rgba(120,80,30,0.08), 0 2px 12px rgba(0,0,0,0.4)'}}>
 
-        {/* Filtre + başlık — "SON OLAYLAR" mockup tarzı header */}
-          <div className="shrink-0 flex items-center justify-between border-b border-amber-900/30 bg-stone-950/50">
-            <div className="flex items-center flex-1">
-              <button
-                onClick={() => setEventFilter("karakter")}
-                className={`flex-1 py-2.5 text-[11px] font-heading tracking-wider transition-colors border-b-2 ${
-                  eventFilter === "karakter"
-                    ? "border-orange-600 text-orange-300 bg-orange-950/20"
-                    : "border-transparent text-stone-500 hover:text-stone-300"
-                }`}
-              >
-                👤 Karakter
-              </button>
-              <button
-                onClick={() => setEventFilter("dünya")}
-                className={`flex-1 py-2.5 text-[11px] font-heading tracking-wider transition-colors border-b-2 ${
-                  eventFilter === "dünya"
-                    ? "border-violet-600 text-violet-300 bg-violet-950/20"
-                    : "border-transparent text-stone-500 hover:text-stone-300"
-                }`}
-              >
-                🌍 Dünya
-              </button>
+        {/* SON OLAYLAR — amber başlık + TARİH linki */}
+          <div className="shrink-0 flex items-center justify-between px-3.5 pt-3 pb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-0.5 h-3.5 bg-amber-700 rounded-full" />
+              <span className="font-heading text-[11px] text-amber-600/90 tracking-[0.2em] uppercase">Son Olaylar</span>
             </div>
             <Link
               to="/oyun/tarih"
-              className="px-4 py-2.5 text-[10px] text-stone-600 hover:text-amber-400 font-heading tracking-wider border-b-2 border-transparent shrink-0"
+              className="text-[9px] text-stone-600 hover:text-amber-500 font-heading tracking-wider transition-colors flex items-center gap-0.5"
             >
-              TARİH →
+              Tümünü Gör <ChevronRight className="w-3 h-3" />
             </Link>
+          </div>
+
+        {/* Filtre sekmeleri */}
+          <div className="shrink-0 flex items-center border-b border-amber-900/30 bg-stone-950/50">
+            <button
+              onClick={() => setEventFilter("karakter")}
+              className={`flex-1 py-2 text-[11px] font-heading tracking-wider transition-colors border-b-2 ${
+                eventFilter === "karakter"
+                  ? "border-orange-600 text-orange-300 bg-orange-950/20"
+                  : "border-transparent text-stone-500 hover:text-stone-300"
+              }`}
+            >
+              👤 Karakter
+            </button>
+            <button
+              onClick={() => setEventFilter("dünya")}
+              className={`flex-1 py-2 text-[11px] font-heading tracking-wider transition-colors border-b-2 ${
+                eventFilter === "dünya"
+                  ? "border-violet-600 text-violet-300 bg-violet-950/20"
+                  : "border-transparent text-stone-500 hover:text-stone-300"
+              }`}
+            >
+              🌍 Dünya
+            </button>
           </div>
 
           {/* Kaydırılabilir olay listesi — tam geri kalan yükseklik */}
@@ -1152,33 +1272,37 @@ export default function Dashboard() {
       </div>
 
       {/* ── YAPIŞIK ALT BAR — sabit, nav barın üstünde ── */}
-      {/* Not: GameLayout main z-[2] stacking context'i nedeniyle z-40 çalışmıyor;
-           bottom offset ile nav'ın üstüne alınıyor */}
-      <div className="fixed left-0 right-0 z-40 border-t border-amber-900/40 bg-stone-950/60 backdrop-blur-md" style={{bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)', boxShadow: '0 -2px 20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(180,100,20,0.07)'}}>
-        <div className="max-w-2xl mx-auto px-3 py-2.5">
+      <div
+        className="fixed left-0 right-0 z-40 bg-stone-950/80 backdrop-blur-md"
+        style={{
+          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)',
+          borderTop: '1px solid rgba(180,100,20,0.18)',
+          boxShadow: '0 -4px 24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(200,120,30,0.08)',
+        }}
+      >
+        <div className="max-w-2xl mx-auto px-3 py-2">
 
-          {/* İlerleme bar — çok haftalı atlamada */}
+          {/* İlerleme çubuğu — çok haftalı atlama */}
           {advancing && advProgress && (
-            <div className="h-0.5 bg-stone-800 rounded-full overflow-hidden mb-2">
+            <div className="h-0.5 rounded-full overflow-hidden mb-2 bg-stone-800">
               <div
-                className="h-full bg-orange-600 transition-all duration-300"
+                className="h-full bg-gradient-to-r from-orange-700 to-amber-500 transition-all duration-300"
                 style={{ width: `${(advProgress.cur / advProgress.total) * 100}%` }}
               />
             </div>
           )}
 
           <div className="flex items-center gap-2">
-
-            {/* Dönem seçici — pill butonlar */}
+            {/* Dönem seçici */}
             <div className="flex gap-1">
               {PERIODS.map((p) => (
                 <button
                   key={p.label}
                   onClick={() => setSelectedPeriod(p)}
                   disabled={advancing}
-                  className={`px-2.5 py-2 text-[10px] font-heading tracking-wider rounded-sm border transition-colors disabled:opacity-40 ${
+                  className={`px-2.5 py-2 text-[10px] font-heading tracking-wider rounded-sm border transition-all disabled:opacity-40 ${
                     selectedPeriod.label === p.label
-                      ? "border-orange-700 bg-orange-950/50 text-orange-300"
+                      ? "border-amber-700/80 bg-amber-950/60 text-amber-300 shadow-[0_0_8px_rgba(180,100,20,0.2)]"
                       : "border-stone-800 text-stone-500 hover:text-stone-300 hover:border-stone-700"
                   }`}
                 >
@@ -1187,20 +1311,30 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {/* Ana ilerleme butonu */}
+            {/* Ana ilerleme butonu — mockup tarzı, büyük ve belirgin */}
             <button
               onClick={handleAdvance}
               disabled={advancing}
-              className="flex-1 btn-ember py-2.5 font-heading text-xs tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-1 py-3 font-heading text-[11px] tracking-[0.18em] flex items-center justify-center gap-2 disabled:opacity-50 rounded-sm transition-all relative overflow-hidden"
+              style={{
+                background: advancing
+                  ? 'linear-gradient(180deg, #78350f, #451a03)'
+                  : 'linear-gradient(180deg, #b45309 0%, #92400e 50%, #78350f 100%)',
+                border: '1px solid rgba(180,100,20,0.5)',
+                boxShadow: advancing ? 'none' : '0 0 20px rgba(180,100,20,0.25), inset 0 1px 0 rgba(251,191,36,0.12)',
+                color: '#fef3c7',
+              }}
             >
               {advancing
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : <Hourglass className="w-4 h-4" />}
-              {advancing
-                ? advProgress
-                  ? `${advProgress.cur} / ${advProgress.total} HAFTA…`
-                  : "GEÇİYOR…"
-                : `${selectedPeriod.label.toUpperCase()} İLERLE`}
+                ? <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                : <Hourglass className="w-4 h-4 text-amber-400 shrink-0" style={{filter: 'drop-shadow(0 0 4px rgba(251,191,36,0.5))'}} />}
+              <span>
+                {advancing
+                  ? advProgress
+                    ? `${advProgress.cur} / ${advProgress.total} Hafta…`
+                    : "Geçiyor…"
+                  : `${selectedPeriod.label} İlerle`}
+              </span>
             </button>
           </div>
         </div>
