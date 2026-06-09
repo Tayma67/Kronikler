@@ -278,13 +278,124 @@ const DUNYA_TYPES = new Set([
   "_world_alert", "_kriz_alert",
 ]);
 
-// ── sub-components ────────────────────────────────────────────────────────
+// ── HERO SAHNE SİSTEMİ ───────────────────────────────────────────────────
+// Görsel adları: /images/hero/{yaşGrubu}_{mevsim}.jpg
+// Mevcut görseller: cocuk_ilkbahar, cocuk_yaz, cocuk_sonbahar, cocuk_kis
+// Yeni yaş grubu görselleri eklendikçe availableAgeGroups'a ekle
 
-// Kompakt stat pill (tek satır için)
-function StatPill({ icon: Icon, value, warn = false, color = "text-stone-300" }) {
+const SEASON_KEY_MAP = {
+  "İlkbahar": "ilkbahar",
+  "Yaz":      "yaz",
+  "Sonbahar": "sonbahar",
+  "Kış":      "kis",
+};
+
+const SEASON_TOP_GRADIENT = {
+  "İlkbahar": "from-emerald-950/65 via-emerald-950/20 to-transparent",
+  "Yaz":      "from-amber-950/55 via-amber-950/15 to-transparent",
+  "Sonbahar": "from-orange-950/70 via-orange-950/20 to-transparent",
+  "Kış":      "from-slate-950/80 via-slate-950/25 to-transparent",
+};
+
+// Hangi yaş grubu görsellerinin hazır olduğunu buradan yönet
+const AVAILABLE_AGE_GROUPS = ["cocuk"]; // genişledikçe: "genc", "yetiskin", "yasli"
+
+function getHeroImage(age, season) {
+  const ageGroup = age >= 50 ? "yasli"
+                : age >= 18 ? "yetiskin"
+                : age >= 13 ? "genc"
+                : "cocuk";
+  const seasonKey    = SEASON_KEY_MAP[season] || "kis";
+  const resolvedAge  = AVAILABLE_AGE_GROUPS.includes(ageGroup) ? ageGroup : "cocuk";
+  return `/images/hero/${resolvedAge}_${seasonKey}.jpg`;
+}
+
+function HeroScene({ player, cal, rep }) {
+  const age     = player?.age || 7;
+  const season  = cal?.season || "Kış";
+  const heroSrc = getHeroImage(age, season);
+  const topGrad = SEASON_TOP_GRADIENT[season] || SEASON_TOP_GRADIENT["Kış"];
+
   return (
-    <div className={`flex items-center gap-1 px-2 py-1 rounded-sm border ${warn ? "bg-red-950/30 border-red-900/50" : "bg-amber-950/20 border-amber-900/30"}`}>
-      <Icon className={`w-3 h-3 shrink-0 ${warn ? "text-red-400" : "text-amber-800"}`} />
+    <div
+      className="relative w-full shrink-0 overflow-hidden"
+      style={{ height: "44vw", maxHeight: "260px", minHeight: "185px" }}
+    >
+      {/* ─ Görsel ─ */}
+      <img
+        src={heroSrc}
+        alt={`${season} manzarası`}
+        className="absolute inset-0 w-full h-full object-cover object-center select-none"
+        draggable={false}
+      />
+
+      {/* ─ Üst koyu geçiş (isim/rep okunabilirliği) ─ */}
+      <div className={`absolute inset-0 bg-gradient-to-b ${topGrad} pointer-events-none`} />
+
+      {/* ─ Alt koyu geçiş (stat pills okunabilirliği) ─ */}
+      <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/55 to-transparent pointer-events-none" />
+
+      {/* ─ Üst katman: isim + tarih (sol) · itibar (sağ) ─ */}
+      <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-4 pt-3 pointer-events-none">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1
+              className="font-heading text-xl text-amber-100 leading-none"
+              style={{ textShadow: "0 2px 14px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.6)" }}
+            >
+              {player?.name || "İsimsiz"}
+            </h1>
+            {player?.is_child && (
+              <span className="text-[9px] text-amber-400 font-heading border border-amber-600/50 bg-black/50 backdrop-blur-sm px-1.5 py-0.5">
+                ÇOCUK
+              </span>
+            )}
+          </div>
+          <div
+            className="text-[11px] text-stone-300/90 mt-0.5"
+            style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
+          >
+            {age} yaş · {cal?.season} · {cal?.month_name} {cal?.year}
+          </div>
+        </div>
+        <div className="text-right shrink-0 ml-2">
+          <div
+            className={`font-heading text-sm ${rep.color}`}
+            style={{ textShadow: "0 1px 8px rgba(0,0,0,0.9)" }}
+          >
+            {rep.label}
+          </div>
+          <div className="text-[10px] text-stone-400/80">
+            {player?.reputation > 0 ? "+" : ""}{player?.reputation || 0}
+          </div>
+        </div>
+      </div>
+
+      {/* ─ Alt katman: stat pills ─ */}
+      <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <StatPill glass icon={Heart}  value={player?.health || 0}      warn={(player?.health || 0) < 25}   color="text-emerald-400" />
+          <StatPill glass icon={Apple}  value={player?.hunger ?? 100}     warn={(player?.hunger ?? 100) < 25} color="text-orange-400" />
+          <StatPill glass icon={Flame}  value={`${player?.money || 0}A`}                                      color="text-amber-400" />
+          <StatPill glass icon={Scroll} value={player?.crime || 0}        warn={(player?.crime || 0) > 50}    color={(player?.crime || 0) > 50 ? "text-red-400" : "text-stone-400"} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// glass=true → hero görseli üstündeki yarı saydam varyant
+function StatPill({ icon: Icon, value, warn = false, color = "text-stone-300", glass = false }) {
+  return (
+    <div className={`flex items-center gap-1 px-2 py-1 rounded-sm border ${
+      warn
+        ? "bg-red-950/60 border-red-700/60 backdrop-blur-sm"
+        : glass
+          ? "bg-black/45 border-stone-600/40 backdrop-blur-sm"
+          : "bg-amber-950/20 border-amber-900/30"
+    }`}>
+      <Icon className={`w-3 h-3 shrink-0 ${warn ? "text-red-400" : glass ? "text-amber-500" : "text-amber-800"}`} />
       <span className={`text-[11px] font-heading tabular-nums ${warn ? "text-red-300" : color}`}>{value}</span>
     </div>
   );
@@ -922,64 +1033,8 @@ export default function Dashboard() {
       {/* Ana wrapper — tam yükseklik, flex kolon */}
       <div className="flex flex-col max-w-2xl mx-auto" style={{ minHeight: "calc(100dvh - 56px)" }}>
 
-        {/* ── ÜST BAŞLIK — kompakt, sabit ── */}
-        <div className="shrink-0 border-b border-amber-900/40 bg-gradient-to-b from-stone-900/90 to-stone-950/95 backdrop-blur-sm" style={{boxShadow: '0 2px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(180,120,40,0.08)'}}>
-
-          {/* Karakter satırı */}
-          <div className="flex items-center justify-between px-4 pt-3 pb-2 gap-3">
-            {/* Sol: isim + yaş/tarih */}
-            <div className="min-w-0">
-              <div className="flex items-baseline gap-2 min-w-0">
-                <h1 className="font-heading text-xl text-amber-100 leading-none truncate" style={{textShadow: '0 0 20px rgba(180,100,20,0.4)'}}>
-                  {player?.name || "İsimsiz"}
-                </h1>
-                {player?.is_child && (
-                  <span className="text-[9px] text-amber-500 font-heading border border-amber-900/60 bg-amber-950/30 px-1 shrink-0">ÇOCUK</span>
-                )}
-              </div>
-              <div className="text-[11px] text-stone-500 mt-0.5 truncate">
-                {player?.age || 0} yaş
-                <span className="mx-1.5 text-amber-900/70">·</span>
-                {cal.season} · {cal.month_name} {cal.year}
-              </div>
-            </div>
-
-            {/* Sağ: itibar */}
-            <div className="text-right shrink-0">
-              <div className={`font-heading text-sm ${rep.color}`}>{rep.label}</div>
-              <div className="text-[10px] text-stone-600">
-                {player?.reputation > 0 ? "+" : ""}{player?.reputation || 0}
-              </div>
-            </div>
-          </div>
-
-          {/* Stat pills satırı */}
-          <div className="flex items-center gap-1.5 px-4 pb-2.5 overflow-x-auto">
-            <StatPill
-              icon={Heart}
-              value={player?.health || 0}
-              warn={(player?.health || 0) < 25}
-              color="text-emerald-400"
-            />
-            <StatPill
-              icon={Apple}
-              value={player?.hunger ?? 100}
-              warn={(player?.hunger ?? 100) < 25}
-              color="text-orange-400"
-            />
-            <StatPill
-              icon={Flame}
-              value={`${player?.money || 0}A`}
-              color="text-amber-400"
-            />
-            <StatPill
-              icon={Scroll}
-              value={player?.crime || 0}
-              warn={(player?.crime || 0) > 50}
-              color={(player?.crime || 0) > 50 ? "text-red-400" : "text-stone-400"}
-            />
-          </div>
-        </div>
+        {/* ── HERO SAHNE — mevsim + yaş grubuna göre değişen görsel ── */}
+        <HeroScene player={player} cal={cal} rep={rep} />
 
         {/* Faction/Yönetici strip — varsa */}
         <StatusStrip player={player} world={state?.world} />
