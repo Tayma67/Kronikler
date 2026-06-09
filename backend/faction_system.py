@@ -231,6 +231,14 @@ FACTION_ACTIONS = {
 }
 
 
+def _loc_name(state: dict, location_id: str) -> str:
+    """location_id → insan okunur isim. Bulunamazsa ID döner."""
+    for loc in state.get("world", {}).get("locations", []):
+        if loc.get("id") == location_id:
+            return loc.get("name", location_id)
+    return location_id
+
+
 def _log_event(state: dict, turn: int, etype: str, text: str, faction_id: str = None):
     """Hem dünya history'ye hem faction log'una yazar."""
     entry = {
@@ -900,21 +908,22 @@ def gain_influence(faction: dict, location_id: str, amount: int,
         update_faction_influence(state, faction["id"], location_id, amount, turn)
     except Exception:
         pass
+    loc_name = _loc_name(state, location_id)
     if new_val >= 25 and current < 25:
         _log_event(state, turn, "nüfuz_eşik",
-                   f"{faction['name']} {location_id}'de faaliyet eşiğine ulaştı (25 nüfuz).",
+                   f"{faction['name']}, {loc_name}'de faaliyet eşiğine ulaştı.",
                    faction["id"])
     elif new_val >= 50 and current < 50:
         _log_event(state, turn, "nüfuz_eşik",
-                   f"{faction['name']} {location_id}'de baskı gücü kazandı (50 nüfuz).",
+                   f"{faction['name']}, {loc_name}'de baskı gücü kazandı.",
                    faction["id"])
     elif new_val >= 75 and current < 75:
         _log_event(state, turn, "nüfuz_eşik",
-                   f"{faction['name']} {location_id}'de aday gösterme hakkı kazandı (75 nüfuz).",
+                   f"{faction['name']}, {loc_name}'de aday gösterme hakkı kazandı.",
                    faction["id"])
     elif new_val >= 100 and current < 100:
         _log_event(state, turn, "nüfuz_kontrol",
-                   f"{faction['name']} {location_id}'in kontrolünü ele geçirdi!",
+                   f"{faction['name']}, {loc_name} üzerinde tam kontrol kurdu!",
                    faction["id"])
     return new_val
 
@@ -931,8 +940,9 @@ def lose_influence(faction: dict, location_id: str, amount: int,
     except Exception:
         pass
     if current >= 100 and new_val < 100:
+        loc_name = _loc_name(state, location_id)
         _log_event(state, turn, "nüfuz_kayıp",
-                   f"{faction['name']} {location_id}'deki kontrolünü kaybetti.",
+                   f"{faction['name']}, {loc_name}'deki kontrolünü kaybetti.",
                    faction["id"])
     return new_val
 
@@ -1020,7 +1030,7 @@ def religious_sermon(faction: dict, location_id: str, state: dict, turn: int) ->
     except Exception:
         pass
     _log_event(state, turn, "vaaz",
-               f"{faction['name']} {location_id}'de vaaz verdi. Halk mutluluğu arttı.",
+               f"{faction['name']}, {_loc_name(state, location_id)}'de vaaz verdi. Halk mutluluğu arttı.",
                faction["id"])
     return {"success": True, "influence_gain": gain}
 

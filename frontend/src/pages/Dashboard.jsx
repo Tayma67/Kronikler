@@ -17,6 +17,7 @@ const SEASON_IMAGE = {
 
 // ── EVENT TYPE → DISPLAY CONFIG ──────────────────────────────────────────────
 const EVENT_MAP = {
+  // ── Kişisel / kariyer ──────────────────────────────────────────
   çalışma:          { type: 'TİCARET',  typeColor: '#4A9A5A', icon: Coins,     iconColor: '#C9A84C', personal: true  },
   ticaret:          { type: 'TİCARET',  typeColor: '#4A9A5A', icon: Coins,     iconColor: '#C9A84C', personal: true  },
   kariyer_terfi:    { type: 'KARİYER',  typeColor: '#C9A84C', icon: Crown,     iconColor: '#C9A84C', personal: true  },
@@ -35,6 +36,10 @@ const EVENT_MAP = {
   cocuk_yatirim:    { type: 'YATIRIM',  typeColor: '#4A9A5A', icon: Coins,     iconColor: '#C9A84C', personal: true  },
   kullanım:         { type: 'EŞYA',     typeColor: '#7A6A4F', icon: Scroll,    iconColor: '#7A6A4F', personal: true  },
   kuşanma:          { type: 'EKİPMAN',  typeColor: '#7A6A4F', icon: Shield,    iconColor: '#7A6A4F', personal: true  },
+  life_event:       { type: 'OLAY',     typeColor: '#C9A84C', icon: Star,      iconColor: '#C9A84C', personal: true  },
+  hapis:            { type: 'CEZA',     typeColor: '#C84040', icon: Shield,    iconColor: '#C84040', personal: true  },
+  ceza:             { type: 'CEZA',     typeColor: '#C84040', icon: Shield,    iconColor: '#C84040', personal: true  },
+  // ── Dünya / faction ────────────────────────────────────────────
   isyan:            { type: 'DÜNYA',    typeColor: '#D4820A', icon: Scale,     iconColor: '#D4820A', personal: false },
   savaş:            { type: 'DÜNYA',    typeColor: '#C84040', icon: Sword,     iconColor: '#C84040', personal: false },
   kıtlık:           { type: 'DÜNYA',    typeColor: '#D4820A', icon: Scale,     iconColor: '#D4820A', personal: false },
@@ -44,8 +49,29 @@ const EVENT_MAP = {
   kriz_kuraklik:    { type: 'KRİZ',     typeColor: '#D4820A', icon: Scale,     iconColor: '#D4820A', personal: false },
   kriz_veba:        { type: 'KRİZ',     typeColor: '#C84040', icon: Scale,     iconColor: '#C84040', personal: false },
   kriz_yangin:      { type: 'KRİZ',     typeColor: '#E05A30', icon: Scale,     iconColor: '#E05A30', personal: false },
+  // ── Faction olayları (dünya) ────────────────────────────────────
+  nüfuz_eşik:       { type: 'GÜÇLER',   typeColor: '#7B4FAF', icon: Shield,    iconColor: '#7B4FAF', personal: false },
+  nüfuz_kontrol:    { type: 'GÜÇLER',   typeColor: '#C84040', icon: Sword,     iconColor: '#C84040', personal: false },
+  nüfuz_kayıp:      { type: 'GÜÇLER',   typeColor: '#7B4FAF', icon: Shield,    iconColor: '#7B4FAF', personal: false },
+  casus_belli:      { type: 'SAVAŞ',    typeColor: '#C84040', icon: Sword,     iconColor: '#C84040', personal: false },
+  aggression_artis: { type: 'GERGİNLİK',typeColor: '#E05A30', icon: Scale,     iconColor: '#E05A30', personal: false },
+  ko_mudahale_zorunluluk: { type: 'ORDU', typeColor: '#C84040', icon: Sword,   iconColor: '#C84040', personal: false },
+  koalisyon_kuruldu:{ type: 'İTTİFAK',  typeColor: '#C9A84C', icon: Shield,   iconColor: '#C9A84C', personal: false },
+  savunma_mudahale: { type: 'ORDU',     typeColor: '#C84040', icon: Sword,     iconColor: '#C84040', personal: false },
+  arabuluculuk_basarili: { type: 'BARIŞ',typeColor: '#4A9A5A',icon: Scale,    iconColor: '#4A9A5A', personal: false },
+  arabuluculuk_red: { type: 'GERGİNLİK',typeColor: '#E05A30', icon: Scale,    iconColor: '#E05A30', personal: false },
+  zanaatkar_grev:   { type: 'DÜNYA',    typeColor: '#D4820A', icon: Scale,     iconColor: '#D4820A', personal: false },
+  gizli_cemiyet_ifsa:{ type: 'GÖLGE',  typeColor: '#7B3FBF', icon: Shield,    iconColor: '#7B3FBF', personal: false },
+  paralı_asker_kiralama: { type: 'GÜÇLER',typeColor: '#7A6A4F',icon: Sword,   iconColor: '#7A6A4F', personal: false },
+  paralı_asker_ihanet:  { type: 'İHANET',typeColor: '#C84040', icon: Sword,  iconColor: '#C84040', personal: false },
+  suikast:          { type: 'GÖLGE',    typeColor: '#7B3FBF', icon: Shield,    iconColor: '#7B3FBF', personal: false },
+  sabotaj:          { type: 'GÖLGE',    typeColor: '#7B3FBF', icon: Shield,    iconColor: '#7B3FBF', personal: false },
+  manipülasyon:     { type: 'GÖLGE',    typeColor: '#7B3FBF', icon: Shield,    iconColor: '#7B3FBF', personal: false },
+  yardim_cagrisi:   { type: 'İTTİFAK',  typeColor: '#C9A84C', icon: Shield,   iconColor: '#C9A84C', personal: false },
+  istihbarat_satis: { type: 'GÖLGE',    typeColor: '#7B3FBF', icon: BookMarked,iconColor:'#7B3FBF', personal: false },
+  vaaz:             { type: 'DÜNYA',    typeColor: '#C9A84C', icon: Star,      iconColor: '#C9A84C', personal: false },
 };
-const DEFAULT_EVENT = { type: 'OLAY', typeColor: '#7A6A4F', icon: Scroll, iconColor: '#7A6A4F', personal: true };
+const DEFAULT_EVENT = { type: 'OLAY', typeColor: '#C9A84C', icon: Star, iconColor: '#C9A84C', personal: true };
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 function fameLabel(fame) {
@@ -94,16 +120,15 @@ function StatCard({ icon, value, label, barColor, isLast }) {
     <div
       className="flex-1 flex flex-col items-center justify-center relative"
       style={{
-        padding: '0.6rem 0.3rem 0.5rem',
-        background: `radial-gradient(ellipse at 50% 0%, ${barColor}0D 0%, transparent 70%), var(--color-card)`,
+        padding: '0.55rem 0.3rem 0.45rem',
+        background: 'var(--color-card)',
         borderRight: isLast ? 'none' : '1px solid var(--color-border)',
-        boxShadow: `inset 0 2px 12px rgba(0,0,0,0.55), inset 0 -1px 0 rgba(201,168,76,0.06)`,
+        boxShadow: `inset 0 1px 6px rgba(0,0,0,0.4)`,
       }}
     >
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
-        background: `linear-gradient(to right, transparent 0%, ${barColor}99 30%, ${barColor} 50%, ${barColor}99 70%, transparent 100%)`,
-        boxShadow: `0 0 8px ${barColor}60`,
+        position: 'absolute', top: 0, left: '20%', right: '20%', height: '1px',
+        background: `linear-gradient(to right, transparent, ${barColor}44, transparent)`,
       }} />
       <div style={{
         width: '1.8rem', height: '1.8rem', borderRadius: '50%',
@@ -545,9 +570,9 @@ export default function Dashboard() {
       <div style={{
         display: 'flex',
         background: 'var(--color-surface)',
-        borderTop: '1px solid rgba(201,168,76,0.30)',
+        borderTop: '1px solid var(--color-border)',
         borderBottom: '1px solid var(--color-border)',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.45)',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
       }}>
         <StatCard icon="❤"  value={stats.health} label="SAĞLIK"  barColor="#C84040" />
         <StatCard icon="🍎" value={stats.hunger} label="TOKLUK"  barColor="#4A9A5A" />
