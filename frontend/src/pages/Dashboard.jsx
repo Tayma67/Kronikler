@@ -149,16 +149,15 @@ function EventCard({ event, isLast }) {
       </div>
       <div className="flex-1 card-shadow" style={{
         background: isUrgent
-          ? `linear-gradient(160deg, rgba(224,90,48,0.07) 0%, #251A0C 40%)`
-          : 'linear-gradient(150deg, #2A1E0E 0%, #231608 55%, #1E1408 100%)',
-        border: `1px solid ${isUrgent ? event.iconColor + '40' : 'rgba(201,168,76,0.22)'}`,
-        borderLeft: `2.5px solid ${event.iconColor}66`,
+          ? `linear-gradient(160deg, rgba(224,90,48,0.06) 0%, var(--color-card) 40%)`
+          : 'var(--color-card)',
+        border: `1px solid ${isUrgent ? event.iconColor + '30' : 'var(--color-border)'}`,
+        borderLeft: `2.5px solid ${event.iconColor}55`,
         borderRadius: '8px',
         padding: '0.75rem 0.9rem',
         marginBottom: '0.1rem',
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: `inset 0 0 28px rgba(201,168,76,0.04), inset 0 1px 0 rgba(201,168,76,0.07), 0 2px 8px rgba(0,0,0,0.3)`,
       }}>
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
@@ -381,13 +380,13 @@ export default function Dashboard() {
 
               {/* Mini stats */}
               <div style={{
-                background: 'rgba(8,5,2,0.62)',
-                border: '1px solid rgba(201,168,76,0.16)',
+                background: 'rgba(8,5,2,0.65)',
+                border: '1px solid rgba(201,168,76,0.18)',
                 borderRadius: '8px',
-                padding: '0.32rem 0.4rem',
+                padding: '0.42rem 0.5rem',
                 backdropFilter: 'blur(8px)',
-                width: '3.6rem',
-                display: 'flex', flexDirection: 'column', gap: '0.26rem',
+                width: '4.2rem',
+                display: 'flex', flexDirection: 'column', gap: '0.36rem',
               }}>
                 {[
                   { icon: '❤', value: stats.health, color: '#C84040', max: 100,  suffix: '' },
@@ -395,26 +394,26 @@ export default function Dashboard() {
                   { icon: '💰', value: stats.money,  color: '#C9A84C', max: 500,  suffix: 'A' },
                   { icon: '👑', value: stats.fame,   color: '#7B4FAF', max: 100,  suffix: '' },
                 ].map(({ icon, value, color, max, suffix }) => (
-                  <div key={icon} style={{ display: 'flex', alignItems: 'center', gap: '0.22rem' }}>
-                    <span style={{ fontSize: '0.55rem', lineHeight: 1, flexShrink: 0 }}>{icon}</span>
+                  <div key={icon} style={{ display: 'flex', alignItems: 'center', gap: '0.28rem' }}>
+                    <span style={{ fontSize: '0.65rem', lineHeight: 1, flexShrink: 0 }}>{icon}</span>
                     <div style={{
-                      flex: 1, height: '2px',
-                      background: 'rgba(255,255,255,0.07)',
-                      borderRadius: '1px', overflow: 'hidden',
+                      flex: 1, height: '2.5px',
+                      background: 'rgba(255,255,255,0.08)',
+                      borderRadius: '2px', overflow: 'hidden',
                     }}>
                       <div style={{
                         height: '100%',
                         width: `${Math.min(100, Math.max(0, (value / max) * 100))}%`,
                         background: `linear-gradient(to right, ${color}bb, ${color})`,
                         boxShadow: `0 0 4px ${color}77`,
-                        borderRadius: '1px',
+                        borderRadius: '2px',
                         transition: 'width 0.6s ease',
                       }} />
                     </div>
                     <span style={{
-                      fontSize: '0.42rem', color: 'var(--color-parchment-dim)',
-                      minWidth: '1.4rem', textAlign: 'right',
-                      fontFamily: 'Cinzel, serif', fontWeight: 600, lineHeight: 1,
+                      fontSize: '0.58rem', color: 'var(--color-parchment)',
+                      minWidth: '1.6rem', textAlign: 'right',
+                      fontFamily: 'Cinzel, serif', fontWeight: 700, lineHeight: 1,
                     }}>
                       {value}{suffix}
                     </span>
@@ -630,6 +629,8 @@ export default function Dashboard() {
             overflowY: 'auto',
             scrollbarWidth: 'thin',
             scrollbarColor: 'rgba(201,168,76,0.22) transparent',
+            background: 'linear-gradient(180deg, #271D0C 0%, #231808 50%, #1F1507 100%)',
+            boxShadow: 'inset 0 0 50px rgba(201,168,76,0.05), inset 0 2px 0 rgba(201,168,76,0.07), inset 0 -2px 0 rgba(201,168,76,0.04)',
           }}>
             {currentTabEvents.length > 0 ? (
               currentTabEvents.map((ev, i) => (
