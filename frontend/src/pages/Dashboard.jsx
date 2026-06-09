@@ -1170,7 +1170,7 @@ export default function Dashboard() {
       />
 
       {/* Ana wrapper — tam yükseklik, flex kolon */}
-      <div className="flex flex-col max-w-2xl mx-auto" style={{ minHeight: "calc(100dvh - 56px)" }}>
+      <div className="flex flex-col max-w-2xl mx-auto overflow-hidden" style={{ height: "calc(100dvh - 80px)" }}>
 
         {/* ── HERO SAHNE — mevsim + yaş grubuna göre değişen görsel ── */}
         <HeroScene player={player} cal={cal} rep={rep} />
@@ -1182,7 +1182,7 @@ export default function Dashboard() {
         <StatusStrip player={player} world={state?.world} />
 
         {/* ── OLAY AKIŞI — esnek yükseklik ── */}
-        <div className="flex flex-col flex-1 min-h-0 pb-40 mx-2 mb-2 rounded-sm border border-stone-700/50 overflow-hidden bg-amber-950/10" style={{boxShadow: 'inset 0 0 0 1px rgba(120,80,30,0.08), 0 2px 12px rgba(0,0,0,0.4)'}}>
+        <div className="flex flex-col flex-1 min-h-0 mx-2 rounded-sm border border-stone-700/50 overflow-hidden bg-amber-950/10" style={{boxShadow: 'inset 0 0 0 1px rgba(120,80,30,0.08), 0 2px 12px rgba(0,0,0,0.4)'}}>
 
         {/* SON OLAYLAR — amber başlık + TARİH linki */}
           <div className="shrink-0 flex items-center justify-between px-3.5 pt-3 pb-2">
@@ -1223,7 +1223,7 @@ export default function Dashboard() {
           </div>
 
           {/* Kaydırılabilir olay listesi — tam geri kalan yükseklik */}
-          <div className="flex-1 overflow-y-auto" style={{background: 'linear-gradient(180deg, rgba(35,22,10,0.18) 0%, rgba(28,18,8,0.45) 100%)'}}>
+          <div className="flex-1 overflow-y-auto pb-20" style={{background: 'linear-gradient(180deg, rgba(35,22,10,0.18) 0%, rgba(28,18,8,0.45) 100%)'}}>
 
             {/* Anlık Eylem Paneli (eylemden dönerken göster) */}
             {eventFilter === "karakter" && freshEvents?.length > 0 && (
@@ -1275,7 +1275,7 @@ export default function Dashboard() {
       <div
         className="fixed left-0 right-0 z-40 bg-stone-950/80 backdrop-blur-md"
         style={{
-          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)',
+          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
           borderTop: '1px solid rgba(180,100,20,0.18)',
           boxShadow: '0 -4px 24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(200,120,30,0.08)',
         }}

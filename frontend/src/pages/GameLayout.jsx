@@ -5,7 +5,7 @@ import {
   Map, User, Scroll, Briefcase,
   Sword, Heart, Flame, Hourglass, Loader2,
   CalendarDays, Apple, Sparkles, Shield,
-  MoreHorizontal, X,
+  MoreHorizontal, X, Castle,
   Zap, Newspaper, Baby, GraduationCap, ListChecks, Users,
   ArrowUpDown, GitBranch, Coffee,
 } from "lucide-react";
@@ -15,10 +15,10 @@ import { api } from "@/lib/api";
 
 // Ana navigasyon — 4 madde (mobilde dengeli görünüm)
 const PRIMARY_NAV = [
-  { to: "/oyun",            label: "Ana Sayfa", icon: Flame,     end: true, testid: "nav-world" },
-  { to: "/oyun/karakter",   label: "Karakter",  icon: User,      testid: "nav-character" },
-  { to: "/oyun/harita",     label: "Şehir",     icon: Map,       testid: "nav-map" },
-  { to: "/oyun/iliskiler",  label: "İlişkiler", icon: Users,     testid: "nav-relationships" },
+  { to: "/oyun",            label: "Ana Sayfa", icon: Flame,   end: true, testid: "nav-world" },
+  { to: "/oyun/karakter",   label: "Karakter",  icon: Shield,  testid: "nav-character" },
+  { to: "/oyun/harita",     label: "Şehir",     icon: Castle,  testid: "nav-map" },
+  { to: "/oyun/iliskiler",  label: "İlişkiler", icon: Users,   testid: "nav-relationships" },
 ];
 
 // Alt bardan kaldırılan öğeler — "Daha Fazla" menüsünde gösterilecek
@@ -75,31 +75,63 @@ function MobileNavItem({ to, label, icon: Icon, end, testid, pulse }) {
       to={to}
       end={end}
       data-testid={`m-${testid}`}
-      className={({ isActive }) =>
-        `flex flex-col items-center justify-center gap-1 py-2 flex-1 transition-all relative ${
-          isActive
-            ? "text-amber-400"
-            : "text-stone-500 hover:text-stone-300"
-        }`
-      }
+      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, paddingTop: 4 }}
     >
       {({ isActive }) => (
         <>
-          {/* Aktif göstergesi — üst amber çizgi */}
-          <div className={`absolute top-0 left-2 right-2 h-0.5 rounded-full transition-all ${
-            isActive ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" : "bg-transparent"
-          }`} />
-          <div className="relative">
-            <Icon className={`w-6 h-6 transition-all ${
-              isActive ? "drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]" : ""
-            }`} />
+          {/* İkon kutusu — 52×52, 14px radius */}
+          <div
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 14,
+              border: isActive ? '1px solid #C8923A' : '1px solid rgba(200,146,58,0.12)',
+              background: isActive
+                ? 'linear-gradient(180deg, rgba(200,146,58,0.25) 0%, rgba(200,146,58,0.05) 100%)'
+                : 'rgba(255,255,255,0.02)',
+              boxShadow: isActive ? '0 0 24px rgba(200,146,58,0.28), inset 0 1px 0 rgba(200,146,58,0.15)' : 'none',
+              transform: isActive ? 'translateY(-4px)' : 'translateY(0px)',
+              opacity: isActive ? 1 : 0.7,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              transition: 'all 280ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+            }}
+          >
+            <Icon
+              strokeWidth={2.2}
+              style={{
+                width: 22,
+                height: 22,
+                color: isActive ? '#F6D38D' : '#8A7A60',
+                filter: isActive ? 'drop-shadow(0 0 8px rgba(246,211,141,0.55))' : 'none',
+                transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                transition: 'all 280ms ease',
+              }}
+            />
             {pulse && (
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+              <span style={{
+                position: 'absolute', top: 7, right: 7,
+                width: 6, height: 6, borderRadius: '50%',
+                background: '#f97316', boxShadow: '0 0 6px rgba(249,115,22,0.7)',
+                animation: 'pulse 2s infinite',
+              }} />
             )}
           </div>
-          <span className={`text-[10px] font-heading tracking-wider leading-none ${
-            isActive ? "text-amber-400" : ""
-          }`}>{label}</span>
+
+          {/* Etiket */}
+          <span style={{
+            fontSize: 11,
+            fontFamily: 'Inter, sans-serif',
+            letterSpacing: '0.04em',
+            lineHeight: 1,
+            fontWeight: isActive ? 500 : 400,
+            color: isActive ? '#F2E6CC' : '#8A7A60',
+            transition: 'color 280ms ease',
+          }}>
+            {label}
+          </span>
         </>
       )}
     </NavLink>
@@ -409,13 +441,24 @@ export default function GameLayout() {
         )}
 
         {/* Sadece bu alan scroll eder */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-32 lg:pb-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-28 lg:pb-6">
           <Outlet />
         </div>
       </main>
 
-      {/* Mobil alt navigation — 4 ana + "Menü" */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 border-t border-amber-900/40 bg-stone-950/60 backdrop-blur-md flex pb-safe" style={{boxShadow: '0 -2px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(180,100,20,0.06)'}}>
+      {/* Mobil alt navigation — Medieval RPG navbar */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center px-2"
+        style={{
+          height: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          background: 'rgba(10,9,8,0.96)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(200,146,58,0.25)',
+          boxShadow: '0 -8px 32px rgba(0,0,0,0.85), inset 0 1px 0 rgba(200,146,58,0.08)',
+        }}
+      >
         {visiblePrimary.map((n) => (
           <MobileNavItem
             key={n.to} {...n}
@@ -425,14 +468,27 @@ export default function GameLayout() {
             }
           />
         ))}
-        {/* Daha Fazla butonu */}
+
+        {/* Menü butonu — aynı kart sistemi */}
         <button
           data-testid="mobile-more-btn"
           onClick={() => setShowMore(true)}
-          className="flex flex-col items-center justify-center gap-1 py-2 flex-1 text-stone-500 hover:text-stone-300 transition-colors"
+          style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, paddingTop: 4, opacity: 0.7, transition: 'opacity 280ms ease' }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '0.7'}
         >
-          <MoreHorizontal className="w-6 h-6" />
-          <span className="text-[10px] font-heading tracking-wider leading-none">Menü</span>
+          <div style={{
+            width: 52, height: 52, borderRadius: 14,
+            border: '1px solid rgba(200,146,58,0.12)',
+            background: 'rgba(255,255,255,0.02)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 280ms ease',
+          }}>
+            <Scroll strokeWidth={2.2} style={{ width: 22, height: 22, color: '#8A7A60' }} />
+          </div>
+          <span style={{ fontSize: 11, fontFamily: 'Inter, sans-serif', letterSpacing: '0.04em', lineHeight: 1, color: '#8A7A60' }}>
+            Menü
+          </span>
         </button>
       </nav>
 
@@ -459,7 +515,7 @@ export default function GameLayout() {
                      bg-stone-900 border border-stone-700 rounded-sm
                      text-stone-300 hover:text-stone-100 hover:border-stone-500
                      shadow-lg transition-all"
-          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)' }}
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 104px)' }}
         >
           ↩ {lastActionPage.label}
         </button>
