@@ -497,7 +497,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
 
           {/* Age / Season / Date — bottom-right of hero */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
