@@ -250,3 +250,161 @@ nav button:active {
   transition: transform 0.1s;
 }
 
+
+/* ============================================================
+   LEGACY CLASS BRIDGE — tüm sayfalar otomatik tema alır
+   ============================================================ */
+
+/* ── font-heading → Cinzel (Tailwind font-family override) ── */
+.font-heading {
+  font-family: 'Cinzel', Georgia, serif !important;
+}
+
+/* ── card-frame → premium dark panel ──────────────────────── */
+.card-frame {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45), 0 1px 0 rgba(201,168,76,0.07);
+}
+.card-frame:hover {
+  border-color: var(--color-border-hi);
+}
+
+/* ── label-tiny → Cinzel uppercase micro label ─────────────── */
+.label-tiny {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-parchment-muted);
+}
+
+/* ── btn-ember → primary gold RPG action button ────────────── */
+.btn-ember {
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #3D2A08 0%, #2A1C06 50%, #1C1204 100%);
+  color: var(--color-gold);
+  border: 1.5px solid rgba(201,168,76,0.55);
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(201,168,76,0.20), 0 4px 12px rgba(0,0,0,0.55),
+              inset 0 1px 0 rgba(201,168,76,0.18);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.btn-ember::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(240,192,64,0.7), transparent);
+}
+.btn-ember:hover:not(:disabled) {
+  box-shadow: 0 0 24px rgba(201,168,76,0.35), 0 4px 16px rgba(0,0,0,0.65),
+              inset 0 1px 0 rgba(201,168,76,0.25);
+  border-color: rgba(201,168,76,0.75);
+}
+.btn-ember:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── btn-ghost-ash → secondary ghost button ─────────────────── */
+.btn-ghost-ash {
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--color-parchment-muted);
+  border: 1px solid var(--color-border-hi);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-ghost-ash:hover:not(:disabled) {
+  color: var(--color-parchment);
+  border-color: var(--color-gold-dim);
+  background: rgba(201,168,76,0.06);
+}
+.btn-ghost-ash:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── divider-ash → subtle gold separator ────────────────────── */
+.divider-ash {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(201,168,76,0.25) 30%,
+    rgba(201,168,76,0.40) 50%,
+    rgba(201,168,76,0.25) 70%,
+    transparent
+  );
+}
+
+/* ── grain-overlay → subtle dark texture ────────────────────── */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+/* ── ember-flicker → gold pulse ─────────────────────────────── */
+@keyframes ember-flicker {
+  0%, 100% { color: var(--color-gold); filter: drop-shadow(0 0 4px rgba(201,168,76,0.5)); }
+  50%       { color: var(--color-gold-bright); filter: drop-shadow(0 0 8px rgba(240,192,64,0.7)); }
+}
+.ember-flicker {
+  animation: ember-flicker 3s ease-in-out infinite;
+}
+
+/* ── heading-section / section-title — common page headers ─── */
+.heading-section,
+.section-title {
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-gold);
+  text-shadow: 0 0 12px rgba(201,168,76,0.25);
+}
+
+/* ── Tailwind bg overrides via !important ────────────────────── */
+/* These catch any stone-* / amber-* classes the new theme needs */
+.bg-stone-950 { background-color: var(--color-bg)      !important; }
+.bg-stone-900 { background-color: var(--color-surface)  !important; }
+.bg-stone-800 { background-color: var(--color-card)     !important; }
+
+.border-stone-800 { border-color: var(--color-border)    !important; }
+.border-stone-700 { border-color: var(--color-border-hi) !important; }
+
+.text-stone-100,
+.text-stone-200  { color: var(--color-parchment)       !important; }
+.text-stone-300  { color: var(--color-parchment-dim)   !important; }
+.text-stone-400,
+.text-stone-500  { color: var(--color-parchment-muted) !important; }
+.text-stone-600  { color: #4E3E2C !important; }
+
+.text-amber-400,
+.text-orange-400 { color: var(--color-gold)       !important; }
+.text-orange-600 { color: var(--color-gold-dim)   !important; }
+
+.border-amber-900,
+.border-orange-800 { border-color: var(--color-gold-dim) !important; }
+
+/* Mobile header in GameLayout */
+.bg-stone-950\/95 { background-color: rgba(13,10,6,0.95) !important; }
+
+/* ── Rounded-sm consistency ──────────────────────────────────── */
+.rounded-sm { border-radius: 4px; }
