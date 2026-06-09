@@ -1,17 +1,29 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { api, extractErrorMessage } from "@/lib/api";
 import { toast } from "sonner";
 
 const GameContext = createContext(null);
 
+// Railway free tier 5 dakika işlem olmayınca uyuyor.
+// Her 4 dakikada bir /health ping'i atarak uyku modunu engelle.
+const KEEP_ALIVE_MS = 4 * 60 * 1000; // 4 dakika
+
 export function GameProvider({ children }) {
   const [state, setState] = useState(null);
   const [loading, setLoading] = useState(false);
   const [lastCaravanEvent, setLastCaravanEvent] = useState(null);
-  const [lastWorldEvent, setLastWorldEvent] = useState(null);   // Adım 9
-  const [lastCrisisEvents, setLastCrisisEvents] = useState([]);   // GDD v4 Bölüm 5.4
-  const [lastActionPage, setLastActionPage] = useState(null);   // Adım 14
-  const [freshEvents, setFreshEvents] = useState([]);           // Anlık eylem olayları
+  const [lastWorldEvent, setLastWorldEvent] = useState(null);
+  const [lastCrisisEvents, setLastCrisisEvents] = useState([]);
+  const [lastActionPage, setLastActionPage] = useState(null);
+  const [freshEvents, setFreshEvents] = useState([]);
+
+  // ── Keep-alive: Railway uykuya geçmesin ──────────────────────
+  useEffect(() => {
+    const ping = () => api.get("/").catch(() => {});
+    ping(); // uygulama açılışında hemen tetikle
+    const id = setInterval(ping, KEEP_ALIVE_MS);
+    return () => clearInterval(id);
+  }, []);
 
   const fetchState = useCallback(async () => {
     setLoading(true);
@@ -59,29 +71,22 @@ export function GameProvider({ children }) {
   }, []);
 
   const advance = useCallback(async (weeks = 1) => {
-    // Railway cold-start'a karşı dayanıklı retry:
-    // Deneme 0 → hemen
-    // Deneme 1 → 4s bekle  (Railway uyanma başlıyor)
-    // Deneme 2 → 8s bekle  (Railway genelde 10-15s'de hazır)
-    // Deneme 3 → 14s bekle (son şans)
+    // Railway cold-start'a karşı dayanıklı retry
     const RETRY_DELAYS = [0, 4000, 8000, 14000];
     const MAX_RETRIES = RETRY_DELAYS.length - 1;
     let lastError = null;
     let warmupToastId = null;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      // İlk deneme başarısız olduysa "uyanıyor" mesajı göster
-      if (attempt === 1) {
-        warmupToastId = toast.loading("Sunucu uyanıyor, lütfen bekle…", {
+      // 3. denemede (12s geçti) artık "uyanıyor" mesajı göster
+      if (attempt === 2 && !warmupToastId) {
+        warmupToastId = toast.loading("Sunucu uyanıyor, az kaldı…", {
           duration: 30000,
-          description: "Railway cold-start — 15-30 saniye sürebilir",
         });
       }
 
       const delay = RETRY_DELAYS[attempt];
-      if (delay > 0) {
-        await new Promise(res => setTimeout(res, delay));
-      }
+      if (delay > 0) await new Promise(res => setTimeout(res, delay));
 
       try {
         const { data } = await api.post(`/game/advance?weeks=${weeks}`);

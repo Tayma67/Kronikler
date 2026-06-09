@@ -101,23 +101,33 @@ def _random_name(gender):
 
 
 def _ensure_market(loc):
-    """Migrate old loc.prices to loc.market{good: {price, supply, demand, base}}"""
-    if "market" in loc and loc["market"]:
-        return
-    market = {}
+    """Migrate old loc.prices to loc.market{good: {price, supply, demand, base}}.
+    Also patches missing goods into existing markets (handles GOODS list updates)."""
     pop = loc.get("population", 100)
+    if "market" not in loc or not loc["market"]:
+        market = {}
+        for g in GOODS:
+            base = GOOD_BASE_PRICES[g]
+            current_price = loc.get("prices", {}).get(g, base)
+            market[g] = {
+                "price": current_price,
+                "base": base,
+                "supply": max(5, int(pop * random.uniform(0.05, 0.15))),
+                "demand": max(5, int(pop * random.uniform(0.05, 0.15))),
+            }
+        loc["market"] = market
+        loc["prices"] = {g: market[g]["price"] for g in GOODS}
+        return
+    # Market var ama GOODS listesine sonradan eklenen mallar eksik olabilir — patch et
     for g in GOODS:
-        base = GOOD_BASE_PRICES[g]
-        current_price = loc.get("prices", {}).get(g, base)
-        # Initial supply ~ population fraction; demand similar.
-        market[g] = {
-            "price": current_price,
-            "base": base,
-            "supply": max(5, int(pop * random.uniform(0.05, 0.15))),
-            "demand": max(5, int(pop * random.uniform(0.05, 0.15))),
-        }
-    loc["market"] = market
-    loc["prices"] = {g: market[g]["price"] for g in GOODS}
+        if g not in loc["market"]:
+            base = GOOD_BASE_PRICES[g]
+            loc["market"][g] = {
+                "price": base,
+                "base": base,
+                "supply": max(2, int(pop * random.uniform(0.02, 0.08))),
+                "demand": max(2, int(pop * random.uniform(0.02, 0.08))),
+            }
 
 
 def _recompute_prices(loc):
@@ -403,6 +413,8 @@ def _economy_tick(state, day):
         for good, frac in [("ekmek", 0.012), ("buğday", 0.010), ("et", 0.006),
                            ("odun", 0.004), ("kumaş", 0.002), ("demir", 0.002),
                            ("silah", 0.001)]:
+            if good not in loc["market"]:
+                continue
             consume = max(1, int(pop * frac))
             # Demand grows
             loc["market"][good]["demand"] += consume
@@ -414,10 +426,13 @@ def _economy_tick(state, day):
             need = PROFESSION_NEEDS.get(n["profession"])
             if need:
                 good, amt = need
-                loc["market"][good]["demand"] += amt
+                if good in loc["market"]:
+                    loc["market"][good]["demand"] += amt
 
         # Decay demand & supply slightly (memory effect)
         for good in GOODS:
+            if good not in loc["market"]:
+                continue  # Eski kayıtta eksik mal — _ensure_market sonraki turda ekleyecek
             m = loc["market"][good]
             m["demand"] = int(m["demand"] * 0.85)
             m["supply"] = int(m["supply"] * 0.90)
