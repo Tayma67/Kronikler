@@ -375,7 +375,7 @@ export default function Dashboard() {
   // ── Extract real data from state ───────────────────────────────────────────
   const player    = state.player;
   const cal       = state.calendar || {};
-  const chronicle = state.chronicle || [];
+  const chronicle = state.history || [];
   const turn      = state.turn || 0;
 
   const playerName  = (player.name || 'Kahraman').toUpperCase();
@@ -419,7 +419,7 @@ export default function Dashboard() {
     setAdvancing(true);
     try {
       const result = await advance(1);
-      if (result) {
+      if (result && !result.player?.dead) {
         toast.success('1 hafta geçti', {
           description: 'Yeni olaylar günlüğünde belirdi.',
           duration: 2500,

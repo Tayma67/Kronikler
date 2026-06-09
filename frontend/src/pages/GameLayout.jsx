@@ -218,6 +218,19 @@ export default function GameLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Oyuncu ölümünü her kaynaktan yakala (Dashboard advance dahil)
+  useEffect(() => {
+    if (state?.player?.dead && !showInheritance) {
+      api.get("/game/inheritance/options")
+        .then(({ data }) => {
+          setInheritanceData(data);
+          setShowInheritance(true);
+        })
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state?.player?.dead]);
+
   const onAdvance = async (weeks) => {
     setAdvancing(true);
     try {
@@ -441,7 +454,7 @@ export default function GameLayout() {
         )}
 
         {/* Sadece bu alan scroll eder */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-28 lg:pb-6">
+        <div className={`flex-1 overflow-y-auto lg:pb-6 ${isDashboard ? 'pb-0' : 'p-4 sm:p-6 lg:p-8 pb-28'}`}>
           <Outlet />
         </div>
       </main>
