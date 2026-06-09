@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
-  Coins, ChevronRight, Scroll, Flame, Shield, Castle, Users,
+  Coins, ChevronRight, Scroll, Shield,
   Hourglass, Scale, BookMarked, Heart, Crown, Loader2, Sword, Star
 } from 'lucide-react';
 import { useGame } from '@/lib/GameContext';
@@ -211,15 +210,16 @@ function EventCard({ event, isLast }) {
       </div>
       <div className="flex-1 card-shadow" style={{
         background: isUrgent
-          ? `linear-gradient(160deg, rgba(224,90,48,0.06) 0%, var(--color-card) 40%)`
-          : 'var(--color-card)',
-        border: `1px solid ${isUrgent ? event.iconColor + '30' : 'var(--color-border)'}`,
-        borderLeft: `2.5px solid ${event.iconColor}55`,
+          ? `linear-gradient(160deg, rgba(224,90,48,0.07) 0%, #251A0C 40%)`
+          : 'linear-gradient(150deg, #2A1E0E 0%, #231608 55%, #1E1408 100%)',
+        border: `1px solid ${isUrgent ? event.iconColor + '40' : 'rgba(201,168,76,0.22)'}`,
+        borderLeft: `2.5px solid ${event.iconColor}66`,
         borderRadius: '8px',
         padding: '0.75rem 0.9rem',
         marginBottom: '0.1rem',
         position: 'relative',
         overflow: 'hidden',
+        boxShadow: `inset 0 0 28px rgba(201,168,76,0.04), inset 0 1px 0 rgba(201,168,76,0.07), 0 2px 8px rgba(0,0,0,0.3)`,
       }}>
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
@@ -292,56 +292,6 @@ function EventCard({ event, isLast }) {
   );
 }
 
-// ── NAV ITEM (uses NavLink for routing) ───────────────────────────────────────
-function NavItem({ icon: Icon, label, to, end }) {
-  return (
-    <NavLink to={to} end={end} style={{ flex: 1, textDecoration: 'none' }}>
-      {({ isActive }) => (
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          justifyContent: 'center', gap: '0.18rem',
-          paddingTop: '0.45rem', paddingBottom: '0.35rem',
-          position: 'relative',
-        }}>
-          {isActive && (
-            <div style={{
-              position: 'absolute', top: 0, left: '15%', right: '15%', height: '2px',
-              background: 'linear-gradient(to right, transparent, var(--color-gold-bright), var(--color-gold), var(--color-gold-bright), transparent)',
-              boxShadow: '0 0 10px var(--color-gold), 0 0 20px rgba(201,168,76,0.40)',
-              borderRadius: '0 0 2px 2px',
-            }} />
-          )}
-          <div style={{
-            width: '2rem', height: '2rem', borderRadius: '9px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: isActive
-              ? 'linear-gradient(145deg, rgba(201,168,76,0.20) 0%, rgba(201,168,76,0.08) 100%)'
-              : 'rgba(255,255,255,0.02)',
-            border: isActive
-              ? '1px solid rgba(201,168,76,0.45)'
-              : '1px solid rgba(255,255,255,0.04)',
-            boxShadow: isActive
-              ? '0 0 14px rgba(201,168,76,0.30), inset 0 1px 0 rgba(201,168,76,0.18), 0 2px 4px rgba(0,0,0,0.4)'
-              : 'none',
-            transition: 'all 0.2s',
-          }}>
-            <Icon size={16}
-              color={isActive ? 'var(--color-gold)' : 'var(--color-parchment-muted)'}
-              strokeWidth={isActive ? 2 : 1.5} />
-          </div>
-          <span className="font-display uppercase"
-            style={{
-              fontSize: '0.47rem', letterSpacing: '0.09em',
-              color: isActive ? 'var(--color-gold)' : 'var(--color-parchment-muted)',
-              textShadow: isActive ? '0 0 8px rgba(201,168,76,0.5)' : 'none',
-            }}>
-            {label}
-          </span>
-        </div>
-      )}
-    </NavLink>
-  );
-}
 
 // ── CORNER ORNAMENT ───────────────────────────────────────────────────────────
 function CornerOrnament({ position }) {
@@ -458,13 +408,13 @@ export default function Dashboard() {
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <div style={{
-      minHeight: '100vh', background: 'var(--color-bg)',
+      height: '100dvh', overflow: 'hidden', background: 'var(--color-bg)',
       display: 'flex', flexDirection: 'column',
       maxWidth: '480px', margin: '0 auto', position: 'relative',
     }}>
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <div className="hero-section">
+      <div className="hero-section" style={{ flexShrink: 0 }}>
         <div className="hero-image" style={{ backgroundImage: `url(${heroImage})` }} />
         <div className="hero-bg" />
         <div className="hero-overlay" />
@@ -472,7 +422,7 @@ export default function Dashboard() {
         <div style={{
           position: 'absolute', inset: 0, zIndex: 10,
           display: 'flex', flexDirection: 'column',
-          padding: '0.8rem 0.9rem 1rem', justifyContent: 'flex-start',
+          padding: '0.8rem 0.9rem 1rem', justifyContent: 'space-between',
         }}>
           <div className="flex items-start justify-between">
 
@@ -506,26 +456,12 @@ export default function Dashboard() {
               <div className="font-serif flex items-center gap-1"
                 style={{
                   fontSize: '0.8rem', color: 'var(--color-gold)', letterSpacing: '0.04em',
-                  marginBottom: '0.4rem',
+                  marginBottom: '0.2rem',
                   textShadow: '0 1px 8px rgba(0,0,0,0.8)',
                   fontStyle: 'italic',
                 }}>
                 <span style={{ fontStyle: 'normal' }}>{titleIcon}</span>
                 {careerTitle}
-              </div>
-              <div className="flex items-center gap-2 font-display uppercase"
-                style={{
-                  fontSize: '0.5rem', color: 'var(--color-parchment-dim)', letterSpacing: '0.12em',
-                  background: 'rgba(8,5,2,0.45)', borderRadius: '20px',
-                  padding: '0.2rem 0.6rem',
-                  border: '1px solid rgba(201,168,76,0.12)',
-                  backdropFilter: 'blur(4px)',
-                }}>
-                <span>🛡 {playerAge} YAŞ</span>
-                <span style={{ color: 'var(--color-border-hi)', fontSize: '0.7rem' }}>·</span>
-                <span>❄ {season.toUpperCase()}</span>
-                <span style={{ color: 'var(--color-border-hi)', fontSize: '0.7rem' }}>·</span>
-                <span>📅 {dateStr}</span>
               </div>
             </div>
 
@@ -563,6 +499,25 @@ export default function Dashboard() {
           </div>
         </div>
 
+          {/* Age / Season / Date — bottom-right of hero */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div className="flex items-center gap-2 font-display uppercase"
+              style={{
+                fontSize: '0.5rem', color: 'var(--color-parchment-dim)', letterSpacing: '0.12em',
+                background: 'rgba(8,5,2,0.50)', borderRadius: '20px',
+                padding: '0.22rem 0.7rem',
+                border: '1px solid rgba(201,168,76,0.14)',
+                backdropFilter: 'blur(6px)',
+              }}>
+              <span>🛡 {playerAge} YAŞ</span>
+              <span style={{ color: 'var(--color-border-hi)', fontSize: '0.7rem' }}>·</span>
+              <span>❄ {season.toUpperCase()}</span>
+              <span style={{ color: 'var(--color-border-hi)', fontSize: '0.7rem' }}>·</span>
+              <span>📅 {dateStr}</span>
+            </div>
+          </div>
+        </div>
+
         <div className="hero-sep" />
       </div>
 
@@ -573,6 +528,7 @@ export default function Dashboard() {
         borderTop: '1px solid var(--color-border)',
         borderBottom: '1px solid var(--color-border)',
         boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+        flexShrink: 0,
       }}>
         <StatCard icon="❤"  value={stats.health} label="SAĞLIK"  barColor="#C84040" />
         <StatCard icon="🍎" value={stats.hunger} label="TOKLUK"  barColor="#4A9A5A" />
@@ -581,7 +537,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── SCROLLABLE CONTENT ─────────────────────────────────────────────── */}
-      <div style={{ paddingBottom: '10.5rem', background: 'var(--color-bg)' }}>
+      <div style={{ flex: 1, overflow: 'hidden', paddingBottom: '10.5rem', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column' }}>
 
         {/* ── JOURNAL PANEL ─────────────────────────────────────────────── */}
         <div style={{
@@ -592,6 +548,9 @@ export default function Dashboard() {
           boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
           overflow: 'hidden',
           position: 'relative',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
         }}>
           {/* Corner accents */}
           <div style={{
@@ -610,6 +569,7 @@ export default function Dashboard() {
             padding: '0.85rem 0.9rem 0',
             background: 'linear-gradient(180deg, rgba(201,168,76,0.05) 0%, transparent 100%)',
             borderBottom: '1px solid var(--color-border)',
+            flexShrink: 0,
           }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
               <div>
@@ -694,7 +654,13 @@ export default function Dashboard() {
           </div>
 
           {/* Event list */}
-          <div style={{ padding: '0.85rem 0.85rem 1rem' }}>
+          <div style={{
+            padding: '0.85rem 0.85rem 1rem',
+            flex: 1,
+            overflowY: 'auto',
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(201,168,76,0.22) transparent',
+          }}>
             {currentTabEvents.length > 0 ? (
               currentTabEvents.map((ev, i) => (
                 <EventCard
@@ -787,28 +753,6 @@ export default function Dashboard() {
           </div>
         </button>
       </div>
-
-      {/* ── BOTTOM NAV ────────────────────────────────────────────────────────── */}
-      <nav className="lg:hidden" style={{
-        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-        width: 'min(480px, 100vw)',
-        background: 'linear-gradient(180deg, var(--color-surface) 0%, #0F0B07 100%)',
-        borderTop: '1px solid var(--color-border-hi)',
-        display: 'flex', zIndex: 60,
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        boxShadow: '0 -6px 28px rgba(0,0,0,0.65)',
-      }}>
-        <div style={{
-          position: 'absolute', top: 0, left: '5%', right: '5%', height: '1px',
-          background: 'linear-gradient(to right, transparent, rgba(201,168,76,0.22) 50%, transparent)',
-          pointerEvents: 'none',
-        }} />
-        <NavItem icon={Flame}  label="Ana Sayfa" to="/oyun"           end={true} />
-        <NavItem icon={Shield} label="Karakter"  to="/oyun/karakter"  />
-        <NavItem icon={Castle} label="Şehir"     to="/oyun/harita"    />
-        <NavItem icon={Users}  label="İlişkiler" to="/oyun/iliskiler" />
-        <NavItem icon={Scroll} label="Menü"      to="/oyun/meslek"    />
-      </nav>
 
     </div>
   );
