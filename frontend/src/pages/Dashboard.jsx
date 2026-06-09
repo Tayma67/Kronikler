@@ -1,1445 +1,753 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useGame } from "@/lib/GameContext";
-import { api } from "@/lib/api";
-import { toast } from "sonner";
-import LifeEventModal from "@/components/LifeEventModal";
-import PerkChoiceModal from "@/components/PerkChoiceModal";
-import StoryEventFeed from "@/components/StoryEventFeed";
+import React, { useState } from 'react';
 import {
-  Heart, Apple, Flame, Scroll, AlertTriangle,
-  Hourglass, Loader2, Swords, Crown, ChevronRight,
-  Shield, Landmark, ChevronDown,
-  ChevronUp, User,
-} from "lucide-react";
+  Coins, ChevronRight, Scroll, Flame, Shield, Castle, Users,
+  Hourglass, Scale, BookMarked, Home, Map, Sword
+} from 'lucide-react';
 
-// ── helpers ───────────────────────────────────────────────────────────────
-function reputationLabel(rep) {
-  const r = Number(rep) || 0;
-  if (r >= 80)  return { label: "Efsane",     color: "text-amber-400" };
-  if (r >= 50)  return { label: "Saygın",     color: "text-emerald-400" };
-  if (r >= 20)  return { label: "Tanınan",    color: "text-blue-400" };
-  if (r >= 0)   return { label: "Tanınmayan", color: "text-stone-400" };
-  if (r >= -20) return { label: "Güvenilmez", color: "text-orange-400" };
-  return              { label: "Sürgün",     color: "text-red-400" };
-}
-
-const PERIODS = [
-  { label: "Hafta", weeks: 1,  short: "H" },
-  { label: "Ay",    weeks: 4,  short: "A" },
-  { label: "Yıl",   weeks: 52, short: "Y" },
-];
-
-const EVENT_ICONS = {
-  // Hayat olayları
-  doğum: "👶", ölüm: "💀", evlilik: "💍", nesil_devri: "🌿", miras: "📜",
-  evlilik_teklifi: "💌", çıkma_teklifi: "💘",
-  // Dünya
-  savaş_ilanı: "⚔️", barış: "🕊️", kıtlık: "🌵", şenlik: "🎉",
-  kral_değişimi: "👑", tahta_çıkış: "👑", savaş_zaferi: "🏆",
-  faction_savaş: "⚔️", isyan: "🔥", halk_isyanı: "🔥",
-  istikrar_artışı: "🌟", lord_düşüşü: "⚠️", yeni_lord: "👑",
-  göç: "🚶", kıtlık_etkisi: "🌾", savaş_hareketi: "🗺️",
-  // Karakter eylemleri
-  çalışma: "🔨", ticaret: "🪙", yolculuk: "🚶", meslek_değişimi: "🔄",
-  meslek_edinme: "🎯", kariyer_terfi: "🏆",
-  suç: "🗡️", suç_yakalandı: "🚨", hırsızlık: "🤫", cinayet: "🩸",
-  hapis: "⛓️", yakalandı: "🚨",
-  dedikodu: "🗣️", başlangıç: "🌅",
-  // Mektep / çocukluk
-  okul: "📚", ders: "📖", kulup: "🎵", aktivite: "🌿", sinav: "📝",
-  cocuk_yatirim: "🌱", cocuk_meslek: "🎯",
-  // İlişkiler / sosyal
-  beceri: "⭐", ilişki: "🤝", iltifat: "🌸", hediye: "🎁",
-  para_verme: "💰", hakaret: "😠", kaçırma: "⛓️",
-  // Savaş
-  savaş_zaferi: "🏆", savaş_kaybı: "💔", savaş_kaçış: "💨",
-  // Görevler
-  görev_tamamlandı: "✅", görev_başarısız: "❌",
-  aile_görevi: "👨‍👩‍👦", aile_görevi_açıldı: "📜", aile_destek: "🤲",
-  adaylık: "🏛️", faction_kontrol: "🛡️",
-  // Kervan
-  kervan: "🐫", kervan_varış: "🏁", kervan_saldırı: "⚔️",
-  // Sağlık / durum
-  enforcement: "⚖️", starvation_warning: "🍞", misilleme: "😤",
-  hastalık: "🤒", iyileşme: "💚",
-  rank_bonusu: "💰", ödül: "🎖️", kuşanma: "🛡️", kullanım: "✋",
-  vergi_ödeme: "💸", vergi_ödendi: "💸", vergi_gecikme: "⚠️",
-  isyan_riski: "🔥", asayis_baskisi: "🚔", asayis_gozaltisi: "⛓️",
-  darbe_yaklasıyor: "⚠️", darbe_icra: "⚔️",
-  darbe_basarili: "🏆", darbe_basarisiz: "💔",
-  haydut_baskını: "💥",
-  // Özel
-  ozel_olay: "✨",
-  // Uyarılar
-  _alert_urgent: "🚨", _alert_high: "⚠️", _alert_normal: "💬",
-  _world_alert: "🌍", _kriz_alert: "🔥",
+// ── SEASON → HERO IMAGE MAP ──────────────────────────────────────────────────
+const SEASON_IMAGE = {
+  'YAZ':       '/images/hero/cocuk_yaz.jpg',
+  'KIŞ':       '/images/hero/cocuk_kis.jpg',
+  'SONBAHAR':  '/images/hero/cocuk_sonbahar.jpg',
+  'İLKBAHAR':  '/images/hero/cocuk_ilkbahar.jpg',
 };
 
-const EVENT_COLORS = {
-  // Hayat
-  ölüm: "border-red-500", doğum: "border-emerald-500",
-  evlilik: "border-pink-500", nesil_devri: "border-emerald-600",
-  miras: "border-violet-500", evlilik_teklifi: "border-pink-400",
-  çıkma_teklifi: "border-pink-300",
-  // Dünya
-  savaş_ilanı: "border-red-600", faction_savaş: "border-red-700",
-  savaş_zaferi: "border-amber-500", savaş_kaybı: "border-red-600",
-  savaş_kaçış: "border-orange-500", savaş_hareketi: "border-stone-500",
-  kral_değişimi: "border-amber-400", tahta_çıkış: "border-amber-400",
-  isyan: "border-red-700", halk_isyanı: "border-red-700",
-  istikrar_artışı: "border-emerald-600", lord_düşüşü: "border-amber-600",
-  yeni_lord: "border-amber-500", göç: "border-stone-500",
-  kıtlık: "border-orange-600", kıtlık_etkisi: "border-orange-500",
-  barış: "border-sky-500", şenlik: "border-yellow-500",
-  // Eylemler
-  çalışma: "border-stone-600", ticaret: "border-emerald-700",
-  yolculuk: "border-stone-500", meslek_değişimi: "border-blue-600",
-  meslek_edinme: "border-blue-500", kariyer_terfi: "border-amber-400",
-  // Suç
-  suç: "border-red-800", suç_yakalandı: "border-red-700",
-  hırsızlık: "border-red-800", cinayet: "border-red-900",
-  hapis: "border-red-700", yakalandı: "border-red-700",
-  kaçırma: "border-purple-600",
-  // Sosyal
-  ilişki: "border-sky-500", iltifat: "border-pink-400",
-  hediye: "border-amber-400", para_verme: "border-amber-500",
-  hakaret: "border-red-500", dedikodu: "border-stone-500",
-  misilleme: "border-orange-600",
-  // Mektep
-  ders: "border-blue-500", kulup: "border-purple-500",
-  aktivite: "border-emerald-500", sinav: "border-amber-500",
-  okul: "border-blue-500", cocuk_yatirim: "border-emerald-400",
-  cocuk_meslek: "border-blue-400",
-  // Görevler
-  görev_tamamlandı: "border-blue-500", görev_başarısız: "border-red-500",
-  aile_görevi: "border-amber-500", aile_görevi_açıldı: "border-amber-400",
-  aile_destek: "border-amber-400", adaylık: "border-amber-500",
-  faction_kontrol: "border-orange-500",
-  // Kervan
-  kervan: "border-amber-600", kervan_varış: "border-emerald-600",
-  kervan_saldırı: "border-red-600",
-  // Sağlık
-  hastalık: "border-red-400", iyileşme: "border-emerald-500",
-  // Darbe & vergi
-  vergi_ödeme: "border-amber-700", vergi_ödendi: "border-amber-700",
-  vergi_gecikme: "border-orange-600", isyan_riski: "border-red-600",
-  asayis_baskisi: "border-orange-500", asayis_gozaltisi: "border-red-600",
-  darbe_yaklasıyor: "border-red-500", darbe_icra: "border-red-700",
-  darbe_basarili: "border-amber-500", darbe_basarisiz: "border-red-600",
-  // Diğer
-  rank_bonusu: "border-amber-400", ödül: "border-amber-500",
-  kuşanma: "border-stone-500", kullanım: "border-stone-500",
-  haydut_baskını: "border-orange-600", başlangıç: "border-orange-500",
-  ozel_olay: "border-amber-400",
-  enforcement: "border-amber-700", starvation_warning: "border-orange-700",
-  _alert_urgent: "border-red-600", _alert_high: "border-amber-600",
-  _alert_normal: "border-stone-600", _world_alert: "border-violet-600",
-  _kriz_alert: "border-red-700",
+// ── MOCK DATA ────────────────────────────────────────────────────────────────
+const character = {
+  name:      'İLKNUR HAN',
+  title:     'Demirci Çırağı',
+  titleIcon: '⚒',
+  age:       15,
+  season:    'YAZ',
+  date:      'HAZİRAN 1255',
+  rep:       3,
+  repTitle:  'TANINMAYAN',
+  repIcon:   '🦁',
+  stats: { health: 100, hunger: 75, money: 158.4, fame: 3 },
 };
 
-// ══════════════════════════════════════════════════════════════════════════
-// HİKAYELEŞTİRME — olay tiplerine göre kısa atmosferik açılış cümleleri
-// ══════════════════════════════════════════════════════════════════════════
-const FLAVOR_LINES = {
-  // Mektep & Çocukluk
-  ders:            ["Kalem kağıda değdi, zihin açıldı.", "Bugün bir şeyler yapıştı aklına.", "Hoca memnun ayrıldı. Sanırım.", "Bilgi sessizce birikir — farkında bile olmazsın.", "Sabah ezanıyla başlandı, akşam yorgunluğuyla bitti."],
-  sinav:           ["Eller ter içindeydi. Nefes tutuldu.", "Kâğıt önünde, tüm bildikler sırada bekliyordu.", "Sınav kâğıdı geldi. Bazı sorular tanıdık, bazıları... hmm.", "Hoca yüzünü okumak imkânsızdı. İyi mi, kötü mü?"],
-  kulup:           ["Kapıdan ilk kez girildi. Koku yabancıydı.", "Biri güldü — buz kırıldı.", "İlk gün böyle işte: garip ama heyecanlı."],
-  aktivite:        ["Eller kirlendi, alın terledi. İyi bir terlemeydi.", "Bugün kaslar konuştu.", "Yanındakiler daha hızlıydı. Durma sebebi değil."],
-  cocuk_yatirim:   ["Birikimi bir amaca yatırıldı.", "Küçük bir kumar — ama kaderine inanmak gerekiyordu."],
-  cocuk_meslek:    ["İlk usta-çırak ilişkisi böyle başlar: bir \"Bak, şöyle yapılır\" ile.", "Ellere bakıldı. Belki de doğru meslek bu."],
-  okul:            ["Mektep kapısından girildi. Gün başladı.", "Bugün ders, yarın imtihan. Böyle büyünür insan."],
-  // Günlük Hayat
-  çalışma:         ["Alın teri döküldü.", "İş ağırdı. Ama yarın daha kolay olacak — hep öyle olur.", "Ustanın gözü bir an takıldı. Onay mıydı?", "Günün sonu eller yıkandı. Yeterliydi.", "Çarşı gürültüsü içinde çalışıldı. Kese fark etti."],
-  ticaret:         ["Pazarda gözler birkaç kez buluştu. Sonunda anlaşıldı.", "Tüccar kaşını kaldırdı. Sonra güldü — iyi demek.", "Mal gitti, akçe geldi. Dünya böyle döner.", "Kazanmak bazen kimin daha uzun beklediğiyle ölçülür."],
-  yolculuk:        ["Yol uzundu. Düşünmeye bol vakit oldu.", "Şehir kapısından geçildi — eski mi, yeni mi?", "Ayaklar yoruldu, ama manzara değerdi.", "İçeride gürültü vardı. Dışarıda sadece yol."],
-  meslek_değişimi: ["Eski kapı kapandı. Yenisi aralandı.", "\"Bu defa farklı olacak\" dendi. Belki haklı.", "Yeni elbise henüz vücuda oturmamış — ama oturacak."],
-  meslek_edinme:   ["İlk kez bir meslek sahibi olundu. Kulağa güzel geliyor.", "\"Senin işin bu.\" Parmaklar incelendi. Evet, bu işe yarar."],
-  kariyer_terfi:   ["Usta omzuna dokundu: \"Hazırsın.\"", "Terfi haberi gelince önce şüpheyle bakıldı. Sonra gülümsendi.", "Yeni rütbe, daha ağır omuzlar — ama daha dik duruş.", "Şehirde adın biraz daha büyüdü."],
-  rank_bonusu:     ["Sadakat karşılıksız kalmaz.", "Fraksiyon payı bu hafta da cebe girdi.", "Para kazanmanın en rahat yolu: sadık kalmak."],
-  // Savaş & Çatışma
-  savaş_zaferi:    ["Toz dağıldı. Hâlâ ayaktasın.", "Rakip yerde. Sen ayakta. Bundan iyisi yok.", "Şehir bunu konuşacak.", "Düşman hızlı geldi — daha hızlı gitti.", "Zafer anlık, hazırlık uzun. Değdi."],
-  savaş_kaybı:     ["Ah. Bugün değilmiş.", "Bu acı öğretici bir tür.", "Son hamle gözden kaçtı. Bir dahaki sefere.", "Hayatta kalmak da bir zafer sayılır.", "Bugün hüsran. Ama tarih hep yenilgilerle başlar."],
-  savaş_kaçış:     ["Stratejik geri çekilme. Kaçmak değil — kesinlikle.", "Ölümle dans edildi; müzik erken bitti.", "Sağ çıkmak da bir taktiktir.", "Bu savaş kazanılmazdı. Akıl galip geldi."],
-  // Suç & Ceza
-  suç:             ["Gece karanlığında. Tanık yoktu. Sanırım.", "Risk alındı. Heyecan var — ve biraz pişmanlık.", "Eller titredi. Sonra titremedi. Bu, endişe verici.", "Yapıldı. Geri dönüşü yok."],
-  suç_yakalandı:   ["\"Dur!\" sesi her şeyi dondurdu.", "Yakalandı. En kötüsü: beklenen bir andı.", "\"Ben mi?\" yüz ifadesi takıldı yüze. İşe yaramadı."],
-  hırsızlık:       ["El hızlı hareket etti, göz kırpmadan.", "Pazar kalabalığı iyi bir perde oldu. Bu sefer.", "Küçük bir şeydi. Ama ağırlığı büyük hissettiriyor."],
-  hapis:           ["Demir kapı kapandı. Sessizlik bastı.", "Düşünmeye bol vakit var artık.", "Bu da geçer. Geçmek zorunda."],
-  cinayet:         ["Geri dönülmez bir çizgi geçildi.", "Kan soğuduktan sonra ellere bakıldı uzun süre."],
-  yakalandı:       ["Kaçacak yer kalmadı.", "Öngörülmüş bir sondı. Ama yine de acıttı."],
-  // Sosyal & İlişki
-  iltifat:         ["Beklenmedik bir an.", "İltifat basitti. Ama o gün içinde bir şey ısındı.", "\"Sen farklısın\" denildi. İyi farklı."],
-  hediye:          ["Küçük bir paket, büyük bir anlam.", "\"Al\" dedi sadece. Hiç açıklama yapmadı.", "Bu jest hatırlarda kalacak."],
-  para_verme:      ["Akçe el değiştirdi. İlişki kaldı — daha sağlam.", "\"İşte\" denildi. Doğruydu."],
-  evlilik:         ["İki hayat birleşti. Kolay değildi — değmezdi zaten.", "Yemin edildi. Şahitler vardı. Gökyüzü de.", "Bu bağ, kader mi yoksa seçim mi? Her ikisi."],
-  evlilik_teklifi: ["Kalp hızlandı. Kelimeler güçlükle çıktı.", "En cesur an bu muydu? Belki evet."],
-  // Hayat Döngüsü
-  doğum:           ["Dünyaya yeni bir ses geldi.", "Küçük bir ağlama sesi — her şeyin başlangıcı.", "Hayat devam ediyor. Yeni bir sayfayla."],
-  ölüm:            ["Bir mum söndü.", "Geride ne kaldı? Anılar. Ve boşluk.", "Ölüm herkesin kapısına gelir — bugün başka bir kapıya vurdu."],
-  nesil_devri:     ["Bir çağ kapandı, yenisi açıldı.", "Miras sadece toprakta değil, kanda da taşınır."],
-  miras:           ["Geçmişten gelen bir el uzandı.", "Bu miras hak mı, yük mü? Zamanla anlaşılır."],
-  // Görevler & Aile
-  görev_tamamlandı:["İş bitti. Tam ve eksiksiz.", "Söz verildi, tutuldu. Bu basit görünür — değil.", "Vaaat tutuldu. Nadirdir."],
-  görev_başarısız: ["Her şey yolundaydı. Ta ki gitmeyene kadar.", "Bugün ders alındı. Bedavaya değil."],
-  aile_görevi:     ["Aile işi, başka işlerden farklıdır. Reddedilemez.", "Kan bağı bazen zincir gibi, bazen kanat gibi hissettirir."],
-  aile_destek:     ["Aile, hesap sormadan uzandı.", "\"Senden başka kimsem yok\" demek gerekmedi — zaten biliniyordu."],
-  // Kervan
-  kervan:          ["Kervan yola çıktı. Yük ağır, yol belirsiz, umut yerinde.", "Deve sıralarında mal yüklenirken hesaplar yapıldı."],
-  kervan_varış:    ["Kervan hedefe ulaştı. Değdi.", "Mal teslim edildi, para alındı. Bir sonrakine."],
-  kervan_saldırı:  ["Yolda beklenmedik misafirler. Silahlı ve aceleci.", "Haydutlar iyi seçmiş: yolun en ıssız noktasını."],
-  // Fraksiyon & Yönetim
-  faction_kontrol: ["Nüfuz sessizce büyür. Bugün biraz daha büyüdü.", "Fraksiyon içinde bir yer daha sağlamlaştı. Kimse fark etmedi. Henüz."],
-  adaylık:         ["Ad öne sürüldü. Geri alınamaz artık.", "Aday olmak cesaret ister. Bugün gösterildi."],
-  darbe_yaklasıyor:["Plan olgunlaşıyor. Sabır da bir silah.", "Geri sayım başladı. Kimse adını bilmiyor henüz."],
-  darbe_basarili:  ["Sabah uyandığında güç el değiştirmişti.", "\"İmkânsız\" diyenler yanılmıştı. Kanıtlandı.", "Yıllar süren hazırlık, bir gecede meyvesini verdi."],
-  darbe_basarisiz: ["Plan bir noktada çöktü. Ve her şey onunla birlikte.", "Bazı riskler büyük bedel ödetir. Bu onlardan biriydi."],
-  // Vergi & Asayiş
-  vergi_ödendi:    ["Para gitti. Ağrıdı. Ama asker geceleri kapıda beklemiyor — şimdilik.", "\"Devletin hakkı\" verildi. İsteksizce de olsa."],
-  vergi_gecikme:   ["Vergi ödenmedi. Bu notlar birikmez diyenler yanılmış.", "Akçe yoktu. Bu özür sayılmaz, ama gerçek."],
-  asayis_baskisi:  ["\"Dur!\" Duruldu. Cüzdan ağırlaştı, onur... kısmen.", "Suç kaydının bu kadar hızlı yayılacağı tahmin edilmemişti."],
-  asayis_gozaltisi:["Zindanın havası bambaşka.", "Gözaltı süreci tamamlandı. Bundan ders çıkarılmadıysa, hazırlıklı ol."],
-  // Sağlık
-  iyileşme:        ["Bir sabah: \"Daha iyi hissediyorum.\" Küçük, ama gerçek.", "Vücut yavaş yavaş geri dönüyor.", "İyi haber: bugün dün kadar kötü değil."],
-  hastalık:        ["Yataktan kalkmak güç.", "Vücut bazen bedelini ister. Bugün talep geldi.", "Hasta olmak; hayatın geri kalanının değerini hatırlatır."],
-  // Dünya Olayları
-  şenlik:          ["Şehir bugün güldü.", "Davullar çaldı, insanlar toplandı. Kötü günler bir gün ertelendi.", "Şenlik bitince her şey eskiye dönecek. Ama bu an gerçekti."],
-  isyan:           ["Bir lord sabaha karşı bayrak kaldırdı.", "İstikrar sarsıldı. Bu tür sarsıntılar habersiz gelir."],
-  halk_isyanı:     ["Halk sokaklara döküldü. Sesler birleşince duyulur.", "Öfke uzun süredir birikiyor. Bugün taştı."],
-  kıtlık:          ["Ekmek fiyatı dün ikiydi, bugün üç.", "Ambar kapıları kapandı. Şehir içine çekildi."],
-  haydut_baskını:  ["Şehrin dışından atlar geliyor. İyi niyet aramayın.", "Haydutlar seçti: bu köy, bu gece. Şans işte."],
-  tahta_çıkış:     ["Yeni bir el taç giydi. Eski denge değişti.", "Tahta oturmak kolaydır. Oturmaya devam etmek — asıl mesele."],
-  kral_değişimi:   ["Kral öldü — yaşasın kral. Belirsizlik asılı kaldı.", "Yeni dönem başlıyor. Hayırlısı."],
-  savaş_ilanı:     ["Elçi dönmedi. Bu, savaş demek.", "Haberci soluk soluğa kapıya dayandı. Haber kötüydü."],
-  barış:           ["Silahlar bırakıldı. Herkes kazandığını sandı. Herkes kaybetti de biraz.", "Savaş bitti. Şimdi daha zor iş: birlikte yaşamak."],
-  // Stat sentetik olaylar
-  enforcement:     ["Yetkililer harekete geçti.", "Bir hatırlatma geldi. Ciddiye alınmalı."],
+const events = {
+  gunluk: [
+    {
+      id: 1, type: 'ACİL', typeColor: '#E05A30',
+      icon: Hourglass, iconColor: '#E05A30',
+      title: '3 fırsat bu hafta kapanıyor — kaçırma!',
+      body: 'Bazı önemli fırsatlar zamanla kaybolur.\nKararlarını iyi seç.',
+      time: 'Az önce', timeDot: '#E05A30', badge: null,
+      urgent: true,
+    },
+    {
+      id: 2, type: 'DÜNYA', typeColor: '#D4820A',
+      icon: Scale, iconColor: '#D4820A',
+      title: "Külkale'de halkın huzursuzluğu artıyor.",
+      body: 'Pazar yerinde ekmek fiyatları son haftalarda iki katına çıktı.\nYerel yöneticiler olası bir isyandan endişe ediyor.',
+      time: '2 saat önce', timeDot: '#D4820A',
+      badge: { label: '⚠ İsyan Riski +12', color: '#7B2020', textColor: '#E05A30' },
+      urgent: true,
+    },
+    {
+      id: 3, type: 'TİCARET', typeColor: '#4A9A5A',
+      icon: Coins, iconColor: '#C9A84C',
+      title: 'Değirmende çalışarak ustana yardım ettin.',
+      body: 'Bugün un çuvallarını taşıyarak emeğini gösterdin.\nUstan senden memnun kaldı.',
+      time: '5 saat önce', timeDot: '#4A9A5A',
+      badge: { label: '💰 +5 Akçe', color: '#1A3020', textColor: '#C9A84C' },
+      urgent: false,
+    },
+    {
+      id: 4, type: 'BİLGİ', typeColor: '#2A6FA8',
+      icon: BookMarked, iconColor: '#2A6FA8',
+      title: 'Yaşlı bir adamla uzun uzun konuştun.',
+      body: 'Sana eski savaşlardan ve krallıkların yükselişinden bahsetti.\nÇok şey öğrendin.',
+      time: '1 gün önce', timeDot: '#2A6FA8',
+      badge: { label: '📚 +1 Bilgi', color: '#0D2040', textColor: '#4A9AE8' },
+      urgent: false,
+    },
+  ],
 };
 
-function getFlavorText(event) {
-  if (!event?.type) return null;
-  if (event.type.startsWith("_")) return null;   // uyarılar hikayeleştirilmez
-  // narrative alanı varsa FLAVOR_LINES kullanma — EventCard ayrı gösterecek
-  if (event.narrative) return null;
-  if (event._synthetic && !FLAVOR_LINES[event.type]) return null;
-  const lines = FLAVOR_LINES[event.type];
-  if (!lines || lines.length === 0) return null;
-  const seed = ((event.day || 0) + (event.text?.length || 0)) % lines.length;
-  return lines[seed < 0 ? 0 : seed];
-}
-
-const KARAKTER_TYPES = new Set([
-  // Hayat olayları
-  "doğum", "ölüm", "evlilik", "nesil_devri", "miras",
-  "evlilik_teklifi", "çıkma_teklifi",
-  // Günlük eylemler
-  "çalışma", "ticaret", "yolculuk", "meslek_değişimi", "meslek_edinme",
-  "kariyer_terfi", "rank_bonusu", "ödül",
-  // Mektep / çocukluk
-  "okul", "ders", "kulup", "aktivite", "sinav",
-  "cocuk_yatirim", "cocuk_meslek",
-  // Sosyal / ilişki
-  "beceri", "ilişki", "iltifat", "hediye", "para_verme",
-  "hakaret", "dedikodu", "başlangıç",
-  // Suç & ceza
-  "suç", "suç_yakalandı", "hırsızlık", "cinayet",
-  "hapis", "yakalandı", "kaçırma", "misilleme",
-  // Savaş (oyuncu perspektifli)
-  "savaş_zaferi", "savaş_kaybı", "savaş_kaçış",
-  // Görevler
-  "görev_tamamlandı", "görev_başarısız",
-  "aile_görevi", "aile_görevi_açıldı", "aile_destek",
-  // Kervan
-  "kervan", "kervan_varış", "kervan_saldırı",
-  // Faction & yönetim
-  "adaylık", "faction_kontrol",
-  // Sağlık
-  "iyileşme", "hastalık",
-  // Darbe & güvenlik
-  "asayis_baskisi", "asayis_gozaltisi",
-  "darbe_yaklasıyor", "darbe_icra", "darbe_basarili", "darbe_basarisiz",
-  // Vergi
-  "vergi_ödeme", "vergi_ödendi", "vergi_gecikme", "isyan_riski",
-  // Ekipman
-  "kuşanma", "kullanım",
-  // Özel & uyarılar
-  "ozel_olay", "starvation_warning", "enforcement",
-  "_alert_urgent", "_alert_high", "_alert_normal",
-  "haydut_baskını",
-]);
-
-const DUNYA_TYPES = new Set([
-  "savaş_ilanı", "barış", "kıtlık", "kıtlık_etkisi", "şenlik",
-  "kral_değişimi", "tahta_çıkış", "savaş_zaferi", "savaş_hareketi",
-  "faction_savaş", "ittifak", "isyan", "halk_isyanı",
-  "istikrar_artışı", "lord_düşüşü", "yeni_lord", "göç",
-  "vergi_artışı", "vergi_indirimi", "savunma_yatırımı",
-  "isyan_bastırma", "haydut_baskını",
-  "_world_alert", "_kriz_alert",
-]);
-
-// ── HERO SAHNE SİSTEMİ ───────────────────────────────────────────────────
-// Görsel adları: /images/hero/{yaşGrubu}_{mevsim}.jpg
-// Mevcut görseller: cocuk_ilkbahar, cocuk_yaz, cocuk_sonbahar, cocuk_kis
-// Yeni yaş grubu görselleri eklendikçe availableAgeGroups'a ekle
-
-const SEASON_KEY_MAP = {
-  "İlkbahar": "ilkbahar",
-  "Yaz":      "yaz",
-  "Sonbahar": "sonbahar",
-  "Kış":      "kis",
-};
-
-const SEASON_TOP_GRADIENT = {
-  "İlkbahar": "from-emerald-950/65 via-emerald-950/20 to-transparent",
-  "Yaz":      "from-amber-950/55 via-amber-950/15 to-transparent",
-  "Sonbahar": "from-orange-950/70 via-orange-950/20 to-transparent",
-  "Kış":      "from-slate-950/80 via-slate-950/25 to-transparent",
-};
-
-// Hangi yaş grubu görsellerinin hazır olduğunu buradan yönet
-const AVAILABLE_AGE_GROUPS = ["cocuk"]; // genişledikçe: "genc", "yetiskin", "yasli"
-
-function getHeroImage(age, season) {
-  const ageGroup = age >= 50 ? "yasli"
-                : age >= 18 ? "yetiskin"
-                : age >= 13 ? "genc"
-                : "cocuk";
-  const seasonKey    = SEASON_KEY_MAP[season] || "kis";
-  const resolvedAge  = AVAILABLE_AGE_GROUPS.includes(ageGroup) ? ageGroup : "cocuk";
-  return `/images/hero/${resolvedAge}_${seasonKey}.jpg`;
-}
-
-// ── KARAKTER AVATAR ──────────────────────────────────────────────────────
-function CharacterAvatar({ player, size = 38 }) {
-  const [imgError, setImgError] = useState(false);
-  const age = player?.age || 7;
-  const gender = player?.gender || "erkek";
-  const ageGroup = age >= 50 ? "yasli" : age >= 18 ? "yetiskin" : age >= 13 ? "genc" : "cocuk";
-  const resolvedAge = AVAILABLE_AGE_GROUPS.includes(ageGroup) ? ageGroup : "cocuk";
-  const imgSrc = `/images/characters/${gender}_${resolvedAge}.jpg`;
-  const initial = (player?.name || "?")[0].toUpperCase();
-
+// ── STAT CARD ────────────────────────────────────────────────────────────────
+function StatCard({ icon, value, label, barColor, isLast }) {
+  const pct = Math.min(100, Math.max(0, (value / (label === 'AKÇE' ? 500 : 100)) * 100));
   return (
     <div
+      className="flex-1 flex flex-col items-center justify-center relative"
       style={{
-        width: size, height: size,
-        borderRadius: "50%",
-        border: "2px solid rgba(200,146,58,.7)",
-        boxShadow: "0 0 0 1px rgba(0,0,0,.75), 0 0 14px rgba(200,146,58,.22), 0 2px 10px rgba(0,0,0,.9)",
-        overflow: "hidden",
-        flexShrink: 0,
-        background: "rgba(22,13,6,.97)",
-        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: '0.85rem 0.4rem 0.6rem',
+        background: `radial-gradient(ellipse at 50% 0%, ${barColor}0D 0%, transparent 70%), var(--color-card)`,
+        borderRight: isLast ? 'none' : '1px solid var(--color-border)',
+        boxShadow: `inset 0 2px 12px rgba(0,0,0,0.55), inset 0 -1px 0 rgba(201,168,76,0.06)`,
       }}
     >
-      {!imgError ? (
-        <img
-          src={imgSrc}
-          alt={player?.name || "Karakter"}
-          style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }}
-          onError={() => setImgError(true)}
-          draggable={false}
-        />
-      ) : (
-        <span style={{
-          fontFamily: "'Cinzel', Georgia, serif",
-          fontSize: size * 0.42,
-          fontWeight: 700,
-          color: "rgba(200,146,58,.85)",
-          textShadow: "0 0 10px rgba(200,146,58,.4)",
-          userSelect: "none",
-          lineHeight: 1,
-        }}>
-          {initial}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
+        background: `linear-gradient(to right, transparent 0%, ${barColor}99 30%, ${barColor} 50%, ${barColor}99 70%, transparent 100%)`,
+        boxShadow: `0 0 8px ${barColor}60`,
+      }} />
+
+      <div style={{
+        width: '2.2rem', height: '2.2rem', borderRadius: '50%',
+        background: `radial-gradient(circle, ${barColor}18 0%, transparent 70%)`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: '0.18rem',
+      }}>
+        <span style={{ fontSize: '1.45rem', lineHeight: 1, filter: `drop-shadow(0 0 4px ${barColor}88)` }}>
+          {icon}
         </span>
-      )}
-    </div>
-  );
-}
-
-function HeroScene({ player, cal, rep }) {
-  const age     = player?.age || 7;
-  const season  = cal?.season || "Kış";
-  const heroSrc = getHeroImage(age, season);
-  const topGrad = SEASON_TOP_GRADIENT[season] || SEASON_TOP_GRADIENT["Kış"];
-
-  return (
-    <div
-      className="relative w-full shrink-0 overflow-hidden"
-      style={{ height: "52vw", maxHeight: "270px", minHeight: "190px" }}
-    >
-      {/* ─ Görsel ─ */}
-      <img
-        src={heroSrc}
-        alt={`${season} manzarası`}
-        className="absolute inset-0 w-full h-full object-cover object-center select-none"
-        draggable={false}
-      />
-
-      {/* ─ Üst koyu geçiş ─ */}
-      <div className={`absolute inset-0 bg-gradient-to-b ${topGrad} pointer-events-none`} />
-
-      {/* ─ Alt koyu geçiş — daha derin, stat pill satırını kaplar ─ */}
-      <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/65 to-transparent pointer-events-none" />
-
-      {/* ─ Üst katman: isim + tarih (sol) · itibar badge (sağ) ─ */}
-      <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-3 pt-2">
-        {/* Sol: avatar + isim + yaş */}
-        <div className="flex items-center gap-2.5 min-w-0">
-          <CharacterAvatar player={player} size={40} />
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1
-                className="font-heading text-[19px] text-amber-100 leading-none tracking-wide"
-                style={{ textShadow: "0 2px 14px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.7)" }}
-              >
-                {player?.name || "İsimsiz"}
-              </h1>
-              {player?.is_child && (
-                <span className="text-[9px] text-amber-400 font-heading border border-amber-600/50 bg-black/55 backdrop-blur-sm px-1.5 py-0.5 tracking-widest">
-                  ÇOCUK
-                </span>
-              )}
-            </div>
-            <div
-              className="text-[11px] text-stone-300/85 mt-1 font-heading tracking-wide"
-              style={{ textShadow: "0 1px 6px rgba(0,0,0,0.95)" }}
-            >
-              📅 {age} yaş &nbsp;·&nbsp; {cal?.season} &nbsp;·&nbsp; {cal?.month_name} {cal?.year}
-            </div>
-          </div>
-        </div>
-
-        {/* Sağ: itibar rozeti — mockup tarzı kutu */}
-        <div className="shrink-0 ml-2 flex items-center gap-2 bg-black/50 backdrop-blur-sm border border-stone-600/30 rounded-sm px-2.5 py-1.5">
-          <div className="w-7 h-7 rounded-full bg-stone-800/80 border border-stone-600/50 flex items-center justify-center">
-            <User className="w-3.5 h-3.5 text-stone-400" />
-          </div>
-          <div className="text-right">
-            <div className={`font-heading text-[11px] tracking-wider uppercase ${rep.color}`}
-              style={{ textShadow: "0 1px 8px rgba(0,0,0,0.9)" }}>
-              {rep.label}
-            </div>
-            <div className="text-[10px] text-stone-400/80 font-heading tabular-nums">
-              {player?.reputation || 0}
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* ─ Alt katman: stat pills — tam satır, 4 eşit genişlik ─ */}
-      <div className="absolute bottom-0 left-0 right-0 px-3 pb-3">
-        <div className="flex items-stretch gap-1.5">
-          <StatPill glass label="SAĞLIK"  icon={Heart}  value={player?.health || 0}      warn={(player?.health || 0) < 25}   color="text-red-400" />
-          <StatPill glass label="TOKLUK"  icon={Apple}  value={player?.hunger ?? 100}     warn={(player?.hunger ?? 100) < 25} color="text-orange-400" />
-          <StatPill glass label="AKÇE"    icon={Flame}  value={`${player?.money || 0}A`}                                      color="text-amber-400" />
-          <StatPill glass label="TANINMA" icon={Crown}  value={player?.reputation || 0}                                        color="text-stone-300" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// label= varsa hero-style dikey pill (büyük sayı + alt etiket), yoksa kompakt yatay pill
-function StatPill({ icon: Icon, value, warn = false, color = "text-stone-300", glass = false, label = null }) {
-  if (glass && label) {
-    return (
-      <div className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1.5 py-2 rounded-sm border backdrop-blur-sm ${
-        warn
-          ? "bg-red-950/65 border-red-700/55"
-          : "bg-black/50 border-stone-600/30"
-      }`}>
-        <div className="flex items-center gap-1">
-          <Icon className={`w-3 h-3 shrink-0 ${warn ? "text-red-400" : "text-amber-500"}`} />
-          <span className={`text-[13px] font-heading tabular-nums leading-none ${warn ? "text-red-300" : color}`}>{value}</span>
-        </div>
-        <span className="text-[8px] text-stone-500 font-heading tracking-widest uppercase mt-0.5">{label}</span>
-      </div>
-    );
-  }
-  return (
-    <div className={`flex items-center gap-1 px-2 py-1 rounded-sm border ${
-      warn
-        ? "bg-red-950/60 border-red-700/60 backdrop-blur-sm"
-        : glass
-          ? "bg-black/45 border-stone-600/40 backdrop-blur-sm"
-          : "bg-amber-950/20 border-amber-900/30"
-    }`}>
-      <Icon className={`w-3 h-3 shrink-0 ${warn ? "text-red-400" : glass ? "text-amber-500" : "text-amber-800"}`} />
-      <span className={`text-[11px] font-heading tabular-nums ${warn ? "text-red-300" : color}`}>{value}</span>
-    </div>
-  );
-}
-
-// BitLife tarzı olay kartı — icon kutusu, zaman damgası, sağda ok
-function EventCard({ event, pinned = false, fresh = false, timeAgo = null }) {
-  const icon    = EVENT_ICONS[event?.type]  || "📜";
-  const color   = EVENT_COLORS[event?.type] || "border-stone-700";
-  const isAlert = event?.type?.startsWith("_alert");
-  const isWorld = event?.type === "_world_alert";
-  const isKriz  = event?.type === "_kriz_alert";
-  const flavor   = getFlavorText(event);
-  // Narrative: zengin, kişisel, bağlamsal metin (narrative_engine'den)
-  const narrative = event?.narrative || null;
-
-  const mainTextColor = fresh
-    ? "text-emerald-100"
-    : isAlert ? "text-amber-200"
-    : isWorld ? "text-violet-200"
-    : isKriz  ? "text-red-300"
-    : "text-stone-200";
-
-  const rowBg = fresh  ? "bg-emerald-950/10"
-    : pinned && !fresh ? "bg-amber-950/10"
-    : isAlert          ? "bg-red-950/10"
-    : isWorld          ? "bg-violet-950/10"
-    : isKriz           ? "bg-red-950/20"
-    : "";
-
-  const iconBoxBg = fresh  ? "bg-emerald-950/60 border-emerald-800/40"
-    : isAlert              ? "bg-amber-950/60 border-amber-800/40"
-    : isWorld              ? "bg-violet-950/60 border-violet-800/40"
-    : isKriz               ? "bg-red-950/60 border-red-800/40"
-    : "bg-stone-800/70 border-stone-700/40";
-
-  const badgeEl = fresh ? (
-    <span className="text-[9px] text-emerald-500 font-heading tracking-wider uppercase">YENİ</span>
-  ) : pinned && !fresh ? (
-    <span className={`text-[9px] font-heading tracking-wider uppercase ${
-      isKriz || isAlert ? "text-red-400" : "text-amber-600"
-    }`}>AKTİF</span>
-  ) : null;
-
-  return (
-    <div className={`flex items-center gap-2.5 px-3 py-2.5 border-b border-stone-800/30 border-l-4 ${color} ${rowBg}`}>
-
-      {/* İkon kutusu */}
-      <div className={`w-8 h-8 shrink-0 rounded-sm flex items-center justify-center text-sm border ${iconBoxBg}`}>
-        {icon}
-      </div>
-
-      {/* Ana içerik */}
-      <div className="flex-1 min-w-0">
-        {narrative ? (
-          <p className={`text-[13px] leading-snug ${mainTextColor}`}>{narrative}</p>
-        ) : (
-          <>
-            <p className={`text-[13px] leading-snug ${mainTextColor}`}>{event?.text || "Bilinmeyen olay"}</p>
-            {flavor && (
-              <p className="text-[11px] leading-snug mt-0.5 italic text-stone-500">{flavor}</p>
-            )}
-          </>
-        )}
-        {narrative && event?.text && (
-          <p className="text-[10px] text-stone-700 mt-0.5 leading-snug">{event.text}</p>
-        )}
-        {badgeEl && <div className="mt-0.5">{badgeEl}</div>}
-      </div>
-
-      {/* Zaman damgası + ok */}
-      <div className="shrink-0 flex items-center gap-0.5 text-stone-600">
-        {timeAgo && (
-          <span className="text-[10px] font-heading text-stone-500 tabular-nums">{timeAgo}</span>
-        )}
-        <ChevronRight className="w-3.5 h-3.5 text-stone-700 shrink-0" />
-      </div>
-    </div>
-  );
-}
-
-
-// ── Anlık Eylem Paneli (BitLife tarzı: eylemden hemen sonra görünür) ────
-function FreshEventsPanel({ events, onDismiss }) {
-  if (!events || events.length === 0) return null;
-  return (
-    <div className="border-b border-emerald-900/50 bg-emerald-950/15 animate-in slide-in-from-top duration-300">
-      <div className="flex items-center justify-between px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <span className="text-base">⚡</span>
-          <div>
-            <div className="font-heading text-emerald-400 text-xs tracking-wider">SON EYLEM</div>
-            <div className="text-[10px] text-stone-500">{events.length} yeni olay</div>
-          </div>
-        </div>
-        <button
-          onClick={onDismiss}
-          className="text-stone-600 hover:text-stone-400 text-lg leading-none px-1"
-        >×</button>
-      </div>
-      <div className="divide-y divide-emerald-950/60 border-t border-emerald-900/30">
-        {events.map((ev, i) => (
-          <EventCard key={`fresh-${i}`} event={ev} pinned={false} fresh timeAgo={i === 0 ? "Yeni" : null} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Yıl özeti kartı
-function YearSummaryCard({ summary, onDismiss }) {
-  const [open, setOpen] = useState(false);
-  const counts = {};
-  for (const ev of summary.events) {
-    counts[ev.type] = (counts[ev.type] || 0) + 1;
-  }
-  const highlights = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([type, n]) => `${EVENT_ICONS[type] || "📜"} ${n}x ${type.replace(/_/g, " ")}`);
-  const topEvents = summary.events
-    .filter(ev => ["ölüm", "evlilik", "savaş_ilanı", "savaş_zaferi", "kral_değişimi", "nesil_devri"].includes(ev.type))
-    .slice(0, 4);
-
-  return (
-    <div className="border-b border-stone-800 bg-amber-950/10">
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">🌟</span>
-          <div>
-            <div className="font-heading text-amber-400 text-xs tracking-wider">YIL ÖZETİ</div>
-            <div className="text-[10px] text-stone-500">{summary.totalWeeks} hafta • {summary.events.length} olay</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setOpen(o => !o)} className="text-[10px] text-stone-500 hover:text-stone-300 font-heading tracking-wider">
-            {open ? "KAPAT" : "DETAY"}
-          </button>
-          <button onClick={onDismiss} className="text-stone-700 hover:text-stone-400 text-lg leading-none">×</button>
-        </div>
-      </div>
-      <div className="px-4 pb-3 flex flex-wrap gap-1.5">
-        {highlights.map((h, i) => (
-          <span key={i} className="text-[10px] text-stone-400 bg-stone-900 px-2 py-0.5 rounded-sm">{h}</span>
-        ))}
-      </div>
-      {open && topEvents.length > 0 && (
-        <div className="border-t border-stone-800 divide-y divide-stone-900">
-          {topEvents.map((ev, i) => <EventCard key={i} event={ev} />)}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Faction/Yönetici özet satırı — kompakt, sadece rozet gibi
-const FACTION_TYPE_LABELS = {
-  krallık_ordusu:    "Krallık Ordusu",
-  tuccar_loncasi:    "Tüccar Loncası",
-  zanaatkar_loncasi: "Zanaatkar Loncası",
-  paralı_asker:      "Paralı Asker",
-  ilim_cemiyeti:     "İlim Cemiyeti",
-  sifaci_birligi:    "Şifacı Birliği",
-  dini_tarikat:      "Dini Tarikat",
-  oyuncu_kumpanya:   "Seyyah Kumpanya",
-  eskiya_cetesi:     "Eşkıya Çetesi",
-  gizli_cemiyet:     "Gizli Cemiyet",
-};
-
-// ─────────────────────────────────────────────────────────────────────────
-// HAYATİN paneli — mockup'taki sol panel, hero'nun hemen altında
-const SKILL_LABELS_TR = { combat: "Dövüş", trade: "Ticaret", crafting: "El Sanatı", social: "Sosyal" };
-const GOAL_LABELS_TR = {
-  "büyümek":      "Büyü, öğren ve kendi hikayeni yaz.",
-  "toprak_sahibi":"Toprak ve mülk edin.",
-  "zengin":       "Servet ve refah kazan.",
-  "şöhret":       "Adını tarihe yazdır.",
-  "güçlü":        "Güç ve nüfuz kazan.",
-};
-
-function LifePanel({ player, state }) {
-  const npcs = state?.world?.npcs || [];
-  const parentNpcs = (player?.parent_ids || []).map(pid => npcs.find(n => n.id === pid)).filter(Boolean);
-  const mother = parentNpcs.find(n => n.gender === "kadın") || parentNpcs.find(n => n.gender === "female");
-  const father = parentNpcs.find(n => n !== mother) || parentNpcs[0];
-
-  const currentLoc = (state?.world?.locations || []).find(l => l.id === player?.location_id);
-
-  const topSkills = Object.entries(player?.skills || {})
-    .filter(([, v]) => v > 15)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 2)
-    .map(([k]) => SKILL_LABELS_TR[k] || k);
-
-  const goalText = GOAL_LABELS_TR[player?.goal] || player?.goal || "Henüz belirsiz.";
-
-  return (
-    <div className="shrink-0 border-b border-stone-800/50 bg-gradient-to-b from-stone-950/60 to-stone-950/30">
-      <div className="px-3.5 pt-2.5 pb-2">
-        {/* Başlık */}
-        <div className="flex items-center gap-2 mb-2">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-amber-900/40" />
-          <span className="text-[9px] font-heading text-amber-700/70 tracking-[0.25em] uppercase">Hayatın</span>
-          <div className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-900/40" />
-        </div>
-
-        {/* 2 sütun grid */}
-        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-          {/* AİLEN */}
-          <div className="flex items-start gap-1.5 min-w-0">
-            <span className="text-sm shrink-0">👨‍👩‍👦</span>
-            <div className="min-w-0">
-              <div className="text-[8px] text-stone-600 font-heading tracking-widest uppercase">Ailen</div>
-              <div className="text-[11px] text-stone-300 leading-snug">
-                {mother?.name
-                  ? <><span className="text-stone-500">Anne:</span> {mother.name.split(" ")[0]}</>
-                  : <span className="text-stone-600 italic">Bilinmiyor</span>}
-              </div>
-              {father && (
-                <div className="text-[11px] text-stone-300 leading-snug">
-                  <span className="text-stone-500">Baba:</span> {father.name.split(" ")[0]}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* YAŞADIĞIN YER */}
-          <div className="flex items-start gap-1.5 min-w-0">
-            <span className="text-sm shrink-0">🏠</span>
-            <div className="min-w-0">
-              <div className="text-[8px] text-stone-600 font-heading tracking-widest uppercase">Yaşadığın Yer</div>
-              <div className="text-[11px] text-stone-300 leading-snug truncate">
-                {currentLoc?.name || <span className="text-stone-600 italic">Bilinmiyor</span>}
-              </div>
-              {currentLoc?.type && (
-                <div className="text-[9px] text-stone-600 capitalize">{currentLoc.type}</div>
-              )}
-            </div>
-          </div>
-
-          {/* MESLEĞİN */}
-          <div className="flex items-start gap-1.5 min-w-0">
-            <span className="text-sm shrink-0">⚒️</span>
-            <div className="min-w-0">
-              <div className="text-[8px] text-stone-600 font-heading tracking-widest uppercase">Mesleğin</div>
-              <div className="text-[11px] text-stone-300 leading-snug">
-                {player?.profession
-                  ? <span className="capitalize">{player.profession}</span>
-                  : <span className="text-stone-600 italic">Henüz bir mesleğin yok</span>}
-              </div>
-            </div>
-          </div>
-
-          {/* BECERİLERİN */}
-          <div className="flex items-start gap-1.5 min-w-0">
-            <span className="text-sm shrink-0">⭐</span>
-            <div className="min-w-0">
-              <div className="text-[8px] text-stone-600 font-heading tracking-widest uppercase">Becerilerin</div>
-              <div className="text-[11px] text-stone-300 leading-snug">
-                {topSkills.length > 0
-                  ? topSkills.join(", ")
-                  : <span className="text-stone-600 italic">Henüz keşfedilmedi</span>}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* HAYAT HEDEFİN — amber vurgulu alt bant */}
-        <div className="mt-2.5 pt-2 border-t border-stone-800/50 flex items-start gap-1.5">
-          <span className="text-sm shrink-0">🎯</span>
-          <div>
-            <div className="text-[8px] text-amber-700/80 font-heading tracking-widest uppercase mb-0.5">Hayat Hedefin</div>
-            <p className="text-[11px] text-amber-400/75 leading-snug">{goalText}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatusStrip({ player, world }) {
-  const factionId = player?.faction_id;
-  const factions  = world?.factions || [];
-  const myFac     = factions.find((f) => f.id === factionId);
-  const governances = world?.governances || [];
-  const myGov       = governances.find((g) => g.governor_id === "PLAYER");
-  const govLoc      = myGov ? (world?.locations || []).find((l) => l.id === myGov.location_id) : null;
-
-  if (!myFac && !myGov) return null;
-
-  return (
-    <div className="flex items-center gap-2 px-4 py-2 border-b border-stone-800/60 bg-stone-950/40 overflow-x-auto">
-      {myFac && (() => {
-        const rankTable  = myFac.rank_table || [];
-        const playerRank = player?.faction_rank ?? 0;
-        const rankName   = rankTable[playerRank] || "—";
-        return (
-          <Link to="/oyun/karakter" className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity">
-            <Shield className="w-3 h-3 text-orange-500" />
-            <span className="text-[10px] text-stone-400 font-heading">{myFac.name}</span>
-            <span className="text-[10px] text-amber-400 font-heading">· {rankName}</span>
-          </Link>
-        );
-      })()}
-      {myFac && myGov && <span className="text-stone-700 text-xs shrink-0">|</span>}
-      {myGov && govLoc && (
-        <Link to="/oyun/karakter" className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity">
-          <Landmark className="w-3 h-3 text-amber-500" />
-          <span className="text-[10px] text-stone-400 font-heading">{myGov.governor_title}</span>
-          <span className="text-[10px] text-stone-500 font-heading">· {govLoc.name}</span>
-          {myGov.governor_legitimacy < 40 && (
-            <AlertTriangle className="w-3 h-3 text-red-400 ml-0.5" />
-          )}
-        </Link>
-      )}
-      <Link to="/oyun/karakter" className="ml-auto shrink-0 text-[9px] text-stone-600 hover:text-stone-400 font-heading tracking-wider">
-        DETAY →
-      </Link>
-    </div>
-  );
-}
-
-// Dünya savaş durumu özeti (Dünya tabı feed'inde gösterilecek)
-function buildWorldAlertEvents(state) {
-  const kingdoms = state?.world?.kingdoms || [];
-  const factions = state?.world?.factions || [];
-  const history  = Array.isArray(state?.history) ? state.history : [];
-  const events   = [];
-
-  const seen = new Set();
-  for (const k of kingdoms.filter(k => k.at_war_with?.length > 0)) {
-    for (const eid of (k.at_war_with || [])) {
-      const key = [k.id, eid].sort().join("-");
-      if (!seen.has(key)) {
-        seen.add(key);
-        const enemy = kingdoms.find(x => x.id === eid);
-        if (enemy) events.push({ type: "_world_alert", text: `${k.name} ⚔️ ${enemy.name} savaşı sürüyor.`, _pinned: true });
-      }
-    }
-  }
-  const seenF = new Set();
-  for (const f of factions.filter(f => f.at_war_with?.length > 0)) {
-    for (const eid of (f.at_war_with || [])) {
-      const key = [f.id, eid].sort().join("-");
-      if (!seenF.has(key)) {
-        seenF.add(key);
-        const enemy = factions.find(x => x.id === eid);
-        if (enemy) events.push({ type: "_world_alert", text: `${f.name} ⚔️ ${enemy.name} çatışması devam ediyor.`, _pinned: true });
-      }
-    }
-  }
-  const lastCrown = [...history].reverse().find(e => e.type === "kral_değişimi" || e.type === "tahta_çıkış");
-  if (lastCrown) events.push({ type: "_world_alert", text: lastCrown.text, _pinned: true });
-
-  return events;
-}
-
-// ── main ──────────────────────────────────────────────────────────────────
-export default function Dashboard() {
-  const { state, advance, lastWorldEvent, clearWorldEvent, freshEvents, clearFreshEvents } = useGame() || {};
-  const navigate = useNavigate();
-  const [advancing, setAdvancing]             = useState(false);
-
-  const [selectedPeriod, setSelectedPeriod]   = useState(PERIODS[0]);
-  const [advProgress, setAdvProgress]         = useState(null);
-  const [yearSummary, setYearSummary]         = useState(null);
-  const [showLifeEvent, setShowLifeEvent]     = useState(false);
-  const [showPerkChoice, setShowPerkChoice]   = useState(false);
-  const [syntheticEvents, setSyntheticEvents] = useState([]);
-  const [historyStartIdx, setHistoryStartIdx] = useState(-1);
-  const [historyInitialized, setHistoryInitialized] = useState(false);
-  const [eventFilter, setEventFilter]         = useState("karakter");
-
-  const player = state?.player || {};
-  const cal    = state?.calendar || { season: "Bilinmiyor", month_name: "", year: 0 };
-  const rep    = reputationLabel(player?.reputation || 0);
-
-  // İlk yüklemede son 25 olay
-  useEffect(() => {
-    if (state && !historyInitialized) {
-      const len = (state?.history || []).length;
-      setHistoryStartIdx(Math.max(0, len - 25));
-      setHistoryInitialized(true);
-    }
-  }, [state, historyInitialized]);
-
-  const safeHistoryLen = (state?.history || []).length;
-  useEffect(() => {
-    if (!advancing && historyInitialized && historyStartIdx >= 0) {
-      setHistoryStartIdx(prev => Math.min(prev, Math.max(0, safeHistoryLen - 1)));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [safeHistoryLen]);
-
-  // Aktif görevler & fırsatlar
-  const activeQuests = (state?.quests || []).filter(q => ["açık", "kabul_edildi"].includes(q.status));
-  const acceptedOpps = (state?.opportunities || []).filter(o => o.status === "kabul_edildi");
-  const currentTurn  = state?.turn ?? 0;
-  const criticalOpps = (state?.opportunities || []).filter(o =>
-    o.status === "açık" && o.expires_at != null && (o.expires_at - currentTurn) <= 1
-  );
-
-  // Uyarıları feed'e gömülü olay olarak üret
-  const alertEvents = [];
-  if ((player?.health ?? 100) < 25)
-    alertEvents.push({ type: "_alert_urgent", text: "❤️ Sağlığın kritik! Dinlen veya tedavi ol.", _pinned: true });
-  if ((player?.hunger ?? 100) < 25)
-    alertEvents.push({ type: "_alert_urgent", text: "🍞 Çok acıktın. Yemezsen güçten düşersin.", _pinned: true });
-  if ((player?.crime  ?? 0)   > 60)
-    alertEvents.push({ type: "_alert_high",   text: "⚖️ Suç puanın yüksek. Yetkililer seni izliyor.", _pinned: true });
-  if (criticalOpps.length > 0)
-    alertEvents.push({ type: "_alert_urgent", text: `⏳ ${criticalOpps.length} fırsat bu hafta kapanıyor — kaçırma!`, _pinned: true });
-  if (acceptedOpps.length > 0)
-    alertEvents.push({ type: "_alert_normal", text: `⚡ ${acceptedOpps.length} üstlenilmiş fırsat seni bekliyor.`, _pinned: true });
-  if (activeQuests.some(q => q.status === "kabul_edildi"))
-    alertEvents.push({ type: "_alert_normal", text: "✅ Devam eden görevin var. Bitirmeyi unutma.", _pinned: true });
-
-  // Dünya durum olayları (Dünya tabı için)
-  const worldAlertEvents = buildWorldAlertEvents(state);
-
-  // Aktif dünya olayları (state'den, banner yerine feed'e)
-  const activeWorldEventsFromState = (state?.world_events || []).filter(ev => ev.active);
-  const worldEventFeedItems = activeWorldEventsFromState.map(ev => ({
-    type: "_world_alert",
-    text: `${ev.headline} — ${ev.location_name}`,
-    _pinned: true,
-  }));
-
-  // Olay geçmişi filtreleme
-  const safeHistory = Array.isArray(state?.history) ? state.history : [];
-  const playerFamilyNames = new Set();
-  if (player?.name) playerFamilyNames.add(player.name);
-  if (player?.spouse_id) {
-    const spouseNpc = (state?.world?.npcs || []).find(n => n.id === player.spouse_id);
-    if (spouseNpc?.name) playerFamilyNames.add(spouseNpc.name);
-  }
-  if (player?.parent_ids?.length) {
-    player.parent_ids.forEach(pid => {
-      const p = (state?.world?.npcs || []).find(n => n.id === pid);
-      if (p?.name) playerFamilyNames.add(p.name);
-    });
-  }
-
-  const periodEvents = historyStartIdx >= 0
-    ? safeHistory.slice(historyStartIdx)
-    : safeHistory.slice(-25);
-
-  const isFamilyRelated = (ev) => {
-    if (["doğum", "ölüm", "evlilik"].includes(ev.type)) {
-      if (playerFamilyNames.size === 0) return true;
-      return [...playerFamilyNames].some(name => (ev.text || "").includes(name));
-    }
-    return true;
-  };
-
-  const allEvents = [...periodEvents].reverse();
-  const historyEvents = allEvents
-    .filter(ev => eventFilter === "karakter" ? KARAKTER_TYPES.has(ev.type) : DUNYA_TYPES.has(ev.type))
-    .filter(isFamilyRelated)
-    .slice(0, 40);
-
-  // handleAdvance — logic unchanged
-  const handleAdvance = async () => {
-    const totalWeeks    = selectedPeriod.weeks;
-    const histLenBefore = (state?.history || []).length;
-    setAdvancing(true);
-    setYearSummary(null);
-    setSyntheticEvents([]);
-    setAdvProgress(null);
-    try {
-      if (!advance) return;
-      const result = await advance(totalWeeks);
-      if (!result) return;
-      if (result?.player?.dead) return;
-
-      const finalHist   = Array.isArray(result?.history) ? result.history : [];
-      const allNewEvents = finalHist.slice(histLenBefore);
-      setHistoryStartIdx(histLenBefore);
-
-      if (totalWeeks >= 52 && allNewEvents.length > 0) {
-        setYearSummary({ totalWeeks, events: allNewEvents });
-      }
-
-      const diff     = Array.isArray(result?.advance_diff) ? result?.advance_diff : [];
-      const triggers = Array.isArray(result?.triggers)     ? result?.triggers     : [];
-
-      const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-      const FIELD_NARRATIVES = {
-        money: {
-          pos: [
-            (d) => `${Math.abs(d).toFixed(0)} altın cebe girdi. İyi iş.`,
-            (d) => `Bu hafta kasa ${Math.abs(d).toFixed(0)} altın şişti. Emek boşa gitmedi.`,
-            (d) => `Pazar bereketliydi: ${Math.abs(d).toFixed(0)} altın kazanıldı.`,
-            (d) => `${Math.abs(d).toFixed(0)} altın. Az değil. Devam et.`,
-            (d) => `Esnaf seninle iş yapmayı seviyor. ${Math.abs(d).toFixed(0)} altın geldi.`,
-          ],
-          neg: [
-            (d) => `${Math.abs(d).toFixed(0)} altın gitti. Bir daha gelmeyebilir.`,
-            (d) => `Kasadan ${Math.abs(d).toFixed(0)} altın çıktı. Acıtır ama bu böyledir.`,
-            (d) => `Bu haftaki masraflar ${Math.abs(d).toFixed(0)} altını yedi bitirdi.`,
-            (d) => `Para aktı gitti. ${Math.abs(d).toFixed(0)} altın. Böyle gider.`,
-            (d) => `${Math.abs(d).toFixed(0)} altın. Veda etti. Kapıyı bile çarpmadan.`,
-          ],
-        },
-        hunger: {
-          pos: [
-            () => `Mide dolu, kafan berrak. Bu hafta yeterince yenildi.`,
-            () => `Sofra iyiydi. Vücut bunun farkında; enerji yerinde.`,
-            () => `Karnın tokken dünya daha güzel görünür — bu hafta öyleydi.`,
-            () => `Yiyecek boldu. Basit bir nimet; ama değerini bilmek şart.`,
-          ],
-          neg: [
-            () => `Mide grıldıyor ama ses yok — henüz.`,
-            () => `Açlık bu hafta arkadaşın oldu. İstemeden.`,
-            () => `Yiyecek kıttı. Zor bir hafta geçti.`,
-            () => `Sabah ekmek yoktu. Öğleden sonra da olmadı. Zor günler bunlar.`,
-          ],
-        },
-        health: {
-          pos: [
-            () => `Vücut toparladı. Az da olsa — önemli.`,
-            () => `Dinlenme işe yaradı. Daha iyi hissediyorsun.`,
-            () => `Sağlık düzeldi. Biraz tuz, biraz şans, biraz irade.`,
-            () => `Ayakta kalmak bu hafta daha az çaba istedi. İyi işaret.`,
-          ],
-          neg: [
-            () => `Beden duraksadı. Bu ihmal edilmemeli.`,
-            () => `Sağlık gerilemesi başladı. Dikkat et.`,
-            () => `Yorgunluk üst üste bindi. Biraz yavaşla.`,
-            () => `Vücut şikâyet ediyor. Küçük bir uyarı — ama uyarı.`,
-          ],
-        },
-        reputation: {
-          pos: [
-            () => `İnsanlar artık seni bir adım önde görüyor.`,
-            () => `Adın şehirde biraz daha duyulmaya başladı. Fark ediliyorsun.`,
-            () => `İtibar yavaş kazanılır. Bu hafta bir taş daha örüldü.`,
-            () => `Çevredeki algı olumluya döndü. Devam et.`,
-          ],
-          neg: [
-            () => `Birkaç dedikoducu konuşmuş. Hasar var.`,
-            () => `İtibar sarsıldı. Fısıltılar yayılıyor.`,
-            () => `Çevredekiler mesafe koyuyor. Fark ettiler.`,
-            () => `Bu hafta algın olumsuza döndü. Düzeltmesi zaman alır.`,
-          ],
-        },
-        crime: {
-          pos: [
-            () => `Suç kaydın ağırlaşıyor. Yetkililer gözü dikmiş durumda. Dikkatli ol.`,
-            () => `Yaptıkların göze çarpmaya başladı. Gölgede kal.`,
-            () => `Bir kapı daha kapandı. Suç kaydı böyle birikmez diyenler yanılıyor.`,
-          ],
-          neg: [
-            () => `Temiz davranışların bir miktar geçmişi sildi.`,
-            () => `Suç kaydın hafifçe temizlendi. Devam et.`,
-            () => `Birkaç iyi iş, birkaç kötü sayfayı kapattı.`,
-          ],
-        },
-        honor: {
-          pos: [
-            () => `Onur duygusu bugün biraz daha doldu. Doğru yapıldı.`,
-            () => `Şerefine uygun davranıldı. Fark edildi.`,
-            () => `Bu tercih değer tartılmaz bir şey bıraktı geride.`,
-          ],
-          neg: [
-            () => `Bu tercih onuru biraz sarstı. Geri alınamaz.`,
-            () => `Bazı şeyler bir kez yapılınca farklı durur.`,
-            () => `Vicdan bu hafta huzursuz.`,
-          ],
-        },
-        stamina: {
-          pos: [
-            () => `Beden daha güçlü; dayanıklılık arttı.`,
-            () => `Bu hafta çalışmak daha az yordu. Güzel.`,
-            () => `Kaslar seninle konuştu: daha iyi.`,
-          ],
-          neg: [
-            () => `Tükenme hissediliyor. Dinlenme şart.`,
-            () => `Dayanıklılık biraz eridi. Dikkat et.`,
-            () => `Beden aşınıyor. Bir ara dur.`,
-          ],
-        },
-        intelligence: {
-          pos: [
-            () => `Zekân keskinleşiyor — fark ediliyor.`,
-            () => `Düşünce netleşti. Bu hafta bir şeyler öğrenildi. Kalıcı.`,
-            () => `Zihin her geçen günle biraz daha açılıyor.`,
-          ],
-          neg: [
-            () => `Zihin biraz bulanıklaştı. Odaklanmak güçleşti.`,
-            () => `Dikkat dağıldı. Topla kendini.`,
-          ],
-        },
-        charisma: {
-          pos: [
-            () => `İnsanlar seninle daha kolay konuşuyor artık.`,
-            () => `Kelimeler daha etkili çıkıyor. Çevre bunu hissediyor.`,
-            () => `Şehirde seni dinleyenler çoğaldı.`,
-          ],
-          neg: [
-            () => `Bu hafta sözlerin pek etki bırakmadı.`,
-            () => `Karizman biraz soldu. Geçici olabilir.`,
-          ],
-        },
-        fear: {
-          pos: [
-            () => `Korku yükseliyor. Çevre bunu hissediyor — ve ürküyor.`,
-            () => `Tedirginlik arttı. İçeride ve dışarıda.`,
-          ],
-          neg: [
-            () => `Korku azaldı. Adımlar biraz daha sağlam.`,
-            () => `Tedirginlik geçti. Zihin daha sakin.`,
-          ],
-        },
-      };
-
-      const currentTurnAfter = result?.turn ?? (0 + totalWeeks);
-      // Alan → anlamlı event tipi eşleştirmesi (ikon, renk, flavor için)
-      const FIELD_TYPES = {
-        money: (pos) => pos ? "ticaret" : "vergi_ödendi",
-        hunger: (pos) => pos ? "iyileşme" : "hastalık",
-        health: (pos) => pos ? "iyileşme" : "hastalık",
-        reputation: (pos) => pos ? "iltifat" : "dedikodu",
-        crime: (pos) => pos ? "suç" : "iyileşme",
-        honor: (pos) => pos ? "görev_tamamlandı" : "görev_başarısız",
-        stamina: (pos) => pos ? "aktivite" : "hastalık",
-        intelligence: (pos) => pos ? "ders" : "hastalık",
-        charisma: (pos) => pos ? "iltifat" : "dedikodu",
-        fear: (pos) => pos ? "suç" : "iyileşme",
-      };
-
-      const newSynthetics = diff
-        .filter(d => d?.field && FIELD_NARRATIVES[d.field])
-        .map((d) => {
-          const variants = d.positive ? FIELD_NARRATIVES[d.field].pos : FIELD_NARRATIVES[d.field].neg;
-          const fn = pick(variants);
-          const typeFn = FIELD_TYPES[d.field];
-          return {
-            type: typeFn ? typeFn(d.positive) : (d.positive ? "iyileşme" : "hastalık"),
-            day: currentTurnAfter,
-            text: fn(Math.abs(d.delta)),
-            _synthetic: true,
-          };
-        });
-
-      triggers.filter(t => t?.urgent).forEach(t => {
-        newSynthetics.push({ type: "enforcement", day: currentTurnAfter, text: t.text, _synthetic: true });
-      });
-
-      if (newSynthetics.length > 0) setSyntheticEvents(newSynthetics);
-
-      const earlyStop = result?.advance_early_stop;
-      if (earlyStop) {
-        setSyntheticEvents(prev => [...prev, {
-          type: "starvation_warning",
-          day: currentTurnAfter,
-          text: `🍞 Yiyecek stoğun tükendi ve açlık kritik seviyeye düştü. ${earlyStop.week_done} hafta geçti — devam etmedi.`,
-          _synthetic: true,
-        }]);
-        toast.error("Yiyecek stoğun tükendi, çok açsın! Zaman atlaması durduruldu.", {
-          duration: 7000,
-          description: `${earlyStop.week_done} / ${earlyStop.total} hafta tamamlandı.`,
-        });
-      } else {
-        toast.success(
-          totalWeeks === 1 ? "Bir hafta geçti."
-          : totalWeeks <= 4 ? "Bir ay geçti."
-          : "Bir yıl geçti."
-        );
-      }
-
-      const ce = result?.caravan_event;
-      if (ce) {
-        if (ce.type === "arrived") {
-          const profitStr = ce.profit != null ? ` Kâr: +${ce.profit.toFixed(1)}A` : "";
-          toast.success(`🚛 Kervanın hedefe ulaştı!${profitStr}`, { duration: 5000 });
-        } else if (ce.type === "attack") {
-          toast.error(`⚔️ Kervanın saldırıya uğradı! Kayıp: ${ce.lost_value?.toFixed(1)}A`, { duration: 5000 });
-        } else if (ce.type === "caravan_destroyed") {
-          toast.error(`💀 Kervanın tamamen yağmalandı!`, { duration: 6000 });
-        }
-      }
-
-      const we = result?.new_world_events?.[0];
-      if (we) {
-        const CAT_EMOJIS = { tehlike: "⚠️", doğa: "🌿", ekonomi: "📈", sosyal: "🎉", haber: "📰" };
-        const em = CAT_EMOJIS[we.category] || "🌍";
-        if (we.category === "tehlike") {
-          toast.error(`${em} ${we.headline}`, { duration: 6000, description: we.location_name });
-        } else {
-          toast.info(`${em} ${we.headline}`, { duration: 5000, description: we.location_name });
-        }
-      }
-
-      // GDD v4 Bölüm 5.4 — Kriz Olayları bildirimi
-      const crisisEvents = result?.crisis_events;
-      if (crisisEvents?.length > 0) {
-        const KRIZ_EMOJIS = { kriz_kuraklik: "☀️", kriz_veba: "💀", kriz_yangin: "🔥" };
-        crisisEvents.slice(0, 3).forEach(ev => {
-          const emoji = KRIZ_EMOJIS[ev.type] || "⚠️";
-          toast.error(`${emoji} ${ev.text}`, { duration: 8000, description: "Kriz Olayı — Dünya Haberleri'ne bak" });
-        });
-      }
-    } catch {
-      toast.error("Zaman ilerletilemedi.");
-    } finally {
-      setAdvancing(false);
-      setAdvProgress(null);
-      try {
-        const evRes = await api.get("/life-event/pending");
-        if (evRes.data.event) setShowLifeEvent(true);
-      } catch {}
-      try {
-        const perkRes = await api.get("/perk/pending");
-        if (perkRes.data.pending_perk) setShowPerkChoice(true);
-      } catch {}
-    }
-  };
-
-  if (!state) return null;
-
-  // Feed'e girecek sabitlenmiş olaylar (uyarılar)
-  const KRIZ_EMOJIS_FEED = { kriz_kuraklik: "☀️", kriz_veba: "💀", kriz_yangin: "🔥" };
-  const crisisFeedItems = (state?.recent_crises || []).map(ev => ({
-    type: "_kriz_alert",
-    text: `${KRIZ_EMOJIS_FEED[ev.type] || "⚠️"} ${ev.text}`,
-    _pinned: true,
-    _kriz: true,
-  }));
-  const pinnedFeedEvents = eventFilter === "karakter"
-    ? alertEvents
-    : [...crisisFeedItems, ...worldAlertEvents, ...worldEventFeedItems];
-
-  return (
-    <>
-      <LifeEventModal
-        open={showLifeEvent}
-        onClose={() => setShowLifeEvent(false)}
-        onComplete={() => {
-          setShowLifeEvent(false);
-          if (advance) advance(0).catch(() => {});
-        }}
-      />
-      <PerkChoiceModal
-        open={showPerkChoice && !showLifeEvent}
-        onClose={() => setShowPerkChoice(false)}
-        onComplete={() => {
-          setShowPerkChoice(false);
-          if (advance) advance(0).catch(() => {});
-        }}
-      />
-
-      {/* Ana wrapper — tam yükseklik, flex kolon */}
-      <div className="flex flex-col max-w-2xl mx-auto overflow-hidden" style={{ height: "calc(100dvh - 80px)" }}>
-
-        {/* ── HERO SAHNE — mevsim + yaş grubuna göre değişen görsel ── */}
-        <HeroScene player={player} cal={cal} rep={rep} />
-
-        {/* Faction/Yönetici strip — varsa */}
-        <StatusStrip player={player} world={state?.world} />
-
-        {/* ── HAYAT GÜNLÜĞÜ — StoryEventFeed ── */}
-        <div className="flex flex-col flex-1 min-h-0 overflow-hidden" style={{
-          borderRadius: "22px 22px 0 0",
-          border: "1px solid rgba(200,146,58,.22)",
-          borderBottom: "none",
-          background: "linear-gradient(180deg, #131009 0%, #0C0906 100%)",
-          boxShadow: "0 -16px 48px rgba(0,0,0,.85), 0 -1px 0 rgba(200,146,58,.2), inset 0 1px 0 rgba(200,146,58,.14), inset 0 0 0 1px rgba(120,80,30,0.06)",
-          marginTop: "-6px",
-          position: "relative",
-          zIndex: 2,
+      <div className="font-display font-bold leading-none"
+        style={{
+          fontSize: 'clamp(1.1rem, 4.5vw, 1.4rem)',
+          color: 'var(--color-parchment)',
+          letterSpacing: '0.02em',
+          textShadow: `0 0 12px ${barColor}44, 0 1px 3px rgba(0,0,0,0.8)`,
+          marginBottom: '0.2rem',
         }}>
+        {label === 'AKÇE' ? `${value}A` : value}
+      </div>
 
-          {/* Header row: Hayat Günlüğü title + tab switcher + link */}
-          <div style={{ flexShrink: 0, padding: "10px 16px 0" }}>
-            {/* Bottom-sheet handle */}
-            <div style={{ width: "36px", height: "3px", borderRadius: "2px", background: "rgba(200,146,58,.22)", margin: "0 auto 12px" }} />
-            {/* Title + link */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-                <div style={{ width: "2px", height: "18px", background: "linear-gradient(180deg, #C8923A, #6A4A1A)", borderRadius: "1px" }}/>
-                <div>
-                  <p style={{ fontFamily: "'Cinzel',Georgia,serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.26em", color: "rgba(200,146,58,.9)", textTransform: "uppercase", lineHeight: 1 }}>
-                    Hayat Günlüğü
-                  </p>
-                  <p style={{ fontFamily: "'Lora',Georgia,serif", fontSize: "10px", color: "rgba(180,155,110,.26)", fontStyle: "italic", marginTop: "3px" }}>
-                    yaşananların izleri
-                  </p>
-                </div>
-              </div>
-              <Link
-                to="/oyun/tarih"
-                className="flex items-center gap-0.5"
-                style={{ fontSize: "9px", color: "rgba(120,100,70,.5)", fontFamily: "'Cinzel',Georgia,serif", letterSpacing: "0.1em", textDecoration: "none" }}
-              >
-                Tümünü Gör <ChevronRight className="w-3 h-3" />
-              </Link>
+      <div className="font-display uppercase"
+        style={{
+          fontSize: '0.52rem',
+          color: 'var(--color-parchment-muted)',
+          letterSpacing: '0.13em',
+          marginBottom: '0.5rem',
+        }}>
+        {label}
+      </div>
+
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: '3px',
+        background: 'rgba(0,0,0,0.5)',
+      }}>
+        <div style={{
+          height: '100%', width: `${pct}%`,
+          background: `linear-gradient(to right, ${barColor}77, ${barColor}EE)`,
+          boxShadow: `0 0 8px ${barColor}99, 0 0 3px ${barColor}`,
+          borderRadius: '0 2px 2px 0',
+          transition: 'width 0.6s ease',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ── STEP 6+7+8: ENHANCED EVENT CARD WITH PREMIUM TIMELINE ────────────────────
+function EventCard({ event, isLast }) {
+  const IconComp = event.icon;
+  const isUrgent = event.urgent;
+
+  return (
+    <div className="relative flex gap-0" style={{ paddingBottom: isLast ? 0 : '0.5rem' }}>
+
+      {/* ── STEP 6: Premium Timeline Line ── */}
+      {!isLast && (
+        <div style={{
+          position: 'absolute',
+          left: '1.42rem',
+          top: '3.1rem',
+          bottom: '-0.5rem',
+          width: '2px',
+          background: 'linear-gradient(to bottom, rgba(184,148,64,0.7) 0%, rgba(120,88,40,0.45) 50%, rgba(80,56,24,0.18) 100%)',
+          boxShadow: '0 0 6px rgba(184,148,64,0.18)',
+        }} />
+      )}
+
+      {/* ── STEP 6: Timeline Icon Circle (Ornate) ── */}
+      <div style={{ width: '2.85rem', flexShrink: 0, paddingTop: '0.7rem', zIndex: 1 }}>
+        {/* Outer ring */}
+        <div style={{
+          width: '2.25rem', height: '2.25rem', borderRadius: '50%',
+          background: isUrgent
+            ? `radial-gradient(circle at 40% 30%, rgba(224,90,48,0.18) 0%, var(--color-card) 70%)`
+            : `radial-gradient(circle at 40% 30%, rgba(201,168,76,0.10) 0%, var(--color-card) 70%)`,
+          border: `1.5px solid ${isUrgent ? event.iconColor + '70' : 'rgba(184,148,64,0.35)'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: isUrgent
+            ? `0 0 14px ${event.iconColor}35, inset 0 1px 0 rgba(255,255,255,0.05)`
+            : `0 0 10px rgba(184,148,64,0.18), inset 0 1px 0 rgba(255,255,255,0.04)`,
+          position: 'relative',
+        }}>
+          {/* Inner subtle glow dot */}
+          <div style={{
+            position: 'absolute', inset: 3,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${event.iconColor}12 0%, transparent 70%)`,
+          }} />
+          <IconComp size={13} color={event.iconColor} strokeWidth={1.8} />
+        </div>
+      </div>
+
+      {/* ── STEP 7+8: Story Card Body ── */}
+      <div className="flex-1 card-shadow" style={{
+        background: isUrgent
+          ? `linear-gradient(160deg, rgba(224,90,48,0.06) 0%, var(--color-card) 40%)`
+          : 'var(--color-card)',
+        border: `1px solid ${isUrgent ? event.iconColor + '30' : 'var(--color-border)'}`,
+        borderLeft: `2.5px solid ${event.iconColor}55`,
+        borderRadius: '8px',
+        padding: '1rem 1.05rem 1rem',
+        marginBottom: '0.1rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+
+        {/* Subtle top sheen */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: `linear-gradient(to right, ${event.iconColor}22, ${event.iconColor}44 40%, transparent)`,
+        }} />
+
+        {/* ── Type label + timestamp ── */}
+        <div className="flex items-center justify-between" style={{ marginBottom: '0.6rem' }}>
+          <div className="flex items-center gap-1.5">
+            <div style={{
+              width: '5px', height: '5px', borderRadius: '50%',
+              background: event.typeColor,
+              boxShadow: `0 0 5px ${event.typeColor}`,
+              flexShrink: 0,
+            }} />
+            <span className="font-display uppercase"
+              style={{ fontSize: '0.6rem', color: event.typeColor, letterSpacing: '0.16em', fontWeight: 700 }}>
+              {event.type}
+            </span>
+          </div>
+          <span style={{
+            fontSize: '0.65rem',
+            color: 'var(--color-parchment-muted)',
+            fontFamily: 'Crimson Text, serif',
+            fontStyle: 'italic',
+          }}>
+            {event.time}
+          </span>
+        </div>
+
+        {/* ── STEP 7+8: Title (story size) ── */}
+        <div className="font-serif font-semibold"
+          style={{
+            fontSize: '1.05rem',
+            color: 'var(--color-parchment)',
+            lineHeight: '1.32',
+            marginBottom: '0.5rem',
+            textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+          }}>
+          {event.title}
+        </div>
+
+        {/* ── Body text ── */}
+        <div className="font-serif"
+          style={{
+            fontSize: '0.86rem',
+            color: 'var(--color-parchment-muted)',
+            lineHeight: '1.55',
+            whiteSpace: 'pre-line',
+            marginBottom: event.badge ? '0.85rem' : '0.2rem',
+          }}>
+          {event.body}
+        </div>
+
+        {/* ── STEP 8: Badge (bottom-right, physical stamp) ── */}
+        {event.badge ? (
+          <div className="flex items-end justify-between" style={{ alignItems: 'center' }}>
+            <div />
+            <div style={{
+              background: event.badge.color,
+              border: `1px solid ${event.badge.textColor}50`,
+              borderRadius: '5px',
+              padding: '0.22rem 0.65rem',
+              fontSize: '0.72rem',
+              color: event.badge.textColor,
+              fontFamily: 'Cinzel, serif',
+              fontWeight: 700,
+              letterSpacing: '0.05em',
+              boxShadow: `0 2px 8px rgba(0,0,0,0.45), inset 0 1px 0 ${event.badge.textColor}20`,
+              position: 'relative',
+            }}>
+              {/* Top highlight on stamp */}
+              <div style={{
+                position: 'absolute', top: 0, left: '10%', right: '10%', height: '1px',
+                background: `linear-gradient(to right, transparent, ${event.badge.textColor}30, transparent)`,
+              }} />
+              {event.badge.label}
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-end">
+            <ChevronRight size={14} color="var(--color-parchment-muted)" strokeWidth={1.5} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── STEP 10: ENHANCED NAV ITEM ────────────────────────────────────────────────
+function NavItem({ icon: Icon, label, active }) {
+  return (
+    <button style={{
+      flex: 1,
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', gap: '0.22rem',
+      paddingTop: '0.55rem', paddingBottom: '0.4rem',
+      border: 'none', background: 'transparent',
+      cursor: 'pointer', position: 'relative',
+      transition: 'all 0.2s',
+    }}>
+      {/* STEP 10: Active top bar — gold glow */}
+      {active && (
+        <div style={{
+          position: 'absolute', top: 0, left: '15%', right: '15%', height: '2px',
+          background: 'linear-gradient(to right, transparent, var(--color-gold-bright), var(--color-gold), var(--color-gold-bright), transparent)',
+          boxShadow: '0 0 10px var(--color-gold), 0 0 20px rgba(201,168,76,0.40)',
+          borderRadius: '0 0 2px 2px',
+        }} />
+      )}
+
+      {/* STEP 10: Icon container with premium active state */}
+      <div style={{
+        width: '2.2rem', height: '2.2rem', borderRadius: '9px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: active
+          ? 'linear-gradient(145deg, rgba(201,168,76,0.20) 0%, rgba(201,168,76,0.08) 100%)'
+          : 'rgba(255,255,255,0.02)',
+        border: active
+          ? '1px solid rgba(201,168,76,0.45)'
+          : '1px solid rgba(255,255,255,0.04)',
+        boxShadow: active
+          ? '0 0 14px rgba(201,168,76,0.30), inset 0 1px 0 rgba(201,168,76,0.18), 0 2px 4px rgba(0,0,0,0.4)'
+          : 'none',
+        transition: 'all 0.2s',
+      }}>
+        <Icon size={17}
+          color={active ? 'var(--color-gold)' : 'var(--color-parchment-muted)'}
+          strokeWidth={active ? 2 : 1.5} />
+      </div>
+
+      {/* STEP 10: Label */}
+      <span className="font-display uppercase"
+        style={{
+          fontSize: '0.5rem', letterSpacing: '0.09em',
+          color: active ? 'var(--color-gold)' : 'var(--color-parchment-muted)',
+          textShadow: active ? '0 0 8px rgba(201,168,76,0.5)' : 'none',
+          transition: 'all 0.2s',
+        }}>
+        {label}
+      </span>
+    </button>
+  );
+}
+
+// ── STEP 9: DECORATIVE CORNER ORNAMENT ───────────────────────────────────────
+function CornerOrnament({ position }) {
+  const isTop = position.includes('top');
+  const isLeft = position.includes('left');
+  return (
+    <div style={{
+      position: 'absolute',
+      top: isTop ? 0 : 'auto',
+      bottom: isTop ? 'auto' : 0,
+      left: isLeft ? 0 : 'auto',
+      right: isLeft ? 'auto' : 0,
+      width: '18px', height: '18px',
+      pointerEvents: 'none',
+    }}>
+      {/* Horizontal bar */}
+      <div style={{
+        position: 'absolute',
+        top: isTop ? '4px' : 'auto', bottom: isTop ? 'auto' : '4px',
+        left: isLeft ? '4px' : 'auto', right: isLeft ? 'auto' : '4px',
+        width: '10px', height: '1.5px',
+        background: 'rgba(201,168,76,0.75)',
+        boxShadow: '0 0 4px rgba(201,168,76,0.4)',
+      }} />
+      {/* Vertical bar */}
+      <div style={{
+        position: 'absolute',
+        top: isTop ? '4px' : 'auto', bottom: isTop ? 'auto' : '4px',
+        left: isLeft ? '4px' : 'auto', right: isLeft ? 'auto' : '4px',
+        width: '1.5px', height: '10px',
+        background: 'rgba(201,168,76,0.75)',
+        boxShadow: '0 0 4px rgba(201,168,76,0.4)',
+      }} />
+      {/* Corner dot */}
+      <div style={{
+        position: 'absolute',
+        top: isTop ? '3.5px' : 'auto', bottom: isTop ? 'auto' : '3.5px',
+        left: isLeft ? '3.5px' : 'auto', right: isLeft ? 'auto' : '3.5px',
+        width: '2.5px', height: '2.5px', borderRadius: '50%',
+        background: 'var(--color-gold)',
+        boxShadow: '0 0 4px rgba(201,168,76,0.8)',
+      }} />
+    </div>
+  );
+}
+
+// ── MAIN DASHBOARD ────────────────────────────────────────────────────────────
+export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState('gunluk');
+  const { stats } = character;
+  const heroImage = SEASON_IMAGE[character.season] || SEASON_IMAGE['YAZ'];
+
+  return (
+    <div style={{
+      minHeight: '100vh', background: 'var(--color-bg)',
+      display: 'flex', flexDirection: 'column',
+      maxWidth: '480px', margin: '0 auto', position: 'relative',
+    }}>
+
+      {/* ══════════════════════════════════════════
+          HERO SECTION (Steps 2+3 — unchanged)
+         ══════════════════════════════════════════ */}
+      <div className="hero-section">
+        <div className="hero-image" style={{ backgroundImage: `url(${heroImage})` }} />
+        <div className="hero-bg" />
+        <div className="hero-overlay" />
+
+        {/* CHARACTER LAYER */}
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 10,
+          display: 'flex', flexDirection: 'column',
+          padding: '0.9rem 1rem 1.1rem', justifyContent: 'flex-start',
+        }}>
+          <div className="flex items-start justify-between">
+
+            {/* Avatar */}
+            <div style={{
+              width: '3.6rem', height: '3.6rem', borderRadius: '50%', flexShrink: 0,
+              border: '2px solid var(--color-gold)',
+              boxShadow: '0 0 0 3px rgba(201,168,76,0.15), 0 0 16px rgba(201,168,76,0.45), 0 0 32px rgba(201,168,76,0.15)',
+              background: 'linear-gradient(135deg, #3A2010 0%, #2A1808 50%, #1A0E06 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
+              <span style={{ fontSize: '1.55rem' }}>👤</span>
             </div>
 
-            {/* Filter tabs */}
-            <div style={{
-              display: "flex",
-              background: "rgba(10,8,5,.7)",
-              border: "1px solid rgba(200,146,58,.08)",
-              borderRadius: "11px",
-              padding: "3px",
-              gap: "3px",
-            }}>
-              {[
-                { key: "karakter", label: "👤 Karakter" },
-                { key: "dünya",    label: "🌍 Dünya"    },
-              ].map(({ key, label }) => {
-                const active = eventFilter === key;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setEventFilter(key)}
+            {/* Center: Name / Title / Meta */}
+            <div className="flex-1 flex flex-col items-center"
+              style={{ paddingTop: '0.05rem', paddingLeft: '0.5rem', paddingRight: '0.5rem' }}>
+              <h1 className="font-display font-bold text-center"
+                style={{
+                  fontSize: 'clamp(1.1rem, 5.2vw, 1.45rem)',
+                  color: 'var(--color-parchment)',
+                  letterSpacing: '0.18em', lineHeight: 1.1, marginBottom: '0.25rem',
+                  textShadow: '0 1px 12px rgba(0,0,0,0.9), 0 0 28px rgba(201,168,76,0.22), 0 2px 4px rgba(0,0,0,0.8)',
+                }}>
+                {character.name}
+              </h1>
+              <div style={{
+                width: '60%', height: '1px', marginBottom: '0.3rem',
+                background: 'linear-gradient(to right, transparent, rgba(201,168,76,0.55), transparent)',
+              }} />
+              <div className="font-serif flex items-center gap-1"
+                style={{
+                  fontSize: '0.88rem', color: 'var(--color-gold)', letterSpacing: '0.05em',
+                  marginBottom: '0.5rem',
+                  textShadow: '0 1px 8px rgba(0,0,0,0.8), 0 0 12px rgba(201,168,76,0.30)',
+                  fontStyle: 'italic',
+                }}>
+                <span style={{ fontStyle: 'normal' }}>{character.titleIcon}</span>
+                {character.title}
+              </div>
+              <div className="flex items-center gap-2 font-display uppercase"
+                style={{
+                  fontSize: '0.56rem', color: 'var(--color-parchment-dim)', letterSpacing: '0.12em',
+                  background: 'rgba(8,5,2,0.45)', borderRadius: '20px',
+                  padding: '0.22rem 0.65rem',
+                  border: '1px solid rgba(201,168,76,0.12)',
+                  backdropFilter: 'blur(4px)',
+                  textShadow: '0 1px 4px rgba(0,0,0,0.9)',
+                }}>
+                <span>🛡 {character.age} YAŞ</span>
+                <span style={{ color: 'var(--color-border-hi)', fontSize: '0.7rem', lineHeight: 1 }}>·</span>
+                <span>❄ {character.season}</span>
+                <span style={{ color: 'var(--color-border-hi)', fontSize: '0.7rem', lineHeight: 1 }}>·</span>
+                <span>📅 {character.date}</span>
+              </div>
+            </div>
+
+            {/* Rep Badge */}
+            <div className="flex flex-col items-center" style={{ paddingTop: '0.05rem', gap: '0.18rem' }}>
+              <div style={{
+                width: '2.6rem', height: '2.6rem', borderRadius: '8px',
+                background: 'rgba(8,5,2,0.72)',
+                border: '1.5px solid rgba(201,168,76,0.45)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 10px rgba(201,168,76,0.22), inset 0 1px 0 rgba(201,168,76,0.12)',
+                backdropFilter: 'blur(6px)',
+              }}>
+                <span style={{ fontSize: '1.15rem' }}>{character.repIcon}</span>
+              </div>
+              <span className="font-display uppercase text-center"
+                style={{
+                  fontSize: '0.42rem', color: 'var(--color-parchment-muted)',
+                  letterSpacing: '0.07em', lineHeight: 1.3,
+                  textShadow: '0 1px 4px rgba(0,0,0,0.9)',
+                }}>
+                {character.repTitle}
+              </span>
+              <div style={{
+                width: '1.5rem', height: '1.5rem', borderRadius: '50%',
+                background: 'rgba(8,5,2,0.80)',
+                border: '1.5px solid rgba(201,168,76,0.40)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 6px rgba(201,168,76,0.18)',
+              }}>
+                <span className="font-display font-bold"
+                  style={{ fontSize: '0.68rem', color: 'var(--color-parchment)' }}>
+                  {character.rep}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="hero-sep" />
+      </div>
+
+      {/* ── STATS BAR ─────────────────────────────────────────────────────── */}
+      <div style={{
+        display: 'flex',
+        background: 'var(--color-surface)',
+        borderTop: '1px solid rgba(201,168,76,0.30)',
+        borderBottom: '1px solid var(--color-border)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.45), inset 0 1px 0 rgba(201,168,76,0.08)',
+      }}>
+        <StatCard icon="❤" value={stats.health} label="SAĞLIK"  barColor="#C84040" />
+        <StatCard icon="🍎" value={stats.hunger} label="TOKLUK"  barColor="#4A9A5A" />
+        <StatCard icon="💰" value={stats.money}  label="AKÇE"    barColor="#C9A84C" />
+        <StatCard icon="👑" value={stats.fame}   label="TANINMA" barColor="#7B4FAF" isLast />
+      </div>
+
+      {/* ── SCROLLABLE CONTENT ────────────────────────────────────────────── */}
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '8rem', background: 'var(--color-bg)' }}>
+
+        {/* ── STEP 5: JOURNAL PREMIUM PANEL ─────────────────────────────── */}
+        <div style={{
+          margin: '0.9rem 0.8rem 0',
+          background: 'var(--color-card)',
+          border: '1px solid var(--color-border-hi)',
+          borderRadius: '10px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.55), 0 1px 0 rgba(201,168,76,0.10), inset 0 1px 0 rgba(201,168,76,0.06)',
+          overflow: 'hidden',
+          position: 'relative',
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0,
+            width: '40px', height: '40px',
+            background: 'linear-gradient(135deg, rgba(201,168,76,0.18) 0%, transparent 60%)',
+            borderRadius: '10px 0 0 0', pointerEvents: 'none',
+          }} />
+          <div style={{
+            position: 'absolute', top: 0, right: 0,
+            width: '40px', height: '40px',
+            background: 'linear-gradient(225deg, rgba(201,168,76,0.12) 0%, transparent 60%)',
+            borderRadius: '0 10px 0 0', pointerEvents: 'none',
+          }} />
+
+          {/* Panel Header */}
+          <div style={{
+            padding: '1rem 1rem 0',
+            background: 'linear-gradient(180deg, rgba(201,168,76,0.05) 0%, transparent 100%)',
+            borderBottom: '1px solid var(--color-border)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                  <div style={{
+                    width: '3px', height: '1.3rem', borderRadius: '2px',
+                    background: 'linear-gradient(to bottom, var(--color-gold-bright), var(--color-gold-dim))',
+                    boxShadow: '0 0 6px rgba(201,168,76,0.5)', flexShrink: 0,
+                  }} />
+                  <h2 className="font-display font-bold"
                     style={{
-                      flex: 1, padding: "8px",
-                      borderRadius: "8px", border: "none",
-                      cursor: "pointer",
-                      fontSize: "9.5px", fontWeight: 700, letterSpacing: "0.16em",
-                      textTransform: "uppercase",
-                      fontFamily: "'Cinzel',Georgia,serif",
-                      transition: "all .2s ease",
-                      background: active
-                        ? key === "dünya" ? "rgba(155,127,212,.14)" : "rgba(200,146,58,.14)"
-                        : "transparent",
-                      color: active
-                        ? key === "dünya" ? "#9B7FD4" : "#C8923A"
-                        : "rgba(180,155,110,.3)",
-                      boxShadow: active
-                        ? key === "dünya"
-                          ? "inset 0 0 0 1px rgba(155,127,212,.22)"
-                          : "inset 0 0 0 1px rgba(200,146,58,.22)"
-                        : "none",
-                    }}
-                  >
-                    {label}
+                      fontSize: '1.05rem', color: 'var(--color-gold)',
+                      letterSpacing: '0.14em',
+                      textShadow: '0 0 16px rgba(201,168,76,0.35), 0 1px 3px rgba(0,0,0,0.8)',
+                    }}>
+                    HAYAT GÜNLÜĞÜ
+                  </h2>
+                </div>
+                <p className="font-serif"
+                  style={{
+                    fontSize: '0.78rem', color: 'var(--color-parchment-muted)',
+                    marginTop: '0.12rem', marginLeft: '0.95rem', fontStyle: 'italic',
+                  }}>
+                  Yaşananların izleri...
+                </p>
+              </div>
+              <button style={{
+                display: 'flex', alignItems: 'center', gap: '0.25rem',
+                paddingTop: '0.12rem', background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: 'Cinzel, serif', fontSize: '0.58rem',
+                fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
+                color: 'var(--color-gold-dim)',
+                textShadow: '0 0 8px rgba(201,168,76,0.2)', transition: 'color 0.2s',
+              }}>
+                TÜMÜNÜ GÖR
+                <ChevronRight size={12} strokeWidth={2} color="var(--color-gold-dim)" />
+              </button>
+            </div>
+
+            <div style={{
+              height: '1px', marginBottom: '0.75rem', marginLeft: '0.95rem',
+              background: 'linear-gradient(to right, rgba(201,168,76,0.25), transparent)',
+            }} />
+
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: '0.4rem', paddingBottom: '0.75rem' }}>
+              {[
+                { key: 'gunluk', icon: '📋', label: 'GÜNLÜK' },
+                { key: 'dunya',  icon: '🌍', label: 'DÜNYA' },
+                { key: 'icsel',  icon: '✨', label: 'İÇSEL ARZU' },
+              ].map(tab => {
+                const isActive = activeTab === tab.key;
+                return (
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                    style={{
+                      flex: 1,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                      padding: '0.55rem 0.3rem', borderRadius: '7px',
+                      fontFamily: 'Cinzel, serif', fontSize: '0.57rem',
+                      fontWeight: 600, letterSpacing: '0.09em', textTransform: 'uppercase',
+                      cursor: 'pointer', transition: 'all 0.2s',
+                      border: isActive ? '1px solid rgba(201,168,76,0.45)' : '1px solid var(--color-border)',
+                      background: isActive
+                        ? 'linear-gradient(160deg, rgba(201,168,76,0.18) 0%, rgba(201,168,76,0.07) 100%)'
+                        : 'linear-gradient(160deg, rgba(255,255,255,0.02) 0%, transparent 100%)',
+                      color: isActive ? 'var(--color-gold)' : 'var(--color-parchment-muted)',
+                      boxShadow: isActive
+                        ? '0 0 12px rgba(201,168,76,0.18), inset 0 1px 0 rgba(201,168,76,0.15)'
+                        : 'inset 0 1px 0 rgba(255,255,255,0.03)',
+                      position: 'relative', overflow: 'hidden',
+                    }}>
+                    {isActive && (
+                      <div style={{
+                        position: 'absolute', bottom: 0, left: '15%', right: '15%', height: '1.5px',
+                        background: 'linear-gradient(to right, transparent, var(--color-gold), transparent)',
+                        boxShadow: '0 0 6px var(--color-gold)',
+                      }} />
+                    )}
+                    <span style={{ fontSize: '0.72rem' }}>{tab.icon}</span>
+                    {tab.label}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Scrollable feed */}
-          <div className="flex-1 overflow-y-auto" style={{ padding: "14px 14px 100px" }}>
-
-            {/* FreshEvents panel (existing component, kept as-is) */}
-            {eventFilter === "karakter" && freshEvents?.length > 0 && (
-              <FreshEventsPanel events={freshEvents} onDismiss={() => clearFreshEvents && clearFreshEvents()} />
-            )}
-
-            {/* Year summary panel (existing component, kept as-is) */}
-            {yearSummary && (
-              <YearSummaryCard summary={yearSummary} onDismiss={() => setYearSummary(null)} />
-            )}
-
-            {/* Build the StoryEventFeed events array */}
-            {(() => {
-              // Pinned alerts → mark isPinned + isNew:false
-              const pinnedItems = pinnedFeedEvents.map(ev => ({
-                ...ev,
-                isPinned: true,
-                isNew: false,
-              }));
-
-              // Synthetic events (diff narratives) → mark isNew for first
-              const synthItems = eventFilter === "karakter"
-                ? syntheticEvents.map((ev, i) => ({
-                    ...ev,
-                    isNew: i === 0,
-                    isPinned: false,
-                  }))
-                : [];
-
-              // History events — mark first as isNew if no synthetics
-              const histItems = historyEvents.map((ev, i) => ({
-                ...ev,
-                isNew: i === 0 && synthItems.length === 0,
-                isPinned: false,
-                // attach flavor text so StoryEventFeed can use it
-                flavor: getFlavorText(ev),
-              }));
-
-              const allFeedEvents = [...pinnedItems, ...synthItems, ...histItems];
-
-              return (
-                <StoryEventFeed
-                  events={allFeedEvents}
-                  showTimeline={true}
-                  emptyMessage={
-                    eventFilter === "karakter"
-                      ? "Bu dönemde seni etkileyen bir olay yaşanmadı."
-                      : "Bu dönemde kayda değer bir dünya olayı yaşanmadı."
-                  }
-                />
-              );
-            })()}
+          {/* ── STEP 6+7+8: Event List with Premium Timeline ── */}
+          <div style={{ padding: '1rem 0.9rem 1.1rem' }}>
+            {events.gunluk.map((ev, i) => (
+              <EventCard key={ev.id} event={ev} isLast={i === events.gunluk.length - 1} />
+            ))}
           </div>
+
         </div>
+        {/* ── END JOURNAL PANEL ─────────────────────────────────────────── */}
+
       </div>
 
-      {/* ── YAPIŞIK ALT BAR — sabit, nav barın üstünde ── */}
-      <div
-        className="fixed left-0 right-0 z-40 bg-stone-950/80 backdrop-blur-md"
-        style={{
-          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
-          borderTop: '1px solid rgba(180,100,20,0.18)',
-          boxShadow: '0 -4px 24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(200,120,30,0.08)',
-        }}
-      >
-        <div className="max-w-2xl mx-auto px-3 py-2">
+      {/* ══════════════════════════════════════════════════════════════════
+          STEP 9: PRIMARY CTA — RPG PREMIUM BUTTON
+         ══════════════════════════════════════════════════════════════════ */}
+      <div style={{
+        position: 'fixed', bottom: '4.5rem', left: '50%',
+        transform: 'translateX(-50%)',
+        width: 'min(480px, 100vw)',
+        padding: '0 0.875rem', zIndex: 50,
+      }}>
+        <button className="w-full animate-pulse-gold" style={{
+          background: 'linear-gradient(180deg, #3D2A08 0%, #2C1E06 35%, #1E1404 70%, #160E02 100%)',
+          border: '1.5px solid rgba(201,168,76,0.55)',
+          borderRadius: '8px',
+          padding: '1.05rem 1.5rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: '1rem', cursor: 'pointer',
+          boxShadow: '0 0 30px rgba(201,168,76,0.25), 0 0 60px rgba(201,168,76,0.08), 0 6px 24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(201,168,76,0.25), inset 0 -1px 0 rgba(0,0,0,0.5)',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          {/* Top shine line */}
+          <div style={{
+            position: 'absolute', top: 0, left: '5%', right: '5%', height: '1px',
+            background: 'linear-gradient(to right, transparent, rgba(240,192,64,0.7) 30%, rgba(240,192,64,0.9) 50%, rgba(240,192,64,0.7) 70%, transparent)',
+          }} />
+          {/* Bottom dim line */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '1px',
+            background: 'linear-gradient(to right, transparent, rgba(201,168,76,0.35), transparent)',
+          }} />
+          {/* Inner surface sheen */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
+            background: 'linear-gradient(to bottom, rgba(255,255,255,0.04) 0%, transparent 100%)',
+            pointerEvents: 'none',
+          }} />
 
-          {/* İlerleme çubuğu — çok haftalı atlama */}
-          {advancing && advProgress && (
-            <div className="h-0.5 rounded-full overflow-hidden mb-2 bg-stone-800">
-              <div
-                className="h-full bg-gradient-to-r from-orange-700 to-amber-500 transition-all duration-300"
-                style={{ width: `${(advProgress.cur / advProgress.total) * 100}%` }}
-              />
-            </div>
-          )}
+          {/* STEP 9: Decorative corner ornaments */}
+          <CornerOrnament position="top-left" />
+          <CornerOrnament position="top-right" />
+          <CornerOrnament position="bottom-left" />
+          <CornerOrnament position="bottom-right" />
 
-          <div className="flex items-center gap-2">
-            {/* Dönem seçici */}
-            <div className="flex gap-1">
-              {PERIODS.map((p) => (
-                <button
-                  key={p.label}
-                  onClick={() => setSelectedPeriod(p)}
-                  disabled={advancing}
-                  className={`px-2.5 py-2 text-[10px] font-heading tracking-wider rounded-sm border transition-all disabled:opacity-40 ${
-                    selectedPeriod.label === p.label
-                      ? "border-amber-700/80 bg-amber-950/60 text-amber-300 shadow-[0_0_8px_rgba(180,100,20,0.2)]"
-                      : "border-stone-800 text-stone-500 hover:text-stone-300 hover:border-stone-700"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Ana ilerleme butonu — mockup tarzı, büyük ve belirgin */}
-            <button
-              onClick={handleAdvance}
-              disabled={advancing}
-              className="flex-1 py-3 font-heading text-[11px] tracking-[0.18em] flex items-center justify-center gap-2 disabled:opacity-50 rounded-sm transition-all relative overflow-hidden"
+          {/* Content */}
+          <span style={{ fontSize: '1.4rem', filter: 'drop-shadow(0 0 6px rgba(201,168,76,0.6))' }}>⏳</span>
+          <div style={{ textAlign: 'left' }}>
+            <div className="font-display font-bold uppercase"
               style={{
-                background: advancing
-                  ? 'linear-gradient(180deg, #78350f, #451a03)'
-                  : 'linear-gradient(180deg, #b45309 0%, #92400e 50%, #78350f 100%)',
-                border: '1px solid rgba(180,100,20,0.5)',
-                boxShadow: advancing ? 'none' : '0 0 20px rgba(180,100,20,0.25), inset 0 1px 0 rgba(251,191,36,0.12)',
-                color: '#fef3c7',
-              }}
-            >
-              {advancing
-                ? <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
-                : <Hourglass className="w-4 h-4 text-amber-400 shrink-0" style={{filter: 'drop-shadow(0 0 4px rgba(251,191,36,0.5))'}} />}
-              <span>
-                {advancing
-                  ? advProgress
-                    ? `${advProgress.cur} / ${advProgress.total} Hafta…`
-                    : "Geçiyor…"
-                  : `${selectedPeriod.label} İlerle`}
-              </span>
-            </button>
+                fontSize: '1.05rem', color: 'var(--color-gold)',
+                letterSpacing: '0.2em',
+                textShadow: '0 0 14px rgba(201,168,76,0.6), 0 1px 3px rgba(0,0,0,0.9)',
+              }}>
+              HAFTAYI İLERLE
+            </div>
+            <div className="font-serif"
+              style={{
+                fontSize: '0.74rem', color: 'var(--color-parchment-muted)',
+                fontStyle: 'italic', marginTop: '0.12rem',
+                textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+              }}>
+              Yeni olaylar seni bekliyor...
+            </div>
           </div>
-        </div>
+
+          {/* Right arrow hint */}
+          <div style={{
+            position: 'absolute', right: '1.1rem',
+            display: 'flex', alignItems: 'center',
+            opacity: 0.5,
+          }}>
+            <ChevronRight size={16} color="var(--color-gold)" strokeWidth={1.5} />
+          </div>
+        </button>
       </div>
-    </>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          STEP 10: NAVBAR — PREMIUM RPG
+         ══════════════════════════════════════════════════════════════════ */}
+      <nav style={{
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: 'min(480px, 100vw)',
+        background: 'linear-gradient(180deg, var(--color-surface) 0%, #0F0B07 100%)',
+        borderTop: '1px solid var(--color-border-hi)',
+        display: 'flex', zIndex: 60,
+        boxShadow: '0 -6px 28px rgba(0,0,0,0.65), 0 -1px 0 rgba(201,168,76,0.08)',
+      }}>
+        {/* Top inner highlight */}
+        <div style={{
+          position: 'absolute', top: 0, left: '5%', right: '5%', height: '1px',
+          background: 'linear-gradient(to right, transparent, rgba(201,168,76,0.15) 30%, rgba(201,168,76,0.22) 50%, rgba(201,168,76,0.15) 70%, transparent)',
+          pointerEvents: 'none',
+        }} />
+
+        <NavItem icon={Flame}  label="Ana Sayfa" active={true}  />
+        <NavItem icon={Shield} label="Karakter"  active={false} />
+        <NavItem icon={Castle} label="Şehir"     active={false} />
+        <NavItem icon={Users}  label="İlişkiler" active={false} />
+        <NavItem icon={Scroll} label="Menü"      active={false} />
+      </nav>
+
+    </div>
   );
 }
