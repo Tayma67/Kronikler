@@ -217,10 +217,6 @@ function MarketPanel({ loc, playerInv, onTrade, busy }) {
   const [previews, setPreviews] = useState({});   // { "buğday_al": {total, avg, ...}, ... }
   const [previewBusy, setPreviewBusy] = useState({});
 
-  if (!loc?.market) return null;
-  const goods = Object.keys(loc.market);
-  const maxPriceInMarket = Math.max(...goods.map(g => loc.market[g].price));
-
   // qty veya action değişince preview çek (debounced)
   const fetchPreview = useCallback(async (good, action, q) => {
     if (q < 1) return;
@@ -228,7 +224,7 @@ function MarketPanel({ loc, playerInv, onTrade, busy }) {
     setPreviewBusy(p => ({ ...p, [key]: true }));
     try {
       const { data } = await api.get("/game/trade/preview", {
-        params: { location_id: loc.id, good, qty: q, action },
+        params: { location_id: loc?.id, good, qty: q, action },
       });
       setPreviews(p => ({ ...p, [key]: data }));
     } catch {
@@ -237,7 +233,7 @@ function MarketPanel({ loc, playerInv, onTrade, busy }) {
     } finally {
       setPreviewBusy(p => ({ ...p, [key]: false }));
     }
-  }, [loc.id]);
+  }, [loc?.id]);
 
   // qty değişince debounce ile preview çek
   const timerRef = useRef({});
@@ -255,6 +251,10 @@ function MarketPanel({ loc, playerInv, onTrade, busy }) {
       return { ...q_, [good]: next };
     });
   }, [schedulePreview]);
+
+  if (!loc?.market) return null;
+  const goods = Object.keys(loc.market);
+  const maxPriceInMarket = Math.max(...goods.map(g => loc.market[g].price));
 
   return (
     <div className="card-frame p-4 space-y-4">
