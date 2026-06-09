@@ -311,6 +311,54 @@ function getHeroImage(age, season) {
   return `/images/hero/${resolvedAge}_${seasonKey}.jpg`;
 }
 
+// ── KARAKTER AVATAR ──────────────────────────────────────────────────────
+function CharacterAvatar({ player, size = 38 }) {
+  const [imgError, setImgError] = useState(false);
+  const age = player?.age || 7;
+  const gender = player?.gender || "erkek";
+  const ageGroup = age >= 50 ? "yasli" : age >= 18 ? "yetiskin" : age >= 13 ? "genc" : "cocuk";
+  const resolvedAge = AVAILABLE_AGE_GROUPS.includes(ageGroup) ? ageGroup : "cocuk";
+  const imgSrc = `/images/characters/${gender}_${resolvedAge}.jpg`;
+  const initial = (player?.name || "?")[0].toUpperCase();
+
+  return (
+    <div
+      style={{
+        width: size, height: size,
+        borderRadius: "50%",
+        border: "2px solid rgba(200,146,58,.7)",
+        boxShadow: "0 0 0 1px rgba(0,0,0,.75), 0 0 14px rgba(200,146,58,.22), 0 2px 10px rgba(0,0,0,.9)",
+        overflow: "hidden",
+        flexShrink: 0,
+        background: "rgba(22,13,6,.97)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+    >
+      {!imgError ? (
+        <img
+          src={imgSrc}
+          alt={player?.name || "Karakter"}
+          style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }}
+          onError={() => setImgError(true)}
+          draggable={false}
+        />
+      ) : (
+        <span style={{
+          fontFamily: "'Cinzel', Georgia, serif",
+          fontSize: size * 0.42,
+          fontWeight: 700,
+          color: "rgba(200,146,58,.85)",
+          textShadow: "0 0 10px rgba(200,146,58,.4)",
+          userSelect: "none",
+          lineHeight: 1,
+        }}>
+          {initial}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function HeroScene({ player, cal, rep }) {
   const age     = player?.age || 7;
   const season  = cal?.season || "Kış";
@@ -338,26 +386,29 @@ function HeroScene({ player, cal, rep }) {
 
       {/* ─ Üst katman: isim + tarih (sol) · itibar badge (sağ) ─ */}
       <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-3 pt-2">
-        {/* Sol: isim + yaş */}
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1
-              className="font-heading text-[19px] text-amber-100 leading-none tracking-wide"
-              style={{ textShadow: "0 2px 14px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.7)" }}
+        {/* Sol: avatar + isim + yaş */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <CharacterAvatar player={player} size={40} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1
+                className="font-heading text-[19px] text-amber-100 leading-none tracking-wide"
+                style={{ textShadow: "0 2px 14px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.7)" }}
+              >
+                {player?.name || "İsimsiz"}
+              </h1>
+              {player?.is_child && (
+                <span className="text-[9px] text-amber-400 font-heading border border-amber-600/50 bg-black/55 backdrop-blur-sm px-1.5 py-0.5 tracking-widest">
+                  ÇOCUK
+                </span>
+              )}
+            </div>
+            <div
+              className="text-[11px] text-stone-300/85 mt-1 font-heading tracking-wide"
+              style={{ textShadow: "0 1px 6px rgba(0,0,0,0.95)" }}
             >
-              {player?.name || "İsimsiz"}
-            </h1>
-            {player?.is_child && (
-              <span className="text-[9px] text-amber-400 font-heading border border-amber-600/50 bg-black/55 backdrop-blur-sm px-1.5 py-0.5 tracking-widest">
-                ÇOCUK
-              </span>
-            )}
-          </div>
-          <div
-            className="text-[11px] text-stone-300/85 mt-1 font-heading tracking-wide"
-            style={{ textShadow: "0 1px 6px rgba(0,0,0,0.95)" }}
-          >
-            📅 {age} yaş &nbsp;·&nbsp; {cal?.season} &nbsp;·&nbsp; {cal?.month_name} {cal?.year}
+              📅 {age} yaş &nbsp;·&nbsp; {cal?.season} &nbsp;·&nbsp; {cal?.month_name} {cal?.year}
+            </div>
           </div>
         </div>
 
@@ -1180,15 +1231,21 @@ export default function Dashboard() {
         <StatusStrip player={player} world={state?.world} />
 
         {/* ── HAYAT GÜNLÜĞÜ — StoryEventFeed ── */}
-        <div className="flex flex-col flex-1 min-h-0 mx-2 overflow-hidden" style={{
-          borderRadius: "18px",
-          border: "1px solid rgba(200,146,58,.1)",
-          background: "linear-gradient(180deg, #0E0B08 0%, #0C0906 100%)",
-          boxShadow: "0 4px 24px rgba(0,0,0,.5), inset 0 0 0 1px rgba(120,80,30,0.06)",
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden" style={{
+          borderRadius: "22px 22px 0 0",
+          border: "1px solid rgba(200,146,58,.22)",
+          borderBottom: "none",
+          background: "linear-gradient(180deg, #131009 0%, #0C0906 100%)",
+          boxShadow: "0 -16px 48px rgba(0,0,0,.85), 0 -1px 0 rgba(200,146,58,.2), inset 0 1px 0 rgba(200,146,58,.14), inset 0 0 0 1px rgba(120,80,30,0.06)",
+          marginTop: "-6px",
+          position: "relative",
+          zIndex: 2,
         }}>
 
           {/* Header row: Hayat Günlüğü title + tab switcher + link */}
-          <div style={{ flexShrink: 0, padding: "14px 16px 0" }}>
+          <div style={{ flexShrink: 0, padding: "10px 16px 0" }}>
+            {/* Bottom-sheet handle */}
+            <div style={{ width: "36px", height: "3px", borderRadius: "2px", background: "rgba(200,146,58,.22)", margin: "0 auto 12px" }} />
             {/* Title + link */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
