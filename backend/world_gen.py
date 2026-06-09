@@ -52,6 +52,8 @@ PROFESSIONS_COMMON = [
     "çiftçi", "demirci", "tüccar", "avcı", "asker", "balıkçı",
     "çoban", "fırıncı", "marangoz", "şifacı", "rahip", "haydut",
     "değirmenci", "öğretmen", "han sahibi", "kunduracı", "katip",
+    # S2: Silah üreticisi meslekler eklendi
+    "silahçı", "zırh_ustası",
 ]
 PROFESSIONS_NOBLE = ["lord", "general", "veliaht", "kral", "şövalye"]
 
@@ -62,10 +64,12 @@ PERSONALITY_TRAITS = [
     "konuşkan", "suskun",
 ]
 
-GOODS = ["buğday", "ekmek", "et", "demir", "odun", "kumaş", "silah"]
+# S8: İpek ve baharat lüks mal olarak eklendi (mücevher items.py'da ama pazarda yok — ağır)
+GOODS = ["buğday", "ekmek", "et", "demir", "odun", "kumaş", "silah", "ipek", "baharat"]
 GOOD_BASE_PRICES = {
     "buğday": 4, "ekmek": 6, "et": 12, "demir": 25,
     "odun": 5, "kumaş": 10, "silah": 60,
+    "ipek": 45, "baharat": 35,
 }
 
 PLAYER_START_PROFESSIONS = [

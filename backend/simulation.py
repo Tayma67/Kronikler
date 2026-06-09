@@ -56,8 +56,11 @@ PRODUCTION = {
     "demirci": ("demir", 3),
     "marangoz": ("odun", 7),
     "değirmenci": ("buğday", 5),
-    "tüccar": (None, 0),  # they move goods but don't produce
+    "tüccar": (None, 0),   # they move goods but don't produce
     "kunduracı": ("kumaş", 3),
+    # S2 — silah üreticisi meslekler eklendi
+    "silahçı":   ("silah", 1),
+    "zırh_ustası": ("silah", 1),
 }
 
 PROFESSION_NEEDS = {
@@ -112,6 +115,7 @@ def _ensure_market(loc):
 
 def _recompute_prices(loc):
     """Price formula: base * (demand / max(1, supply))^0.4 * wealth_factor."""
+    from balance_config import ECONOMY
     wealth_factor = 0.6 + (loc["wealth"] / 100)
     security_factor = 0.7 + (loc["security"] / 100) * 0.6
     for g, m in loc["market"].items():
@@ -119,7 +123,11 @@ def _recompute_prices(loc):
         target = m["base"] * (ratio ** 0.45) * wealth_factor * security_factor
         # Smooth toward target
         m["price"] = round(max(0.5, m["price"] * 0.65 + target * 0.35), 2)
-    loc["prices"] = {g: loc["market"][g]["price"] for g in GOODS}
+        # S3: Baz fiyat sınırlarını uygula (min_price_ratio / max_price_ratio)
+        min_price = m["base"] * ECONOMY["min_price_ratio"]   # baz fiyatın en az %30'u
+        max_price = m["base"] * ECONOMY["max_price_ratio"]   # baz fiyatın en fazla 3 katı
+        m["price"] = round(max(min_price, min(max_price, m["price"])), 2)
+    loc["prices"] = {g: loc["market"][g]["price"] for g in GOODS if g in loc["market"]}
 
 
 def _ensure_npc_fields(npc):
@@ -423,8 +431,9 @@ def _economy_tick(state, day):
         # FİYAT GEÇMİŞİ: Her 4 turda bir snapshot al (son 12 kayıt = 3 aylık veri)
         turn = state.get("turn", 0)
         if turn % 4 == 0:
-            snap = {g: round(loc["market"][g]["price"], 1) for g in GOODS}
+            snap = {g: round(loc["market"][g]["price"], 1) for g in GOODS if g in loc["market"]}
             snap["turn"] = turn
+            snap["season"] = season  # S4: mevsim etiketi eklendi
             hist = loc.setdefault("price_history", [])
             hist.append(snap)
             if len(hist) > 12:
@@ -434,6 +443,15 @@ def _economy_tick(state, day):
         loc["wealth"] = max(5, min(100, loc["wealth"] + random.randint(-2, 2)))
         loc["security"] = max(5, min(100, loc["security"] + random.randint(-3, 3)))
         loc["prosperity"] = max(5, min(100, round((loc["wealth"] + loc["security"]) / 2)))
+
+    # S6: Haftalık enflasyon — baz fiyatları çok küçük miktarda artır
+    from balance_config import ECONOMY
+    inflation = ECONOMY["inflation_per_week"]  # 0.001 = %0.1
+    for loc in state["world"]["locations"]:
+        for g in loc.get("market", {}):
+            loc["market"][g]["base"] = round(
+                loc["market"][g]["base"] * (1 + inflation), 3
+            )
 
     # NPC merchant arbitrage: pick a few merchants, move 1 unit from cheap loc to expensive loc
     merchants = [n for n in state["world"]["npcs"] if n["alive"] and n["profession"] == "tüccar"]

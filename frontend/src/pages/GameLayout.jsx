@@ -391,13 +391,13 @@ export default function GameLayout() {
         </header>
 
         {/* Sadece bu alan scroll eder */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-32 lg:pb-6">
           <Outlet />
         </div>
       </main>
 
       {/* Mobil alt navigation — 4 ana + "Menü" */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 border-t border-amber-900/40 bg-stone-950/97 backdrop-blur-sm flex pb-safe" style={{boxShadow: '0 -2px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(180,100,20,0.06)'}}>
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 border-t border-amber-900/40 bg-stone-950/60 backdrop-blur-md flex pb-safe" style={{boxShadow: '0 -2px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(180,100,20,0.06)'}}>
         {visiblePrimary.map((n) => (
           <MobileNavItem
             key={n.to} {...n}

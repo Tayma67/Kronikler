@@ -204,7 +204,20 @@ def trade_price_multiplier(player: dict, action: str) -> float:
     # Korku fiyatı olumsuz etkiler (tüccar kaçmak ister)
     fear_penalty = fear * 0.0003      # -50 korku → -1.5%
 
-    combined = rep_factor + fame_factor - fear_penalty
+    # S10: Lonca üyeliği bonusu — tüccar loncası veya zanaatkar loncası üyesiyse
+    lonca_bonus = 0.0
+    memberships = player.get("faction_memberships", {})
+    for _fid, mem in memberships.items():
+        if mem.get("status") == "active":
+            faction_type = mem.get("type", "")
+            if faction_type in ("tuccar_loncasi", "zanaatkar_loncasi"):
+                # Her rank +1% avantaj (rank_index 0-bazlı)
+                rank_idx = mem.get("rank_index", 0)
+                lonca_bonus += 0.01 * (rank_idx + 1)
+    # Lonca bonusu max %5 ile sınırlı
+    lonca_bonus = min(0.05, lonca_bonus)
+
+    combined = rep_factor + fame_factor - fear_penalty + lonca_bonus
 
     if action == "al":
         # İtibar artınca alım fiyatı düşer

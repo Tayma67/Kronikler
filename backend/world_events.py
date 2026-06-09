@@ -433,16 +433,90 @@ def generate_world_event(state, day):
     return event
 
 
+def _find_location_by_id(state, location_id):
+    """Dünya lokasyonlarından ID ile bul."""
+    return next(
+        (l for l in state["world"].get("locations", []) if l["id"] == location_id),
+        None,
+    )
+
+
+def _apply_event_ongoing(state, event, day):
+    """
+    Aktif olayların zayıflatılmış haftalık devam etkisi (S1 düzeltmesi).
+    Başlangıç etkisinin yaklaşık %25'i her hafta tekrar uygulanır.
+    """
+    from simulation import _recompute_prices
+
+    loc = _find_location_by_id(state, event["location_id"])
+    if not loc or not loc.get("market"):
+        return
+
+    market = loc["market"]
+    intensity = 0.25  # Başlangıç etkisinin %25'i
+
+    etype = event["type"]
+
+    if etype == "kuraklık":
+        for good in ("buğday", "ekmek", "et"):
+            if good in market:
+                market[good]["supply"] = max(0, market[good]["supply"] - int(8 * intensity))
+                market[good]["demand"] = min(9999, market[good]["demand"] + int(6 * intensity))
+        _recompute_prices(loc)
+
+    elif etype == "salgın_hastalık":
+        loc["prosperity"] = max(5, loc["prosperity"] - 1)
+        npcs_here = [
+            n for n in state["world"]["npcs"]
+            if n.get("alive") and n.get("location_id") == loc["id"]
+        ]
+        if npcs_here:
+            victim = random.choice(npcs_here)
+            victim["health"] = max(10, victim["health"] - random.randint(3, 8))
+
+    elif etype == "haydut_saldırıları":
+        loc["security"] = max(5, loc["security"] - random.randint(1, 3))
+        if market:
+            good = random.choice(list(market.keys()))
+            market[good]["supply"] = max(0, market[good]["supply"] - int(5 * intensity))
+        _recompute_prices(loc)
+
+    elif etype == "ticaret_patlaması":
+        for good in market:
+            market[good]["demand"] = min(9999, market[good]["demand"] + int(5 * intensity))
+        _recompute_prices(loc)
+
+    elif etype == "yeni_maden":
+        if "demir" in market:
+            market["demir"]["supply"] = min(9999, market["demir"]["supply"] + int(15 * intensity))
+        _recompute_prices(loc)
+
+    elif etype == "asker_toplama":
+        if "silah" in market:
+            market["silah"]["demand"] = min(9999, market["silah"]["demand"] + int(10 * intensity))
+        _recompute_prices(loc)
+
+    elif etype == "bereketli_hasat":
+        for good in ("buğday", "ekmek", "et"):
+            if good in market:
+                market[good]["supply"] = min(9999, market[good]["supply"] + int(12 * intensity))
+        _recompute_prices(loc)
+
+
 def tick_world_events(state, day):
     """
     Her haftada çağrılır:
     - Süresi dolanları kapat
+    - Aktif olaylara haftalık devam etkisi uygula (S1)
     - Her ay (4 haftada 1) yeni olay üret
     """
-    # Süresi dolan olayları kapat
+    # Süresi dolan olayları kapat ve aktif olanlara devam etkisi uygula
     for ev in state.get("world_events", []):
         if ev["active"] and ev["ends_day"] <= day:
             ev["active"] = False
+        elif ev["active"]:
+            # YENİ S1: Aktif olayların haftalık devam etkisi
+            _apply_event_ongoing(state, ev, day)
 
     # Her 4 haftada bir olay üret (ay başı)
     turn = state.get("turn", 0)

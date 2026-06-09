@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -7,17 +7,119 @@ import {
   Package, ShoppingCart, ArrowRight, ChevronDown, ChevronUp,
   Truck, MapPin, AlertTriangle, CheckCircle2, XCircle,
   History, Plus, Minus, Navigation, Trophy, Swords, X,
+  Zap,
 } from "lucide-react";
 
 /* ─── Sabitler ─────────────────────────────────────────────────────── */
 const GOOD_LABELS = {
   "buğday": "Buğday", "ekmek": "Ekmek", "et": "Et",
   "demir": "Demir", "odun": "Odun", "kumaş": "Kumaş", "silah": "Silah",
+  "ipek": "İpek", "baharat": "Baharat",
 };
 const GOOD_ICONS = {
   "buğday": "🌾", "ekmek": "🍞", "et": "🥩",
   "demir": "⚙️", "odun": "🪵", "kumaş": "🧵", "silah": "⚔️",
+  "ipek": "🪡", "baharat": "🌶️",
 };
+
+/* ─── S4: Fiyat Trendi Yardımcısı ──────────────────────────────────── */
+/**
+ * Lokasyonun price_history'sine bakarak belirli bir malın
+ * fiyat trendini döndürür: "rising" | "falling" | "stable" | null
+ */
+function priceTrend(loc, good) {
+  const history = loc?.price_history;
+  if (!history || history.length < 2) return null;
+  const last = history[history.length - 1]?.[good];
+  const prev = history[history.length - 2]?.[good];
+  if (last == null || prev == null || prev === 0) return null;
+  if (last > prev * 1.05) return "rising";
+  if (last < prev * 0.95) return "falling";
+  return "stable";
+}
+
+function TrendIcon({ trend }) {
+  if (trend === "rising")  return <TrendingUp  className="w-3 h-3 text-red-400"     title="Fiyat yükseliyor" />;
+  if (trend === "falling") return <TrendingDown className="w-3 h-3 text-emerald-400" title="Fiyat düşüyor"  />;
+  if (trend === "stable")  return <span className="text-[10px] text-stone-600">→</span>;
+  return null;
+}
+
+/* ─── S5: Backend Arbitraj Paneli ──────────────────────────────────── */
+function ArbitrageOpportunities() {
+  const [opps, setOpps] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const fetch = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/game/market/arbitrage");
+      setOpps(data.opportunities || []);
+    } catch { setOpps([]); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { if (open && opps === null) fetch(); }, [open, opps, fetch]);
+
+  return (
+    <div className="card-frame overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between p-3 hover:bg-stone-900/40 transition-colors">
+        <div className="flex items-center gap-2">
+          <Zap className="w-3.5 h-3.5 text-amber-500" />
+          <span className="label-tiny">Arbitraj Fırsatları</span>
+          {opps !== null && opps.length > 0 && (
+            <span className="text-[10px] bg-amber-900/40 text-amber-400 border border-amber-800/50 px-1.5 rounded-sm font-heading">
+              {opps.length}
+            </span>
+          )}
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 text-stone-500" /> : <ChevronDown className="w-4 h-4 text-stone-500" />}
+      </button>
+      {open && (
+        <div className="border-t border-stone-800/50 px-3 pb-3 pt-2 space-y-2">
+          {loading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="w-4 h-4 animate-spin text-stone-500" />
+            </div>
+          ) : !opps?.length ? (
+            <p className="text-xs text-stone-500 italic py-2">Şu an büyük fiyat farkı yok.</p>
+          ) : (
+            opps.map((op, i) => (
+              <div key={i}
+                className="flex items-center gap-2 text-xs border border-stone-800/40 rounded-sm px-3 py-2 bg-stone-950/20">
+                <span className="text-base shrink-0">{GOOD_ICONS[op.good] || "📦"}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-stone-200 font-heading">{GOOD_LABELS[op.good] || op.good}</div>
+                  <div className="text-[10px] text-stone-500 flex items-center gap-1 flex-wrap">
+                    <span className="text-emerald-400">{op.cheap_city}</span>
+                    <span>{op.cheap_price}A</span>
+                    <ArrowRight className="w-2.5 h-2.5" />
+                    <span className="text-red-400">{op.expensive_city}</span>
+                    <span>{op.expensive_price}A</span>
+                  </div>
+                </div>
+                <div className="shrink-0 flex flex-col items-end gap-0.5">
+                  <span className="text-emerald-400 font-heading text-sm">+%{op.spread_pct}</span>
+                  <span className="text-[10px] text-stone-600">kâr marjı</span>
+                </div>
+              </div>
+            ))
+          )}
+          <button
+            onClick={fetch}
+            disabled={loading}
+            className="text-[10px] text-stone-500 hover:text-stone-300 transition-colors flex items-center gap-1 disabled:opacity-40">
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+            Yenile
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ─── Yardımcı: Fiyat Çubuğu ───────────────────────────────────────── */
 function PriceBar({ price, base, max }) {
@@ -112,9 +214,47 @@ function ArbitrageTable({ locations, goods }) {
 /* ─── Pazar Paneli ──────────────────────────────────────────────────── */
 function MarketPanel({ loc, playerInv, onTrade, busy }) {
   const [qty, setQty] = useState({});
+  const [previews, setPreviews] = useState({});   // { "buğday_al": {total, avg, ...}, ... }
+  const [previewBusy, setPreviewBusy] = useState({});
+
   if (!loc?.market) return null;
   const goods = Object.keys(loc.market);
   const maxPriceInMarket = Math.max(...goods.map(g => loc.market[g].price));
+
+  // qty veya action değişince preview çek (debounced)
+  const fetchPreview = useCallback(async (good, action, q) => {
+    if (q < 1) return;
+    const key = `${good}_${action}`;
+    setPreviewBusy(p => ({ ...p, [key]: true }));
+    try {
+      const { data } = await api.get("/game/trade/preview", {
+        params: { location_id: loc.id, good, qty: q, action },
+      });
+      setPreviews(p => ({ ...p, [key]: data }));
+    } catch {
+      // preview başarısız olursa eski hesabı göster
+      setPreviews(p => ({ ...p, [key]: null }));
+    } finally {
+      setPreviewBusy(p => ({ ...p, [key]: false }));
+    }
+  }, [loc.id]);
+
+  // qty değişince debounce ile preview çek
+  const timerRef = useRef({});
+  const schedulePreview = useCallback((good, action, q) => {
+    const key = `${good}_${action}`;
+    clearTimeout(timerRef.current[key]);
+    timerRef.current[key] = setTimeout(() => fetchPreview(good, action, q), 300);
+  }, [fetchPreview]);
+
+  const changeQty = useCallback((good, delta) => {
+    setQty(q_ => {
+      const next = Math.max(1, (q_[good] || 1) + delta);
+      schedulePreview(good, "al",  next);
+      schedulePreview(good, "sat", next);
+      return { ...q_, [good]: next };
+    });
+  }, [schedulePreview]);
 
   return (
     <div className="card-frame p-4 space-y-4">
@@ -128,51 +268,114 @@ function MarketPanel({ loc, playerInv, onTrade, busy }) {
           const m = loc.market[good];
           const inInv = playerInv[good] || 0;
           const q = qty[good] || 1;
-          const buyCost = Math.round(m.price * q * 10) / 10;
-          const sellEarn = Math.round(m.price * Math.min(q, inInv) * 10) / 10;
+          const trend = priceTrend(loc, good);
+
+          // Preview veya fallback
+          const buyPreview  = previews[`${good}_al`];
+          const sellPreview = previews[`${good}_sat`];
+          const buyCost  = buyPreview  ? buyPreview.total  : Math.round(m.price * q * 10) / 10;
+          const sellEarn = sellPreview ? sellPreview.total : Math.round(m.price * Math.min(q, inInv) * 10) / 10;
+          const buyAvg   = buyPreview  ? buyPreview.avg_unit_price  : null;
+          const sellAvg  = sellPreview ? sellPreview.avg_unit_price : null;
+          const buyImpact  = buyPreview?.has_impact  && q > 1;
+          const sellImpact = sellPreview?.has_impact && q > 1;
+
           return (
             <div key={good} className="border border-stone-800/60 rounded-sm p-3 space-y-2">
+              {/* Başlık satırı */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-base">{GOOD_ICONS[good]}</span>
-                  <span className="text-sm text-stone-200">{GOOD_LABELS[good]}</span>
+                  <span className="text-sm text-stone-200">{GOOD_LABELS[good] || good}</span>
                 </div>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-stone-500">
                     Stok: <span className="text-stone-300">{m.supply}</span>
                   </span>
                   <PriceBar price={m.price} base={m.base} max={maxPriceInMarket} />
+                  <TrendIcon trend={trend} />
                   <span className="font-heading text-amber-400 w-10 text-right">{m.price}A</span>
                 </div>
               </div>
+
+              {/* Miktar + butonlar */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center border border-stone-700 rounded-sm overflow-hidden">
                   <button
-                    onClick={() => setQty(q_ => ({ ...q_, [good]: Math.max(1, (q_[good] || 1) - 1) }))}
+                    onClick={() => changeQty(good, -1)}
                     className="px-2 py-1 text-stone-400 hover:text-stone-200 text-xs border-r border-stone-700">
                     -
                   </button>
-                  <span className="px-3 text-xs text-stone-200 bg-stone-900 py-1">{q}</span>
+                  <span className="px-3 text-xs text-stone-200 bg-stone-900 py-1 min-w-[2rem] text-center">
+                    {q}
+                  </span>
                   <button
-                    onClick={() => setQty(q_ => ({ ...q_, [good]: (q_[good] || 1) + 1 }))}
+                    onClick={() => changeQty(good, +1)}
                     className="px-2 py-1 text-stone-400 hover:text-stone-200 text-xs border-l border-stone-700">
                     +
                   </button>
                 </div>
+
                 <button onClick={() => onTrade(loc.id, good, "al", q)}
                   disabled={busy || m.supply < q}
                   className="flex-1 btn-ember py-1 text-[11px] font-heading tracking-wider disabled:opacity-40 flex items-center justify-center gap-1">
-                  <Coins className="w-3 h-3" /> AL ({buyCost}A)
+                  {previewBusy[`${good}_al`]
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : <Coins className="w-3 h-3" />}
+                  AL ({buyCost}A)
                 </button>
+
                 <button onClick={() => onTrade(loc.id, good, "sat", q)}
                   disabled={busy || inInv < q}
                   className="flex-1 btn-ghost-ash py-1 text-[11px] font-heading tracking-wider disabled:opacity-40 flex items-center justify-center gap-1">
-                  <Package className="w-3 h-3" /> SAT ({sellEarn}A)
+                  {previewBusy[`${good}_sat`]
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : <Package className="w-3 h-3" />}
+                  SAT ({sellEarn}A)
                 </button>
+
                 {inInv > 0 && (
                   <span className="text-[10px] text-stone-500 shrink-0">Env: {inInv}</span>
                 )}
               </div>
+
+              {/* Ortalama fiyat satırı — sadece q > 1 ve preview varsa göster */}
+              {q > 1 && (buyAvg || sellAvg) && (
+                <div className="flex flex-wrap gap-2 text-[10px] text-stone-500">
+                  {buyAvg && (
+                    <span>
+                      Alım ort.: <span className="text-amber-400">{buyAvg}A/birim</span>
+                      {buyPreview && (
+                        <span className="text-stone-600">
+                          {" "}({buyPreview.first_unit_price}A → {buyPreview.last_unit_price}A)
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  {sellAvg && (
+                    <span>
+                      Satış ort.: <span className="text-emerald-400">{sellAvg}A/birim</span>
+                      {sellPreview && (
+                        <span className="text-stone-600">
+                          {" "}({sellPreview.first_unit_price}A → {sellPreview.last_unit_price}A)
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Piyasa etkisi uyarısı */}
+              {(buyImpact || sellImpact) && (
+                <div className="flex items-center gap-1.5 text-[10px] text-amber-400 border border-amber-900/30 bg-amber-950/10 px-2 py-1 rounded-sm">
+                  <AlertTriangle className="w-3 h-3 shrink-0" />
+                  <span>
+                    Büyük işlem — piyasa etkilenecek
+                    {buyImpact  && ` (alım: +%${buyPreview.price_impact_pct})`}
+                    {sellImpact && ` (satış: ${sellPreview.price_impact_pct}%)`}
+                  </span>
+                </div>
+              )}
             </div>
           );
         })}
@@ -876,7 +1079,10 @@ export default function Trade() {
             />
           )}
 
-          {/* Arbitraj analizi */}
+          {/* Arbitraj analizi — backend destekli (S5) */}
+          <ArbitrageOpportunities />
+
+          {/* Şehirler arası fiyat karşılaştırması (frontend, anlık) */}
           <ArbitrageTable locations={sortedLocs} goods={allGoods} />
 
           {/* Diğer pazarlar */}

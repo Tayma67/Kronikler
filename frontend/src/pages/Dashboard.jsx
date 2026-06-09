@@ -137,6 +137,95 @@ const EVENT_COLORS = {
   _kriz_alert: "border-red-700",
 };
 
+// ══════════════════════════════════════════════════════════════════════════
+// HİKAYELEŞTİRME — olay tiplerine göre kısa atmosferik açılış cümleleri
+// ══════════════════════════════════════════════════════════════════════════
+const FLAVOR_LINES = {
+  // Mektep & Çocukluk
+  ders:            ["Kalem kağıda değdi, zihin açıldı.", "Bugün bir şeyler yapıştı aklına.", "Hoca memnun ayrıldı. Sanırım.", "Bilgi sessizce birikir — farkında bile olmazsın.", "Sabah ezanıyla başlandı, akşam yorgunluğuyla bitti."],
+  sinav:           ["Eller ter içindeydi. Nefes tutuldu.", "Kâğıt önünde, tüm bildikler sırada bekliyordu.", "Sınav kâğıdı geldi. Bazı sorular tanıdık, bazıları... hmm.", "Hoca yüzünü okumak imkânsızdı. İyi mi, kötü mü?"],
+  kulup:           ["Kapıdan ilk kez girildi. Koku yabancıydı.", "Biri güldü — buz kırıldı.", "İlk gün böyle işte: garip ama heyecanlı."],
+  aktivite:        ["Eller kirlendi, alın terledi. İyi bir terlemeydi.", "Bugün kaslar konuştu.", "Yanındakiler daha hızlıydı. Durma sebebi değil."],
+  cocuk_yatirim:   ["Birikimi bir amaca yatırıldı.", "Küçük bir kumar — ama kaderine inanmak gerekiyordu."],
+  cocuk_meslek:    ["İlk usta-çırak ilişkisi böyle başlar: bir \"Bak, şöyle yapılır\" ile.", "Ellere bakıldı. Belki de doğru meslek bu."],
+  okul:            ["Mektep kapısından girildi. Gün başladı.", "Bugün ders, yarın imtihan. Böyle büyünür insan."],
+  // Günlük Hayat
+  çalışma:         ["Alın teri döküldü.", "İş ağırdı. Ama yarın daha kolay olacak — hep öyle olur.", "Ustanın gözü bir an takıldı. Onay mıydı?", "Günün sonu eller yıkandı. Yeterliydi.", "Çarşı gürültüsü içinde çalışıldı. Kese fark etti."],
+  ticaret:         ["Pazarda gözler birkaç kez buluştu. Sonunda anlaşıldı.", "Tüccar kaşını kaldırdı. Sonra güldü — iyi demek.", "Mal gitti, akçe geldi. Dünya böyle döner.", "Kazanmak bazen kimin daha uzun beklediğiyle ölçülür."],
+  yolculuk:        ["Yol uzundu. Düşünmeye bol vakit oldu.", "Şehir kapısından geçildi — eski mi, yeni mi?", "Ayaklar yoruldu, ama manzara değerdi.", "İçeride gürültü vardı. Dışarıda sadece yol."],
+  meslek_değişimi: ["Eski kapı kapandı. Yenisi aralandı.", "\"Bu defa farklı olacak\" dendi. Belki haklı.", "Yeni elbise henüz vücuda oturmamış — ama oturacak."],
+  meslek_edinme:   ["İlk kez bir meslek sahibi olundu. Kulağa güzel geliyor.", "\"Senin işin bu.\" Parmaklar incelendi. Evet, bu işe yarar."],
+  kariyer_terfi:   ["Usta omzuna dokundu: \"Hazırsın.\"", "Terfi haberi gelince önce şüpheyle bakıldı. Sonra gülümsendi.", "Yeni rütbe, daha ağır omuzlar — ama daha dik duruş.", "Şehirde adın biraz daha büyüdü."],
+  rank_bonusu:     ["Sadakat karşılıksız kalmaz.", "Fraksiyon payı bu hafta da cebe girdi.", "Para kazanmanın en rahat yolu: sadık kalmak."],
+  // Savaş & Çatışma
+  savaş_zaferi:    ["Toz dağıldı. Hâlâ ayaktasın.", "Rakip yerde. Sen ayakta. Bundan iyisi yok.", "Şehir bunu konuşacak.", "Düşman hızlı geldi — daha hızlı gitti.", "Zafer anlık, hazırlık uzun. Değdi."],
+  savaş_kaybı:     ["Ah. Bugün değilmiş.", "Bu acı öğretici bir tür.", "Son hamle gözden kaçtı. Bir dahaki sefere.", "Hayatta kalmak da bir zafer sayılır.", "Bugün hüsran. Ama tarih hep yenilgilerle başlar."],
+  savaş_kaçış:     ["Stratejik geri çekilme. Kaçmak değil — kesinlikle.", "Ölümle dans edildi; müzik erken bitti.", "Sağ çıkmak da bir taktiktir.", "Bu savaş kazanılmazdı. Akıl galip geldi."],
+  // Suç & Ceza
+  suç:             ["Gece karanlığında. Tanık yoktu. Sanırım.", "Risk alındı. Heyecan var — ve biraz pişmanlık.", "Eller titredi. Sonra titremedi. Bu, endişe verici.", "Yapıldı. Geri dönüşü yok."],
+  suç_yakalandı:   ["\"Dur!\" sesi her şeyi dondurdu.", "Yakalandı. En kötüsü: beklenen bir andı.", "\"Ben mi?\" yüz ifadesi takıldı yüze. İşe yaramadı."],
+  hırsızlık:       ["El hızlı hareket etti, göz kırpmadan.", "Pazar kalabalığı iyi bir perde oldu. Bu sefer.", "Küçük bir şeydi. Ama ağırlığı büyük hissettiriyor."],
+  hapis:           ["Demir kapı kapandı. Sessizlik bastı.", "Düşünmeye bol vakit var artık.", "Bu da geçer. Geçmek zorunda."],
+  cinayet:         ["Geri dönülmez bir çizgi geçildi.", "Kan soğuduktan sonra ellere bakıldı uzun süre."],
+  yakalandı:       ["Kaçacak yer kalmadı.", "Öngörülmüş bir sondı. Ama yine de acıttı."],
+  // Sosyal & İlişki
+  iltifat:         ["Beklenmedik bir an.", "İltifat basitti. Ama o gün içinde bir şey ısındı.", "\"Sen farklısın\" denildi. İyi farklı."],
+  hediye:          ["Küçük bir paket, büyük bir anlam.", "\"Al\" dedi sadece. Hiç açıklama yapmadı.", "Bu jest hatırlarda kalacak."],
+  para_verme:      ["Akçe el değiştirdi. İlişki kaldı — daha sağlam.", "\"İşte\" denildi. Doğruydu."],
+  evlilik:         ["İki hayat birleşti. Kolay değildi — değmezdi zaten.", "Yemin edildi. Şahitler vardı. Gökyüzü de.", "Bu bağ, kader mi yoksa seçim mi? Her ikisi."],
+  evlilik_teklifi: ["Kalp hızlandı. Kelimeler güçlükle çıktı.", "En cesur an bu muydu? Belki evet."],
+  // Hayat Döngüsü
+  doğum:           ["Dünyaya yeni bir ses geldi.", "Küçük bir ağlama sesi — her şeyin başlangıcı.", "Hayat devam ediyor. Yeni bir sayfayla."],
+  ölüm:            ["Bir mum söndü.", "Geride ne kaldı? Anılar. Ve boşluk.", "Ölüm herkesin kapısına gelir — bugün başka bir kapıya vurdu."],
+  nesil_devri:     ["Bir çağ kapandı, yenisi açıldı.", "Miras sadece toprakta değil, kanda da taşınır."],
+  miras:           ["Geçmişten gelen bir el uzandı.", "Bu miras hak mı, yük mü? Zamanla anlaşılır."],
+  // Görevler & Aile
+  görev_tamamlandı:["İş bitti. Tam ve eksiksiz.", "Söz verildi, tutuldu. Bu basit görünür — değil.", "Vaaat tutuldu. Nadirdir."],
+  görev_başarısız: ["Her şey yolundaydı. Ta ki gitmeyene kadar.", "Bugün ders alındı. Bedavaya değil."],
+  aile_görevi:     ["Aile işi, başka işlerden farklıdır. Reddedilemez.", "Kan bağı bazen zincir gibi, bazen kanat gibi hissettirir."],
+  aile_destek:     ["Aile, hesap sormadan uzandı.", "\"Senden başka kimsem yok\" demek gerekmedi — zaten biliniyordu."],
+  // Kervan
+  kervan:          ["Kervan yola çıktı. Yük ağır, yol belirsiz, umut yerinde.", "Deve sıralarında mal yüklenirken hesaplar yapıldı."],
+  kervan_varış:    ["Kervan hedefe ulaştı. Değdi.", "Mal teslim edildi, para alındı. Bir sonrakine."],
+  kervan_saldırı:  ["Yolda beklenmedik misafirler. Silahlı ve aceleci.", "Haydutlar iyi seçmiş: yolun en ıssız noktasını."],
+  // Fraksiyon & Yönetim
+  faction_kontrol: ["Nüfuz sessizce büyür. Bugün biraz daha büyüdü.", "Fraksiyon içinde bir yer daha sağlamlaştı. Kimse fark etmedi. Henüz."],
+  adaylık:         ["Ad öne sürüldü. Geri alınamaz artık.", "Aday olmak cesaret ister. Bugün gösterildi."],
+  darbe_yaklasıyor:["Plan olgunlaşıyor. Sabır da bir silah.", "Geri sayım başladı. Kimse adını bilmiyor henüz."],
+  darbe_basarili:  ["Sabah uyandığında güç el değiştirmişti.", "\"İmkânsız\" diyenler yanılmıştı. Kanıtlandı.", "Yıllar süren hazırlık, bir gecede meyvesini verdi."],
+  darbe_basarisiz: ["Plan bir noktada çöktü. Ve her şey onunla birlikte.", "Bazı riskler büyük bedel ödetir. Bu onlardan biriydi."],
+  // Vergi & Asayiş
+  vergi_ödendi:    ["Para gitti. Ağrıdı. Ama asker geceleri kapıda beklemiyor — şimdilik.", "\"Devletin hakkı\" verildi. İsteksizce de olsa."],
+  vergi_gecikme:   ["Vergi ödenmedi. Bu notlar birikmez diyenler yanılmış.", "Akçe yoktu. Bu özür sayılmaz, ama gerçek."],
+  asayis_baskisi:  ["\"Dur!\" Duruldu. Cüzdan ağırlaştı, onur... kısmen.", "Suç kaydının bu kadar hızlı yayılacağı tahmin edilmemişti."],
+  asayis_gozaltisi:["Zindanın havası bambaşka.", "Gözaltı süreci tamamlandı. Bundan ders çıkarılmadıysa, hazırlıklı ol."],
+  // Sağlık
+  iyileşme:        ["Bir sabah: \"Daha iyi hissediyorum.\" Küçük, ama gerçek.", "Vücut yavaş yavaş geri dönüyor.", "İyi haber: bugün dün kadar kötü değil."],
+  hastalık:        ["Yataktan kalkmak güç.", "Vücut bazen bedelini ister. Bugün talep geldi.", "Hasta olmak; hayatın geri kalanının değerini hatırlatır."],
+  // Dünya Olayları
+  şenlik:          ["Şehir bugün güldü.", "Davullar çaldı, insanlar toplandı. Kötü günler bir gün ertelendi.", "Şenlik bitince her şey eskiye dönecek. Ama bu an gerçekti."],
+  isyan:           ["Bir lord sabaha karşı bayrak kaldırdı.", "İstikrar sarsıldı. Bu tür sarsıntılar habersiz gelir."],
+  halk_isyanı:     ["Halk sokaklara döküldü. Sesler birleşince duyulur.", "Öfke uzun süredir birikiyor. Bugün taştı."],
+  kıtlık:          ["Ekmek fiyatı dün ikiydi, bugün üç.", "Ambar kapıları kapandı. Şehir içine çekildi."],
+  haydut_baskını:  ["Şehrin dışından atlar geliyor. İyi niyet aramayın.", "Haydutlar seçti: bu köy, bu gece. Şans işte."],
+  tahta_çıkış:     ["Yeni bir el taç giydi. Eski denge değişti.", "Tahta oturmak kolaydır. Oturmaya devam etmek — asıl mesele."],
+  kral_değişimi:   ["Kral öldü — yaşasın kral. Belirsizlik asılı kaldı.", "Yeni dönem başlıyor. Hayırlısı."],
+  savaş_ilanı:     ["Elçi dönmedi. Bu, savaş demek.", "Haberci soluk soluğa kapıya dayandı. Haber kötüydü."],
+  barış:           ["Silahlar bırakıldı. Herkes kazandığını sandı. Herkes kaybetti de biraz.", "Savaş bitti. Şimdi daha zor iş: birlikte yaşamak."],
+  // Stat sentetik olaylar
+  enforcement:     ["Yetkililer harekete geçti.", "Bir hatırlatma geldi. Ciddiye alınmalı."],
+};
+
+function getFlavorText(event) {
+  if (!event?.type) return null;
+  if (event.type.startsWith("_")) return null;   // uyarılar hikayeleştirilmez
+  if (event._synthetic && !FLAVOR_LINES[event.type]) return null;
+  const lines = FLAVOR_LINES[event.type];
+  if (!lines || lines.length === 0) return null;
+  const seed = ((event.day || 0) + (event.text?.length || 0)) % lines.length;
+  return lines[seed < 0 ? 0 : seed];
+}
+
 const KARAKTER_TYPES = new Set([
   // Hayat olayları
   "doğum", "ölüm", "evlilik", "nesil_devri", "miras",
@@ -199,13 +288,22 @@ function StatPill({ icon: Icon, value, warn = false, color = "text-stone-300" })
   );
 }
 
-// BitLife tarzı olay kartı
+// BitLife tarzı olay kartı — flavor text ile hikayeleştirilmiş
 function EventCard({ event, pinned = false, fresh = false }) {
-  const icon  = EVENT_ICONS[event?.type]  || "📜";
-  const color = EVENT_COLORS[event?.type] || "border-stone-700";
+  const icon    = EVENT_ICONS[event?.type]  || "📜";
+  const color   = EVENT_COLORS[event?.type] || "border-stone-700";
   const isAlert = event?.type?.startsWith("_alert");
   const isWorld = event?.type === "_world_alert";
   const isKriz  = event?.type === "_kriz_alert";
+  const flavor  = getFlavorText(event);
+
+  const mainTextColor = fresh
+    ? "text-emerald-100"
+    : isAlert ? "text-amber-200"
+    : isWorld ? "text-violet-200"
+    : isKriz  ? "text-red-300"
+    : "text-stone-200";
+
   return (
     <div className={`flex gap-3 px-3 py-3 mx-3 my-2 rounded-sm border border-l-4 ${color} transition-colors
       ${fresh  ? "bg-emerald-950/15 border-r-emerald-900/20 border-t-emerald-900/20 border-b-emerald-900/20" : ""}
@@ -217,7 +315,16 @@ function EventCard({ event, pinned = false, fresh = false }) {
     `}>
       <span className="text-base shrink-0 leading-none mt-0.5">{icon}</span>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm leading-snug ${fresh ? "text-emerald-100" : isAlert ? "text-amber-200" : isWorld ? "text-violet-200" : isKriz ? "text-red-300" : "text-stone-200"}`}>
+        {/* Atmosfer satırı — kısa, italik, soluk */}
+        {flavor && (
+          <p className={`text-[11px] leading-snug mb-1 italic
+            ${fresh ? "text-emerald-400/80" : isKriz ? "text-red-400/70" : "text-stone-500"}
+          `}>
+            {flavor}
+          </p>
+        )}
+        {/* Ana olay metni */}
+        <p className={`text-sm leading-snug ${mainTextColor}`}>
           {event?.text || "Bilinmeyen olay"}
         </p>
         {fresh && (
@@ -531,72 +638,155 @@ export default function Dashboard() {
       const FIELD_NARRATIVES = {
         money: {
           pos: [
-            (d) => `Kasana ${Math.abs(d).toFixed(0)} altın girdi.`,
-            (d) => `Bu hafta ${Math.abs(d).toFixed(0)} altın kazandın.`,
-            (d) => `Gelir dengelendi; ${Math.abs(d).toFixed(0)} altın elde edildi.`,
+            (d) => `${Math.abs(d).toFixed(0)} altın cebe girdi. İyi iş.`,
+            (d) => `Bu hafta kasa ${Math.abs(d).toFixed(0)} altın şişti. Emek boşa gitmedi.`,
+            (d) => `Pazar bereketliydi: ${Math.abs(d).toFixed(0)} altın kazanıldı.`,
+            (d) => `${Math.abs(d).toFixed(0)} altın. Az değil. Devam et.`,
+            (d) => `Esnaf seninle iş yapmayı seviyor. ${Math.abs(d).toFixed(0)} altın geldi.`,
           ],
           neg: [
-            (d) => `Harcamalar ${Math.abs(d).toFixed(0)} altın götürdü.`,
-            (d) => `Kasadan ${Math.abs(d).toFixed(0)} altın çıktı.`,
-            (d) => `Bu hafta ${Math.abs(d).toFixed(0)} altın gidere aktı.`,
+            (d) => `${Math.abs(d).toFixed(0)} altın gitti. Bir daha gelmeyebilir.`,
+            (d) => `Kasadan ${Math.abs(d).toFixed(0)} altın çıktı. Acıtır ama bu böyledir.`,
+            (d) => `Bu haftaki masraflar ${Math.abs(d).toFixed(0)} altını yedi bitirdi.`,
+            (d) => `Para aktı gitti. ${Math.abs(d).toFixed(0)} altın. Böyle gider.`,
+            (d) => `${Math.abs(d).toFixed(0)} altın. Veda etti. Kapıyı bile çarpmadan.`,
           ],
         },
         hunger: {
           pos: [
-            () => `Karın doydu; vücut dinç hissediyor.`,
-            () => `Bu hafta iyi beslenebildin; enerjin yerinde.`,
-            () => `Yeterince yiyecek buldun; güçlü hissediyorsun.`,
+            () => `Mide dolu, kafan berrak. Bu hafta yeterince yenildi.`,
+            () => `Sofra iyiydi. Vücut bunun farkında; enerji yerinde.`,
+            () => `Karnın tokken dünya daha güzel görünür — bu hafta öyleydi.`,
+            () => `Yiyecek boldu. Basit bir nimet; ama değerini bilmek şart.`,
           ],
           neg: [
-            () => `Açlık çekildi; bu hafta yemek bulmak güçtü.`,
-            () => `Karnını doyuramadın; yorgunluk çöktü.`,
-            () => `Yiyecek kıttı; zayıflık hissediyorsun.`,
+            () => `Mide grıldıyor ama ses yok — henüz.`,
+            () => `Açlık bu hafta arkadaşın oldu. İstemeden.`,
+            () => `Yiyecek kıttı. Zor bir hafta geçti.`,
+            () => `Sabah ekmek yoktu. Öğleden sonra da olmadı. Zor günler bunlar.`,
           ],
         },
         health: {
           pos: [
-            () => `Sağlık biraz toparladı.`,
-            () => `Dinlenme işe yaradı; kendini daha iyi hissediyorsun.`,
-            () => `Bu hafta sağlığın iyileşti.`,
+            () => `Vücut toparladı. Az da olsa — önemli.`,
+            () => `Dinlenme işe yaradı. Daha iyi hissediyorsun.`,
+            () => `Sağlık düzeldi. Biraz tuz, biraz şans, biraz irade.`,
+            () => `Ayakta kalmak bu hafta daha az çaba istedi. İyi işaret.`,
           ],
           neg: [
-            () => `Sağlık geriledi; yorgunluk ağır basmaya başladı.`,
-            () => `Bu hafta kendini pek iyi hissetmedin.`,
-            () => `Zorlu geçen hafta sağlığına mal oldu.`,
+            () => `Beden duraksadı. Bu ihmal edilmemeli.`,
+            () => `Sağlık gerilemesi başladı. Dikkat et.`,
+            () => `Yorgunluk üst üste bindi. Biraz yavaşla.`,
+            () => `Vücut şikâyet ediyor. Küçük bir uyarı — ama uyarı.`,
           ],
         },
         reputation: {
           pos: [
-            () => `İtibarın arttı; insanlar seni daha saygıyla karşılıyor.`,
-            () => `Adın çevrede daha iyi duyulmaya başladı.`,
-            () => `Bu hafta itibarına katkıda bulundun.`,
+            () => `İnsanlar artık seni bir adım önde görüyor.`,
+            () => `Adın şehirde biraz daha duyulmaya başladı. Fark ediliyorsun.`,
+            () => `İtibar yavaş kazanılır. Bu hafta bir taş daha örüldü.`,
+            () => `Çevredeki algı olumluya döndü. Devam et.`,
           ],
           neg: [
-            () => `İtibarın biraz sarsıldı.`,
-            () => `Bazı dedikodular adını lekeler gibi yayıldı.`,
-            () => `Bu hafta çevredeki algın olumsuza döndü.`,
+            () => `Birkaç dedikoducu konuşmuş. Hasar var.`,
+            () => `İtibar sarsıldı. Fısıltılar yayılıyor.`,
+            () => `Çevredekiler mesafe koyuyor. Fark ettiler.`,
+            () => `Bu hafta algın olumsuza döndü. Düzeltmesi zaman alır.`,
           ],
         },
         crime: {
           pos: [
-            () => `Suç kaydın ağırlaştı; yetkililer gözünü dikmiş durumda.`,
-            () => `Yaptıkların göze çarpmaya başladı; dikkatli ol.`,
+            () => `Suç kaydın ağırlaşıyor. Yetkililer gözü dikmiş durumda. Dikkatli ol.`,
+            () => `Yaptıkların göze çarpmaya başladı. Gölgede kal.`,
+            () => `Bir kapı daha kapandı. Suç kaydı böyle birikmez diyenler yanılıyor.`,
           ],
           neg: [
-            () => `Suç kaydın hafifçe silindi.`,
-            () => `Temiz davranışların suç kaydını biraz temizledi.`,
+            () => `Temiz davranışların bir miktar geçmişi sildi.`,
+            () => `Suç kaydın hafifçe temizlendi. Devam et.`,
+            () => `Birkaç iyi iş, birkaç kötü sayfayı kapattı.`,
+          ],
+        },
+        honor: {
+          pos: [
+            () => `Onur duygusu bugün biraz daha doldu. Doğru yapıldı.`,
+            () => `Şerefine uygun davranıldı. Fark edildi.`,
+            () => `Bu tercih değer tartılmaz bir şey bıraktı geride.`,
+          ],
+          neg: [
+            () => `Bu tercih onuru biraz sarstı. Geri alınamaz.`,
+            () => `Bazı şeyler bir kez yapılınca farklı durur.`,
+            () => `Vicdan bu hafta huzursuz.`,
+          ],
+        },
+        stamina: {
+          pos: [
+            () => `Beden daha güçlü; dayanıklılık arttı.`,
+            () => `Bu hafta çalışmak daha az yordu. Güzel.`,
+            () => `Kaslar seninle konuştu: daha iyi.`,
+          ],
+          neg: [
+            () => `Tükenme hissediliyor. Dinlenme şart.`,
+            () => `Dayanıklılık biraz eridi. Dikkat et.`,
+            () => `Beden aşınıyor. Bir ara dur.`,
+          ],
+        },
+        intelligence: {
+          pos: [
+            () => `Zekân keskinleşiyor — fark ediliyor.`,
+            () => `Düşünce netleşti. Bu hafta bir şeyler öğrenildi. Kalıcı.`,
+            () => `Zihin her geçen günle biraz daha açılıyor.`,
+          ],
+          neg: [
+            () => `Zihin biraz bulanıklaştı. Odaklanmak güçleşti.`,
+            () => `Dikkat dağıldı. Topla kendini.`,
+          ],
+        },
+        charisma: {
+          pos: [
+            () => `İnsanlar seninle daha kolay konuşuyor artık.`,
+            () => `Kelimeler daha etkili çıkıyor. Çevre bunu hissediyor.`,
+            () => `Şehirde seni dinleyenler çoğaldı.`,
+          ],
+          neg: [
+            () => `Bu hafta sözlerin pek etki bırakmadı.`,
+            () => `Karizman biraz soldu. Geçici olabilir.`,
+          ],
+        },
+        fear: {
+          pos: [
+            () => `Korku yükseliyor. Çevre bunu hissediyor — ve ürküyor.`,
+            () => `Tedirginlik arttı. İçeride ve dışarıda.`,
+          ],
+          neg: [
+            () => `Korku azaldı. Adımlar biraz daha sağlam.`,
+            () => `Tedirginlik geçti. Zihin daha sakin.`,
           ],
         },
       };
 
       const currentTurnAfter = result?.turn ?? (0 + totalWeeks);
+      // Alan → anlamlı event tipi eşleştirmesi (ikon, renk, flavor için)
+      const FIELD_TYPES = {
+        money: (pos) => pos ? "ticaret" : "vergi_ödendi",
+        hunger: (pos) => pos ? "iyileşme" : "hastalık",
+        health: (pos) => pos ? "iyileşme" : "hastalık",
+        reputation: (pos) => pos ? "iltifat" : "dedikodu",
+        crime: (pos) => pos ? "suç" : "iyileşme",
+        honor: (pos) => pos ? "görev_tamamlandı" : "görev_başarısız",
+        stamina: (pos) => pos ? "aktivite" : "hastalık",
+        intelligence: (pos) => pos ? "ders" : "hastalık",
+        charisma: (pos) => pos ? "iltifat" : "dedikodu",
+        fear: (pos) => pos ? "suç" : "iyileşme",
+      };
+
       const newSynthetics = diff
         .filter(d => d?.field && FIELD_NARRATIVES[d.field])
         .map((d) => {
           const variants = d.positive ? FIELD_NARRATIVES[d.field].pos : FIELD_NARRATIVES[d.field].neg;
           const fn = pick(variants);
+          const typeFn = FIELD_TYPES[d.field];
           return {
-            type: d.positive ? "iyileşme" : "hastalık",
+            type: typeFn ? typeFn(d.positive) : (d.positive ? "iyileşme" : "hastalık"),
             day: currentTurnAfter,
             text: fn(Math.abs(d.delta)),
             _synthetic: true,
@@ -776,7 +966,7 @@ export default function Dashboard() {
         <StatusStrip player={player} world={state?.world} />
 
         {/* ── OLAY AKIŞI — esnek yükseklik ── */}
-        <div className="flex flex-col flex-1 min-h-0 pb-28 mx-2 mb-2 rounded-sm border border-stone-700/50 overflow-hidden" style={{boxShadow: 'inset 0 0 0 1px rgba(120,80,30,0.08), 0 2px 12px rgba(0,0,0,0.4)'}}>
+        <div className="flex flex-col flex-1 min-h-0 pb-40 mx-2 mb-2 rounded-sm border border-stone-700/50 overflow-hidden" style={{boxShadow: 'inset 0 0 0 1px rgba(120,80,30,0.08), 0 2px 12px rgba(0,0,0,0.4)'}}>
 
           {/* Filtre + başlık */}
           <div className="shrink-0 flex items-center gap-0 border-b border-amber-900/30 bg-stone-950/50">
@@ -854,7 +1044,7 @@ export default function Dashboard() {
       {/* ── YAPIŞIK ALT BAR — sabit, nav barın üstünde ── */}
       {/* Not: GameLayout main z-[2] stacking context'i nedeniyle z-40 çalışmıyor;
            bottom offset ile nav'ın üstüne alınıyor */}
-      <div className="fixed left-0 right-0 z-40 border-t border-amber-900/40 bg-stone-950/97 backdrop-blur-sm" style={{bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)', boxShadow: '0 -2px 20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(180,100,20,0.07)'}}>
+      <div className="fixed left-0 right-0 z-40 border-t border-amber-900/40 bg-stone-950/60 backdrop-blur-md" style={{bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)', boxShadow: '0 -2px 20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(180,100,20,0.07)'}}>
         <div className="max-w-2xl mx-auto px-3 py-2.5">
 
           {/* İlerleme bar — çok haftalı atlamada */}

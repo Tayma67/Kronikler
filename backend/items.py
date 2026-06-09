@@ -55,6 +55,27 @@ ITEMS = {
         "effects": {"attack": 6},
         "weight": 4, "base_value": 60,
     },
+    # S8: Lüks mallar — pazarda işlem görür, kervanla taşınabilir
+    "ipek": {
+        "name": "İpek", "type": "material", "slot": None,
+        "effects": {},
+        "weight": 1, "base_value": 45,
+    },
+    "baharat": {
+        "name": "Baharat", "type": "material", "slot": None,
+        "effects": {"hunger": 5},
+        "weight": 1, "base_value": 35,
+    },
+    "mücevher": {
+        "name": "Mücevher", "type": "material", "slot": None,
+        "effects": {},
+        "weight": 0, "base_value": 150,
+    },
+    "şifalı_ot": {
+        "name": "Şifalı Ot", "type": "consumable", "slot": None,
+        "effects": {"health": 15},
+        "weight": 1, "base_value": 20,
+    },
     "tahta_sopa": {
         "name": "Tahta Sopa", "type": "weapon", "slot": "weapon",
         "effects": {"attack": 2},

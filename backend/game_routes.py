@@ -743,6 +743,82 @@ def build_game_router(db):
         return {"state": _decorate(state), "enforcement": outcome}
 
     # ---------- trade ----------
+
+    def _simulate_bulk_trade(loc, good, qty, action):
+        """
+        qty kadar alım/satımı simüle eder, piyasayı DEĞİŞTİRMEZ.
+        Her birim alındıkça/satıldıkça arz/talep kademeli değişir
+        ve fiyat ona göre hesaplanır — bu sayede:
+          - Büyük alımda her birim bir öncekinden pahalı olur
+          - Büyük satışta her birim bir öncekinden ucuz olur
+        Returns: (toplam_fiyat, ortalama_birim_fiyat, ilk_fiyat, son_fiyat)
+        """
+        from balance_config import ECONOMY
+        m = loc["market"][good]
+        supply = m["supply"]
+        demand = m["demand"]
+        base   = m["base"]
+        wealth_f   = 0.6 + (loc["wealth"] / 100)
+        security_f = 0.7 + (loc["security"] / 100) * 0.6
+        min_p = base * ECONOMY["min_price_ratio"]
+        max_p = base * ECONOMY["max_price_ratio"]
+
+        total      = 0.0
+        first_price = None
+        last_price  = None
+
+        for _ in range(qty):
+            ratio  = demand / max(1, supply)
+            target = base * (ratio ** 0.45) * wealth_f * security_f
+            price  = max(min_p, min(max_p, target))
+            if first_price is None:
+                first_price = price
+            last_price = price
+            total += price
+            if action == "al":
+                supply = max(0, supply - 1)
+                demand += 1
+            else:
+                supply += 1
+                demand = max(1, demand - 1)
+
+        avg = total / qty if qty else 0
+        return round(total, 2), round(avg, 2), round(first_price or 0, 2), round(last_price or 0, 2)
+
+    @router.get("/trade/preview")
+    async def trade_preview(
+        location_id: str, good: str, qty: int, action: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """
+        Alım/satım öncesi gerçek maliyeti hesaplar, piyasayı değiştirmez.
+        Frontend qty değiştiğinde bu endpoint'i çekerek kullanıcıya
+        gerçek maliyet + uyarı gösterir.
+        """
+        if qty < 1:
+            raise HTTPException(400, "Miktar 1'den az olamaz")
+        state = await _load_state(db, user["_id"])
+        loc = next((l for l in state["world"]["locations"] if l["id"] == location_id), None)
+        if not loc or good not in loc.get("market", {}):
+            raise HTTPException(404, "Konum veya ürün bulunamadı")
+
+        mult = trade_price_multiplier(state["player"], action)
+        total_raw, avg_raw, first_p, last_p = _simulate_bulk_trade(loc, good, qty, action)
+        total = round(total_raw * mult, 2)
+        avg   = round(avg_raw   * mult, 2)
+
+        # Fiyat etkisi: (son - ilk) / ilk  → %kaç değişti
+        price_impact_pct = round(((last_p - first_p) / max(0.01, first_p)) * 100, 1) if qty > 1 else 0
+
+        return {
+            "total":            total,
+            "avg_unit_price":   avg,
+            "first_unit_price": round(first_p * mult, 2),
+            "last_unit_price":  round(last_p  * mult, 2),
+            "price_impact_pct": price_impact_pct,
+            "has_impact":       abs(price_impact_pct) >= 5,  # %5+ fark varsa uyar
+        }
+
     @router.post("/trade")
     async def trade(body: TradeIn, user: dict = Depends(get_current_user)):
         state = await _load_state(db, user["_id"])
@@ -761,31 +837,38 @@ def build_game_router(db):
         if body.action == "al":
             if m["supply"] < body.qty:
                 raise HTTPException(status_code=400, detail=f"Stokta sadece {m['supply']} adet var")
-            # Yüksek itibar → daha ucuz alım
             buy_mult = trade_price_multiplier(player, "al")
-            total = round(m["price"] * body.qty * buy_mult, 1)
+            # Kayan fiyat: her birim piyasayı etkiler, gerçek toplam hesaplanır
+            total_raw, avg_raw, _, _ = _simulate_bulk_trade(loc, body.good, body.qty, "al")
+            total = round(total_raw * buy_mult, 1)
             if player["money"] < total:
                 raise HTTPException(status_code=400, detail="Yeterli paran yok")
             player["money"] = round(player["money"] - total, 1)
             inv[body.good] = inv.get(body.good, 0) + body.qty
-            m["supply"] -= body.qty
+            m["supply"] = max(0, m["supply"] - body.qty)
             m["demand"] += body.qty
             _recompute_prices(loc)
             _push_event(state, state["turn"], "ticaret",
-                        f"{player['name']} {loc['name']}'de {body.qty} {body.good} aldı ({total} altın).")
+                        f"{player['name']} {loc['name']}'de {body.qty} {body.good} aldı "
+                        f"(ort. {avg_raw:.1f}A × {body.qty} = {total} altın).")
+
         elif body.action == "sat":
             if inv.get(body.good, 0) < body.qty:
                 raise HTTPException(status_code=400, detail="Yeterli ürünün yok")
-            # Yüksek itibar → daha pahalı satış
             sell_mult = trade_price_multiplier(player, "sat")
-            total = round(m["price"] * body.qty * sell_mult, 1)
+            # Kayan fiyat: stok arttıkça fiyat düşer, gerçek toplam hesaplanır
+            total_raw, avg_raw, _, _ = _simulate_bulk_trade(loc, body.good, body.qty, "sat")
+            total = round(total_raw * sell_mult, 1)
             inv[body.good] -= body.qty
+            if inv[body.good] == 0:
+                del inv[body.good]
             player["money"] = round(player["money"] + total, 1)
             m["supply"] += body.qty
             m["demand"] = max(1, m["demand"] - body.qty)
             _recompute_prices(loc)
             _push_event(state, state["turn"], "ticaret",
-                        f"{player['name']} {loc['name']}'de {body.qty} {body.good} sattı ({total} altın).")
+                        f"{player['name']} {loc['name']}'de {body.qty} {body.good} sattı "
+                        f"(ort. {avg_raw:.1f}A × {body.qty} = {total} altın).")
         else:
             raise HTTPException(status_code=400, detail="Geçersiz işlem")
 
@@ -2812,6 +2895,42 @@ def build_game_router(db):
         if event:
             await _save_state(db, user["_id"], state)
         return {"event": event}
+
+    @router.get("/market/arbitrage")
+    async def market_arbitrage(user: dict = Depends(get_current_user)):
+        """
+        S5: Şehirler arası arbitraj fırsatlarını döndürür.
+        %15'ten fazla fiyat farkı olan malları listeler.
+        Response: [{ good, cheap_city, cheap_price, expensive_city, expensive_price, spread_pct }]
+        """
+        from world_gen import GOODS
+        state = await _load_state(db, user["_id"])
+        locs = [l for l in state["world"]["locations"] if l.get("market")]
+        results = []
+        for good in GOODS:
+            prices = [
+                (l["name"], l["id"], l["market"][good]["price"])
+                for l in locs if good in l.get("market", {})
+            ]
+            if len(prices) < 2:
+                continue
+            cheap    = min(prices, key=lambda x: x[2])
+            expensive = max(prices, key=lambda x: x[2])
+            diff = expensive[2] - cheap[2]
+            if diff > cheap[2] * 0.15:  # %15'ten fazla fark varsa göster
+                results.append({
+                    "good":            good,
+                    "cheap_city":      cheap[0],
+                    "cheap_city_id":   cheap[1],
+                    "cheap_price":     round(cheap[2], 2),
+                    "expensive_city":  expensive[0],
+                    "expensive_city_id": expensive[1],
+                    "expensive_price": round(expensive[2], 2),
+                    "spread_pct":      round((diff / cheap[2]) * 100),
+                })
+        # En yüksek kâr marjından sırala
+        results.sort(key=lambda x: -x["spread_pct"])
+        return {"opportunities": results}
 
     @router.get("/factions")
     async def faction_list(user: dict = Depends(get_current_user)):
