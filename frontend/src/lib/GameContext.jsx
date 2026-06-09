@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import { api, extractErrorMessage } from "@/lib/api";
+import { toast } from "sonner";
 
 const GameContext = createContext(null);
 
@@ -58,37 +59,57 @@ export function GameProvider({ children }) {
   }, []);
 
   const advance = useCallback(async (weeks = 1) => {
-    const MAX_RETRIES = 2;
+    // Railway cold-start'a karşı dayanıklı retry:
+    // Deneme 0 → hemen
+    // Deneme 1 → 4s bekle  (Railway uyanma başlıyor)
+    // Deneme 2 → 8s bekle  (Railway genelde 10-15s'de hazır)
+    // Deneme 3 → 14s bekle (son şans)
+    const RETRY_DELAYS = [0, 4000, 8000, 14000];
+    const MAX_RETRIES = RETRY_DELAYS.length - 1;
     let lastError = null;
+    let warmupToastId = null;
+
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      // İlk deneme başarısız olduysa "uyanıyor" mesajı göster
+      if (attempt === 1) {
+        warmupToastId = toast.loading("Sunucu uyanıyor, lütfen bekle…", {
+          duration: 30000,
+          description: "Railway cold-start — 15-30 saniye sürebilir",
+        });
+      }
+
+      const delay = RETRY_DELAYS[attempt];
+      if (delay > 0) {
+        await new Promise(res => setTimeout(res, delay));
+      }
+
       try {
         const { data } = await api.post(`/game/advance?weeks=${weeks}`);
+        // Başarılı — yükleniyor toastını kapat
+        if (warmupToastId) toast.dismiss(warmupToastId);
         setState(data);
-        if (data?.caravan_event) {
-          setLastCaravanEvent(data.caravan_event);
-        }
-        // Adım 9: dünya olayı
-        if (data?.new_world_events?.length > 0) {
-          setLastWorldEvent(data.new_world_events[0]);
-        }
-        // GDD v4: kriz olayları
-        if (data?.crisis_events?.length > 0) {
-          setLastCrisisEvents(data.crisis_events);
-        }
+        if (data?.caravan_event) setLastCaravanEvent(data.caravan_event);
+        if (data?.new_world_events?.length > 0) setLastWorldEvent(data.new_world_events[0]);
+        if (data?.crisis_events?.length > 0) setLastCrisisEvents(data.crisis_events);
         return data;
       } catch (error) {
         lastError = error;
         const isNetwork = error.message === "Network Error" || !error.response;
-        if (isNetwork && attempt < MAX_RETRIES) {
-          // Railway uyanma süresi için kısa bekle, sonra tekrar dene
-          await new Promise(res => setTimeout(res, 1200 * (attempt + 1)));
-          continue;
-        }
+        // Ağ hatası ve retry hakkı varsa devam et
+        if (isNetwork && attempt < MAX_RETRIES) continue;
+        // 5xx sunucu hatası da retry'a girer
+        if (error.response?.status >= 500 && attempt < MAX_RETRIES) continue;
         break;
       }
     }
+
+    if (warmupToastId) toast.dismiss(warmupToastId);
     const msg = extractErrorMessage(lastError);
-    alert("İlerleme hatası: " + msg);
+    toast.error("İlerleme hatası", {
+      description: msg,
+      duration: 6000,
+      action: { label: "Tamam", onClick: () => {} },
+    });
     return null;
   }, []);
 
@@ -104,7 +125,8 @@ export function GameProvider({ children }) {
       }
       return data;
     } catch (error) {
-      alert("Aksiyon hatası: " + (error.response?.data?.detail || error.message));
+      const msg = error.response?.data?.detail || error.message;
+      toast.error("Aksiyon hatası", { description: msg, duration: 5000 });
       return null;
     }
   }, []);
