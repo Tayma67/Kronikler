@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import LifeEventModal from "@/components/LifeEventModal";
 import PerkChoiceModal from "@/components/PerkChoiceModal";
+import StoryEventFeed from "@/components/StoryEventFeed";
 import {
   Heart, Apple, Flame, Scroll, AlertTriangle,
   Hourglass, Loader2, Swords, Crown, ChevronRight,
@@ -1181,92 +1182,138 @@ export default function Dashboard() {
         {/* Faction/Yönetici strip — varsa */}
         <StatusStrip player={player} world={state?.world} />
 
-        {/* ── OLAY AKIŞI — esnek yükseklik ── */}
-        <div className="flex flex-col flex-1 min-h-0 mx-2 rounded-sm border border-stone-700/50 overflow-hidden bg-amber-950/10" style={{boxShadow: 'inset 0 0 0 1px rgba(120,80,30,0.08), 0 2px 12px rgba(0,0,0,0.4)'}}>
+        {/* ── HAYAT GÜNLÜĞÜ — StoryEventFeed ── */}
+        <div className="flex flex-col flex-1 min-h-0 mx-2 overflow-hidden" style={{
+          borderRadius: "18px",
+          border: "1px solid rgba(200,146,58,.1)",
+          background: "linear-gradient(180deg, #0E0B08 0%, #0C0906 100%)",
+          boxShadow: "0 4px 24px rgba(0,0,0,.5), inset 0 0 0 1px rgba(120,80,30,0.06)",
+        }}>
 
-        {/* SON OLAYLAR — amber başlık + TARİH linki */}
-          <div className="shrink-0 flex items-center justify-between px-3.5 pt-3 pb-2">
-            <div className="flex items-center gap-2">
-              <div className="w-0.5 h-3.5 bg-amber-700 rounded-full" />
-              <span className="font-heading text-[11px] text-amber-600/90 tracking-[0.2em] uppercase">Son Olaylar</span>
+          {/* Header row: Hayat Günlüğü title + tab switcher + link */}
+          <div style={{ flexShrink: 0, padding: "14px 16px 0" }}>
+            {/* Title + link */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+                <div style={{ width: "2px", height: "18px", background: "linear-gradient(180deg, #C8923A, #6A4A1A)", borderRadius: "1px" }}/>
+                <div>
+                  <p style={{ fontFamily: "'Cinzel',Georgia,serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.26em", color: "rgba(200,146,58,.9)", textTransform: "uppercase", lineHeight: 1 }}>
+                    Hayat Günlüğü
+                  </p>
+                  <p style={{ fontFamily: "'Lora',Georgia,serif", fontSize: "10px", color: "rgba(180,155,110,.26)", fontStyle: "italic", marginTop: "3px" }}>
+                    yaşananların izleri
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/oyun/tarih"
+                className="flex items-center gap-0.5"
+                style={{ fontSize: "9px", color: "rgba(120,100,70,.5)", fontFamily: "'Cinzel',Georgia,serif", letterSpacing: "0.1em", textDecoration: "none" }}
+              >
+                Tümünü Gör <ChevronRight className="w-3 h-3" />
+              </Link>
             </div>
-            <Link
-              to="/oyun/tarih"
-              className="text-[9px] text-stone-600 hover:text-amber-500 font-heading tracking-wider transition-colors flex items-center gap-0.5"
-            >
-              Tümünü Gör <ChevronRight className="w-3 h-3" />
-            </Link>
+
+            {/* Filter tabs */}
+            <div style={{
+              display: "flex",
+              background: "rgba(10,8,5,.7)",
+              border: "1px solid rgba(200,146,58,.08)",
+              borderRadius: "11px",
+              padding: "3px",
+              gap: "3px",
+            }}>
+              {[
+                { key: "karakter", label: "👤 Karakter" },
+                { key: "dünya",    label: "🌍 Dünya"    },
+              ].map(({ key, label }) => {
+                const active = eventFilter === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setEventFilter(key)}
+                    style={{
+                      flex: 1, padding: "8px",
+                      borderRadius: "8px", border: "none",
+                      cursor: "pointer",
+                      fontSize: "9.5px", fontWeight: 700, letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                      fontFamily: "'Cinzel',Georgia,serif",
+                      transition: "all .2s ease",
+                      background: active
+                        ? key === "dünya" ? "rgba(155,127,212,.14)" : "rgba(200,146,58,.14)"
+                        : "transparent",
+                      color: active
+                        ? key === "dünya" ? "#9B7FD4" : "#C8923A"
+                        : "rgba(180,155,110,.3)",
+                      boxShadow: active
+                        ? key === "dünya"
+                          ? "inset 0 0 0 1px rgba(155,127,212,.22)"
+                          : "inset 0 0 0 1px rgba(200,146,58,.22)"
+                        : "none",
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-        {/* Filtre sekmeleri */}
-          <div className="shrink-0 flex items-center border-b border-amber-900/30 bg-stone-950/50">
-            <button
-              onClick={() => setEventFilter("karakter")}
-              className={`flex-1 py-2 text-[11px] font-heading tracking-wider transition-colors border-b-2 ${
-                eventFilter === "karakter"
-                  ? "border-orange-600 text-orange-300 bg-orange-950/20"
-                  : "border-transparent text-stone-500 hover:text-stone-300"
-              }`}
-            >
-              👤 Karakter
-            </button>
-            <button
-              onClick={() => setEventFilter("dünya")}
-              className={`flex-1 py-2 text-[11px] font-heading tracking-wider transition-colors border-b-2 ${
-                eventFilter === "dünya"
-                  ? "border-violet-600 text-violet-300 bg-violet-950/20"
-                  : "border-transparent text-stone-500 hover:text-stone-300"
-              }`}
-            >
-              🌍 Dünya
-            </button>
-          </div>
+          {/* Scrollable feed */}
+          <div className="flex-1 overflow-y-auto" style={{ padding: "14px 14px 100px" }}>
 
-          {/* Kaydırılabilir olay listesi — tam geri kalan yükseklik */}
-          <div className="flex-1 overflow-y-auto pb-20" style={{background: 'linear-gradient(180deg, rgba(35,22,10,0.18) 0%, rgba(28,18,8,0.45) 100%)'}}>
-
-            {/* Anlık Eylem Paneli (eylemden dönerken göster) */}
+            {/* FreshEvents panel (existing component, kept as-is) */}
             {eventFilter === "karakter" && freshEvents?.length > 0 && (
               <FreshEventsPanel events={freshEvents} onDismiss={() => clearFreshEvents && clearFreshEvents()} />
             )}
 
-            {/* Yıl özeti */}
+            {/* Year summary panel (existing component, kept as-is) */}
             {yearSummary && (
               <YearSummaryCard summary={yearSummary} onDismiss={() => setYearSummary(null)} />
             )}
 
-            {/* Sabitlenmiş uyarılar (üstte) */}
-            {pinnedFeedEvents.map((ev, i) => (
-              <EventCard key={`pin-${i}`} event={ev} pinned timeAgo="Şimdi" />
-            ))}
+            {/* Build the StoryEventFeed events array */}
+            {(() => {
+              // Pinned alerts → mark isPinned + isNew:false
+              const pinnedItems = pinnedFeedEvents.map(ev => ({
+                ...ev,
+                isPinned: true,
+                isNew: false,
+              }));
 
-            {/* Sentetik anlatı (diff'ten) — sadece karakter sekmesinde */}
-            {eventFilter === "karakter" && syntheticEvents.map((ev, i) => (
-              <EventCard key={`syn-${i}`} event={ev} timeAgo={i === 0 ? "Yeni" : null} />
-            ))}
+              // Synthetic events (diff narratives) → mark isNew for first
+              const synthItems = eventFilter === "karakter"
+                ? syntheticEvents.map((ev, i) => ({
+                    ...ev,
+                    isNew: i === 0,
+                    isPinned: false,
+                  }))
+                : [];
 
-            {/* Geçmiş olaylar */}
-            {historyEvents.length > 0
-              ? historyEvents.map((ev, i) => (
-                  <EventCard
-                    key={i}
-                    event={ev}
-                    timeAgo={i === 0 && syntheticEvents.length === 0 ? "Yeni" : null}
-                  />
-                ))
-              : (
-                <div className="px-4 py-12 text-center">
-                  <div className="text-2xl mb-2 opacity-30">
-                    {eventFilter === "karakter" ? "👤" : "🌍"}
-                  </div>
-                  <div className="text-stone-600 text-xs font-heading tracking-wider">
-                    {eventFilter === "karakter"
+              // History events — mark first as isNew if no synthetics
+              const histItems = historyEvents.map((ev, i) => ({
+                ...ev,
+                isNew: i === 0 && synthItems.length === 0,
+                isPinned: false,
+                // attach flavor text so StoryEventFeed can use it
+                flavor: getFlavorText(ev),
+              }));
+
+              const allFeedEvents = [...pinnedItems, ...synthItems, ...histItems];
+
+              return (
+                <StoryEventFeed
+                  events={allFeedEvents}
+                  showTimeline={true}
+                  emptyMessage={
+                    eventFilter === "karakter"
                       ? "Bu dönemde seni etkileyen bir olay yaşanmadı."
-                      : "Bu dönemde kayda değer bir dünya olayı yaşanmadı."}
-                  </div>
-                </div>
-              )
-            }
+                      : "Bu dönemde kayda değer bir dünya olayı yaşanmadı."
+                  }
+                />
+              );
+            })()}
           </div>
         </div>
       </div>
