@@ -27,6 +27,7 @@ import Crime from "@/pages/Crime";
 import Trade from "@/pages/Trade";
 import Generation from "@/pages/Generation";
 import TownFeed from "@/pages/TownFeed";
+import Properties from "@/pages/Properties";
 
 export default function App() {
   return (
@@ -62,6 +63,7 @@ export default function App() {
             <Route path="ticaret" element={<Trade />} />
             <Route path="nesil" element={<Generation />} />
             <Route path="kasaba" element={<TownFeed />} />
+            <Route path="mulkler" element={<Properties />} />
           </Route>
           <Route path="*" element={<Navigate to="/oyun" replace />} />
         </Routes>

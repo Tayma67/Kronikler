@@ -5,7 +5,7 @@ import {
   Scroll, Flame, Shield, Castle, Users,
   Briefcase, Sword, Hourglass, Loader2,
   Zap, Newspaper, GraduationCap, ArrowUpDown,
-  GitBranch, Coffee, X, Heart, Apple,
+  GitBranch, Coffee, X, Heart, Apple, Home,
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import InheritanceScreen from "@/pages/InheritanceScreen";
@@ -30,6 +30,7 @@ const SECONDARY_NAV = [
   { to: "/oyun/npcler",          label: "Yakınlar",     icon: Users,          testid: "nav-npcs"        },
   { to: "/oyun/suc",             label: "Gölge",        icon: Sword,          testid: "nav-crime"       },
   { to: "/oyun/ticaret",         label: "Pazar",        icon: ArrowUpDown,    testid: "nav-trade"       },
+  { to: "/oyun/mulkler",         label: "Mülkler",      icon: Home,           testid: "nav-properties"  },
   { to: "/oyun/nesil",           label: "Nesil",        icon: GitBranch,      testid: "nav-generation"  },
   { to: "/oyun/kasaba",          label: "Kasaba",       icon: Coffee,         testid: "nav-townfeed"    },
 ];

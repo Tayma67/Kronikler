@@ -12,6 +12,7 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from game_routes import build_game_router
+from property_routes import build_property_router
 
 
 logging.basicConfig(level=logging.INFO,
@@ -47,6 +48,7 @@ async def root():
 
 
 app.include_router(build_game_router(db))
+app.include_router(build_property_router(db))
 
 app.add_middleware(
     CORSMiddleware,

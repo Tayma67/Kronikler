@@ -120,14 +120,30 @@ def _ensure_market(loc):
             }
 
 
-def _recompute_prices(loc):
-    """Price formula: base * (demand / max(1, supply))^0.4 * wealth_factor."""
+def _recompute_prices(loc, season=None, turn=None):
+    """Faz 1C fiyat formülü:
+    fiyat = baz × (talep/arz)^esneklik × servet × güvenlik × mevsim × olay_çarpanı
+    """
     from balance_config import ECONOMY
     wealth_factor = 0.6 + (loc["wealth"] / 100)
     security_factor = 0.7 + (loc["security"] / 100) * 0.6
+    season_table = {}
+    if season:
+        from market_events import SEASON_PRICE_MULT
+        season_table = SEASON_PRICE_MULT.get(season, {})
     for g, m in loc["market"].items():
         ratio = m["demand"] / max(1, m["supply"])
-        target = m["base"] * (ratio ** 0.45) * wealth_factor * security_factor
+        season_mult = season_table.get(g, 1.0)
+        # Süreli piyasa olayı çarpanı (market_events.py yazar, burada düşer)
+        event_mult = 1.0
+        if m.get("event_mult") and turn is not None:
+            if turn <= m.get("event_mult_until", 0):
+                event_mult = m["event_mult"]
+            else:
+                m.pop("event_mult", None)
+                m.pop("event_mult_until", None)
+        target = (m["base"] * (ratio ** 0.45) * wealth_factor * security_factor
+                  * season_mult * event_mult)
         # Smooth toward target
         m["price"] = round(max(0.5, m["price"] * 0.65 + target * 0.35), 2)
         # S3: Baz fiyat sınırlarını uygula (min_price_ratio / max_price_ratio)
@@ -158,6 +174,7 @@ def _ensure_state_fields(state):
     state.setdefault("active_caravan", None)      # Adım 8: Kervan
     state.setdefault("caravan_history", [])       # Adım 8: Kervan geçmişi
     state.setdefault("pending_caravan_event", None)  # Adım 8: Kervan UI eventi
+    state.setdefault("properties", [])            # Faz 1B: Mülk sahipliği
     p = state["player"]
     p.setdefault("crime", 0)
     p.setdefault("reputation", 0)
@@ -427,7 +444,7 @@ def _economy_tick(state, day):
             m["demand"] = max(1, m["demand"])
             m["supply"] = max(0, m["supply"])
 
-        _recompute_prices(loc)
+        _recompute_prices(loc, season=season, turn=day)
 
         # AÇLIK CASCADE: Buğday veya ekmek arzı sıfırda kalırsa şehir cezalanır
         wheat_out = loc["market"]["buğday"]["supply"] == 0
@@ -496,15 +513,7 @@ def _random_events(state, day):
         _push_event(state, day, "haydut_baskını",
                     f"Haydutlar {loc['name']}'i bastı. Güvenlik düştü.",
                     narrative=narrate_raid(loc["name"]))
-    if random.random() < 0.05:
-        loc = random.choice([l for l in state["world"]["locations"] if l["kind"] != "kale"])
-        loc["wealth"] = max(5, loc["wealth"] - random.randint(5, 15))
-        # Crop failure: drop wheat supply
-        loc["market"]["buğday"]["supply"] = max(0, loc["market"]["buğday"]["supply"] - 20)
-        _recompute_prices(loc)
-        _push_event(state, day, "kıtlık",
-                    f"{loc['name']}'de kötü hasat: buğday arzı düştü, fiyatlar yükseldi.",
-                    narrative=narrate_famine(loc["name"]))
+    # Kötü hasat / kıtlık artık market_events.py havuzundan tetikleniyor (Faz 1C)
     if random.random() < 0.04 and len(state["world"]["kingdoms"]) > 1:
         k1, k2 = random.sample(state["world"]["kingdoms"], 2)
         if k2["id"] not in k1["at_war_with"]:
@@ -966,6 +975,12 @@ def advance_time(state, weeks=1, days=None):
         # Kervan rotaları tick
         _caravan_tick(state, day)
         _random_events(state, day)
+        # Faz 1C: Piyasa olayları havuzu
+        try:
+            from market_events import tick_market_events
+            tick_market_events(state, day)
+        except Exception:
+            pass
         _generate_quest(state, day)
         # FIX-10: Süresi geçen görevleri kapat
         _expire_old_quests(state, day)
@@ -1018,6 +1033,12 @@ def advance_time(state, weeks=1, days=None):
             from game_engine import run_npc_daily_routines, apply_crime_decay
             run_npc_daily_routines(state, day)
             apply_crime_decay(state)
+        except Exception:
+            pass
+        # Mülk sahipliği haftalık tick (Faz 1B)
+        try:
+            from property_system import property_world_tick
+            property_world_tick(state, day)
         except Exception:
             pass
         # Kervan haftalık ilerleme (Adım 8)
