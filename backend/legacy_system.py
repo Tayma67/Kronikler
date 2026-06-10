@@ -211,22 +211,14 @@ def apply_generation_bonuses(state, chosen_child_id=None):
         new_player["reputation"] = new_player.get("reputation", 0) + 15
         notes.append(t("miras.vasiyet_hayir"))
     elif style == "tek_varis":
-        # Kardeş düşmanlığı: diğer kardeşlerle ilişki eksiden başlar
-        rels = state.setdefault("relationships", {})
-        for sid in [c for c in state["world"]["npcs"]
-                    if c.get("alive") and chosen_child_id
-                    and c["id"] != chosen_child_id
-                    and chosen_child_id in [x for x in [c2["id"] for c2 in state["world"]["npcs"]]]]:
-            pass    # kardeş tespiti aşağıda parent üzerinden
-        prev = state.get("legacy_history", [])
         notes.append(t("miras.vasiyet_tek_varis"))
-        # Basit uygulama: yeni oyuncunun kardeşleri (aynı parent) -30 ilişki
+        # Kardeş düşmanlığı: yeni oyuncunun kardeşleri (aynı ebeveyn) -30 ilişki
         parent_ids = set(new_player.get("parent_ids", []))
         if parent_ids:
+            rels = state.setdefault("relationships", {})
             for npc in state["world"]["npcs"]:
-                if (npc.get("alive") and npc["id"] != new_player.get("id")
-                        and parent_ids & set(npc.get("parent_ids", []))):
-                    rels = state.setdefault("relationships", {})
+                if (npc.get("alive") and
+                        parent_ids & set(npc.get("parent_ids", []))):
                     rels[npc["id"]] = rels.get(npc["id"], 0) - 30
 
     # Hanedan: nesil başına taban puan + yatırımlar sıfırlanır

@@ -37,6 +37,10 @@ export const api = axios.create({ baseURL: API });
 api.interceptors.request.use((config) => {
   const deviceId = getOrCreateDeviceId();
   config.headers["X-Device-ID"] = deviceId;
+  // Faz 5E: çoklu kayıt slotu (1-3); Ayarlar sayfasından değiştirilir
+  config.headers["X-Save-Slot"] = localStorage.getItem("kronikler_save_slot") || "1";
+  // Faz 6A: oyun dili (tr varsayılan; en hazır, de/es/ar yolda)
+  config.headers["X-Lang"] = localStorage.getItem("kronikler_lang") || "tr";
   return config;
 });
 

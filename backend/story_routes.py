@@ -30,7 +30,15 @@ def build_story_router(db):
         device_id = request.headers.get("X-Device-ID", "").strip()
         if not device_id:
             device_id = str(uuid.uuid4())
-        return {"_id": device_id}
+        # Faz 6A: istek dili (X-Lang) — contextvar async-güvenli
+        from locales import set_language
+        set_language(request.headers.get("X-Lang", "tr").strip().lower())
+        # Faz 5E: çoklu kayıt — slot 1 varsayılan, 2-3 ayrı kayıt alanı
+        slot = request.headers.get("X-Save-Slot", "1").strip()
+        if slot not in ("1", "2", "3"):
+            slot = "1"
+        user_id = device_id if slot == "1" else f"{device_id}#s{slot}"
+        return {"_id": user_id}
 
     async def _ctx(user):
         from game_routes import _load_state

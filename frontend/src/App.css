@@ -1,3 +1,36 @@
 .App {
   min-height: 100vh;
 }
+
+/* ─── Faz 5D: Mikro-animasyonlar ─────────────────────────────────── */
+@keyframes stat-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); color: #fbbf24; }
+  100% { transform: scale(1); }
+}
+.stat-pop { animation: stat-pop 0.45s ease-out; }
+
+@keyframes coin-float {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-24px); }
+}
+.coin-float {
+  animation: coin-float 0.9s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes card-enter {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.card-enter { animation: card-enter 0.25s ease-out; }
+
+/* ─── Faz 5D: Mevsim temaları (kök sınıfa uygulanır) ─────────────── */
+.season-kis      { --season-tint: rgba(96, 165, 250, 0.04); }
+.season-ilkbahar { --season-tint: rgba(74, 222, 128, 0.04); }
+.season-yaz      { --season-tint: rgba(251, 191, 36, 0.04); }
+.season-sonbahar { --season-tint: rgba(251, 146, 60, 0.05); }
+.season-overlay {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background: var(--season-tint, transparent);
+}
