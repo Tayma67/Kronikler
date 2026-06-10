@@ -987,14 +987,10 @@ export default function CharacterSheet() {
       .catch(() => {});
   }, [state?.turn, state?.player?.age]);
 
-  if (!state) return null;
-
-  const p = state.player;
-
   const skills = useMemo(() => {
-    if (!skillsData || !p.perks) return [];
+    if (!state || !skillsData || !state.player?.perks) return [];
     const result = [];
-    for (const [skillKey, perkIds] of Object.entries(p.perks)) {
+    for (const [skillKey, perkIds] of Object.entries(state.player.perks)) {
       for (const pid of perkIds || []) {
         const meta = skillsData.perks?.[skillKey]?.find?.(pk => pk.id === pid);
         if (meta) result.push({
@@ -1006,7 +1002,11 @@ export default function CharacterSheet() {
       }
     }
     return result;
-  }, [p.perks, skillsData]);
+  }, [state?.player?.perks, skillsData]);
+
+  if (!state) return null;
+
+  const p = state.player;
 
   const handleNavigate = (tabId) => {
     const routes = {
