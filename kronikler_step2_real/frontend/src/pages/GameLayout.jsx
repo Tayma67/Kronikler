@@ -178,6 +178,7 @@ export default function GameLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const isDashboard = location.pathname === "/oyun" || location.pathname === "/oyun/";
+  const isCharacterSheet = location.pathname === "/oyun/karakter";
   const [advancing, setAdvancing]       = useState(false);
   const [showInheritance, setShowInheritance] = useState(false);
   const [inheritanceData, setInheritanceData] = useState(null);
@@ -380,8 +381,8 @@ export default function GameLayout() {
       {/* ── Main content ──────────────────────────────────────────────────── */}
       <main style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
-        {/* Mobile top header (non-dashboard pages) */}
-        {!isDashboard && (
+        {/* Mobile top header (non-dashboard, non-character pages) */}
+        {!isDashboard && !isCharacterSheet && (
           <header className="lg:hidden" style={{
             position: 'sticky', top: 0, zIndex: 20,
             background: 'rgba(13,10,6,0.96)', backdropFilter: 'blur(16px)',
@@ -425,8 +426,8 @@ export default function GameLayout() {
         {/* Page content */}
         <div style={{
           flex: 1, overflowY: 'auto',
-          paddingBottom: isDashboard ? 0 : '7rem',
-          padding: isDashboard ? 0 : undefined,
+          paddingBottom: isDashboard || isCharacterSheet ? 0 : '7rem',
+          padding: isDashboard || isCharacterSheet ? 0 : undefined,
         }}
           className={isDashboard ? '' : 'lg:p-6'}>
           <Outlet />

@@ -91,9 +91,8 @@ const MILESTONE_TYPES = {
 
 // ── Karakter Portresi ────────────────────────────────────────────────────────
 function CharacterPortrait({ p, season }) {
-  const portraitSrc = (p.is_child || p.age < 13)
-    ? (PORTRAIT_MAP[season] || "/images/hero/cocuk_yaz.jpg")
-    : null;
+  // Show seasonal village image for all ages as atmospheric background
+  const portraitSrc = PORTRAIT_MAP[season] || "/images/hero/cocuk_yaz.jpg";
   const initials = p.name
     ? p.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()
     : "??";
@@ -401,32 +400,48 @@ function PremiumHeroCard({ p, season }) {
               ))}
             </div>
 
-            {/* Vitals: health · hunger · money · fame */}
+            {/* Vitals: health · hunger · money · fame — with progress bars */}
             <div style={{
-              display: "flex", gap: "0.75rem", flexWrap: "wrap",
+              display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr",
+              gap: "0.35rem",
               background: "rgba(13,10,6,0.40)", border: "1px solid var(--color-border)",
-              borderRadius: "8px", padding: "0.5rem 0.65rem",
+              borderRadius: "8px", padding: "0.5rem 0.45rem 0.45rem",
               marginBottom: "0.6rem",
             }}>
               {[
-                { icon: "❤", value: `${p.health ?? 100}`, sub: "/100", color: "#C84040" },
-                { icon: "🍎", value: `${p.hunger ?? 100}`, sub: "/100", color: "#4A9A5A" },
-                { icon: "💰", value: `${p.money ?? 0}`,    sub: null,   color: "#C9A84C" },
-                { icon: "👑", value: `${p.social?.fame ?? 0}`, sub: null, color: "#9B6FD0" },
+                { icon: "❤", value: p.health ?? 100, max: 100, color: "#C84040" },
+                { icon: "🍎", value: p.hunger ?? 100, max: 100, color: "#4A9A5A" },
+                { icon: "💰", value: p.money  ?? 0,   max: null, color: "#C9A84C" },
+                { icon: "👑", value: p.social?.fame ?? 0, max: null, color: "#9B6FD0" },
               ].map((v, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                  <span style={{ fontSize: "0.8rem", filter: `drop-shadow(0 0 3px ${v.color}88)` }}>{v.icon}</span>
-                  <span style={{
-                    fontFamily: "Cinzel, serif", fontWeight: 700, fontSize: "0.85rem",
-                    color: v.color, textShadow: `0 0 8px ${v.color}55`,
-                  }}>
-                    {v.value}
-                  </span>
-                  {v.sub && (
-                    <span style={{ fontFamily: "Crimson Text, serif", fontSize: "0.72rem", color: "var(--color-parchment-muted)" }}>
-                      {v.sub}
-                    </span>
-                  )}
+                <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.18rem" }}>
+                  {/* Icon + value */}
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "0.2rem" }}>
+                    <span style={{ fontSize: "0.72rem", filter: `drop-shadow(0 0 3px ${v.color}88)`, lineHeight: 1 }}>{v.icon}</span>
+                    <span style={{
+                      fontFamily: "Cinzel, serif", fontWeight: 700,
+                      fontSize: "0.82rem", color: v.color,
+                      textShadow: `0 0 8px ${v.color}55`,
+                    }}>{v.value}</span>
+                    {v.max && (
+                      <span style={{ fontFamily: "Crimson Text, serif", fontSize: "0.6rem", color: "var(--color-parchment-muted)" }}>
+                        /{v.max}
+                      </span>
+                    )}
+                  </div>
+                  {/* Bar */}
+                  <div style={{ width: "100%", height: "2.5px", background: "rgba(0,0,0,0.55)", borderRadius: "2px" }}>
+                    <div style={{
+                      height: "100%",
+                      width: v.max
+                        ? `${Math.min(100, Math.round((v.value / v.max) * 100))}%`
+                        : "60%",
+                      background: `linear-gradient(to right, ${v.color}77, ${v.color})`,
+                      boxShadow: `0 0 5px ${v.color}88`,
+                      borderRadius: "2px",
+                      transition: "width 0.5s ease",
+                    }} />
+                  </div>
                 </div>
               ))}
             </div>
