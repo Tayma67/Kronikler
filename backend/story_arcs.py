@@ -493,4 +493,44 @@ STORY_ARCS = [
         ],
         "odul": {"itibar": 10, "stat_xp": {"intelligence": 5}},
     },
+
+    # ══ TUTORIAL: İLK YIL (Faz 5A — quest motoruyla onboarding) ══════════
+    {
+        "id": "ilk_yil",
+        "baslik_key": "yay.ilkyil.baslik",
+        "kanca_key": "yay.ilkyil.kanca",
+        "tur": "zincir",
+        "tetik": {"yas_min": 7, "yas_max": 9},
+        "zaman_siniri_hafta": None,
+        "adimlar": [
+            {"id": "a1", "metin_key": "yay.ilkyil.a1", "secenekler": [
+                {"metin_key": "yay.ilkyil.a1.s0", "sonraki": "a2",
+                 "efekt": {"esya": {"ekmek": 2}}, "sonuc_key": "yay.ilkyil.a1.s0.ok"},
+            ]},
+            {"id": "a2", "metin_key": "yay.ilkyil.a2", "secenekler": [
+                {"metin_key": "yay.ilkyil.a2.s0", "sonraki": "a3", "bekle_hafta": 1,
+                 "sonuc_key": "yay.ilkyil.a2.s0.ok"},
+            ]},
+            {"id": "a3", "metin_key": "yay.ilkyil.a3", "secenekler": [
+                {"metin_key": "yay.ilkyil.a3.s0", "sonraki": "a4",
+                 "efekt": {"stat_xp": {"intelligence": 3}}, "sonuc_key": "yay.ilkyil.a3.s0.ok"},
+                {"metin_key": "yay.ilkyil.a3.s1", "sonraki": "a4",
+                 "efekt": {"stat_xp": {"strength": 3}}, "sonuc_key": "yay.ilkyil.a3.s1.ok"},
+            ]},
+            {"id": "a4", "metin_key": "yay.ilkyil.a4", "secenekler": [
+                {"metin_key": "yay.ilkyil.a4.s0", "sonraki": "a5",
+                 "efekt": {"skill_xp": {"social": 4}}, "sonuc_key": "yay.ilkyil.a4.s0.ok"},
+            ]},
+            {"id": "a5", "metin_key": "yay.ilkyil.a5", "secenekler": [
+                {"metin_key": "yay.ilkyil.a5.s0", "sonraki": "a6", "bekle_hafta": 2,
+                 "sonuc_key": "yay.ilkyil.a5.s0.ok"},
+            ]},
+            {"id": "a6", "metin_key": "yay.ilkyil.a6", "secenekler": [
+                {"metin_key": "yay.ilkyil.a6.s0", "sonraki": None,
+                 "efekt": {"para": 15, "bayrak": {"tutorial_tamam": True}},
+                 "sonuc_key": "yay.ilkyil.a6.s0.ok"},
+            ]},
+        ],
+        "odul": {"para": 10, "itibar": 2},
+    },
 ]

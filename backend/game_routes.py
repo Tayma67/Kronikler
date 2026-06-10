@@ -538,6 +538,13 @@ def build_game_router(db):
         # Unlock starting quests
         unlock_age_appropriate(state)
         refresh_opportunities(state)
+        # Faz 5A: "İlk Yıl" tutorial yayını otomatik başlat (atlanabilir)
+        try:
+            from quest_engine import ensure_story_state, start_arc
+            ensure_story_state(state)
+            start_arc(state, "ilk_yil", 0)
+        except Exception:
+            pass
         _push_event(state, 0, "doğum",
                     f"{player['name']} doğdu. Anne: {mother['name']}, Baba: {father['name']}.")
         await _save_state(db, user["_id"], state)

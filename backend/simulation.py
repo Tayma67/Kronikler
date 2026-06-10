@@ -1062,6 +1062,12 @@ def advance_time(state, weeks=1, days=None):
             legacy_world_tick(state, day)
         except Exception:
             pass
+        # Başarımlar (Faz 5E)
+        try:
+            from achievements import check_achievements
+            check_achievements(state, day)
+        except Exception:
+            pass
         # Kervan haftalık ilerleme (Adım 8)
         try:
             from caravan import process_caravan_tick, ensure_caravan_state
