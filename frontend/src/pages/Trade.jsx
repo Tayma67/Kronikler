@@ -12,13 +12,21 @@ import {
 
 /* ─── Sabitler ─────────────────────────────────────────────────────── */
 const GOOD_LABELS = {
-  "buğday": "Buğday", "ekmek": "Ekmek", "et": "Et",
-  "demir": "Demir", "odun": "Odun", "kumaş": "Kumaş", "silah": "Silah",
+  "buğday": "Buğday", "un": "Un", "ekmek": "Ekmek", "et": "Et",
+  "yün": "Yün", "kumaş": "Kumaş", "kıyafet": "Kıyafet",
+  "demir_cevheri": "Demir Cevheri", "demir": "Demir", "silah": "Silah", "alet": "Alet",
+  "üzüm": "Üzüm", "şıra": "Şıra", "şarap": "Şarap",
+  "odun": "Odun", "kereste": "Kereste", "mobilya": "Mobilya",
+  "deri": "Deri", "işlenmiş_deri": "İşlenmiş Deri", "zırh": "Zırh", "çizme": "Çizme",
   "ipek": "İpek", "baharat": "Baharat",
 };
 const GOOD_ICONS = {
-  "buğday": "🌾", "ekmek": "🍞", "et": "🥩",
-  "demir": "⚙️", "odun": "🪵", "kumaş": "🧵", "silah": "⚔️",
+  "buğday": "🌾", "un": "🫓", "ekmek": "🍞", "et": "🥩",
+  "yün": "🐑", "kumaş": "🧵", "kıyafet": "👘",
+  "demir_cevheri": "🪨", "demir": "⚙️", "silah": "⚔️", "alet": "🔨",
+  "üzüm": "🍇", "şıra": "🍶", "şarap": "🍷",
+  "odun": "🪵", "kereste": "🪚", "mobilya": "🪑",
+  "deri": "🦌", "işlenmiş_deri": "🧳", "zırh": "🛡️", "çizme": "🥾",
   "ipek": "🪡", "baharat": "🌶️",
 };
 

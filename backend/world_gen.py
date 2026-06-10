@@ -151,10 +151,12 @@ CASTLE_NAMES = [
 PROFESSIONS_COMMON = [
     # Tarım & hayvancılık
     "çiftçi", "çoban", "bahçıvan", "balıkçı", "avcı", "arıcı",
+    # Hammadde (Faz 1A: üretim zinciri girişleri)
+    "madenci", "oduncu",
     # Zanaatkâr
     "demirci", "marangoz", "kunduracı", "fırıncı", "değirmenci",
     "çömlekçi", "dokumacı", "boyacı", "sepici", "kasap",
-    "kuyumcu", "silahçı", "zırh_ustası", "berber",
+    "kuyumcu", "silahçı", "zırh_ustası", "berber", "terzi", "şarapçı",
     # Ticaret & hizmet
     "tüccar", "seyyar_satıcı", "han_sahibi", "kervancı",
     "katip", "tellal", "sarraf",
@@ -187,10 +189,30 @@ PERSONALITY_TRAITS = [
     "huysuz", "hoşgörülü", "mütevazi", "gösterişçi", "maceracı", "muhafazakâr",
 ]
 
-GOODS = ["buğday", "ekmek", "et", "demir", "odun", "kumaş", "silah", "ipek", "baharat"]
+# Faz 1A: Üretim zinciri malları eklendi (hammadde → ara ürün → son ürün)
+GOODS = [
+    # Gıda zinciri
+    "buğday", "un", "ekmek", "et",
+    # Tekstil zinciri
+    "yün", "kumaş", "kıyafet",
+    # Metal zinciri
+    "demir_cevheri", "demir", "silah", "alet",
+    # Şarap zinciri
+    "üzüm", "şıra", "şarap",
+    # Ahşap zinciri
+    "odun", "kereste", "mobilya",
+    # Deri zinciri
+    "deri", "işlenmiş_deri", "zırh", "çizme",
+    # Lüks ithal (kervan malları — yerel üretimi yok)
+    "ipek", "baharat",
+]
 GOOD_BASE_PRICES = {
-    "buğday": 4, "ekmek": 6, "et": 12, "demir": 25,
-    "odun": 5, "kumaş": 10, "silah": 60,
+    "buğday": 4, "un": 7, "ekmek": 6, "et": 12,
+    "yün": 6, "kumaş": 10, "kıyafet": 28,
+    "demir_cevheri": 10, "demir": 25, "silah": 60, "alet": 32,
+    "üzüm": 5, "şıra": 14, "şarap": 18,
+    "odun": 5, "kereste": 14, "mobilya": 55,
+    "deri": 8, "işlenmiş_deri": 14, "zırh": 55, "çizme": 20,
     "ipek": 45, "baharat": 35,
 }
 

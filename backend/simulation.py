@@ -21,9 +21,9 @@ from rumors import auto_rumors_from_events, seasonal_rumors
 from world_events import tick_world_events
 
 # Yiyecek öncelik sırası — en yüksek açlık giderenden başla
-_FOOD_PRIORITY = ["et", "ekmek", "şarap", "buğday"]
+_FOOD_PRIORITY = ["et", "ekmek", "şarap", "şıra", "üzüm", "buğday"]
 # Hangi envanter öğeleri yiyecek sayılır
-_FOOD_ITEMS = {"et", "ekmek", "buğday", "şarap"}
+_FOOD_ITEMS = {"et", "ekmek", "buğday", "şarap", "şıra", "üzüm"}
 
 
 def _has_food(player):
@@ -52,25 +52,15 @@ def _auto_eat(state, day):
     return None
 
 
-PRODUCTION = {
-    "çiftçi": ("buğday", 10),
-    "fırıncı": ("ekmek", 8),
-    "avcı": ("et", 6),
-    "balıkçı": ("et", 5),
-    "çoban": ("et", 3),
-    "demirci": ("demir", 3),
-    "marangoz": ("odun", 7),
-    "değirmenci": ("buğday", 5),
-    "tüccar": (None, 0),   # they move goods but don't produce
-    "kunduracı": ("kumaş", 3),
-    # S2 — silah üreticisi meslekler eklendi
-    "silahçı":   ("silah", 1),
-    "zırh_ustası": ("silah", 1),
-}
+# Faz 1A: Üretim production_chains.py'a taşındı. PRODUCTION adı, oyuncunun
+# "çalış" aksiyonu için game_routes tarafından import edilmeye devam ediyor.
+from production_chains import PROFESSION_OUTPUT as PRODUCTION
+from production_chains import run_raw_tick, run_craft_tick
 
 PROFESSION_NEEDS = {
-    "asker": ("silah", 1),
-    "şövalye": ("silah", 1),
+    "asker": [("silah", 1), ("zırh", 1)],
+    "şövalye": [("silah", 1), ("zırh", 1)],
+    "çiftçi": [("alet", 1)],
 }
 
 
@@ -391,41 +381,38 @@ def _economy_tick(state, day):
             continue
         npcs_by_loc.setdefault(n["location_id"], []).append(n)
 
+    from balance_config import CONSUMPTION
+
     for loc in state["world"]["locations"]:
         _ensure_market(loc)
         local_npcs = npcs_by_loc.get(loc["id"], [])
         pop = max(10, loc.get("population", 50))
 
-        # Production from NPC professions (seasonal multiplier)
-        for n in local_npcs:
-            prod = PRODUCTION.get(n["profession"])
-            if prod and prod[0]:
-                good, amt = prod
-                noise = random.uniform(0.7, 1.3)
-                loc["market"][good]["supply"] += max(1, int(amt * noise * prod_mult))
+        # ── Faz 1A: Gerçek üretim — sihirli spawn yok ────────────────────
+        # 1) Hammadde üreticileri (çiftçi, çoban, madenci, oduncu…)
+        run_raw_tick(loc, local_npcs, prod_mult, random)
+        # 2) Zanaatkâr dönüşümleri (un→ekmek, cevher→demir→silah…)
+        craft = run_craft_tick(loc, local_npcs, prod_mult, random)
+        # Hammadde bulamayan zanaatkârlar — seyrek event (spam önleme)
+        if craft["starved"] and random.random() < 0.06:
+            from locales import t
+            _push_event(state, day, "zanaat_durgun",
+                        t("uretim.zanaat_durgun", loc=loc["name"],
+                          profession=random.choice(craft["starved"])))
 
-        # Background production scaled to population (so cities don't starve when only a few NPCs are here)
-        bg = max(2, pop // 25)
-        for good in ("buğday", "ekmek", "et", "odun"):
-            loc["market"][good]["supply"] += int(bg * prod_mult * random.uniform(0.6, 1.2))
-
-        # NPC consumption drives demand
-        for good, frac in [("ekmek", 0.012), ("buğday", 0.010), ("et", 0.006),
-                           ("odun", 0.004), ("kumaş", 0.002), ("demir", 0.002),
-                           ("silah", 0.001)]:
+        # ── Nüfus tüketimi: talep yaratır, arzı düşürür ──────────────────
+        wealth_mult = 0.4 + loc.get("wealth", 50) / 60  # zengin şehir lüks tüketir
+        for good, cfg in CONSUMPTION.items():
             if good not in loc["market"]:
                 continue
+            frac = cfg["frac"] * (wealth_mult if cfg["wealth_scaled"] else 1.0)
             consume = max(1, int(pop * frac))
-            # Demand grows
             loc["market"][good]["demand"] += consume
-            # Supply is depleted by consumption (but can't go negative)
             loc["market"][good]["supply"] = max(0, loc["market"][good]["supply"] - consume)
 
-        # NPC needs (soldiers want weapons)
+        # NPC ihtiyaçları (asker silah/zırh, çiftçi alet ister)
         for n in local_npcs:
-            need = PROFESSION_NEEDS.get(n["profession"])
-            if need:
-                good, amt = need
+            for good, amt in PROFESSION_NEEDS.get(n["profession"], []):
                 if good in loc["market"]:
                     loc["market"][good]["demand"] += amt
 
@@ -450,8 +437,9 @@ def _economy_tick(state, day):
             loc["security"] = max(5, loc["security"] - random.randint(2, 6))
             loc["population"] = max(10, loc.get("population", 50) - random.randint(0, 1))
             shortage_good = "buğday" if wheat_out else "ekmek"
+            from locales import t
             _push_event(state, day, "kıtlık_etkisi",
-                        f"{loc['name']}'de {shortage_good} arzı tükendi: halk aç, huzursuzluk arttı.")
+                        t("uretim.kitlik_etkisi", loc=loc["name"], good=shortage_good))
 
         # FİYAT GEÇMİŞİ: Her 4 turda bir snapshot al (son 12 kayıt = 3 aylık veri)
         turn = state.get("turn", 0)

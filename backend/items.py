@@ -31,9 +31,75 @@ ITEMS = {
         "weight": 1, "base_value": 80,
     },
     "şarap": {
-        "name": "Bal Şarabı", "type": "drink", "slot": None,
+        "name": "Şarap", "type": "drink", "slot": None,
         "effects": {"hunger": 10, "stamina_temp": 2, "charisma_temp": 1, "health": -2},
-        "weight": 1, "base_value": 15,
+        "weight": 1, "base_value": 18,
+    },
+    # Faz 1A — üretim zinciri malları
+    "un": {
+        "name": "Un", "type": "material", "slot": None,
+        "effects": {},
+        "weight": 1, "base_value": 7,
+    },
+    "yün": {
+        "name": "Yün", "type": "material", "slot": None,
+        "effects": {},
+        "weight": 1, "base_value": 6,
+    },
+    "kıyafet": {
+        "name": "Kıyafet", "type": "armor_body", "slot": "body",
+        "effects": {"defense": 1, "charisma_passive": 1},
+        "weight": 1, "base_value": 28,
+    },
+    "demir_cevheri": {
+        "name": "Demir Cevheri", "type": "material", "slot": None,
+        "effects": {},
+        "weight": 4, "base_value": 10,
+    },
+    "alet": {
+        "name": "Alet Takımı", "type": "material", "slot": None,
+        "effects": {},
+        "weight": 2, "base_value": 32,
+    },
+    "üzüm": {
+        "name": "Üzüm", "type": "food", "slot": None,
+        "effects": {"hunger": 6},
+        "weight": 1, "base_value": 5,
+    },
+    "şıra": {
+        "name": "Şıra", "type": "drink", "slot": None,
+        "effects": {"hunger": 8},
+        "weight": 1, "base_value": 14,
+    },
+    "kereste": {
+        "name": "Kereste", "type": "material", "slot": None,
+        "effects": {},
+        "weight": 3, "base_value": 14,
+    },
+    "mobilya": {
+        "name": "Mobilya", "type": "material", "slot": None,
+        "effects": {},
+        "weight": 8, "base_value": 55,
+    },
+    "deri": {
+        "name": "Deri", "type": "material", "slot": None,
+        "effects": {},
+        "weight": 2, "base_value": 8,
+    },
+    "işlenmiş_deri": {
+        "name": "İşlenmiş Deri", "type": "material", "slot": None,
+        "effects": {},
+        "weight": 2, "base_value": 14,
+    },
+    "zırh": {
+        "name": "Deri Savaş Zırhı", "type": "armor_body", "slot": "body",
+        "effects": {"defense": 4},
+        "weight": 5, "base_value": 55,
+    },
+    "çizme": {
+        "name": "Çizme", "type": "armor_feet", "slot": "feet",
+        "effects": {"defense": 1, "stamina_passive": 1},
+        "weight": 2, "base_value": 20,
     },
     "demir": {
         "name": "Demir", "type": "material", "slot": None,
