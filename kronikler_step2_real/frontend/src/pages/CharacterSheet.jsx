@@ -21,7 +21,7 @@ const TABS = [
 
 // ── Stat meta ────────────────────────────────────────────────────────────────
 const STAT_META = [
-  { key: "strength",     label: "GÜÇ",          emoji: "💪", color: "#C84040", fill: "bg-red-700" },
+  { key: "strength",     label: "GÜÇ",          emoji: "💪", color: "#E8973A", fill: "bg-orange-700" },
   { key: "intelligence", label: "ZEKÂ",          emoji: "📖", color: "#4A8FC4", fill: "bg-sky-700" },
   { key: "charisma",     label: "KARİZMA",       emoji: "🎭", color: "#C9A84C", fill: "bg-amber-700" },
   { key: "stamina",      label: "DAYANIKLILIK",  emoji: "🛡", color: "#4A9A5A", fill: "bg-emerald-700" },
@@ -102,7 +102,7 @@ function CharacterPortrait({ p, season }) {
       position: "relative", width: "130px", minHeight: "160px", flexShrink: 0,
       border: "1.5px solid var(--color-gold)",
       borderRadius: "8px", overflow: "hidden",
-      boxShadow: "0 0 0 1px rgba(201,168,76,0.15), 0 0 20px rgba(201,168,76,0.30), 0 8px 32px rgba(0,0,0,0.7)",
+      boxShadow: "0 0 0 1px rgba(201,168,76,0.15), 0 0 24px rgba(201,168,76,0.35), 0 8px 32px rgba(0,0,0,0.7)",
     }}>
       {portraitSrc ? (
         <img src={portraitSrc} alt="Karakter"
@@ -158,43 +158,43 @@ function DiamondStatCard({ stat, value, xp, nextXp, color, emoji }) {
     <div style={{
       background: "var(--color-card)",
       border: "1px solid var(--color-border-hi)",
-      borderRadius: "8px", padding: "0.85rem 0.5rem 0.7rem",
-      display: "flex", flexDirection: "column", alignItems: "center", gap: "0.3rem",
+      borderRadius: "8px", padding: "0.9rem 0.5rem 0.75rem",
+      display: "flex", flexDirection: "column", alignItems: "center", gap: "0.35rem",
       boxShadow: `0 0 0 1px transparent, 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 ${color}18`,
       position: "relative", overflow: "hidden",
     }}>
       {/* Top color accent */}
       <div style={{
         position: "absolute", top: 0, left: 0, right: 0, height: "2px",
-        background: `linear-gradient(to right, transparent, ${color}88, transparent)`,
+        background: `linear-gradient(to right, transparent, ${color}aa, transparent)`,
       }} />
 
       {/* Label */}
       <span style={{
-        fontFamily: "Cinzel, serif", fontSize: "0.58rem", fontWeight: 700,
+        fontFamily: "Cinzel, serif", fontSize: "0.6rem", fontWeight: 700,
         color: "var(--color-parchment-muted)", letterSpacing: "0.14em", textTransform: "uppercase",
       }}>
         {stat}
       </span>
 
       {/* Emoji icon */}
-      <span style={{ fontSize: "1.5rem", lineHeight: 1, filter: `drop-shadow(0 0 4px ${color}66)` }}>
+      <span style={{ fontSize: "1.65rem", lineHeight: 1, filter: `drop-shadow(0 0 5px ${color}77)` }}>
         {emoji}
       </span>
 
       {/* Diamond number */}
-      <div style={{ position: "relative", width: "46px", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", margin: "0.1rem 0" }}>
+      <div style={{ position: "relative", width: "50px", height: "50px", display: "flex", alignItems: "center", justifyContent: "center", margin: "0.15rem 0" }}>
         <div style={{
           position: "absolute", inset: 0,
-          background: "var(--color-card-hi)", border: `1.5px solid ${color}99`,
+          background: "var(--color-card-hi)", border: `1.5px solid ${color}bb`,
           transform: "rotate(45deg)", borderRadius: "5px",
-          boxShadow: `0 0 10px ${color}33`,
+          boxShadow: `0 0 12px ${color}44, inset 0 1px 0 ${color}22`,
         }} />
         <span style={{
           position: "relative", zIndex: 1,
-          fontFamily: "Cinzel, serif", fontWeight: 700, fontSize: "1.25rem",
+          fontFamily: "Cinzel, serif", fontWeight: 700, fontSize: "1.35rem",
           color: "var(--color-parchment)",
-          textShadow: `0 0 8px ${color}66`,
+          textShadow: `0 0 10px ${color}77`,
         }}>
           {value}
         </span>
@@ -202,7 +202,7 @@ function DiamondStatCard({ stat, value, xp, nextXp, color, emoji }) {
 
       {/* XP label */}
       <span style={{
-        fontFamily: "Crimson Text, serif", fontSize: "0.7rem",
+        fontFamily: "Crimson Text, serif", fontSize: "0.72rem",
         color: "var(--color-parchment-muted)",
       }}>
         {xp} / {nextXp} XP
@@ -212,7 +212,7 @@ function DiamondStatCard({ stat, value, xp, nextXp, color, emoji }) {
       <div style={{ width: "100%", height: "3px", background: "rgba(0,0,0,0.5)", borderRadius: "2px", marginTop: "0.1rem" }}>
         <div style={{
           height: "100%", width: `${pct}%`,
-          background: `linear-gradient(to right, ${color}88, ${color})`,
+          background: `linear-gradient(to right, ${color}99, ${color})`,
           boxShadow: `0 0 6px ${color}99`, borderRadius: "2px",
         }} />
       </div>
@@ -226,32 +226,32 @@ function SocialStatCard({ label, icon, value, color, sublabel }) {
     <div style={{
       flex: 1, background: "var(--color-card)",
       border: "1px solid var(--color-border-hi)", borderRadius: "8px",
-      padding: "0.75rem 0.4rem",
-      display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem",
+      padding: "0.8rem 0.4rem",
+      display: "flex", flexDirection: "column", alignItems: "center", gap: "0.2rem",
       boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
       position: "relative", overflow: "hidden",
     }}>
       <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, height: "1.5px",
-        background: `linear-gradient(to right, transparent, ${color}66, transparent)`,
+        position: "absolute", top: 0, left: 0, right: 0, height: "2px",
+        background: `linear-gradient(to right, transparent, ${color}77, transparent)`,
       }} />
-      <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>{icon}</span>
+      <span style={{ fontSize: "1.25rem", lineHeight: 1, marginBottom: "0.05rem" }}>{icon}</span>
       <span style={{
-        fontFamily: "Cinzel, serif", fontWeight: 700, fontSize: "1.5rem",
+        fontFamily: "Cinzel, serif", fontWeight: 700, fontSize: "1.6rem",
         color, lineHeight: 1,
-        textShadow: `0 0 10px ${color}55`,
+        textShadow: `0 0 12px ${color}66`,
       }}>
         {value}
       </span>
       <span style={{
-        fontFamily: "Cinzel, serif", fontSize: "0.52rem", fontWeight: 600,
-        color: "var(--color-parchment-muted)", letterSpacing: "0.1em", textTransform: "uppercase",
+        fontFamily: "Cinzel, serif", fontSize: "0.5rem", fontWeight: 700,
+        color: "var(--color-parchment-muted)", letterSpacing: "0.12em", textTransform: "uppercase",
       }}>
         {label}
       </span>
       <span style={{
-        fontFamily: "Crimson Text, serif", fontSize: "0.7rem", fontStyle: "italic",
-        color: "var(--color-parchment-muted)", textAlign: "center",
+        fontFamily: "Crimson Text, serif", fontSize: "0.72rem", fontStyle: "italic",
+        color: "var(--color-parchment-muted)", textAlign: "center", lineHeight: 1.3,
       }}>
         {sublabel}
       </span>
@@ -265,19 +265,25 @@ function PerkCard({ icon, name, desc, level }) {
     <div style={{
       flex: 1, background: "var(--color-card)",
       border: "1px solid var(--color-border-hi)", borderRadius: "8px",
-      padding: "0.75rem 0.6rem",
+      padding: "0.85rem 0.55rem",
       display: "flex", flexDirection: "column", alignItems: "center", gap: "0.35rem",
       boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+      position: "relative", overflow: "hidden",
     }}>
+      {/* Subtle top accent */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: "1.5px",
+        background: "linear-gradient(to right, transparent, rgba(201,168,76,0.4), transparent)",
+      }} />
       {/* Icon circle */}
       <div style={{
-        width: "2.4rem", height: "2.4rem", borderRadius: "50%",
-        background: "linear-gradient(135deg, rgba(201,168,76,0.18) 0%, rgba(201,168,76,0.05) 100%)",
-        border: "1.5px solid rgba(201,168,76,0.40)",
+        width: "2.6rem", height: "2.6rem", borderRadius: "50%",
+        background: "linear-gradient(135deg, rgba(201,168,76,0.20) 0%, rgba(201,168,76,0.06) 100%)",
+        border: "1.5px solid rgba(201,168,76,0.45)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        boxShadow: "0 0 10px rgba(201,168,76,0.20)",
+        boxShadow: "0 0 12px rgba(201,168,76,0.25)",
       }}>
-        <span style={{ fontSize: "1.1rem" }}>{icon}</span>
+        <span style={{ fontSize: "1.2rem" }}>{icon}</span>
       </div>
       <span style={{
         fontFamily: "Cinzel, serif", fontSize: "0.62rem", fontWeight: 700,
@@ -295,8 +301,9 @@ function PerkCard({ icon, name, desc, level }) {
       <span style={{
         fontFamily: "Cinzel, serif", fontSize: "0.55rem", fontWeight: 600,
         color: "var(--color-gold-dim)", letterSpacing: "0.08em",
-        textTransform: "uppercase",
-        marginTop: "0.1rem",
+        textTransform: "uppercase", marginTop: "0.1rem",
+        border: "1px solid rgba(201,168,76,0.2)",
+        borderRadius: "4px", padding: "0.1rem 0.4rem",
       }}>
         Seviye {level}
       </span>
@@ -400,7 +407,7 @@ function PremiumHeroCard({ p, season }) {
               ))}
             </div>
 
-            {/* Vitals: health · hunger · money · fame — with progress bars */}
+            {/* Vitals: health · energy · money · fame — with progress bars */}
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr",
               gap: "0.35rem",
@@ -410,8 +417,8 @@ function PremiumHeroCard({ p, season }) {
             }}>
               {[
                 { icon: "❤", value: p.health ?? 100, max: 100, color: "#C84040" },
-                { icon: "🍎", value: p.hunger ?? 100, max: 100, color: "#4A9A5A" },
-                { icon: "💰", value: p.money  ?? 0,   max: null, color: "#C9A84C" },
+                { icon: "☕", value: p.hunger ?? 100, max: 100, color: "#C9A84C" },
+                { icon: "🪙", value: p.money  ?? 0,   max: null, color: "#C9A84C" },
                 { icon: "👑", value: p.social?.fame ?? 0, max: null, color: "#9B6FD0" },
               ].map((v, i) => (
                 <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.18rem" }}>
