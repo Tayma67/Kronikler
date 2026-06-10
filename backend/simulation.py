@@ -1056,6 +1056,12 @@ def advance_time(state, weeks=1, days=None):
             injury_tick(state)
         except Exception:
             pass
+        # Aile 2.0, hanedan, çağ olayları (Faz 4)
+        try:
+            from legacy_system import legacy_world_tick
+            legacy_world_tick(state, day)
+        except Exception:
+            pass
         # Kervan haftalık ilerleme (Adım 8)
         try:
             from caravan import process_caravan_tick, ensure_caravan_state

@@ -29,6 +29,7 @@ import Generation from "@/pages/Generation";
 import TownFeed from "@/pages/TownFeed";
 import Properties from "@/pages/Properties";
 import StoryJournal from "@/pages/StoryJournal";
+import Legacy from "@/pages/Legacy";
 
 export default function App() {
   return (
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="kasaba" element={<TownFeed />} />
             <Route path="mulkler" element={<Properties />} />
             <Route path="hikayeler" element={<StoryJournal />} />
+            <Route path="hanedan" element={<Legacy />} />
           </Route>
           <Route path="*" element={<Navigate to="/oyun" replace />} />
         </Routes>

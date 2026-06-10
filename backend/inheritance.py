@@ -71,7 +71,13 @@ def begin_inheritance(state, chosen_child_id: str = None) -> dict:
     world = state["world"]
 
     # ── Mirası hesapla ─────────────────────────────────────────
-    inherited_money = round(old_player.get("money", 0) * 0.60, 1)
+    # Faz 4C: vasiyet stili para çarpanını belirler (eşit 0.60 varsayılan)
+    try:
+        from legacy_system import will_money_multiplier
+        _money_mult = will_money_multiplier(state)
+    except Exception:
+        _money_mult = 0.60
+    inherited_money = round(old_player.get("money", 0) * _money_mult, 1)
     inherited_stats = {
         k: max(1, round(v * 0.30))
         for k, v in old_player.get("stats", {}).items()
@@ -207,6 +213,16 @@ def begin_inheritance(state, chosen_child_id: str = None) -> dict:
         "generation": state.get("generation", 1) + 1,
     }
     state["generation"] = state.get("generation", 1) + 1
+
+    # Faz 4C: Miras Perki + çocuk eğitim bonusu + vasiyet yan etkileri
+    try:
+        from legacy_system import apply_generation_bonuses
+        notes = apply_generation_bonuses(
+            state, chosen_child_id=child_npc["id"] if child_npc else None)
+        if notes:
+            state["inheritance_summary"]["legacy_notes"] = notes
+    except Exception:
+        pass
 
     return state
 
