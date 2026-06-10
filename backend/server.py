@@ -14,6 +14,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from game_routes import build_game_router
 from property_routes import build_property_router
 from story_routes import build_story_router
+from combat_routes import build_combat_router
 
 
 logging.basicConfig(level=logging.INFO,
@@ -51,6 +52,7 @@ async def root():
 app.include_router(build_game_router(db))
 app.include_router(build_property_router(db))
 app.include_router(build_story_router(db))
+app.include_router(build_combat_router(db))
 
 app.add_middleware(
     CORSMiddleware,

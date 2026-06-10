@@ -1050,6 +1050,12 @@ def advance_time(state, weeks=1, days=None):
             tick_story(state, day)
         except Exception:
             pass
+        # Yaralanma iyileşmesi (Faz 3)
+        try:
+            from combat_engine import injury_tick
+            injury_tick(state)
+        except Exception:
+            pass
         # Kervan haftalık ilerleme (Adım 8)
         try:
             from caravan import process_caravan_tick, ensure_caravan_state
