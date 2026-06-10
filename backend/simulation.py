@@ -175,6 +175,9 @@ def _ensure_state_fields(state):
     state.setdefault("caravan_history", [])       # Adım 8: Kervan geçmişi
     state.setdefault("pending_caravan_event", None)  # Adım 8: Kervan UI eventi
     state.setdefault("properties", [])            # Faz 1B: Mülk sahipliği
+    state.setdefault("story_quests", [])          # Faz 2: Hikâye yayları
+    state.setdefault("story_flags", {})
+    state.setdefault("story_offers", [])
     p = state["player"]
     p.setdefault("crime", 0)
     p.setdefault("reputation", 0)
@@ -1041,6 +1044,12 @@ def advance_time(state, weeks=1, days=None):
             property_world_tick(state, day)
         except Exception:
             pass
+        # Hikâye yayları tick (Faz 2)
+        try:
+            from quest_engine import tick_story
+            tick_story(state, day)
+        except Exception:
+            pass
         # Kervan haftalık ilerleme (Adım 8)
         try:
             from caravan import process_caravan_tick, ensure_caravan_state
@@ -1056,6 +1065,12 @@ def advance_time(state, weeks=1, days=None):
         if new_events:
             auto_rumors_from_events(state, new_events)
         seasonal_rumors(state)
+        # Faz 2D: Eyleme dönüşen söylentiler (piyasa ipucu, NPC sırrı, istihbarat)
+        try:
+            from rumors import actionable_rumors_tick
+            actionable_rumors_tick(state, day)
+        except Exception:
+            pass
         if len(state["history"]) > 250:
             state["history"] = state["history"][-250:]
     # Auto-unlock family quests at the end of advancement

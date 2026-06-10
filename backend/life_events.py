@@ -1396,3 +1396,8 @@ def apply_life_event_choice(state: dict, event_id: str, choice_index: int) -> di
         "result_text": choice["result"],
         "effects_applied": effects,
     }
+
+
+# ─── Faz 2C: Yetişkin/orta yaş/yaşlılık havuzu genişletmesi ───────────────
+from life_events_v2 import LIFE_EVENTS_V2
+LIFE_EVENTS.extend(LIFE_EVENTS_V2)

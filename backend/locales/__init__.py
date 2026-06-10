@@ -7,7 +7,9 @@ Kullanım:
 Şimdilik tek dil (tr) yüklüdür; Faz 6'da dil seçimi eklenecek.
 """
 from locales.tr import STRINGS as _TR
+from locales.tr_arcs import ARC_STRINGS as _TR_ARCS
 
+_TR = {**_TR, **_TR_ARCS}
 _ACTIVE = _TR
 
 
