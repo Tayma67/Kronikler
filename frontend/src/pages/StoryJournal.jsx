@@ -210,7 +210,10 @@ export default function StoryJournal() {
                   </span>
                 ) : (
                   <span className="text-[9px] text-red-400/80 flex items-center gap-1">
-                    <XCircle className="w-3 h-3" /> {f.status === "süresi_doldu" ? "Süresi doldu" : "Kötü bitti"}
+                    <XCircle className="w-3 h-3" />
+                    {f.status === "süresi_doldu" ? "Süresi doldu"
+                      : f.status === "yarım_kaldı" ? "Yarım kaldı (önceki nesil)"
+                      : "Kötü bitti"}
                   </span>
                 )}
               </div>

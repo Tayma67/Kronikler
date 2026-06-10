@@ -69,6 +69,10 @@ def spouse_care_tick(state, day):
     player = state["player"]
     spouse_id = player.get("spouse_id")
     if not spouse_id:
+        # Eş yok (ölüm/ayrılık): kriz bayrakları takılı kalmasın
+        flags = state.get("story_flags", {})
+        flags.pop("es_soguma_uyari", None)
+        flags.pop("es_kriz", None)
         return
     rels = state.setdefault("relationships", {})
     rel = rels.get(spouse_id, 50)
@@ -227,6 +231,15 @@ def apply_generation_bonuses(state, chosen_child_id=None):
     state["will"] = {"style": None, "heir_id": None}
     state["story_flags"].pop("es_soguma_uyari", None)
     state["story_flags"].pop("es_kriz", None)
+    # Ölen karakterin yarım kalan hikâyeleri yeni nesle taşınmaz:
+    # aktif yaylar "yarım kaldı" olarak kapanır (bayraklar kalıcıdır,
+    # Küllerin Sırrı gibi nesiller arası yaylar bayrak üzerinden sürer).
+    for q in state.get("story_quests", []):
+        if q.get("status") == "aktif":
+            q["status"] = "yarım_kaldı"
+    state["story_offers"] = []
+    # Yarım kalan çatışma da ölümle kapanır
+    state.pop("active_combat", None)
     return notes
 
 
