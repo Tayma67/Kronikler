@@ -240,7 +240,7 @@ function TabSeruven() {
   const p = state.player;
 
   /* ── Ekipman ── */
-  const equipment = p.equipment || {};
+  const equipment = useMemo(() => p.equipment || {}, [p.equipment]);
 
   /* ── Ekipman bonusları ── */
   const eqBonuses = useMemo(() => {
@@ -586,10 +586,11 @@ function TabDunya() {
 
   /* ── İlişkiler grouped ── */
   const grouped = useMemo(() => {
+    const npcs = state.world?.npcs || [];
     const out = {};
     for (const band of BANDS) out[band.id] = [];
     for (const [npcId, score] of Object.entries(state.relationships || {})) {
-      const npc  = findNpc(npcId);
+      const npc  = npcs.find(n => n.id === npcId);
       if (!npc) continue;
       const band = BANDS.find(b => b.test(score));
       if (band) out[band.id].push({ npc, score });
@@ -981,20 +982,15 @@ export default function CharacterSheet() {
   const [skillsData, setSkillsData] = useState(null);
 
   useEffect(() => {
-    if (!state) return;
     api.get("/game/skills")
       .then(({ data }) => setSkillsData(data))
       .catch(() => {});
   }, [state?.turn, state?.player?.age]);
 
-  if (!state) return null;
-
-  const p = state.player;
-
   const skills = useMemo(() => {
-    if (!skillsData || !p.perks) return [];
+    if (!skillsData || !state?.player?.perks) return [];
     const result = [];
-    for (const [skillKey, perkIds] of Object.entries(p.perks)) {
+    for (const [skillKey, perkIds] of Object.entries(state?.player?.perks || {})) {
       for (const pid of perkIds || []) {
         const meta = skillsData.perks?.[skillKey]?.find?.(pk => pk.id === pid);
         if (meta) result.push({
@@ -1006,7 +1002,11 @@ export default function CharacterSheet() {
       }
     }
     return result;
-  }, [p.perks, skillsData]);
+  }, [state?.player?.perks, skillsData]);
+
+  if (!state) return null;
+
+  const p = state.player;
 
   const handleNavigate = (tabId) => {
     const routes = {
