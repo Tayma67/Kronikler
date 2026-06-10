@@ -435,7 +435,9 @@ export default function GameLayout() {
       </main>
 
       {/* ── Mobile bottom nav ─────────────────────────────────────────────── */}
+      {/* KarakterEkrani kendi nav barını getiriyor; karakter sayfasında gizle */}
       <nav className="lg:hidden" style={{
+        display: isCharacterSheet ? 'none' : undefined,
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 30,
         display: 'flex', alignItems: 'center',
         height: 'calc(68px + env(safe-area-inset-bottom, 0px))',
