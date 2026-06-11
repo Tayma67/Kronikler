@@ -7,6 +7,8 @@ import {
 import { useGame } from '@/lib/GameContext';
 import LifeEventModal from '@/components/LifeEventModal';
 import StoryModal from '@/components/StoryModal';
+import WeekPlanCard from '@/components/WeekPlanCard';
+import HarvestModal from '@/components/HarvestModal';
 
 // ── SEASON → HERO IMAGE MAP ──────────────────────────────────────────────────
 const SEASON_IMAGE = {
@@ -309,6 +311,7 @@ export default function Dashboard() {
   // Popup zinciri: hafta ilerleyince önce life event, sonra hikâye popup'ı
   const [showLifeEvent, setShowLifeEvent] = useState(false);
   const [showStory, setShowStory] = useState(false);
+  const [harvest, setHarvest] = useState(null);   // R1: hafta sonu hasadı
 
   React.useEffect(() => {
     // Sayfa açılışında bekleyen popup'ları yokla (önceki oturumdan kalmış olabilir)
@@ -385,12 +388,16 @@ export default function Dashboard() {
     try {
       const result = await advance(1);
       if (result && !result.player?.dead) {
-        toast.success('1 hafta geçti', {
-          description: 'Yeni olaylar günlüğünde belirdi.',
-          duration: 2500,
-        });
-        // Önce life event popup'ı; o kapanınca hikâye popup'ı zincirlenir
-        setShowLifeEvent(true);
+        // R1: önce hafta sonu hasadı; kapanınca life event → hikâye zinciri
+        if (result.hafta_hasadi) {
+          setHarvest(result.hafta_hasadi);
+        } else {
+          toast.success('1 hafta geçti', {
+            description: 'Yeni olaylar günlüğünde belirdi.',
+            duration: 2500,
+          });
+          setShowLifeEvent(true);
+        }
       }
     } finally {
       setAdvancing(false);
@@ -563,6 +570,9 @@ export default function Dashboard() {
       <div style={{ flex: 1, overflow: 'hidden', paddingBottom: '10.5rem', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column' }}>
 
         {/* ── JOURNAL PANEL ─────────────────────────────────────────────── */}
+        {/* R1: Hafta Planı kartı (kompakt; dokununca 3 slotlu seçici) */}
+        <WeekPlanCard />
+
         <div style={{
           margin: '0.7rem 0.75rem 0',
           // Sabit Haftayı İlerle butonu + alt nav'ın üzerinde bitir:
@@ -721,6 +731,10 @@ export default function Dashboard() {
       </div>
 
       {/* ── EVENT & HİKÂYE POPUP ZİNCİRİ ──────────────────────────────────── */}
+      <HarvestModal
+        harvest={harvest}
+        onClose={() => { setHarvest(null); setShowLifeEvent(true); }}
+      />
       <LifeEventModal
         open={showLifeEvent}
         onClose={() => { setShowLifeEvent(false); setShowStory(true); }}

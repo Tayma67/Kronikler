@@ -1096,7 +1096,10 @@ def _build_hafta_hasadi(
     all_rumors: list[dict] = state.get("rumors", [])
     player      = state["player"]
     player_name = player.get("name", "")
-    player_loc  = player.get("location_id", "")
+    # Söylentiler kingdom_id taşır — oyuncunun krallığını lokasyonundan bul
+    _loc = next((l for l in state.get("world", {}).get("locations", [])
+                 if l.get("id") == player.get("location_id")), None)
+    player_loc  = _loc.get("kingdom_id") if _loc else None
 
     kulak_misafiri: dict
     if all_rumors:
