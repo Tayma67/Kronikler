@@ -1,654 +1,478 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useGame } from "@/lib/GameContext";
-import { api } from "@/lib/api";
+import { api, extractErrorMessage } from "@/lib/api";
 import { toast } from "sonner";
-import { useActionRedirect } from "@/hooks/useActionRedirect";
-import {
-  BookOpen, Dumbbell, Users, Star, Calendar,
-  ChevronRight, Lock, CheckCircle2, AlertCircle,
-  Sparkles, Trophy, Clock, Leaf
-} from "lucide-react";
 
-// ─── helpers ───────────────────────────────────────────────────────────────
-const LESSON_COLORS = {
-  din:       { border: "border-amber-900",  text: "text-amber-400",  bg: "bg-amber-950/40"  },
-  matematik: { border: "border-blue-900",   text: "text-blue-400",   bg: "bg-blue-950/40"   },
-  edebiyat:  { border: "border-purple-900", text: "text-purple-400", bg: "bg-purple-950/40" },
-  beden:     { border: "border-emerald-900",text: "text-emerald-400",bg: "bg-emerald-950/40"},
+/* ─────────────────────────────────────────────────────────────────
+   School.jsx — MEKTEP (mockup uygulaması)
+   Hero başlık → devam durumu → bu hafta dersleri (yuvarlak ikonlar)
+   → öğrenci toplulukları → sınav durumu → hocalarım → mevsimsel
+   etkinlikler. Mevcut school.py sistemine birebir bağlı.
+   ───────────────────────────────────────────────────────────────── */
+
+const C = {
+  bg: "#0A0A0A", card: "#111111", card2: "#16120A",
+  gold: "#C9A84C", goldBright: "#F0C040", goldDim: "#5A4010",
+  goldBorder: "rgba(201,168,76,0.22)", goldBg: "rgba(201,168,76,0.07)",
+  text: "#D8C8A0", textDim: "#7A7060", textMid: "#A09070",
+  red: "#C0392B", green: "#27AE60",
 };
 
-const CLUB_COLORS = {
-  medrese_korosu: { border: "border-amber-800",   text: "text-amber-300"  },
-  gures_kulubu:   { border: "border-red-800",     text: "text-red-300"    },
-  cirak_loncasi:  { border: "border-stone-600",   text: "text-stone-300"  },
+const TEACHERS = {
+  din:       { name: "Hoca Efendi",  icon: "🧔" },
+  matematik: { name: "Molla Hasan",  icon: "👳" },
+  edebiyat:  { name: "Derviş Kâtip", icon: "🧙" },
+  beden:     { name: "Pehlivan Ağa", icon: "💪" },
 };
 
-const SEASON_COLORS = {
-  "İlkbahar": "text-emerald-400",
-  "Yaz":      "text-amber-400",
-  "Sonbahar": "text-orange-400",
-  "Kış":      "text-sky-300",
+const SEASON_HERO = {
+  "İlkbahar": "/images/hero/cocuk_ilkbahar.jpg",
+  "Yaz":      "/images/hero/cocuk_yaz.jpg",
+  "Sonbahar": "/images/hero/cocuk_sonbahar.jpg",
+  "Kış":      "/images/hero/cocuk_kis.jpg",
 };
 
-function StatBar({ label, value, max = 10, color = "bg-amber-700" }) {
-  const w = Math.max(0, Math.min(100, (value / max) * 100));
+function GoldDivider() {
   return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className="text-stone-500 w-14 shrink-0">{label}</span>
-      <div className="flex-1 h-1 bg-stone-900 rounded-sm overflow-hidden">
-        <div className={`h-full ${color} transition-all`} style={{ width: `${w}%` }} />
-      </div>
-      <span className="text-stone-400 w-4 text-right">{value}</span>
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${C.goldDim} 60%, transparent)` }} />
+      <div style={{ width: 5, height: 5, background: C.gold, transform: "rotate(45deg)", margin: "0 8px", boxShadow: `0 0 4px ${C.gold}` }} />
+      <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${C.goldDim} 60%, transparent)` }} />
     </div>
   );
 }
 
-function XpBadge({ stat_xp, skill_xp }) {
-  const items = [
-    ...Object.entries(stat_xp || {}).map(([k, v]) => ({ label: k.slice(0,3).toUpperCase(), val: v, color: "text-amber-400" })),
-    ...Object.entries(skill_xp || {}).map(([k, v]) => ({ label: k.slice(0,3).toUpperCase(), val: v, color: "text-emerald-400" })),
-  ];
+function SectionTitle({ children, right }) {
   return (
-    <div className="flex flex-wrap gap-1 mt-1">
-      {items.map(i => (
-        <span key={i.label} className={`text-[10px] font-heading px-1.5 py-0.5 rounded-sm bg-stone-900 ${i.color}`}>
-          +{i.val} {i.label}
-        </span>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "16px 0 9px" }}>
+      <span style={{ fontFamily: "'Cinzel', serif", fontSize: 9.5, fontWeight: 700, letterSpacing: "0.2em", color: C.gold, flexShrink: 0 }}>
+        {children}
+      </span>
+      <div style={{ flex: 1 }}><GoldDivider /></div>
+      {right}
+    </div>
+  );
+}
+
+function Card({ children, style = {} }) {
+  return (
+    <div style={{
+      background: C.card, border: `1px solid ${C.goldBorder}`,
+      borderRadius: 10, padding: "12px", ...style,
+    }}>{children}</div>
+  );
+}
+
+function Stars({ value }) {
+  const n = Math.max(0, Math.min(5, Math.floor((value || 0) / 8) + (value > 0 ? 1 : 0)));
+  return (
+    <span style={{ letterSpacing: 1.5 }}>
+      {[...Array(5)].map((_, i) => (
+        <span key={i} style={{ color: i < n ? C.goldBright : "#3A3325", fontSize: 9 }}>★</span>
       ))}
-    </div>
+    </span>
   );
 }
 
-// ─── sub-sections ──────────────────────────────────────────────────────────
-
-function LessonsSection({ summary, onAction, busy }) {
-  const { lessons } = summary;
-  const canAttend = Object.values(lessons).some(l => l.can_attend_today && l.available);
-
-  return (
-    <section>
-      <div className="flex items-center gap-2 mb-3">
-        <BookOpen className="w-4 h-4 text-amber-500" />
-        <h2 className="font-heading text-stone-200 tracking-wider">DERSLER</h2>
-        {!canAttend && (
-          <span className="text-[10px] text-stone-600 border border-stone-800 px-2 py-0.5 rounded-sm font-heading">
-            Bu hafta işlendi
-          </span>
-        )}
-        {summary.exam_due_in <= 1 && (
-          <span className="text-[10px] text-red-400 border border-red-900 px-2 py-0.5 rounded-sm font-heading animate-pulse">
-            ⚠ Sınav yaklaşıyor!
-          </span>
-        )}
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        {Object.entries(lessons).map(([lid, lesson]) => {
-          const colors = LESSON_COLORS[lid] || LESSON_COLORS.din;
-          const locked = !lesson.available;
-          const doneToday = !lesson.can_attend_today;
-
-          return (
-            <div
-              key={lid}
-              className={`card-frame p-4 border ${colors.border} ${locked ? "opacity-50" : ""} ${colors.bg}`}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{lesson.icon}</span>
-                  <div>
-                    <div className={`font-heading text-sm ${colors.text}`}>{lesson.name}</div>
-                    <div className="text-[10px] text-stone-500">
-                      {lesson.count} ders işlendi
-                    </div>
-                  </div>
-                </div>
-                {locked
-                  ? <Lock className="w-4 h-4 text-stone-600" />
-                  : doneToday
-                  ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  : null
-                }
-              </div>
-
-              <p className="text-xs text-stone-400 mb-2">{lesson.description}</p>
-              <XpBadge stat_xp={lesson.stat_xp} skill_xp={lesson.skill_xp} />
-
-              {lesson.teacher_relation > 0 && (
-                <div className="mt-2 text-[10px] text-stone-500">
-                  Hoca ilişkisi: <span className="text-amber-400">{lesson.teacher_relation}</span>
-                </div>
-              )}
-
-              {!locked && !doneToday && (
-                <button
-                  onClick={() => onAction("lesson", lid)}
-                  disabled={busy}
-                  className={`mt-3 w-full py-2 font-heading text-[11px] tracking-widest btn-ember disabled:opacity-50 flex items-center justify-center gap-1`}
-                >
-                  <ChevronRight className="w-3 h-3" />
-                  Derse Katıl
-                </button>
-              )}
-              {locked && (
-                <div className="mt-3 text-[10px] text-stone-600 text-center font-heading">
-                  {lesson.min_age} YAŞ GEREKLİ
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function ClubsSection({ summary, onAction, busy }) {
-  const { clubs } = summary;
-  const myClubs = Object.entries(clubs).filter(([, c]) => c.joined).map(([id]) => id);
-
-  return (
-    <section>
-      <div className="flex items-center gap-2 mb-3">
-        <Users className="w-4 h-4 text-purple-400" />
-        <h2 className="font-heading text-stone-200 tracking-wider">ÖĞRENCİ TOPLULUKLARI</h2>
-        <span className="text-[10px] text-stone-600">{myClubs.length}/2 üyelik</span>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {Object.entries(clubs).map(([cid, club]) => {
-          const colors = CLUB_COLORS[cid] || { border: "border-stone-700", text: "text-stone-300" };
-          return (
-            <div key={cid} className={`card-frame p-4 border ${colors.border}`}>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-2xl">{club.icon}</span>
-                {club.joined && (
-                  <span className="text-[9px] font-heading tracking-wider text-emerald-400 border border-emerald-900 px-1.5 py-0.5 rounded-sm">
-                    ÜYE
-                  </span>
-                )}
-              </div>
-              <div className={`font-heading text-sm ${colors.text} mb-1`}>{club.name}</div>
-              <p className="text-[11px] text-stone-500 mb-2">{club.description}</p>
-
-              <div className="text-[10px] text-stone-600 mb-2">
-                Haftalık pasif XP:
-                <XpBadge
-                  stat_xp={club.weekly_xp?.stat_xp}
-                  skill_xp={club.weekly_xp?.skill_xp}
-                />
-              </div>
-
-              {club.joined ? (
-                <button
-                  onClick={() => onAction("leave_club", cid)}
-                  disabled={busy}
-                  className="w-full py-1.5 text-[10px] font-heading tracking-wider text-stone-500 hover:text-stone-300 border border-stone-800 hover:border-stone-600 transition-colors"
-                >
-                  Ayrıl
-                </button>
-              ) : club.can_join ? (
-                <button
-                  onClick={() => onAction("join_club", cid)}
-                  disabled={busy}
-                  className="w-full py-1.5 text-[10px] font-heading tracking-wider btn-ember disabled:opacity-50"
-                >
-                  Katıl
-                </button>
-              ) : (
-                <div className="text-[10px] text-stone-700 text-center font-heading mt-1">
-                  {club.joined ? "" : "Stat gereksinimi karşılanmıyor"}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function SeasonalSection({ summary, onAction, busy }) {
-  const { seasonal_activities, current_season } = summary;
-  const seasonColor = SEASON_COLORS[current_season] || "text-stone-300";
-
-  if (!seasonal_activities?.length) return null;
-
-  return (
-    <section>
-      <div className="flex items-center gap-2 mb-3">
-        <Leaf className="w-4 h-4 text-emerald-500" />
-        <h2 className="font-heading text-stone-200 tracking-wider">MEVSİMSEL AKTİVİTELER</h2>
-        <span className={`text-[11px] font-heading ${seasonColor}`}>{current_season}</span>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {seasonal_activities.map((act) => (
-          <div key={act.id} className="card-frame p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xl">{act.icon}</span>
-              <div className="font-heading text-sm text-stone-200">{act.name}</div>
-            </div>
-            <p className="text-xs text-stone-400 mb-2">{act.desc}</p>
-            <XpBadge stat_xp={act.stat_xp} skill_xp={act.skill_xp} />
-            {act.done_this_week ? (
-              <div className="mt-3 w-full py-2 font-heading text-[11px] tracking-widest text-center text-stone-500 border border-stone-700 rounded">
-                ✓ Bu hafta yapıldı
-              </div>
-            ) : (
-              <button
-                onClick={() => onAction("seasonal", act.id)}
-                disabled={busy}
-                className="mt-3 w-full py-2 font-heading text-[11px] tracking-widest btn-ghost-ash disabled:opacity-50"
-              >
-                Katıl →
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function SpecialEventBanner({ eventId, allEvents, onAction, busy, doneThistWeek }) {
-  const event = allEvents?.find(e => e.id === eventId);
+/* ── Ders olayı seçim modalı (iki adımlı ders akışı) ─────────────── */
+function LessonEventModal({ event, busy, onChoose }) {
   if (!event) return null;
   return (
-    <div className="card-frame p-4 border border-amber-700 bg-amber-950/20 animate-pulse-slow">
-      <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="w-4 h-4 text-amber-400" />
-        <span className="font-heading text-amber-400 text-sm tracking-wider">ÖZEL OLAY!</span>
-      </div>
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-2xl">{event.icon}</span>
-        <span className="font-heading text-stone-100">{event.name}</span>
-      </div>
-      <p className="text-xs text-stone-400 mb-3">{event.desc}</p>
-      {doneThistWeek ? (
-        <div className="w-full py-2 font-heading text-xs tracking-widest text-center text-stone-500 border border-stone-700 rounded">
-          ✓ Bu etkinliğe zaten katıldın
-        </div>
-      ) : (
-        <button
-          onClick={() => onAction("event", event.id)}
-          disabled={busy}
-          className="w-full py-2 font-heading text-xs tracking-widest btn-ember disabled:opacity-50"
-        >
-          Katıl!
-        </button>
-      )}
-    </div>
-  );
-}
-
-function ExamHistory({ history }) {
-  if (!history?.length) return null;
-  return (
-    <section>
-      <div className="flex items-center gap-2 mb-2">
-        <Trophy className="w-4 h-4 text-amber-500" />
-        <h2 className="font-heading text-stone-400 text-xs tracking-wider">SON SINAVLAR</h2>
-      </div>
-      <div className="space-y-1">
-        {history.slice().reverse().map((e, i) => (
-          <div key={i} className="flex items-center gap-2 text-xs text-stone-500">
-            {e.passed
-              ? <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
-              : <AlertCircle className="w-3 h-3 text-red-500 shrink-0" />
-            }
-            <span className="capitalize">{e.lesson}</span>
-            <span className={e.passed ? "text-emerald-500" : "text-red-400"}>
-              {e.passed ? "Geçti" : "Kaldı"}
-            </span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ─── lesson event modal ───────────────────────────────────────────────────
-function LessonEventModal({ event, lessonId, onChoice, busy }) {
-  const [chosen, setChosen] = useState(null);
-
-  if (!event) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/85 backdrop-blur">
-      <div className="card-frame max-w-md w-full border border-amber-800 bg-stone-950 overflow-hidden">
-        {/* Header */}
-        <div className="bg-amber-950/40 border-b border-amber-900/50 px-5 py-4">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xl">{event.icon}</span>
-            <span className="font-heading text-amber-400 text-xs tracking-widest">
-              {event.lesson_name.toUpperCase()} · DERS OLAYI
-            </span>
-          </div>
-        </div>
-
-        {/* Scene */}
-        <div className="px-5 py-5">
-          <p className="text-stone-200 text-sm leading-relaxed italic">
-            "{event.scene}"
-          </p>
-        </div>
-
-        {/* Choices */}
-        <div className="px-5 pb-5 space-y-2">
-          <div className="text-[10px] font-heading text-stone-500 tracking-widest mb-3">
-            NE YAPIYORSUN?
-          </div>
-          {event.choices.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => {
-                setChosen(c.id);
-                onChoice(event.id, c.id);
-              }}
-              disabled={busy || chosen !== null}
-              className={`w-full text-left px-4 py-3 border rounded-sm transition-all
-                ${chosen === c.id
-                  ? "border-amber-600 bg-amber-950/30 text-amber-300"
-                  : chosen !== null
-                  ? "border-stone-800 text-stone-600 opacity-50"
-                  : "border-stone-700 hover:border-amber-700 hover:bg-amber-950/20 text-stone-300 hover:text-stone-100"
-                }
-                disabled:cursor-not-allowed
-              `}
-            >
-              <div className="font-heading text-[11px] tracking-wider mb-0.5">
-                {c.label}
-              </div>
-              {c.hint && (
-                <div className="text-[10px] text-stone-500">{c.hint}</div>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {busy && (
-          <div className="px-5 pb-4 text-center text-xs text-stone-500 font-heading animate-pulse">
-            Sonuç bekleniyor…
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── result toast modal ────────────────────────────────────────────────────
-function ResultModal({ result, onClose }) {
-  if (!result) return null;
-  const { result: r } = result;
-  const evRes = r.event_resolved;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur">
-      <div className="card-frame p-6 max-w-sm w-full border border-amber-800 bg-stone-950">
-        <div className="text-center mb-4">
-          <div className="text-3xl mb-2">
-            {r.lesson ? "📖" : r.activity ? "🌿" : r.event ? "✨" : "✦"}
-          </div>
-          <div className="font-heading text-amber-400 text-lg">
-            {r.lesson || r.activity || r.event}
-          </div>
-        </div>
-
-        <p className="text-stone-300 text-sm text-center italic mb-4">"{r.flavor}"</p>
-
-        {/* Olay sonucu varsa XP'yi birleşik göster */}
-        {evRes && (
-          <div className="mb-3 p-3 bg-stone-900/60 border border-stone-800 rounded-sm">
-            <div className="text-[10px] text-stone-500 font-heading mb-1.5">DERS OLAYI XP</div>
-            <XpBadge stat_xp={evRes.xp_gained?.stat_xp} skill_xp={evRes.xp_gained?.skill_xp} />
-            {evRes.teacher_rel_delta !== 0 && (
-              <div className={`mt-1.5 text-[10px] font-heading ${evRes.teacher_rel_delta > 0 ? "text-amber-400" : "text-red-400"}`}>
-                Hoca ilişkisi {evRes.teacher_rel_delta > 0 ? `+${evRes.teacher_rel_delta}` : evRes.teacher_rel_delta}
-              </div>
-            )}
-          </div>
-        )}
-
-        {r.xp_gained && (
-          <div className="mb-4">
-            <div className="text-[10px] text-stone-500 font-heading mb-1">DERS TEMEL XP</div>
-            <XpBadge stat_xp={r.xp_gained.stat_xp} skill_xp={r.xp_gained.skill_xp} />
-          </div>
-        )}
-
-        {(r.money_bonus > 0 || evRes?.money_bonus > 0) && (
-          <div className="text-center text-amber-400 font-heading text-sm mb-3">
-            +{r.money_bonus || evRes?.money_bonus} Altın 💰
-          </div>
-        )}
-
-        {r.leveled?.length > 0 && (
-          <div className="mb-4 text-center">
-            {r.leveled.map((l, i) => (
-              <div key={i} className="text-emerald-400 font-heading text-xs">⬆ {l} seviye atladı!</div>
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 60, display: "flex",
+      alignItems: "center", justifyContent: "center", padding: 16,
+      background: "rgba(0,0,0,0.8)",
+    }}>
+      <div style={{
+        width: "100%", maxWidth: 360, borderRadius: 14, overflow: "hidden",
+        background: "linear-gradient(160deg, #1c1814, #111)",
+        border: `1px solid ${C.gold}66`,
+      }}>
+        <div style={{ height: 4, background: `linear-gradient(90deg, ${C.goldDim}, ${C.gold}, ${C.goldDim})` }} />
+        <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ textAlign: "center", fontSize: 34 }}>{event.icon || "🏫"}</div>
+          <div style={{
+            fontFamily: "'Cinzel', serif", fontSize: 13, fontWeight: 700,
+            color: C.goldBright, textAlign: "center",
+          }}>{event.title || "Mektepte Bir An"}</div>
+          <p style={{
+            fontFamily: "'Lora', serif", fontSize: 12, color: C.text,
+            textAlign: "center", lineHeight: 1.5, fontStyle: "italic", margin: 0,
+          }}>{event.text || event.description}</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            {(event.choices || []).map((c) => (
+              <button key={c.id} disabled={busy} onClick={() => onChoose(c.id)}
+                style={{
+                  padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                  background: C.goldBg, border: `1px solid ${C.goldBorder}`,
+                  color: C.text, fontFamily: "'Lora', serif", fontSize: 12,
+                  textAlign: "left",
+                }}>{c.text}</button>
             ))}
           </div>
-        )}
-
-        {r.exam_result && (
-          <div className={`text-center p-3 rounded-sm mb-4 ${r.exam_result.passed ? "bg-emerald-950 border border-emerald-800" : "bg-red-950 border border-red-900"}`}>
-            <div className={`font-heading text-sm ${r.exam_result.passed ? "text-emerald-400" : "text-red-400"}`}>
-              {r.exam_result.passed ? "SINAV BAŞARILI! 🎉" : "SINAV BAŞARISIZ"}
-            </div>
-            <div className="text-xs text-stone-400 mt-1 italic">"{r.exam_result.flavor}"</div>
-          </div>
-        )}
-
-        <button onClick={onClose} className="w-full btn-ember py-2 font-heading text-xs tracking-widest">
-          Devam
-        </button>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── main page ─────────────────────────────────────────────────────────────
+/* ═══════════════════ ANA SAYFA ═══════════════════ */
 export default function School() {
-  const { state } = useGame();
-  const withRedirect = useActionRedirect("Mektep");
+  const { state, setState } = useGame() || {};
   const [summary, setSummary] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState(null);
-  const [lessonEvent, setLessonEvent] = useState(null); // pending lesson event
-  const [tab, setTab] = useState("dersler"); // dersler | kulüpler | aktiviteler
+  const [lessonEvent, setLessonEvent] = useState(null); // {lessonId, event}
 
-  const player = state?.player;
-  const isChild = player?.is_child;
-
-  const loadSummary = () => {
+  const refresh = useCallback(() => {
     api.get("/game/school").then(({ data }) => setSummary(data)).catch(() => {});
-  };
+  }, []);
+  useEffect(() => { refresh(); }, [refresh]);
 
-  useEffect(() => { loadSummary(); }, [state?.turn]);
+  const player = state?.player || {};
+  const age = player.age ?? 7;
+  const isStudent = age < 13;
+  const season = summary?.current_season || "Yaz";
+  const locName = state?.world?.locations?.find((l) => l.id === player.location_id)?.name || "";
 
-  const onAction = async (type, id) => {
+  const act = async (fn, refreshAfter = true) => {
     setBusy(true);
     try {
-      if (type === "lesson") {
-        // Step 1: attempt lesson — may return event that needs a choice
-        const res = await api.post(`/game/school/lesson/${id}`);
-        if (res?.data?.result?.needs_event_choice) {
-          // Pause — show event modal, don't redirect yet
-          setLessonEvent({ ...res.data.result.lesson_event, _lessonId: id });
-          setBusy(false);
-          return;
-        }
-        // No event — normal redirect flow
-        await withRedirect(async () => {
-          if (res?.data?.result) setResult(res.data);
-          loadSummary();
-          return res?.data ?? null;
-        });
-      } else {
-        await withRedirect(async () => {
-          let res;
-          if (type === "join_club")  res = await api.post(`/game/school/club/${id}/join`);
-          else if (type === "leave_club") res = await api.post(`/game/school/club/${id}/leave`);
-          else if (type === "seasonal")   res = await api.post(`/game/school/seasonal/${id}`);
-          else if (type === "event")      res = await api.post(`/game/school/event/${id}`);
-          if (res?.data?.result) setResult(res.data);
-          loadSummary();
-          return res?.data ?? null;
-        });
+      const res = await fn();
+      if (res?.data?.state) setState(res.data.state);
+      if (refreshAfter) refresh();
+      return res;
+    } catch (e) {
+      toast.error(extractErrorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const attendLesson = (id) =>
+    act(async () => {
+      const res = await api.post(`/game/school/lesson/${id}`);
+      if (res?.data?.result?.needs_event_choice) {
+        setLessonEvent({ lessonId: id, event: res.data.result.event });
+      } else if (res?.data?.result?.flavor) {
+        toast.success(res.data.result.flavor, { duration: 3500 });
       }
-    } catch (e) {
-      toast.error(e?.response?.data?.detail || "Bir hata oluştu.");
-    } finally {
-      setBusy(false);
-    }
-  };
+      return res;
+    });
 
-  const onLessonChoice = async (eventId, choiceId) => {
-    if (!lessonEvent) return;
-    const lessonId = lessonEvent._lessonId;
-    setBusy(true);
-    try {
-      await withRedirect(async () => {
-        const res = await api.post(`/game/school/lesson/${lessonId}/choice`, {
-          event_id: eventId,
-          choice_id: choiceId,
-        });
-        setLessonEvent(null);
-        if (res?.data?.result) setResult(res.data);
-        loadSummary();
-        return res?.data ?? null;
+  const chooseLessonEvent = (choiceId) =>
+    act(async () => {
+      const res = await api.post(`/game/school/lesson/${lessonEvent.lessonId}/choice`, {
+        event_id: lessonEvent.event.id, choice_id: choiceId,
       });
-    } catch (e) {
-      toast.error(e?.response?.data?.detail || "Bir hata oluştu.");
       setLessonEvent(null);
-    } finally {
-      setBusy(false);
-    }
-  };
+      if (res?.data?.result?.flavor) toast.success(res.data.result.flavor, { duration: 3500 });
+      return res;
+    });
 
-  if (!state) return null;
+  const clubAction = (id, joined) =>
+    act(() => api.post(`/game/school/club/${id}/${joined ? "leave" : "join"}`));
 
-  if (!isChild) {
+  const doSeasonal = (id) =>
+    act(async () => {
+      const res = await api.post(`/game/school/seasonal/${id}`);
+      if (res?.data?.result?.flavor) toast.success(res.data.result.flavor, { duration: 3000 });
+      return res;
+    });
+
+  /* ── Mezun ekranı ── */
+  if (!isStudent) {
     return (
-      <div className="space-y-4 rise-in">
-        <div>
-          <div className="label-tiny">Çocukluk</div>
-          <h1 className="font-heading text-3xl text-stone-100">Mektep</h1>
-        </div>
-        <div className="card-frame p-6 text-center text-stone-500">
-          <BookOpen className="w-8 h-8 mx-auto mb-3 text-stone-700" />
-          <p className="font-heading text-stone-400">13 yaşını geçtin.</p>
-          <p className="text-sm mt-1">Mektep günlerin geride kaldı.</p>
-        </div>
+      <div style={{ minHeight: "100%", background: C.bg, maxWidth: 480, margin: "0 auto", padding: "40px 16px" }}>
+        <Card style={{ textAlign: "center", padding: "36px 20px" }}>
+          <div style={{ fontSize: 34, marginBottom: 10 }}>🎓</div>
+          <div style={{ fontFamily: "'Cinzel', serif", fontSize: 13, fontWeight: 700, color: C.gold, letterSpacing: "0.1em" }}>
+            MEKTEP YILLARIN GERİDE KALDI
+          </div>
+          <p style={{ fontFamily: "'Lora', serif", fontSize: 11.5, color: C.textDim, lineHeight: 1.6, marginTop: 8 }}>
+            Çocukluğun mektep sıralarında geçti; öğrendiklerin hâlâ seninle.
+            Şimdi sıra hayat mektebinde.
+          </p>
+          {summary?.total_lessons > 0 && (
+            <div style={{ marginTop: 12, fontFamily: "'Cinzel', serif", fontSize: 10, color: C.textMid }}>
+              Toplam {summary.total_lessons} ders gördün ·{" "}
+              {(summary.exam_history || []).filter((e) => e.passed).length} sınav geçtin
+            </div>
+          )}
+        </Card>
       </div>
     );
   }
 
-  const TABS = [
-    { id: "dersler",    label: "Dersler",    icon: BookOpen  },
-    { id: "kulüpler",   label: "Kulüpler",   icon: Users     },
-    { id: "aktiviteler",label: "Aktiviteler",icon: Leaf      },
-  ];
+  if (!summary) {
+    return (
+      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", background: C.bg }}>
+        <span style={{ color: C.textDim, fontFamily: "'Cinzel', serif", fontSize: 10, letterSpacing: "0.2em" }}>MEKTEP AÇILIYOR…</span>
+      </div>
+    );
+  }
+
+  const lessons = Object.entries(summary.lessons || {});
+  const clubs = Object.entries(summary.clubs || {});
+  const grade = Math.max(1, age - 6);
+  const examDue = summary.exam_due_in ?? 4;
+  const examProgress = ((4 - examDue) / 4) * 100;
+  const examHist = (summary.exam_history || []).slice(-3);
 
   return (
-    <div className="space-y-6 rise-in">
-      {/* header */}
-      <div>
-        <div className="label-tiny">Çocukluk</div>
-        <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-          <BookOpen className="w-7 h-7 text-amber-500" /> Mektep
-        </h1>
-        <p className="text-stone-400 text-sm mt-1">
-          {player.age} yaşındasın — dersler, topluluklar ve mevsimsel aktiviteler seni şekillendiriyor.
-        </p>
-      </div>
+    <div style={{ minHeight: "100%", background: C.bg, maxWidth: 480, margin: "0 auto", paddingBottom: "6.5rem" }}>
 
-      {/* stats summary */}
-      {summary && (
-        <div className="card-frame p-4">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-            <StatBar label="STR"  value={player.stats?.strength    || 1} color="bg-red-700" />
-            <StatBar label="INT"  value={player.stats?.intelligence || 1} color="bg-blue-700" />
-            <StatBar label="CHA"  value={player.stats?.charisma     || 1} color="bg-amber-700" />
-            <StatBar label="STA"  value={player.stats?.stamina      || 1} color="bg-emerald-700" />
-          </div>
-          <div className="mt-2 flex items-center gap-3 text-[10px] text-stone-500 font-heading">
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              Toplam {summary.total_lessons} ders
-            </span>
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {summary.exam_due_in > 0 ? `${summary.exam_due_in} haftada sınav` : "Bu hafta sınav!"}
-            </span>
-            <span className={`flex items-center gap-1 ${SEASON_COLORS[summary.current_season]}`}>
-              <Leaf className="w-3 h-3" />
-              {summary.current_season}
-            </span>
+      {/* ── HERO ── */}
+      <div style={{ position: "relative", height: 150, overflow: "hidden" }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          background: `url(${SEASON_HERO[season]}) center 30% / cover no-repeat, #16120A`,
+          filter: "brightness(0.55) saturate(0.9)",
+        }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(10,10,10,0.25) 0%, rgba(10,10,10,0.92) 95%)" }} />
+        <div style={{ position: "absolute", left: 14, bottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 9,
+            background: "linear-gradient(135deg, #2A1A08, #1A1008)",
+            border: `1.5px solid ${C.gold}`, display: "flex",
+            alignItems: "center", justifyContent: "center", fontSize: 19,
+            boxShadow: `0 0 14px rgba(201,168,76,0.3)`,
+          }}>🏫</div>
+          <div>
+            <div style={{
+              fontFamily: "'Cinzel', serif", fontSize: 15, fontWeight: 700,
+              color: C.goldBright, letterSpacing: "0.06em",
+              textShadow: "0 0 16px rgba(201,168,76,0.4)",
+            }}>{(locName ? `${locName} Mektebi` : "Mektep").toUpperCase()}</div>
+            <div style={{ fontFamily: "'Lora', serif", fontSize: 10, color: C.textMid, fontStyle: "italic" }}>
+              {grade}. Sınıf Öğrencisi
+            </div>
           </div>
         </div>
-      )}
-
-      {/* pending special event banner */}
-      {summary?.pending_special_event && (
-        <SpecialEventBanner
-          eventId={summary.pending_special_event}
-          allEvents={summary.special_events}
-          onAction={onAction}
-          busy={busy}
-          doneThistWeek={summary.special_event_done_this_week}
-        />
-      )}
-
-      {/* tab nav */}
-      <div className="flex border-b border-stone-800">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 font-heading text-xs tracking-wider border-b-2 transition-colors ${
-              tab === t.id
-                ? "border-amber-600 text-amber-400"
-                : "border-transparent text-stone-500 hover:text-stone-300"
-            }`}
-          >
-            <t.icon className="w-3.5 h-3.5" />
-            {t.label}
-          </button>
-        ))}
       </div>
 
-      {/* tab content */}
-      {summary && (
-        <>
-          {tab === "dersler" && (
-            <LessonsSection summary={summary} onAction={onAction} busy={busy} />
-          )}
-          {tab === "kulüpler" && (
-            <ClubsSection summary={summary} onAction={onAction} busy={busy} />
-          )}
-          {tab === "aktiviteler" && (
-            <>
-              <SeasonalSection summary={summary} onAction={onAction} busy={busy} />
-              <ExamHistory history={summary.exam_history} />
-            </>
-          )}
-        </>
-      )}
+      <div style={{ padding: "12px 12px 0" }}>
 
-      {/* lesson event modal */}
-      {lessonEvent && (
-        <LessonEventModal
-          event={lessonEvent}
-          lessonId={lessonEvent._lessonId}
-          onChoice={onLessonChoice}
-          busy={busy}
-        />
-      )}
+        {/* ── DEVAM DURUMU ── */}
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
+            <span style={{ fontFamily: "'Cinzel', serif", fontSize: 8.5, letterSpacing: "0.2em", color: C.textDim }}>DEVAM DURUMU</span>
+            <span style={{ fontFamily: "'Cinzel', serif", fontSize: 10, fontWeight: 700, color: C.gold }}>
+              {summary.total_lessons} DERS
+            </span>
+          </div>
+          <div style={{ height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 5, overflow: "hidden" }}>
+            <div style={{
+              width: `${examProgress}%`, height: "100%",
+              background: `linear-gradient(90deg, ${C.goldDim}, ${C.gold})`,
+              boxShadow: `0 0 8px ${C.gold}66`, transition: "width 0.5s",
+            }} />
+          </div>
+          <div style={{ marginTop: 6, fontFamily: "'Lora', serif", fontSize: 9.5, color: C.textDim, display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ color: C.goldBright }}>⏳</span>
+            SINAVA: <span style={{ color: C.textMid, fontWeight: 600 }}>
+              {examDue === 0 ? "bu hafta!" : `${examDue} hafta kaldı`}
+            </span>
+          </div>
+        </Card>
 
-      {/* result modal */}
-      {result && (
-        <ResultModal result={result} onClose={() => { setResult(null); loadSummary(); }} />
-      )}
+        {/* ── BU HAFTA DERSLERİ ── */}
+        <SectionTitle>BU HAFTA DERSLERİ</SectionTitle>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+          {lessons.map(([id, l]) => {
+            const locked = !l.available;
+            const spent = !l.can_attend_today;
+            const disabled = busy || locked || spent;
+            return (
+              <button key={id} disabled={disabled} onClick={() => attendLesson(id)}
+                style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                  background: "transparent", border: "none", cursor: disabled ? "default" : "pointer",
+                  opacity: locked ? 0.35 : spent ? 0.55 : 1, padding: 0,
+                }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: "50%",
+                  background: "radial-gradient(circle at 35% 30%, #2A1F0C, #14100A)",
+                  border: `2px solid ${spent || locked ? C.goldBorder : C.gold}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 22,
+                  boxShadow: spent || locked ? "none" : `0 0 14px rgba(201,168,76,0.3)`,
+                }}>{l.icon}</div>
+                <span style={{
+                  fontFamily: "'Cinzel', serif", fontSize: 7.5, fontWeight: 700,
+                  letterSpacing: "0.08em", color: spent || locked ? C.textDim : C.text,
+                  textAlign: "center", lineHeight: 1.3, textTransform: "uppercase",
+                }}>{l.name.replace(" & ", " &\n")}</span>
+                {locked && <span style={{ fontSize: 7, color: C.textDim }}>{l.min_age} yaş</span>}
+              </button>
+            );
+          })}
+        </div>
+        {lessons.some(([, l]) => !l.can_attend_today) && (
+          <p style={{ fontFamily: "'Lora', serif", fontSize: 9, color: C.textDim, fontStyle: "italic", textAlign: "center", margin: "8px 0 0" }}>
+            Bu haftanın dersi alındı — ders zamanı ilerletir, haftaya yeni ders.
+          </p>
+        )}
+
+        {/* ── ÖĞRENCİ TOPLULUKLARI ── */}
+        <SectionTitle>ÖĞRENCİ TOPLULUKLARI</SectionTitle>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+          {clubs.map(([id, c]) => {
+            const joined = c.joined;
+            const canJoin = c.can_join;
+            return (
+              <button key={id} disabled={busy || (!joined && !canJoin)}
+                onClick={() => clubAction(id, joined)}
+                style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                  background: joined ? "rgba(201,168,76,0.1)" : C.card,
+                  border: `1px solid ${joined ? C.gold : C.goldBorder}`,
+                  borderRadius: 10, padding: "12px 6px",
+                  cursor: "pointer", opacity: !joined && !canJoin ? 0.45 : 1,
+                  position: "relative",
+                }}>
+                {joined && (
+                  <span style={{
+                    position: "absolute", top: 5, right: 5,
+                    fontFamily: "'Cinzel', serif", fontSize: 6.5, fontWeight: 700,
+                    letterSpacing: "0.12em", color: "#0A0A0A",
+                    background: C.gold, borderRadius: 3, padding: "1.5px 4px",
+                  }}>ÜYE</span>
+                )}
+                <span style={{ fontSize: 21 }}>{c.icon}</span>
+                <span style={{
+                  fontFamily: "'Cinzel', serif", fontSize: 8, fontWeight: 700,
+                  letterSpacing: "0.06em", color: joined ? C.goldBright : C.text,
+                  textAlign: "center", lineHeight: 1.3, textTransform: "uppercase",
+                }}>{c.name}</span>
+                <span style={{ fontFamily: "'Lora', serif", fontSize: 7.5, color: C.textDim, textAlign: "center" }}>
+                  {joined ? "ayrılmak için dokun"
+                    : canJoin ? "katılmak için dokun"
+                    : `${c.join_req.stat === "charisma" ? "Karizma" : c.join_req.stat === "strength" ? "Güç" : "Zeka"} ${c.join_req.min_val}+ gerek`}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── SINAV DURUMU ── */}
+        <SectionTitle>SINAV DURUMU</SectionTitle>
+        <Card>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+            {[0, 1, 2].map((i) => {
+              const ex = examHist[i];
+              const lessonMeta = ex ? summary.lessons?.[ex.lesson] : null;
+              return (
+                <div key={i} style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                  padding: "9px 4px", borderRadius: 8,
+                  background: C.card2, border: `1px solid ${C.goldBorder}`,
+                  opacity: ex ? 1 : 0.35,
+                }}>
+                  <span style={{ fontFamily: "'Cinzel', serif", fontSize: 7.5, color: C.textDim, letterSpacing: "0.1em" }}>
+                    {ex ? (lessonMeta?.icon || "📜") : `${i + 1}. SINAV`}
+                  </span>
+                  {ex ? (
+                    <>
+                      <span style={{ fontSize: 15 }}>{ex.passed ? "✅" : "❌"}</span>
+                      <span style={{
+                        fontFamily: "'Cinzel', serif", fontSize: 8, fontWeight: 700,
+                        color: ex.passed ? C.green : C.red, letterSpacing: "0.1em",
+                      }}>{ex.passed ? "GEÇTİ" : "KALDI"}</span>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: 13, color: C.textDim }}>—</span>
+                  )}
+                </div>
+              );
+            })}
+            {/* Sıradaki sınav */}
+            <div style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+              padding: "9px 4px", borderRadius: 8,
+              background: "rgba(201,168,76,0.08)", border: `1px dashed ${C.gold}88`,
+            }}>
+              <span style={{ fontFamily: "'Cinzel', serif", fontSize: 7.5, color: C.gold, letterSpacing: "0.1em" }}>SIRADAKİ</span>
+              <span style={{ fontSize: 15 }}>⏳</span>
+              <span style={{ fontFamily: "'Cinzel', serif", fontSize: 7, fontWeight: 700, color: C.goldBright, textAlign: "center", lineHeight: 1.4 }}>
+                {examDue === 0 ? "BU HAFTA" : `${examDue} HAFTA SONRA`}
+              </span>
+            </div>
+          </div>
+        </Card>
+
+        {/* ── HOCALARIM ── */}
+        <SectionTitle>HOCALARIM</SectionTitle>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          {lessons.filter(([, l]) => l.available).map(([id, l]) => {
+            const t = TEACHERS[id] || { name: "Hoca", icon: "🧔" };
+            const rel = l.teacher_relation || 0;
+            return (
+              <div key={id} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                background: C.card, border: `1px solid ${C.goldBorder}`,
+                borderRadius: 10, padding: "9px 11px",
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                  background: "radial-gradient(circle at 35% 30%, #2A1F0C, #14100A)",
+                  border: `1.5px solid ${C.goldBorder}`,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17,
+                }}>{t.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "'Cinzel', serif", fontSize: 10.5, fontWeight: 700, color: C.text }}>
+                    {t.name}
+                  </div>
+                  <div style={{ fontFamily: "'Lora', serif", fontSize: 8.5, color: C.textDim }}>
+                    {l.name} · {l.count} ders
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                  <Stars value={rel} />
+                  <span style={{ fontFamily: "'Cinzel', serif", fontSize: 8.5, color: rel >= 0 ? C.green : C.red }}>
+                    İlişki {rel >= 0 ? "+" : ""}{rel}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── MEVSİMSEL ETKİNLİKLER ── */}
+        {(summary.seasonal_activities || []).length > 0 && (
+          <>
+            <SectionTitle right={
+              <span style={{ fontFamily: "'Cinzel', serif", fontSize: 7.5, color: C.textDim, letterSpacing: "0.12em" }}>
+                {season.toUpperCase()}
+              </span>
+            }>MEVSİMSEL ETKİNLİKLER</SectionTitle>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              {summary.seasonal_activities.map((a) => (
+                <button key={a.id} disabled={busy || a.done_this_week}
+                  onClick={() => doSeasonal(a.id)}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                    background: a.done_this_week ? C.card2 : C.card,
+                    border: `1px solid ${a.done_this_week ? C.goldBorder : C.gold}66`,
+                    borderRadius: 10, padding: "11px 6px", cursor: "pointer",
+                    opacity: a.done_this_week ? 0.5 : 1,
+                  }}>
+                  <span style={{ fontSize: 19 }}>{a.icon}</span>
+                  <span style={{
+                    fontFamily: "'Cinzel', serif", fontSize: 7.5, fontWeight: 700,
+                    color: C.text, textAlign: "center", lineHeight: 1.3,
+                    letterSpacing: "0.05em", textTransform: "uppercase",
+                  }}>{a.name}</span>
+                  <span style={{ fontFamily: "'Lora', serif", fontSize: 7, color: C.textDim }}>
+                    {a.done_this_week ? "✓ yapıldı" : Object.entries(a.stat_xp || {}).map(([k, v]) => `+${v} ${k.slice(0, 5)}`).join(" ")}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      <LessonEventModal event={lessonEvent?.event} busy={busy} onChoose={chooseLessonEvent} />
     </div>
   );
 }

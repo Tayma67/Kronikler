@@ -29,6 +29,12 @@ from inheritance import begin_inheritance, get_heir_options, has_heir
 from game_engine import (
     build_action_result, get_suggested_actions,
     snapshot_player, diff_snapshots, check_state_triggers,
+    # R1 Hafta Planı (GDD v7)
+    HAFTA_PLANI_SECENEKLERI, get_default_hafta_plani,
+    validate_hafta_plani, get_hafta_plani_state,
+    hafta_plani_beklenti_metni,
+    # R9 Hafta Sonu Hasadı (GDD v7)
+    _build_hafta_hasadi,
 )
 from npc_interactions import (
     do_compliment, do_gift, do_give_money, do_insult,
@@ -497,7 +503,15 @@ def build_game_router(db):
         if not device_id:
             # Başlık boş geldi — rastgele ID üret (sabit string ASLA)
             device_id = str(uuid.uuid4())
-        return {"_id": device_id}
+        # Faz 6A: istek dili (X-Lang) — contextvar async-güvenli
+        from locales import set_language
+        set_language(request.headers.get("X-Lang", "tr").strip().lower())
+        # Faz 5E: çoklu kayıt — slot 1 varsayılan, 2-3 ayrı kayıt alanı
+        slot = request.headers.get("X-Save-Slot", "1").strip()
+        if slot not in ("1", "2", "3"):
+            slot = "1"
+        user_id = device_id if slot == "1" else f"{device_id}#s{slot}"
+        return {"_id": user_id}
 
     # ---------- core ----------
 
@@ -538,6 +552,13 @@ def build_game_router(db):
         # Unlock starting quests
         unlock_age_appropriate(state)
         refresh_opportunities(state)
+        # Faz 5A: "İlk Yıl" tutorial yayını otomatik başlat (atlanabilir)
+        try:
+            from quest_engine import ensure_story_state, start_arc
+            ensure_story_state(state)
+            start_arc(state, "ilk_yil", 0)
+        except Exception:
+            pass
         _push_event(state, 0, "doğum",
                     f"{player['name']} doğdu. Anne: {mother['name']}, Baba: {father['name']}.")
         await _save_state(db, user["_id"], state)
@@ -558,10 +579,59 @@ def build_game_router(db):
         await db.game_states.delete_one({"user_id": user["_id"]})
         return {"ok": True}
 
+    # ── R1 Hafta Planı (GDD v7, Bölüm I R1 — Parça 1.1) ────────────
+    @router.get("/hafta-plani")
+    async def get_hafta_plani(user: dict = Depends(get_current_user)):
+        """
+        Mevcut hafta planını + tüm seçenekleri + beklenti metnini döner.
+        Frontend dashboard kartı için kullanılır.
+        """
+        state = await _load_state(db, user["_id"])
+        plan = get_hafta_plani_state(state)
+        beklenti = hafta_plani_beklenti_metni(plan)
+        return {
+            "mevcut_plan": plan,
+            "beklenti": beklenti,
+            "secenekler": HAFTA_PLANI_SECENEKLERI,
+        }
+
+    @router.post("/hafta-plani")
+    async def set_hafta_plani(
+        body: dict = Body(...),
+        user: dict = Depends(get_current_user),
+    ):
+        """
+        Oyuncunun hafta planını günceller.
+        Body örneği: {"is": "fazla_mesai", "sosyal": "hamam", "kisisel": "dinlen"}
+        Geçersiz seçim 400 döner.
+        """
+        plan = {
+            "is":      body.get("is", "calis"),
+            "sosyal":  body.get("sosyal", "pazar"),
+            "kisisel": body.get("kisisel", "dua_okuma"),
+        }
+        gecerli, hata = validate_hafta_plani(plan)
+        if not gecerli:
+            raise HTTPException(status_code=400, detail=hata)
+
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        state["player"]["hafta_plani"] = plan
+        await _save_state(db, user["_id"], state)
+
+        beklenti = hafta_plani_beklenti_metni(plan)
+        return {
+            "ok": True,
+            "mevcut_plan": plan,
+            "beklenti": beklenti,
+        }
+
     @router.post("/advance")
     async def advance(weeks: int = 1, user: dict = Depends(get_current_user)):
         state = await _load_state(db, user["_id"])
         _require_alive(state)
+        # R9 Hafta Sonu Hasadı: advance öncesi turn'ü ve snapshot'ı sakla
+        turn_before = state.get("turn", 0)
         before = snapshot_player(state["player"])
         advance_time(state, weeks=max(1, min(weeks, 52)))
         refresh_opportunities(state)
@@ -578,11 +648,14 @@ def build_game_router(db):
             ev for ev in get_active_world_events(state)
             if ev.get("started_day") == current_turn
         ]
+        # R9 Hafta Sonu Hasadı (GDD v7 R9): manşet + kazançlar + kulak misafiri
+        hafta_hasadi = _build_hafta_hasadi(state, before, after, turn_before)
         await _save_state(db, user["_id"], state)
         result = _decorate(state)
         result["advance_diff"] = diff
         result["triggers"] = triggers
         result["suggestions"] = suggestions
+        result["hafta_hasadi"] = hafta_hasadi
         if caravan_event:
             result["caravan_event"] = caravan_event
         if new_world_events:

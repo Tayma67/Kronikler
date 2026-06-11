@@ -5,7 +5,7 @@ import {
   Scroll, Flame, Shield, Castle, Users,
   Briefcase, Sword, Hourglass, Loader2,
   Zap, Newspaper, GraduationCap, ArrowUpDown,
-  GitBranch, Coffee, X, Heart, Apple,
+  GitBranch, Coffee, X, Heart, Apple, Home, BookOpen, Crown, Settings,
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import InheritanceScreen from "@/pages/InheritanceScreen";
@@ -30,6 +30,10 @@ const SECONDARY_NAV = [
   { to: "/oyun/npcler",          label: "Yakınlar",     icon: Users,          testid: "nav-npcs"        },
   { to: "/oyun/suc",             label: "Gölge",        icon: Sword,          testid: "nav-crime"       },
   { to: "/oyun/ticaret",         label: "Pazar",        icon: ArrowUpDown,    testid: "nav-trade"       },
+  { to: "/oyun/mulkler",         label: "Mülkler",      icon: Home,           testid: "nav-properties"  },
+  { to: "/oyun/hikayeler",       label: "Hikâyeler",    icon: BookOpen,       testid: "nav-stories"     },
+  { to: "/oyun/hanedan",         label: "Hanedan",      icon: Crown,          testid: "nav-legacy"      },
+  { to: "/oyun/ayarlar",         label: "Ayarlar",      icon: Settings,       testid: "nav-settings"    },
   { to: "/oyun/nesil",           label: "Nesil",        icon: GitBranch,      testid: "nav-generation"  },
   { to: "/oyun/kasaba",          label: "Kasaba",       icon: Coffee,         testid: "nav-townfeed"    },
 ];
@@ -128,7 +132,7 @@ function SideNavItem({ to, label, icon: Icon, end, testid, pulse }) {
 // ── More menu (mobile secondary nav) ─────────────────────────────────────────
 function MoreMenu({ items, state, onClose }) {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+    <div style={{ position: 'fixed', inset: 0, zIndex: 70, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
       onClick={onClose}>
       <div style={{
         background: 'var(--color-surface)',
@@ -425,7 +429,8 @@ export default function GameLayout() {
 
         {/* Page content */}
         <div style={{
-          flex: 1, overflowY: 'auto',
+          flex: 1,
+          overflowY: isDashboard ? 'hidden' : 'auto',
           paddingBottom: isDashboard || isCharacterSheet ? 0 : '7rem',
           padding: isDashboard || isCharacterSheet ? 0 : undefined,
         }}

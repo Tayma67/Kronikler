@@ -15,11 +15,14 @@ export default function LifeEventModal({ open, onClose, onComplete }) {
   const fetchPending = useCallback(async () => {
     try {
       const res = await api.get("/life-event/pending");
-      setEvent(res.data.event || null);
+      const ev = res.data.event || null;
+      setEvent(ev);
+      if (!ev && onClose) onClose();   // event yoksa zinciri devret (→ hikâye popup'ı)
     } catch {
       setEvent(null);
+      if (onClose) onClose();
     }
-  }, []);
+  }, [onClose]);
 
   useEffect(() => {
     if (open) {

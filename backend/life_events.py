@@ -1318,7 +1318,8 @@ def get_eligible_events(state: dict) -> list:
 # ─────────────────────────────────────────────────────────────
 
 def maybe_trigger_life_event(state: dict):
-    """Her hafta %30 ihtimalle bir life event tetikler."""
+    """Her hafta %30 ihtimalle bir life event tetikler.
+    Seçim, oyuncunun hafta planına göre ağırlıklı yapılır (Parça 5)."""
     if state.get("pending_life_event"):
         return  # Zaten bekleyen event var
     if random.random() > 0.30:
@@ -1326,7 +1327,12 @@ def maybe_trigger_life_event(state: dict):
     eligible = get_eligible_events(state)
     if not eligible:
         return
-    event = random.choice(eligible)
+    # Hafta planına göre ağırlıklı seçim — plan yoksa random.choice fallback
+    try:
+        from simulation import _hafta_weighted_life_event
+        event = _hafta_weighted_life_event(state, eligible)
+    except Exception:
+        event = random.choice(eligible)
     safe_event = {
         "id": event["id"],
         "title": event["title"],
@@ -1396,3 +1402,8 @@ def apply_life_event_choice(state: dict, event_id: str, choice_index: int) -> di
         "result_text": choice["result"],
         "effects_applied": effects,
     }
+
+
+# ─── Faz 2C: Yetişkin/orta yaş/yaşlılık havuzu genişletmesi ───────────────
+from life_events_v2 import LIFE_EVENTS_V2
+LIFE_EVENTS.extend(LIFE_EVENTS_V2)

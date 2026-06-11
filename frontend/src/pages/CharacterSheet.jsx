@@ -243,16 +243,16 @@ function TabSeruven() {
   const equipment = useMemo(() => p.equipment || {}, [p.equipment]);
 
   /* ── Ekipman bonusları ── */
+  // equipment değerleri item KEY'leridir (string); bonusları backend
+  // _decorate içinde hesaplar → player.equipment_bonuses
   const eqBonuses = useMemo(() => {
-    const b = { saldırı: 0, savunma: 0, karizma: 0 };
-    for (const slot of Object.values(equipment)) {
-      if (!slot) continue;
-      b.saldırı += slot.attack  || slot.saldiri  || 0;
-      b.savunma  += slot.defense || slot.savunma  || 0;
-      b.karizma  += slot.charisma|| slot.karizma  || 0;
-    }
-    return b;
-  }, [equipment]);
+    const eb = p.equipment_bonuses || {};
+    return {
+      saldırı: eb.attack || 0,
+      savunma: eb.defense || 0,
+      karizma: eb.charisma_passive || 0,
+    };
+  }, [p.equipment_bonuses]);
 
   /* ── Envanter ── */
   const invEntries = useMemo(() =>
@@ -605,7 +605,32 @@ function TabDunya() {
   const visibleRels = showMore ? currentBandList : currentBandList.slice(0, 3);
 
   /* ── Hanedan ── */
-  const clan = p.clan || p.dynasty || p.hanedan || {};
+  // Gerçek hanedan verisi state.dynasty'de yaşar (Faz 4 legacy sistemi)
+  const dyn = state.dynasty || { score: 0, generation: state.generation || 1 };
+  const dynScore = dyn.score || 0;
+  const dynTitle =
+    dynScore >= 300 ? "Efsanevi Hanedan" :
+    dynScore >= 200 ? "Soylu Hanedan" :
+    dynScore >= 100 ? "Saygın Aile" :
+    dynScore >= 50  ? "Tanınan Aile" : "Sıradan Aile";
+  const dynBonus =
+    dynScore >= 200 ? "Nesil mirası: tüm statlar +1, +150 altın, ün +10" :
+    dynScore >= 100 ? "Nesil mirası: karizma +1, +75 altın" :
+    dynScore >= 50  ? "Nesil mirası: +40 altın" : null;
+  const surname = (p.name || "").split(" ").slice(-1)[0] || "";
+  const clan = {
+    name: surname ? `${surname} Ailesi` : "Hanedan",
+    crest: "🛡️",
+    type: dynTitle,
+    rank: `${state.generation || 1}. Nesil`,
+    power: dynScore,
+    lands: (state.properties || []).length,
+    cities: (state.world?.locations || []).filter(l => l.founded_by_player).length,
+    bonus: dynBonus,
+    heritage: (state.legacy_history || []).length
+      ? `${state.legacy_history.length} nesil geriye uzanan bir soy`
+      : null,
+  };
 
   /* ── Mutluluk etiketi ── */
   const happinessLabel = (score) => {

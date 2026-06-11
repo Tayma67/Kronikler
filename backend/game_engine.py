@@ -839,3 +839,292 @@ def apply_crime_decay(state):
     decay = CRIME.get("crime_decay_per_week", 1)
     if player.get("crime", 0) > 0:
         player["crime"] = max(0, player["crime"] - decay)
+
+
+# ─────────────────────────────────────────────────────────────
+# HAFTA PLANI — R1 Hafta Döngüsü (GDD v7 Bölüm I, R1)
+# ─────────────────────────────────────────────────────────────
+
+HAFTA_PLANI_SECENEKLERI = {
+    "is": [
+        {
+            "id": "calis",
+            "label": "Çalış",
+            "icon": "⚒️",
+            "etki": "Standart gelir. Güvenli, öngörülebilir.",
+            "event_weights": {"is": 1.5, "sosyal": 0.8, "kisisel": 0.8},
+        },
+        {
+            "id": "fazla_mesai",
+            "label": "Fazla Mesai",
+            "icon": "🔥",
+            "etki": "Gelir ↑ ama sağlık riski artar.",
+            "event_weights": {"is": 2.0, "sosyal": 0.5, "kisisel": 0.5},
+        },
+        {
+            "id": "ticaret",
+            "label": "Ticaret",
+            "icon": "🛒",
+            "etki": "Pazar fırsatları ve fiyat bilgisi açılır.",
+            "event_weights": {"is": 1.2, "pazar": 1.8, "sosyal": 1.0},
+        },
+    ],
+    "sosyal": [
+        {
+            "id": "hamam",
+            "label": "Hamam",
+            "icon": "🛁",
+            "etki": "Dedikodu eventleri ve yeni bağlantılar öne çıkar.",
+            "event_weights": {"dedikodu": 2.0, "sosyal": 1.5, "is": 0.7},
+        },
+        {
+            "id": "ziyaret",
+            "label": "Ziyaret",
+            "icon": "🏡",
+            "etki": "İlişki puanları daha kolay artar.",
+            "event_weights": {"npc": 2.0, "sosyal": 1.5, "is": 0.7},
+        },
+        {
+            "id": "pazar",
+            "label": "Pazar",
+            "icon": "🏪",
+            "etki": "Ticaret fırsatları ve karşılaşma eventleri.",
+            "event_weights": {"pazar": 1.8, "npc": 1.3, "is": 0.9},
+        },
+    ],
+    "kisisel": [
+        {
+            "id": "dinlen",
+            "label": "Dinlen",
+            "icon": "😴",
+            "etki": "Sağlık ve açlık daha hızlı iyileşir.",
+            "event_weights": {"iyilesme": 2.0, "is": 0.6, "risk": 0.5},
+        },
+        {
+            "id": "antrenman",
+            "label": "Antrenman",
+            "icon": "💪",
+            "etki": "Güç ve dayanıklılık stat eventleri artar.",
+            "event_weights": {"stat": 1.8, "is": 0.8, "risk": 0.7},
+        },
+        {
+            "id": "dua_okuma",
+            "label": "Dua/Okuma",
+            "icon": "📖",
+            "etki": "İtibar ve bilgelik eventleri öne çıkar.",
+            "event_weights": {"itibar": 1.6, "stat": 1.2, "is": 0.8},
+        },
+    ],
+}
+
+# Varsayılan plan — oyuncu hiç seçmese de her şey çalışır
+_DEFAULT_HAFTA_PLANI = {
+    "is":      "calis",
+    "sosyal":  "pazar",
+    "kisisel": "dua_okuma",
+}
+
+
+def get_default_hafta_plani() -> dict:
+    """Varsayılan hafta planını döner (değiştirilebilir kopya)."""
+    return dict(_DEFAULT_HAFTA_PLANI)
+
+
+def validate_hafta_plani(plan: dict) -> tuple[bool, str]:
+    """
+    Gelen plan dict'ini doğrular.
+    Returns: (gecerli_mi, hata_mesaji)
+    """
+    required_slots = {"is", "sosyal", "kisisel"}
+    if not required_slots.issubset(plan.keys()):
+        missing = required_slots - set(plan.keys())
+        return False, f"Eksik slotlar: {', '.join(missing)}"
+
+    for slot, secim in plan.items():
+        if slot not in HAFTA_PLANI_SECENEKLERI:
+            return False, f"Geçersiz slot: {slot}"
+        valid_ids = [s["id"] for s in HAFTA_PLANI_SECENEKLERI[slot]]
+        if secim not in valid_ids:
+            return False, f"'{slot}' için geçersiz seçim: '{secim}'. Geçerli: {valid_ids}"
+
+    return True, ""
+
+
+def get_hafta_plani_state(state: dict) -> dict:
+    """
+    Oyuncunun aktif hafta planını state'den çeker.
+    Yoksa varsayılanı döner ve state'e yazar.
+    """
+    player = state["player"]
+    if "hafta_plani" not in player:
+        player["hafta_plani"] = get_default_hafta_plani()
+    return player["hafta_plani"]
+
+
+def hafta_plani_beklenti_metni(plan: dict) -> str:
+    """
+    Seçili plana göre kısa beklenti açıklaması üretir.
+    Dashboard'da "Seçili plan: ... Beklenti: ..." satırı için.
+    """
+    slot_labels = []
+    risk_hints = []
+
+    slot_map = {
+        "is": ("İş", {"fazla_mesai": "sağlık ↓ riski"}),
+        "sosyal": ("Sosyal", {}),
+        "kisisel": ("Kişisel", {}),
+    }
+
+    for slot_key, (slot_label, risk_map) in slot_map.items():
+        secim_id = plan.get(slot_key, "")
+        secenekler = HAFTA_PLANI_SECENEKLERI.get(slot_key, [])
+        sec = next((s for s in secenekler if s["id"] == secim_id), None)
+        if sec:
+            slot_labels.append(sec["label"])
+            if secim_id in risk_map:
+                risk_hints.append(risk_map[secim_id])
+
+    plan_str = " + ".join(slot_labels) if slot_labels else "Belirsiz"
+    if risk_hints:
+        return f"Seçili plan: {plan_str} — risk: {', '.join(risk_hints)}"
+    return f"Seçili plan: {plan_str}"
+
+
+# ─────────────────────────────────────────────────────────────
+# HAFTA SONU HASADI — _build_hafta_hasadi
+# ─────────────────────────────────────────────────────────────
+# Event türüne göre manşet ağırlığı — ne kadar büyük bir haber?
+_EVENT_MANSET_WEIGHT: dict[str, int] = {
+    "ölüm":            10,
+    "cinayet":         10,
+    "savaş_ilanı":      9,
+    "tahta_çıkış":      9,
+    "savaş_hareketi":   8,
+    "isyan":            8,
+    "barış":            7,
+    "haydut_baskını":   7,
+    "rank_bonusu":      7,
+    "kıtlık_etkisi":    6,
+    "evlilik":          6,
+    "şenlik":           5,
+    "doğum":            5,
+    "meslek_edinme":    5,
+    "zanaat_durgun":    4,
+    "aile_destek":      4,
+    "göç":              4,
+}
+
+# Sessiz hafta — haber yoksa gösterilecek fallback manşetler
+_MANSET_FALLBACK: list[str] = [
+    "Bu hafta sessiz geçti. Belki de fırtına öncesi sükunettir.",
+    "Pek bir şey olmadı. Ya da olan şeyler henüz konuşulmaya başlanmadı.",
+    "Şehir sakin, ama sükûnet bazen en büyük haberdir.",
+    "Herkes kendi işiyle meşguldü bu hafta. Belki öyle olmalı.",
+    "Bir şeyler oldu, ama akıllara kazınacak türden değildi.",
+]
+
+# Kulak misafiri — söylenti yoksa gösterilecek fallback satırlar
+_KULAK_FALLBACK: list[str] = [
+    "Bir seyyah bu hafta şehirden geçti; nereye gittiğini kimse sormadı.",
+    "Kalabalık içinde bir isim fısıldandı — ama rüzgâr götürdü.",
+    "Bu hafta pek söylenti dolaşmadı. Sessizlik de bir işarettir.",
+    "Biri bir şey söyledi, kulağa geldi; ama kimse üstüne basmadı.",
+    "Çarşı bugün temkinliydi — dedikodu bile kısık sesle yapılır oldu.",
+]
+
+
+def _build_hafta_hasadi(
+    state: dict,
+    before: dict,
+    after: dict,
+    turn_before: int,
+) -> dict:
+    """
+    Hafta Sonu Hasadı paketini 3 bölüm halinde döner.
+
+    Bölümler
+    --------
+    manset        : Bu haftanın en önemli 1 olayı (text + type + weight).
+                    Ağırlık tablosuna göre seçilir; eşitler arasında rastgele.
+    kazanclar     : diff_snapshots(before, after) listesi.
+                    Para / sağlık / itibar / stat delta'ları.
+    kulak_misafiri: 1 söylenti/ipucu satırı.
+                    Önce oyuncunun adını geçiren, sonra aynı bölge,
+                    sonra genel yeni söylentiler; hiç yoksa fallback.
+
+    Parametreler
+    ------------
+    state        — advance_time() SONRASI güncel state
+    before       — advance_time() ÖNCE snapshot_player() çıktısı
+    after        — advance_time() SONRA snapshot_player() çıktısı
+    turn_before  — advance çağrılmadan önceki state['turn'] değeri
+    """
+    current_turn: int = state.get("turn", 0)
+
+    # ── MANŞET ──────────────────────────────────────────────────
+    # Bu turda tarihe geçen olaylar (turn_before < day <= current_turn)
+    this_week: list[dict] = [
+        e for e in state.get("history", [])
+        if turn_before < e.get("day", 0) <= current_turn
+    ]
+
+    if this_week:
+        def _w(ev: dict) -> int:
+            return _EVENT_MANSET_WEIGHT.get(ev.get("type", ""), 1)
+
+        max_w = max(_w(e) for e in this_week)
+        # Aynı en yüksek ağırlıktaki eventlerin hepsi aday — rastgele seç
+        top_candidates = [e for e in this_week if _w(e) >= max_w]
+        chosen = random.choice(top_candidates)
+        manset = {
+            "text":   chosen.get("narrative") or chosen.get("text", ""),
+            "type":   chosen.get("type", "bilinmiyor"),
+            "weight": max_w,
+        }
+    else:
+        manset = {
+            "text":   random.choice(_MANSET_FALLBACK),
+            "type":   "sessiz_hafta",
+            "weight": 0,
+        }
+
+    # ── KAZANÇLAR ────────────────────────────────────────────────
+    # diff_snapshots zaten game_engine.py'da mevcut — direkt kullan
+    kazanclar: list[dict] = diff_snapshots(before, after)
+
+    # ── KULAK MİSAFİRİ ───────────────────────────────────────────
+    all_rumors: list[dict] = state.get("rumors", [])
+    player      = state["player"]
+    player_name = player.get("name", "")
+    player_loc  = player.get("location_id", "")
+
+    kulak_misafiri: dict
+    if all_rumors:
+        recent = all_rumors[-25:]  # sadece en yeni 25 söylenti
+        # 1. Oyuncunun adını içeren söylentiler (itibar yansıması)
+        player_rumors = [r for r in recent if player_name and player_name in r.get("text", "")]
+        # 2. Oyuncunun bulunduğu bölgeye ait söylentiler
+        local_rumors  = [r for r in recent
+                         if r.get("kingdom_id") in (player_loc, None)]
+        # Öncelik sırası: oyuncu → yerel → genel
+        candidates = player_rumors or local_rumors or recent
+        picked = random.choice(candidates)
+        kulak_misafiri = {
+            "text":       picked.get("text", ""),
+            "type":       picked.get("type", ""),
+            "actionable": bool(picked.get("action")),
+            "action":     picked.get("action"),   # None veya {kind, ...}
+        }
+    else:
+        kulak_misafiri = {
+            "text":       random.choice(_KULAK_FALLBACK),
+            "type":       "sessiz",
+            "actionable": False,
+            "action":     None,
+        }
+
+    return {
+        "manset":         manset,
+        "kazanclar":      kazanclar,
+        "kulak_misafiri": kulak_misafiri,
+    }

@@ -21,9 +21,9 @@ from rumors import auto_rumors_from_events, seasonal_rumors
 from world_events import tick_world_events
 
 # Yiyecek öncelik sırası — en yüksek açlık giderenden başla
-_FOOD_PRIORITY = ["et", "ekmek", "şarap", "buğday"]
+_FOOD_PRIORITY = ["et", "ekmek", "şarap", "şıra", "üzüm", "buğday"]
 # Hangi envanter öğeleri yiyecek sayılır
-_FOOD_ITEMS = {"et", "ekmek", "buğday", "şarap"}
+_FOOD_ITEMS = {"et", "ekmek", "buğday", "şarap", "şıra", "üzüm"}
 
 
 def _has_food(player):
@@ -52,25 +52,15 @@ def _auto_eat(state, day):
     return None
 
 
-PRODUCTION = {
-    "çiftçi": ("buğday", 10),
-    "fırıncı": ("ekmek", 8),
-    "avcı": ("et", 6),
-    "balıkçı": ("et", 5),
-    "çoban": ("et", 3),
-    "demirci": ("demir", 3),
-    "marangoz": ("odun", 7),
-    "değirmenci": ("buğday", 5),
-    "tüccar": (None, 0),   # they move goods but don't produce
-    "kunduracı": ("kumaş", 3),
-    # S2 — silah üreticisi meslekler eklendi
-    "silahçı":   ("silah", 1),
-    "zırh_ustası": ("silah", 1),
-}
+# Faz 1A: Üretim production_chains.py'a taşındı. PRODUCTION adı, oyuncunun
+# "çalış" aksiyonu için game_routes tarafından import edilmeye devam ediyor.
+from production_chains import PROFESSION_OUTPUT as PRODUCTION
+from production_chains import run_raw_tick, run_craft_tick
 
 PROFESSION_NEEDS = {
-    "asker": ("silah", 1),
-    "şövalye": ("silah", 1),
+    "asker": [("silah", 1), ("zırh", 1)],
+    "şövalye": [("silah", 1), ("zırh", 1)],
+    "çiftçi": [("alet", 1)],
 }
 
 
@@ -130,14 +120,30 @@ def _ensure_market(loc):
             }
 
 
-def _recompute_prices(loc):
-    """Price formula: base * (demand / max(1, supply))^0.4 * wealth_factor."""
+def _recompute_prices(loc, season=None, turn=None):
+    """Faz 1C fiyat formülü:
+    fiyat = baz × (talep/arz)^esneklik × servet × güvenlik × mevsim × olay_çarpanı
+    """
     from balance_config import ECONOMY
     wealth_factor = 0.6 + (loc["wealth"] / 100)
     security_factor = 0.7 + (loc["security"] / 100) * 0.6
+    season_table = {}
+    if season:
+        from market_events import SEASON_PRICE_MULT
+        season_table = SEASON_PRICE_MULT.get(season, {})
     for g, m in loc["market"].items():
         ratio = m["demand"] / max(1, m["supply"])
-        target = m["base"] * (ratio ** 0.45) * wealth_factor * security_factor
+        season_mult = season_table.get(g, 1.0)
+        # Süreli piyasa olayı çarpanı (market_events.py yazar, burada düşer)
+        event_mult = 1.0
+        if m.get("event_mult") and turn is not None:
+            if turn <= m.get("event_mult_until", 0):
+                event_mult = m["event_mult"]
+            else:
+                m.pop("event_mult", None)
+                m.pop("event_mult_until", None)
+        target = (m["base"] * (ratio ** 0.45) * wealth_factor * security_factor
+                  * season_mult * event_mult)
         # Smooth toward target
         m["price"] = round(max(0.5, m["price"] * 0.65 + target * 0.35), 2)
         # S3: Baz fiyat sınırlarını uygula (min_price_ratio / max_price_ratio)
@@ -156,6 +162,39 @@ def _ensure_npc_fields(npc):
     ensure_profile(npc)
 
 
+def _repair_family_links(state):
+    """Bozuk aile bağlarını onar: eş simetrisi, ölü eş bağları, soyadı birliği.
+    Eski kayıtlardaki _link_family çift-atama hatasının izlerini temizler."""
+    npcs = state["world"]["npcs"]
+    by_id = {n["id"]: n for n in npcs}
+    for n in npcs:
+        if not n.get("alive", True):
+            continue
+        sid = n.get("spouse_id")
+        if not sid or sid == "PLAYER":
+            continue
+        spouse = by_id.get(sid)
+        if not spouse or not spouse.get("alive", True):
+            n["spouse_id"] = None           # eşi yok/ölü → dul
+            continue
+        if spouse.get("spouse_id") is None:
+            spouse["spouse_id"] = n["id"]   # tek yönlü bağ → simetriyi kur
+        elif spouse.get("spouse_id") not in (n["id"], "PLAYER"):
+            n["spouse_id"] = None           # üçgen: bu bağ geçersiz
+    # Çocuk soyadı birliği: babası belli olan reşit olmayanlar
+    for n in npcs:
+        if not n.get("alive", True) or n.get("age", 99) >= 18:
+            continue
+        for pid in n.get("parent_ids", []):
+            p = by_id.get(pid)
+            if p and p.get("gender") == "erkek" and " " in p.get("name", ""):
+                surname = p["name"].split()[-1]
+                given = n["name"].split()[0]
+                if not n["name"].endswith(" " + surname):
+                    n["name"] = f"{given} {surname}"
+                break
+
+
 def _ensure_state_fields(state):
     state.setdefault("relationships", {})
     state.setdefault("quests", [])
@@ -168,6 +207,10 @@ def _ensure_state_fields(state):
     state.setdefault("active_caravan", None)      # Adım 8: Kervan
     state.setdefault("caravan_history", [])       # Adım 8: Kervan geçmişi
     state.setdefault("pending_caravan_event", None)  # Adım 8: Kervan UI eventi
+    state.setdefault("properties", [])            # Faz 1B: Mülk sahipliği
+    state.setdefault("story_quests", [])          # Faz 2: Hikâye yayları
+    state.setdefault("story_flags", {})
+    state.setdefault("story_offers", [])
     p = state["player"]
     p.setdefault("crime", 0)
     p.setdefault("reputation", 0)
@@ -194,6 +237,7 @@ def _ensure_state_fields(state):
         _ensure_market(loc)
     for npc in state["world"]["npcs"]:
         _ensure_npc_fields(npc)
+    _repair_family_links(state)
 
 
 # ---------- NPC life events ----------
@@ -225,6 +269,14 @@ def _age_and_die(state, day):
             death_chance += 0.02
         if random.random() < death_chance:
             npc["alive"] = False
+            # Dul kalan eşin bağı temizlenir — zamanla yeniden evlenebilir
+            if npc.get("spouse_id") and npc["spouse_id"] != "PLAYER":
+                widow = next((w for w in state["world"]["npcs"]
+                              if w["id"] == npc["spouse_id"]), None)
+                if widow:
+                    widow["spouse_id"] = None
+                    widow.setdefault("personal_events", []).append(
+                        {"type": "eş_kaybı", "day": day, "of": npc["name"]})
             # Faction üye listelerinden temizle
             for fac in state["world"].get("factions", []):
                 if npc["id"] in fac.get("members", []):
@@ -325,6 +377,10 @@ def _marry_and_birth(state, day):
                 continue
             a["spouse_id"] = b["id"]
             b["spouse_id"] = a["id"]
+            # Aile soyadı birliği: kadın, kocasının soyadını alır
+            husband = a if a["gender"] == "erkek" else b
+            wife = b if husband is a else a
+            wife["name"] = f"{wife['name'].split()[0]} {husband['name'].split()[-1]}"
             a.setdefault("personal_events", []).append({"type": "evlilik", "day": day, "of": b["name"]})
             b.setdefault("personal_events", []).append({"type": "evlilik", "day": day, "of": a["name"]})
             push_recent_event(a, "spouse_married", day, b["name"])
@@ -353,9 +409,12 @@ def _marry_and_birth(state, day):
             if not partner:
                 continue
             gender = random.choice(["erkek", "kadın"])
+            family_surname = partner["name"].split()[-1] if partner["gender"] == "erkek" \
+                else a["name"].split()[-1]
+            given = random.choice(MALE_NAMES if gender == "erkek" else FEMALE_NAMES)
             child = {
                 "id": new_id(),
-                "name": _random_name(gender),
+                "name": f"{given} {family_surname}",
                 "gender": gender, "age": 0, "profession": "çocuk",
                 "personality": random.sample(PERSONALITY_TRAITS, 2),
                 "wealth": 0, "health": 90,
@@ -391,41 +450,38 @@ def _economy_tick(state, day):
             continue
         npcs_by_loc.setdefault(n["location_id"], []).append(n)
 
+    from balance_config import CONSUMPTION
+
     for loc in state["world"]["locations"]:
         _ensure_market(loc)
         local_npcs = npcs_by_loc.get(loc["id"], [])
         pop = max(10, loc.get("population", 50))
 
-        # Production from NPC professions (seasonal multiplier)
-        for n in local_npcs:
-            prod = PRODUCTION.get(n["profession"])
-            if prod and prod[0]:
-                good, amt = prod
-                noise = random.uniform(0.7, 1.3)
-                loc["market"][good]["supply"] += max(1, int(amt * noise * prod_mult))
+        # ── Faz 1A: Gerçek üretim — sihirli spawn yok ────────────────────
+        # 1) Hammadde üreticileri (çiftçi, çoban, madenci, oduncu…)
+        run_raw_tick(loc, local_npcs, prod_mult, random)
+        # 2) Zanaatkâr dönüşümleri (un→ekmek, cevher→demir→silah…)
+        craft = run_craft_tick(loc, local_npcs, prod_mult, random)
+        # Hammadde bulamayan zanaatkârlar — seyrek event (spam önleme)
+        if craft["starved"] and random.random() < 0.06:
+            from locales import t
+            _push_event(state, day, "zanaat_durgun",
+                        t("uretim.zanaat_durgun", loc=loc["name"],
+                          profession=random.choice(craft["starved"])))
 
-        # Background production scaled to population (so cities don't starve when only a few NPCs are here)
-        bg = max(2, pop // 25)
-        for good in ("buğday", "ekmek", "et", "odun"):
-            loc["market"][good]["supply"] += int(bg * prod_mult * random.uniform(0.6, 1.2))
-
-        # NPC consumption drives demand
-        for good, frac in [("ekmek", 0.012), ("buğday", 0.010), ("et", 0.006),
-                           ("odun", 0.004), ("kumaş", 0.002), ("demir", 0.002),
-                           ("silah", 0.001)]:
+        # ── Nüfus tüketimi: talep yaratır, arzı düşürür ──────────────────
+        wealth_mult = 0.4 + loc.get("wealth", 50) / 60  # zengin şehir lüks tüketir
+        for good, cfg in CONSUMPTION.items():
             if good not in loc["market"]:
                 continue
+            frac = cfg["frac"] * (wealth_mult if cfg["wealth_scaled"] else 1.0)
             consume = max(1, int(pop * frac))
-            # Demand grows
             loc["market"][good]["demand"] += consume
-            # Supply is depleted by consumption (but can't go negative)
             loc["market"][good]["supply"] = max(0, loc["market"][good]["supply"] - consume)
 
-        # NPC needs (soldiers want weapons)
+        # NPC ihtiyaçları (asker silah/zırh, çiftçi alet ister)
         for n in local_npcs:
-            need = PROFESSION_NEEDS.get(n["profession"])
-            if need:
-                good, amt = need
+            for good, amt in PROFESSION_NEEDS.get(n["profession"], []):
                 if good in loc["market"]:
                     loc["market"][good]["demand"] += amt
 
@@ -440,7 +496,7 @@ def _economy_tick(state, day):
             m["demand"] = max(1, m["demand"])
             m["supply"] = max(0, m["supply"])
 
-        _recompute_prices(loc)
+        _recompute_prices(loc, season=season, turn=day)
 
         # AÇLIK CASCADE: Buğday veya ekmek arzı sıfırda kalırsa şehir cezalanır
         wheat_out = loc["market"]["buğday"]["supply"] == 0
@@ -450,8 +506,9 @@ def _economy_tick(state, day):
             loc["security"] = max(5, loc["security"] - random.randint(2, 6))
             loc["population"] = max(10, loc.get("population", 50) - random.randint(0, 1))
             shortage_good = "buğday" if wheat_out else "ekmek"
+            from locales import t
             _push_event(state, day, "kıtlık_etkisi",
-                        f"{loc['name']}'de {shortage_good} arzı tükendi: halk aç, huzursuzluk arttı.")
+                        t("uretim.kitlik_etkisi", loc=loc["name"], good=shortage_good))
 
         # FİYAT GEÇMİŞİ: Her 4 turda bir snapshot al (son 12 kayıt = 3 aylık veri)
         turn = state.get("turn", 0)
@@ -508,15 +565,7 @@ def _random_events(state, day):
         _push_event(state, day, "haydut_baskını",
                     f"Haydutlar {loc['name']}'i bastı. Güvenlik düştü.",
                     narrative=narrate_raid(loc["name"]))
-    if random.random() < 0.05:
-        loc = random.choice([l for l in state["world"]["locations"] if l["kind"] != "kale"])
-        loc["wealth"] = max(5, loc["wealth"] - random.randint(5, 15))
-        # Crop failure: drop wheat supply
-        loc["market"]["buğday"]["supply"] = max(0, loc["market"]["buğday"]["supply"] - 20)
-        _recompute_prices(loc)
-        _push_event(state, day, "kıtlık",
-                    f"{loc['name']}'de kötü hasat: buğday arzı düştü, fiyatlar yükseldi.",
-                    narrative=narrate_famine(loc["name"]))
+    # Kötü hasat / kıtlık artık market_events.py havuzundan tetikleniyor (Faz 1C)
     if random.random() < 0.04 and len(state["world"]["kingdoms"]) > 1:
         k1, k2 = random.sample(state["world"]["kingdoms"], 2)
         if k2["id"] not in k1["at_war_with"]:
@@ -978,6 +1027,12 @@ def advance_time(state, weeks=1, days=None):
         # Kervan rotaları tick
         _caravan_tick(state, day)
         _random_events(state, day)
+        # Faz 1C: Piyasa olayları havuzu
+        try:
+            from market_events import tick_market_events
+            tick_market_events(state, day)
+        except Exception:
+            pass
         _generate_quest(state, day)
         # FIX-10: Süresi geçen görevleri kapat
         _expire_old_quests(state, day)
@@ -1032,6 +1087,36 @@ def advance_time(state, weeks=1, days=None):
             apply_crime_decay(state)
         except Exception:
             pass
+        # Mülk sahipliği haftalık tick (Faz 1B)
+        try:
+            from property_system import property_world_tick
+            property_world_tick(state, day)
+        except Exception:
+            pass
+        # Hikâye yayları tick (Faz 2)
+        try:
+            from quest_engine import tick_story
+            tick_story(state, day)
+        except Exception:
+            pass
+        # Yaralanma iyileşmesi (Faz 3)
+        try:
+            from combat_engine import injury_tick
+            injury_tick(state)
+        except Exception:
+            pass
+        # Aile 2.0, hanedan, çağ olayları (Faz 4)
+        try:
+            from legacy_system import legacy_world_tick
+            legacy_world_tick(state, day)
+        except Exception:
+            pass
+        # Başarımlar (Faz 5E)
+        try:
+            from achievements import check_achievements
+            check_achievements(state, day)
+        except Exception:
+            pass
         # Kervan haftalık ilerleme (Adım 8)
         try:
             from caravan import process_caravan_tick, ensure_caravan_state
@@ -1047,6 +1132,12 @@ def advance_time(state, weeks=1, days=None):
         if new_events:
             auto_rumors_from_events(state, new_events)
         seasonal_rumors(state)
+        # Faz 2D: Eyleme dönüşen söylentiler (piyasa ipucu, NPC sırrı, istihbarat)
+        try:
+            from rumors import actionable_rumors_tick
+            actionable_rumors_tick(state, day)
+        except Exception:
+            pass
         if len(state["history"]) > 250:
             state["history"] = state["history"][-250:]
     # Auto-unlock family quests at the end of advancement
@@ -1059,6 +1150,93 @@ def advance_time(state, weeks=1, days=None):
     except Exception:
         pass
     return state
+
+
+# ─────────────────────────────────────────────────────────────
+# PARÇA 5 — Event Ağırlıklandırma (Hafta Planına Göre)
+# ─────────────────────────────────────────────────────────────
+
+# Her event kategorisini tanıyan sinyal kelimeleri
+_PLAN_CATEGORY_SIGNALS: dict[str, list[str]] = {
+    "is":       ["iş", "meslek", "üret", "çalış", "zanaatkâr", "ticaret", "kazanç", "lonca",
+                 "görev", "çırak", "usta", "hammadde", "üretim", "sipariş"],
+    "pazar":    ["pazar", "market", "fiyat", "alışveriş", "tüccar", "satış", "mal", "ticaret",
+                 "alıcı", "satıcı", "kâr", "arz", "talep"],
+    "sosyal":   ["sohbet", "ziyaret", "düğün", "şölen", "festival", "arkadaş", "akraba",
+                 "komşu", "dedikodu", "hamam", "buluşma", "ilişki"],
+    "dedikodu": ["dedikodu", "söylenti", "söz", "kulaktan", "haber", "fısıltı"],
+    "npc":      ["npc", "kişi", "tanıdık", "karakter", "bağlantı", "ilişki", "seviye"],
+    "stat":     ["güç", "dayanıklılık", "zeka", "karizm", "antrenman", "beceri",
+                 "stamina", "strength", "intelligence", "charisma"],
+    "iyilesme": ["iyileş", "dinlen", "iyileşme", "iyilik", "sağlık", "huzur", "istirahat"],
+    "itibar":   ["itibar", "şöhret", "onur", "namaz", "dua", "okuma", "bilgelik", "saygınlık"],
+    "risk":     ["kavga", "kaza", "tehlike", "saldırı", "haydut", "risk", "tehdit",
+                 "yaralanma", "ceza", "kayıp"],
+}
+
+
+def _event_category_weight(event: dict, composite: dict) -> float:
+    """
+    Bir life-event için plan composite ağırlıklarına göre skalar çarpan hesaplar.
+    Event'in title + choice text'lerinde kategori sinyallerini arar;
+    eşleşen kategorilerin composite ağırlıklarının ortalamasını döner.
+    Eşleşme yoksa 1.0 (nötr) döner.
+    """
+    # Event'ten metin topla (küçük harf)
+    texts: list[str] = [event.get("title", ""), event.get("description", "")]
+    for ch in event.get("choices", []):
+        texts.append(ch.get("text", ""))
+        for eff_key in ch.get("effects", {}).keys():
+            texts.append(eff_key)
+    combined = " ".join(texts).lower()
+
+    matched_weights: list[float] = []
+    for cat, signals in _PLAN_CATEGORY_SIGNALS.items():
+        if cat not in composite:
+            continue
+        if any(sig in combined for sig in signals):
+            matched_weights.append(composite[cat])
+
+    if not matched_weights:
+        return 1.0
+    return sum(matched_weights) / len(matched_weights)
+
+
+def _composite_plan_weights(state: dict) -> dict[str, float]:
+    """
+    Oyuncunun hafta planındaki 3 slot seçeneğinin event_weights'lerini
+    tek bir düzleştirilmiş dict'e birleştirir.
+    Aynı kategori birden fazla slotta varsa en büyük ağırlık kazanır.
+    """
+    try:
+        from game_engine import HAFTA_PLANI_SECENEKLERI, get_hafta_plani_state
+        plan = get_hafta_plani_state(state)           # {"is": "calis", "sosyal": "pazar", ...}
+        composite: dict[str, float] = {}
+        for slot_key, secim_id in plan.items():
+            slot_list = HAFTA_PLANI_SECENEKLERI.get(slot_key, [])
+            secim = next((s for s in slot_list if s["id"] == secim_id), None)
+            if secim is None:
+                continue
+            for cat, w in secim.get("event_weights", {}).items():
+                if composite.get(cat, 0.0) < w:
+                    composite[cat] = w
+        return composite
+    except Exception:
+        return {}
+
+
+def _hafta_weighted_life_event(state: dict, eligible: list) -> dict:
+    """
+    Uygun eventler arasından hafta planına göre ağırlıklı seçim yapar.
+    Ağırlık hesaplanamayan / sıfır olan eventler minimum 0.1 ağırlık alır.
+    """
+    composite = _composite_plan_weights(state)
+    weights: list[float] = []
+    for ev in eligible:
+        w = _event_category_weight(ev, composite) if composite else 1.0
+        weights.append(max(0.1, w))
+    # random.choices normalize eder — toplamın 1.0 olması gerekmez
+    return random.choices(eligible, weights=weights, k=1)[0]
 
 
 # ---------- Soldier enforcement ----------

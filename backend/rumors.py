@@ -130,3 +130,83 @@ def rumor_for_npc(npc, state):
     if npc["id"] not in r["heard_by"]:
         r["heard_by"].append(npc["id"])
     return r
+
+
+# ═══ Faz 2D: Eyleme Dönüşen Söylentiler ═══════════════════════════════════
+# Söylenti artık sadece metin değil: yapılandırılmış "action" yükü taşır.
+# Türler: piyasa_ipucu (gerçek arbitrajdan), npc_sirri (şantaj/itibar),
+#         fraksiyon_istihbarat, quest_tetik (hikâye teklifi köprüsü).
+
+def _market_tip(state, day):
+    """Gerçek fiyat farklarından piyasa ipucu üret. %20 ihtimalle yanlış
+    bilgi (güvenilmez kaynak) — risk oyuncunun."""
+    from world_gen import GOODS
+    locs = [l for l in state["world"]["locations"] if l.get("market")]
+    if len(locs) < 2:
+        return None
+    good = random.choice(GOODS)
+    priced = [(l, l["market"][good]["price"]) for l in locs if good in l["market"]]
+    if len(priced) < 2:
+        return None
+    cheap = min(priced, key=lambda x: x[1])
+    expensive = max(priced, key=lambda x: x[1])
+    if expensive[1] < cheap[1] * 1.3:
+        return None  # kayda değer fark yok
+    truthful = random.random() > 0.20
+    if not truthful:
+        # Yanlış ipucu: yönü ters söyle
+        cheap, expensive = expensive, cheap
+    text = (f"Kulağıma çalındı: {good} {cheap[0]['name']}'de ucuz, "
+            f"{expensive[0]['name']}'de el yakıyormuş. Tez davranan kazanır.")
+    r = make_rumor(state, "piyasa_ipucu", text,
+                   kingdom_id=cheap[0].get("kingdom_id"),
+                   truth=0.95 if truthful else 0.2)
+    r["action"] = {"kind": "piyasa", "good": good,
+                   "buy_loc": cheap[0]["id"], "buy_loc_name": cheap[0]["name"],
+                   "sell_loc": expensive[0]["id"], "sell_loc_name": expensive[0]["name"]}
+    return r
+
+
+def _npc_secret(state, day):
+    """Suçlu/ödüllü bir NPC'nin sırrı — ilişki kozu veya ihbar malzemesi."""
+    npcs = [n for n in state["world"]["npcs"]
+            if n.get("alive") and (n.get("bounty", 0) > 0 or
+                                   n.get("profession") == "haydut")]
+    if not npcs:
+        return None
+    npc = random.choice(npcs)
+    text = (f"{npc['name']} hakkında fısıltılar dolaşıyor: geçmişinde "
+            f"karanlık işler varmış. Bilen biri bunu koz yapabilir.")
+    r = make_rumor(state, "npc_sirri", text,
+                   kingdom_id=npc.get("kingdom_id"), truth=0.8)
+    r["action"] = {"kind": "sır", "npc_id": npc["id"], "npc_name": npc["name"]}
+    return r
+
+
+def _faction_intel(state, day):
+    """Fraksiyon istihbaratı: savaş/darbe hazırlıkları kulağa gelir."""
+    factions = state["world"].get("factions") or []
+    active = [f for f in factions if f.get("at_war_with") or f.get("coup_brewing")]
+    if not active:
+        active = factions
+    if not active:
+        return None
+    fac = random.choice(active)
+    text = (f"{fac.get('name', 'Bir örgüt')} içinde hareketlilik varmış; "
+            f"yakında büyük bir şey olacak deniyor.")
+    r = make_rumor(state, "fraksiyon_istihbarat", text, truth=0.7)
+    r["action"] = {"kind": "fraksiyon", "faction_id": fac.get("id")}
+    return r
+
+
+def actionable_rumors_tick(state, day):
+    """Haftalık: %25 ihtimalle eyleme dönüşen bir söylenti üret."""
+    if random.random() > 0.25:
+        return None
+    roll = random.random()
+    if roll < 0.45:
+        return _market_tip(state, day)
+    elif roll < 0.75:
+        return _npc_secret(state, day)
+    else:
+        return _faction_intel(state, day)

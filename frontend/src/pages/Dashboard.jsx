@@ -5,6 +5,8 @@ import {
   Hourglass, Scale, BookMarked, Heart, Crown, Loader2, Sword, Star
 } from 'lucide-react';
 import { useGame } from '@/lib/GameContext';
+import LifeEventModal from '@/components/LifeEventModal';
+import StoryModal from '@/components/StoryModal';
 
 // ── SEASON → HERO IMAGE MAP ──────────────────────────────────────────────────
 const SEASON_IMAGE = {
@@ -25,8 +27,8 @@ const EVENT_MAP = {
   savaş_zaferi:     { type: 'SAVAŞ',    typeColor: '#E05A30', icon: Sword,     iconColor: '#E05A30', personal: true  },
   savaş_kaybı:      { type: 'SAVAŞ',    typeColor: '#C84040', icon: Shield,    iconColor: '#C84040', personal: true  },
   savaş_kaçış:      { type: 'KAÇIŞ',   typeColor: '#E05A30', icon: Shield,    iconColor: '#E05A30', personal: true  },
-  evlilik:          { type: 'AİLE',     typeColor: '#D4528A', icon: Heart,     iconColor: '#D4528A', personal: true  },
-  doğum:            { type: 'AİLE',     typeColor: '#7B4FAF', icon: Star,      iconColor: '#7B4FAF', personal: true  },
+  evlilik:          { type: 'AİLE',     typeColor: '#D4528A', icon: Heart,     iconColor: '#D4528A', personal: 'isim' },
+  doğum:            { type: 'AİLE',     typeColor: '#7B4FAF', icon: Star,      iconColor: '#7B4FAF', personal: 'isim' },
   suç:              { type: 'GÖLGE',    typeColor: '#7B3FBF', icon: Shield,    iconColor: '#7B3FBF', personal: true  },
   suç_yakalandı:    { type: 'CEZA',     typeColor: '#C84040', icon: Shield,    iconColor: '#C84040', personal: true  },
   görev_tamamlandı: { type: 'GÖREV',    typeColor: '#4A9A5A', icon: Scroll,    iconColor: '#4A9A5A', personal: true  },
@@ -69,8 +71,42 @@ const EVENT_MAP = {
   yardim_cagrisi:   { type: 'İTTİFAK',  typeColor: '#C9A84C', icon: Shield,   iconColor: '#C9A84C', personal: false },
   istihbarat_satis: { type: 'GÖLGE',    typeColor: '#7B3FBF', icon: BookMarked,iconColor:'#7B3FBF', personal: false },
   vaaz:             { type: 'DÜNYA',    typeColor: '#C9A84C', icon: Star,      iconColor: '#C9A84C', personal: false },
+  // ── GDD v5 yeni tipler ──────────────────────────────────────────
+  mülk_alım:        { type: 'MÜLK',     typeColor: '#C9A84C', icon: Coins,     iconColor: '#C9A84C', personal: true  },
+  mülk_satış:       { type: 'MÜLK',     typeColor: '#C9A84C', icon: Coins,     iconColor: '#C9A84C', personal: true  },
+  mülk_hasat:       { type: 'HASAT',    typeColor: '#4A9A5A', icon: Star,      iconColor: '#4A9A5A', personal: true  },
+  mülk_yağma:       { type: 'MÜLK',     typeColor: '#C84040', icon: Shield,    iconColor: '#C84040', personal: true  },
+  mülk_soygun:      { type: 'MÜLK',     typeColor: '#C84040', icon: Shield,    iconColor: '#C84040', personal: true  },
+  mülk_durgun:      { type: 'MÜLK',     typeColor: '#D4820A', icon: Scale,     iconColor: '#D4820A', personal: true  },
+  hikâye:           { type: 'HİKÂYE',   typeColor: '#7B4FAF', icon: BookMarked,iconColor: '#7B4FAF', personal: true  },
+  hikâye_teklifi:   { type: 'HİKÂYE',   typeColor: '#7B4FAF', icon: Star,      iconColor: '#7B4FAF', personal: true  },
+  başarım:          { type: 'BAŞARIM',  typeColor: '#C9A84C', icon: Crown,     iconColor: '#C9A84C', personal: true  },
+  komutan_savaşı:   { type: 'KOMUTA',   typeColor: '#E05A30', icon: Sword,     iconColor: '#E05A30', personal: true  },
+  aile_krizi:       { type: 'AİLE',     typeColor: '#D4528A', icon: Heart,     iconColor: '#D4528A', personal: true  },
+  aile_destek:      { type: 'AİLE',     typeColor: '#D4528A', icon: Heart,     iconColor: '#D4528A', personal: true  },
+  aile_görevi_açıldı:{ type: 'AİLE',    typeColor: '#D4528A', icon: Scroll,    iconColor: '#D4528A', personal: true  },
+  iyileşme:         { type: 'SAĞLIK',   typeColor: '#4A9A5A', icon: Heart,     iconColor: '#4A9A5A', personal: true  },
+  yakalandı:        { type: 'CEZA',     typeColor: '#C84040', icon: Shield,    iconColor: '#C84040', personal: true  },
+  rank_bonusu:      { type: 'ÖRGÜT',    typeColor: '#7B4FAF', icon: Shield,    iconColor: '#7B4FAF', personal: true  },
+  şehir_kuruluşu:   { type: 'KURULUŞ',  typeColor: '#C9A84C', icon: Crown,     iconColor: '#C9A84C', personal: true  },
+  nesil_devri:      { type: 'NESİL',    typeColor: '#7B4FAF', icon: Star,      iconColor: '#7B4FAF', personal: true  },
+  zanaat_durgun:    { type: 'DÜNYA',    typeColor: '#D4820A', icon: Scale,     iconColor: '#D4820A', personal: false },
+  piyasa_olayı:     { type: 'PİYASA',   typeColor: '#4A9A5A', icon: Coins,     iconColor: '#4A9A5A', personal: false },
+  kıtlık_etkisi:    { type: 'DÜNYA',    typeColor: '#D4820A', icon: Scale,     iconColor: '#D4820A', personal: false },
+  çağ_olayı:        { type: 'ÇAĞ',      typeColor: '#C84040', icon: Crown,     iconColor: '#C84040', personal: false },
+  göç:              { type: 'DÜNYA',    typeColor: '#7A6A4F', icon: Scroll,    iconColor: '#7A6A4F', personal: false },
+  ölüm:             { type: 'DÜNYA',    typeColor: '#7A6A4F', icon: Scroll,    iconColor: '#7A6A4F', personal: false },
+  meslek_edinme:    { type: 'DÜNYA',    typeColor: '#7A6A4F', icon: Scroll,    iconColor: '#7A6A4F', personal: false },
+  şenlik:           { type: 'DÜNYA',    typeColor: '#C9A84C', icon: Star,      iconColor: '#C9A84C', personal: false },
+  haydut_baskını:   { type: 'DÜNYA',    typeColor: '#C84040', icon: Sword,     iconColor: '#C84040', personal: false },
+  savaş_ilanı:      { type: 'DÜNYA',    typeColor: '#C84040', icon: Sword,     iconColor: '#C84040', personal: false },
+  savaş_hareketi:   { type: 'DÜNYA',    typeColor: '#C84040', icon: Sword,     iconColor: '#C84040', personal: false },
+  barış:            { type: 'DÜNYA',    typeColor: '#4A9A5A', icon: Scale,     iconColor: '#4A9A5A', personal: false },
+  istikrar_artışı:  { type: 'DÜNYA',    typeColor: '#4A9A5A', icon: Scale,     iconColor: '#4A9A5A', personal: false },
+  tahta_çıkış:      { type: 'DÜNYA',    typeColor: '#C9A84C', icon: Crown,     iconColor: '#C9A84C', personal: false },
+  işgal:            { type: 'DÜNYA',    typeColor: '#C84040', icon: Sword,     iconColor: '#C84040', personal: false },
 };
-const DEFAULT_EVENT = { type: 'OLAY', typeColor: '#C9A84C', icon: Star, iconColor: '#C9A84C', personal: true };
+const DEFAULT_EVENT = { type: 'OLAY', typeColor: '#C9A84C', icon: Star, iconColor: '#C9A84C', personal: false };
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 function fameLabel(fame) {
@@ -269,7 +305,16 @@ function CornerOrnament({ position }) {
 
 // ── MAIN DASHBOARD ────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const { state, advance } = useGame() || {};
+  const { state, advance, fetchState } = useGame() || {};
+  // Popup zinciri: hafta ilerleyince önce life event, sonra hikâye popup'ı
+  const [showLifeEvent, setShowLifeEvent] = useState(false);
+  const [showStory, setShowStory] = useState(false);
+
+  React.useEffect(() => {
+    // Sayfa açılışında bekleyen popup'ları yokla (önceki oturumdan kalmış olabilir)
+    const t = setTimeout(() => setShowLifeEvent(true), 600);
+    return () => clearTimeout(t);
+  }, []);
   const [activeTab, setActiveTab]     = useState('gunluk');
   const [advancing, setAdvancing]     = useState(false);
 
@@ -311,15 +356,22 @@ export default function Dashboard() {
   // ── Filter events by tab ───────────────────────────────────────────────────
   const reversed = [...chronicle].reverse();
 
-  const personalEvents = reversed.filter(e => {
-    const cfg = EVENT_MAP[e.type];
-    return cfg ? cfg.personal !== false : true;
-  }).slice(0, 8);
+  // Kişisel günlük: haritada personal=true olan tipler + metinde oyuncunun
+  // adı geçen olaylar (kendi evliliğin/doğumun gibi). Gerisi dünya sekmesine.
+  const firstName = (player?.name || '').split(' ')[0];
+  const mentionsPlayer = (e) =>
+    firstName && firstName.length > 2 && (e.text || '').includes(firstName);
 
-  const worldEvents = reversed.filter(e => {
+  const isPersonal = (e) => {
     const cfg = EVENT_MAP[e.type];
-    return cfg ? cfg.personal === false : false;
-  }).slice(0, 8);
+    if (cfg?.personal === true) return true;
+    if (cfg?.personal === 'isim') return mentionsPlayer(e);
+    if (cfg?.personal === false) return false;
+    return mentionsPlayer(e);
+  };
+
+  const personalEvents = reversed.filter(isPersonal).slice(0, 8);
+  const worldEvents = reversed.filter(e => !isPersonal(e)).slice(0, 8);
 
   const currentTabEvents =
     activeTab === 'gunluk' ? personalEvents :
@@ -337,6 +389,8 @@ export default function Dashboard() {
           description: 'Yeni olaylar günlüğünde belirdi.',
           duration: 2500,
         });
+        // Önce life event popup'ı; o kapanınca hikâye popup'ı zincirlenir
+        setShowLifeEvent(true);
       }
     } finally {
       setAdvancing(false);
@@ -511,6 +565,9 @@ export default function Dashboard() {
         {/* ── JOURNAL PANEL ─────────────────────────────────────────────── */}
         <div style={{
           margin: '0.7rem 0.75rem 0',
+          // Sabit Haftayı İlerle butonu + alt nav'ın üzerinde bitir:
+          // panel içi scroll çalışır, içerik butonun altında kaybolmaz
+          marginBottom: 'calc(8.4rem + env(safe-area-inset-bottom, 0px))',
           background: 'var(--color-card)',
           border: '1px solid var(--color-border-hi)',
           borderRadius: '10px',
@@ -518,6 +575,7 @@ export default function Dashboard() {
           overflow: 'hidden',
           position: 'relative',
           flex: 1,
+          minHeight: 0,
           display: 'flex',
           flexDirection: 'column',
         }}>
@@ -661,6 +719,18 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* ── EVENT & HİKÂYE POPUP ZİNCİRİ ──────────────────────────────────── */}
+      <LifeEventModal
+        open={showLifeEvent}
+        onClose={() => { setShowLifeEvent(false); setShowStory(true); }}
+        onComplete={() => { if (fetchState) fetchState(); }}
+      />
+      <StoryModal
+        open={showStory}
+        onClose={() => setShowStory(false)}
+        onComplete={() => { if (fetchState) fetchState(); }}
+      />
 
       {/* ── ADVANCE BUTTON (fixed, above nav) ─────────────────────────────── */}
       <div className="lg:hidden" style={{

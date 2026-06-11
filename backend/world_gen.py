@@ -151,10 +151,12 @@ CASTLE_NAMES = [
 PROFESSIONS_COMMON = [
     # Tarım & hayvancılık
     "çiftçi", "çoban", "bahçıvan", "balıkçı", "avcı", "arıcı",
+    # Hammadde (Faz 1A: üretim zinciri girişleri)
+    "madenci", "oduncu",
     # Zanaatkâr
     "demirci", "marangoz", "kunduracı", "fırıncı", "değirmenci",
     "çömlekçi", "dokumacı", "boyacı", "sepici", "kasap",
-    "kuyumcu", "silahçı", "zırh_ustası", "berber",
+    "kuyumcu", "silahçı", "zırh_ustası", "berber", "terzi", "şarapçı",
     # Ticaret & hizmet
     "tüccar", "seyyar_satıcı", "han_sahibi", "kervancı",
     "katip", "tellal", "sarraf",
@@ -187,10 +189,30 @@ PERSONALITY_TRAITS = [
     "huysuz", "hoşgörülü", "mütevazi", "gösterişçi", "maceracı", "muhafazakâr",
 ]
 
-GOODS = ["buğday", "ekmek", "et", "demir", "odun", "kumaş", "silah", "ipek", "baharat"]
+# Faz 1A: Üretim zinciri malları eklendi (hammadde → ara ürün → son ürün)
+GOODS = [
+    # Gıda zinciri
+    "buğday", "un", "ekmek", "et",
+    # Tekstil zinciri
+    "yün", "kumaş", "kıyafet",
+    # Metal zinciri
+    "demir_cevheri", "demir", "silah", "alet",
+    # Şarap zinciri
+    "üzüm", "şıra", "şarap",
+    # Ahşap zinciri
+    "odun", "kereste", "mobilya",
+    # Deri zinciri
+    "deri", "işlenmiş_deri", "zırh", "çizme",
+    # Lüks ithal (kervan malları — yerel üretimi yok)
+    "ipek", "baharat",
+]
 GOOD_BASE_PRICES = {
-    "buğday": 4, "ekmek": 6, "et": 12, "demir": 25,
-    "odun": 5, "kumaş": 10, "silah": 60,
+    "buğday": 4, "un": 7, "ekmek": 6, "et": 12,
+    "yün": 6, "kumaş": 10, "kıyafet": 28,
+    "demir_cevheri": 10, "demir": 25, "silah": 60, "alet": 32,
+    "üzüm": 5, "şıra": 14, "şarap": 18,
+    "odun": 5, "kereste": 14, "mobilya": 55,
+    "deri": 8, "işlenmiş_deri": 14, "zırh": 55, "çizme": 20,
     "ipek": 45, "baharat": 35,
 }
 
@@ -478,6 +500,10 @@ def _link_family(npcs):
     i = 0
     while i < len(adults) - 1 and pairs_formed < len(adults) // 3:
         a = adults[i]
+        # Önceki turda partner olarak atanmış olabilir — üzerine yazma!
+        if a["spouse_id"] is not None:
+            i += 1
+            continue
         partner = next(
             (b for b in adults[i+1:] if b["gender"] != a["gender"]
              and b["spouse_id"] is None and b["kingdom_id"] == a["kingdom_id"]),
@@ -486,6 +512,11 @@ def _link_family(npcs):
         if partner:
             a["spouse_id"] = partner["id"]
             partner["spouse_id"] = a["id"]
+            # Aile soyadı birliği: kadın ve çocuklar erkeğin soyadını taşır
+            husband = a if a["gender"] == "erkek" else partner
+            wife = partner if husband is a else a
+            h_surname = husband["name"].split()[-1]
+            wife["name"] = f"{wife['name'].split()[0]} {h_surname}"
             n_children = random.randint(0, 3)
             for _ in range(n_children):
                 child = next(
@@ -498,6 +529,7 @@ def _link_family(npcs):
                     child["parent_ids"] = [a["id"], partner["id"]]
                     a["children_ids"].append(child["id"])
                     partner["children_ids"].append(child["id"])
+                    child["name"] = f"{child['name'].split()[0]} {h_surname}"
             pairs_formed += 1
         i += 1
 

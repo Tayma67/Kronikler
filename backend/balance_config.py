@@ -130,6 +130,39 @@ ECONOMY = {
     "wealth_min": 1,
 }
 
+# ─── ÜRETİM ZİNCİRLERİ (Faz 1A) ───────────────────────────────────────────
+PRODUCTION_BALANCE = {
+    # Her hammadde üreticisi NPC kaç kişilik nüfusu temsil eder
+    "people_per_producer": 6,
+    # Temsil çarpanı tavanı (tek çiftçi koca şehri tek başına doyuramasın)
+    "household_factor_max": 8.0,
+    # Zanaatkârın dönüşüm kârından servetine yazılan pay (kalanı vergi/işçilik)
+    "craftsman_wage_share": 0.4,
+}
+
+# Haftalık nüfus tüketimi: mal → nüfus_oranı (pop × oran = tüketilen adet)
+# Talep yaratır + arzı düşürür. Lüks mallar (şarap, mobilya, kıyafet)
+# lokasyon zenginliğiyle ölçeklenir (wealth_scaled).
+CONSUMPTION = {
+    "ekmek":   {"frac": 0.012, "wealth_scaled": False},
+    "buğday":  {"frac": 0.006, "wealth_scaled": False},
+    "et":      {"frac": 0.006, "wealth_scaled": False},
+    "un":      {"frac": 0.002, "wealth_scaled": False},   # ev fırınları
+    "odun":    {"frac": 0.004, "wealth_scaled": False},   # ısınma
+    "kumaş":   {"frac": 0.002, "wealth_scaled": False},
+    "üzüm":    {"frac": 0.004, "wealth_scaled": False},  # taze meyve
+    "yün":     {"frac": 0.002, "wealth_scaled": False},  # ev eğirmeciliği
+    "deri":    {"frac": 0.0015, "wealth_scaled": False}, # ev kullanımı
+    "kıyafet": {"frac": 0.0015, "wealth_scaled": True},
+    "çizme":   {"frac": 0.001,  "wealth_scaled": True},
+    "alet":    {"frac": 0.001,  "wealth_scaled": False},  # çiftçi/zanaat ihtiyacı
+    "şarap":   {"frac": 0.002,  "wealth_scaled": True},
+    "mobilya": {"frac": 0.0005, "wealth_scaled": True},
+    "demir":   {"frac": 0.001,  "wealth_scaled": False},
+    "silah":   {"frac": 0.0008, "wealth_scaled": False},
+    "zırh":    {"frac": 0.0003, "wealth_scaled": False},
+}
+
 # ─── DÜNYA OLAYLARI ───────────────────────────────────────────────────────
 WORLD_EVENTS = {
     # Her ayda kaç event tetiklenir (ortalama)

@@ -1,662 +1,433 @@
-import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
-import {
-  Crown, MapPin, ShieldCheck, Coins, Castle, Tent,
-  Building2, Swords, User, ChevronRight, AlertTriangle, Layers, Map, Users,
-} from "lucide-react";
 
-// ─── Faction nüfuz renkleri ───────────────────────────────────────────────────
-const FACTION_COLORS = [
-  "#f97316", "#3b82f6", "#22c55e", "#a855f7",
-  "#ec4899", "#eab308", "#06b6d4", "#ef4444",
+/* ─────────────────────────────────────────────────────────────────
+   WorldMap.jsx — "Şehir" sayfası: Dünya Genel Bakışı
+   Mockup uygulaması: bulunduğun yer kartı + stilize diyar haritası +
+   beylikler/yerleşimler akordeonu. KarakterEkrani tasarım dili (C paleti).
+   ───────────────────────────────────────────────────────────────── */
+
+const C = {
+  bg:         "#0A0A0A",
+  card:       "#111111",
+  card2:      "#16120A",
+  card3:      "#1A1500",
+  gold:       "#C9A84C",
+  goldBright: "#F0C040",
+  goldDim:    "#5A4010",
+  goldBorder: "rgba(201,168,76,0.22)",
+  goldBg:     "rgba(201,168,76,0.07)",
+  text:       "#D8C8A0",
+  textDim:    "#7A7060",
+  textMid:    "#A09070",
+  red:        "#C0392B",
+  green:      "#27AE60",
+};
+
+const KIND_ICON = { "şehir": "🏛", "köy": "🏘", "kale": "🏰" };
+const KIND_LABEL = { "şehir": "ŞEHİR", "köy": "KÖY", "kale": "KALE" };
+
+/* Krallık pinleri: el yerleşimi slotlar — kenarlardan ve sol-alttaki
+   "Bulunduğun Yer" kartından uzak dururlar */
+const PIN_SLOTS = [
+  { left: "50%", top: "18%" },
+  { left: "22%", top: "34%" },
+  { left: "76%", top: "30%" },
+  { left: "64%", top: "58%" },
+  { left: "38%", top: "52%" },
+  { left: "84%", top: "64%" },
+  { left: "16%", top: "60%" },
+  { left: "50%", top: "42%" },
 ];
-
-// ─── Sabit renkler (krallık başına) ──────────────────────────────────────────
-const KINGDOM_PALETTES = [
-  {
-    zone: "rgba(194,65,12,0.07)",
-    border: "stroke-orange-900",
-    text: "text-orange-400",
-    node: "#c2410c",
-    badge: "border-orange-800/60 text-orange-400",
-    dim: "rgba(194,65,12,0.25)",
-  },
-  {
-    zone: "rgba(59,130,246,0.07)",
-    border: "stroke-blue-900",
-    text: "text-sky-400",
-    node: "#2563eb",
-    badge: "border-sky-800/60 text-sky-400",
-    dim: "rgba(37,99,235,0.25)",
-  },
-  {
-    zone: "rgba(22,163,74,0.07)",
-    border: "stroke-green-900",
-    text: "text-emerald-400",
-    node: "#16a34a",
-    badge: "border-emerald-800/60 text-emerald-400",
-    dim: "rgba(22,163,74,0.25)",
-  },
-];
-
-function hashCode(str) {
-  let h = 5381;
-  for (let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
-  return Math.abs(h);
+function pinPosition(index) {
+  return PIN_SLOTS[index % PIN_SLOTS.length];
 }
 
-function getLocPos(loc, kingdoms, mapW, mapH, idx, totalInKingdom) {
-  const kIdx = kingdoms.findIndex((k) => k.id === loc.kingdom_id);
-  const cols = kingdoms.length;
-  const zoneW = mapW / cols;
-  const baseX = kIdx * zoneW;
-
-  const pad = { x: 30, y: 50 };
-  const innerW = zoneW - pad.x * 2;
-  const innerH = mapH - pad.y * 2;
-
-  const h = hashCode(loc.id);
-  const tx = (h % 1000) / 1000;
-  const ty = ((h >> 10) % 1000) / 1000;
-
-  let x, y;
-  if (loc.kind === "şehir") {
-    x = baseX + zoneW * 0.5;
-    y = pad.y + innerH * 0.2;
-  } else if (loc.kind === "kale") {
-    x = baseX + pad.x + innerW * (0.2 + tx * 0.6);
-    y = pad.y + innerH * (0.35 + ty * 0.25);
-  } else {
-    x = baseX + pad.x + innerW * (0.05 + tx * 0.9);
-    y = pad.y + innerH * (0.55 + ty * 0.38);
-  }
-
-  return { x: Math.round(x), y: Math.round(y) };
-}
-
-const NODE_SIZE = { şehir: 10, kale: 7, köy: 5 };
-const LOC_ICONS = { şehir: Building2, kale: Castle, köy: Tent };
-
-// ─── SVG Harita ───────────────────────────────────────────────────────────────
-function WorldSvgMap({ kingdoms, locations, playerLocId, onLocClick, factions = [], showInfluence = false, regionsSlim = [] }) {
-  const [selected, setSelected] = useState(null);
-  const MAP_W = 660;
-  const MAP_H = 340;
-
-  const posMap = useMemo(() => {
-    const m = {};
-    const countByKingdom = {};
-    for (const loc of locations) {
-      countByKingdom[loc.kingdom_id] = (countByKingdom[loc.kingdom_id] || 0) + 1;
-    }
-    const idxByKingdom = {};
-    for (const loc of locations) {
-      idxByKingdom[loc.kingdom_id] = (idxByKingdom[loc.kingdom_id] || 0);
-      m[loc.id] = getLocPos(
-        loc, kingdoms, MAP_W, MAP_H,
-        idxByKingdom[loc.kingdom_id]++,
-        countByKingdom[loc.kingdom_id]
-      );
-    }
-    return m;
-  }, [locations, kingdoms]);
-
-  const influenceMap = useMemo(() => {
-    if (!showInfluence || !factions.length) return {};
-    const m = {};
-    for (const loc of locations) {
-      let best = null, bestVal = 0;
-      factions.forEach((f, idx) => {
-        const val = f.city_influence?.[loc.id] || 0;
-        if (val > bestVal) { bestVal = val; best = { f, idx }; }
-      });
-      if (best && bestVal > 10) {
-        m[loc.id] = {
-          color: FACTION_COLORS[best.idx % FACTION_COLORS.length],
-          pct: Math.min(100, bestVal),
-          name: best.f.name,
-        };
-      }
-    }
-    return m;
-  }, [showInfluence, factions, locations]);
-
-  const warPairs = useMemo(() => {
-    const pairs = [];
-    const seen = new Set();
-    for (const k of kingdoms) {
-      for (const wid of (k.at_war_with || [])) {
-        const key = [k.id, wid].sort().join("-");
-        if (!seen.has(key)) {
-          seen.add(key);
-          pairs.push([k.id, wid]);
-        }
-      }
-    }
-    return pairs;
-  }, [kingdoms]);
-
-  const capitalPos = useMemo(() => {
-    const m = {};
-    for (const k of kingdoms) {
-      const cap = locations.find((l) => l.kind === "şehir" && l.kingdom_id === k.id);
-      if (cap && posMap[cap.id]) m[k.id] = posMap[cap.id];
-    }
-    return m;
-  }, [kingdoms, locations, posMap]);
-
-  const selectedLoc = selected ? locations.find((l) => l.id === selected) : null;
-
+function GoldDivider() {
   return (
-    <div className="relative w-full">
-      <svg
-        viewBox={`0 0 ${MAP_W} ${MAP_H}`}
-        className="w-full rounded-sm border border-stone-800/60"
-        style={{ background: "linear-gradient(180deg, #0f0e0d 0%, #141210 100%)" }}
-        onClick={() => setSelected(null)}
-      >
-        {/* Grain doku */}
-        <defs>
-          <filter id="grain">
-            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" />
-            <feColorMatrix values="0 0 0 0 0.08 0 0 0 0 0.06 0 0 0 0 0.04 0 0 0 0.12 0" />
-          </filter>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-          <filter id="pulse-glow">
-            <feGaussianBlur stdDeviation="5" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
-        <rect width={MAP_W} height={MAP_H} filter="url(#grain)" opacity="0.6" />
-
-        {/* Krallık bölge arka planları */}
-        {kingdoms.map((k, idx) => {
-          const palette = KINGDOM_PALETTES[idx % KINGDOM_PALETTES.length];
-          const zoneW = MAP_W / kingdoms.length;
-          const x = idx * zoneW;
-          return (
-            <g key={k.id}>
-              <rect
-                x={x + 2}
-                y={2}
-                width={zoneW - 4}
-                height={MAP_H - 4}
-                fill={palette.zone}
-                rx="2"
-              />
-              {idx > 0 && (
-                <line
-                  x1={x}
-                  y1={20}
-                  x2={x}
-                  y2={MAP_H - 20}
-                  stroke="#292524"
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
-                  opacity="0.6"
-                />
-              )}
-              <text
-                x={x + zoneW / 2}
-                y={22}
-                textAnchor="middle"
-                fontSize="9"
-                fontFamily="Cinzel, serif"
-                letterSpacing="2"
-                fill={palette.dim}
-                style={{ textTransform: "uppercase" }}
-              >
-                {k.name}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Savaş çizgileri */}
-        {warPairs.map(([k1id, k2id]) => {
-          const p1 = capitalPos[k1id];
-          const p2 = capitalPos[k2id];
-          if (!p1 || !p2) return null;
-          const mx = (p1.x + p2.x) / 2;
-          const my = (p1.y + p2.y) / 2;
-          return (
-            <g key={`war-${k1id}-${k2id}`}>
-              <line
-                x1={p1.x}
-                y1={p1.y}
-                x2={p2.x}
-                y2={p2.y}
-                stroke="#7f1d1d"
-                strokeWidth="1.5"
-                strokeDasharray="5 4"
-                opacity="0.6"
-              />
-              <text x={mx} y={my - 4} textAnchor="middle" fontSize="11" fill="#ef4444" opacity="0.8">⚔</text>
-            </g>
-          );
-        })}
-
-        {/* Konum bağlantı çizgileri (aynı krallık, city→castle) */}
-        {locations.filter((l) => l.kind === "kale").map((loc) => {
-          const city = locations.find((l2) => l2.kind === "şehir" && l2.kingdom_id === loc.kingdom_id);
-          if (!city || !posMap[loc.id] || !posMap[city.id]) return null;
-          const p1 = posMap[city.id];
-          const p2 = posMap[loc.id];
-          return (
-            <line
-              key={`conn-${loc.id}`}
-              x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-              stroke="#292524"
-              strokeWidth="1"
-              opacity="0.5"
-            />
-          );
-        })}
-
-        {/* Lokasyon düğümleri */}
-        {locations.map((loc) => {
-          const pos = posMap[loc.id];
-          if (!pos) return null;
-          const kIdx = kingdoms.findIndex((k) => k.id === loc.kingdom_id);
-          const palette = KINGDOM_PALETTES[kIdx % KINGDOM_PALETTES.length];
-          const r = NODE_SIZE[loc.kind] || 5;
-          const isPlayer = loc.id === playerLocId;
-          const isSelected = selected === loc.id;
-
-          return (
-            <g
-              key={loc.id}
-              style={{ cursor: "pointer" }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelected(prev => prev === loc.id ? null : loc.id);
-              }}
-            >
-              {/* Faction nüfuz halkası */}
-              {showInfluence && influenceMap[loc.id] && (() => {
-                const inf = influenceMap[loc.id];
-                const alpha = Math.max(0.15, inf.pct / 100 * 0.55);
-                return (
-                  <circle
-                    cx={pos.x}
-                    cy={pos.y}
-                    r={r + 8 + (inf.pct / 100) * 6}
-                    fill={inf.color}
-                    opacity={alpha}
-                  />
-                );
-              })()}
-
-              {/* Glow halkası player için */}
-              {isPlayer && (
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={r + 7}
-                  fill="none"
-                  stroke="#f97316"
-                  strokeWidth="1.5"
-                  opacity="0.5"
-                  filter="url(#pulse-glow)"
-                >
-                  <animate
-                    attributeName="r"
-                    values={`${r + 4};${r + 10};${r + 4}`}
-                    dur="2.5s"
-                    repeatCount="indefinite"
-                  />
-                  <animate
-                    attributeName="opacity"
-                    values="0.6;0.15;0.6"
-                    dur="2.5s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-              )}
-
-              {/* Seçili halka */}
-              {isSelected && !isPlayer && (
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={r + 5}
-                  fill="none"
-                  stroke={palette.node}
-                  strokeWidth="1"
-                  opacity="0.4"
-                />
-              )}
-
-              {/* Ana düğüm */}
-              <circle
-                cx={pos.x}
-                cy={pos.y}
-                r={isSelected ? r + 2 : r}
-                fill={isPlayer ? "#f97316" : palette.node}
-                opacity={isSelected ? 1 : 0.85}
-                style={{ transition: "r 0.2s ease" }}
-              />
-
-              {/* İç nokta (şehirler için) */}
-              {loc.kind === "şehir" && (
-                <circle cx={pos.x} cy={pos.y} r={3} fill="#fef3c7" opacity="0.6" />
-              )}
-
-              {/* Player ikonı */}
-              {isPlayer && (
-                <text
-                  x={pos.x}
-                  y={pos.y - r - 5}
-                  textAnchor="middle"
-                  fontSize="10"
-                  fill="#f97316"
-                >
-                  ●
-                </text>
-              )}
-
-              {/* İsim etiketi */}
-              <text
-                x={pos.x}
-                y={pos.y + r + 10}
-                textAnchor="middle"
-                fontSize={loc.kind === "şehir" ? "8" : "7"}
-                fontFamily="Cinzel, serif"
-                fill={isPlayer ? "#f97316" : "#a8a29e"}
-                opacity={isSelected ? 1 : 0.75}
-                letterSpacing="0.5"
-              >
-                {loc.name}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-
-      {/* Seçili lokasyon tooltip */}
-      {selectedLoc && (() => {
-        const kIdx = kingdoms.findIndex((k) => k.id === selectedLoc.kingdom_id);
-        const palette = KINGDOM_PALETTES[kIdx % KINGDOM_PALETTES.length];
-        const reg = regionsSlim.find((r) => r.location_id === selectedLoc.id);
-        const ALTYAPI = { 1: "Mezra", 2: "Köy", 3: "Kasaba", 4: "Şehir", 5: "Büyük Şehir" };
-        return (
-          <div className="absolute bottom-2 left-2 right-2 pointer-events-none">
-            <div className="card-frame p-2.5 text-xs flex items-center gap-3 flex-wrap">
-              <span className={`font-heading ${palette.text}`}>{selectedLoc.name}</span>
-              <span className="text-stone-500 capitalize">{selectedLoc.kind}</span>
-              {reg && (
-                <>
-                  <span className="flex items-center gap-1 text-stone-400">
-                    <Users className="w-3 h-3" /> {reg.nufus.toLocaleString()}
-                  </span>
-                  <span className="text-stone-600 text-[10px] font-heading tracking-wider uppercase">
-                    {ALTYAPI[reg.altyapi_seviyesi] || `Lv${reg.altyapi_seviyesi}`}
-                  </span>
-                </>
-              )}
-              <span className="flex items-center gap-1 text-stone-400">
-                <Coins className="w-3 h-3" /> {selectedLoc.wealth}
-              </span>
-              <span className="flex items-center gap-1 text-stone-400">
-                <ShieldCheck className="w-3 h-3" /> {selectedLoc.security}
-              </span>
-              <button
-                onClick={(e) => { e.stopPropagation(); onLocClick(selectedLoc.id); }}
-                className="ml-auto px-2 py-1 text-[10px] font-heading tracking-wider border border-orange-800 text-orange-400 hover:bg-orange-950/40 rounded-sm pointer-events-auto"
-              >
-                Git →
-              </button>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Lejand */}
-      <div className="absolute top-2 right-2 flex flex-col gap-1 pointer-events-none">
-        {[
-          { kind: "şehir", label: "Şehir", r: 5 },
-          { kind: "kale", label: "Kale", r: 3.5 },
-          { kind: "köy", label: "Köy", r: 2.5 },
-        ].map(({ kind, label, r }) => (
-          <div key={kind} className="flex items-center gap-1.5">
-            <svg width="12" height="12" viewBox="0 0 12 12">
-              <circle cx="6" cy="6" r={r} fill="#57534e" />
-              {kind === "şehir" && <circle cx="6" cy="6" r="1.5" fill="#a8a29e" />}
-            </svg>
-            <span className="text-[9px] text-stone-600 font-heading tracking-wider">{label}</span>
-          </div>
-        ))}
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <svg width="12" height="12" viewBox="0 0 12 12">
-            <circle cx="6" cy="6" r="5" fill="#f97316" opacity="0.8" />
-          </svg>
-          <span className="text-[9px] text-orange-500 font-heading tracking-wider">Sen</span>
-        </div>
-      </div>
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${C.goldDim} 60%, transparent)` }} />
+      <div style={{ width: 5, height: 5, background: C.gold, transform: "rotate(45deg)", margin: "0 8px", boxShadow: `0 0 4px ${C.gold}` }} />
+      <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${C.goldDim} 60%, transparent)` }} />
     </div>
   );
 }
 
-// ─── Kingdom Kartı (liste görünümü) ──────────────────────────────────────────
-function KingdomCard({ kingdom, locs, king, kIdx }) {
-  const palette = KINGDOM_PALETTES[kIdx % KINGDOM_PALETTES.length];
-  const wars = kingdom.at_war_with?.length ?? 0;
-
+function StatChip({ icon, value }) {
   return (
-    <div className="card-frame p-4">
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <div className="label-tiny">{kingdom.culture} · {kingdom.religion}</div>
-          <h2 className={`font-heading text-lg ${palette.text}`}>{kingdom.name}</h2>
-        </div>
-        <Crown className={`w-4 h-4 ${palette.text}`} />
-      </div>
-
-      {king ? (
-        <div className="text-xs text-stone-400 mb-3 flex items-center gap-1.5">
-          <User className="w-3 h-3" />
-          <span>Hükümdar: <span className="text-stone-200">{king.name}</span> ({king.age})</span>
-        </div>
-      ) : (
-        <div className="text-xs text-red-400/70 mb-3 italic flex items-center gap-1.5">
-          <AlertTriangle className="w-3 h-3" /> Taht boş
-        </div>
-      )}
-
-      {wars > 0 && (
-        <div className="text-xs text-red-400 border border-red-900/40 bg-red-950/20 px-2 py-1 rounded-sm mb-3 flex items-center gap-1.5">
-          <Swords className="w-3 h-3" /> {wars} krallıkla savaş halinde
-        </div>
-      )}
-
-      <div className="mb-3">
-        <div className="flex justify-between text-xs mb-1">
-          <span className="text-stone-500">İstikrar</span>
-          <span className={`font-heading ${kingdom.stability > 60 ? "text-emerald-400" : kingdom.stability > 35 ? "text-amber-400" : "text-red-400"}`}>
-            {kingdom.stability}
-          </span>
-        </div>
-        <div className="stat-bar">
-          <div
-            className={`h-full ${kingdom.stability > 60 ? "stat-bar-fill-good" : kingdom.stability > 35 ? "stat-bar-fill" : "stat-bar-fill-bad"}`}
-            style={{ width: `${kingdom.stability}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-0.5">
-        {locs.map((loc) => {
-          const Icon = LOC_ICONS[loc.kind] || MapPin;
-          return (
-            <Link
-              key={loc.id}
-              to={`/oyun/sehir/${loc.id}`}
-              className="flex items-center justify-between text-sm py-1.5 px-2 rounded-sm hover:bg-stone-900/80 group"
-            >
-              <div className="flex items-center gap-2">
-                <Icon className="w-3.5 h-3.5 text-stone-500 group-hover:text-orange-500" />
-                <span className="text-stone-200 capitalize text-xs">{loc.name}</span>
-                <span className="text-stone-600 text-[10px]">({loc.kind})</span>
-              </div>
-              <div className="flex items-center gap-3 text-[10px] text-stone-500">
-                <span className="flex items-center gap-1"><ShieldCheck className="w-2.5 h-2.5" />{loc.security}</span>
-                <span className="flex items-center gap-1"><Coins className="w-2.5 h-2.5" />{loc.wealth}</span>
-                <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 text-orange-500" />
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 9.5, color: C.textMid }}>
+      <span style={{ fontSize: 10 }}>{icon}</span>
+      <span style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, color: C.text }}>{value}</span>
+    </span>
   );
 }
 
-// ─── Ana Sayfa ────────────────────────────────────────────────────────────────
-export default function WorldMap() {
-  const { state } = useGame();
-  const navigate = useNavigate();
-  const [showInfluence, setShowInfluence] = useState(false);
-  const [view, setView] = useState("harita");
+/* ── Yerleşim mini kartı (akordeon içi) ─────────────────────────── */
+function SettlementCard({ loc, isHere, onGo }) {
+  return (
+    <button onClick={onGo} style={{
+      display: "flex", flexDirection: "column", gap: 3,
+      background: isHere ? "rgba(201,168,76,0.12)" : C.card2,
+      border: `1px solid ${isHere ? C.gold : C.goldBorder}`,
+      borderRadius: 8, padding: "8px 9px", minWidth: 0,
+      cursor: "pointer", textAlign: "left",
+      boxShadow: isHere ? `0 0 10px rgba(201,168,76,0.25)` : "none",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+        <span style={{ fontSize: 13 }}>{KIND_ICON[loc.kind] || "📍"}</span>
+        <span style={{
+          fontFamily: "'Cinzel', serif", fontSize: 10.5, fontWeight: 700,
+          color: isHere ? C.goldBright : C.text,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>{loc.name}</span>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <StatChip icon="👥" value={loc.population ?? "?"} />
+        <StatChip icon="💰" value={loc.wealth ?? "?"} />
+        <StatChip icon="🛡" value={loc.security ?? "?"} />
+      </div>
+      {isHere && (
+        <span style={{ fontSize: 8, color: C.goldBright, fontFamily: "'Cinzel', serif", letterSpacing: "0.12em" }}>
+          ◆ BURADASIN
+        </span>
+      )}
+    </button>
+  );
+}
 
-  const locationsByKingdom = useMemo(() => {
-    const m = {};
-    for (const loc of state.world.locations) {
-      m[loc.kingdom_id] = m[loc.kingdom_id] || [];
-      m[loc.kingdom_id].push(loc);
-    }
-    return m;
-  }, [state]);
+/* ── Krallık akordeon satırı ────────────────────────────────────── */
+function KingdomRow({ kingdom, locations, leaderName, playerLocId, atWar, onGoLoc }) {
+  const [open, setOpen] = useState(
+    locations.some((l) => l.id === playerLocId) // kendi beyliğin açık başlar
+  );
+  const [showAllVillages, setShowAllVillages] = useState(false);
 
-  const kingFor = (kid) => {
-    const kingdom = state.world.kingdoms.find((k) => k.id === kid);
-    if (!kingdom?.king_id) return null;
-    return state.world.npcs.find((n) => n.id === kingdom.king_id && n.alive !== false);
-  };
+  const cities   = locations.filter((l) => l.kind === "şehir");
+  const castles  = locations.filter((l) => l.kind === "kale");
+  const villages = locations.filter((l) => l.kind === "köy");
+  const totalPop = locations.reduce((a, l) => a + (l.population || 0), 0);
+  const avgWealth = locations.length
+    ? Math.round(locations.reduce((a, l) => a + (l.wealth || 0), 0) / locations.length) : 0;
 
-  const playerLocId = state?.player?.location_id;
-  const playerLoc = state.world.locations.find((l) => l.id === playerLocId);
+  const visibleVillages = showAllVillages ? villages : villages.slice(0, 4);
 
   return (
-    <div className="space-y-5 rise-in">
-      <div>
-        <div className="label-tiny">Dünya</div>
-        <h1 className="font-heading text-3xl text-stone-100">Yedi Tepe Diyarı</h1>
-        <p className="text-stone-400 text-sm mt-1">
-          Krallıklar yaşıyor, halklar çekişiyor — sen olsan da olmasan da.
-        </p>
-      </div>
+    <div style={{
+      background: C.card, border: `1px solid ${C.goldBorder}`,
+      borderRadius: 10, overflow: "hidden",
+    }}>
+      {/* Başlık satırı */}
+      <button onClick={() => setOpen(!open)} style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 10,
+        padding: "11px 12px", background: open ? C.goldBg : "transparent",
+        border: "none", cursor: "pointer", textAlign: "left",
+      }}>
+        <div style={{
+          width: 34, height: 34, borderRadius: 7, flexShrink: 0,
+          background: "linear-gradient(135deg, #2A1A08, #1A1008)",
+          border: `1.5px solid ${C.gold}`,
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+        }}>👑</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{
+              fontFamily: "'Cinzel', serif", fontSize: 11.5, fontWeight: 700,
+              color: C.gold, letterSpacing: "0.06em",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>{kingdom.name?.toUpperCase()}</span>
+            {atWar && (
+              <span style={{
+                fontSize: 7.5, color: C.red, border: `1px solid ${C.red}66`,
+                borderRadius: 4, padding: "1px 4px", fontFamily: "'Cinzel', serif",
+                letterSpacing: "0.1em", flexShrink: 0,
+              }}>⚔ SAVAŞTA</span>
+            )}
+          </div>
+          <div style={{ fontFamily: "'Lora', serif", fontSize: 9.5, color: C.textDim, marginTop: 1 }}>
+            LİDER: <span style={{ color: C.textMid }}>{leaderName}</span>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 9, flexShrink: 0, alignItems: "center" }}>
+          <StatChip icon="👥" value={totalPop.toLocaleString("tr-TR")} />
+          <StatChip icon="💰" value={avgWealth} />
+          <StatChip icon="🏛" value={locations.length} />
+          <span style={{
+            color: C.textDim, fontSize: 11,
+            transform: open ? "rotate(90deg)" : "none", transition: "transform 0.2s",
+          }}>›</span>
+        </div>
+      </button>
 
-      {/* Oyuncu konum hero kartı */}
-      {playerLoc && (() => {
-        const pk = state.world.kingdoms.find(k => k.id === playerLoc.kingdom_id);
-        return (
-          <div className="card-frame p-4 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="label-tiny mb-0.5 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-orange-500" /> Bulunduğun Yer
+      {/* Genişleyen içerik */}
+      {open && (
+        <div style={{ padding: "4px 12px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
+          {cities.length > 0 && (
+            <div>
+              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 8.5, color: C.textDim, letterSpacing: "0.18em", marginBottom: 6 }}>
+                ŞEHİRLER ({cities.length})
               </div>
-              <div className="font-heading text-xl text-stone-100 truncate">{playerLoc.name}</div>
-              <div className="text-xs text-stone-500 mt-0.5">
-                {playerLoc.kind} · {pk?.name}
-                <span className="mx-1.5 text-stone-700">·</span>
-                <span className="text-stone-400">
-                  <Coins className="w-2.5 h-2.5 inline mr-0.5" />{playerLoc.wealth}
-                </span>
-                <span className="mx-1 text-stone-700">·</span>
-                <span className="text-stone-400">
-                  <ShieldCheck className="w-2.5 h-2.5 inline mr-0.5" />{playerLoc.security}
-                </span>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+                {cities.map((l) => (
+                  <SettlementCard key={l.id} loc={l} isHere={l.id === playerLocId}
+                    onGo={() => onGoLoc(l.id)} />
+                ))}
               </div>
             </div>
-            <Link
-              to={`/oyun/sehir/${playerLoc.id}`}
-              className="shrink-0 btn-ember px-3 py-2 text-[11px] font-heading tracking-wider"
-            >
-              Şehre Git →
-            </Link>
-          </div>
-        );
-      })()}
-
-      {/* Harita / Liste toggle */}
-      <div className="flex gap-1 border-b border-stone-800 pb-0">
-        {[
-          { id: "harita", label: "Harita", icon: Map },
-          { id: "liste",  label: "Liste",  icon: Layers },
-        ].map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setView(id)}
-            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-heading tracking-wider border-b-2 transition-all ${
-              view === id
-                ? "border-orange-500 text-orange-400"
-                : "border-transparent text-stone-500 hover:text-stone-300"
-            }`}
-          >
-            <Icon className="w-3 h-3" /> {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Harita view */}
-      {view === "harita" && (
-        <div className="relative">
-          <div className="flex items-center justify-end mb-2">
-            <button
-              onClick={() => setShowInfluence(v => !v)}
-              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-sm border font-heading tracking-wider transition-all ${
-                showInfluence
-                  ? "border-violet-800 bg-stone-900 text-violet-400"
-                  : "border-stone-800 text-stone-500 hover:text-stone-300"
-              }`}
-            >
-              <Layers className="w-3 h-3" />
-              Faction Nüfuz Katmanı
-            </button>
-          </div>
-          <WorldSvgMap
-            kingdoms={state.world.kingdoms}
-            locations={state.world.locations}
-            playerLocId={playerLocId}
-            onLocClick={(locId) => navigate(`/oyun/sehir/${locId}`)}
-            factions={state.world.factions || []}
-            showInfluence={showInfluence}
-            regionsSlim={state.world.regions_slim || []}
-          />
-          {showInfluence && (state.world.factions || []).length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {(state.world.factions || []).slice(0, 8).map((f, idx) => (
-                <div key={f.id} className="flex items-center gap-1.5 text-[10px] text-stone-400">
-                  <span
-                    className="w-3 h-3 rounded-full inline-block"
-                    style={{ backgroundColor: FACTION_COLORS[idx % FACTION_COLORS.length], opacity: 0.7 }}
-                  />
-                  {f.name}
-                </div>
-              ))}
+          )}
+          {castles.length > 0 && (
+            <div>
+              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 8.5, color: C.textDim, letterSpacing: "0.18em", marginBottom: 6 }}>
+                KALELER ({castles.length})
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+                {castles.map((l) => (
+                  <SettlementCard key={l.id} loc={l} isHere={l.id === playerLocId}
+                    onGo={() => onGoLoc(l.id)} />
+                ))}
+              </div>
+            </div>
+          )}
+          {villages.length > 0 && (
+            <div>
+              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 8.5, color: C.textDim, letterSpacing: "0.18em", marginBottom: 6 }}>
+                KÖYLER ({villages.length})
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+                {visibleVillages.map((l) => (
+                  <SettlementCard key={l.id} loc={l} isHere={l.id === playerLocId}
+                    onGo={() => onGoLoc(l.id)} />
+                ))}
+              </div>
+              {villages.length > 4 && (
+                <button onClick={() => setShowAllVillages(!showAllVillages)} style={{
+                  width: "100%", marginTop: 7, padding: "6px 0",
+                  background: "transparent", border: `1px solid ${C.goldBorder}`,
+                  borderRadius: 7, cursor: "pointer",
+                  fontFamily: "'Cinzel', serif", fontSize: 8.5, letterSpacing: "0.16em",
+                  color: C.textMid,
+                }}>
+                  {showAllVillages ? "▲ DAHA AZ GÖSTER" : `▼ TÜM KÖYLERİ GÖR (${villages.length})`}
+                </button>
+              )}
             </div>
           )}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Liste view */}
-      {view === "liste" && (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {state.world.kingdoms.map((k, kIdx) => (
-            <KingdomCard
+/* ═══════════════════ ANA SAYFA ═══════════════════ */
+export default function WorldMap() {
+  const { state } = useGame() || {};
+  const navigate = useNavigate();
+
+  const world     = state?.world;
+  const kingdoms  = useMemo(() => world?.kingdoms || [], [world]);
+  const locations = useMemo(() => world?.locations || [], [world]);
+  const npcs      = world?.npcs || [];
+  const player    = state?.player || {};
+
+  const currentLoc = locations.find((l) => l.id === player.location_id);
+
+  const leaderOf = (k) => {
+    if (k.king_id === "PLAYER") return player.name || "Sen";
+    const king = npcs.find((n) => n.id === k.king_id);
+    return king ? king.name : "Taht boş";
+  };
+
+  /* Krallıklar: oyuncununki en üstte */
+  const sortedKingdoms = useMemo(() => {
+    const arr = [...kingdoms];
+    arr.sort((a, b) =>
+      (b.id === currentLoc?.kingdom_id ? 1 : 0) - (a.id === currentLoc?.kingdom_id ? 1 : 0));
+    return arr;
+  }, [kingdoms, currentLoc]);
+
+  const goLoc = (id) => navigate(`/oyun/sehir/${id}`);
+
+  if (!state) return null;
+
+  return (
+    <div style={{
+      minHeight: "100%", background: C.bg, paddingBottom: "6.5rem",
+      maxWidth: 480, margin: "0 auto",
+    }}>
+      {/* ── BAŞLIK ── */}
+      <div style={{ padding: "14px 14px 10px" }}>
+        <div style={{ fontFamily: "'Cinzel', serif", fontSize: 8.5, letterSpacing: "0.3em", color: C.textDim }}>
+          DÜNYA
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <h1 style={{
+            fontFamily: "'Cinzel', serif", fontSize: 19, fontWeight: 700,
+            color: C.gold, margin: "2px 0 0", letterSpacing: "0.04em",
+            textShadow: `0 0 18px rgba(201,168,76,0.35)`,
+          }}>Küllerin Diyarı</h1>
+          {currentLoc && (
+            <button onClick={() => goLoc(currentLoc.id)} style={{
+              flexShrink: 0, padding: "7px 12px",
+              background: "linear-gradient(180deg, #3D2A08, #1E1404)",
+              border: `1.5px solid ${C.gold}88`, borderRadius: 8, cursor: "pointer",
+              fontFamily: "'Cinzel', serif", fontSize: 9.5, fontWeight: 700,
+              letterSpacing: "0.12em", color: C.goldBright,
+            }}>ŞEHRE GİT →</button>
+          )}
+        </div>
+        <p style={{ fontFamily: "'Lora', serif", fontSize: 10, fontStyle: "italic", color: C.textDim, margin: "4px 0 0", lineHeight: 1.4 }}>
+          Krallıklar yaşıyor, beylikler çekişiyor — sen daha çok yolun başında, ama harita seni bekliyor.
+        </p>
+      </div>
+
+      {/* ── HARİTA PANELİ ── */}
+      <div style={{ padding: "0 12px" }}>
+        <div style={{
+          position: "relative", height: 248, borderRadius: 12, overflow: "hidden",
+          border: `1px solid ${C.goldBorder}`,
+          background: `
+            url(/images/map/world.jpg) center / cover no-repeat,
+            radial-gradient(ellipse 90% 70% at 30% 30%, rgba(122,86,28,0.45) 0%, transparent 62%),
+            radial-gradient(ellipse 70% 60% at 75% 65%, rgba(96,70,30,0.5) 0%, transparent 66%),
+            linear-gradient(160deg, #1A140C 0%, #110D08 55%, #0C0906 100%)
+          `,
+          boxShadow: "inset 0 0 60px rgba(0,0,0,0.7), inset 0 0 24px rgba(201,168,76,0.05)",
+        }}>
+          {/* Doku: ince ızgara */}
+          <div style={{
+            position: "absolute", inset: 0, opacity: 0.05,
+            backgroundImage: `linear-gradient(${C.gold} 0.5px, transparent 0.5px), linear-gradient(90deg, ${C.gold} 0.5px, transparent 0.5px)`,
+            backgroundSize: "26px 26px",
+          }} />
+
+          {/* Kara parçaları: harita görseli yoksa diyar hissi veren organik şekiller */}
+          <svg viewBox="0 0 100 60" preserveAspectRatio="none"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.6 }}>
+            <path d="M8,14 Q18,4 34,8 Q50,3 58,12 Q66,8 72,16 Q64,24 52,22 Q40,28 28,24 Q14,26 8,14 Z"
+              fill="rgba(122,90,36,0.22)" stroke="rgba(201,168,76,0.28)" strokeWidth="0.4" />
+            <path d="M62,24 Q78,18 90,26 Q96,36 88,46 Q76,52 66,46 Q58,38 62,24 Z"
+              fill="rgba(110,82,34,0.2)" stroke="rgba(201,168,76,0.25)" strokeWidth="0.4" />
+            <path d="M12,36 Q24,30 36,38 Q46,34 52,44 Q44,54 30,52 Q16,52 12,36 Z"
+              fill="rgba(100,76,32,0.18)" stroke="rgba(201,168,76,0.22)" strokeWidth="0.4" />
+            {/* Nehir */}
+            <path d="M36,6 Q40,20 34,32 Q30,44 38,58"
+              fill="none" stroke="rgba(90,120,140,0.3)" strokeWidth="0.9" strokeLinecap="round" />
+            {/* Dağ işaretleri */}
+            <g stroke="rgba(201,168,76,0.4)" strokeWidth="0.5" fill="none">
+              <path d="M22,12 l2,-3 l2,3 M26,13 l1.6,-2.4 l1.6,2.4" />
+              <path d="M74,30 l2,-3 l2,3 M78,31 l1.6,-2.4 l1.6,2.4" />
+            </g>
+          </svg>
+
+          {/* Krallık pinleri */}
+          {kingdoms.map((k, i) => {
+            const pos = pinPosition(i);
+            const isHome = k.id === currentLoc?.kingdom_id;
+            const atWar = (k.at_war_with || []).length > 0;
+            return (
+              <div key={k.id} style={{
+                position: "absolute", ...pos, transform: "translate(-50%, -50%)",
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+                zIndex: isHome ? 3 : 2,
+              }}>
+                <div style={{
+                  width: isHome ? 14 : 10, height: isHome ? 14 : 10,
+                  background: isHome ? C.goldBright : (atWar ? C.red : C.gold),
+                  transform: "rotate(45deg)",
+                  border: `1.5px solid rgba(0,0,0,0.6)`,
+                  boxShadow: `0 0 ${isHome ? 14 : 8}px ${isHome ? C.goldBright : C.gold}99`,
+                }} />
+                <span style={{
+                  fontFamily: "'Cinzel', serif", fontSize: 7.5, fontWeight: 700,
+                  letterSpacing: "0.08em", color: isHome ? C.goldBright : C.text,
+                  whiteSpace: "nowrap", maxWidth: 86,
+                  overflow: "hidden", textOverflow: "ellipsis",
+                  background: "rgba(8,6,3,0.78)", border: `1px solid ${C.goldBorder}`,
+                  borderRadius: 4, padding: "1.5px 5px",
+                }}>{k.name?.toUpperCase()}</span>
+              </div>
+            );
+          })}
+
+          {/* Sol-alt: bulunduğun yer kartı */}
+          {currentLoc && (
+            <div style={{
+              position: "absolute", left: 10, bottom: 10, width: 158,
+              background: "rgba(10,8,4,0.88)", backdropFilter: "blur(6px)",
+              border: `1px solid ${C.gold}66`, borderRadius: 9, padding: "9px 10px",
+            }}>
+              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 7, letterSpacing: "0.22em", color: C.textDim, marginBottom: 4 }}>
+                ◆ BULUNDUĞUN YER
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: 6, flexShrink: 0,
+                  background: "linear-gradient(135deg, #2A1A08, #1A1008)",
+                  border: `1.5px solid ${C.gold}`,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+                }}>{KIND_ICON[currentLoc.kind] || "📍"}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: "'Cinzel', serif", fontSize: 11, fontWeight: 700, color: C.goldBright }}>
+                    {currentLoc.name}
+                  </div>
+                  <div style={{ fontFamily: "'Lora', serif", fontSize: 8.5, color: C.textDim }}>
+                    {KIND_LABEL[currentLoc.kind] || ""} · {currentLoc.kingdom_name || kingdoms.find(k => k.id === currentLoc.kingdom_id)?.name || ""}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 9, marginTop: 7 }}>
+                <StatChip icon="👥" value={currentLoc.population ?? "?"} />
+                <StatChip icon="💰" value={currentLoc.wealth ?? "?"} />
+                <StatChip icon="🛡" value={currentLoc.security ?? "?"} />
+              </div>
+            </div>
+          )}
+
+          {/* Sağ kenar: lejant */}
+          <div style={{
+            position: "absolute", right: 8, top: 10,
+            background: "rgba(10,8,4,0.8)", border: `1px solid ${C.goldBorder}`,
+            borderRadius: 7, padding: "6px 7px",
+            display: "flex", flexDirection: "column", gap: 4,
+          }}>
+            {[
+              { icon: "◆", color: C.goldBright, label: "Yurdun" },
+              { icon: "◆", color: C.gold, label: "Beylik" },
+              { icon: "◆", color: C.red, label: "Savaşta" },
+            ].map((l) => (
+              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ color: l.color, fontSize: 8 }}>{l.icon}</span>
+                <span style={{ fontFamily: "'Lora', serif", fontSize: 7.5, color: C.textDim }}>{l.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── BEYLİKLER VE YERLEŞİMLER ── */}
+      <div style={{ padding: "14px 12px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <span style={{
+            fontFamily: "'Cinzel', serif", fontSize: 10, fontWeight: 700,
+            letterSpacing: "0.2em", color: C.gold,
+          }}>BEYLİKLER VE YERLEŞİMLER</span>
+          <div style={{ flex: 1 }}><GoldDivider /></div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {sortedKingdoms.map((k) => (
+            <KingdomRow
               key={k.id}
               kingdom={k}
-              locs={locationsByKingdom[k.id] || []}
-              king={kingFor(k.id)}
-              kIdx={kIdx}
+              locations={locations.filter((l) => l.kingdom_id === k.id)}
+              leaderName={leaderOf(k)}
+              playerLocId={player.location_id}
+              atWar={(k.at_war_with || []).length > 0}
+              onGoLoc={goLoc}
             />
           ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
