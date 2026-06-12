@@ -706,11 +706,11 @@ Bu paragrafın yazılabilmesi için:
 
 |Anlatı Unsuru                     |Gerektiren Sistem                     |Durum      |
 |----------------------------------|--------------------------------------|-----------|
-|“Karaoğlu babamı iflas ettirmişti”|S1 Rakip Hanedanlar + miras           |🔴 Yapılacak|
-|“13’ümde intikam yemini”          |S4 Sonuç Tohumları                    |🔴 Yapılacak|
-|“Adamlarını ayarttım”             |S2 NPC Zihni + R4 Sohbet Eli          |🔴 Yapılacak|
-|“İçeriden çökerttim”              |S1 + S2 + faction_system              |🔴 Yapılacak|
-|“Oyun bana şunu yazdı”            |S3 Hikâye Yönetmeni + nemesis hafızası|🔴 Yapılacak|
+|“Karaoğlu babamı iflas ettirmişti”|S1 Rakip Hanedanlar + miras           |✅ Çalışıyor|
+|“13’ümde intikam yemini”          |S4 Sonuç Tohumları                    |✅ Çalışıyor|
+|“Adamlarını ayarttım”             |S2 NPC Zihni + R4 Sohbet Eli          |✅ Çalışıyor|
+|“İçeriden çökerttim”              |S1 + S2 + faction_system              |✅ Çalışıyor|
+|“Oyun bana şunu yazdı”            |S3 Hikâye Yönetmeni + nemesis hafızası|✅ Çalışıyor|
 
 **Bu paragraf yazılamıyorsa → hangi sistem koptu, oradan devam.**
 

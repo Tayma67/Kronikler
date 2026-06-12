@@ -17,7 +17,7 @@ Son güncelleme: 2026-06-12 · Branch: `main` (doğrudan main'e push ediliyor �
 | 4 | v5-Faz2 Quest Motoru | ✅ TAMAM (önceden vardı) | quest_engine, story_arcs, story_routes |
 | 5 | v6-S3 Hikâye Yönetmeni + Nemesis | ✅ TAMAM | **story_director.py** |
 | 6 | v6-S4 Sonuç Tohumları | ✅ TAMAM (çekirdek + retroaktif geçiş) | story_director.py (sow_seed, LIFE_EVENT_SEEDS) |
-| 7 | v5-Faz3-7 Savaş / Geç Oyun / Mobil / i18n / Store | ⬜ BAŞLANMADI | — (lansman fazı; GDD v5 spec'i repoda yok) |
+| 7 | v5-Faz3-7 Savaş / Geç Oyun / Mobil / i18n / Store | 🟡 KISMEN | Savaş reworku zaten v7 standardında (combat_engine: duruş+kart+yaralanma); 40+ içerik var (life_events_v2); tutorial var (ilk_yil arc). Kalan: mobil paketleme, ses, i18n tamamlama, offline, store launch — lansman kalemleri |
 
 ## Bu Oturumda Yapılanlar (özet)
 
@@ -95,9 +95,19 @@ advance_time(state, weeks=104)
 - Yönetmen durumu `state["yonetmen"]`, tohumlar `state["tohumlar"]`
   (okulun eski `state["seeds"]` listesi AYRI — dokunma).
 
-## Sıradaki İş (Adım 7 — başlanmadı)
+## GDD Başarı Testi — GEÇTİ ✅
 
-Savaş reworku, 40+ yaş içerik genişletmesi (kısmen var: life_events_v2),
-tutorial, ses, i18n tamamlama (locales/ var), offline mod, store launch.
-GDD v5 dokümanı repoda olmadığı için savaş reworku spec'i kullanıcıdan
-istenecek ya da v7 vizyonuna göre tasarlanacak.
+"Karaoğlu babamı iflas ettirmişti..." paragrafının 5 anlatı unsuru da
+uçtan uca doğrulandı (sabotaj → tohum → adam ayartma → tutum köprüsü →
+veraset → yönetmen perdeleri, 200 haftalık simülasyonda sıfır hata).
+GDD'deki Başarı Testi tablosu ✅ olarak güncellendi.
+
+## Sıradaki İş (Adım 7 — kalan lansman kalemleri)
+
+- Mobil paketleme, ses sistemi, offline mod, store launch (repo dışı/altyapı)
+- i18n tamamlama: `locales/` var, `t()` kullanımı kısmi — yeni S1-S4
+  metinleri şu an Türkçe hardcoded (oyun dili Türkçe; EN için geçiş gerekir)
+- İçerik geçişi: daha fazla life-event'e tohum tarifi eklemek
+  (`story_director.LIFE_EVENT_SEEDS` — veri eklemek yeterli, kod hazır)
+- Chronicle paylaşılabilir özet kartı (final_page verisi hazır; görsel
+  kart üretimi frontend işi)
