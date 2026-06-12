@@ -1031,17 +1031,21 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
         else:
             parts.append(_pick(rng, GREETING_BY_BAND[band]).format(pname=pname))
 
+        # Ruh-hali satırı: her selamda DEĞİL (tekrar olmasın) ve düşmanca
+        # band'lerde değil (pozitif satır "Defol!" ile çelişiyordu)
         mg = MOOD_GREETING.get(mood)
-        if mg:
+        if mg and band not in ("düşman", "rakip") and rng.random() < 0.45:
             parts.append(_pick(rng, mg))
 
-        if rng.random() < 0.4:
+        # Kişisel haber paylaşımı sadece düşmanca OLMAYAN band'lerde
+        # (düşmana "geçenlerde çocuğum oldu" demek mantıksızdı)
+        if band not in ("düşman", "rakip") and rng.random() < 0.4:
             ev = latest_event_line(npc)
             if ev:
                 parts.append(ev)
 
         pf_aware = _player_aware_flavor(npc, ctx, rng, band)
-        if pf_aware and rng.random() < 0.3:
+        if pf_aware and band not in ("düşman", "rakip") and rng.random() < 0.3:
             parts.append(pf_aware)
 
     elif topic == "iş":
