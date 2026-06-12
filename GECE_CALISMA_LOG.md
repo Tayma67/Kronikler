@@ -93,3 +93,23 @@ Kullanıcı uyandığında oyunda HİÇBİR yerde ham tarayıcı penceresi görm
 - Onay metinleri sahici Türkçeye çevrildi (kuru "emin misin?" değil, sonucu anlatan).
 Doğrulama: jsxcheck 106/106 ✓. Native dialog kalmadı (grep temiz). Risk: düşük
 (her dönüşüm izole, mantık korundu, sadece tetikleme akışı modal'a sarıldı).
+
+### [22:55] ✅ İŞ 5: CityDetail pazar grafiği palete çekildi
+Recharts neon turuncu/yeşil/mor çizgiler → palet uyumlu + anlamsal (et=kan,
+demir=çelik, kumaş=mor boya, silah=köz). Eksen/tooltip/legend temalı. X ekseni
+ham "T{tur}" yerine YIL (1 tur=1 ay tutarlı). Para ⚜. Risk: düşük (izole).
+
+### [23:00] ✅ İŞ 6: Para birimi simgesi tek tip (⚜)
+HUD'da 'A', Dynasties/KarakterEkrani'nda 🪙 vardı; tasarım sistemi ⚜ kullanıyor.
+Hepsi ⚜'ye hizalandı. Risk: yok (simge değişimi).
+
+### [23:05] ✅ İŞ 7: Ölü kod + DEPRECATED işareti
+İki import edilmeyen .bak silindi (git'te korunur). design_guidelines.json eski
+spec; başına _DEPRECATED + gerçek kaynak (index.css/Kit.jsx) notu. Risk: yok.
+
+### [23:10] ✅ İŞ 8: rise-in animasyonu CANLANDI (33 sayfa)
+KRİTİK BULGU: `.rise-in` 33 dosyada kullanılıyor ama CSS tanımı YOKTU → tüm
+uygulamadaki sayfa/kart giriş animasyonu hiç çalışmıyordu. Guidelines'ın
+"subtle fade-in" hedefi tanımlanıp canlandırıldı (mount'ta bir kez,
+prefers-reduced-motion'da kapanır). Risk: yok (saf eklenti). Etki: her ekran
+artık nazikçe beliriyor — "yaşayan, cilalı" his. Bedava şaheser dokunuşu.

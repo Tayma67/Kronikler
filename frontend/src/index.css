@@ -230,6 +230,18 @@ body::after {
 
 .animate-pulse-gold { animation: pulse-gold 3s ease-in-out infinite; }
 
+/* ── rise-in: 33 sayfada KULLANILIYOR ama tanımı yoktu → sayfa/kart giriş
+   animasyonu hiç çalışmıyordu. Guidelines'ın "subtle fade-in" hedefi.
+   Mount anında bir kez; reduced-motion'da kapanır (erişilebilirlik). ── */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rise-in { animation: rise-in 0.4s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .rise-in { animation: none; }
+}
+
 /* ============================
    STEP 9: ENHANCED CTA PULSE
    ============================ */
