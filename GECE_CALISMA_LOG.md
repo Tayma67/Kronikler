@@ -191,6 +191,9 @@ Görsel teyit edilen 6 ekran (hepsi sohbette paylaşıldı / kontrol edildi):
 Sonuç: tema köprüsü + zaman modeli + görseller + rise-in HEPSİ gerçek render'da
 doğrulandı. Neon renk yok, layout sağlam, tek estetik. Hat tekrar kullanılabilir
 (spa.js + multishot.js + genstate.py) — gelecekte sayfa cilası görsel doğrulanabilir.
+- **NPCDetail** (ajanların #1 sorunlu sayfası) da render edildi: menü tam istediğim
+  3 tonda — sıradan eylemler ALTIN, tehlike KIRMIZI, gökkuşağı YOK. Disiplin teyitli.
+Toplam 7 ekran görsel doğrulandı.
 
 **EN KRİTİK İKİ BULGU:** (a) production build gece başlamadan ÖNCE de kırıktı →
 düzeltildi; (b) üretilen uygulama ikonu hiçbir yere bağlı değildi → bağlandı.
