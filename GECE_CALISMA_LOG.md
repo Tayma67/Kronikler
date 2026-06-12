@@ -53,3 +53,20 @@ Düzeltmeler:
 - Kenar takvimi: her zaman "1. Hafta" yazan anlamsız satır kaldırıldı (week_in_month
   reform sonrası daima 1) → sadece mevsim gösteriyor.
 Doğrulama: jsxcheck ✓. Risk: yok (saf etiket/sabit; backend doğru, dokunulmadı).
+
+### [21:40] ✅ İŞ 2: Tema köprüsü genişletmesi (index.css) — global kazanç
+Her iki ajanın da #1 önerdiği "tek dosyada onlarca ekranı hizala" işi. Sapma
+sayımı: text-red-400 (45×), text-emerald-400 (30×), zinc/amber/sky/purple ham
+shade'leri palet dışı neon basıyordu. Yaklaşım: ajanların "kırmızıyı altına ez"
+önerisi REDDEDİLDİ — kırmızı anlamlı (zarar). Bunun yerine ham Tailwind renkleri
+temanın kendi anlamsal tokenlarına eşlendi (anlam korunur, hue temaya oturur):
+- Yeni CSS değişkenleri (Kit.jsx TONES ile tek kaynak): --color-blood/sage/ember/
+  ink/azure/rose.
+- Metin: red/rose→blood, emerald/green→sage, purple→ink, sky/blue→azure,
+  pink→rose, amber-200/300→gold-bright, amber-500→ember, zinc/slate→parşömen.
+- Zemin: solid dolgular→temalı solid; ince tonlar (opacity son ekli)→temalı ince ton.
+- Kenar: red/emerald/purple/orange tonlu kenarlar→temalı.
+Doğrulama: esbuild CSS ✓. Risk: düşük — kanıtlanmış köprü kalıbının (text-stone-*→
+parchment) genişletilmesi; sadece off-palette hue düzeltir, layout/anlam değişmez.
+NOT: Sayfa-bazlı derin Kit migrasyonu (NPCDetail vb.) ayrıca yapılacak; bu köprü
+zemini global olarak temizliyor.

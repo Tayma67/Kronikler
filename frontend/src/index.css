@@ -22,6 +22,14 @@
   --color-parchment-dim:   #B8A880;
   --color-parchment-muted: #7A6A4F;
 
+  /* Anlamsal tonlar — Kit.jsx TONES ile tek kaynak (köprü bunları kullanır) */
+  --color-blood: #C84040;   /* tehlike / zarar / kayıp */
+  --color-sage:  #4A9A5A;   /* kazanç / olumlu / sağlık */
+  --color-ember: #E05A30;   /* uyarı / gerilim / ısı */
+  --color-ink:   #7B4FAF;   /* gizem / hikâye / örgüt */
+  --color-azure: #5E86A8;   /* bilgi / seyahat / meslek */
+  --color-rose:  #D4528A;   /* aile / sevgi */
+
   --space-xs: 0.375rem;
   --space-sm: 0.625rem;
   --space-md: 1rem;
@@ -437,6 +445,76 @@ nav button:active {
 
 .border-amber-900,
 .border-orange-800 { border-color: var(--color-gold-dim) !important; }
+
+/* ── KÖPRÜ GENİŞLETMESİ: köprü-dışı ham Tailwind metin renkleri ──────────
+   Sapma raporu (2 ajan): emerald/red/zinc/pink/sky/purple ham shade'leri
+   palet dışı neon basıyordu. Hepsini anlamsal Kül & Köz tokenına çekiyoruz —
+   anlam korunur (zarar=kırmızı, kazanç=yeşil), sadece hue temaya uyar. */
+.text-red-300, .text-red-400, .text-red-500, .text-rose-400, .text-rose-500 {
+  color: var(--color-blood) !important;
+}
+.text-emerald-300, .text-emerald-400, .text-emerald-500,
+.text-green-300, .text-green-400, .text-green-500, .text-lime-400 {
+  color: var(--color-sage) !important;
+}
+.text-orange-300, .text-orange-500, .text-amber-500, .text-amber-500\/80 {
+  color: var(--color-ember) !important;
+}
+.text-amber-200, .text-amber-300 { color: var(--color-gold-bright) !important; }
+.text-amber-600, .text-amber-600\/80 { color: var(--color-gold-dim) !important; }
+.text-purple-300, .text-purple-400, .text-violet-400, .text-fuchsia-400 {
+  color: var(--color-ink) !important;
+}
+.text-sky-300, .text-sky-400, .text-blue-300, .text-blue-400, .text-cyan-400 {
+  color: var(--color-azure) !important;
+}
+.text-pink-300, .text-pink-400 { color: var(--color-rose) !important; }
+.text-yellow-300, .text-yellow-400, .text-yellow-500 { color: var(--color-gold) !important; }
+/* zinc/slate gri tonları → parşömen ailesi (stone ile aynı muamele) */
+.text-zinc-100, .text-zinc-200, .text-slate-100, .text-slate-200 { color: var(--color-parchment) !important; }
+.text-zinc-300, .text-slate-300 { color: var(--color-parchment-dim) !important; }
+.text-zinc-400, .text-zinc-500, .text-slate-400, .text-slate-500 { color: var(--color-parchment-muted) !important; }
+
+/* ── KÖPRÜ: ham arka plan/kenar shade'leri ─────────────────────────────
+   Solid dolgular (buton/çubuk) → temalı solid; ince tonlar (opacity son
+   ekli) → temalı ince ton. Anlam korunur, hue palete oturur. */
+/* Solid dolgular */
+.bg-red-600, .bg-red-700        { background-color: var(--color-blood) !important; }
+.bg-emerald-600, .bg-emerald-700, .bg-green-600, .bg-green-700 { background-color: var(--color-sage) !important; }
+.bg-sky-600, .bg-sky-700, .bg-blue-600, .bg-blue-700 { background-color: var(--color-azure) !important; }
+.bg-amber-600, .bg-amber-700, .bg-orange-500, .bg-orange-600 { background-color: var(--color-gold-dim) !important; }
+.bg-purple-600, .bg-purple-700, .bg-violet-600 { background-color: var(--color-ink) !important; }
+.bg-pink-600, .bg-rose-600      { background-color: var(--color-rose) !important; }
+.bg-stone-600                   { background-color: #4E3E2C !important; }
+/* İnce tonlu zeminler (opacity son ekli — '/' kaçışlı) */
+.bg-red-950\/10, .bg-red-950\/20, .bg-red-950\/30, .bg-red-900\/20, .bg-red-900\/40 {
+  background-color: rgba(200,64,64,0.10) !important;
+}
+.bg-emerald-950\/20, .bg-emerald-950\/30, .bg-emerald-900\/40, .bg-green-950\/20 {
+  background-color: rgba(74,154,90,0.10) !important;
+}
+.bg-amber-950\/20, .bg-amber-950\/30, .bg-amber-900\/30, .bg-amber-900\/40 {
+  background-color: rgba(201,168,76,0.08) !important;
+}
+.bg-orange-950\/20, .bg-orange-900\/30 { background-color: rgba(224,90,48,0.08) !important; }
+.bg-purple-950\/10, .bg-purple-950\/20, .bg-purple-900\/30 { background-color: rgba(123,79,175,0.10) !important; }
+.bg-sky-950\/20, .bg-blue-950\/20 { background-color: rgba(94,134,168,0.10) !important; }
+.bg-stone-900\/40, .bg-stone-900\/60, .bg-stone-950\/40 { background-color: rgba(28,22,13,0.55) !important; }
+/* Tonlu kenarlar */
+.border-red-900, .border-red-900\/40, .border-red-900\/50, .border-red-900\/60 {
+  border-color: rgba(200,64,64,0.40) !important;
+}
+.border-emerald-900, .border-emerald-900\/40, .border-emerald-900\/50 {
+  border-color: rgba(74,154,90,0.40) !important;
+}
+.border-amber-700, .border-amber-900\/30, .border-amber-900\/50,
+.border-orange-700, .border-orange-900, .border-orange-900\/50 {
+  border-color: var(--color-gold-dim) !important;
+}
+.border-purple-900, .border-purple-900\/40 { border-color: rgba(123,79,175,0.40) !important; }
+.border-stone-900, .border-stone-800\/60, .border-stone-700\/60, .border-stone-600 {
+  border-color: var(--color-border) !important;
+}
 
 /* Mobile header in GameLayout */
 .bg-stone-950\/95 { background-color: rgba(13,10,6,0.95) !important; }
