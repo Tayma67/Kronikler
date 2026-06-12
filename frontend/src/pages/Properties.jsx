@@ -235,6 +235,14 @@ function PropertyCard({ prop, catalog, npcs, busy, onConfigure, onHire, onFire, 
         </button>
       )}
 
+      {/* GDD v8 D3: defter eksideyken oyuncu 'zarar' sanmasın — toprakta
+          büyüyen değer görünür olsun */}
+      {prop.type === "tarla" && prop.bekleyen_hasat_degeri > 0 && prop.pending_harvest <= 0 && (
+        <div className="text-[10px] text-emerald-400/80 italic flex items-center gap-1">
+          🌱 Toprakta büyüyen: ~{prop.bekleyen_hasat_degeri} altın değerinde ekin
+        </div>
+      )}
+
       {prop.type !== "ev" && (
         <WorkerSection prop={prop} npcs={npcs} onHire={onHire} onFire={onFire} busy={busy} />
       )}

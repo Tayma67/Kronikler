@@ -1388,6 +1388,11 @@ def apply_life_event_choice(state: dict, event_id: str, choice_index: int) -> di
             player["money"] = round(max(0.0, float(player.get("money", 0)) + float(delta)), 1)
         elif key == "health":
             player["health"] = min(100, max(0, int(player.get("health", 100)) + int(delta)))
+        elif key == "reputation":
+            # GDD v8 D1: event itibar ödülleri enflasyon yapıyordu (çocuk
+            # 2 yılda tavana dayanıyordu) — pozitif deltalar yarıya iner
+            d = (int(delta) + 1) // 2 if delta > 0 else int(delta)
+            player["reputation"] = max(-100, min(100, player.get("reputation", 0) + d))
         elif key in player:
             player[key] = round(max(0, player.get(key, 0) + delta), 1)
 

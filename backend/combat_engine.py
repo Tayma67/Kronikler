@@ -101,6 +101,11 @@ def roll_injury(state, severity_roll, critical):
             player["dead"] = True
             return {"id": "olum", "label": "Ölümcül Yara"}
         tier = INJURY_TIERS[3]
+        # GDD v8 D2: kalıcı sakatlık tavanı 3 — sarmalı durdur, sonrası
+        # ağır yaraya (geçici) düşer. Yenilen oyuncu kalıcı çukura girmesin.
+        kalici = sum(1 for i in player.get("injuries", []) if i.get("permanent"))
+        if kalici >= 3:
+            tier = INJURY_TIERS[2]
     if tier["stat"]:
         injury = {"id": tier["id"], "label": tier["label"], "stat": tier["stat"],
                   "delta": tier["delta"], "weeks_left": tier["weeks"],

@@ -520,6 +520,14 @@ def property_report(state):
             "pending_harvest": prop.get("pending_harvest", 0),
             "ledger": list(reversed(prop.get("ledger", [])))[:12],
         }
+        # GDD v8 D3: tarla defteri hasada dek eksi görünür — bekleyen değeri
+        # göster ki oyuncu 'zarar ediyorum' sanmasın (büyüyen ekin + hasat)
+        if prop["type"] == "tarla":
+            loc = _loc_of(state, prop["location_id"])
+            crop = prop["config"].get("crop", "buğday")
+            birim = ((loc or {}).get("market", {}).get(crop, {}) or {}).get("price", 3)
+            bekleyen = prop.get("pending_harvest", 0) + int(prop.get("_growth", 0))
+            entry["bekleyen_hasat_degeri"] = round(bekleyen * birim, 1)
         if prop["type"] == "ev":
             tier = prop["config"].get("tier", 1)
             tiers = PROPERTY_TYPES["ev"]["tiers"]

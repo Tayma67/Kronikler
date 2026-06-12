@@ -1050,6 +1050,16 @@ function BargainModal({ target, onTrade, onClose }) {
         {/* ── ÇEKİŞME ── */}
         {phase === "live" && view && (
           <div className="space-y-3">
+            {/* S2: satıcının zihni tezgâha yansır — düşmanlık zammı / dost indirimi */}
+            {view.tier_note && (
+              <p className={`text-[11px] italic px-3 py-1.5 rounded-sm border ${
+                view.tier === "aktif_dusman"
+                  ? "text-red-300 border-red-900/50 bg-red-950/20"
+                  : "text-emerald-300 border-emerald-900/40 bg-emerald-950/10"
+              }`}>
+                {view.tier_note}
+              </p>
+            )}
             <p className="text-xs text-stone-200 italic border border-stone-800/60 bg-stone-900/40 rounded-sm px-3 py-2">
               {view.line}
             </p>

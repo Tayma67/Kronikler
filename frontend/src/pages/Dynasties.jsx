@@ -30,13 +30,17 @@ function AttitudeBadge({ value, allied }) {
 }
 
 // ─── Hanedan satırı ───────────────────────────────────────────────────────────
-function DynastyRow({ row, busy, onOverture }) {
+function DynastyRow({ row, busy, onOverture, delta }) {
   const [open, setOpen] = useState(false);
   return (
     <div className={`card-frame overflow-hidden ${row.oyuncu ? "border border-amber-700/60" : ""} ${row.sonmus ? "opacity-40" : ""}`}>
       <button onClick={() => !row.oyuncu && setOpen(!open)}
         className="w-full flex items-center gap-3 px-3.5 py-3 text-left">
-        <span className="font-heading text-stone-600 text-sm w-5">{row.sira}</span>
+        <span className="font-heading text-stone-600 text-sm w-7 flex items-center gap-0.5">
+          {row.sira}
+          {delta > 0 && <span className="text-emerald-400 text-[10px]">▲</span>}
+          {delta < 0 && <span className="text-red-400 text-[10px]">▼</span>}
+        </span>
         <span className="text-xl shrink-0">{row.sembol}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -122,11 +126,24 @@ export default function Dynasties() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
+  const [rankDelta, setRankDelta] = useState({});
+
   const load = async () => {
     setLoading(true);
     try {
       const { data } = await api.get("/game/hanedanlar");
       setData(data);
+      // Lig psikolojisi: geçen ziyarete göre sıra değişim okları
+      try {
+        const onceki = JSON.parse(localStorage.getItem("kronikler_lig") || "{}");
+        const simdiki = {}, delta = {};
+        for (const r of data.tablo) {
+          simdiki[r.id] = r.sira;
+          if (onceki[r.id]) delta[r.id] = onceki[r.id] - r.sira; // + = yükseldi
+        }
+        setRankDelta(delta);
+        localStorage.setItem("kronikler_lig", JSON.stringify(simdiki));
+      } catch { /* sıra okları süs — asla kırmasın */ }
     } catch {
       setData(null);
     } finally {
@@ -205,7 +222,8 @@ export default function Dynasties() {
       ) : (
         <div className="space-y-2">
           {data.tablo.map((row) => (
-            <DynastyRow key={row.id} row={row} busy={busy} onOverture={overture} />
+            <DynastyRow key={row.id} row={row} busy={busy} onOverture={overture}
+              delta={rankDelta[row.id] || 0} />
           ))}
         </div>
       )}
