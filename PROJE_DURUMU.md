@@ -1,20 +1,3 @@
-# ⚡ SONRAKİ OTURUMA İLK GÖREV (2026-06-12)
-
-Kullanıcı ortam ağ izinlerine `image.pollinations.ai` EKLEDİ ama izinler
-oturum başında yüklendiği için eski oturumda etkinleşmedi. Bu oturumda
-İLK İŞ olarak:
-
-1. Erişimi doğrula:
-   curl -sL "https://image.pollinations.ai/prompt/test?width=64&height=64" -o /tmp/t.jpg && file /tmp/t.jpg
-   (JPEG görmelisin; "allowlist" metni dönerse kullanıcıya domain adını
-   teyit ettir: tam olarak image.pollinations.ai)
-2. Çalışıyorsa: python frontend/tools/gorsel_uret.py
-   (43 görsel üretir → frontend/public/images/ + icon-512.png; mevcutları
-   atlar, başarısızlarda 3 deneme)
-3. Üretilenleri commit + push et (main). Frontend köprüsü hazır —
-   görseller repoya girince Dashboard/NPC/Rakipler otomatik resimli olur.
-4. Bu bölümü PROJE_DURUMU.md'den sil.
-
 # PROJE DURUMU — Kronikler: Küllerin Mirası
 
 > Bu dosya oturumlar/hesaplar arası devir içindir. Yeni bir Claude oturumu
@@ -22,6 +5,20 @@ oturum başında yüklendiği için eski oturumda etkinleşmedi. Bu oturumda
 > **Her oturum sonunda bu dosyayı güncelle ve `main`'e push et.**
 
 Son güncelleme: 2026-06-12 · Branch: `main` (doğrudan main'e push ediliyor — Vercel)
+
+## Görsel Varlıklar (2026-06-12) — üretim sürüyor (yerel SD-Turbo)
+
+37 varlık (12 hero + 6 arma + 18 portre + ikon — eski notta "43" yanlış
+sayımdı) `frontend/public/images/` + `icon-512.png` hedefine üretiliyor.
+Pollinations bu ortamdan KULLANILAMADI: bulut ortamının çıkış IP'si
+paylaşımlı → anonim IP kuyruğu sürekli dolu (HTTP 402), HF ZeroGPU anonim
+kotası da aynı sebepten 0. Çözüm: `tools/gorsel_uret_yerel.py` — aynı
+VARLIKLAR listesini Stable Diffusion Turbo ile CPU'da üretir (anahtarsız).
+
+Kalite FLUX'tan bir kademe düşük. YÜKSELTME yolu (istenirse): FLUX
+erişimi olan ortamda ilgili dosyaları sil + `python tools/gorsel_uret.py`
+(veya Pollinations token'ı ile) — köprü (Gorsel.jsx) dosya adına baktığı
+için kod değişikliği gerekmez.
 
 ## Roadmap Durumu (GDD v7 Master Roadmap)
 
