@@ -264,6 +264,18 @@ class TradeIn(BaseModel):
     action: str  # "al" or "sat"
 
 
+class BargainStartIn(BaseModel):
+    location_id: str
+    good: str
+    qty: int = 1
+    action: str = "al"
+
+
+class BargainMoveIn(BaseModel):
+    move: str  # "kabul" | "karsi" | "blof" | "vazgec"
+    offer: Optional[float] = None
+
+
 class CrimeIn(BaseModel):
     crime_type: str
     target_npc_id: Optional[str] = None
@@ -944,6 +956,8 @@ def build_game_router(db):
             # Kayan fiyat: her birim piyasayı etkiler, gerçek toplam hesaplanır
             total_raw, avg_raw, _, _ = _simulate_bulk_trade(loc, body.good, body.qty, "al")
             total = round(total_raw * buy_mult, 1)
+            from bargain import consume_voucher
+            total, bargain_used = consume_voucher(state, loc["id"], body.good, "al", total)
             if player["money"] < total:
                 raise HTTPException(status_code=400, detail="Yeterli paran yok")
             player["money"] = round(player["money"] - total, 1)
@@ -953,7 +967,8 @@ def build_game_router(db):
             _recompute_prices(loc)
             _push_event(state, state["turn"], "ticaret",
                         f"{player['name']} {loc['name']}'de {body.qty} {body.good} aldı "
-                        f"(ort. {avg_raw:.1f}A × {body.qty} = {total} altın).")
+                        f"(ort. {avg_raw:.1f}A × {body.qty} = {total} altın"
+                        + (", pazarlıklı" if bargain_used else "") + ").")
 
         elif body.action == "sat":
             if inv.get(body.good, 0) < body.qty:
@@ -962,6 +977,8 @@ def build_game_router(db):
             # Kayan fiyat: stok arttıkça fiyat düşer, gerçek toplam hesaplanır
             total_raw, avg_raw, _, _ = _simulate_bulk_trade(loc, body.good, body.qty, "sat")
             total = round(total_raw * sell_mult, 1)
+            from bargain import consume_voucher
+            total, bargain_used = consume_voucher(state, loc["id"], body.good, "sat", total)
             inv[body.good] -= body.qty
             if inv[body.good] == 0:
                 del inv[body.good]
@@ -971,7 +988,8 @@ def build_game_router(db):
             _recompute_prices(loc)
             _push_event(state, state["turn"], "ticaret",
                         f"{player['name']} {loc['name']}'de {body.qty} {body.good} sattı "
-                        f"(ort. {avg_raw:.1f}A × {body.qty} = {total} altın).")
+                        f"(ort. {avg_raw:.1f}A × {body.qty} = {total} altın"
+                        + (", pazarlıklı" if bargain_used else "") + ").")
         else:
             raise HTTPException(status_code=400, detail="Geçersiz işlem")
 
@@ -984,6 +1002,44 @@ def build_game_router(db):
         progress_quest(state, "inventory_changed")
         await _save_state(db, user["_id"], state)
         return _decorate(state)
+
+    # ---------- pazarlık (GDD v7 R3.1) ----------
+    @router.post("/bargain/start")
+    async def bargain_start(body: BargainStartIn, user: dict = Depends(get_current_user)):
+        """Tezgâh önünde pazarlığı aç: satıcı açılış fiyatını söyler."""
+        from bargain import start_bargain
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        if body.qty < 1:
+            raise HTTPException(400, "Miktar 1'den az olamaz")
+        if body.action not in ("al", "sat"):
+            raise HTTPException(400, "Geçersiz işlem")
+        loc = next((l for l in state["world"]["locations"] if l["id"] == body.location_id), None)
+        if not loc or body.good not in loc.get("market", {}):
+            raise HTTPException(404, "Konum veya ürün bulunamadı")
+        player = state["player"]
+        if body.action == "al" and loc["market"][body.good]["supply"] < body.qty:
+            raise HTTPException(400, "Stok yetersiz, pazarlığa gerek yok")
+        if body.action == "sat" and player.get("inventory", {}).get(body.good, 0) < body.qty:
+            raise HTTPException(400, "Elinde bu maldan yeterince yok")
+        mult = trade_price_multiplier(player, body.action)
+        total_raw, _, _, _ = _simulate_bulk_trade(loc, body.good, body.qty, body.action)
+        base_total = round(total_raw * mult, 1)
+        view = start_bargain(state, loc, body.good, body.qty, body.action, base_total)
+        await _save_state(db, user["_id"], state)
+        return view
+
+    @router.post("/bargain/move")
+    async def bargain_move_ep(body: BargainMoveIn, user: dict = Depends(get_current_user)):
+        """Pazarlık hamlesi: kabul | karsi | blof | vazgec."""
+        from bargain import bargain_move
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        result, err = bargain_move(state, body.move, body.offer)
+        if err:
+            raise HTTPException(400, err)
+        await _save_state(db, user["_id"], state)
+        return result
 
     # ---------- job / work ----------
     @router.get("/jobs")

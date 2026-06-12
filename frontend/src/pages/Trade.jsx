@@ -220,7 +220,7 @@ function ArbitrageTable({ locations, goods }) {
 }
 
 /* ─── Pazar Paneli ──────────────────────────────────────────────────── */
-function MarketPanel({ loc, playerInv, onTrade, busy }) {
+function MarketPanel({ loc, playerInv, onTrade, onBargain, busy }) {
   const [qty, setQty] = useState({});
   const [previews, setPreviews] = useState({});   // { "buğday_al": {total, avg, ...}, ... }
   const [previewBusy, setPreviewBusy] = useState({});
@@ -340,6 +340,17 @@ function MarketPanel({ loc, playerInv, onTrade, busy }) {
                     ? <Loader2 className="w-3 h-3 animate-spin" />
                     : <Package className="w-3 h-3" />}
                   SAT ({sellEarn}A)
+                </button>
+
+                <button
+                  onClick={() => onBargain?.({
+                    locId: loc.id, good, qty: q,
+                    canBuy: m.supply >= q, canSell: inInv >= q,
+                  })}
+                  disabled={busy || (m.supply < q && inInv < q)}
+                  title="Pazarlık et"
+                  className="px-2 py-1 text-sm border border-amber-900/50 rounded-sm hover:bg-amber-950/20 transition-all disabled:opacity-30 shrink-0">
+                  🤝
                 </button>
 
                 {inInv > 0 && (
@@ -890,6 +901,200 @@ function CaravanResultModal({ event, onClose }) {
 }
 
 /* ─── Ana Bileşen ───────────────────────────────────────────────────── */
+/* ─── Pazarlık Modalı (GDD v7 R3.1) ─────────────────────────────────── */
+function BargainModal({ target, onTrade, onClose }) {
+  // target: { locId, good, qty, canBuy, canSell }
+  const [action, setAction] = useState(target.canBuy ? "al" : "sat");
+  const [phase, setPhase]   = useState("setup");   // setup | live | done
+  const [view, setView]     = useState(null);
+  const [result, setResult] = useState(null);
+  const [note, setNote]     = useState(null);
+  const [busyB, setBusyB]   = useState(false);
+
+  const goodName = GOOD_LABELS[target.good] || target.good;
+
+  const start = async () => {
+    setBusyB(true);
+    try {
+      const { data } = await api.post("/game/bargain/start", {
+        location_id: target.locId, good: target.good, qty: target.qty, action,
+      });
+      setView(data); setNote(null); setPhase("live");
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Pazarlık başlatılamadı.");
+    } finally { setBusyB(false); }
+  };
+
+  const move = async (m) => {
+    setBusyB(true);
+    try {
+      const { data } = await api.post("/game/bargain/move", { move: m });
+      if (data.done) { setResult(data); setPhase("done"); }
+      else { setView(data); setNote(data.note || null); }
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Hamle yapılamadı.");
+    } finally { setBusyB(false); }
+  };
+
+  const finishTrade = async () => {
+    setBusyB(true);
+    try {
+      await onTrade(target.locId, target.good, action, target.qty);
+      onClose();
+    } finally { setBusyB(false); }
+  };
+
+  const saved = result?.saved ?? 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="w-full max-w-sm card-frame p-5 space-y-4 rise-in">
+
+        {/* Başlık */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-heading text-amber-400">
+            <span className="text-base">🤝</span>
+            <span>Pazarlık — {GOOD_ICONS[target.good] || "📦"} {goodName} ×{target.qty}</span>
+          </div>
+          <button onClick={onClose}
+            className="text-stone-500 hover:text-stone-300 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* ── KURULUM ── */}
+        {phase === "setup" && (
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              {[
+                { id: "al",  label: "ALIRKEN", ok: target.canBuy },
+                { id: "sat", label: "SATARKEN", ok: target.canSell },
+              ].map(a => (
+                <button key={a.id} disabled={!a.ok}
+                  onClick={() => setAction(a.id)}
+                  className={`flex-1 py-2 text-[11px] font-heading tracking-wider border rounded-sm transition-all disabled:opacity-30 ${
+                    action === a.id
+                      ? "border-amber-600 text-amber-400 bg-amber-950/20"
+                      : "border-stone-700 text-stone-500 hover:text-stone-300"
+                  }`}>
+                  {a.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-stone-400">
+              Tezgâha yanaşıp fiyatı çekiştirebilirsin. Satıcı yüksekten açar;
+              dil dökersen iner — ama blöfün tutmazsa alınır.
+            </p>
+            <button onClick={start} disabled={busyB}
+              className="w-full btn-ember py-2 text-xs font-heading tracking-wider disabled:opacity-40 flex items-center justify-center gap-2">
+              {busyB ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "🤝"} TEZGÂHA YANAŞ
+            </button>
+          </div>
+        )}
+
+        {/* ── ÇEKİŞME ── */}
+        {phase === "live" && view && (
+          <div className="space-y-3">
+            <p className="text-xs text-stone-200 italic border border-stone-800/60 bg-stone-900/40 rounded-sm px-3 py-2">
+              {view.line}
+            </p>
+            {note && <p className="text-[11px] text-amber-400">{note}</p>}
+
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="border border-stone-800/60 rounded-sm py-2">
+                <div className="label-tiny">Normal Fiyat</div>
+                <div className="font-heading text-stone-300 text-sm">{view.base}A</div>
+              </div>
+              <div className="border border-amber-900/40 bg-amber-950/10 rounded-sm py-2">
+                <div className="label-tiny">Eldeki Teklif</div>
+                <div className="font-heading text-amber-400 text-sm">{view.offer}A</div>
+              </div>
+            </div>
+
+            {view.floor_visible && view.floor != null && (
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 border border-emerald-900/30 bg-emerald-950/10 px-2 py-1 rounded-sm">
+                👁 Tabanını seziyorsun: <strong>{view.floor}A</strong>
+                {action === "al" ? " — bunun altına inmez." : " — bunun üstüne çıkmaz."}
+              </div>
+            )}
+
+            <div className="text-[10px] text-stone-500 text-center">
+              Tur {view.round}/{view.max_rounds}
+            </div>
+
+            <div className="space-y-2">
+              <button onClick={() => move("kabul")} disabled={busyB}
+                className="w-full btn-ember py-2 text-[11px] font-heading tracking-wider disabled:opacity-40">
+                KABUL ET ({view.offer}A)
+              </button>
+              <div className="flex gap-2">
+                <button onClick={() => move("karsi")} disabled={busyB}
+                  className="flex-1 btn-ghost-ash py-2 text-[11px] font-heading tracking-wider disabled:opacity-40">
+                  KARŞI TEKLİF
+                </button>
+                <button onClick={() => move("blof")} disabled={busyB}
+                  className="flex-1 py-2 text-[11px] font-heading tracking-wider border border-red-900/50 text-red-400 hover:bg-red-950/20 rounded-sm transition-all disabled:opacity-40">
+                  BLÖF YAP
+                </button>
+              </div>
+              <button onClick={() => move("vazgec")} disabled={busyB}
+                className="w-full py-1.5 text-[10px] text-stone-500 hover:text-stone-300 transition-colors">
+                Vazgeç, tezgâhtan ayrıl
+              </button>
+            </div>
+            <p className="text-[10px] text-stone-600">
+              Blöf: "Çarşıda ucuza buldum" — tutarsa taban fiyat, tutmazsa satıcı alınır.
+            </p>
+          </div>
+        )}
+
+        {/* ── SONUÇ ── */}
+        {phase === "done" && result && (
+          <div className="space-y-3">
+            <p className="text-xs text-stone-200 italic border border-stone-800/60 bg-stone-900/40 rounded-sm px-3 py-2">
+              {result.note}
+            </p>
+
+            {result.cancelled ? (
+              <button onClick={onClose}
+                className="w-full btn-ghost-ash py-2 text-xs font-heading tracking-wider">
+                KAPAT
+              </button>
+            ) : (
+              <>
+                <div className="flex items-center justify-between border border-amber-900/30 bg-amber-950/10 rounded-sm px-3 py-2">
+                  <span className="text-xs text-stone-400 font-heading tracking-wider">
+                    ANLAŞILAN FİYAT
+                  </span>
+                  <span className="font-heading text-base text-amber-400">{result.final}A</span>
+                </div>
+                <div className={`text-[11px] px-2 py-1 rounded-sm border ${
+                  saved >= 0
+                    ? "text-emerald-400 border-emerald-900/30 bg-emerald-950/10"
+                    : "text-red-400 border-red-900/30 bg-red-950/10"
+                }`}>
+                  {saved >= 0
+                    ? `Normal fiyata göre ${saved}A ${action === "al" ? "ucuza" : "fazlaya"} bağladın.`
+                    : `Normal fiyattan ${Math.abs(saved)}A daha kötü — yine de bağlamak ister misin?`}
+                </div>
+                <button onClick={finishTrade} disabled={busyB}
+                  className="w-full btn-ember py-2 text-xs font-heading tracking-wider disabled:opacity-40 flex items-center justify-center gap-2">
+                  {busyB && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  ANLAŞMAYI TAMAMLA — {action === "al" ? "AL" : "SAT"}
+                </button>
+                <button onClick={onClose}
+                  className="w-full py-1.5 text-[10px] text-stone-500 hover:text-stone-300 transition-colors">
+                  Şimdi değil (söz bu hafta geçerli)
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Trade() {
   const { state, setState, lastCaravanEvent, clearCaravanEvent } = useGame();
   const [tab, setTab] = useState("pazar");
@@ -899,6 +1104,7 @@ export default function Trade() {
   const [caravanHistory, setCaravanHistory] = useState([]);
   const [caravanLoading, setCaravanLoading] = useState(false);
   const [resultEvent, setResultEvent] = useState(null);
+  const [bargainTarget, setBargainTarget] = useState(null);
 
   const player    = state?.player || {};
   const locations = useMemo(() => state?.world?.locations || [], [state?.world?.locations]);
@@ -1018,6 +1224,14 @@ export default function Trade() {
           }}
         />
       )}
+      {/* Pazarlık Modalı */}
+      {bargainTarget && (
+        <BargainModal
+          target={bargainTarget}
+          onTrade={handleTrade}
+          onClose={() => setBargainTarget(null)}
+        />
+      )}
       {/* Başlık */}
       <div>
         <div className="label-tiny">Ekonomi</div>
@@ -1083,6 +1297,7 @@ export default function Trade() {
               loc={playerLoc}
               playerInv={inventory}
               onTrade={handleTrade}
+              onBargain={setBargainTarget}
               busy={busy}
             />
           )}
