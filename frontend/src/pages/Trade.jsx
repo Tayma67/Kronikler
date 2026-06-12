@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
+import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
 import {
   Coins, ArrowUpDown, TrendingUp, TrendingDown, Loader2,
@@ -1224,6 +1225,7 @@ export default function Trade() {
     setBusy(true);
     try {
       const { data } = await api.post("/game/trade", { location_id: locId, good, action, qty });
+      playSfx("coin");
       const note = data._trade_note;
       delete data._trade_note;
       setState(data);

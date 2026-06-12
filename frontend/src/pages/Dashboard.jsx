@@ -10,6 +10,25 @@ import StoryModal from '@/components/StoryModal';
 import WeekPlanCard from '@/components/WeekPlanCard';
 import HarvestModal from '@/components/HarvestModal';
 import SagaStrip, { SagaTab, useSaga } from '@/components/SagaStrip';
+import { playSfx } from '@/lib/audio';
+
+// Mesleğe göre ünvan ikonu — tek tip ⚒ yerine kimlik hissi
+const PROF_ICON = {
+  'demirci': '⚒', 'çiftçi': '🌾', 'tüccar': '⚖', 'asker': '⚔', 'şövalye': '🛡',
+  'şifacı': '🌿', 'eczacı': '🧪', 'rahip': '📿', 'haydut': '🗡', 'balıkçı': '🎣',
+  'fırıncı': '🍞', 'avcı': '🏹', 'marangoz': '🪚', 'kunduracı': '👞',
+  'müzisyen': '🎶', 'katip': '📜', 'lord': '👑', 'kral': '👑', 'çoban': '🐑',
+  'kervancı': '🐫', 'kuyumcu': '💎', 'dokumacı': '🧵', 'çömlekçi': '🏺',
+  'işsiz': '🍂', 'çocuk': '🪁',
+};
+
+function avatarFor(age, gender) {
+  const k = gender === 'kadın';
+  if (age < 13) return k ? '👧' : '👦';
+  if (age < 30) return k ? '👩' : '🧑';
+  if (age < 55) return k ? '👩‍🦱' : '🧔';
+  return k ? '👵' : '🧓';
+}
 
 // ── SEASON → HERO IMAGE MAP ──────────────────────────────────────────────────
 const SEASON_IMAGE = {
@@ -343,8 +362,19 @@ export default function Dashboard() {
 
   const playerName  = (player.name || 'Kahraman').toUpperCase();
   const careerTitle = player.career?.title || player.profession || 'İşsiz';
-  const titleIcon   = '⚒';
+  const titleIcon   = PROF_ICON[player.profession] || '⚒';
   const playerAge   = player.age || 0;
+  const avatarEmoji = avatarFor(playerAge, player.gender);
+
+  // İlerle butonu alt yazısı — yönetmenin ağzından, atmosfer kurar
+  const y = saga?.yonetmen;
+  const advanceSub =
+    (saga?.teklifler?.length > 0) ? 'Kapında bekleyen elçiler var…'
+    : (y?.gerilim >= 75) ? 'Havada fırtına kokusu var…'
+    : (y?.gerilim >= 55) ? 'Gerilim yükseliyor — dikkatli ol…'
+    : (y?.nefes_kalan > 0) ? 'Sakin günler — tadını çıkar…'
+    : (y?.aktif_yay === 'durgun') ? 'Sular durgun… fazla durgun.'
+    : 'Yeni olaylar seni bekliyor…';
   const season      = cal.season || 'Yaz';
   const dateStr     = `${cal.month_name || 'Ocak'} ${cal.year || 1247}`.toUpperCase();
   const fame        = player.fame || 0;
@@ -404,6 +434,7 @@ export default function Dashboard() {
   const handleAdvance = async () => {
     if (advancing || !advance) return;
     setAdvancing(true);
+    playSfx('week');
     try {
       const result = await advance(1);
       if (result && !result.player?.dead) {
@@ -455,7 +486,7 @@ export default function Dashboard() {
                 background: 'linear-gradient(135deg, #3A2010 0%, #2A1808 50%, #1A0E06 100%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <span style={{ fontSize: '1.3rem' }}>👤</span>
+                <span style={{ fontSize: '1.3rem' }}>{avatarEmoji}</span>
               </div>
 
               {/* Mini stats */}
@@ -822,7 +853,7 @@ export default function Dashboard() {
                 fontSize: '0.68rem', color: 'var(--color-parchment-muted)',
                 fontStyle: 'italic', marginTop: '0.08rem',
               }}>
-              {advancing ? 'Birkaç saniye bekle...' : 'Yeni olaylar seni bekliyor...'}
+              {advancing ? 'Birkaç saniye bekle...' : advanceSub}
             </div>
           </div>
           <div style={{ position: 'absolute', right: '1rem', opacity: advancing ? 0 : 0.5 }}>

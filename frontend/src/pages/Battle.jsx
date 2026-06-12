@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useGame } from "@/lib/GameContext";
+import { playSfx } from "@/lib/audio";
 import { useNavigate } from "react-router-dom";
 import { api, extractErrorMessage } from "@/lib/api";
 import { toast } from "sonner";
@@ -258,8 +259,10 @@ export default function Battle() {
     act(async () => (await api.post("/combat/start", { type, bet: type === "turnuva" ? bet : 0 })).data);
   const onStance = (stance) =>
     act(async () => (await api.post("/combat/stance", { stance })).data);
-  const onCard = (card) =>
-    act(async () => (await api.post("/combat/card", { card })).data);
+  const onCard = (card) => {
+    playSfx("sword");
+    return act(async () => (await api.post("/combat/card", { card })).data);
+  };
   const onFlee = () =>
     act(async () => (await api.post("/combat/flee")).data);
   const onCommand = (picks) =>

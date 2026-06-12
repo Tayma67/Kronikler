@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { playSfx } from "@/lib/audio";
 
 /**
  * HarvestModal — R1/R9 Hafta Sonu Hasadı (GDD v7).
@@ -12,6 +13,7 @@ export default function HarvestModal({ harvest, onClose }) {
   useEffect(() => {
     if (!harvest) return;
     setStage(0);
+    playSfx("notify");
     const t1 = setTimeout(() => setStage(1), 350);
     const t2 = setTimeout(() => setStage(2), 800);
     return () => { clearTimeout(t1); clearTimeout(t2); };

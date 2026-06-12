@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { playSfx } from "@/lib/audio";
 import { profLabel } from "@/lib/labels";
 import { useEffect, useState, useRef } from "react";
 import { useGame } from "@/lib/GameContext";
@@ -153,6 +154,7 @@ function ChatModal({ npc, state, onClose }) {
 
   const playCard = async (card) => {
     setBusy(true);
+    playSfx("page");
     setLog((c) => [...c, { from: "p", text: card.label }]);
     try {
       const { data } = await api.post(`/game/npc/${npc.id}/card`, { card_id: card.id });

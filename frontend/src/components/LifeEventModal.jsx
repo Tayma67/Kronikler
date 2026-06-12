@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { playSfx } from "@/lib/audio";
 import { api } from "../lib/api";
 
 /**
@@ -38,12 +39,16 @@ export default function LifeEventModal({ open, onClose, onComplete }) {
     if (loading) return;
     setLoading(true);
     setChosenIndex(index);
+    playSfx("click");
     try {
       const res = await api.post("/life-event/choose", {
         event_id: event.id,
         choice_index: index,
       });
       setResult(res.data);
+      const fx = res.data?.effects_applied || {};
+      const kotu = (fx.health || 0) < 0 || (fx.crime || 0) > 0 || (fx.money || 0) < -20;
+      playSfx(kotu ? "fail" : "success");
     } catch (err) {
       setResult({
         result_text: "Bir hata oluştu. Lütfen tekrar dene.",

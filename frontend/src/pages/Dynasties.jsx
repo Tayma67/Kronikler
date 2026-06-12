@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
+import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
 import {
   Swords, Loader2, RefreshCw, Crown, Handshake, Gift,
@@ -138,6 +139,7 @@ export default function Dynasties() {
     setBusy(true);
     try {
       const { data: res } = await api.post("/game/hanedanlar/teklif", { offer_id: offerId, karar });
+      playSfx(karar === "kabul" ? "achievement" : "click");
       toast.success(res.response, { duration: 5000 });
       (res.consequences || []).forEach((c) => toast(c, { duration: 4000 }));
       if (res.state) setState(res.state);
