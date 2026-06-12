@@ -631,7 +631,29 @@ export default function Dashboard() {
         {/* S3 Makyaj: Hayat Romanı şeridi — perde, gerilim, kapındaki elçiler.
             GDD v8 aşamalı keşif: çocuklukta gizli — 13'te dünya açılınca
             bu şeridin belirmesi başlı başına bir keşif anıdır. */}
-        {playerAge >= 13 && <SagaStrip saga={saga} />}
+        {playerAge >= 13 ? (
+          <SagaStrip saga={saga} />
+        ) : (
+          /* Çocukluk: sistem ifşa etmeyen mevsim fısıltısı — sahne hissi */
+          <div style={{
+            margin: '0.55rem 0.75rem 0',
+            padding: '0.5rem 0.85rem',
+            background: 'linear-gradient(160deg, rgba(201,168,76,0.05) 0%, var(--color-card) 50%)',
+            border: '1px solid var(--color-border)',
+            borderRadius: '10px',
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+          }}>
+            <span style={{ fontSize: '0.85rem' }}>
+              {season === 'Kış' ? '❄' : season === 'Yaz' ? '☀' : season === 'Sonbahar' ? '🍂' : '🌸'}
+            </span>
+            <span className="font-serif" style={{
+              fontSize: '0.78rem', fontStyle: 'italic',
+              color: 'var(--color-parchment-dim)',
+            }}>
+              {cal.season_flavor || 'Mevsim dönüyor, sen büyüyorsun…'}
+            </span>
+          </div>
+        )}
 
         {/* ── JOURNAL PANEL ─────────────────────────────────────────────── */}
         {/* R1: Hafta Planı kartı (kompakt; dokununca 3 slotlu seçici) */}
