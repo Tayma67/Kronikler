@@ -143,15 +143,15 @@ class Bot:
         p = s["player"]
         age = p.get("age", 0)
 
-        # Çocukluğu hızlı sar: haftaların %60'ında sadece ilerle (2 hafta)
-        if age < 13 and random.random() < 0.6:
+        # Çocukluğu hızlı sar: haftaların %70'inde sadece ilerle (4 hafta)
+        if age < 13 and random.random() < 0.7:
             pend = s.get("pending_life_event")
             if pend:
                 ci = random.randrange(len(pend.get("choices", [{}])))
                 self.post("/api/game/life-event/choose",
                           {"event_id": pend["id"], "choice_index": ci},
                           tag="life-event/choose")
-            adv = self.post("/api/game/advance?weeks=2", {}, tag="advance",
+            adv = self.post("/api/game/advance?weeks=4", {}, tag="advance",
                             expect_guard_ok=False)
             self.state = adv.get("state", adv) if adv else self.state
             self.invariants(week)
