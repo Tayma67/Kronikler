@@ -204,6 +204,11 @@ gerçek sorun yok. Tek bulgu: Inventory `/game/items` fetch'i `.catch`'siz
 Dynasties/Rumors'u da global olarak hizalamış (görsel teyitli) → derin sayfa-bazlı
 Kit migrasyonları artık büyük ölçüde GEREKSİZ (regresyon riski almaya değmez).
 
+### [02:55] ✅ İŞ 17: Çocukluk modu (aşamalı keşif) görsel teyidi
+Çocuk state'i (yaş 9) üretilip render edildi: çocuk hero görseli görünüyor, saga
+şeridi ve ROMAN sekmesi GİZLİ (13'te açılır — doğru), mevsim fısıltısı + aile
+olayları, "AYI İLERLE". Hem çocuk (<13) hem yetişkin (13+) UI yolu doğrulandı.
+
 ### 🏁 Gecenin Sonucu
 27 commit · build yeşil · 58/58 test · ~12 ekran görsel doğrulandı · çalışma ağacı
 temiz (npm'in kirlettiği yarn.lock geri alındı) · main'e dokunulmadı. İki kullanıcı
