@@ -7,6 +7,7 @@ import {
   AlertTriangle, Music, Wind, MessageSquare, RefreshCw, Loader2,
   Eye, Megaphone, Coins,
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/Kit";
 
 // ─── S2: Nam profili & oyuncu söylentileri ───────────────────────────────────
 const NAM_CFG = {
@@ -262,27 +263,23 @@ export default function Rumors() {
   ];
 
   return (
-    <div className="space-y-5 rise-in">
-      {/* Başlık */}
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <div className="label-tiny">Halk Arasında</div>
-          <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-            <Scroll className="w-6 h-6 text-amber-600" /> Dedikodular
-          </h1>
-          <p className="text-stone-400 text-sm mt-1">
-            Kasabada fısıldananlar, haber olup gelenler.
-          </p>
-        </div>
-        <button
-          onClick={load}
-          disabled={loading}
-          className="btn-ghost-ash px-3 py-1.5 text-xs flex items-center gap-1.5"
-        >
-          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          Yenile
-        </button>
-      </div>
+    <div className="page-shell space-y-5 rise-in">
+      <PageHeader
+        kicker="Halk Arasında"
+        icon="👂"
+        title="Dedikodular"
+        sub="Hamamda fısıldananlar, çarşıda dilden dile gezenler."
+        right={
+          <button
+            onClick={load}
+            disabled={loading}
+            className="btn-ghost-ash px-3 py-1.5 text-xs flex items-center gap-1.5"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            Yenile
+          </button>
+        }
+      />
 
       {/* S2: Nam profili & hakkındaki söylentiler */}
       <NamPanel currentTurn={currentTurn} />

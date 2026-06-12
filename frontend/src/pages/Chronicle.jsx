@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import { useGame } from "@/lib/GameContext";
+import { PageHeader } from "@/components/ui/Kit";
 import { api } from "@/lib/api";
 import { ScrollText, Star, Loader2, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
 
@@ -191,14 +192,14 @@ export default function Chronicle() {
   const fallbackEvents = [...(state?.history || [])].reverse();
 
   return (
-    <div className="space-y-6 rise-in max-w-3xl">
+    <div className="page-shell space-y-6 rise-in">
       {/* Başlık */}
-      <div>
-        <div className="label-tiny">Tarih</div>
-        <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-          <ScrollText className="w-7 h-7 text-orange-600" /> Küllerin Kroniği
-        </h1>
-      </div>
+      <PageHeader
+        kicker="Tarih"
+        icon="📜"
+        title="Küllerin Kroniği"
+        sub="Yaşanmış her şey burada — senin romanın, mürekkep kurudukça."
+      />
 
       {/* ── Güncel Dünya Durumu ── */}
       {(() => {

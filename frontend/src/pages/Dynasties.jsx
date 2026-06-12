@@ -8,6 +8,7 @@ import {
   Swords, Loader2, RefreshCw, Crown, Handshake, Gift,
   ChevronDown, ChevronUp, ScrollText,
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/Kit";
 
 // ─── Tutum göstergesi ─────────────────────────────────────────────────────────
 function AttitudeBadge({ value, allied }) {
@@ -179,23 +180,20 @@ export default function Dynasties() {
   };
 
   return (
-    <div className="space-y-5 rise-in">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <div className="label-tiny">Lig Tablosu</div>
-          <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-            <Swords className="w-6 h-6 text-amber-600" /> Rakip Hanedanlar
-          </h1>
-          <p className="text-stone-400 text-sm mt-1">
-            Aynı oyunu oynayan altı aile daha var — mülk alıyor, evleniyor, büyüyorlar.
-          </p>
-        </div>
-        <button onClick={load} disabled={loading}
-          className="btn-ghost-ash px-3 py-1.5 text-xs flex items-center gap-1.5">
-          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          Yenile
-        </button>
-      </div>
+    <div className="page-shell space-y-5 rise-in">
+      <PageHeader
+        kicker="Lig Tablosu"
+        icon="⚔"
+        title="Rakip Hanedanlar"
+        sub="Aynı oyunu oynayan altı aile daha var — mülk alıyor, evleniyor, büyüyorlar."
+        right={
+          <button onClick={load} disabled={loading}
+            className="btn-ghost-ash px-3 py-1.5 text-xs flex items-center gap-1.5">
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            Yenile
+          </button>
+        }
+      />
 
       {/* Teklifler */}
       {(data?.teklifler || []).length > 0 && (
