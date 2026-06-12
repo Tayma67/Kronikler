@@ -11,7 +11,7 @@ Kullanım:
 """
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+SCOPES = ["https://www.googleapis.com/auth/youtube"]
 
 client_id = input("OAuth Client ID: ").strip()
 client_secret = input("OAuth Client Secret: ").strip()
