@@ -58,6 +58,14 @@ def build_state(months=90):
     if soc is not None:
         p["social"] = soc
     p.setdefault("career", {"title": p.get("profession", "İşsiz")})
+
+    # QA için birkaç ilişki tohumla — Relationships/Marry/sosyal ekranlar dolu
+    # render olsun (gerçek oyunda bunlar etkileşimle birikir).
+    local = [n for n in state["world"]["npcs"]
+             if n.get("alive") and n.get("location_id") == p.get("location_id")][:8]
+    rels = state.setdefault("relationships", {})
+    for i, n in enumerate(local):
+        rels[n["id"]] = [55, 35, -45, 70, 20, -25, 40, 60][i % 8]
     return state
 
 
