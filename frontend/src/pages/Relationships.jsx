@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
 import { PageHeader, Panel, Pill, EmptyState } from "@/components/ui/Kit";
+import { Portre } from "@/components/ui/Gorsel";
 
 const BANDS = [
   { id: "dost", label: "Dostlar", test: (s) => s >= 50, tone: "sage", icon: "🤝", motto: "Ekmeğini bölüştüklerin" },
@@ -97,10 +98,8 @@ export default function Relationships() {
                     <li key={npc.id}>
                       <Link to={`/oyun/npc/${npc.id}`} data-testid={`rel-${npc.id}`}
                         className="row-frame" style={{ textDecoration: "none" }}>
-                        <span style={{ fontSize: "1.1rem", flexShrink: 0,
-                                       filter: "drop-shadow(0 0 6px rgba(201,168,76,0.2))" }}>
-                          {npcAvatar(npc)}
-                        </span>
+                        <Portre age={npc.age} gender={npc.gender} id={npc.id}
+                                emoji={npcAvatar(npc)} size="2.3rem" ring={false} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <span className="font-serif" style={{
                             fontSize: "0.88rem", fontWeight: 600,
