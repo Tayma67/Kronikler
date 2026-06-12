@@ -212,7 +212,7 @@ export default function GameLayout() {
         try { const { data } = await api.get("/game/inheritance/options"); setInheritanceData(data); setShowInheritance(true); }
         catch (_) {}
       } else {
-        toast.success(`${weeks} hafta geçti.`);
+        toast.success(weeks === 1 ? "1 ay geçti." : `${weeks} ay geçti.`);
       }
     } catch (e) { toast.error("Zaman ilerletilemedi."); }
     finally { setAdvancing(false); }
@@ -329,7 +329,7 @@ export default function GameLayout() {
           <div style={{ fontFamily: 'Cinzel, serif', fontSize: '0.6rem', letterSpacing: '0.1em',
                         textTransform: 'uppercase', color: 'var(--color-gold)',
                         marginBottom: '0.15rem' }} data-testid="hud-season">
-            {cal.season} · {cal.week_in_month}. Hafta
+            {cal.season}
           </div>
           <div style={{ fontFamily: 'Crimson Text, serif', fontSize: '0.75rem', fontStyle: 'italic',
                         color: 'var(--color-parchment-muted)' }}>
@@ -372,13 +372,13 @@ export default function GameLayout() {
             style={{ padding: '0.6rem', fontSize: '0.6rem', display: 'flex',
                      alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
             <Hourglass size={13} />
-            {advancing ? 'GEÇİYOR…' : 'BİR HAFTA İLERLE'}
+            {advancing ? 'GEÇİYOR…' : 'BİR AY İLERLE'}
           </button>
-          <button onClick={() => onAdvance(4)} disabled={advancing}
+          <button onClick={() => onAdvance(3)} disabled={advancing}
             data-testid="advance-month"
             className="btn-ghost-ash"
             style={{ padding: '0.5rem', fontSize: '0.55rem' }}>
-            BİR AY İLERLE
+            BİR MEVSİM İLERLE
           </button>
           <div style={{ marginTop: '0.35rem', display: 'flex', justifyContent: 'space-between',
                         fontFamily: 'Cinzel, serif', fontSize: '0.5rem',
@@ -436,7 +436,7 @@ export default function GameLayout() {
               style={{ padding: '0.4rem 0.75rem', fontSize: '0.55rem', flexShrink: 0,
                        display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
               <Hourglass size={11} />
-              {advancing ? '…' : 'HAFTA'}
+              {advancing ? '…' : 'AY'}
             </button>
           </header>
         )}
