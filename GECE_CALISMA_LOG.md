@@ -195,6 +195,22 @@ doğrulandı. Neon renk yok, layout sağlam, tek estetik. Hat tekrar kullanılab
   3 tonda — sıradan eylemler ALTIN, tehlike KIRMIZI, gökkuşağı YOK. Disiplin teyitli.
 Toplam 7 ekran görsel doğrulandı.
 
+### [02:40] ✅ İŞ 16: Tüm-app görsel sweep (~12 ekran) + araç repoya eklendi
+Görsel-QA hattı `frontend/tools/visual_qa/`'e kalıcı eklendi (gen_state/serve/
+screenshot + README). Ek olarak WorldMap, Chronicle, Fırsatlar, Envanter, Meslek,
+Haberler, Ayarlar, Kasaba render edildi. HEPSİ bütün, temalı, kargaşasız —
+gerçek sorun yok. Tek bulgu: Inventory `/game/items` fetch'i `.catch`'siz
+(unhandled rejection riski) → düzeltildi. Köprü, ajanların sapma dediği Chronicle/
+Dynasties/Rumors'u da global olarak hizalamış (görsel teyitli) → derin sayfa-bazlı
+Kit migrasyonları artık büyük ölçüde GEREKSİZ (regresyon riski almaya değmez).
+
+### 🏁 Gecenin Sonucu
+27 commit · build yeşil · 58/58 test · ~12 ekran görsel doğrulandı · çalışma ağacı
+temiz (npm'in kirlettiği yarn.lock geri alındı) · main'e dokunulmadı. İki kullanıcı
+isteği (ay modeli + sinematik NewGame) + iki kritik bug (build kırığı + bağlanmamış
+ikon) + kapsamlı tutarlılık/cila + görsel-QA altyapısı. Mevcut sistem bozulmadı,
+üzerine eklendi.
+
 **EN KRİTİK İKİ BULGU:** (a) production build gece başlamadan ÖNCE de kırıktı →
 düzeltildi; (b) üretilen uygulama ikonu hiçbir yere bağlı değildi → bağlandı.
 İkisi de kozmetik değil, gerçek sonuç doğuran düzeltmeler.
