@@ -1,4 +1,5 @@
 {
+  "_DEPRECATED": "Bu dosya ESKİ tasarım spec'idir (stone/orange Shadcn). GERÇEK ve GÜNCEL tasarım sistemi 'Kül & Köz' altın/parşömen temasıdır → kaynak: frontend/src/index.css (CSS değişkenleri + legacy köprü) ve frontend/src/components/ui/Kit.jsx (PageHeader/Panel/Pill/Stat/Coin/ConfirmModal/TONES). Yeni UI için BURAYI DEĞİL onları referans al.",
   "theme_and_archetype": {
     "domain": "Text-based RPG / Life-Sim",
     "theme": "Dark",
