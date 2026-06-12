@@ -70,3 +70,16 @@ Doğrulama: esbuild CSS ✓. Risk: düşük — kanıtlanmış köprü kalıbın
 parchment) genişletilmesi; sadece off-palette hue düzeltir, layout/anlam değişmez.
 NOT: Sayfa-bazlı derin Kit migrasyonu (NPCDetail vb.) ayrıca yapılacak; bu köprü
 zemini global olarak temizliyor.
+
+### [22:05] ✅ İŞ 3: NPCDetail — en çok ziyaret edilen sayfanın disiplini
+Her iki ajanın da #1 sapma kaynağı dediği sayfa. Köprü zaten renkleri global
+temizledi; üstüne iki cerrahi düzeltme:
+- **Menü renk disiplini**: 7 farklı çiğ hue (pink/emerald/orange/rose/yellow/red-600)
+  → 3 anlamlı ton: sıradan eylemler GOLD, romantik (flört/evlilik) ROSE, tehlikeli
+  (hakaret/saldır/dedikodu/kaçır) BLOOD, çıkış nötr. "Kargaşasız" hedefine uygun.
+- **Native window.confirm → temalı ConfirmModal**: saldır/kaçır onayları artık
+  ham tarayıcı penceresi değil; ModalShell tabanlı, blood-kırmızı "Vazgeç/Onayla"
+  kartı + sahici Türkçe uyarı metni. Mobil şaheser hissini kıran #1 ucuzluk gitti.
+Doğrulama: jsxcheck ✓. Risk: düşük (renk dizesi + izole modal).
+Keşif: Trade/Properties/Legacy/Factions'ta 4 native window.confirm + GameContext'te
+ham alert() daha var → paylaşımlı Kit ConfirmModal'a taşınacak (sıradaki).

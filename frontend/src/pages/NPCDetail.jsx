@@ -394,6 +394,29 @@ function ModalShell({ children, onClose, title, tall = false }) {
   );
 }
 
+// Temalı onay modalı — native window.confirm yerine (mobil + Kül & Köz tutarlılığı)
+function ConfirmModal({ title, message, confirmLabel = "Onayla", onConfirm, onClose }) {
+  return (
+    <ModalShell onClose={onClose} title={title}>
+      <p className="text-sm text-stone-300 leading-relaxed mb-5">{message}</p>
+      <div className="flex gap-2">
+        <button onClick={onClose}
+          className="flex-1 py-2.5 font-heading text-xs tracking-widest btn-ghost-ash">
+          Vazgeç
+        </button>
+        <button onClick={() => { onConfirm(); onClose(); }}
+          className="flex-1 py-2.5 font-heading text-xs tracking-widest rounded-sm"
+          style={{
+            background: "linear-gradient(180deg, rgba(200,64,64,0.22), rgba(200,64,64,0.10))",
+            color: "var(--color-blood)", border: "1px solid var(--color-blood)",
+          }}>
+          {confirmLabel}
+        </button>
+      </div>
+    </ModalShell>
+  );
+}
+
 // ─── main ─────────────────────────────────────────────────────────────────
 export default function NPCDetail() {
   const { id } = useParams();
@@ -404,6 +427,7 @@ export default function NPCDetail() {
   const [modal, setModal] = useState(null); // null | "chat" | "gift" | "money"
   const [result, setResult] = useState(null); // { text, gain }
   const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState(null); // { title, message, confirmLabel, onConfirm }
 
   const npc = state?.world.npcs.find((n) => n.id === id);
 
@@ -517,7 +541,7 @@ export default function NPCDetail() {
       id: "compliment",
       label: "İltifat Et",
       icon: Heart,
-      color: "text-pink-400",
+      color: "text-amber-400",
       available: npc.alive,
       onClick: () => handleAction("compliment"),
     },
@@ -525,7 +549,7 @@ export default function NPCDetail() {
       id: "gift",
       label: "Hediye Ver",
       icon: Gift,
-      color: "text-emerald-400",
+      color: "text-amber-400",
       available: npc.alive && Object.keys(player.inventory || {}).length > 0,
       unavailableReason: "Envanterin boş.",
       onClick: () => setModal("gift"),
@@ -534,7 +558,7 @@ export default function NPCDetail() {
       id: "money",
       label: "Para Ver",
       icon: Coins,
-      color: "text-amber-300",
+      color: "text-amber-400",
       available: npc.alive && (player.money || 0) > 0,
       unavailableReason: "Paran yok.",
       onClick: () => setModal("money"),
@@ -543,7 +567,7 @@ export default function NPCDetail() {
       id: "flirt",
       label: isDating ? "Çıkıyorsunuz ✓" : "Çıkma Teklifi Et",
       icon: Flame,
-      color: "text-orange-400",
+      color: "text-pink-400",
       available: isAdult && npc.alive && !isDating && !isMarried && !npc.spouse_id && npc.age >= 18 && rel >= 20,
       unavailableReason: isMarried ? "Zaten evlisiniz." : isDating ? "Zaten çıkıyorsunuz." : !isAdult ? "13+ gerekli." : rel < 20 ? "İlişki 20+ gerekli." : npc.spouse_id ? "Bu kişi evli." : "",
       disabled: isDating || isMarried,
@@ -553,7 +577,7 @@ export default function NPCDetail() {
       id: "propose",
       label: isMarried ? "Evlisiniz ✓" : "Evlilik Teklifi Et",
       icon: HeartHandshake,
-      color: "text-rose-400",
+      color: "text-pink-400",
       available: isAdult && npc.alive && isDating && !isMarried && rel >= 50,
       unavailableReason: isMarried ? "Zaten evlisiniz." : !isAdult ? "13+ gerekli." : !isDating ? "Önce çıkıyorsunuz olmalı." : rel < 50 ? "İlişki 50+ gerekli." : "",
       disabled: isMarried,
@@ -564,7 +588,7 @@ export default function NPCDetail() {
       id: "insult",
       label: "Hakaret Et",
       icon: Megaphone,
-      color: "text-yellow-500",
+      color: "text-red-400",
       available: npc.alive,
       danger: true,
       onClick: () => handleAction("insult"),
@@ -577,16 +601,18 @@ export default function NPCDetail() {
       available: isAdult && npc.alive && sameLocation,
       unavailableReason: !isAdult ? "13+ gerekli." : !sameLocation ? "Hedef burada değil." : "",
       danger: true,
-      onClick: () => {
-        if (!window.confirm(`${npc.name}'a saldırmak istediğinden emin misin?`)) return;
-        handleAction("attack");
-      },
+      onClick: () => setConfirm({
+        title: "Saldır",
+        message: `${npc.name} adlı kişiye saldırmak üzeresin. Bu, görenlerin gözünde seni lekeler ve karşılık görebilir. Emin misin?`,
+        confirmLabel: "Saldır",
+        onConfirm: () => handleAction("attack"),
+      }),
     },
     {
       id: "gossip",
       label: "Hakkında Dedikodu Yay",
       icon: AlertTriangle,
-      color: "text-orange-500",
+      color: "text-red-400",
       available: npc.alive,
       danger: true,
       onClick: () => handleAction("gossip"),
@@ -595,14 +621,16 @@ export default function NPCDetail() {
       id: "kidnap",
       label: "Kaçır",
       icon: AlertTriangle,
-      color: "text-red-600",
+      color: "text-red-400",
       available: isAdult && npc.alive && sameLocation,
       unavailableReason: !isAdult ? "13+ gerekli." : !sameLocation ? "Hedef burada değil." : "",
       danger: true,
-      onClick: () => {
-        if (!window.confirm(`${npc.name}'ı kaçırmak istediğinden emin misin? Bu ciddi bir suçtur.`)) return;
-        handleAction("kidnap");
-      },
+      onClick: () => setConfirm({
+        title: "Kaçır",
+        message: `${npc.name} adlı kişiyi kaçırmak ciddi bir suçtur — yakalanırsan ağır bedeli olur. Yine de yapacak mısın?`,
+        confirmLabel: "Kaçır",
+        onConfirm: () => handleAction("kidnap"),
+      }),
     },
     null, // separator
     {
@@ -837,6 +865,16 @@ export default function NPCDetail() {
           playerMoney={player.money}
           onGive={(amount) => handleAction("money", { amount })}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {confirm && (
+        <ConfirmModal
+          title={confirm.title}
+          message={confirm.message}
+          confirmLabel={confirm.confirmLabel}
+          onConfirm={confirm.onConfirm}
+          onClose={() => setConfirm(null)}
         />
       )}
 
