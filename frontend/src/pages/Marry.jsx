@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
 import { PageHeader, Panel, Pill, EmptyState, GoldRule } from "@/components/ui/Kit";
+import { Portre } from "@/components/ui/Gorsel";
 
 // ─── Yardımcılar ──────────────────────────────────────────────────────────────
 function relColor(score) {
@@ -127,12 +128,8 @@ function MarriedView({ spouse, relationship, children }) {
       <Panel title="Hayat Yoldaşın" icon="💍" tone="gold"
         right={<Pill tone={score >= 50 ? "sage" : score >= 30 ? "ember" : "ash"}>{relLabel(score)}</Pill>}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <span style={{
-            fontSize: "1.8rem", flexShrink: 0,
-            filter: "drop-shadow(0 0 10px rgba(201,168,76,0.35))",
-          }}>
-            {npcAvatar(spouse)}
-          </span>
+          <Portre age={spouse.age} gender={spouse.gender} id={spouse.id}
+                  emoji={npcAvatar(spouse)} size="3.4rem" ring={true} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <Link
               to={`/oyun/npc/${spouse.id}`}
@@ -210,10 +207,8 @@ function CandidateCard({ npc, score, isDating, busy, onPropose }) {
       } : {}),
     }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem" }}>
-        <span style={{ fontSize: "1.5rem", flexShrink: 0,
-                       filter: "drop-shadow(0 0 8px rgba(201,168,76,0.25))" }}>
-          {npcAvatar(npc)}
-        </span>
+        <Portre age={npc.age} gender={npc.gender} id={npc.id}
+                emoji={npcAvatar(npc)} size="2.8rem" ring={false} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <Link to={`/oyun/npc/${npc.id}`} className="font-display" style={{
             fontSize: "0.92rem", fontWeight: 700, color: "var(--color-parchment)",
