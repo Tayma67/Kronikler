@@ -638,7 +638,9 @@ export default function Dashboard() {
       </div>
 
       {/* ── SCROLLABLE CONTENT ─────────────────────────────────────────────── */}
-      <div style={{ flex: 1, overflow: 'hidden', paddingBottom: '10.5rem', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column' }}>
+      {/* Not: alt boşluk panelin kendi marginBottom'ı ile veriliyor; burada
+          ekstra paddingBottom panelle çakışıp günlüğü küçültüyordu (kaldırıldı) */}
+      <div style={{ flex: 1, overflow: 'hidden', paddingBottom: 0, background: 'var(--color-bg)', display: 'flex', flexDirection: 'column' }}>
 
         {/* S3 Makyaj: Hayat Romanı şeridi — perde, gerilim, kapındaki elçiler.
             GDD v8 aşamalı keşif: çocuklukta gizli — 13'te dünya açılınca
