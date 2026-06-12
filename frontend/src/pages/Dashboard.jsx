@@ -429,10 +429,11 @@ export default function Dashboard() {
     return !BACKGROUND_TYPES.has(e.type);
   };
 
-  const personalEvents = reversed.filter(isPersonal).slice(0, 8);
+  // Günlük = yaşam akışı: çerçeve içinde kaydırılan zengin geçmiş (8 değil, bol)
+  const personalEvents = reversed.filter(isPersonal).slice(0, 60);
   const worldEvents = reversed
     .filter(e => !isPersonal(e) && isWorldWorthy(e))
-    .slice(0, 8);
+    .slice(0, 60);
 
   const currentTabEvents =
     activeTab === 'gunluk' ? personalEvents :
@@ -510,27 +511,28 @@ export default function Dashboard() {
                         emoji={avatarEmoji} size="3.2rem" ring={false} />
               </div>
 
-              {/* Mini stats */}
+              {/* Mini stats — okunabilirlik için ferahlatıldı */}
               <div style={{
-                background: 'rgba(8,5,2,0.65)',
-                border: '1px solid rgba(201,168,76,0.18)',
-                borderRadius: '8px',
-                padding: '0.42rem 0.5rem',
+                background: 'rgba(8,5,2,0.68)',
+                border: '1px solid rgba(201,168,76,0.20)',
+                borderRadius: '9px',
+                padding: '0.5rem 0.55rem',
                 backdropFilter: 'blur(8px)',
-                width: '4.2rem',
-                display: 'flex', flexDirection: 'column', gap: '0.36rem',
+                width: '5rem',
+                display: 'flex', flexDirection: 'column', gap: '0.46rem',
               }}>
                 {[
-                  { icon: '❤', value: stats.health, color: '#C84040', max: 100,  suffix: '' },
-                  { icon: '🍎', value: stats.hunger, color: '#4A9A5A', max: 100,  suffix: '' },
-                  { icon: '💰', value: stats.money,  color: '#C9A84C', max: 500,  suffix: 'A' },
-                  { icon: '👑', value: stats.fame,   color: '#7B4FAF', max: 100,  suffix: '' },
+                  { icon: '❤', value: stats.health, color: '#C84040', max: 100, suffix: '' },
+                  { icon: '🍎', value: stats.hunger, color: '#4A9A5A', max: 100, suffix: '' },
+                  { icon: '⚜', value: stats.money,  color: '#C9A84C', max: 500, suffix: '' },
+                  { icon: '👑', value: stats.fame,   color: '#7B4FAF', max: 100, suffix: '' },
                 ].map(({ icon, value, color, max, suffix }) => (
-                  <div key={icon} style={{ display: 'flex', alignItems: 'center', gap: '0.28rem' }}>
-                    <span style={{ fontSize: '0.65rem', lineHeight: 1, flexShrink: 0 }}>{icon}</span>
+                  <div key={icon} style={{ display: 'flex', alignItems: 'center', gap: '0.32rem' }}>
+                    <span style={{ fontSize: '0.72rem', lineHeight: 1, flexShrink: 0,
+                                   color: icon === '⚜' ? '#C9A84C' : undefined }}>{icon}</span>
                     <div style={{
-                      flex: 1, height: '2.5px',
-                      background: 'rgba(255,255,255,0.08)',
+                      flex: 1, height: '3px',
+                      background: 'rgba(255,255,255,0.09)',
                       borderRadius: '2px', overflow: 'hidden',
                     }}>
                       <div style={{
@@ -543,8 +545,8 @@ export default function Dashboard() {
                       }} />
                     </div>
                     <span style={{
-                      fontSize: '0.58rem', color: 'var(--color-parchment)',
-                      minWidth: '1.6rem', textAlign: 'right',
+                      fontSize: '0.64rem', color: 'var(--color-parchment)',
+                      minWidth: '1.95rem', textAlign: 'right',
                       fontFamily: 'Cinzel, serif', fontWeight: 700, lineHeight: 1,
                     }}>
                       {value}{suffix}
