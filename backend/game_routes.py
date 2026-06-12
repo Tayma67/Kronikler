@@ -996,6 +996,12 @@ def build_game_router(db):
             from quality import sell_quality, clear_sold_quality
             q_mult, trade_note, caught = sell_quality(state, body.good, body.qty)
             total = round(total * q_mult, 1)
+            # R6.3: çalıntı (sıcak) mal satışı — eritme riski
+            from crime_rework import sell_hot_check
+            h_mult, hot_note, _hot_caught = sell_hot_check(state, body.good, body.qty)
+            total = round(total * h_mult, 1)
+            if hot_note:
+                trade_note = f"{trade_note} {hot_note}" if trade_note else hot_note
             from bargain import consume_voucher
             total, bargain_used = consume_voucher(state, loc["id"], body.good, "sat", total)
             inv[body.good] -= body.qty
@@ -1280,6 +1286,83 @@ def build_game_router(db):
         result["event_result"] = res.get("result_text", "")
         await _save_state(db, user["_id"], state)
         return result
+
+    # ---------- suç reworku (GDD v7 R6) ----------
+    @router.get("/crime/jobs")
+    async def crime_jobs(user: dict = Depends(get_current_user)):
+        """İş kataloğu: risk merdiveni, hesaplanmış şans, keşif durumu."""
+        from crime_rework import job_listing
+        state = await _load_state(db, user["_id"])
+        return job_listing(state)
+
+    @router.post("/crime/scout")
+    async def crime_scout(body: dict, user: dict = Depends(get_current_user)):
+        """Keşif: 1 hafta hedefi izle → +%20 başarı + kaçış planı."""
+        from crime_rework import do_scout
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        _require_adult(state, "suç")
+        result, err = do_scout(state, body.get("job_id"))
+        if err:
+            raise HTTPException(400, err)
+        _push_event(state, state["turn"], "suç",
+                    f"{state['player']['name']} bir hafta boyunca ortalığı kolaçan etti.")
+        advance_time(state, weeks=1)
+        await _save_state(db, user["_id"], state)
+        result["state"] = _decorate(state)
+        return result
+
+    @router.post("/crime/execute")
+    async def crime_execute(body: dict, user: dict = Depends(get_current_user)):
+        """İcra: ya doğrudan sonuç ya da kesinti sahnesi (iki aşamalı)."""
+        from crime_rework import start_execution
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        _require_adult(state, "suç")
+        result, err = start_execution(state, body.get("job_id"))
+        if err:
+            raise HTTPException(400, err)
+        if result.get("needs_choice"):
+            await _save_state(db, user["_id"], state)
+            return result
+        enf = _finish_crime_job(state, body.get("job_id"), result)
+        await _save_state(db, user["_id"], state)
+        return {"result": result, "state": _decorate(state), "enforcement": enf}
+
+    @router.post("/crime/resolve")
+    async def crime_resolve(body: dict, user: dict = Depends(get_current_user)):
+        """Kesinti sahnesindeki seçimi çöz: saklan / sustur / kaç / kaçış planı."""
+        from crime_rework import resolve_execution
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        job_id = (state.get("pending_crime") or {}).get("job")
+        result, err = resolve_execution(state, body.get("choice"))
+        if err:
+            raise HTTPException(400, err)
+        enf = _finish_crime_job(state, job_id, result)
+        await _save_state(db, user["_id"], state)
+        return {"result": result, "state": _decorate(state), "enforcement": enf}
+
+    def _finish_crime_job(state, job_id, result):
+        """Ortak kapanış: günlük kaydı + hafta ilerlet + asker kontrolü."""
+        from crime_rework import CRIME_JOBS
+        player = state["player"]
+        label = CRIME_JOBS.get(job_id, {}).get("label", "bir iş")
+        o = result.get("outcome")
+        if o == "temiz":
+            _push_event(state, state["turn"], "suç",
+                        f"{player['name']} sessiz bir gece geçirdi; kesesi nedense ağırlaştı.")
+        elif o == "goruldun":
+            _push_event(state, state["turn"], "suç",
+                        f"{player['name']} {label.lower()} sırasında görüldü — çarşıda fısıltılar dolaşıyor.")
+        elif o == "yakalandin":
+            _push_event(state, state["turn"], "suç_yakalandı",
+                        f"{player['name']} {label.lower()} yaparken yakalandı, ceza ödedi.")
+        elif o == "kacti":
+            _push_event(state, state["turn"], "suç",
+                        f"{player['name']} dar sokaklarda bekçilerden kaçtı; eli boş döndü.")
+        advance_time(state, weeks=1)
+        return soldier_check(state)
 
     # ---------- crime / attack ----------
     @router.post("/crime")

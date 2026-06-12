@@ -221,6 +221,10 @@ def _ensure_state_fields(state):
     p.setdefault("interaction_counts", {})
     p.setdefault("inv_quality", {})      # R3.2: mal başına kalite bayrağı
     p.setdefault("quality_intel", {})    # R3.2: incelenen partiler
+    p.setdefault("hot_goods", {})        # R6.3: çalıntı mal işaretleri
+    # R6: yarım kalmış icra sahnesi başka haftaya sarkmasın
+    if state.get("pending_crime") and state["pending_crime"].get("turn") != state.get("turn"):
+        state.pop("pending_crime", None)
     p.setdefault("dead", False)
     p.setdefault("hunger", 100)
     p.setdefault("base_age", p.get("age", 7))
