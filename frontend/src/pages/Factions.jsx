@@ -1,5 +1,6 @@
 /**
- * Factions.jsx — Örgütler & Güç Dengesi
+ * Factions.jsx — Ocaklar & Güç Dengesi — KÜL & KÖZ.
+ * Duygu görevi: "Bir ocağa aitim" — rütbe merdiveni, ocaktan haberler ferman gibi.
  *
  * Adım 6: Faction savaşı UI derinleştirme
  * - WarAlertBanner: Oyuncu factioni savaştaysa üst uyarı
@@ -7,6 +8,8 @@
  * - WarOutcomeModal: Savaş sonuç ekranı (log + stat değişimleri)
  * - BattleLogEntry: Geçmiş çatışma kayıtları
  * - Güç değişimi görsel göstergesi (ok + bar)
+ *
+ * İşlevsellik (API çağrıları, state akışı, handler'lar) birebir korunur.
  */
 
 import { useEffect, useState, useCallback } from "react";
@@ -15,30 +18,25 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useActionRedirect } from "@/hooks/useActionRedirect";
 import StoryEventFeed from "@/components/StoryEventFeed";
-import {
-  Shield, Swords, Crown, Users, Coins, AlertTriangle,
-  Loader2, MapPin, LogIn, LogOut, Plus, X, Star,
-  ChevronRight, ChevronDown, TrendingUp, TrendingDown, Minus, Eye, Flame, BookOpen,
-  Heart, Church, Music, Skull, Lock, Landmark, Search, Unlock,
-  Zap, Clock, Activity, ArrowRight, CheckCircle2, XCircle,
-  Sword, Shield as ShieldIcon, Wind, Trophy, Crosshair,
-} from "lucide-react";
+import { playSfx } from "@/lib/audio";
+import { Loader2 } from "lucide-react";
+import { PageHeader, Panel, Pill, GoldRule, EmptyState, Coin } from "@/components/ui/Kit";
 
 // ─── Faction Tip Konfigürasyonu ───────────────────────────────────────────────
 const FACTION_TYPES = {
-  krallık_ordusu:    { label: "Sultanın Ordusu",      color: "text-sky-300",     border: "border-sky-900/60",    bg: "bg-sky-950/20",    Icon: Shield  },
-  tuccar_loncasi:    { label: "Tüccar Loncası",        color: "text-amber-400",   border: "border-amber-900/60",  bg: "bg-amber-950/20",  Icon: Coins   },
-  zanaatkar_loncasi: { label: "Zanaatkar Loncası",     color: "text-violet-400",  border: "border-violet-900/60", bg: "bg-violet-950/15", Icon: Landmark },
-  paralı_asker:      { label: "Paralı Asker Loncası",  color: "text-red-400",     border: "border-red-900/60",    bg: "bg-red-950/15",    Icon: Swords  },
-  ilim_cemiyeti:     { label: "İlim Cemiyeti",         color: "text-emerald-400", border: "border-emerald-900/60",bg: "bg-emerald-950/15",Icon: BookOpen },
-  sifaci_birligi:    { label: "Şifacı Birliği",        color: "text-green-400",   border: "border-green-900/60",  bg: "bg-green-950/15",  Icon: Heart   },
-  dini_tarikat:      { label: "Dini Tarikat",          color: "text-purple-400",  border: "border-purple-900/60", bg: "bg-purple-950/15", Icon: Church  },
-  oyuncu_kumpanya:   { label: "Seyyah Kumpanya",       color: "text-pink-400",    border: "border-pink-900/60",   bg: "bg-pink-950/15",   Icon: Music   },
-  eskiya_cetesi:     { label: "Eşkıya Çetesi",         color: "text-orange-400",  border: "border-orange-900/60", bg: "bg-orange-950/20", Icon: Skull   },
-  gizli_cemiyet:     { label: "Gizli Cemiyet",         color: "text-teal-400",    border: "border-teal-900/60",   bg: "bg-teal-950/15",   Icon: Lock    },
+  krallık_ordusu:    { label: "Sultanın Ordusu",      color: "#7FA7C9", icon: "🛡️" },
+  tuccar_loncasi:    { label: "Tüccar Loncası",        color: "#C9A84C", icon: "⚖️" },
+  zanaatkar_loncasi: { label: "Zanaatkar Loncası",     color: "#B08FD9", icon: "🔨" },
+  paralı_asker:      { label: "Paralı Asker Loncası",  color: "#C84040", icon: "⚔️" },
+  ilim_cemiyeti:     { label: "İlim Cemiyeti",         color: "#4A9A5A", icon: "📜" },
+  sifaci_birligi:    { label: "Şifacı Birliği",        color: "#6FBF7F", icon: "🌿" },
+  dini_tarikat:      { label: "Dini Tarikat",          color: "#7B4FAF", icon: "🕌" },
+  oyuncu_kumpanya:   { label: "Seyyah Kumpanya",       color: "#D98FB0", icon: "🎶" },
+  eskiya_cetesi:     { label: "Eşkıya Çetesi",         color: "#E05A30", icon: "🏴" },
+  gizli_cemiyet:     { label: "Gizli Cemiyet",         color: "#4FA8A0", icon: "🗝️" },
 };
 
-// ─── R8: Fraksiyon Yüzeyi — haftalık sahne + rütbe imtiyaz kartı + olay feed'i ──
+// ─── R8: Fraksiyon Yüzeyi — aylık sahne + rütbe imtiyaz kartı + olay feed'i ──
 function FactionFeedSection({ feed, onSceneChoice, busy }) {
   const [showPerks, setShowPerks] = useState(false);
   if (!feed) return null;
@@ -52,55 +50,99 @@ function FactionFeedSection({ feed, onSceneChoice, busy }) {
   }));
 
   return (
-    <div className="space-y-3">
-      {/* 8.1 Haftalık sahne */}
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+      {/* 8.1 Aylık sahne */}
       {scene && (
-        <div className="card-frame p-4 border border-amber-800/50 bg-amber-950/15 space-y-3">
-          <div className="label-tiny text-amber-400">BU AY OCAKTA</div>
-          <p className="text-sm text-stone-200 italic">{scene.text}</p>
-          <div className="space-y-1.5">
+        <Panel title="Bu Ay Ocakta" icon="🔥" tone="ember">
+          <p className="font-serif" style={{
+            fontSize: "0.88rem", fontStyle: "italic", lineHeight: 1.6,
+            color: "var(--color-parchment)", margin: "0 0 0.7rem",
+          }}>
+            {scene.text}
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
             {scene.choices.map(c => (
               <button key={c.id} onClick={() => onSceneChoice(c.id)} disabled={busy}
-                className="w-full text-left px-3 py-2 border border-amber-900/40 rounded-sm hover:bg-amber-950/25 transition-all disabled:opacity-40">
-                <span className="font-heading text-xs tracking-wider text-stone-200">{c.label}</span>
-                <span className="text-[10px] text-stone-500 ml-2">{c.hint}</span>
+                className="row-frame"
+                style={{
+                  width: "100%", textAlign: "left", cursor: "pointer",
+                  opacity: busy ? 0.4 : 1,
+                  border: "1px solid rgba(224,90,48,0.35)",
+                }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span className="font-display" style={{
+                    fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.08em",
+                    color: "var(--color-parchment)",
+                  }}>
+                    {c.label}
+                  </span>
+                  <span className="font-serif" style={{
+                    fontSize: "0.68rem", fontStyle: "italic",
+                    color: "var(--color-parchment-muted)", marginLeft: "0.5rem",
+                  }}>
+                    {c.hint}
+                  </span>
+                </div>
               </button>
             ))}
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* 8.2 Rütbe imtiyaz kartı */}
       {card && (
-        <div className="card-frame p-3">
+        <div className="card-frame" style={{ padding: "0.75rem 0.85rem" }}>
           <button onClick={() => setShowPerks(s => !s)}
-            className="w-full flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Crown className="w-4 h-4 text-amber-500" />
-              <span className="font-heading text-sm text-stone-100">{card.title}</span>
+            style={{
+              width: "100%", display: "flex", alignItems: "center",
+              justifyContent: "space-between", background: "none",
+              border: "none", padding: 0, cursor: "pointer",
+            }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
+              <span style={{ fontSize: "0.95rem", filter: "drop-shadow(0 0 8px rgba(201,168,76,0.35))" }}>👑</span>
+              <span className="font-display" style={{
+                fontSize: "0.8rem", fontWeight: 700, color: "var(--color-gold)",
+                letterSpacing: "0.06em",
+              }}>
+                {card.title}
+              </span>
               {card.next_title && (
-                <span className="text-[10px] text-stone-600">→ {card.next_title}</span>
+                <span className="font-serif" style={{
+                  fontSize: "0.68rem", fontStyle: "italic",
+                  color: "var(--color-parchment-muted)",
+                }}>
+                  → {card.next_title}
+                </span>
               )}
             </div>
-            {showPerks
-              ? <ChevronDown className="w-4 h-4 text-stone-500" />
-              : <ChevronRight className="w-4 h-4 text-stone-500" />}
+            <span className="font-display" style={{ fontSize: "0.7rem", color: "var(--color-parchment-muted)" }}>
+              {showPerks ? "▾" : "▸"}
+            </span>
           </button>
           {showPerks && (
-            <div className="mt-3 space-y-1.5">
+            <div style={{ marginTop: "0.65rem", display: "flex", flexDirection: "column", gap: "0.35rem" }}>
               {card.perks.map((p, i) => (
-                <div key={i} className={`flex items-start gap-2 text-xs px-2 py-1.5 rounded-sm border ${
-                  p.unlocked
-                    ? "border-amber-900/40 bg-amber-950/10 text-stone-200"
-                    : "border-stone-800/50 text-stone-600"
-                }`}>
-                  {p.unlocked
-                    ? <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                    : <Lock className="w-3.5 h-3.5 shrink-0 mt-0.5" />}
-                  <div className="flex-1">
+                <div key={i} style={{
+                  display: "flex", alignItems: "flex-start", gap: "0.45rem",
+                  padding: "0.4rem 0.55rem", borderRadius: "5px",
+                  border: p.unlocked ? "1px solid rgba(201,168,76,0.35)" : "1px dashed rgba(122,106,79,0.35)",
+                  background: p.unlocked ? "rgba(201,168,76,0.06)" : "transparent",
+                }}>
+                  <span style={{ fontSize: "0.7rem", flexShrink: 0, opacity: p.unlocked ? 1 : 0.5 }}>
+                    {p.unlocked ? "✦" : "🔒"}
+                  </span>
+                  <div className="font-serif" style={{
+                    flex: 1, fontSize: "0.78rem",
+                    color: p.unlocked ? "var(--color-parchment)" : "var(--color-parchment-muted)",
+                  }}>
                     {p.perk}
                     {!p.unlocked && (
-                      <span className="text-[10px] text-stone-700 ml-1">({p.rank_title} rütbesinde)</span>
+                      <span className="font-display" style={{
+                        fontSize: "0.56rem", color: "var(--color-parchment-muted)",
+                        marginLeft: "0.35rem", opacity: 0.8,
+                      }}>
+                        ({p.rank_title} rütbesinde)
+                      </span>
                     )}
                   </div>
                 </div>
@@ -110,10 +152,10 @@ function FactionFeedSection({ feed, onSceneChoice, busy }) {
         </div>
       )}
 
-      {/* 8.3 Olaylar — mini sahneler */}
+      {/* 8.3 Olaylar — mini sahneler, ferman gibi */}
       {events.length > 0 && (
         <div>
-          <div className="label-tiny mb-2">OCAKTAN HABERLER</div>
+          <GoldRule label="Ocaktan Haberler" />
           <StoryEventFeed events={events} showTimeline={false} />
         </div>
       )}
@@ -128,40 +170,58 @@ function ftCfg(type) {
 // ─── Küçük yardımcılar ────────────────────────────────────────────────────────
 function clamp(v, lo = 0, hi = 100) { return Math.max(lo, Math.min(hi, v)); }
 
+const BAR_COLORS = {
+  "bg-emerald-700": "#4A9A5A", "bg-emerald-600": "#4A9A5A",
+  "bg-amber-700": "#C9A84C", "bg-amber-600": "#C9A84C", "bg-amber-400": "#F0C040",
+  "bg-red-700": "#C84040", "bg-red-600": "#C84040",
+  "bg-sky-700": "#7FA7C9", "bg-sky-600": "#7FA7C9",
+  "bg-orange-700": "#E05A30", "bg-orange-800": "#B5512E",
+  "bg-teal-700": "#4FA8A0",
+  "bg-stone-600": "#7A6A4F",
+};
+
 function Bar({ value, max = 100, color = "bg-orange-700", label, labelRight }) {
   const pct = clamp((value / max) * 100);
+  const hex = BAR_COLORS[color] || "#C9A84C";
   return (
-    <div className="space-y-0.5">
+    <div>
       {(label || labelRight) && (
-        <div className="flex justify-between items-center">
-          {label && <span className="label-tiny">{label}</span>}
-          {labelRight && <span className="text-xs text-stone-400">{labelRight}</span>}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.2rem" }}>
+          {label && <span className="label-tiny" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>}
+          {labelRight && (
+            <span className="font-display" style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--color-parchment-dim)", flexShrink: 0 }}>
+              {labelRight}
+            </span>
+          )}
         </div>
       )}
-      <div className="bg-stone-900 rounded-full overflow-hidden h-1.5">
-        <div className={`h-full ${color} transition-all duration-300`} style={{ width: `${pct}%` }} />
+      <div style={{ height: "4px", background: "rgba(255,255,255,0.07)", borderRadius: "2px", overflow: "hidden" }}>
+        <div style={{
+          height: "100%", width: `${pct}%`, borderRadius: "2px",
+          background: `linear-gradient(to right, ${hex}99, ${hex})`,
+          boxShadow: `0 0 6px ${hex}55`, transition: "width 0.3s ease",
+        }} />
       </div>
     </div>
   );
 }
 
 function InfluenceDot({ value }) {
-  const col = value >= 75 ? "bg-amber-400" : value >= 50 ? "bg-sky-400" : value >= 25 ? "bg-emerald-500" : "bg-stone-600";
-  return <span className={`inline-block w-2 h-2 rounded-full ${col}`} />;
+  const col = value >= 75 ? "#F0C040" : value >= 50 ? "#7FA7C9" : value >= 25 ? "#4A9A5A" : "#7A6A4F";
+  return <span style={{
+    display: "inline-block", width: "8px", height: "8px", borderRadius: "50%",
+    background: col, boxShadow: `0 0 6px ${col}66`, flexShrink: 0,
+  }} />;
 }
 
 // ─── Savaş Momentum Rozeti ────────────────────────────────────────────────────
 function MomentumBadge({ momentum }) {
   const cfg = {
-    üstün:    { color: "text-emerald-400", border: "border-emerald-900/60", bg: "bg-emerald-950/20", Icon: TrendingUp,   label: "Üstün Geliyor" },
-    geride:   { color: "text-red-400",     border: "border-red-900/60",     bg: "bg-red-950/20",     Icon: TrendingDown, label: "Geride Kalıyor" },
-    dengeli:  { color: "text-stone-400",   border: "border-stone-700",      bg: "bg-stone-900/30",   Icon: Minus,        label: "Dengeli" },
-  }[momentum] || { color: "text-stone-500", border: "border-stone-800", bg: "bg-stone-900/20", Icon: Minus, label: "—" };
-  return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-heading tracking-wider px-2 py-0.5 rounded-sm border ${cfg.border} ${cfg.bg} ${cfg.color}`}>
-      <cfg.Icon className="w-3 h-3" /> {cfg.label}
-    </span>
-  );
+    üstün:    { tone: "sage",  label: "▲ Üstün Geliyor" },
+    geride:   { tone: "blood", label: "▼ Geride Kalıyor" },
+    dengeli:  { tone: "ash",   label: "— Dengeli" },
+  }[momentum] || { tone: "ash", label: "—" };
+  return <Pill tone={cfg.tone}>{cfg.label}</Pill>;
 }
 
 // ─── Güç Karşılaştırma Barı ───────────────────────────────────────────────────
@@ -171,21 +231,42 @@ function StrengthComparison({ ourPower, enemyPower, ourName, enemyName }) {
   const enemyPct = 100 - ourPct;
   const dominant = ourPct > 60 ? "biz" : ourPct < 40 ? "düşman" : "dengeli";
   return (
-    <div className="space-y-2">
-      <div className="flex justify-between text-[10px] text-stone-500 font-heading">
-        <span>{ourName}</span>
-        <span className={dominant === "biz" ? "text-emerald-400" : dominant === "düşman" ? "text-red-400" : "text-stone-400"}>
+    <div>
+      <div className="font-display" style={{
+        display: "flex", justifyContent: "space-between", gap: "0.4rem",
+        fontSize: "0.56rem", letterSpacing: "0.08em",
+        color: "var(--color-parchment-muted)", marginBottom: "0.3rem",
+      }}>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ourName}</span>
+        <span style={{
+          flexShrink: 0, fontWeight: 700,
+          color: dominant === "biz" ? "#4A9A5A" : dominant === "düşman" ? "#C84040" : "var(--color-parchment-dim)",
+        }}>
           {dominant === "biz" ? "Biz Önde" : dominant === "düşman" ? "Düşman Önde" : "Dengeli"}
         </span>
-        <span>{enemyName}</span>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{enemyName}</span>
       </div>
-      <div className="flex h-3 rounded-full overflow-hidden gap-0.5 bg-stone-900">
-        <div className="bg-sky-700 transition-all duration-500" style={{ width: `${ourPct}%` }} />
-        <div className="bg-red-700 transition-all duration-500" style={{ width: `${enemyPct}%` }} />
+      <div style={{
+        display: "flex", height: "10px", borderRadius: "5px", overflow: "hidden",
+        gap: "2px", background: "rgba(255,255,255,0.05)", border: "1px solid var(--color-border)",
+      }}>
+        <div style={{
+          width: `${ourPct}%`, transition: "width 0.5s ease",
+          background: "linear-gradient(to right, #8B6914, #C9A84C)",
+          boxShadow: "0 0 8px rgba(201,168,76,0.4)",
+        }} />
+        <div style={{
+          width: `${enemyPct}%`, transition: "width 0.5s ease",
+          background: "linear-gradient(to right, #C84040, #7A2020)",
+          boxShadow: "0 0 8px rgba(200,64,64,0.4)",
+        }} />
       </div>
-      <div className="flex justify-between text-[10px]">
-        <span className="text-sky-400 font-heading">{ourPower} güç</span>
-        <span className="text-red-400 font-heading">{enemyPower} güç</span>
+      <div className="font-display" style={{
+        display: "flex", justifyContent: "space-between",
+        fontSize: "0.6rem", fontWeight: 700, marginTop: "0.3rem",
+      }}>
+        <span style={{ color: "var(--color-gold)" }}>{ourPower} güç</span>
+        <span style={{ color: "#C84040" }}>{enemyPower} güç</span>
       </div>
     </div>
   );
@@ -204,15 +285,21 @@ function WarAlertBanner({ warDetail, onOpenDecision, loading }) {
   }[cause] || cause?.replace(/_/g, " ") || "Bilinmiyor";
 
   return (
-    <div className="card-frame border-red-900/70 bg-red-950/20 p-4 space-y-3">
+    <div className="card-frame" style={{
+      padding: "1rem",
+      border: "1px solid rgba(200,64,64,0.55)",
+      boxShadow: "0 0 22px rgba(200,64,64,0.12), 0 4px 16px rgba(0,0,0,0.5)",
+    }}>
       {/* Başlık */}
-      <div className="flex items-center gap-2">
-        <Swords className="w-5 h-5 text-red-400 animate-pulse shrink-0" />
-        <div className="flex-1 min-w-0">
-          <div className="label-tiny text-red-500">⚠️ Factionın Savaşta!</div>
-          <div className="font-heading text-sm text-stone-100">
+      <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+        <span className="ember-flicker" style={{ fontSize: "1.2rem", flexShrink: 0 }}>⚔️</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="label-tiny" style={{ color: "#C84040" }}>Ocağın Savaşta!</div>
+          <div className="font-display" style={{
+            fontSize: "0.82rem", fontWeight: 700, color: "var(--color-parchment)",
+          }}>
             {our_faction.name}
-            <span className="text-red-400 mx-2">⚔️</span>
+            <span style={{ color: "#C84040", margin: "0 0.45rem" }}>⚔</span>
             {enemy_faction.name}
           </div>
         </div>
@@ -220,12 +307,14 @@ function WarAlertBanner({ warDetail, onOpenDecision, loading }) {
       </div>
 
       {/* Detaylar */}
-      <div className="flex items-center gap-3 text-xs text-stone-500">
-        <span><span className="text-stone-400">Sebep:</span> {causeLabel}</span>
+      <div className="font-serif" style={{
+        display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap",
+        fontSize: "0.74rem", fontStyle: "italic",
+        color: "var(--color-parchment-muted)", margin: "0.55rem 0",
+      }}>
+        <span>Sebep: <span style={{ color: "var(--color-parchment-dim)" }}>{causeLabel}</span></span>
         <span>·</span>
-        <span className="flex items-center gap-1">
-          <Clock className="w-3 h-3" /> {duration_weeks} ay
-        </span>
+        <span>🕯 {duration_weeks} ay</span>
         <span>·</span>
         <span>{warDetail.battles_count} çatışma</span>
       </div>
@@ -240,11 +329,15 @@ function WarAlertBanner({ warDetail, onOpenDecision, loading }) {
 
       {/* Aksiyon butonu */}
       <button
-        onClick={onOpenDecision}
+        onClick={() => { playSfx("sword"); onOpenDecision(); }}
         disabled={loading}
-        className="btn-ember w-full py-2.5 text-sm font-heading tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
+        className="btn-ember"
+        style={{
+          width: "100%", padding: "0.65rem", fontSize: "0.7rem", marginTop: "0.75rem",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "0.45rem",
+        }}
       >
-        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Swords className="w-4 h-4" />}
+        {loading ? <Loader2 className="animate-spin" style={{ width: "0.9rem", height: "0.9rem" }} /> : "⚔️"}
         Savaş Kararını Ver
       </button>
     </div>
@@ -259,46 +352,45 @@ function WarDecisionModal({ warDetail, onClose, onDecide, busy }) {
   const STRATEGIES = [
     {
       key: "saldır",
-      Icon: Sword,
+      icon: "⚔️",
       label: "Saldır",
-      color: "text-red-400",
-      border: "border-red-900/60",
-      bg: "bg-red-950/20",
+      color: "#C84040",
       desc: "Hasar +35% · Savunma -30%",
       detail: "Yüksek risk, yüksek ödül. Düşmanı çabuk bitirmek için.",
     },
     {
       key: "savun",
-      Icon: ShieldIcon,
+      icon: "🛡️",
       label: "Savun",
-      color: "text-sky-400",
-      border: "border-sky-900/60",
-      bg: "bg-sky-950/20",
+      color: "#7FA7C9",
       desc: "Savunma +45% · Hasar -30%",
       detail: "Düşmanı yıprat. Uzun vadede daha güvenli.",
     },
     {
       key: "kaç",
-      Icon: Wind,
+      icon: "🌬️",
       label: "Geri Çekil",
-      color: "text-stone-400",
-      border: "border-stone-700",
-      bg: "bg-stone-900/30",
+      color: "#7A6A4F",
       desc: "İtibar -5 · Onur -5",
-      detail: "Faction çağrısını görmezden gelirsin. İtibar kaybedersin.",
+      detail: "Ocağın çağrısını görmezden gelirsin. İtibar kaybedersin.",
     },
   ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-      <div className="card-frame p-5 max-w-sm w-full space-y-4">
+      <div className="card-frame" style={{ padding: "1.2rem", maxWidth: "24rem", width: "100%" }}>
         {/* Başlık */}
-        <div className="flex items-center justify-between">
-          <h2 className="font-heading text-base text-red-400 flex items-center gap-2">
-            <Swords className="w-4 h-4" /> Savaş Kararı
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.85rem" }}>
+          <h2 className="font-display" style={{
+            fontSize: "0.95rem", fontWeight: 700, letterSpacing: "0.1em",
+            color: "#C84040", textShadow: "0 0 14px rgba(200,64,64,0.35)",
+            display: "flex", alignItems: "center", gap: "0.45rem", margin: 0,
+          }}>
+            ⚔️ Savaş Kararı
           </h2>
-          <button onClick={onClose} className="text-stone-500 hover:text-stone-300">
-            <X className="w-4 h-4" />
+          <button onClick={onClose} className="font-display"
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-parchment-muted)", fontSize: "0.85rem" }}>
+            ✕
           </button>
         </div>
 
@@ -311,46 +403,55 @@ function WarDecisionModal({ warDetail, onClose, onDecide, busy }) {
         />
 
         {/* Strateji seçimi */}
-        <div>
-          <div className="label-tiny mb-2">Taktik Seç</div>
-          <div className="space-y-2">
-            {STRATEGIES.map((s) => (
-              <button
-                key={s.key}
-                onClick={() => setStrategy(s.key)}
-                className={`w-full p-3 rounded-sm border text-left transition-all ${
-                  strategy === s.key ? `${s.border} ${s.bg} ${s.color}` : "border-stone-800 text-stone-500 hover:border-stone-600"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-0.5">
-                  <div className="flex items-center gap-2 font-heading text-sm">
-                    <s.Icon className="w-3.5 h-3.5" />
-                    {s.label}
-                  </div>
-                  <span className="text-[10px] font-heading">{s.desc}</span>
-                </div>
-                <div className="text-[10px] text-stone-600">{s.detail}</div>
-              </button>
-            ))}
-          </div>
+        <GoldRule label="Taktik Seç" />
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+          {STRATEGIES.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setStrategy(s.key)}
+              style={{
+                width: "100%", padding: "0.6rem 0.7rem", borderRadius: "6px",
+                textAlign: "left", cursor: "pointer", transition: "all 0.15s",
+                border: strategy === s.key ? `1px solid ${s.color}AA` : "1px solid var(--color-border)",
+                background: strategy === s.key ? `${s.color}14` : "transparent",
+                boxShadow: strategy === s.key ? `0 0 12px ${s.color}22` : "none",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.4rem", marginBottom: "0.15rem" }}>
+                <span className="font-display" style={{
+                  fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.06em",
+                  color: strategy === s.key ? s.color : "var(--color-parchment-dim)",
+                  display: "flex", alignItems: "center", gap: "0.4rem",
+                }}>
+                  {s.icon} {s.label}
+                </span>
+                <span className="font-display" style={{ fontSize: "0.56rem", color: "var(--color-parchment-muted)", flexShrink: 0 }}>
+                  {s.desc}
+                </span>
+              </div>
+              <div className="font-serif" style={{ fontSize: "0.7rem", fontStyle: "italic", color: "var(--color-parchment-muted)" }}>
+                {s.detail}
+              </div>
+            </button>
+          ))}
         </div>
 
         {/* Butonlar */}
-        <div className="flex gap-2 pt-1">
-          <button onClick={onClose} className="btn-ghost-ash flex-1 py-2 text-xs font-heading tracking-wider">
+        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.9rem" }}>
+          <button onClick={onClose} className="btn-ghost-ash" style={{ flex: 1, padding: "0.55rem", fontSize: "0.62rem" }}>
             İptal
           </button>
           <button
             onClick={() => onDecide(strategy)}
             disabled={busy}
-            className={`flex-1 py-2 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 rounded-sm border transition-all disabled:opacity-50 ${
-              strategy === "kaç"
-                ? "border-stone-700 text-stone-400 hover:border-stone-600"
-                : "btn-ember"
-            }`}
+            className={strategy === "kaç" ? "btn-ghost-ash" : "btn-ember"}
+            style={{
+              flex: 1, padding: "0.55rem", fontSize: "0.62rem",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem",
+            }}
           >
-            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
-              strategy === "kaç" ? <Wind className="w-3.5 h-3.5" /> : <Swords className="w-3.5 h-3.5" />}
+            {busy ? <Loader2 className="animate-spin" style={{ width: "0.85rem", height: "0.85rem" }} /> :
+              strategy === "kaç" ? "🌬️" : "⚔️"}
             {strategy === "kaç" ? "Geri Çekil" : "Savaşa Katıl"}
           </button>
         </div>
@@ -365,92 +466,110 @@ function WarOutcomeModal({ result, onClose }) {
           our_military_power, enemy_military_power, strategy } = result;
 
   const OUTCOME_CFG = {
-    zafer:     { color: "text-amber-400", Icon: Trophy,     bg: "border-amber-900/60 bg-amber-950/20", label: "Zafer!" },
-    kayıp:     { color: "text-red-400",   Icon: XCircle,    bg: "border-red-900/60 bg-red-950/20",     label: "Yenildin" },
-    beraberlik:{ color: "text-stone-400", Icon: Minus,      bg: "border-stone-700 bg-stone-900/30",    label: "Beraberlik" },
-    kaçış:     { color: "text-stone-500", Icon: Wind,       bg: "border-stone-800 bg-stone-950/20",    label: "Geri Çekildin" },
+    zafer:     { color: "#F0C040", icon: "🏆", label: "Zafer!" },
+    kayıp:     { color: "#C84040", icon: "💀", label: "Yenildin" },
+    beraberlik:{ color: "#B8A880", icon: "⚖️", label: "Beraberlik" },
+    kaçış:     { color: "#7A6A4F", icon: "🌬️", label: "Geri Çekildin" },
   };
   const cfg = OUTCOME_CFG[outcome] || OUTCOME_CFG["beraberlik"];
-  const { Icon } = cfg;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85">
-      <div className="card-frame p-5 max-w-sm w-full space-y-4">
+      <div className="card-frame" style={{ padding: "1.2rem", maxWidth: "24rem", width: "100%" }}>
         {/* Sonuç Başlık */}
-        <div className={`card-frame p-3 border ${cfg.bg} flex items-center gap-3`}>
-          <Icon className={`w-7 h-7 ${cfg.color} shrink-0`} />
+        <div style={{
+          display: "flex", alignItems: "center", gap: "0.75rem",
+          padding: "0.7rem 0.85rem", borderRadius: "6px",
+          border: `1px solid ${cfg.color}66`, background: `${cfg.color}10`,
+          boxShadow: `0 0 18px ${cfg.color}1A`,
+        }}>
+          <span style={{ fontSize: "1.6rem", flexShrink: 0, filter: `drop-shadow(0 0 12px ${cfg.color}66)` }}>
+            {cfg.icon}
+          </span>
           <div>
-            <div className={`font-heading text-lg ${cfg.color}`}>{cfg.label}</div>
-            <div className="text-xs text-stone-500 capitalize">{strategy?.replace("kaç", "Geri Çekilme")}</div>
+            <div className="font-display" style={{
+              fontSize: "1.05rem", fontWeight: 700, letterSpacing: "0.1em",
+              color: cfg.color, textShadow: `0 0 14px ${cfg.color}55`,
+            }}>
+              {cfg.label}
+            </div>
+            <div className="font-serif" style={{
+              fontSize: "0.72rem", fontStyle: "italic",
+              color: "var(--color-parchment-muted)", textTransform: "capitalize",
+            }}>
+              {strategy?.replace("kaç", "Geri Çekilme")}
+            </div>
           </div>
         </div>
 
         {/* Stat değişimleri */}
-        <div className="grid grid-cols-3 gap-2">
+        <div style={{
+          display: "flex", justifyContent: "center", flexWrap: "wrap",
+          gap: "0.5rem", marginTop: "0.75rem",
+        }}>
           {loot > 0 && (
-            <div className="card-frame p-2 text-center">
-              <Coins className="w-3.5 h-3.5 text-amber-400 mx-auto mb-0.5" />
-              <div className="font-heading text-sm text-amber-400">+{loot}</div>
-              <div className="text-[9px] text-stone-600">altın</div>
+            <div className="card-frame" style={{ padding: "0.5rem 0.8rem", textAlign: "center" }}>
+              <Coin value={`+${loot}`} />
+              <div className="label-tiny" style={{ marginTop: "0.1rem" }}>ganimet</div>
             </div>
           )}
           {reputation_change !== 0 && (
-            <div className="card-frame p-2 text-center">
-              <Star className="w-3.5 h-3.5 text-sky-400 mx-auto mb-0.5" />
-              <div className={`font-heading text-sm ${reputation_change > 0 ? "text-emerald-400" : "text-red-400"}`}>
+            <div className="card-frame" style={{ padding: "0.5rem 0.8rem", textAlign: "center" }}>
+              <div className="font-display" style={{
+                fontSize: "0.85rem", fontWeight: 700,
+                color: reputation_change > 0 ? "#4A9A5A" : "#C84040",
+              }}>
                 {reputation_change > 0 ? "+" : ""}{reputation_change}
               </div>
-              <div className="text-[9px] text-stone-600">itibar</div>
+              <div className="label-tiny" style={{ marginTop: "0.1rem" }}>itibar</div>
             </div>
           )}
           {honor_change !== 0 && (
-            <div className="card-frame p-2 text-center">
-              <Crown className="w-3.5 h-3.5 text-purple-400 mx-auto mb-0.5" />
-              <div className={`font-heading text-sm ${honor_change > 0 ? "text-emerald-400" : "text-red-400"}`}>
+            <div className="card-frame" style={{ padding: "0.5rem 0.8rem", textAlign: "center" }}>
+              <div className="font-display" style={{
+                fontSize: "0.85rem", fontWeight: 700,
+                color: honor_change > 0 ? "#4A9A5A" : "#C84040",
+              }}>
                 {honor_change > 0 ? "+" : ""}{honor_change}
               </div>
-              <div className="text-[9px] text-stone-600">onur</div>
+              <div className="label-tiny" style={{ marginTop: "0.1rem" }}>onur</div>
             </div>
           )}
         </div>
 
         {/* Güç durumu (varsa) */}
         {our_military_power != null && enemy_military_power != null && (
-          <div className="space-y-1.5">
-            <div className="label-tiny">Savaş Durumu</div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-sky-400 shrink-0 w-24 truncate">Bizim güç:</span>
-              <div className="flex-1 bg-stone-900 rounded-full h-1.5 overflow-hidden">
-                <div className="h-full bg-sky-700 transition-all" style={{ width: `${our_military_power}%` }} />
-              </div>
-              <span className="text-sky-400 text-[10px] w-6 text-right">{our_military_power}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-red-400 shrink-0 w-24 truncate">Düşman güç:</span>
-              <div className="flex-1 bg-stone-900 rounded-full h-1.5 overflow-hidden">
-                <div className="h-full bg-red-700 transition-all" style={{ width: `${enemy_military_power}%` }} />
-              </div>
-              <span className="text-red-400 text-[10px] w-6 text-right">{enemy_military_power}</span>
-            </div>
+          <div style={{ marginTop: "0.8rem" }}>
+            <div className="label-tiny" style={{ marginBottom: "0.35rem" }}>Savaş Durumu</div>
+            <Bar label="Bizim güç" value={our_military_power} color="bg-sky-700" labelRight={`${our_military_power}`} />
+            <div style={{ height: "0.35rem" }} />
+            <Bar label="Düşman güç" value={enemy_military_power} color="bg-red-700" labelRight={`${enemy_military_power}`} />
           </div>
         )}
 
         {/* Savaş Logu */}
-        <div>
-          <div className="label-tiny mb-1.5">Savaş Günlüğü</div>
-          <div className="bg-stone-950 border border-stone-800 rounded-sm p-3 space-y-1 max-h-36 overflow-y-auto">
+        <div style={{ marginTop: "0.8rem" }}>
+          <GoldRule label="Savaş Günlüğü" />
+          <div style={{
+            border: "1px solid var(--color-border)", borderRadius: "6px",
+            background: "rgba(10,7,4,0.5)", padding: "0.6rem 0.7rem",
+            maxHeight: "9rem", overflowY: "auto",
+          }}>
             {log?.map((line, i) => (
-              <div key={i} className={`text-[10px] font-mono leading-relaxed ${
-                line.includes("⚔️") || line.includes("🏆") ? "text-amber-400" :
-                line.includes("💀") || line.includes("hasar aldın") ? "text-red-400" :
-                line.includes("💨") || line.includes("Geri çekildin") ? "text-stone-500" :
-                line.includes("hasar verdin") ? "text-emerald-400" : "text-stone-400"
-              }`}>{line}</div>
+              <div key={i} className="font-serif" style={{
+                fontSize: "0.74rem", fontStyle: "italic", lineHeight: 1.55,
+                color:
+                  line.includes("⚔️") || line.includes("🏆") ? "var(--color-gold)" :
+                  line.includes("💀") || line.includes("hasar aldın") ? "#C84040" :
+                  line.includes("💨") || line.includes("Geri çekildin") ? "var(--color-parchment-muted)" :
+                  line.includes("hasar verdin") ? "#4A9A5A" : "var(--color-parchment-dim)",
+              }}>{line}</div>
             ))}
           </div>
         </div>
 
-        <button onClick={onClose} className="btn-ember w-full py-2.5 text-sm font-heading tracking-wider">
+        <button onClick={onClose} className="btn-ember"
+          style={{ width: "100%", padding: "0.65rem", fontSize: "0.7rem", marginTop: "0.85rem" }}>
           Tamam
         </button>
       </div>
@@ -462,28 +581,39 @@ function WarOutcomeModal({ result, onClose }) {
 function BattleLogEntry({ battle, ourFactionId, turn }) {
   const weeksAgo = turn != null && battle.turn != null ? turn - battle.turn : null;
   const isWin = battle.winner_id === ourFactionId;
+  const col = isWin ? "#4A9A5A" : "#C84040";
   return (
-    <div className={`flex items-start gap-3 p-2.5 rounded-sm border ${
-      isWin ? "border-emerald-900/40 bg-emerald-950/10" : "border-red-900/40 bg-red-950/10"
-    }`}>
-      {isWin
-        ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-        : <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <span className={`text-xs font-heading ${isWin ? "text-emerald-400" : "text-red-400"}`}>
+    <div style={{
+      display: "flex", alignItems: "flex-start", gap: "0.6rem",
+      padding: "0.55rem 0.7rem", borderRadius: "6px",
+      border: `1px solid ${col}55`, background: `${col}0D`,
+    }}>
+      <span style={{ fontSize: "0.8rem", flexShrink: 0, filter: `drop-shadow(0 0 6px ${col}55)` }}>
+        {isWin ? "✦" : "✕"}
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.4rem", flexWrap: "wrap" }}>
+          <span className="font-display" style={{ fontSize: "0.7rem", fontWeight: 700, color: col }}>
             {isWin ? "Zafer" : "Mağlubiyet"} — {battle.region_name}
           </span>
           {weeksAgo != null && (
-            <span className="text-[9px] text-stone-600">{weeksAgo} ay önce</span>
+            <span className="font-serif" style={{ fontSize: "0.62rem", fontStyle: "italic", color: "var(--color-parchment-muted)" }}>
+              {weeksAgo} ay önce
+            </span>
           )}
         </div>
-        <div className="text-[10px] text-stone-500 mt-0.5 flex gap-3 flex-wrap">
-          <span>Galibin kaybı: <span className="text-stone-400">{battle.winner_casualties}</span></span>
-          <span>Kaybedenin kaybı: <span className="text-stone-400">{battle.loser_casualties}</span></span>
+        <div className="font-serif" style={{
+          fontSize: "0.68rem", color: "var(--color-parchment-muted)",
+          marginTop: "0.15rem", display: "flex", gap: "0.7rem", flexWrap: "wrap",
+        }}>
+          <span>Galibin kaybı: <span style={{ color: "var(--color-parchment-dim)" }}>{battle.winner_casualties}</span></span>
+          <span>Kaybedenin kaybı: <span style={{ color: "var(--color-parchment-dim)" }}>{battle.loser_casualties}</span></span>
         </div>
         {battle.npc_events?.length > 0 && (
-          <div className="text-[9px] text-amber-700 mt-1 italic">
+          <div className="font-serif" style={{
+            fontSize: "0.64rem", fontStyle: "italic",
+            color: "var(--color-gold-dim)", marginTop: "0.25rem",
+          }}>
             {battle.npc_events.slice(0, 2).join(" · ")}
           </div>
         )}
@@ -498,66 +628,83 @@ function WarDetailCard({ war, playerFactionId, turn, onOpenDecision }) {
   const isOurWar = war.faction_a === playerFactionId || war.faction_b === playerFactionId;
 
   return (
-    <div className={`card-frame p-4 space-y-3 border ${
-      isOurWar ? "border-red-900/60 bg-red-950/20" : "border-stone-800/60"
-    }`}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Swords className={`w-4 h-4 shrink-0 ${isOurWar ? "text-red-400 animate-pulse" : "text-stone-500"}`} />
-          <div>
-            <div className="font-heading text-sm text-stone-100">
+    <div className="card-frame" style={{
+      padding: "0.9rem",
+      border: isOurWar ? "1px solid rgba(200,64,64,0.55)" : undefined,
+      boxShadow: isOurWar ? "0 0 18px rgba(200,64,64,0.1), 0 4px 16px rgba(0,0,0,0.45)" : undefined,
+    }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
+          <span className={isOurWar ? "ember-flicker" : ""} style={{
+            fontSize: "1rem", flexShrink: 0,
+            opacity: isOurWar ? 1 : 0.6,
+          }}>
+            ⚔️
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <div className="font-display" style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--color-parchment)" }}>
               {war.attacker_name || war.faction_a}
-              <span className="text-red-400 mx-2">⚔️</span>
+              <span style={{ color: "#C84040", margin: "0 0.4rem" }}>⚔</span>
               {war.defender_name || war.faction_b}
             </div>
-            <div className="text-xs text-stone-500">
+            <div className="font-serif" style={{
+              fontSize: "0.7rem", fontStyle: "italic",
+              color: "var(--color-parchment-muted)", textTransform: "capitalize",
+            }}>
               {war.cause?.replace(/_/g, " ")} · {war.battles_fought ?? 0} çatışma
             </div>
           </div>
         </div>
-        {isOurWar && (
-          <span className="text-[9px] font-heading uppercase px-1.5 py-0.5 border border-red-900 bg-red-950/40 text-red-400 rounded-sm shrink-0">
-            Senin Savaşın
-          </span>
-        )}
+        {isOurWar && <Pill tone="blood" pulse="danger">Senin Savaşın</Pill>}
       </div>
 
       {/* Genişlet butonu */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1 text-[10px] text-stone-600 hover:text-stone-400 transition-colors"
+        className="font-display"
+        style={{
+          display: "flex", alignItems: "center", gap: "0.3rem",
+          fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase",
+          color: "var(--color-parchment-muted)", background: "none",
+          border: "none", padding: 0, cursor: "pointer", marginTop: "0.6rem",
+        }}
       >
-        <Activity className="w-3 h-3" />
-        Geçmiş Çatışmalar
-        <ChevronRight className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`} />
+        📜 Geçmiş Çatışmalar {expanded ? "▾" : "▸"}
       </button>
 
       {expanded && war._battles?.length > 0 && (
-        <div className="space-y-2">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", marginTop: "0.5rem" }}>
           {war._battles.map((b, i) => (
             <BattleLogEntry key={i} battle={b} ourFactionId={playerFactionId} turn={turn} />
           ))}
         </div>
       )}
       {expanded && (!war._battles || war._battles.length === 0) && (
-        <div className="text-[10px] text-stone-600 italic text-center py-2">
+        <div className="font-serif" style={{
+          fontSize: "0.7rem", fontStyle: "italic", textAlign: "center",
+          color: "var(--color-parchment-muted)", padding: "0.5rem 0",
+        }}>
           Henüz kayıtlı çatışma yok.
         </div>
       )}
 
       {isOurWar && (
         <button
-          onClick={onOpenDecision}
-          className="btn-ember w-full py-2 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5"
+          onClick={() => { playSfx("sword"); onOpenDecision(); }}
+          className="btn-ember"
+          style={{
+            width: "100%", padding: "0.55rem", fontSize: "0.64rem", marginTop: "0.6rem",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
+          }}
         >
-          <Swords className="w-3.5 h-3.5" /> Savaşa Katıl
+          ⚔️ Savaşa Katıl
         </button>
       )}
     </div>
   );
 }
 
-// ─── Rank İlerleme ────────────────────────────────────────────────────────────
+// ─── Rank İlerleme — rütbe merdiveni ─────────────────────────────────────────
 function RankProgress({ faction, player }) {
   const rankTable = faction.rank_table || [];
   const playerRank = player?.faction_rank ?? 0;
@@ -568,29 +715,58 @@ function RankProgress({ faction, player }) {
   const isMaxRank       = playerRank >= rankTable.length - 1;
   const goal = player?.faction_contribution_goal || 20;
   return (
-    <div className="card-frame p-4 space-y-3">
-      <div className="label-tiny text-orange-400">Senin Durumun</div>
-      <div className="flex items-center justify-between">
-        <div>
-          <span className="text-xs text-stone-500">Mevcut Rank</span>
-          <div className="font-heading text-base text-stone-100">{currentRankName}</div>
-        </div>
-        {!isMaxRank && nextRankName && (
-          <div className="text-right">
-            <span className="text-xs text-stone-500">Sonraki</span>
-            <div className="flex items-center gap-1 text-amber-400 text-xs font-heading">
-              {nextRankName} <ChevronRight className="w-3 h-3" />
+    <div className="card-frame" style={{ padding: "0.85rem" }}>
+      <div className="label-tiny" style={{ color: "#E05A30", marginBottom: "0.5rem" }}>Senin Durumun</div>
+
+      {/* Rütbe merdiveni */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem", marginBottom: "0.6rem" }}>
+        {rankTable.map((rank, i) => {
+          const climbed = i < playerRank;
+          const current = i === playerRank;
+          return (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: "0.5rem",
+              padding: "0.25rem 0.5rem", borderRadius: "4px",
+              border: current ? "1px solid rgba(201,168,76,0.55)" : "1px solid transparent",
+              background: current ? "rgba(201,168,76,0.08)" : "transparent",
+              boxShadow: current ? "0 0 10px rgba(201,168,76,0.12)" : "none",
+            }}>
+              <span style={{ fontSize: "0.62rem", width: "1rem", textAlign: "center", flexShrink: 0, opacity: climbed || current ? 1 : 0.35 }}>
+                {current ? "👑" : climbed ? "✦" : "·"}
+              </span>
+              <span className="font-display" style={{
+                fontSize: current ? "0.74rem" : "0.64rem",
+                fontWeight: current ? 700 : 600,
+                letterSpacing: "0.08em",
+                color: current ? "var(--color-gold)" : climbed ? "var(--color-parchment-dim)" : "var(--color-parchment-muted)",
+                textShadow: current ? "0 0 10px rgba(201,168,76,0.3)" : "none",
+                opacity: climbed || current ? 1 : 0.55,
+              }}>
+                {rank}
+              </span>
+              {current && isMaxRank && <Pill tone="gold">Zirve</Pill>}
             </div>
-          </div>
-        )}
-        {isMaxRank && <Star className="w-4 h-4 text-amber-400" />}
+          );
+        })}
       </div>
+
       {!isMaxRank && (
         <Bar value={contribution} max={goal} color="bg-amber-600" label="Katkı" labelRight={`${contribution} / ${goal}`} />
       )}
+      {!isMaxRank && nextRankName && (
+        <div className="font-serif" style={{
+          fontSize: "0.7rem", fontStyle: "italic",
+          color: "var(--color-parchment-muted)", marginTop: "0.35rem",
+        }}>
+          Sıradaki rütbe: <span style={{ color: "var(--color-gold)" }}>{nextRankName}</span>
+        </div>
+      )}
       {player?.faction_joined_turn != null && (
-        <div className="text-xs text-stone-500">
-          Üyelik süresi: <span className="text-stone-300">{Math.max(0, (player.turn || 0) - player.faction_joined_turn)} ay</span>
+        <div className="font-serif" style={{
+          fontSize: "0.7rem", fontStyle: "italic",
+          color: "var(--color-parchment-muted)", marginTop: "0.35rem",
+        }}>
+          Üyelik süresi: <span style={{ color: "var(--color-parchment-dim)" }}>{Math.max(0, (player.turn || 0) - player.faction_joined_turn)} ay</span>
         </div>
       )}
     </div>
@@ -601,27 +777,41 @@ function RankProgress({ faction, player }) {
 function InfluenceMap({ cityInfluence, locations }) {
   const entries = Object.entries(cityInfluence || {}).filter(([, v]) => v > 0).sort(([, a], [, b]) => b - a);
   if (!entries.length) return (
-    <div className="text-xs text-stone-600 italic py-2 text-center">Henüz hiçbir şehirde nüfuz yok.</div>
+    <div className="font-serif" style={{
+      fontSize: "0.72rem", fontStyle: "italic", textAlign: "center",
+      color: "var(--color-parchment-muted)", padding: "0.5rem 0",
+    }}>
+      Henüz hiçbir şehirde nüfuz yok.
+    </div>
   );
   const locName = (id) => locations.find((l) => l.id === id)?.name || id.slice(0, 12);
   return (
-    <div className="space-y-2">
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
       {entries.map(([locId, val]) => (
-        <div key={locId} className="space-y-0.5">
-          <div className="flex items-center justify-between text-xs">
-            <span className="flex items-center gap-1.5 text-stone-300">
+        <div key={locId}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.2rem" }}>
+            <span className="font-serif" style={{
+              display: "flex", alignItems: "center", gap: "0.4rem",
+              fontSize: "0.78rem", color: "var(--color-parchment-dim)",
+            }}>
               <InfluenceDot value={val} />{locName(locId)}
             </span>
-            <span className="text-stone-400">{val}/100</span>
+            <span className="font-display" style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--color-parchment-dim)" }}>
+              {val}/100
+            </span>
           </div>
-          <div className="bg-stone-900 rounded-full overflow-hidden h-1">
-            <div
-              className={`h-full transition-all ${val >= 100 ? "bg-amber-400" : val >= 75 ? "bg-amber-600" : val >= 50 ? "bg-sky-600" : val >= 25 ? "bg-emerald-700" : "bg-stone-600"}`}
-              style={{ width: `${val}%` }}
-            />
+          <div style={{ height: "3px", background: "rgba(255,255,255,0.06)", borderRadius: "2px", overflow: "hidden" }}>
+            <div style={{
+              height: "100%", width: `${val}%`, borderRadius: "2px", transition: "width 0.3s",
+              background: val >= 100 ? "#F0C040" : val >= 75 ? "#C9A84C" : val >= 50 ? "#7FA7C9" : val >= 25 ? "#4A9A5A" : "#7A6A4F",
+              boxShadow: val >= 75 ? "0 0 6px rgba(201,168,76,0.4)" : "none",
+            }} />
           </div>
           {val >= 25 && (
-            <div className="text-[9px] text-stone-600">
+            <div className="font-serif" style={{
+              fontSize: "0.62rem", fontStyle: "italic",
+              color: "var(--color-parchment-muted)", marginTop: "0.1rem",
+            }}>
               {val >= 100 ? "Kontrol" : val >= 75 ? "Aday gösterebilir" : val >= 50 ? "Baskı yapabilir" : "Faaliyet gösterebilir"}
             </div>
           )}
@@ -631,46 +821,61 @@ function InfluenceMap({ cityInfluence, locations }) {
   );
 }
 
-// ─── Faction Kartı ────────────────────────────────────────────────────────────
 // ─── Darbe Planı Badge (GDD v4 Bölüm 5) ──────────────────────────────────────
 const FAZ_LABELS = ["Propaganda", "Askeri", "Hazine", "Eylem"];
-const FAZ_COLORS = ["text-yellow-400", "text-orange-400", "text-red-400", "text-red-500"];
 
 function DarbePlaniBadge({ darbePlani, factions }) {
   if (!darbePlani) return null;
   const faz = darbePlani.faz ?? 1;
   const hedef = factions?.find(f => f.id === darbePlani.hedef_id);
   return (
-    <div className="rounded-sm border border-red-900/50 bg-red-950/20 px-2 py-1.5 space-y-1">
-      <div className="flex items-center gap-1.5">
-        <Crosshair className="w-3 h-3 text-red-400 shrink-0" />
-        <span className="label-tiny text-red-400">Darbe Planı Aktif</span>
+    <div style={{
+      borderRadius: "6px", border: "1px solid rgba(200,64,64,0.5)",
+      background: "rgba(200,64,64,0.07)", padding: "0.55rem 0.65rem",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+        <span style={{ fontSize: "0.75rem" }}>🎯</span>
+        <span className="label-tiny" style={{ color: "#C84040" }}>Darbe Planı Aktif</span>
       </div>
-      <div className="text-[10px] text-stone-400">
-        Hedef: <span className="text-stone-200">{hedef?.name ?? "?"}</span>
+      <div className="font-serif" style={{ fontSize: "0.72rem", color: "var(--color-parchment-muted)", marginTop: "0.2rem" }}>
+        Hedef: <span style={{ color: "var(--color-parchment)" }}>{hedef?.name ?? "?"}</span>
       </div>
-      <div className="flex gap-1 mt-1">
-        {FAZ_LABELS.map((label, i) => (
-          <div
-            key={i}
-            className={"flex-1 rounded-sm py-0.5 text-center text-[9px] font-heading " +
-              (i + 1 < faz ? "bg-red-900/60 text-red-300" :
-               i + 1 === faz ? "bg-red-700/70 " + FAZ_COLORS[i] + " ring-1 ring-red-500/50" :
-               "bg-stone-900/60 text-stone-600")}
-          >
-            {label}
-          </div>
-        ))}
+      <div style={{ display: "flex", gap: "0.25rem", marginTop: "0.35rem" }}>
+        {FAZ_LABELS.map((label, i) => {
+          const done = i + 1 < faz;
+          const active = i + 1 === faz;
+          return (
+            <div
+              key={i}
+              className="font-display"
+              style={{
+                flex: 1, borderRadius: "3px", padding: "0.18rem 0",
+                textAlign: "center", fontSize: "0.52rem", fontWeight: 700,
+                letterSpacing: "0.04em",
+                background: done ? "rgba(200,64,64,0.4)" : active ? "rgba(200,64,64,0.6)" : "rgba(255,255,255,0.04)",
+                color: done ? "#E8A0A0" : active ? "#FFD9D9" : "var(--color-parchment-muted)",
+                boxShadow: active ? "0 0 8px rgba(200,64,64,0.45)" : "none",
+                border: active ? "1px solid rgba(200,64,64,0.7)" : "1px solid transparent",
+              }}
+            >
+              {label}
+            </div>
+          );
+        })}
       </div>
       {darbePlani.ifsa_riski > 0 && (
-        <div className="flex items-center gap-1 text-[10px] text-amber-500">
-          <AlertTriangle className="w-3 h-3" /> İfşa riski: {Math.round(darbePlani.ifsa_riski * 100)}%
+        <div className="font-display" style={{
+          display: "flex", alignItems: "center", gap: "0.3rem",
+          fontSize: "0.6rem", fontWeight: 700, color: "#E05A30", marginTop: "0.35rem",
+        }}>
+          ⚠ İfşa riski: {Math.round(darbePlani.ifsa_riski * 100)}%
         </div>
       )}
     </div>
   );
 }
 
+// ─── Faction Kartı ────────────────────────────────────────────────────────────
 function FactionCard({
   faction, playerFactionId, playerAge, canJoin, joinBlocked, joinWeeksLeft,
   onJoin, onLeave, onRebel, onInfluence, onDonate,
@@ -679,7 +884,6 @@ function FactionCard({
   warDetail, onOpenDecision, allFactions,
 }) {
   const cfg = ftCfg(faction.type);
-  const { Icon } = cfg;
   const isPlayerFaction = faction.id === playerFactionId;
   const isBusy = busy === faction.id;
   const [expanded, setExpanded] = useState(false);
@@ -692,56 +896,67 @@ function FactionCard({
   const atWar = faction.at_war_with?.length > 0;
 
   return (
-    <div className={`card-frame p-4 flex flex-col gap-3 border ${cfg.border} ${cfg.bg} transition-all ${isPlayerFaction ? "ring-1 ring-orange-700/50" : ""}`}>
+    <div className="card-frame" style={{
+      padding: "0.9rem", display: "flex", flexDirection: "column", gap: "0.7rem",
+      border: `1px solid ${cfg.color}40`,
+      boxShadow: isPlayerFaction
+        ? "0 0 0 1px rgba(201,168,76,0.45), 0 0 18px rgba(201,168,76,0.12), 0 4px 16px rgba(0,0,0,0.45)"
+        : undefined,
+    }}>
 
       {/* Başlık */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <Icon className={`w-5 h-5 shrink-0 ${cfg.color}`} />
-          <div className="min-w-0">
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
+          <span style={{ fontSize: "1.15rem", flexShrink: 0, filter: `drop-shadow(0 0 8px ${cfg.color}55)` }}>
+            {cfg.icon}
+          </span>
+          <div style={{ minWidth: 0 }}>
             <div className="label-tiny">{cfg.label}</div>
-            <h3 className={`font-heading text-sm leading-tight ${cfg.color} truncate`}>{faction.name}</h3>
+            <h3 className="font-display" style={{
+              fontSize: "0.85rem", fontWeight: 700, lineHeight: 1.2,
+              color: cfg.color, margin: 0,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              textShadow: `0 0 12px ${cfg.color}33`,
+            }}>
+              {faction.name}
+            </h3>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-          {isPlayerFaction && (
-            <span className="text-[9px] font-heading tracking-wider uppercase px-2 py-0.5 rounded-sm border border-orange-800 bg-orange-950/30 text-orange-400">
-              ÜYEsin
-            </span>
-          )}
-          {atWar && (
-            <span className="text-[9px] font-heading tracking-wider uppercase text-red-400 border border-red-900 bg-red-950/30 px-1.5 py-0.5 rounded-sm animate-pulse">
-              Savaşta
-            </span>
-          )}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          {isPlayerFaction && <Pill tone="gold">Ocağın</Pill>}
+          {atWar && <Pill tone="blood" pulse="danger">Savaşta</Pill>}
         </div>
       </div>
 
       {/* Lider + Trend */}
-      <div className="flex items-center justify-between text-xs text-stone-500">
-        <span><span className="text-stone-400">Lider:</span> {faction.leader || "—"}</span>
-        <div className="flex items-center gap-2">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+        <span className="font-serif" style={{ fontSize: "0.76rem", color: "var(--color-parchment-muted)" }}>
+          Lider: <span style={{ color: "var(--color-parchment-dim)" }}>{faction.leader || "—"}</span>
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
           {faction.influence_trend === "yukari" && (
-            <span className="flex items-center gap-0.5 text-[10px] text-emerald-400 font-heading">
-              <TrendingUp className="w-3 h-3" />{faction.influence_delta_4w > 0 ? `+${faction.influence_delta_4w}` : ""}
+            <span className="font-display" style={{ fontSize: "0.62rem", fontWeight: 700, color: "#4A9A5A" }}>
+              ▲{faction.influence_delta_4w > 0 ? ` +${faction.influence_delta_4w}` : ""}
             </span>
           )}
           {faction.influence_trend === "asagi" && (
-            <span className="flex items-center gap-0.5 text-[10px] text-red-400 font-heading">
-              <TrendingDown className="w-3 h-3" />{faction.influence_delta_4w}
+            <span className="font-display" style={{ fontSize: "0.62rem", fontWeight: 700, color: "#C84040" }}>
+              ▼ {faction.influence_delta_4w}
             </span>
           )}
           {faction.influence_trend === "sabit" && (
-            <span className="flex items-center gap-0.5 text-[10px] text-stone-500 font-heading">
-              <Minus className="w-3 h-3" />
-            </span>
+            <span className="font-display" style={{ fontSize: "0.62rem", color: "var(--color-parchment-muted)" }}>—</span>
           )}
-          <span className="flex items-center gap-1 text-stone-400" title="Üye sayısı"><Users className="w-3 h-3" /> {faction.uye_sayisi ?? faction.member_count ?? faction.members?.length ?? 0}</span>
+          <span className="font-display" title="Üye sayısı" style={{
+            fontSize: "0.62rem", fontWeight: 700, color: "var(--color-parchment-dim)",
+          }}>
+            👥 {faction.uye_sayisi ?? faction.member_count ?? faction.members?.length ?? 0}
+          </span>
         </div>
       </div>
 
       {/* İstatistikler */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem 0.9rem" }}>
         <Bar label="İstikrar"   value={faction.stability}     color={faction.stability >= 70 ? "bg-emerald-700" : faction.stability >= 40 ? "bg-amber-700" : "bg-red-700"} />
         <Bar label="Ekonomi"    value={faction.economy_level} color="bg-amber-700" />
         <Bar label="İtibar"     value={faction.reputation}    color="bg-sky-700" />
@@ -750,8 +965,8 @@ function FactionCard({
 
       {/* Savaştaysa güç karşılaştırması */}
       {isPlayerFaction && atWar && warDetail && (
-        <div className="space-y-1.5 pt-1 border-t border-red-900/30">
-          <div className="label-tiny text-red-500">Savaş Gücü Karşılaştırması</div>
+        <div style={{ paddingTop: "0.4rem", borderTop: "1px solid rgba(200,64,64,0.25)" }}>
+          <div className="label-tiny" style={{ color: "#C84040", marginBottom: "0.35rem" }}>Savaş Gücü Karşılaştırması</div>
           <StrengthComparison
             ourPower={warDetail.our_faction.military_power}
             enemyPower={warDetail.enemy_faction.military_power}
@@ -763,7 +978,13 @@ function FactionCard({
 
       {/* Hedef */}
       {faction.primary_goal && (
-        <div className="text-[10px] text-stone-500 italic border-l-2 border-stone-800 pl-2">{faction.primary_goal}</div>
+        <div className="font-serif" style={{
+          fontSize: "0.72rem", fontStyle: "italic",
+          color: "var(--color-parchment-muted)",
+          borderLeft: `2px solid ${cfg.color}55`, paddingLeft: "0.55rem",
+        }}>
+          {faction.primary_goal}
+        </div>
       )}
 
       {/* Darbe Planı (GDD v4 Bölüm 5) */}
@@ -773,31 +994,49 @@ function FactionCard({
 
       {/* İnanç Etkisi (GDD v4 Bölüm 4 — sadece dini tarikat) */}
       {faction.type === "dini_tarikat" && faction.inanc_etkisi !== undefined && (
-        <div className={`flex items-center justify-between px-2 py-1.5 rounded-sm border text-xs
-          ${faction.inanc_etkisi >= 30
-            ? "border-purple-800 bg-purple-950/20"
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0.4rem 0.6rem", borderRadius: "5px",
+          border: faction.inanc_etkisi >= 30
+            ? "1px solid rgba(123,79,175,0.5)"
             : faction.inanc_etkisi >= 0
-            ? "border-stone-800 bg-stone-900/40"
-            : "border-red-900/60 bg-red-950/20"}`}
-        >
-          <span className="text-stone-400 flex items-center gap-1">
-            <Church className="w-3 h-3 text-purple-500" /> İnanç Etkisi
+            ? "1px solid var(--color-border)"
+            : "1px solid rgba(200,64,64,0.5)",
+          background: faction.inanc_etkisi >= 30
+            ? "rgba(123,79,175,0.08)"
+            : faction.inanc_etkisi >= 0
+            ? "rgba(255,255,255,0.02)"
+            : "rgba(200,64,64,0.07)",
+        }}>
+          <span className="font-serif" style={{
+            fontSize: "0.74rem", color: "var(--color-parchment-muted)",
+            display: "flex", alignItems: "center", gap: "0.35rem",
+          }}>
+            🕌 İnanç Etkisi
           </span>
-          <span className={`font-heading ${
-            faction.inanc_etkisi >= 30 ? "text-purple-300"
-            : faction.inanc_etkisi >= 0 ? "text-stone-400"
-            : "text-red-400"}`}
-          >
+          <span className="font-display" style={{
+            fontSize: "0.72rem", fontWeight: 700,
+            color: faction.inanc_etkisi >= 30 ? "#B08FD9"
+              : faction.inanc_etkisi >= 0 ? "var(--color-parchment-dim)"
+              : "#C84040",
+          }}>
             {faction.inanc_etkisi > 0 ? `+${faction.inanc_etkisi}` : faction.inanc_etkisi}
-            {faction.inanc_etkisi >= 20 && <span className="text-[9px] ml-1 text-purple-400">→ gelir bonusu</span>}
+            {faction.inanc_etkisi >= 20 && (
+              <span style={{ fontSize: "0.56rem", marginLeft: "0.3rem", color: "#7B4FAF" }}>→ gelir bonusu</span>
+            )}
           </span>
         </div>
       )}
 
       {/* Nüfuz Haritası */}
-      <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1 text-[10px] text-stone-600 hover:text-stone-400 transition-colors">
-        <MapPin className="w-3 h-3" />Şehir Nüfuzları
-        <ChevronRight className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`} />
+      <button onClick={() => setExpanded(!expanded)} className="font-display"
+        style={{
+          display: "flex", alignItems: "center", gap: "0.3rem",
+          fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase",
+          color: "var(--color-parchment-muted)", background: "none",
+          border: "none", padding: 0, cursor: "pointer",
+        }}>
+        🗺 Şehir Nüfuzları {expanded ? "▾" : "▸"}
       </button>
       {expanded && <InfluenceMap cityInfluence={faction.city_influence} locations={locations} />}
 
@@ -805,65 +1044,93 @@ function FactionCard({
 
       {/* Bağış Paneli */}
       {isPlayerFaction && (
-        <div className="card-frame p-4 space-y-3">
-          <div className="label-tiny text-orange-400">Hazineye Bağış</div>
-          <div className="text-xs text-stone-500">Her 10 altın = 1 katkı puanı</div>
-          <div className="flex items-center gap-2">
+        <div className="card-frame" style={{ padding: "0.85rem" }}>
+          <div className="label-tiny" style={{ color: "#E05A30", marginBottom: "0.25rem" }}>Hazineye Bağış</div>
+          <div className="font-serif" style={{
+            fontSize: "0.72rem", fontStyle: "italic",
+            color: "var(--color-parchment-muted)", marginBottom: "0.5rem",
+          }}>
+            Her 10 akçe ⚜ = 1 katkı puanı
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <input
               type="number" min={10} step={10} value={donateAmount}
               onChange={e => setDonateAmount(Math.max(10, parseInt(e.target.value) || 10))}
-              className="w-24 bg-stone-800 border border-stone-700 text-stone-100 text-sm rounded-sm px-2 py-1 focus:outline-none focus:border-amber-600"
+              style={{ width: "6rem", padding: "0.35rem 0.5rem", fontSize: "0.85rem" }}
             />
             <button
               onClick={async () => {
+                playSfx("coin");
                 setDonateMsg(null);
                 const res = await onDonate(donateAmount);
                 if (res?.success) setDonateMsg({ ok: true, text: `+${res.contribution_gained} katkı kazandın!` });
                 else setDonateMsg({ ok: false, text: res?.reason || "Bağış başarısız." });
               }}
               disabled={isBusy}
-              className="btn-ember py-1.5 px-4 text-xs font-heading tracking-wider flex items-center gap-1.5 disabled:opacity-50"
+              className="btn-ember"
+              style={{
+                padding: "0.4rem 1rem", fontSize: "0.6rem",
+                display: "flex", alignItems: "center", gap: "0.35rem",
+              }}
             >
-              {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}Bağış Yap
+              {isBusy ? <Loader2 className="animate-spin" style={{ width: "0.85rem", height: "0.85rem" }} /> : null}Bağış Yap
             </button>
           </div>
           {donateMsg && (
-            <div className={`text-xs ${donateMsg.ok ? "text-green-400" : "text-red-400"}`}>{donateMsg.text}</div>
+            <div className="font-serif" style={{
+              fontSize: "0.74rem", fontStyle: "italic", marginTop: "0.4rem",
+              color: donateMsg.ok ? "#4A9A5A" : "#C84040",
+            }}>
+              {donateMsg.text}
+            </div>
           )}
         </div>
       )}
 
       {/* ── Darbe Başlatma Paneli (oyuncu factionı, darbe yoksa) ── */}
       {isPlayerFaction && !faction.darbe_plani && playerAge >= 18 && (
-        <div className="border-t border-stone-900 pt-3">
+        <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "0.65rem" }}>
           {!showDarbaPanel ? (
             <button
               onClick={() => setShowDarbaPanel(true)}
-              className="flex items-center gap-1.5 text-[10px] text-stone-600 hover:text-red-400 transition-colors font-heading tracking-wide"
+              className="font-display"
+              style={{
+                display: "flex", alignItems: "center", gap: "0.35rem",
+                fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.12em",
+                textTransform: "uppercase", color: "var(--color-parchment-muted)",
+                background: "none", border: "none", padding: 0, cursor: "pointer",
+              }}
             >
-              <Crosshair className="w-3 h-3" /> Darbe Planı Başlat
+              🎯 Darbe Planı Başlat
             </button>
           ) : (
-            <div className="space-y-2 rounded-sm border border-red-900/40 bg-red-950/10 p-2.5">
-              <div className="label-tiny text-red-400 flex items-center gap-1">
-                <Crosshair className="w-3 h-3" /> Darbe Hedefi Seç
+            <div style={{
+              borderRadius: "6px", border: "1px solid rgba(200,64,64,0.45)",
+              background: "rgba(200,64,64,0.06)", padding: "0.65rem",
+              display: "flex", flexDirection: "column", gap: "0.5rem",
+            }}>
+              <div className="label-tiny" style={{ color: "#C84040", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                🎯 Darbe Hedefi Seç
               </div>
               <select
                 value={darbaHedefId}
                 onChange={e => setDarbaHedefId(e.target.value)}
-                className="w-full bg-stone-900 border border-stone-700 text-stone-200 text-xs rounded-sm px-2 py-1.5 focus:outline-none focus:border-red-700"
+                style={{ width: "100%", padding: "0.4rem 0.5rem", fontSize: "0.78rem" }}
               >
-                <option value="">— Hedef faction seç —</option>
+                <option value="">— Hedef ocak seç —</option>
                 {(allFactions || [])
                   .filter(f => f.id !== faction.id && f.active)
                   .map(f => (
                     <option key={f.id} value={f.id}>{f.name}</option>
                   ))}
               </select>
-              <p className="text-[10px] text-stone-600">
-                Maliyet: 200 altın · 4 fazlı süreç · Her an ifşa riski var.
+              <p className="font-serif" style={{
+                fontSize: "0.68rem", fontStyle: "italic",
+                color: "var(--color-parchment-muted)", margin: 0,
+              }}>
+                Maliyet: 200 akçe ⚜ · 4 fazlı süreç · Her an ifşa riski var.
               </p>
-              <div className="flex gap-2">
+              <div style={{ display: "flex", gap: "0.5rem" }}>
                 <button
                   onClick={async () => {
                     if (!darbaHedefId) return;
@@ -872,14 +1139,16 @@ function FactionCard({
                     setDarbaHedefId("");
                   }}
                   disabled={!darbaHedefId || isBusy}
-                  className="btn-ember py-1 px-3 text-xs font-heading tracking-wider disabled:opacity-50"
+                  className="btn-ember"
+                  style={{ padding: "0.35rem 0.8rem", fontSize: "0.6rem" }}
                 >
-                  {isBusy ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : null}
+                  {isBusy ? <Loader2 className="animate-spin" style={{ width: "0.75rem", height: "0.75rem", display: "inline", marginRight: "0.25rem" }} /> : null}
                   Planı Başlat
                 </button>
                 <button
                   onClick={() => { setShowDarbaPanel(false); setDarbaHedefId(""); }}
-                  className="btn-ghost-ash py-1 px-3 text-xs font-heading"
+                  className="btn-ghost-ash"
+                  style={{ padding: "0.35rem 0.8rem", fontSize: "0.6rem" }}
                 >
                   Vazgeç
                 </button>
@@ -891,46 +1160,66 @@ function FactionCard({
 
       {/* ── Aktif Darbe — iptal butonu ── */}
       {isPlayerFaction && faction.darbe_plani?.oyuncu_baslatti && (
-        <div className="flex justify-end pt-1">
+        <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: "0.2rem" }}>
           <button
             onClick={onDarbaIptal}
             disabled={isBusy}
-            className="text-[10px] text-red-600 hover:text-red-400 font-heading flex items-center gap-1 disabled:opacity-50"
+            className="font-display"
+            style={{
+              display: "flex", alignItems: "center", gap: "0.3rem",
+              fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase", color: "#C84040",
+              background: "none", border: "none", padding: 0,
+              cursor: "pointer", opacity: isBusy ? 0.5 : 1,
+            }}
           >
-            <X className="w-3 h-3" /> Planı İptal Et
+            ✕ Planı İptal Et
           </button>
         </div>
       )}
 
       {/* ── Misyoner Gönderme Paneli (Dini Tarikat üyesi) ── */}
       {isPlayerFaction && faction.type === "dini_tarikat" && (
-        <div className="border-t border-stone-900 pt-3">
+        <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "0.65rem" }}>
           {!showMisyonerPanel ? (
             <button
               onClick={() => setShowMisyonerPanel(true)}
-              className="flex items-center gap-1.5 text-[10px] text-stone-600 hover:text-purple-400 transition-colors font-heading tracking-wide"
+              className="font-display"
+              style={{
+                display: "flex", alignItems: "center", gap: "0.35rem",
+                fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.12em",
+                textTransform: "uppercase", color: "var(--color-parchment-muted)",
+                background: "none", border: "none", padding: 0, cursor: "pointer",
+              }}
             >
-              <Church className="w-3 h-3" /> Misyoner Gönder
+              🕌 Misyoner Gönder
             </button>
           ) : (
-            <div className="space-y-2 rounded-sm border border-purple-900/40 bg-purple-950/10 p-2.5">
-              <div className="label-tiny text-purple-400 flex items-center gap-1">
-                <Church className="w-3 h-3" /> Misyoner Hedef Bölge
+            <div style={{
+              borderRadius: "6px", border: "1px solid rgba(123,79,175,0.45)",
+              background: "rgba(123,79,175,0.06)", padding: "0.65rem",
+              display: "flex", flexDirection: "column", gap: "0.5rem",
+            }}>
+              <div className="label-tiny" style={{ color: "#B08FD9", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                🕌 Misyoner Hedef Bölge
               </div>
               <select
                 value={misyonerLocId}
                 onChange={e => setMisyonerLocId(e.target.value)}
-                className="w-full bg-stone-900 border border-stone-700 text-stone-200 text-xs rounded-sm px-2 py-1.5 focus:outline-none focus:border-purple-700"
+                style={{ width: "100%", padding: "0.4rem 0.5rem", fontSize: "0.78rem" }}
               >
                 <option value="">— Bölge seç —</option>
                 {(locations || []).map(loc => (
                   <option key={loc.id} value={loc.id}>{loc.name}</option>
                 ))}
               </select>
-              <p className="text-[10px] text-stone-600">
-                Maliyet: 40 altın · %70 başarı şansı · İnanç etkisi +8
+              <p className="font-serif" style={{
+                fontSize: "0.68rem", fontStyle: "italic",
+                color: "var(--color-parchment-muted)", margin: 0,
+              }}>
+                Maliyet: 40 akçe ⚜ · %70 başarı şansı · İnanç etkisi +8
               </p>
-              <div className="flex gap-2">
+              <div style={{ display: "flex", gap: "0.5rem" }}>
                 <button
                   onClick={async () => {
                     if (!misyonerLocId) return;
@@ -939,14 +1228,23 @@ function FactionCard({
                     setMisyonerLocId("");
                   }}
                   disabled={!misyonerLocId || isBusy}
-                  className="py-1 px-3 text-xs font-heading tracking-wider border border-purple-800 text-purple-300 hover:bg-purple-950/30 rounded-sm disabled:opacity-50 transition-all"
+                  className="font-display"
+                  style={{
+                    padding: "0.35rem 0.8rem", fontSize: "0.6rem", fontWeight: 700,
+                    letterSpacing: "0.1em", textTransform: "uppercase",
+                    borderRadius: "5px", cursor: "pointer",
+                    border: "1px solid rgba(123,79,175,0.6)",
+                    background: "rgba(123,79,175,0.1)", color: "#B08FD9",
+                    opacity: (!misyonerLocId || isBusy) ? 0.5 : 1,
+                  }}
                 >
-                  {isBusy ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : null}
+                  {isBusy ? <Loader2 className="animate-spin" style={{ width: "0.75rem", height: "0.75rem", display: "inline", marginRight: "0.25rem" }} /> : null}
                   Gönder
                 </button>
                 <button
                   onClick={() => { setShowMisyonerPanel(false); setMisyonerLocId(""); }}
-                  className="btn-ghost-ash py-1 px-3 text-xs font-heading"
+                  className="btn-ghost-ash"
+                  style={{ padding: "0.35rem 0.8rem", fontSize: "0.6rem" }}
                 >
                   Vazgeç
                 </button>
@@ -957,56 +1255,91 @@ function FactionCard({
       )}
 
       {/* Aksiyon butonları */}
-      <div className="flex gap-2 pt-0.5">
+      <div style={{ display: "flex", gap: "0.5rem", paddingTop: "0.1rem" }}>
         {isPlayerFaction ? (
           <>
             {atWar && (
               <button
-                onClick={onOpenDecision}
-                className="btn-ember flex-1 py-1.5 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5"
+                onClick={() => { playSfx("sword"); onOpenDecision(); }}
+                className="btn-ember"
+                style={{
+                  flex: 1, padding: "0.45rem", fontSize: "0.6rem",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem",
+                }}
               >
-                <Swords className="w-3.5 h-3.5" /> Savaşa Katıl
+                ⚔️ Savaşa Katıl
               </button>
             )}
             <button
               onClick={() => onInfluence(faction.id)}
               disabled={isBusy}
-              className="btn-ghost-ash flex-1 py-1.5 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-50"
+              className="btn-ghost-ash"
+              style={{
+                flex: 1, padding: "0.45rem", fontSize: "0.6rem",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem",
+              }}
             >
-              {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+              {isBusy ? <Loader2 className="animate-spin" style={{ width: "0.85rem", height: "0.85rem" }} /> : "👁"}
               Nüfuz
             </button>
             <button
               onClick={onLeave} disabled={isBusy}
-              className="btn-ghost-ash flex-1 py-1.5 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-50"
+              className="btn-ghost-ash"
+              style={{
+                flex: 1, padding: "0.45rem", fontSize: "0.6rem",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem",
+              }}
             >
-              <LogOut className="w-3.5 h-3.5" /> Ayrıl
+              🚪 Ayrıl
             </button>
             {playerAge >= 18 && (
               <button
                 onClick={() => onRebel(faction.id)} disabled={isBusy}
-                className="py-1.5 px-3 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-50 border border-red-900/50 text-red-400 hover:border-red-700 rounded-sm transition-all"
+                title="İsyan başlat"
+                className="font-display"
+                style={{
+                  padding: "0.45rem 0.7rem", fontSize: "0.72rem", borderRadius: "5px",
+                  border: "1px solid rgba(200,64,64,0.5)", background: "rgba(200,64,64,0.06)",
+                  color: "#C84040", cursor: "pointer", opacity: isBusy ? 0.5 : 1,
+                }}
               >
-                <Swords className="w-3.5 h-3.5" />
+                ⚔
               </button>
             )}
           </>
         ) : !playerFactionId ? (
           canJoin ? (
-            <button onClick={() => onJoin(faction.id)} disabled={isBusy}
-              className="btn-ember flex-1 py-1.5 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-50">
-              {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogIn className="w-3.5 h-3.5" />}Katıl
+            <button onClick={() => { playSfx("click"); onJoin(faction.id); }} disabled={isBusy}
+              className="btn-ember"
+              style={{
+                flex: 1, padding: "0.45rem", fontSize: "0.6rem",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem",
+              }}>
+              {isBusy ? <Loader2 className="animate-spin" style={{ width: "0.85rem", height: "0.85rem" }} /> : "🤝"}Katıl
             </button>
           ) : joinBlocked ? (
-            <div className="flex-1 py-1.5 text-xs text-orange-700 italic text-center flex items-center justify-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              {joinWeeksLeft === -1 ? "Kalıcı yasak" : `${joinWeeksLeft} ay yasak`}
+            <div className="font-serif" style={{
+              flex: 1, padding: "0.4rem 0", fontSize: "0.74rem", fontStyle: "italic",
+              color: "#E05A30", textAlign: "center",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem",
+            }}>
+              ⚠ {joinWeeksLeft === -1 ? "Kalıcı yasak" : `${joinWeeksLeft} ay yasak`}
             </div>
           ) : (
-            <div className="text-xs text-amber-700 italic flex-1 text-center py-1">Katılmak için biraz daha büyümen gerekiyor</div>
+            <div className="font-serif" style={{
+              flex: 1, padding: "0.3rem 0", fontSize: "0.74rem", fontStyle: "italic",
+              color: "var(--color-gold-dim)", textAlign: "center",
+            }}>
+              Katılmak için biraz daha büyümen gerekiyor
+            </div>
           )
         ) : (
-          <div className="text-xs text-stone-600 italic flex-1 text-center py-1">Başka örgüte üyesin</div>
+          <div className="font-serif" style={{
+            flex: 1, padding: "0.3rem 0", fontSize: "0.74rem", fontStyle: "italic",
+            color: "var(--color-parchment-muted)", textAlign: "center",
+          }}>
+            Başka ocağa bağlısın
+          </div>
         )}
       </div>
     </div>
@@ -1017,15 +1350,30 @@ function FactionCard({
 function DormantFactionCard({ faction }) {
   const cfg = ftCfg(faction.type);
   return (
-    <div className="card-frame p-4 flex flex-col gap-3 border border-stone-800/50 bg-stone-950/20 opacity-50">
-      <div className="flex items-center gap-2">
-        <cfg.Icon className="w-5 h-5 text-stone-700" />
+    <div style={{
+      padding: "0.8rem 0.9rem", borderRadius: "8px",
+      border: "1px dashed rgba(122,106,79,0.35)",
+      background: "rgba(10,7,4,0.35)", opacity: 0.6,
+      display: "flex", flexDirection: "column", gap: "0.4rem",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <span style={{ fontSize: "1rem", filter: "grayscale(0.8)", opacity: 0.6 }}>{cfg.icon}</span>
         <div>
-          <div className="label-tiny text-stone-700">{cfg.label}</div>
-          <h3 className="font-heading text-sm text-stone-700">Henüz bilinmiyor</h3>
+          <div className="label-tiny">{cfg.label}</div>
+          <h3 className="font-display" style={{
+            fontSize: "0.78rem", fontWeight: 700,
+            color: "var(--color-parchment-muted)", margin: 0,
+          }}>
+            Henüz bilinmiyor
+          </h3>
         </div>
       </div>
-      <p className="text-[10px] text-stone-700 italic">Bu tür örgüt henüz bölgede aktif değil.</p>
+      <p className="font-serif" style={{
+        fontSize: "0.7rem", fontStyle: "italic",
+        color: "var(--color-parchment-muted)", margin: 0,
+      }}>
+        Bu tür ocak henüz bölgede tütmüyor.
+      </p>
     </div>
   );
 }
@@ -1036,38 +1384,66 @@ function SecretSocietyCard({ faction, clueCount = 0, threshold = 5, onInvestigat
   const canReveal = clueCount >= threshold;
   const isBusy = busy === faction.id + "_inv";
   return (
-    <div className="card-frame p-4 flex flex-col gap-3 border border-teal-900/60 bg-teal-950/15">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Lock className="w-5 h-5 text-teal-400" />
+    <div className="card-frame" style={{
+      padding: "0.9rem", display: "flex", flexDirection: "column", gap: "0.65rem",
+      border: "1px solid rgba(79,168,160,0.45)",
+      boxShadow: "0 0 16px rgba(79,168,160,0.08), 0 4px 16px rgba(0,0,0,0.45)",
+    }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ fontSize: "1.1rem", filter: "drop-shadow(0 0 8px rgba(79,168,160,0.45))" }}>🗝️</span>
           <div>
-            <div className="label-tiny text-teal-600">Gizli Cemiyet</div>
-            <h3 className="font-heading text-sm text-teal-300">Kimliği Bilinmiyor</h3>
+            <div className="label-tiny" style={{ color: "#4FA8A0" }}>Gizli Cemiyet</div>
+            <h3 className="font-display" style={{
+              fontSize: "0.82rem", fontWeight: 700, color: "#7FCFC7", margin: 0,
+            }}>
+              Kimliği Bilinmiyor
+            </h3>
           </div>
         </div>
-        <span className="text-[9px] font-heading tracking-wider uppercase px-2 py-0.5 rounded-sm border border-teal-900 bg-teal-950/50 text-teal-500">Gizli</span>
+        <Pill tone="ink">Gizli</Pill>
       </div>
-      <div className="space-y-1.5">
-        <div className="flex justify-between items-center">
-          <span className="label-tiny text-stone-500">İpucu İlerlemesi</span>
-          <span className="text-[10px] text-stone-400 font-heading">{clueCount} / {threshold}</span>
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+          <span className="label-tiny">İpucu İlerlemesi</span>
+          <span className="font-display" style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--color-parchment-dim)" }}>
+            {clueCount} / {threshold}
+          </span>
         </div>
-        <div className="bg-stone-900 rounded-full overflow-hidden h-1.5">
-          <div className={`h-full transition-all duration-500 ${canReveal ? "bg-amber-400" : "bg-teal-700"}`} style={{ width: `${pct}%` }} />
+        <div style={{ height: "5px", background: "rgba(255,255,255,0.06)", borderRadius: "3px", overflow: "hidden" }}>
+          <div style={{
+            height: "100%", width: `${pct}%`, borderRadius: "3px",
+            transition: "width 0.5s ease",
+            background: canReveal
+              ? "linear-gradient(to right, #C9A84C, #F0C040)"
+              : "linear-gradient(to right, #2E6661, #4FA8A0)",
+            boxShadow: canReveal ? "0 0 8px rgba(240,192,64,0.5)" : "0 0 6px rgba(79,168,160,0.4)",
+          }} />
         </div>
-        <p className="text-[10px] text-stone-600 italic">
-          {canReveal ? "Yeterli kanıt topladın. Artık bu örgütü ifşa edebilirsin." : "Gizli bu örgüt hakkında daha fazla ipucu toplamalısın."}
+        <p className="font-serif" style={{
+          fontSize: "0.7rem", fontStyle: "italic",
+          color: "var(--color-parchment-muted)", margin: "0.3rem 0 0",
+        }}>
+          {canReveal ? "Yeterli kanıt topladın. Artık bu cemiyeti ifşa edebilirsin." : "Gizli bu cemiyet hakkında daha fazla ipucu toplamalısın."}
         </p>
       </div>
-      <div className="flex gap-2">
+      <div style={{ display: "flex", gap: "0.5rem" }}>
         <button onClick={() => onInvestigate(faction.id)} disabled={isBusy || busy === "reveal_" + faction.id}
-          className="btn-ghost-ash flex-1 py-1.5 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-50">
-          {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}Araştır
+          className="btn-ghost-ash"
+          style={{
+            flex: 1, padding: "0.45rem", fontSize: "0.6rem",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem",
+          }}>
+          {isBusy ? <Loader2 className="animate-spin" style={{ width: "0.85rem", height: "0.85rem" }} /> : "🔍"}Araştır
         </button>
         {canReveal && (
           <button onClick={() => onReveal(faction.id)} disabled={busy === "reveal_" + faction.id}
-            className="flex-1 py-1.5 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 border border-amber-800/60 text-amber-400 hover:border-amber-600 rounded-sm transition-all disabled:opacity-50">
-            {busy === "reveal_" + faction.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unlock className="w-3.5 h-3.5" />}İfşa Et
+            className="btn-ember"
+            style={{
+              flex: 1, padding: "0.45rem", fontSize: "0.6rem",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem",
+            }}>
+            {busy === "reveal_" + faction.id ? <Loader2 className="animate-spin" style={{ width: "0.85rem", height: "0.85rem" }} /> : "🔓"}İfşa Et
           </button>
         )}
       </div>
@@ -1081,31 +1457,57 @@ function InfluenceModal({ faction, locations, onClose, onConfirm, busy }) {
   const influence = faction.city_influence || {};
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75">
-      <div className="card-frame p-6 max-w-sm w-full space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-heading text-base text-orange-400">Nüfuz Operasyonu</h2>
-          <button onClick={onClose} className="text-stone-500 hover:text-stone-300"><X className="w-4 h-4" /></button>
+      <div className="card-frame" style={{ padding: "1.3rem", maxWidth: "24rem", width: "100%" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.7rem" }}>
+          <h2 className="font-display" style={{
+            fontSize: "0.95rem", fontWeight: 700, letterSpacing: "0.08em",
+            color: "#E05A30", textShadow: "0 0 12px rgba(224,90,48,0.3)", margin: 0,
+          }}>
+            👁 Nüfuz Operasyonu
+          </h2>
+          <button onClick={onClose} className="font-display"
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-parchment-muted)", fontSize: "0.85rem" }}>
+            ✕
+          </button>
         </div>
-        <p className="text-xs text-stone-500">Faction adına seçili şehirde gizli operasyon başlat. Başarı durumunda nüfuz artar.</p>
+        <p className="font-serif" style={{
+          fontSize: "0.78rem", fontStyle: "italic",
+          color: "var(--color-parchment-muted)", margin: "0 0 0.8rem",
+        }}>
+          Ocağın adına seçili şehirde gizli operasyon başlat. Başarı durumunda nüfuz artar.
+        </p>
         <div>
-          <div className="label-tiny mb-1.5">Hedef Şehir</div>
+          <div className="label-tiny" style={{ marginBottom: "0.3rem" }}>Hedef Şehir</div>
           <select value={locId} onChange={(e) => setLocId(e.target.value)}
-            className="w-full bg-stone-900 border border-stone-700 rounded-sm px-3 py-2 text-sm text-stone-200 focus:outline-none focus:border-orange-700">
+            style={{ width: "100%", padding: "0.5rem 0.6rem", fontSize: "0.85rem" }}>
             {locations.map((l) => (
               <option key={l.id} value={l.id}>{l.name} — Mevcut nüfuz: {influence[l.id] ?? 0}/100</option>
             ))}
           </select>
         </div>
-        <div className="grid grid-cols-2 gap-1.5 text-[10px] text-stone-600">
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.3rem",
+          margin: "0.7rem 0",
+        }}>
           {[["25", "Faaliyet"], ["50", "Baskı"], ["75", "Aday"], ["100", "Kontrol"]].map(([t, label]) => (
-            <div key={t} className="flex items-center gap-1"><span className="text-stone-400">{t}</span> → {label}</div>
+            <div key={t} className="font-serif" style={{
+              fontSize: "0.66rem", fontStyle: "italic",
+              color: "var(--color-parchment-muted)",
+              display: "flex", alignItems: "center", gap: "0.25rem",
+            }}>
+              <span className="font-display" style={{ color: "var(--color-parchment-dim)", fontWeight: 700, fontStyle: "normal" }}>{t}</span> → {label}
+            </div>
           ))}
         </div>
-        <div className="flex gap-2">
-          <button onClick={onClose} className="btn-ghost-ash flex-1 py-2 text-xs font-heading tracking-wider">İptal</button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button onClick={onClose} className="btn-ghost-ash" style={{ flex: 1, padding: "0.55rem", fontSize: "0.62rem" }}>İptal</button>
           <button onClick={() => onConfirm(locId)} disabled={busy || !locId}
-            className="btn-ember flex-1 py-2 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-50">
-            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}Başlat
+            className="btn-ember"
+            style={{
+              flex: 1, padding: "0.55rem", fontSize: "0.62rem",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem",
+            }}>
+            {busy ? <Loader2 className="animate-spin" style={{ width: "0.85rem", height: "0.85rem" }} /> : "👁"}Başlat
           </button>
         </div>
       </div>
@@ -1121,43 +1523,73 @@ function CreateFactionModal({ locations, onClose, onCreate, busy }) {
   const AVAILABLE_TYPES = Object.entries(FACTION_TYPES).filter(([k]) => k !== "krallık_ordusu" && k !== "gizli_cemiyet");
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75">
-      <div className="card-frame p-6 max-w-sm w-full space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-heading text-lg text-orange-400">Örgüt Kur</h2>
-          <button onClick={onClose} className="text-stone-500 hover:text-stone-300"><X className="w-4 h-4" /></button>
+      <div className="card-frame" style={{ padding: "1.3rem", maxWidth: "24rem", width: "100%" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.8rem" }}>
+          <h2 className="font-display" style={{
+            fontSize: "1.05rem", fontWeight: 700, letterSpacing: "0.08em",
+            color: "var(--color-gold)", textShadow: "0 0 14px rgba(201,168,76,0.3)", margin: 0,
+          }}>
+            🏰 Ocak Kur
+          </h2>
+          <button onClick={onClose} className="font-display"
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-parchment-muted)", fontSize: "0.85rem" }}>
+            ✕
+          </button>
         </div>
-        <div className="space-y-3">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           <div>
-            <div className="label-tiny mb-1">Örgüt Adı</div>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Örgütünün adı..."
-              className="w-full bg-stone-900 border border-stone-700 rounded-sm px-3 py-2 text-sm text-stone-200 focus:outline-none focus:border-orange-700" />
+            <div className="label-tiny" style={{ marginBottom: "0.25rem" }}>Ocağın Adı</div>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ocağının adı..."
+              style={{ width: "100%", padding: "0.5rem 0.6rem", fontSize: "0.85rem" }} />
           </div>
           <div>
-            <div className="label-tiny mb-1.5">Tür</div>
-            <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+            <div className="label-tiny" style={{ marginBottom: "0.35rem" }}>Tür</div>
+            <div style={{
+              display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.35rem",
+              maxHeight: "12rem", overflowY: "auto", paddingRight: "0.25rem",
+            }}>
               {AVAILABLE_TYPES.map(([k, cfg]) => (
                 <button key={k} onClick={() => setType(k)}
-                  className={`py-1.5 px-2 text-[10px] font-heading tracking-wider rounded-sm border transition-all text-left flex items-center gap-1.5 ${type === k ? `${cfg.border} ${cfg.bg} ${cfg.color}` : "border-stone-700 text-stone-500"}`}>
-                  <cfg.Icon className="w-3 h-3 shrink-0" />{cfg.label}
+                  className="font-display"
+                  style={{
+                    padding: "0.4rem 0.5rem", fontSize: "0.56rem", fontWeight: 700,
+                    letterSpacing: "0.06em", borderRadius: "5px", textAlign: "left",
+                    cursor: "pointer", transition: "all 0.15s",
+                    display: "flex", alignItems: "center", gap: "0.35rem",
+                    border: type === k ? `1px solid ${cfg.color}AA` : "1px solid var(--color-border-hi)",
+                    background: type === k ? `${cfg.color}14` : "transparent",
+                    color: type === k ? cfg.color : "var(--color-parchment-muted)",
+                    boxShadow: type === k ? `0 0 10px ${cfg.color}22` : "none",
+                  }}>
+                  <span style={{ flexShrink: 0 }}>{cfg.icon}</span>{cfg.label}
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <div className="label-tiny mb-1">Merkez Konum</div>
+            <div className="label-tiny" style={{ marginBottom: "0.25rem" }}>Merkez Konum</div>
             <select value={locId} onChange={(e) => setLocId(e.target.value)}
-              className="w-full bg-stone-900 border border-stone-700 rounded-sm px-3 py-2 text-sm text-stone-200 focus:outline-none focus:border-orange-700">
+              style={{ width: "100%", padding: "0.5rem 0.6rem", fontSize: "0.85rem" }}>
               {locations.map((l) => <option key={l.id} value={l.id}>{l.name} ({l.kind})</option>)}
             </select>
           </div>
         </div>
-        <div className="divider-ash" />
-        <p className="text-xs text-stone-500">Örgüt kurmak 200 altın gerektirir. Lider olarak başlarsın.</p>
-        <div className="flex gap-2">
-          <button onClick={onClose} className="btn-ghost-ash flex-1 py-2 text-xs font-heading tracking-wider">İptal</button>
-          <button onClick={() => onCreate({ name, type, locId })} disabled={busy || !name.trim() || !locId}
-            className="btn-ember flex-1 py-2 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-50">
-            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}Kur
+        <GoldRule />
+        <p className="font-serif" style={{
+          fontSize: "0.76rem", fontStyle: "italic",
+          color: "var(--color-parchment-muted)", margin: "0 0 0.7rem",
+        }}>
+          Ocak kurmak 200 akçe ⚜ gerektirir. Lider olarak başlarsın.
+        </p>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button onClick={onClose} className="btn-ghost-ash" style={{ flex: 1, padding: "0.55rem", fontSize: "0.62rem" }}>İptal</button>
+          <button onClick={() => { playSfx("success"); onCreate({ name, type, locId }); }} disabled={busy || !name.trim() || !locId}
+            className="btn-ember"
+            style={{
+              flex: 1, padding: "0.55rem", fontSize: "0.62rem",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.35rem",
+            }}>
+            {busy ? <Loader2 className="animate-spin" style={{ width: "0.85rem", height: "0.85rem" }} /> : "🏰"}Kur
           </button>
         </div>
       </div>
@@ -1167,21 +1599,30 @@ function CreateFactionModal({ locations, onClose, onCreate, busy }) {
 
 // ─── Üyelik Banner ────────────────────────────────────────────────────────────
 const MS_CFG = {
-  left:   { label: "Ayrıldı",  color: "text-amber-400",  border: "border-amber-900/50",  bg: "bg-amber-950/10"  },
-  kicked: { label: "Kovuldu",  color: "text-orange-400", border: "border-orange-900/50", bg: "bg-orange-950/10" },
-  rebel:  { label: "İsyancı",  color: "text-red-400",    border: "border-red-900/50",    bg: "bg-red-950/15"    },
-  banned: { label: "Yasaklı",  color: "text-red-500",    border: "border-red-900/60",    bg: "bg-red-950/20"    },
+  left:   { label: "Ayrıldı",  tone: "gold"  },
+  kicked: { label: "Kovuldu",  tone: "ember" },
+  rebel:  { label: "İsyancı",  tone: "blood" },
+  banned: { label: "Yasaklı",  tone: "blood" },
 };
 function MembershipBanner({ status, weeksLeft, permanent }) {
   if (!status || status === "active") return null;
   const cfg = MS_CFG[status] || MS_CFG["left"];
-  const msg = permanent ? "Kalıcı olarak yasaklandın." : weeksLeft > 0 ? `${weeksLeft} hafta sonra yeniden katılabilirsin.` : "";
+  const msg = permanent ? "Kalıcı olarak yasaklandın." : weeksLeft > 0 ? `${weeksLeft} ay sonra yeniden katılabilirsin.` : "";
   return (
-    <div className={`card-frame p-3 flex items-start gap-3 border ${cfg.border} ${cfg.bg}`}>
-      <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${cfg.color}`} />
-      <div>
-        <div className={`label-tiny ${cfg.color} mb-0.5`}>{cfg.label}</div>
-        <p className="text-xs text-stone-400">{msg}</p>
+    <div className="card-frame" style={{
+      padding: "0.75rem 0.85rem", display: "flex", alignItems: "flex-start", gap: "0.6rem",
+    }}>
+      <span style={{ fontSize: "0.95rem", flexShrink: 0 }}>⚠️</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ marginBottom: "0.25rem" }}>
+          <Pill tone={cfg.tone}>{cfg.label}</Pill>
+        </div>
+        <p className="font-serif" style={{
+          fontSize: "0.78rem", fontStyle: "italic",
+          color: "var(--color-parchment-dim)", margin: 0,
+        }}>
+          {msg}
+        </p>
       </div>
     </div>
   );
@@ -1189,20 +1630,34 @@ function MembershipBanner({ status, weeksLeft, permanent }) {
 
 // ─── Tab Bar ──────────────────────────────────────────────────────────────────
 const TABS = [
-  { key: "factions", label: "Örgütler" },
+  { key: "factions", label: "Ocaklar" },
   { key: "wars",     label: "Savaşlar" },
 ];
 function TabBar({ active, onChange, warCount }) {
   return (
-    <div className="flex gap-1.5">
+    <div style={{ display: "flex", gap: "0.4rem" }}>
       {TABS.map((t) => (
-        <button key={t.key} onClick={() => onChange(t.key)}
-          className={`px-3 py-1.5 text-xs font-heading tracking-wider rounded-sm border transition-all ${
-            active === t.key ? "border-orange-800 bg-stone-900 text-orange-400" : "border-stone-800 text-stone-500 hover:text-stone-300 hover:border-stone-600"
-          }`}>
+        <button key={t.key} onClick={() => { playSfx("page"); onChange(t.key); }}
+          className="font-display"
+          style={{
+            padding: "0.45rem 0.9rem", fontSize: "0.62rem", fontWeight: 700,
+            letterSpacing: "0.12em", textTransform: "uppercase",
+            borderRadius: "5px", cursor: "pointer", transition: "all 0.15s",
+            border: active === t.key ? "1px solid rgba(201,168,76,0.6)" : "1px solid var(--color-border)",
+            background: active === t.key ? "rgba(201,168,76,0.1)" : "transparent",
+            color: active === t.key ? "var(--color-gold)" : "var(--color-parchment-muted)",
+            boxShadow: active === t.key ? "0 0 12px rgba(201,168,76,0.15)" : "none",
+            display: "inline-flex", alignItems: "center", gap: "0.35rem",
+          }}>
           {t.label}
           {t.key === "wars" && warCount > 0 && (
-            <span className="ml-1.5 text-[9px] bg-red-900 text-red-300 rounded-sm px-1">{warCount}</span>
+            <span className="font-display" style={{
+              fontSize: "0.54rem", fontWeight: 700, padding: "0.05rem 0.3rem",
+              borderRadius: "3px", background: "rgba(200,64,64,0.3)",
+              border: "1px solid rgba(200,64,64,0.5)", color: "#E8A0A0",
+            }}>
+              {warCount}
+            </span>
           )}
         </button>
       ))}
@@ -1213,11 +1668,11 @@ function TabBar({ active, onChange, warCount }) {
 
 // ─── Faction Tipi Grupları (kategori başlıkları) ──────────────────────────────
 const FACTION_TYPE_GROUPS = [
-  { key: "lonca",   label: "Esnaf Loncaları",    types: ["tuccar_loncasi", "zanaatkar_loncasi", "sifaci_birligi"] },
-  { key: "askeri",  label: "Silahlı Örgütler",   types: ["krallık_ordusu", "paralı_asker"] },
-  { key: "dini",    label: "Dini Tarikatlar",     types: ["dini_tarikat"] },
-  { key: "yeralti", label: "Yeraltı Örgütleri",  types: ["gizli_cemiyet", "eskiya_cetesi"] },
-  { key: "ilim",    label: "İlim ve Kültür",      types: ["ilim_cemiyeti", "oyuncu_kumpanya"] },
+  { key: "lonca",   label: "Esnaf Loncaları",    icon: "⚖️", types: ["tuccar_loncasi", "zanaatkar_loncasi", "sifaci_birligi"] },
+  { key: "askeri",  label: "Silahlı Örgütler",   icon: "⚔️", types: ["krallık_ordusu", "paralı_asker"] },
+  { key: "dini",    label: "Dini Tarikatlar",     icon: "🕌", types: ["dini_tarikat"] },
+  { key: "yeralti", label: "Yeraltı Örgütleri",  icon: "🗝️", types: ["gizli_cemiyet", "eskiya_cetesi"] },
+  { key: "ilim",    label: "İlim ve Kültür",      icon: "📜", types: ["ilim_cemiyeti", "oyuncu_kumpanya"] },
 ];
 
 function FactionGroupSection({
@@ -1235,45 +1690,55 @@ function FactionGroupSection({
   if (groupFactions.length === 0) return null;
 
   return (
-    <div className="rounded-sm border border-stone-800/60 overflow-hidden">
+    <div className="card-frame" style={{ overflow: "hidden" }}>
       {/* Grup başlığı — tıklanabilir */}
       <button
-        onClick={() => setOpen(o => !o)}
-        className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors
-          ${open ? "bg-stone-900/60" : "bg-stone-950/40 hover:bg-stone-900/40"}`}
+        onClick={() => { playSfx("click"); setOpen(o => !o); }}
+        style={{
+          width: "100%", display: "flex", alignItems: "center",
+          justifyContent: "space-between", gap: "0.5rem",
+          padding: "0.7rem 0.9rem", textAlign: "left", cursor: "pointer",
+          background: open
+            ? "linear-gradient(to right, rgba(201,168,76,0.08), transparent 70%)"
+            : "transparent",
+          border: "none",
+          borderBottom: open ? "1px solid var(--color-border)" : "none",
+          transition: "background 0.2s",
+        }}
       >
-        <div className="flex items-center gap-2">
-          <span className="font-heading text-sm text-stone-200">{group.label}</span>
-          {playerInGroup && (
-            <span className="text-[9px] font-heading uppercase px-1.5 py-0.5 rounded-sm border border-orange-800/60 bg-orange-950/30 text-orange-400">
-              Üyesin
-            </span>
-          )}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
+          <span style={{ fontSize: "0.9rem", filter: "drop-shadow(0 0 6px rgba(201,168,76,0.25))" }}>{group.icon}</span>
+          <span className="font-display" style={{
+            fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.08em",
+            color: open ? "var(--color-gold)" : "var(--color-parchment)",
+          }}>
+            {group.label}
+          </span>
+          {playerInGroup && <Pill tone="gold">Ocağın</Pill>}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-stone-500">
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+          <span className="font-display" style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--color-parchment-muted)" }}>
             {activeCount} / {groupFactions.length}
           </span>
-          {open
-            ? <ChevronDown className="w-4 h-4 text-stone-500" />
-            : <ChevronRight className="w-4 h-4 text-stone-500" />
-          }
+          <span className="font-display" style={{ fontSize: "0.7rem", color: "var(--color-parchment-muted)" }}>
+            {open ? "▾" : "▸"}
+          </span>
         </div>
       </button>
 
       {/* Grup içeriği */}
       {open && (
-        <div className="divide-y divide-stone-800/40">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", padding: "0.7rem" }}>
           {groupFactions.map(f => {
             if (!f.active) return (
-              <div key={f.id} className="px-3 py-2">
+              <div key={f.id}>
                 <DormantFactionCard faction={f} />
               </div>
             );
             if (f.is_secret) {
               const clueEntry = clues.find(c => c.faction_id === f.id) || {};
               return (
-                <div key={f.id} className="px-3 py-3">
+                <div key={f.id}>
                   <SecretSocietyCard faction={f}
                     clueCount={clueEntry.clue_count || 0}
                     threshold={clueEntry.threshold || 5}
@@ -1282,7 +1747,7 @@ function FactionGroupSection({
               );
             }
             return (
-              <div key={f.id} className="px-3 py-3">
+              <div key={f.id}>
                 <FactionCard faction={f}
                   playerFactionId={playerFactionId} playerAge={playerAge}
                   canJoin={canJoin} joinBlocked={joinBlocked} joinWeeksLeft={joinWeeksLeft}
@@ -1358,7 +1823,7 @@ export default function Factions() {
 
   useEffect(() => { load(); }, [load]);
 
-  // R8: haftalık fraksiyon sahnesi seçimi
+  // R8: aylık fraksiyon sahnesi seçimi
   const handleSceneChoice = async (choiceId) => {
     setBusy("scene");
     try {
@@ -1582,180 +2047,241 @@ export default function Factions() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 text-stone-500">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" /> Örgüt ağı taranıyor…
+      <div className="font-serif" style={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "5rem 0", fontStyle: "italic", color: "var(--color-parchment-muted)",
+      }}>
+        <Loader2 className="animate-spin" style={{ width: "1.25rem", height: "1.25rem", marginRight: "0.5rem", color: "var(--color-gold-dim)" }} />
+        Ocaklar yoklanıyor…
       </div>
     );
   }
 
   return (
-    <div className="space-y-5 rise-in">
+    <div className="page-shell rise-in" style={{ padding: "0 0 1.5rem" }}>
       {/* Başlık */}
-      <div>
-        <div className="label-tiny">Örgütler & Güç Dengesi</div>
-        <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-          <Shield className="w-7 h-7 text-orange-500" /> Factionlar
-        </h1>
-        <p className="text-stone-400 text-sm mt-1">Dünya üzerinde faaliyet gösteren örgütler. Coğrafyayı aşan güçler.</p>
-      </div>
+      <PageHeader
+        kicker="Örgütler & Güç Dengesi"
+        icon="🏰"
+        title="Ocaklar"
+        sub="Bir ocağa bağlıysan, bu diyarda yalnız değilsin."
+      />
 
-      {/* Savaş Uyarı Bannerı (Adım 6) */}
-      {playerFactionId && warDetail && (
-        <WarAlertBanner
-          warDetail={warDetail}
-          onOpenDecision={() => setShowDecision(true)}
-          loading={busy === "war"}
-        />
-      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
 
-      {/* Yaş uyarısı */}
-      {playerAge < 13 && (
-        <div className="card-frame p-4 border-amber-800/50 bg-amber-950/20 text-amber-400 text-sm">
-          Bir örgüte katılmak için biraz daha büyümen gerekiyor. (Gerekli yaş: 13)
-        </div>
-      )}
+        {/* Savaş Uyarı Bannerı (Adım 6) */}
+        {playerFactionId && warDetail && (
+          <WarAlertBanner
+            warDetail={warDetail}
+            onOpenDecision={() => setShowDecision(true)}
+            loading={busy === "war"}
+          />
+        )}
 
-      {/* Üyelik yasak banner */}
-      {!playerFactionId && membershipStatus && membershipStatus !== "active" && (
-        <MembershipBanner status={membershipStatus} weeksLeft={joinWeeksLeft} permanent={permanentBan} />
-      )}
-
-      {/* Mevcut üyelik özeti */}
-      {playerFactionId && (() => {
-        const myFac = factions.find((f) => f.id === playerFactionId);
-        if (!myFac) return null;
-        const cfg = ftCfg(myFac.type);
-        return (
-          <div className={`card-frame p-3 flex items-center gap-3 border ${cfg.border} ${cfg.bg}`}>
-            <cfg.Icon className={`w-5 h-5 shrink-0 ${cfg.color}`} />
-            <div className="flex-1 min-w-0">
-              <div className="label-tiny mb-0.5">Üyesi Olduğun Örgüt</div>
-              <div className="font-heading text-sm text-stone-100">{myFac.name}</div>
-              <div className="text-xs text-stone-500">{cfg.label}</div>
-            </div>
-            {warDetail && (
-              <div className="text-right shrink-0">
-                <div className="text-[9px] text-red-500 font-heading uppercase">Savaşta</div>
-                <div className="text-xs text-stone-400">{warDetail.duration_weeks} hafta</div>
-              </div>
-            )}
+        {/* Yaş uyarısı */}
+        {playerAge < 13 && (
+          <div className="card-frame" style={{
+            padding: "0.85rem", border: "1px solid rgba(224,90,48,0.4)",
+          }}>
+            <p className="font-serif" style={{
+              fontSize: "0.82rem", fontStyle: "italic", color: "#E0A080", margin: 0,
+            }}>
+              Bir ocağa katılmak için biraz daha büyümen gerekiyor. (Gerekli yaş: 13)
+            </p>
           </div>
-        );
-      })()}
+        )}
 
-      {/* R8: Fraksiyon yüzeyi — sahne + imtiyazlar + ocaktan haberler */}
-      {playerFactionId && (
-        <FactionFeedSection
-          feed={feed}
-          onSceneChoice={handleSceneChoice}
-          busy={busy === "scene"}
-        />
-      )}
+        {/* Üyelik yasak banner */}
+        {!playerFactionId && membershipStatus && membershipStatus !== "active" && (
+          <MembershipBanner status={membershipStatus} weeksLeft={joinWeeksLeft} permanent={permanentBan} />
+        )}
 
-      {/* İstatistik özet */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="card-frame p-2.5 text-center">
-          <div className="label-tiny mb-0.5">Aktif Örgüt</div>
-          <div className="font-heading text-xl text-orange-400">{factions.filter(f => f.active).length}</div>
-        </div>
-        <div className="card-frame p-2.5 text-center">
-          <div className="label-tiny mb-0.5">Savaşta</div>
-          <div className="font-heading text-xl text-red-400">{wars.length}</div>
-        </div>
-        <div className="card-frame p-2.5 text-center">
-          <div className="label-tiny mb-0.5">Uyuyan</div>
-          <div className="font-heading text-xl text-stone-600">{factions.filter(f => !f.active).length}</div>
-        </div>
-      </div>
-
-      {/* Tab */}
-      <TabBar active={tab} onChange={setTab} warCount={wars.length} />
-
-      {/* ── ÖRGÜTLER TAB ── */}
-      {tab === "factions" && (
-        <div className="space-y-4">
-          {factions.length === 0 ? (
-            <div className="card-frame p-8 text-center text-stone-500">
-              <Shield className="w-8 h-8 mx-auto mb-2 opacity-20" />
-              <p className="text-sm">Henüz örgüt oluşmamış.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {FACTION_TYPE_GROUPS.map(group => (
-                <FactionGroupSection
-                  key={group.key}
-                  group={group}
-                  factions={factions}
-                  clues={clues}
-                  playerFactionId={playerFactionId}
-                  playerAge={playerAge}
-                  canJoin={canJoin}
-                  joinBlocked={joinBlocked}
-                  joinWeeksLeft={joinWeeksLeft}
-                  onJoin={handleJoin}
-                  onLeave={handleLeave}
-                  onRebel={handleRebel}
-                  onInfluence={handleInfluenceOpen}
-                  onDonate={handleDonate}
-                  onDarbaBaslat={handleDarbaBaslat}
-                  onDarbaIptal={handleDarbaIptal}
-                  onMisyonerGonder={handleMisyonerGonder}
-                  busy={busy}
-                  locations={locations}
-                  player={player}
-                  warDetail={warDetail}
-                  onOpenDecision={() => setShowDecision(true)}
-                  allFactions={factions}
-                />
-              ))}
-            </div>
-          )}
-
-          {!playerFactionId && playerAge >= 16 ? (
-            <button onClick={() => setShowCreate(true)}
-              className="btn-ghost-ash w-full py-2.5 text-sm font-heading tracking-wider flex items-center justify-center gap-2">
-              <Plus className="w-4 h-4" /> Kendi Örgütünü Kur
-            </button>
-          ) : !playerFactionId && playerAge < 16 ? (
-            <p className="text-center text-xs text-stone-600 italic">Örgüt kurmak için 16 yaşında olmalısın.</p>
-          ) : null}
-        </div>
-      )}
-
-      {/* ── SAVAŞLAR TAB ── */}
-      {tab === "wars" && (
-        <div className="space-y-3">
-          {wars.length === 0 ? (
-            <div className="card-frame p-8 text-center text-stone-500">
-              <Swords className="w-8 h-8 mx-auto mb-2 opacity-20" />
-              <p className="text-sm">Şu an aktif savaş yok.</p>
-            </div>
-          ) : (
-            <>
-              {/* Adım 6: Zenginleştirilmiş savaş kartları */}
-              {warsWithLog.map((w, i) => (
-                <WarDetailCard
-                  key={w.id || i}
-                  war={w}
-                  playerFactionId={playerFactionId}
-                  turn={currentTurn}
-                  onOpenDecision={() => setShowDecision(true)}
-                />
-              ))}
-              {/* Toplam güç tablosu */}
-              <div className="card-frame p-4 space-y-3">
-                <div className="label-tiny">Güç Dengesi — Tüm Savaşlar</div>
-                {wars.map((w, i) => (
-                  <div key={i} className="grid grid-cols-2 gap-3">
-                    <Bar label={w.attacker_name || w.faction_a} value={w.attacker_strength || 50} color="bg-orange-700" />
-                    <Bar label={w.defender_name || w.faction_b} value={w.defender_strength || 50} color="bg-red-700" />
+        {/* Mevcut üyelik özeti */}
+        {playerFactionId && (() => {
+          const myFac = factions.find((f) => f.id === playerFactionId);
+          if (!myFac) return null;
+          const cfg = ftCfg(myFac.type);
+          return (
+            <div className="card-frame" style={{
+              padding: "0.75rem 0.85rem", display: "flex", alignItems: "center", gap: "0.65rem",
+              border: `1px solid ${cfg.color}55`,
+              boxShadow: `0 0 16px ${cfg.color}14, 0 4px 16px rgba(0,0,0,0.45)`,
+            }}>
+              <span style={{ fontSize: "1.2rem", flexShrink: 0, filter: `drop-shadow(0 0 8px ${cfg.color}55)` }}>{cfg.icon}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="label-tiny" style={{ marginBottom: "0.1rem" }}>Bağlı Olduğun Ocak</div>
+                <div className="font-display" style={{
+                  fontSize: "0.82rem", fontWeight: 700, color: "var(--color-parchment)",
+                }}>
+                  {myFac.name}
+                </div>
+                <div className="font-serif" style={{
+                  fontSize: "0.7rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+                }}>
+                  {cfg.label}
+                </div>
+              </div>
+              {warDetail && (
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <Pill tone="blood" pulse="danger">Savaşta</Pill>
+                  <div className="font-display" style={{
+                    fontSize: "0.62rem", fontWeight: 700,
+                    color: "var(--color-parchment-dim)", marginTop: "0.25rem",
+                  }}>
+                    {warDetail.duration_weeks} ay
                   </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* R8: Fraksiyon yüzeyi — sahne + imtiyazlar + ocaktan haberler */}
+        {playerFactionId && (
+          <FactionFeedSection
+            feed={feed}
+            onSceneChoice={handleSceneChoice}
+            busy={busy === "scene"}
+          />
+        )}
+
+        {/* İstatistik özet — tek şerit */}
+        <div className="card-frame" style={{
+          padding: "0.6rem 0.85rem", display: "flex",
+          alignItems: "center", justifyContent: "space-around", gap: "0.5rem",
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <div className="label-tiny" style={{ marginBottom: "0.1rem" }}>Aktif Ocak</div>
+            <div className="font-display" style={{
+              fontSize: "1.15rem", fontWeight: 700, color: "var(--color-gold)",
+              textShadow: "0 0 10px rgba(201,168,76,0.3)",
+            }}>
+              {factions.filter(f => f.active).length}
+            </div>
+          </div>
+          <div style={{ width: "1px", height: "2rem", background: "linear-gradient(to bottom, transparent, rgba(201,168,76,0.3), transparent)" }} />
+          <div style={{ textAlign: "center" }}>
+            <div className="label-tiny" style={{ marginBottom: "0.1rem" }}>Savaşta</div>
+            <div className="font-display" style={{
+              fontSize: "1.15rem", fontWeight: 700, color: "#C84040",
+              textShadow: "0 0 10px rgba(200,64,64,0.3)",
+            }}>
+              {wars.length}
+            </div>
+          </div>
+          <div style={{ width: "1px", height: "2rem", background: "linear-gradient(to bottom, transparent, rgba(201,168,76,0.3), transparent)" }} />
+          <div style={{ textAlign: "center" }}>
+            <div className="label-tiny" style={{ marginBottom: "0.1rem" }}>Uyuyan</div>
+            <div className="font-display" style={{
+              fontSize: "1.15rem", fontWeight: 700, color: "var(--color-parchment-muted)",
+            }}>
+              {factions.filter(f => !f.active).length}
+            </div>
+          </div>
+        </div>
+
+        {/* Tab */}
+        <TabBar active={tab} onChange={setTab} warCount={wars.length} />
+
+        {/* ── ÖRGÜTLER TAB ── */}
+        {tab === "factions" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
+            {factions.length === 0 ? (
+              <div className="card-frame">
+                <EmptyState icon="🏰"
+                  title="Henüz hiçbir ocak tütmüyor."
+                  sub="Diyar büyüdükçe örgütler kurulacak — bekle ve gör." />
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
+                {FACTION_TYPE_GROUPS.map(group => (
+                  <FactionGroupSection
+                    key={group.key}
+                    group={group}
+                    factions={factions}
+                    clues={clues}
+                    playerFactionId={playerFactionId}
+                    playerAge={playerAge}
+                    canJoin={canJoin}
+                    joinBlocked={joinBlocked}
+                    joinWeeksLeft={joinWeeksLeft}
+                    onJoin={handleJoin}
+                    onLeave={handleLeave}
+                    onRebel={handleRebel}
+                    onInfluence={handleInfluenceOpen}
+                    onDonate={handleDonate}
+                    onDarbaBaslat={handleDarbaBaslat}
+                    onDarbaIptal={handleDarbaIptal}
+                    onMisyonerGonder={handleMisyonerGonder}
+                    busy={busy}
+                    locations={locations}
+                    player={player}
+                    warDetail={warDetail}
+                    onOpenDecision={() => setShowDecision(true)}
+                    allFactions={factions}
+                  />
                 ))}
               </div>
-            </>
-          )}
-        </div>
-      )}
+            )}
+
+            {!playerFactionId && playerAge >= 16 ? (
+              <button onClick={() => { playSfx("click"); setShowCreate(true); }}
+                className="btn-ghost-ash"
+                style={{
+                  width: "100%", padding: "0.65rem", fontSize: "0.66rem",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "0.45rem",
+                }}>
+                🏰 Kendi Ocağını Kur
+              </button>
+            ) : !playerFactionId && playerAge < 16 ? (
+              <p className="font-serif" style={{
+                textAlign: "center", fontSize: "0.74rem", fontStyle: "italic",
+                color: "var(--color-parchment-muted)", margin: 0,
+              }}>
+                Ocak kurmak için 16 yaşında olmalısın.
+              </p>
+            ) : null}
+          </div>
+        )}
+
+        {/* ── SAVAŞLAR TAB ── */}
+        {tab === "wars" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+            {wars.length === 0 ? (
+              <div className="card-frame">
+                <EmptyState icon="🕊"
+                  title="Şu an diyarda savaş yok."
+                  sub="Kılıçlar kınında — ama barış hep böyle sürmez." />
+              </div>
+            ) : (
+              <>
+                {/* Adım 6: Zenginleştirilmiş savaş kartları */}
+                {warsWithLog.map((w, i) => (
+                  <WarDetailCard
+                    key={w.id || i}
+                    war={w}
+                    playerFactionId={playerFactionId}
+                    turn={currentTurn}
+                    onOpenDecision={() => setShowDecision(true)}
+                  />
+                ))}
+                {/* Toplam güç tablosu */}
+                <Panel title="Güç Dengesi — Tüm Savaşlar" icon="⚖️" tone="ash">
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                    {wars.map((w, i) => (
+                      <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.7rem" }}>
+                        <Bar label={w.attacker_name || w.faction_a} value={w.attacker_strength || 50} color="bg-orange-700" />
+                        <Bar label={w.defender_name || w.faction_b} value={w.defender_strength || 50} color="bg-red-700" />
+                      </div>
+                    ))}
+                  </div>
+                </Panel>
+              </>
+            )}
+          </div>
+        )}
+
+      </div>
 
       {/* ── MODALLAR ── */}
       {showCreate && (

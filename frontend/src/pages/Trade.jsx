@@ -10,6 +10,7 @@ import {
   History, Plus, Minus, Navigation, Trophy, Swords, X,
   Zap,
 } from "lucide-react";
+import { PageHeader, Panel, Pill, GoldRule, EmptyState, Coin, TONES } from "@/components/ui/Kit";
 
 /* ─── Sabitler ─────────────────────────────────────────────────────── */
 const GOOD_LABELS = {
@@ -37,19 +38,15 @@ const QUALITY_GOODS = new Set([
   "işlenmiş_deri", "mobilya", "şarap",
 ]);
 const QUALITY_BADGES = {
-  "kusurlu":  { icon: "⚠️", label: "Kusurlu",  cls: "text-red-400 border-red-900/40 bg-red-950/10" },
-  "iyi":      { icon: "✨", label: "İyi",      cls: "text-amber-400 border-amber-900/40 bg-amber-950/10" },
-  "usta_işi": { icon: "🏆", label: "Usta İşi", cls: "text-purple-300 border-purple-900/40 bg-purple-950/10" },
+  "kusurlu":  { icon: "⚠️", label: "Kusurlu",  tone: "blood" },
+  "iyi":      { icon: "✨", label: "İyi",      tone: "gold" },
+  "usta_işi": { icon: "🏆", label: "Usta İşi", tone: "ink" },
 };
 
 function QualityBadge({ kalite }) {
   const b = QUALITY_BADGES[kalite];
   if (!b) return null;
-  return (
-    <span className={`text-[9px] px-1.5 py-0.5 rounded-sm border ${b.cls}`}>
-      {b.icon} {b.label}
-    </span>
-  );
+  return <Pill tone={b.tone}>{b.icon} {b.label}</Pill>;
 }
 
 /* ─── S4: Fiyat Trendi Yardımcısı ──────────────────────────────────── */
@@ -100,47 +97,64 @@ function ArbitrageOpportunities() {
   useEffect(() => { if (open && opps === null) fetch(); }, [open, opps, fetch]);
 
   return (
-    <div className="card-frame overflow-hidden">
+    <div className="card-frame" style={{ overflow: "hidden" }}>
       <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between p-3 hover:bg-stone-900/40 transition-colors">
-        <div className="flex items-center gap-2">
-          <Zap className="w-3.5 h-3.5 text-amber-500" />
-          <span className="label-tiny">Arbitraj Fırsatları</span>
+        onClick={() => { playSfx("click"); setOpen(o => !o); }}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0.65rem 0.85rem", background: "linear-gradient(to right, rgba(123,79,175,0.08), transparent 70%)",
+          border: "none", cursor: "pointer",
+        }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ fontSize: "0.85rem" }}>🕊</span>
+          <span className="font-display" style={{
+            fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.18em",
+            textTransform: "uppercase", color: TONES.ink.text,
+          }}>
+            Çarşı Fısıltıları — Arbitraj
+          </span>
           {opps !== null && opps.length > 0 && (
-            <span className="text-[10px] bg-amber-900/40 text-amber-400 border border-amber-800/50 px-1.5 rounded-sm font-heading">
-              {opps.length}
-            </span>
+            <Pill tone="ink">{opps.length}</Pill>
           )}
         </div>
-        {open ? <ChevronUp className="w-4 h-4 text-stone-500" /> : <ChevronDown className="w-4 h-4 text-stone-500" />}
+        <span style={{ color: "var(--color-parchment-muted)", fontSize: "0.65rem" }}>{open ? "▲" : "▼"}</span>
       </button>
       {open && (
-        <div className="border-t border-stone-800/50 px-3 pb-3 pt-2 space-y-2">
+        <div style={{
+          borderTop: "1px solid var(--color-border)", padding: "0.6rem 0.85rem 0.85rem",
+          display: "flex", flexDirection: "column", gap: "0.45rem",
+        }}>
           {loading ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="w-4 h-4 animate-spin text-stone-500" />
+            <div style={{ display: "flex", justifyContent: "center", padding: "1rem 0" }}>
+              <Loader2 className="w-4 h-4 animate-spin" style={{ color: "var(--color-parchment-muted)" }} />
             </div>
           ) : !opps?.length ? (
-            <p className="text-xs text-stone-500 italic py-2">Şu an büyük fiyat farkı yok.</p>
+            <EmptyState icon="🕯" title="Şu an büyük fiyat farkı yok."
+              sub="Çarşı durgun — fısıltılar bir sonraki ayı bekliyor." />
           ) : (
             opps.map((op, i) => (
-              <div key={i}
-                className="flex items-center gap-2 text-xs border border-stone-800/40 rounded-sm px-3 py-2 bg-stone-950/20">
-                <span className="text-base shrink-0">{GOOD_ICONS[op.good] || "📦"}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-stone-200 font-heading">{GOOD_LABELS[op.good] || op.good}</div>
-                  <div className="text-[10px] text-stone-500 flex items-center gap-1 flex-wrap">
-                    <span className="text-emerald-400">{op.cheap_city}</span>
-                    <span>{op.cheap_price}A</span>
+              <div key={i} className="row-frame">
+                <span style={{ fontSize: "1rem", flexShrink: 0 }}>{GOOD_ICONS[op.good] || "📦"}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="font-display" style={{ fontSize: "0.74rem", fontWeight: 700, color: "var(--color-parchment)" }}>
+                    {GOOD_LABELS[op.good] || op.good}
+                  </div>
+                  <div className="font-serif" style={{
+                    fontSize: "0.68rem", color: "var(--color-parchment-muted)",
+                    display: "flex", alignItems: "center", gap: "0.3rem", flexWrap: "wrap",
+                  }}>
+                    <span style={{ color: TONES.sage.text }}>{op.cheap_city}</span>
+                    <Coin value={op.cheap_price} size="0.62rem" />
                     <ArrowRight className="w-2.5 h-2.5" />
-                    <span className="text-red-400">{op.expensive_city}</span>
-                    <span>{op.expensive_price}A</span>
+                    <span style={{ color: TONES.blood.text }}>{op.expensive_city}</span>
+                    <Coin value={op.expensive_price} size="0.62rem" />
                   </div>
                 </div>
-                <div className="shrink-0 flex flex-col items-end gap-0.5">
-                  <span className="text-emerald-400 font-heading text-sm">+%{op.spread_pct}</span>
-                  <span className="text-[10px] text-stone-600">kâr marjı</span>
+                <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                  <span className="font-display" style={{ fontSize: "0.82rem", fontWeight: 700, color: TONES.sage.text }}>
+                    +%{op.spread_pct}
+                  </span>
+                  <span className="label-tiny">kâr marjı</span>
                 </div>
               </div>
             ))
@@ -148,9 +162,15 @@ function ArbitrageOpportunities() {
           <button
             onClick={fetch}
             disabled={loading}
-            className="text-[10px] text-stone-500 hover:text-stone-300 transition-colors flex items-center gap-1 disabled:opacity-40">
+            className="font-display"
+            style={{
+              alignSelf: "flex-start", background: "none", border: "none", padding: 0,
+              cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem",
+              fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase",
+              color: "var(--color-gold-dim)", opacity: loading ? 0.4 : 1,
+            }}>
             {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-            Yenile
+            ⟳ Yenile
           </button>
         </div>
       )}
@@ -162,11 +182,14 @@ function ArbitrageOpportunities() {
 function PriceBar({ price, base, max }) {
   const pct = Math.min(100, Math.round((price / max) * 100));
   const ratio = price / base;
-  const color =
-    ratio > 1.15 ? "stat-bar-fill-bad" : ratio < 0.85 ? "stat-bar-fill-good" : "stat-bar-fill";
+  const t = ratio > 1.15 ? TONES.blood : ratio < 0.85 ? TONES.sage : TONES.gold;
   return (
-    <div className="stat-bar w-16">
-      <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
+    <div style={{ width: "4rem", height: "4px", background: "rgba(255,255,255,0.07)", borderRadius: "2px", overflow: "hidden" }}>
+      <div style={{
+        height: "100%", width: `${pct}%`, borderRadius: "2px",
+        background: `linear-gradient(to right, ${t.text}99, ${t.text})`,
+        boxShadow: `0 0 5px ${t.text}55`, transition: "width 0.4s ease",
+      }} />
     </div>
   );
 }
