@@ -346,19 +346,23 @@ def _action_scores(state, d):
             else:
                 servet_uy = 0.4 if d["servet"] > 800 else -0.5
 
+        # GDD v8 aşamalı keşif: hanedanlar çocukla uğraşmaz — ne elçi
+        # gönderir ne kuyu kazar. Oyuncu 13'te radarlarına girer.
+        cocuk = player.get("age", 0) < 13
+
         risk_c = 0.0
         if eylem == "oyuncuya_sabotaj":
             # Düşmanlık + cüret ister; dost/müttefik hanedan sabote etmez
-            if d["id"] in state.get("allied_dynasties", []):
+            if cocuk or d["id"] in state.get("allied_dynasties", []):
                 risk_c = -5.0
             else:
                 risk_c = risk * 1.2 if tutum < -20 else -3.0
         elif eylem == "oyuncuya_ittifak":
-            risk_c = 0.8 if tutum > 25 else -2.5
+            risk_c = 0.8 if (tutum > 25 and not cocuk) else -2.5
         elif eylem == "evlilik_teklifi":
             # Oyuncunun statüsü arttıkça soylu teklif eder
             rep = player.get("reputation", 0)
-            risk_c = 0.8 if (tutum > 10 and rep > 25) else -1.5
+            risk_c = 0.8 if (tutum > 10 and rep > 25 and not cocuk) else -1.5
 
         scores[eylem] = hk * 3 + servet_uy + risk_c + random.uniform(-0.3, 0.3)
     return scores

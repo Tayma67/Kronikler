@@ -241,8 +241,21 @@ export default function GameLayout() {
   const player  = state.player || {};
   const cal     = state.calendar || { season: 'Kış', month_name: '?', year: 0, week_in_month: 1 };
 
-  const visiblePrimary   = PRIMARY_NAV.filter(n => !(player.age < 13 && n.testid === "nav-factions"));
-  const visibleSecondary = SECONDARY_NAV.filter(n => !(player.age < 13 && n.testid === "nav-battle"));
+  // GDD v8: Aşamalı keşif — 7-13 yaş sade dünya (mektep, aile, kasaba);
+  // 13'te "dünya açılır": meslek, savaş, ticaret derinliği, hanedanlar.
+  // Her şeyi baştan göstermek hevesi öldürür; yeni sekmeler keşif anıdır.
+  const YETISKIN_NAV = new Set([
+    "nav-profession", "nav-factions", "nav-battle", "nav-crime",
+    "nav-properties", "nav-dynasties", "nav-generation", "nav-legacy",
+  ]);
+  const isChild = (player.age || 0) < 13;
+  const navOk = (n) => {
+    if (isChild && YETISKIN_NAV.has(n.testid)) return false;
+    if (!isChild && n.testid === "nav-school") return false;   // mektep bitti
+    return true;
+  };
+  const visiblePrimary   = PRIMARY_NAV.filter(navOk);
+  const visibleSecondary = SECONDARY_NAV.filter(navOk);
 
   const pulseOpportunities = (state.opportunities || []).some(o => o.status === "açık");
   const pulseNews          = (state.world_events  || []).some(e => e.active);

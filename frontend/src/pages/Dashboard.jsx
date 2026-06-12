@@ -366,10 +366,13 @@ export default function Dashboard() {
   const playerAge   = player.age || 0;
   const avatarEmoji = avatarFor(playerAge, player.gender);
 
-  // İlerle butonu alt yazısı — yönetmenin ağzından, atmosfer kurar
+  // İlerle butonu alt yazısı — yönetmenin ağzından, atmosfer kurar.
+  // Çocuklukta sade: görmediği sistemlere gönderme yapmaz (aşamalı keşif).
   const y = saga?.yonetmen;
-  const advanceSub =
-    (saga?.teklifler?.length > 0) ? 'Kapında bekleyen elçiler var…'
+  const advanceSub = playerAge < 13
+    ? (playerAge === 12 ? 'Büyüyorsun… dünya yakında sana açılacak.'
+       : 'Yeni olaylar seni bekliyor…')
+    : (saga?.teklifler?.length > 0) ? 'Kapında bekleyen elçiler var…'
     : (y?.gerilim >= 75) ? 'Havada fırtına kokusu var…'
     : (y?.gerilim >= 55) ? 'Gerilim yükseliyor — dikkatli ol…'
     : (y?.nefes_kalan > 0) ? 'Sakin günler — tadını çıkar…'
@@ -627,8 +630,10 @@ export default function Dashboard() {
       {/* ── SCROLLABLE CONTENT ─────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflow: 'hidden', paddingBottom: '10.5rem', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column' }}>
 
-        {/* S3 Makyaj: Hayat Romanı şeridi — perde, gerilim, kapındaki elçiler */}
-        <SagaStrip saga={saga} />
+        {/* S3 Makyaj: Hayat Romanı şeridi — perde, gerilim, kapındaki elçiler.
+            GDD v8 aşamalı keşif: çocuklukta gizli — 13'te dünya açılınca
+            bu şeridin belirmesi başlı başına bir keşif anıdır. */}
+        {playerAge >= 13 && <SagaStrip saga={saga} />}
 
         {/* ── JOURNAL PANEL ─────────────────────────────────────────────── */}
         {/* R1: Hafta Planı kartı (kompakt; dokununca 3 slotlu seçici) */}
@@ -716,7 +721,8 @@ export default function Dashboard() {
               {[
                 { key: 'gunluk', icon: '📋', label: 'GÜNLÜK' },
                 { key: 'dunya',  icon: '🌍', label: 'DÜNYA' },
-                { key: 'roman',  icon: '📖', label: 'ROMAN' },
+                // Aşamalı keşif: ROMAN sekmesi 13'te belirir
+                ...(playerAge >= 13 ? [{ key: 'roman', icon: '📖', label: 'ROMAN' }] : []),
               ].map(tab => {
                 const isActive = activeTab === tab.key;
                 return (
