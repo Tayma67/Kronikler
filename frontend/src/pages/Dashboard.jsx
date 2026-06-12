@@ -814,7 +814,7 @@ export default function Dashboard() {
                 </div>
                 <p className="font-serif" style={{ fontSize: '0.85rem', fontStyle: 'italic', lineHeight: 1.5 }}>
                   {activeTab === 'gunluk'
-                    ? 'Günlüğün henüz boş.\nHaftayı ilerlet, yeni hikayeler başlasın.'
+                    ? 'Günlüğün henüz boş.\nAyı ilerlet, yeni hikayeler başlasın.'
                     : 'Dünyadan henüz haber yok.\nBüyük olaylar yakında gelecek.'}
                 </p>
               </div>
