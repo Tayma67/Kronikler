@@ -184,6 +184,20 @@ export default function Profession() {
   const [workResult, setWorkResult]   = useState(null);
   const [showChange, setShowChange]   = useState(false);
   const [confirmProf, setConfirmProf] = useState(null);
+  // R2: çalışma tarzı (varsayılan hatırlanır) + bekleyen meslek mini-olayı
+  const [workStyle, setWorkStyle] = useState(
+    localStorage.getItem("kronikler_work_style") || "normal");
+  const [workEvent, setWorkEvent] = useState(null);
+  const WORK_STYLES = [
+    { id: "garantici", label: "Garantici", icon: "🛡️", hint: "×0.8 · risksiz" },
+    { id: "normal",    label: "Normal",    icon: "⚒️", hint: "×1.0" },
+    { id: "hirsli",    label: "Hırslı",    icon: "🔥", hint: "×1.4 · %15 risk" },
+    { id: "kaytarici", label: "Kaytarıcı", icon: "😴", hint: "×0.4 · sağlık +" },
+  ];
+  const pickStyle = (id) => {
+    setWorkStyle(id);
+    localStorage.setItem("kronikler_work_style", id);
+  };
 
   const player   = state?.player || {};
   const age      = player?.age || 0;
@@ -194,11 +208,31 @@ export default function Profession() {
   const handleWork = async () => {
     setWorking(true);
     try {
-      const { data } = await api.post("/game/work");
+      const { data } = await api.post(`/game/work?style=${workStyle}`);
+      if (data.needs_choice) {
+        // R2 SIRADA: meslek mini-olayı — seçim modalı açılır
+        setWorkEvent(data.work_event);
+      } else {
+        if (fetchState) await fetchState();
+        setWorkResult(data);
+      }
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Çalışılamadı.");
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const resolveWorkEvent = async (choiceId) => {
+    setWorking(true);
+    try {
+      const { data } = await api.post("/game/work/resolve", { choice_id: choiceId });
+      setWorkEvent(null);
       if (fetchState) await fetchState();
       setWorkResult(data);
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "Çalışılamadı.");
+      toast.error(e?.response?.data?.detail || "Seçim uygulanamadı.");
+      setWorkEvent(null);
     } finally {
       setWorking(false);
     }
@@ -336,6 +370,21 @@ export default function Profession() {
               ))}
             </div>
             <div className="text-[10px] text-stone-600 mt-1">7 günde hafta tamamlanır — stat eğitimi uygulanır</div>
+          </div>
+
+          {/* R2: Çalışma Tarzı — görünür risk/ödül farkıyla 4 seçenek */}
+          <div className="grid grid-cols-4 gap-1.5 mb-2">
+            {WORK_STYLES.map((s) => (
+              <button key={s.id} onClick={() => pickStyle(s.id)} disabled={working}
+                className={`flex flex-col items-center gap-0.5 py-1.5 rounded-sm border transition-colors ${
+                  workStyle === s.id
+                    ? "border-amber-700 bg-amber-950/30 text-amber-300"
+                    : "border-stone-800 text-stone-500 hover:text-stone-300"}`}>
+                <span className="text-sm">{s.icon}</span>
+                <span className="text-[8px] font-heading tracking-wide uppercase">{s.label}</span>
+                <span className="text-[7px] text-stone-600">{s.hint}</span>
+              </button>
+            ))}
           </div>
 
           <button
@@ -495,6 +544,39 @@ export default function Profession() {
       {workResult && (
         <WorkResult result={workResult} onClose={() => setWorkResult(null)} />
       )}
+    {/* R2: Meslek Mini-Olayı modalı — iş sahnesinde seçim */}
+    {workEvent && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+        style={{ background: "rgba(0,0,0,0.8)" }}>
+        <div className="w-full max-w-sm rounded-2xl overflow-hidden border border-amber-600/40"
+          style={{ background: "linear-gradient(160deg, #1c1814, #111)" }}>
+          <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #92400e, #d97706, #92400e)" }} />
+          <div className="p-5 space-y-4">
+            <div className="text-center text-4xl">⚒️</div>
+            <div className="text-center text-[10px] tracking-[0.25em] text-amber-600/80 uppercase">
+              İş Başında Bir An
+            </div>
+            <p className="text-zinc-200 text-sm text-center leading-relaxed italic">
+              {workEvent.metin}
+            </p>
+            <div className="space-y-2">
+              {workEvent.secenekler.map((c) => (
+                <button key={c.id} disabled={working}
+                  onClick={() => resolveWorkEvent(c.id)}
+                  className="w-full text-left px-4 py-2.5 rounded-xl text-sm text-zinc-200 border border-zinc-700 hover:border-amber-600/60 hover:bg-amber-900/15 transition-colors">
+                  <span>{c.metin}</span>
+                  {c.test && (
+                    <span className="block text-[10px] text-purple-300/90 mt-0.5">
+                      🎲 Sınav: {c.test.stat || c.test.skill} {c.test.esik}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   );
 }

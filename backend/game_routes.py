@@ -1009,17 +1009,9 @@ def build_game_router(db):
         decorated["job_transition_text"] = transition_text
         return decorated
 
-    @router.post("/work")
-    async def work(user: dict = Depends(get_current_user)):
-        state = await _load_state(db, user["_id"])
-        _require_alive(state)
-        player = state["player"]
-        prof = player["profession"]
-
-        # ── Kariyer aşaması bazlı taban gelir ──
-        career_stage = get_current_career_stage(player)
+    def _base_work_income(player, prof, career_stage):
+        """R2: tarz çarpanı uygulanmadan ÖNCEKİ taban gelir."""
         income_mult = career_stage.get("income_multiplier", 1.0)
-
         daily_income_map = {
             "işsiz": (0, 0),
             "köylü": (0, 2), "çiftçi": (1, 4), "asker": (2, 5),
@@ -1029,24 +1021,26 @@ def build_game_router(db):
             "katip": (2, 7), "rahip": (2, 8),
         }
         lo, hi = daily_income_map.get(prof, (0, 1))
-
-        # Skill bonusu
         skills = player.get("skills", {})
         if prof in ("tüccar", "demirci"):
             bonus = 1 + skills.get("trade", 0) * 0.05 + skills.get("crafting", 0) * 0.05
             lo, hi = int(lo * bonus), int(hi * bonus)
-
-        # Kariyer çarpanı uygula
         lo = max(0, int(lo * income_mult))
         hi = max(lo, int(hi * income_mult))
-        income = random.randint(lo, hi) if hi > lo else lo
+        return random.randint(lo, hi) if hi > lo else lo
 
+    def _finalize_work(state, prof, income, career_stage, style_note=None,
+                       event_text=None):
+        """R2: gelir uygulama + üretim + kariyer + haftalık döngü + anlatı.
+        Tarz ve mini-olay çözüldükten SONRA çağrılır. Sonuç dict'i döner."""
+        player = state["player"]
+        income = max(0, round(income, 1))
         player["money"] = round(player["money"] + income, 1)
         player["health"] = max(20, player["health"] - random.randint(0, 2))
         player["hunger"] = max(0, player.get("hunger", 100) - 1)
 
-        # Lokasyon üretimi
-        loc = next((l for l in state["world"]["locations"] if l["id"] == player["location_id"]), None)
+        loc = next((l for l in state["world"]["locations"]
+                    if l["id"] == player["location_id"]), None)
         if loc:
             from simulation import PRODUCTION
             _ensure_market(loc)
@@ -1056,18 +1050,13 @@ def build_game_router(db):
                 loc["market"][good]["supply"] += max(1, amt // 2)
                 _recompute_prices(loc)
 
-        # Faction katkısı
         if player.get("faction_id"):
             player["faction_contribution"] = player.get("faction_contribution", 0) + 1
 
-        # ── Job XP ekle ve kariyer ilerlemesini kontrol et ──
         career_promotion = add_job_xp(player, xp=1)
-
-        # Haftalık döngü
         player["work_units"] = player.get("work_units", 0) + 1
         progress_quest(state, "work")
         leveled = []
-        days_passed = 1
         week_passed = False
         if player["work_units"] >= 7:
             week_passed = True
@@ -1075,40 +1064,84 @@ def build_game_router(db):
             leveled = apply_work_training(player, prof)
             advance_time(state, weeks=1)
 
-        # ── Hikayeli iş olayı metni ──
-        work_narrative = _generate_work_narrative(player, prof, career_stage, income, loc)
-        if income > 0 or prof == "işsiz":
+        # Hikâyeli iş metni: mini-olay sonucu > tarz notu > varsayılan anlatı
+        base_narrative = _generate_work_narrative(player, prof, career_stage, income, loc)
+        work_narrative = event_text or base_narrative
+        if style_note:
+            work_narrative = f"{work_narrative} ({style_note})"
+        if income > 0 or prof == "işsiz" or event_text:
             _push_event(state, state["turn"], "çalışma", work_narrative)
 
-        # ── Kariyer terfi bildirimi ──
         if career_promotion:
-            new_stage = career_promotion["new_stage"]
-            trf_text = (
-                f"🎉 {player['name']} yeni bir unvana kavuştu: **{new_stage['title']}**! "
-                f"{new_stage['desc']}"
-            )
-            _push_event(state, state["turn"], "kariyer_terfi", trf_text)
+            ns = career_promotion["new_stage"]
+            _push_event(state, state["turn"], "kariyer_terfi",
+                        f"🎉 {player['name']} yeni bir unvana kavuştu: **{ns['title']}**! {ns['desc']}")
 
-        outcome = soldier_check(state) if week_passed else None
-        await _save_state(db, user["_id"], state)
-
-        # Kariyer bilgisi döndür
-        current_stage = get_current_career_stage(player)
-        next_stage = get_next_career_stage(player)
+        enforcement = soldier_check(state) if week_passed else None
         career_info = {
-            "current_stage": current_stage,
-            "next_stage": next_stage,
+            "current_stage": get_current_career_stage(player),
+            "next_stage": get_next_career_stage(player),
             "job_xp": player.get("job_xp", 0),
             "progress_pct": get_career_progress_pct(player),
             "promoted": career_promotion is not None,
         }
+        return {"state": _decorate(state), "enforcement": enforcement,
+                "income": income, "leveled": leveled, "week_passed": week_passed,
+                "work_units": player["work_units"], "career": career_info,
+                "work_narrative": work_narrative, "days_passed": 1}
 
-        return {"state": _decorate(state), "enforcement": outcome,
-                "income": income, "leveled": leveled,
-                "days_passed": days_passed, "week_passed": week_passed,
-                "work_units": player["work_units"],
-                "career": career_info,
-                "work_narrative": work_narrative}
+    @router.get("/work/styles")
+    async def work_styles(user: dict = Depends(get_current_user)):
+        from work_rework import work_styles_payload
+        return {"styles": work_styles_payload()}
+
+    @router.post("/work")
+    async def work(style: str = "normal", user: dict = Depends(get_current_user)):
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        player = state["player"]
+        prof = player["profession"]
+        career_stage = get_current_career_stage(player)
+
+        # R2 ÖNCE: taban gelir + çalışma tarzı çarpanı/riski
+        from work_rework import apply_work_style, roll_work_event
+        base = _base_work_income(player, prof, career_stage)
+        income, style_note, _extra = apply_work_style(state, base, style)
+
+        # R2 SIRADA: %30 meslek mini-olayı — varsa seçim bekle, finalize etme
+        event = roll_work_event(prof)
+        if event:
+            state["pending_work"] = {
+                "prof": prof, "income": income, "style_note": style_note,
+                "event_id": event["id"],
+            }
+            await _save_state(db, user["_id"], state)
+            return {"needs_choice": True, "work_event": event,
+                    "base_income": income, "state": _decorate(state)}
+
+        # Olay yoksa doğrudan finalize
+        result = _finalize_work(state, prof, income, career_stage, style_note)
+        await _save_state(db, user["_id"], state)
+        return result
+
+    @router.post("/work/resolve")
+    async def work_resolve(body: dict = Body(default={}),
+                           user: dict = Depends(get_current_user)):
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        pending = state.pop("pending_work", None)
+        if not pending:
+            raise HTTPException(status_code=400, detail="Bekleyen iş olayı yok.")
+        from work_rework import resolve_work_event
+        prof = pending["prof"]
+        career_stage = get_current_career_stage(state["player"])
+        res = resolve_work_event(state, prof, pending["event_id"], body.get("choice_id"))
+        income = pending["income"] * res.get("income_mult", 1.0) + res.get("money", 0)
+        result = _finalize_work(state, prof, income, career_stage,
+                                pending.get("style_note"), res.get("result_text") or None)
+        result["event_result"] = res.get("result_text", "")
+        await _save_state(db, user["_id"], state)
+        return result
 
     # ---------- crime / attack ----------
     @router.post("/crime")
