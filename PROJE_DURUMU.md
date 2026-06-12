@@ -95,6 +95,17 @@ advance_time(state, weeks=104)
 - Yönetmen durumu `state["yonetmen"]`, tohumlar `state["tohumlar"]`
   (okulun eski `state["seeds"]` listesi AYRI — dokunma).
 
+## Tam Oyun Analizi (2026-06-12) — bkz. ANALIZ_RAPORU.md
+
+Oyuncu-bot (gerçek HTTP rotaları, `backend/tools/player_bot.py`) + fonksiyon
+testleri + debugger taraması yapıldı. 7 bug bulunup düzeltildi (auth router
+mount edilmemişti, tohum parayı eksiye düşürüyordu, ölü NPC budaması aile
+bağlarını siliyordu, nüfus/state şişmesi, itibar sınırsızdı, 2 metin hatası).
+Doğrulanan akışlar: okul kariyeri, savaş (300 fuzz), seyahat, mülk, fraksiyon,
+kervan, fırsatlar, ekonomi (10 yıl), ölüm→miras→yeni nesil (rota seviyesi),
+metin kalitesi (1309 metin, sıfır bozuk yer tutucu). Açık denge notları
+ANALIZ_RAPORU.md §4'te.
+
 ## GDD Başarı Testi — GEÇTİ ✅
 
 "Karaoğlu babamı iflas ettirmişti..." paragrafının 5 anlatı unsuru da
