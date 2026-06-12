@@ -67,6 +67,13 @@ function priceTrend(loc, good) {
   return "stable";
 }
 
+/* R3.3: Bir önceki fiyat kaydı — "geçen fiyat" göstergesi */
+function prevPrice(loc, good) {
+  const history = loc?.price_history;
+  if (!history || history.length < 2) return null;
+  return history[history.length - 2]?.[good] ?? null;
+}
+
 function TrendIcon({ trend }) {
   if (trend === "rising")  return <TrendingUp  className="w-3 h-3 text-red-400"     title="Fiyat yükseliyor" />;
   if (trend === "falling") return <TrendingDown className="w-3 h-3 text-emerald-400" title="Fiyat düşüyor"  />;
@@ -298,6 +305,7 @@ function MarketPanel({ loc, playerInv, onTrade, onBargain, onInspect, turn, qual
           const inInv = playerInv[good] || 0;
           const q = qty[good] || 1;
           const trend = priceTrend(loc, good);
+          const prevP = prevPrice(loc, good);
 
           // Preview veya fallback
           const buyPreview  = previews[`${good}_al`];
@@ -342,6 +350,11 @@ function MarketPanel({ loc, playerInv, onTrade, onBargain, onInspect, turn, qual
                     Stok: <span className="text-stone-300">{m.supply}</span>
                   </span>
                   <PriceBar price={m.price} base={m.base} max={maxPriceInMarket} />
+                  {prevP != null && prevP !== m.price && (
+                    <span className="text-[9px] text-stone-600" title="Geçen kaydedilen fiyat">
+                      geçen {prevP}A
+                    </span>
+                  )}
                   <TrendIcon trend={trend} />
                   <span className="font-heading text-amber-400 w-10 text-right">{m.price}A</span>
                 </div>
