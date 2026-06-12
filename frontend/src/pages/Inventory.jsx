@@ -1,26 +1,27 @@
+/**
+ * Heybe & Kuşam — KÜL & KÖZ komple tasarım referans sayfası.
+ * Duygu görevi: "Sırtımdakiler benim hikâyemin kanıtı."
+ * Kit kullanımı: PageHeader, Panel, Stat, Pill, EmptyState, Coin.
+ * İşlevsellik (API çağrıları, data-testid'ler) birebir korunur.
+ */
 import { useEffect, useState, useMemo } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
+import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
-import {
-  Package, Shirt, Hand, Footprints, Crown, Sword, ShieldHalf, Apple, FlaskRound,
-} from "lucide-react";
+import { PageHeader, Panel, Stat, Pill, EmptyState, Coin, GoldRule } from "@/components/ui/Kit";
 
 const SLOT_META = [
-  { key: "head",   label: "Baş",     icon: Crown },
-  { key: "body",   label: "Vücut",   icon: Shirt },
-  { key: "weapon", label: "Silah",   icon: Sword },
-  { key: "hands",  label: "Eller",   icon: Hand },
-  { key: "legs",   label: "Bacaklar",icon: ShieldHalf },
-  { key: "feet",   label: "Ayaklar", icon: Footprints },
+  { key: "head",   label: "Baş",      icon: "👑" },
+  { key: "body",   label: "Vücut",    icon: "🥋" },
+  { key: "weapon", label: "Silah",    icon: "⚔" },
+  { key: "hands",  label: "Eller",    icon: "🧤" },
+  { key: "legs",   label: "Bacaklar", icon: "🛡" },
+  { key: "feet",   label: "Ayaklar",  icon: "🥾" },
 ];
 
 const TYPE_ICON = {
-  food: Apple,
-  drink: FlaskRound,
-  consumable: FlaskRound,
-  weapon: Sword,
-  armor: Shirt,
+  food: "🍞", drink: "🍶", consumable: "🧪", weapon: "⚔", armor: "🥋",
 };
 
 export default function Inventory() {
@@ -35,7 +36,6 @@ export default function Inventory() {
   const inv = state.player.inventory || {};
   const equipment = state.player.equipment || {};
   const bonuses = state.player.equipment_bonuses || { attack: 0, defense: 0, charisma: 0 };
-
   const invEntries = Object.entries(inv).filter(([, q]) => q > 0);
 
   const consumeItem = async (key) => {
@@ -43,6 +43,7 @@ export default function Inventory() {
     try {
       const { data } = await api.post("/game/use_item", { item: key, qty: 1 });
       setState(data.state);
+      playSfx("success");
       const a = data.applied || {};
       const parts = [];
       if (a.hunger) parts.push(`+${a.hunger} açlık`);
@@ -60,6 +61,7 @@ export default function Inventory() {
     try {
       const { data } = await api.post("/game/equip", { item: key });
       setState(data);
+      playSfx("sword");
       toast.success("Kuşandın");
     } catch (e) {
       toast.error(e.response?.data?.detail || "Kuşanılamadı");
@@ -73,6 +75,7 @@ export default function Inventory() {
     try {
       const { data } = await api.post("/game/unequip", { slot });
       setState(data);
+      playSfx("click");
       toast.success("Çıkardın");
     } catch (e) {
       toast.error(e.response?.data?.detail || "Çıkarılamadı");
@@ -93,116 +96,170 @@ export default function Inventory() {
   }, [invEntries, currentLoc, state.player.money]);
 
   return (
-    <div className="space-y-6 rise-in">
-      <div>
-        <div className="label-tiny">Envanter</div>
-        <h1 className="font-heading text-3xl text-stone-100">Heybe & Donanım</h1>
-      </div>
+    <div className="page-shell rise-in" style={{ padding: "0 0 1.5rem" }}>
+      <PageHeader
+        kicker="Sırtındakiler"
+        icon="🎒"
+        title="Heybe & Kuşam"
+        sub="Taşıdıkların, kuşandıkların — hikâyenin kanıtları."
+        right={
+          <div style={{ textAlign: "right" }}>
+            <div className="label-tiny" style={{ marginBottom: "0.1rem" }}>Toplam Değer</div>
+            <Coin value={netWorth} size="1rem" />
+          </div>
+        }
+      />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Equipment silhouette */}
-        <div className="card-frame p-5 lg:col-span-1">
-          <h2 className="font-heading text-lg text-stone-100 mb-4">Donanım</h2>
-          <div className="grid grid-cols-2 gap-2">
-            {SLOT_META.map((slot) => {
-              const itemKey = equipment[slot.key];
-              const item = itemKey ? items[itemKey] : null;
-              const Icon = slot.icon;
-              return (
-                <div
-                  key={slot.key}
-                  data-testid={`slot-${slot.key}`}
-                  className={`border rounded-sm p-3 min-h-[88px] flex flex-col justify-between ${
-                    item ? "border-orange-800/60 bg-stone-900/50" : "border-stone-800 bg-stone-950/40"
-                  }`}
-                >
-                  <div className="flex items-center gap-1 label-tiny">
-                    <Icon className="w-3 h-3" /> {slot.label}
+      {/* ── Kuşam ── */}
+      <Panel title="Kuşam" icon="🛡" tone="ember">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+          {SLOT_META.map((slot) => {
+            const itemKey = equipment[slot.key];
+            const item = itemKey ? items[itemKey] : null;
+            return (
+              <div key={slot.key} data-testid={`slot-${slot.key}`}
+                style={{
+                  position: "relative", minHeight: "82px",
+                  padding: "0.55rem 0.65rem",
+                  borderRadius: "6px",
+                  border: item
+                    ? "1px solid rgba(201,168,76,0.45)"
+                    : "1px dashed rgba(122,106,79,0.4)",
+                  background: item
+                    ? "linear-gradient(160deg, rgba(201,168,76,0.10) 0%, rgba(20,14,7,0.6) 60%)"
+                    : "rgba(10,7,4,0.45)",
+                  boxShadow: item ? "0 0 14px rgba(201,168,76,0.10), inset 0 1px 0 rgba(201,168,76,0.12)" : "none",
+                  display: "flex", flexDirection: "column", justifyContent: "space-between",
+                }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                  <span style={{ fontSize: "0.8rem", opacity: item ? 1 : 0.45 }}>{slot.icon}</span>
+                  <span className="label-tiny">{slot.label}</span>
+                </div>
+                {item ? (
+                  <>
+                    <div className="font-display" style={{
+                      fontSize: "0.74rem", fontWeight: 700, color: "var(--color-gold)",
+                      textShadow: "0 0 10px rgba(201,168,76,0.3)", lineHeight: 1.2,
+                    }}>
+                      {item.name}
+                    </div>
+                    <button onClick={() => unequip(slot.key)} disabled={busy}
+                      data-testid={`unequip-${slot.key}`}
+                      className="font-display"
+                      style={{
+                        alignSelf: "flex-start", background: "none", border: "none",
+                        padding: 0, cursor: "pointer", fontSize: "0.52rem",
+                        letterSpacing: "0.15em", textTransform: "uppercase",
+                        color: "var(--color-parchment-muted)",
+                      }}>
+                      ✕ çıkar
+                    </button>
+                  </>
+                ) : (
+                  <div className="font-serif" style={{
+                    fontSize: "0.7rem", fontStyle: "italic",
+                    color: "var(--color-parchment-muted)", opacity: 0.6,
+                  }}>
+                    boş
                   </div>
-                  {item ? (
-                    <>
-                      <div className="text-sm text-stone-100 font-heading mt-1">{item.name}</div>
-                      <button
-                        onClick={() => unequip(slot.key)}
-                        disabled={busy}
-                        data-testid={`unequip-${slot.key}`}
-                        className="text-[10px] text-stone-500 hover:text-orange-400 self-start mt-1"
-                      >
-                        çıkar
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <GoldRule label="Kuşamın Gücü" />
+        <Stat icon="⚔" label="Saldırı"  value={`+${bonuses.attack}`}  tone="ember" />
+        <Stat icon="🛡" label="Savunma" value={`+${bonuses.defense}`} tone="sage" />
+        <Stat icon="✨" label="Karizma" value={`+${bonuses.charisma}`} tone="ink" />
+      </Panel>
+
+      <div style={{ height: "0.75rem" }} />
+
+      {/* ── Heybe ── */}
+      <Panel title="Heybe" icon="🎒" tone="gold"
+        right={<Pill tone="ash">{invEntries.length} çeşit</Pill>}>
+        {invEntries.length === 0 ? (
+          <EmptyState icon="🎒"
+            title="Heyben bomboş."
+            sub="Pazara uğra, eline geçeni biriktir — kıtlık kapıda beklemez." />
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+            {invEntries.map(([key, qty]) => {
+              const item = items[key];
+              const emoji = item ? (TYPE_ICON[item.type] || "📦") : "📦";
+              const canUse = item && (item.type === "food" || item.type === "drink" || item.type === "consumable");
+              const canEquip = item && item.slot;
+              return (
+                <div key={key} className="row-frame" data-testid={`inv-row-${key}`}>
+                  <span style={{ fontSize: "1rem", flexShrink: 0,
+                                 filter: "drop-shadow(0 0 6px rgba(201,168,76,0.2))" }}>
+                    {emoji}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: "0.45rem" }}>
+                      <span className="font-serif" style={{
+                        fontSize: "0.88rem", color: "var(--color-parchment)",
+                        textTransform: "capitalize", fontWeight: 600,
+                      }}>
+                        {item ? item.name : key}
+                      </span>
+                      <span className="font-display" style={{
+                        fontSize: "0.6rem", color: "var(--color-gold-dim)", fontWeight: 700,
+                      }}>
+                        ×{qty}
+                      </span>
+                    </div>
+                    {item?.desc && (
+                      <div className="font-serif" style={{
+                        fontSize: "0.68rem", fontStyle: "italic",
+                        color: "var(--color-parchment-muted)",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {item.desc}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: "0.3rem", flexShrink: 0 }}>
+                    {canUse && (
+                      <button onClick={() => consumeItem(key)} disabled={busy}
+                        data-testid={`use-${key}`} className="font-display"
+                        style={{
+                          padding: "0.3rem 0.6rem", borderRadius: "4px",
+                          border: "1px solid rgba(74,154,90,0.5)",
+                          background: "rgba(74,154,90,0.08)", color: "#6FBF7F",
+                          fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.12em",
+                          cursor: "pointer",
+                        }}>
+                        KULLAN
                       </button>
-                    </>
-                  ) : (
-                    <div className="text-xs text-stone-600 italic mt-2">boş</div>
-                  )}
+                    )}
+                    {canEquip && (
+                      <button onClick={() => equipItem(key)} disabled={busy}
+                        data-testid={`equip-${key}`} className="font-display"
+                        style={{
+                          padding: "0.3rem 0.6rem", borderRadius: "4px",
+                          border: "1px solid rgba(201,168,76,0.5)",
+                          background: "rgba(201,168,76,0.08)", color: "var(--color-gold)",
+                          fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.12em",
+                          cursor: "pointer",
+                        }}>
+                        KUŞAN
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
-          <div className="divider-ash my-4" />
-          <div className="text-xs space-y-1">
-            <div className="flex justify-between"><span className="text-stone-500">Saldırı</span><span className="text-red-400 font-heading">+{bonuses.attack}</span></div>
-            <div className="flex justify-between"><span className="text-stone-500">Savunma</span><span className="text-sky-400 font-heading">+{bonuses.defense}</span></div>
-            <div className="flex justify-between"><span className="text-stone-500">Karizma</span><span className="text-pink-400 font-heading">+{bonuses.charisma}</span></div>
-          </div>
+        )}
+        <div className="font-serif" style={{
+          marginTop: "0.7rem", fontSize: "0.7rem", fontStyle: "italic",
+          color: "var(--color-parchment-muted)",
+        }}>
+          Alıp satmak için pazara in: <span style={{ color: "var(--color-parchment-dim)" }}>{currentLoc?.name}</span>
         </div>
-
-        {/* Items list */}
-        <div className="card-frame p-5 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading text-lg flex items-center gap-2 text-stone-100"><Package className="w-4 h-4" /> Eşyalarım</h2>
-            <div className="text-xs text-stone-500">Toplam Değer: <span className="text-amber-400">{netWorth} altın</span></div>
-          </div>
-          {invEntries.length === 0 ? (
-            <div className="text-stone-500 text-sm">Heyben bomboş.</div>
-          ) : (
-            <ul className="divide-y divide-stone-900">
-              {invEntries.map(([key, qty]) => {
-                const item = items[key];
-                const TypeIcon = item ? (TYPE_ICON[item.type] || Package) : Package;
-                const canUse = item && (item.type === "food" || item.type === "drink" || item.type === "consumable");
-                const canEquip = item && item.slot;
-                return (
-                  <li key={key} className="py-2 flex items-center gap-3" data-testid={`inv-row-${key}`}>
-                    <TypeIcon className="w-4 h-4 text-stone-500 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-stone-100 capitalize">
-                        {item ? item.name : key}
-                        <span className="text-stone-500 text-xs ml-2">×{qty}</span>
-                      </div>
-                      {item?.desc && <div className="text-[11px] text-stone-500 truncate">{item.desc}</div>}
-                    </div>
-                    <div className="flex gap-1.5">
-                      {canUse && (
-                        <button
-                          onClick={() => consumeItem(key)}
-                          disabled={busy}
-                          data-testid={`use-${key}`}
-                          className="px-2 py-1 text-[10px] border border-emerald-900 text-emerald-400 hover:bg-emerald-900/30 rounded-sm font-heading tracking-wider"
-                        >
-                          KULLAN
-                        </button>
-                      )}
-                      {canEquip && (
-                        <button
-                          onClick={() => equipItem(key)}
-                          disabled={busy}
-                          data-testid={`equip-${key}`}
-                          className="px-2 py-1 text-[10px] border border-orange-900 text-orange-400 hover:bg-orange-900/30 rounded-sm font-heading tracking-wider"
-                        >
-                          KUŞAN
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          <div className="text-xs text-stone-500 mt-3">
-            Satmak veya almak için bir şehrin pazarına git: <span className="text-stone-300">{currentLoc?.name}</span>
-          </div>
-        </div>
-      </div>
+      </Panel>
     </div>
   );
 }

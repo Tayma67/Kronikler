@@ -536,3 +536,48 @@ nav button:active {
   background-size: 64px 64px;
   opacity: 0.18;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   KOMPLE TASARIM — global element teması (GDD v8)
+   Sayfalardaki çıplak form elemanları otomatik Kül & Köz olur.
+   ════════════════════════════════════════════════════════════════ */
+
+select, input[type="text"], input[type="number"], input[type="email"],
+input[type="password"], textarea {
+  background: linear-gradient(180deg, #14100A 0%, #0F0C07 100%) !important;
+  border: 1px solid var(--color-border-hi) !important;
+  border-radius: 5px !important;
+  color: var(--color-parchment) !important;
+  font-family: 'Crimson Text', Georgia, serif;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+select:focus, input:focus, textarea:focus {
+  border-color: rgba(201,168,76,0.6) !important;
+  box-shadow: 0 0 10px rgba(201,168,76,0.15) !important;
+}
+select option { background: #15110A; color: var(--color-parchment); }
+
+/* Tüm butonlara dokunma geri bildirimi (H3: her dokunuş cevap verir) */
+button { transition: transform 0.08s ease, filter 0.15s ease; }
+button:active:not(:disabled) { transform: scale(0.97); filter: brightness(1.15); }
+
+/* Modal scrim'leri tutarlı: köz dumanı */
+.bg-black\/70, .bg-stone-950\/90, .bg-black\/80 {
+  background: radial-gradient(ellipse at 50% 30%, rgba(30,20,8,0.88) 0%, rgba(6,4,2,0.94) 70%) !important;
+  backdrop-filter: blur(3px);
+}
+
+/* Sayfa içerik genişliği ve nefes — GameLayout main alanı */
+.page-shell { max-width: 560px; margin: 0 auto; }
+
+/* Liste satırı standardı (kit dışı hızlı kullanım) */
+.row-frame {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  background: linear-gradient(180deg, rgba(255,255,255,0.015), transparent);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.row-frame:hover { border-color: var(--color-border-hi); background: rgba(201,168,76,0.03); }
