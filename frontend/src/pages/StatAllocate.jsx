@@ -8,7 +8,7 @@ import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
-import { PageHeader, Panel, Pill, GoldRule, EmptyState, TONES } from "@/components/ui/Kit";
+import { PageHeader, Panel, Pill, GoldRule, TONES } from "@/components/ui/Kit";
 
 // ─── Stat konfigürasyonu ──────────────────────────────────────────────────────
 const STATS = [

@@ -4,11 +4,10 @@ import { api } from "@/lib/api";
 import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
 import {
-  Coins, ArrowUpDown, TrendingUp, TrendingDown, Loader2,
-  Package, ShoppingCart, ArrowRight, ChevronDown, ChevronUp,
+  Coins, TrendingUp, TrendingDown, Loader2,
+  Package, ArrowRight, ChevronDown, ChevronUp,
   Truck, MapPin, AlertTriangle, CheckCircle2, XCircle,
   History, Plus, Minus, Navigation, Trophy, Swords, X,
-  Zap,
 } from "lucide-react";
 import { PageHeader, Panel, Pill, GoldRule, EmptyState, Coin, TONES } from "@/components/ui/Kit";
 
@@ -1040,46 +1039,74 @@ function BargainModal({ target, onTrade, onClose }) {
   const saved = result?.saved ?? 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-sm card-frame p-5 space-y-4 rise-in">
-
-        {/* Başlık */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-heading text-amber-400">
-            <span className="text-base">🤝</span>
+    <div className="bg-black/70" style={{
+      position: "fixed", inset: 0, zIndex: 50, display: "flex",
+      alignItems: "center", justifyContent: "center", padding: "1rem",
+    }}>
+      <div className="card-frame rise-in" style={{
+        width: "100%", maxWidth: "24rem", overflow: "hidden",
+        border: "1px solid rgba(201,168,76,0.4)",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.8), 0 0 30px rgba(201,168,76,0.08)",
+      }}>
+        {/* Sahne başlığı — tezgâhın üstündeki tente */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0.7rem 1rem", borderBottom: "1px solid var(--color-border)",
+          background: "linear-gradient(to right, rgba(201,168,76,0.1), transparent 75%)",
+        }}>
+          <div className="font-display" style={{
+            display: "flex", alignItems: "center", gap: "0.45rem",
+            fontSize: "0.74rem", fontWeight: 700, color: "var(--color-gold)",
+            textShadow: "0 0 10px rgba(201,168,76,0.3)",
+          }}>
+            <span style={{ fontSize: "0.95rem" }}>🤝</span>
             <span>Pazarlık — {GOOD_ICONS[target.good] || "📦"} {goodName} ×{target.qty}</span>
           </div>
           <button onClick={onClose}
-            className="text-stone-500 hover:text-stone-300 transition-colors">
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-parchment-muted)", padding: 0 }}>
             <X className="w-4 h-4" />
           </button>
         </div>
 
+        <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+
         {/* ── KURULUM ── */}
         {phase === "setup" && (
-          <div className="space-y-3">
-            <div className="flex gap-2">
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
               {[
                 { id: "al",  label: "ALIRKEN", ok: target.canBuy },
                 { id: "sat", label: "SATARKEN", ok: target.canSell },
               ].map(a => (
                 <button key={a.id} disabled={!a.ok}
                   onClick={() => setAction(a.id)}
-                  className={`flex-1 py-2 text-[11px] font-heading tracking-wider border rounded-sm transition-all disabled:opacity-30 ${
-                    action === a.id
-                      ? "border-amber-600 text-amber-400 bg-amber-950/20"
-                      : "border-stone-700 text-stone-500 hover:text-stone-300"
-                  }`}>
+                  className="font-display"
+                  style={{
+                    flex: 1, padding: "0.55rem 0", borderRadius: "5px", cursor: "pointer",
+                    fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.14em", transition: "all 0.15s",
+                    border: `1px solid ${action === a.id ? "rgba(201,168,76,0.6)" : "var(--color-border-hi)"}`,
+                    background: action === a.id ? "rgba(201,168,76,0.1)" : "transparent",
+                    color: action === a.id ? "var(--color-gold)" : "var(--color-parchment-muted)",
+                    opacity: a.ok ? 1 : 0.3,
+                  }}>
                   {a.label}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-stone-400">
+            <p className="font-serif" style={{
+              fontSize: "0.8rem", fontStyle: "italic", color: "var(--color-parchment-dim)",
+              lineHeight: 1.55, margin: 0,
+            }}>
               Tezgâha yanaşıp fiyatı çekiştirebilirsin. Satıcı yüksekten açar;
               dil dökersen iner — ama blöfün tutmazsa alınır.
             </p>
             <button onClick={start} disabled={busyB}
-              className="w-full btn-ember py-2 text-xs font-heading tracking-wider disabled:opacity-40 flex items-center justify-center gap-2">
+              className="btn-ember"
+              style={{
+                width: "100%", padding: "0.6rem 0", fontSize: "0.66rem",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
+                opacity: busyB ? 0.4 : 1,
+              }}>
               {busyB ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "🤝"} TEZGÂHA YANAŞ
             </button>
           </div>
@@ -1087,65 +1114,115 @@ function BargainModal({ target, onTrade, onClose }) {
 
         {/* ── ÇEKİŞME ── */}
         {phase === "live" && view && (
-          <div className="space-y-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
             {/* S2: satıcının zihni tezgâha yansır — düşmanlık zammı / dost indirimi */}
             {view.tier_note && (
-              <p className={`text-[11px] italic px-3 py-1.5 rounded-sm border ${
-                view.tier === "aktif_dusman"
-                  ? "text-red-300 border-red-900/50 bg-red-950/20"
-                  : "text-emerald-300 border-emerald-900/40 bg-emerald-950/10"
-              }`}>
-                {view.tier_note}
+              <div style={{
+                display: "flex", alignItems: "center", gap: "0.5rem",
+                padding: "0.5rem 0.7rem", borderRadius: "6px",
+                border: `1px solid ${view.tier === "aktif_dusman" ? TONES.blood.border : TONES.sage.border}`,
+                background: view.tier === "aktif_dusman" ? TONES.blood.bg : TONES.sage.bg,
+                boxShadow: `0 0 14px ${view.tier === "aktif_dusman" ? "rgba(200,64,64,0.15)" : "rgba(74,154,90,0.12)"}`,
+              }}>
+                <span style={{ fontSize: "1rem", flexShrink: 0 }}>
+                  {view.tier === "aktif_dusman" ? "😠" : "😌"}
+                </span>
+                <p className="font-serif" style={{
+                  fontSize: "0.78rem", fontStyle: "italic", margin: 0, lineHeight: 1.45,
+                  color: view.tier === "aktif_dusman" ? TONES.blood.text : TONES.sage.text,
+                }}>
+                  {view.tier_note}
+                </p>
+              </div>
+            )}
+
+            {/* Satıcının repliği — sahnenin kalbi */}
+            <p className="font-serif" style={{
+              fontSize: "0.92rem", fontStyle: "italic", textAlign: "center",
+              color: "var(--color-parchment)", lineHeight: 1.55, margin: 0,
+              padding: "0.75rem 0.85rem", borderRadius: "6px",
+              border: "1px solid var(--color-border-hi)",
+              background: "radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.07), rgba(10,7,4,0.5) 70%)",
+            }}>
+              “{view.line}”
+            </p>
+            {note && (
+              <p className="font-serif" style={{ fontSize: "0.74rem", fontStyle: "italic", color: "var(--color-gold)", margin: 0 }}>
+                {note}
               </p>
             )}
-            <p className="text-xs text-stone-200 italic border border-stone-800/60 bg-stone-900/40 rounded-sm px-3 py-2">
-              {view.line}
-            </p>
-            {note && <p className="text-[11px] text-amber-400">{note}</p>}
 
-            <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="border border-stone-800/60 rounded-sm py-2">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", textAlign: "center" }}>
+              <div style={{ border: "1px solid var(--color-border)", borderRadius: "6px", padding: "0.5rem 0" }}>
                 <div className="label-tiny">Normal Fiyat</div>
-                <div className="font-heading text-stone-300 text-sm">{view.base}A</div>
+                <div className="font-display" style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--color-parchment-dim)" }}>
+                  {view.base} ⚜
+                </div>
               </div>
-              <div className="border border-amber-900/40 bg-amber-950/10 rounded-sm py-2">
+              <div style={{
+                border: "1px solid rgba(201,168,76,0.45)", borderRadius: "6px", padding: "0.5rem 0",
+                background: "rgba(201,168,76,0.07)", boxShadow: "0 0 14px rgba(201,168,76,0.12)",
+              }}>
                 <div className="label-tiny">Eldeki Teklif</div>
-                <div className="font-heading text-amber-400 text-sm">{view.offer}A</div>
+                <div><Coin value={view.offer} size="0.98rem" /></div>
               </div>
             </div>
 
             {view.floor_visible && view.floor != null && (
-              <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 border border-emerald-900/30 bg-emerald-950/10 px-2 py-1 rounded-sm">
-                👁 Tabanını seziyorsun: <strong>{view.floor}A</strong>
+              <div className="font-serif" style={{
+                display: "flex", alignItems: "center", gap: "0.35rem",
+                fontSize: "0.7rem", fontStyle: "italic", color: TONES.sage.text,
+                border: `1px solid ${TONES.sage.border}`, background: TONES.sage.bg,
+                borderRadius: "5px", padding: "0.35rem 0.55rem",
+              }}>
+                👁 Tabanını seziyorsun: <strong>{view.floor} ⚜</strong>
                 {action === "al" ? " — bunun altına inmez." : " — bunun üstüne çıkmaz."}
               </div>
             )}
 
-            <div className="text-[10px] text-stone-500 text-center">
-              Tur {view.round}/{view.max_rounds}
+            <div className="font-display" style={{
+              fontSize: "0.56rem", letterSpacing: "0.2em", textAlign: "center",
+              textTransform: "uppercase", color: "var(--color-parchment-muted)",
+            }}>
+              — Tur {view.round}/{view.max_rounds} —
             </div>
 
-            <div className="space-y-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               <button onClick={() => move("kabul")} disabled={busyB}
-                className="w-full btn-ember py-2 text-[11px] font-heading tracking-wider disabled:opacity-40">
-                KABUL ET ({view.offer}A)
+                className="btn-ember"
+                style={{ width: "100%", padding: "0.55rem 0", fontSize: "0.64rem", opacity: busyB ? 0.4 : 1 }}>
+                EL SIKIŞ ({view.offer} ⚜)
               </button>
-              <div className="flex gap-2">
+              <div style={{ display: "flex", gap: "0.5rem" }}>
                 <button onClick={() => move("karsi")} disabled={busyB}
-                  className="flex-1 btn-ghost-ash py-2 text-[11px] font-heading tracking-wider disabled:opacity-40">
+                  className="btn-ghost-ash"
+                  style={{ flex: 1, padding: "0.55rem 0", fontSize: "0.62rem", opacity: busyB ? 0.4 : 1 }}>
                   KARŞI TEKLİF
                 </button>
                 <button onClick={() => move("blof")} disabled={busyB}
-                  className="flex-1 py-2 text-[11px] font-heading tracking-wider border border-red-900/50 text-red-400 hover:bg-red-950/20 rounded-sm transition-all disabled:opacity-40">
+                  className="font-display"
+                  style={{
+                    flex: 1, padding: "0.55rem 0", borderRadius: "6px", cursor: "pointer",
+                    fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+                    border: `1px solid ${TONES.blood.border}`, background: TONES.blood.bg,
+                    color: TONES.blood.text, transition: "all 0.15s", opacity: busyB ? 0.4 : 1,
+                  }}>
                   BLÖF YAP
                 </button>
               </div>
               <button onClick={() => move("vazgec")} disabled={busyB}
-                className="w-full py-1.5 text-[10px] text-stone-500 hover:text-stone-300 transition-colors">
+                className="font-serif"
+                style={{
+                  width: "100%", padding: "0.35rem 0", background: "none", border: "none",
+                  cursor: "pointer", fontSize: "0.7rem", fontStyle: "italic",
+                  color: "var(--color-parchment-muted)",
+                }}>
                 Vazgeç, tezgâhtan ayrıl
               </button>
             </div>
-            <p className="text-[10px] text-stone-600">
+            <p className="font-serif" style={{
+              fontSize: "0.66rem", fontStyle: "italic", color: "var(--color-parchment-muted)", margin: 0,
+            }}>
               Blöf: "Çarşıda ucuza buldum" — tutarsa taban fiyat, tutmazsa satıcı alınır.
             </p>
           </div>
@@ -1153,46 +1230,73 @@ function BargainModal({ target, onTrade, onClose }) {
 
         {/* ── SONUÇ ── */}
         {phase === "done" && result && (
-          <div className="space-y-3">
-            <p className="text-xs text-stone-200 italic border border-stone-800/60 bg-stone-900/40 rounded-sm px-3 py-2">
-              {result.note}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+            <p className="font-serif" style={{
+              fontSize: "0.88rem", fontStyle: "italic", textAlign: "center",
+              color: "var(--color-parchment)", lineHeight: 1.55, margin: 0,
+              padding: "0.7rem 0.8rem", borderRadius: "6px",
+              border: "1px solid var(--color-border-hi)",
+              background: "radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.07), rgba(10,7,4,0.5) 70%)",
+            }}>
+              “{result.note}”
             </p>
 
             {result.cancelled ? (
               <button onClick={onClose}
-                className="w-full btn-ghost-ash py-2 text-xs font-heading tracking-wider">
+                className="btn-ghost-ash"
+                style={{ width: "100%", padding: "0.55rem 0", fontSize: "0.64rem" }}>
                 KAPAT
               </button>
             ) : (
               <>
-                <div className="flex items-center justify-between border border-amber-900/30 bg-amber-950/10 rounded-sm px-3 py-2">
-                  <span className="text-xs text-stone-400 font-heading tracking-wider">
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  border: "1px solid rgba(201,168,76,0.4)", background: "rgba(201,168,76,0.07)",
+                  borderRadius: "6px", padding: "0.55rem 0.75rem",
+                }}>
+                  <span className="font-display" style={{
+                    fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.16em",
+                    textTransform: "uppercase", color: "var(--color-parchment-dim)",
+                  }}>
                     ANLAŞILAN FİYAT
                   </span>
-                  <span className="font-heading text-base text-amber-400">{result.final}A</span>
+                  <Coin value={result.final} size="1rem" />
                 </div>
-                <div className={`text-[11px] px-2 py-1 rounded-sm border ${
-                  saved >= 0
-                    ? "text-emerald-400 border-emerald-900/30 bg-emerald-950/10"
-                    : "text-red-400 border-red-900/30 bg-red-950/10"
-                }`}>
+                <div className="font-serif" style={{
+                  fontSize: "0.74rem", fontStyle: "italic", padding: "0.4rem 0.55rem",
+                  borderRadius: "5px",
+                  border: `1px solid ${saved >= 0 ? TONES.sage.border : TONES.blood.border}`,
+                  background: saved >= 0 ? TONES.sage.bg : TONES.blood.bg,
+                  color: saved >= 0 ? TONES.sage.text : TONES.blood.text,
+                }}>
                   {saved >= 0
-                    ? `Normal fiyata göre ${saved}A ${action === "al" ? "ucuza" : "fazlaya"} bağladın.`
-                    : `Normal fiyattan ${Math.abs(saved)}A daha kötü — yine de bağlamak ister misin?`}
+                    ? `Normal fiyata göre ${saved} akçe ${action === "al" ? "ucuza" : "fazlaya"} bağladın.`
+                    : `Normal fiyattan ${Math.abs(saved)} akçe daha kötü — yine de bağlamak ister misin?`}
                 </div>
                 <button onClick={finishTrade} disabled={busyB}
-                  className="w-full btn-ember py-2 text-xs font-heading tracking-wider disabled:opacity-40 flex items-center justify-center gap-2">
+                  className="btn-ember"
+                  style={{
+                    width: "100%", padding: "0.6rem 0", fontSize: "0.66rem",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
+                    opacity: busyB ? 0.4 : 1,
+                  }}>
                   {busyB && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   ANLAŞMAYI TAMAMLA — {action === "al" ? "AL" : "SAT"}
                 </button>
                 <button onClick={onClose}
-                  className="w-full py-1.5 text-[10px] text-stone-500 hover:text-stone-300 transition-colors">
+                  className="font-serif"
+                  style={{
+                    width: "100%", padding: "0.35rem 0", background: "none", border: "none",
+                    cursor: "pointer", fontSize: "0.7rem", fontStyle: "italic",
+                    color: "var(--color-parchment-muted)",
+                  }}>
                   Şimdi değil (söz bu ay geçerli)
                 </button>
               </>
             )}
           </div>
         )}
+        </div>
       </div>
     </div>
   );
@@ -1348,7 +1452,7 @@ export default function Trade() {
 
   /* ─── Render ─────────────────────────────────────────────────────── */
   return (
-    <div className="space-y-5 rise-in">
+    <div className="page-shell rise-in space-y-5" style={{ paddingBottom: "1.5rem" }}>
       {/* Kervan Sonuç Modalı */}
       {resultEvent && (
         <CaravanResultModal
@@ -1368,38 +1472,37 @@ export default function Trade() {
         />
       )}
       {/* Başlık */}
-      <div>
-        <div className="label-tiny">Ekonomi</div>
-        <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-          <ArrowUpDown className="w-6 h-6 text-amber-500" /> Ticaret & Kervan
-        </h1>
-        <p className="text-stone-400 text-sm mt-1">
-          Pazar arbitrajı yap ya da kervan kurarak şehirler arası ticaret yürüt.
-        </p>
-      </div>
-
-      {/* Cüzdan */}
-      <div className="card-frame p-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Coins className="w-4 h-4 text-amber-500" />
-          <span className="label-tiny">Altın</span>
-        </div>
-        <span className="font-heading text-amber-400 text-lg">{player.money || 0}</span>
-      </div>
+      <PageHeader
+        kicker="Ekonomi"
+        icon="⚖"
+        title="Ticaret & Kervan"
+        sub="Tezgâhın karşısında bir insan var — dil dökersen kese gülümser."
+        right={
+          <div style={{ textAlign: "right" }}>
+            <div className="label-tiny" style={{ marginBottom: "0.1rem" }}>Kese</div>
+            <Coin value={player.money || 0} size="1rem" />
+          </div>
+        }
+      />
 
       {/* Sekmeler */}
-      <div className="flex border-b border-stone-800/60">
+      <div style={{ display: "flex", borderBottom: "1px solid var(--color-border)" }}>
         {[
-          { id: "pazar",  label: "Pazar",  icon: <ShoppingCart className="w-3.5 h-3.5" /> },
-          { id: "kervan", label: "Kervan", icon: <Truck className="w-3.5 h-3.5" /> },
+          { id: "pazar",  label: "Pazar",  icon: "🛒" },
+          { id: "kervan", label: "Kervan", icon: "🐫" },
         ].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-heading tracking-wider border-b-2 transition-all -mb-px ${
-              tab === t.id
-                ? "border-amber-600 text-amber-400"
-                : "border-transparent text-stone-500 hover:text-stone-300"
-            }`}>
-            {t.icon} {t.label}
+          <button key={t.id} onClick={() => { playSfx("page"); setTab(t.id); }}
+            className="font-display"
+            style={{
+              display: "flex", alignItems: "center", gap: "0.4rem",
+              padding: "0.65rem 1.1rem", marginBottom: "-1px", cursor: "pointer",
+              fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase",
+              background: "none", border: "none", transition: "all 0.2s",
+              borderBottom: tab === t.id ? "2px solid var(--color-gold)" : "2px solid transparent",
+              color: tab === t.id ? "var(--color-gold)" : "var(--color-parchment-muted)",
+              textShadow: tab === t.id ? "0 0 10px rgba(201,168,76,0.35)" : "none",
+            }}>
+            <span style={{ fontSize: "0.85rem" }}>{t.icon}</span> {t.label}
           </button>
         ))}
       </div>
@@ -1409,24 +1512,27 @@ export default function Trade() {
         <div className="space-y-5">
           {/* Envanter özeti */}
           {Object.keys(inventory).filter(g => inventory[g] > 0).length > 0 && (
-            <div className="card-frame p-3">
-              <div className="label-tiny mb-2">Envanterindeki Mallar</div>
+            <Panel title="Heybendeki Mallar" icon="🎒" tone="ash">
               <div className="flex flex-wrap gap-2">
                 {Object.entries(inventory)
                   .filter(([, qty]) => qty > 0)
                   .map(([good, qty]) => (
-                    <div key={good}
-                      className="flex items-center gap-1.5 text-xs border border-stone-700 rounded-sm px-2 py-1">
+                    <div key={good} className="row-frame"
+                      style={{ padding: "0.3rem 0.55rem", gap: "0.35rem" }}>
                       <span>{GOOD_ICONS[good] || "📦"}</span>
-                      <span className="text-stone-300">{GOOD_LABELS[good] || good}</span>
-                      <span className="text-amber-400 font-heading">×{qty}</span>
+                      <span className="font-serif" style={{ fontSize: "0.78rem", color: "var(--color-parchment)" }}>
+                        {GOOD_LABELS[good] || good}
+                      </span>
+                      <span className="font-display" style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--color-gold-dim)" }}>
+                        ×{qty}
+                      </span>
                       {player.inv_quality?.[good] && (
                         <QualityBadge kalite={player.inv_quality[good]} />
                       )}
                     </div>
                   ))}
               </div>
-            </div>
+            </Panel>
           )}
 
           {/* Mevcut konum pazarı */}
@@ -1451,7 +1557,7 @@ export default function Trade() {
 
           {/* Diğer pazarlar */}
           <div className="space-y-2">
-            <div className="label-tiny">Diğer Pazarlar</div>
+            <GoldRule label="Diğer Pazarlar" />
             {sortedLocs.filter(l => l.id !== player.location_id).map(loc => {
               const isExpanded = expandedLocId === loc.id;
               return (
@@ -1470,7 +1576,7 @@ export default function Trade() {
                       <div className="flex gap-1.5">
                         {allGoods.slice(0, 4).map(g => loc.market?.[g] && (
                           <span key={g} className="text-[10px] text-stone-500">
-                            {GOOD_ICONS[g]}{loc.market[g].price}A
+                            {GOOD_ICONS[g]}{loc.market[g].price}⚜
                           </span>
                         ))}
                       </div>
@@ -1499,9 +1605,7 @@ export default function Trade() {
                                 <span>{GOOD_LABELS[g]}</span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="font-heading text-sm text-stone-200">
-                                  {m.price}A
-                                </span>
+                                <span><Coin value={m.price} size="0.78rem" /></span>
                                 {currentM && (
                                   <span className={`text-[10px] ${
                                     priceDiff > 0 ? "text-red-400" :
@@ -1543,9 +1647,13 @@ export default function Trade() {
           ) : (
             <>
               {player.age < 13 && (
-                <div className="text-xs text-amber-400 border border-amber-900/40 bg-amber-950/15 px-3 py-2 rounded-sm flex items-center gap-2">
-                  <AlertTriangle className="w-3 h-3 shrink-0" />
-                  Kervan kurmak için 13 yaşında olmalısın.
+                <div className="row-frame" style={{
+                  border: "1px solid rgba(201,168,76,0.4)", background: "rgba(201,168,76,0.05)",
+                }}>
+                  <AlertTriangle className="w-3 h-3 shrink-0" style={{ color: "var(--color-gold)" }} />
+                  <span className="font-serif" style={{ fontSize: "0.78rem", fontStyle: "italic", color: "var(--color-gold)" }}>
+                    Kervan kurmak için 13 yaşında olmalısın.
+                  </span>
                 </div>
               )}
               <CaravanCreateForm
