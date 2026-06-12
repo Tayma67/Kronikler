@@ -1,10 +1,142 @@
 import { useEffect, useState, useMemo } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 import {
   Scroll, Sword, Skull, Heart, Crown, Flame, Wheat,
   AlertTriangle, Music, Wind, MessageSquare, RefreshCw, Loader2,
+  Eye, Megaphone, Coins,
 } from "lucide-react";
+
+// ─── S2: Nam profili & oyuncu söylentileri ───────────────────────────────────
+const NAM_CFG = {
+  "cömert": { color: "text-emerald-400", bar: "bg-emerald-600" },
+  "zalim":  { color: "text-red-400",     bar: "bg-red-700" },
+  "çapkın": { color: "text-pink-400",    bar: "bg-pink-600" },
+  "dindar": { color: "text-sky-400",     bar: "bg-sky-600" },
+  "mert":   { color: "text-amber-400",   bar: "bg-amber-600" },
+};
+
+function NamPanel({ currentTurn }) {
+  const [nam, setNam] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const load = async () => {
+    try {
+      const { data } = await api.get("/game/nam");
+      setNam(data);
+    } catch { /* nam yoksa panel gizli kalır */ }
+  };
+  useEffect(() => { load(); }, []);
+
+  if (!nam) return null;
+  const maxVal = Math.max(8, ...Object.values(nam.profil || {}));
+  const hasProfile = Object.values(nam.profil || {}).some((v) => v > 0);
+  const rumors = nam.soylentiler || [];
+  if (!hasProfile && rumors.length === 0) return null;
+
+  const act = async (rumorId, eylem) => {
+    setBusy(true);
+    try {
+      const { data } = await api.post("/game/nam/eylem", { rumor_id: rumorId, eylem });
+      setResult(data.response);
+      setNam((n) => ({ ...n, profil: data.profil, dominant: data.dominant, soylentiler: data.soylentiler }));
+      (data.consequences || []).forEach((c) =>
+        c.includes("⚠") ? toast.error(c) : toast.success(c));
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Olmadı.");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="card-frame p-4 space-y-3 border border-amber-900/30">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="label-tiny">Namın</div>
+          <div className="text-sm text-stone-300 font-heading tracking-wider">
+            Halkın gözünde kimsin?
+            {nam.dominant && (
+              <span className={`ml-2 text-xs px-1.5 py-0.5 border rounded-sm ${NAM_CFG[nam.dominant]?.color || ""} border-current`}>
+                {nam.dominant.toUpperCase()}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Nam çubukları */}
+      {hasProfile && (
+        <div className="space-y-1">
+          {Object.entries(nam.profil).map(([trait, val]) => (
+            <div key={trait} className="flex items-center gap-2">
+              <span className={`text-[10px] w-12 font-heading tracking-wider ${NAM_CFG[trait]?.color || "text-stone-400"}`}>
+                {trait}
+              </span>
+              <div className="flex-1 h-1 bg-stone-900 rounded-full overflow-hidden">
+                <div className={`h-full ${NAM_CFG[trait]?.bar || "bg-stone-600"}`}
+                     style={{ width: `${Math.min(100, (val / maxVal) * 100)}%` }} />
+              </div>
+              <span className="text-[10px] text-stone-600 w-5 text-right">{val}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Baskın nam etkileri */}
+      {(nam.etkiler || []).length > 0 && (
+        <div className="space-y-0.5">
+          {nam.etkiler.map((e, i) => (
+            <div key={i} className="text-[11px] text-stone-400 italic">• {e}</div>
+          ))}
+        </div>
+      )}
+
+      {/* Hakkındaki söylentiler */}
+      {rumors.length > 0 && (
+        <div className="border-t border-stone-800 pt-2 space-y-2">
+          <div className="text-[9px] font-heading tracking-[0.2em] text-stone-500 uppercase">
+            Hamamda senin için şöyle demişler…
+          </div>
+          {rumors.map((r) => (
+            <div key={r.id} className={`p-2.5 border rounded-sm ${
+              r.yon > 0 ? "border-emerald-900/40 bg-emerald-950/10" : "border-red-900/40 bg-red-950/10"
+            }`}>
+              <p className="text-xs text-stone-200 italic leading-relaxed">"{r.text}"</p>
+              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                <span className="text-[9px] text-stone-600">
+                  Kaynak: {r.kaynak_name} · {timeAgo(currentTurn, r.hafta)} · şiddet {Math.round(r.siddet)}
+                </span>
+                <div className="ml-auto flex gap-1">
+                  <button disabled={busy} onClick={() => act(r.id, "yuzles")}
+                    className="text-[9px] px-1.5 py-0.5 border border-stone-700 text-stone-300 hover:border-amber-700 rounded-sm flex items-center gap-1">
+                    <Eye className="w-2.5 h-2.5" /> Yüzleş
+                  </button>
+                  {r.yon > 0 && (
+                    <button disabled={busy} onClick={() => act(r.id, "yay")}
+                      className="text-[9px] px-1.5 py-0.5 border border-emerald-900 text-emerald-300 hover:border-emerald-700 rounded-sm flex items-center gap-1">
+                      <Megaphone className="w-2.5 h-2.5" /> Yay
+                    </button>
+                  )}
+                  <button disabled={busy} onClick={() => act(r.id, "sustur")}
+                    className="text-[9px] px-1.5 py-0.5 border border-amber-900 text-amber-300 hover:border-amber-700 rounded-sm flex items-center gap-1">
+                    <Coins className="w-2.5 h-2.5" /> Sustur ({15 * Math.round(r.siddet)})
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {result && (
+        <div className="text-[11px] text-amber-200/90 bg-amber-950/20 border border-amber-900/40 rounded-sm px-3 py-2 italic">
+          {result}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Tip konfigürasyonu ───────────────────────────────────────────────────────
 const RUMOR_CFG = {
@@ -152,6 +284,9 @@ export default function Rumors() {
           Yenile
         </button>
       </div>
+
+      {/* S2: Nam profili & hakkındaki söylentiler */}
+      <NamPanel currentTurn={currentTurn} />
 
       {/* Filtreler */}
       {rumors.length > 0 && (

@@ -166,11 +166,32 @@ function ChatModal({ npc, state, onClose }) {
       if (data.intel) {
         setLog((c) => [...c, { from: "i", text: `📖 ${data.intel.text}` }]);
         toast.success(data.intel.text, { duration: 4000 });
+        // Amaç öğrenildiyse eli tazele — Yardım Et / Sömür açılır
+        if (data.intel.type === "amac") {
+          api.get(`/game/npc/${npc.id}/cards`).then((r) => setHand(r.data)).catch(() => {});
+        }
       }
       setPlayedCards((p) => [...p, card.id]);
       if (data.state) setGameState(data.state);
     } catch (e) {
       toast.error(e?.response?.data?.detail || "Sohbet ters gitti.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // S2: amaç eylemi — Yardım Et / Sömür
+  const goalAction = async (eylem) => {
+    setBusy(true);
+    try {
+      const { data } = await api.post(`/game/npc/${npc.id}/amac`, { eylem });
+      setLog((c) => [...c, { from: "n", text: data.response }]);
+      (data.consequences || []).forEach((line) =>
+        setLog((c) => [...c, { from: "i", text: line }]));
+      if (data.state) setGameState(data.state);
+      api.get(`/game/npc/${npc.id}/cards`).then((r) => setHand(r.data)).catch(() => {});
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Olmadı.");
     } finally {
       setBusy(false);
     }
@@ -203,13 +224,38 @@ function ChatModal({ npc, state, onClose }) {
   };
 
   const rel = gameState?.relationships?.[npc.id] ?? 0;
+  const tierCls = {
+    aktif_dusman: "border-red-800 text-red-400",
+    soguk: "border-orange-900 text-orange-400",
+    notr: "border-stone-700 text-stone-400",
+    dost: "border-emerald-900 text-emerald-400",
+    sadik: "border-amber-700 text-amber-300",
+  }[hand?.tier?.key] || "border-stone-700 text-stone-400";
 
   return (
     <ModalShell onClose={onClose} title={`${npc.name} ile Sohbet`} tall>
-      {/* rel mini bar */}
-      <div className="mb-3">
-        <RelBar value={rel} />
+      {/* rel mini bar + S2 davranış kademesi */}
+      <div className="mb-1 flex items-center gap-2">
+        <div className="flex-1"><RelBar value={hand?.effective_rel ?? rel} /></div>
+        {hand?.tier && (
+          <span className={`shrink-0 text-[9px] px-1.5 py-0.5 border rounded-sm font-heading tracking-wider ${tierCls}`}
+                title={hand.tier.desc}>
+            {hand.tier.label}
+          </span>
+        )}
       </div>
+      {/* S2: seni hatırlıyor */}
+      {(hand?.remembers || []).length > 0 && (
+        <div className="mb-2 space-y-0.5">
+          {hand.remembers.map((m, i) => (
+            <div key={i} className={`text-[10px] italic ${
+              m.travma ? "text-red-300" : m.yon > 0 ? "text-emerald-400/80" : "text-orange-400/80"
+            }`}>
+              {m.travma ? "⚡" : "🧠"} Hatırlıyor: "...{m.text}."
+            </div>
+          ))}
+        </div>
+      )}
       {/* chat log */}
       <div ref={logRef} className="flex-1 overflow-y-auto space-y-3 mb-4 min-h-0" style={{ maxHeight: 280 }}>
         {log.length === 0 && (
@@ -271,6 +317,39 @@ function ChatModal({ npc, state, onClose }) {
                 </button>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* S2: bilinen amaç — Yardım Et / Sömür / Görmezden gel */}
+      {hand?.amac_eylem && (
+        <div className="border-t border-stone-800 pt-2 mt-2 space-y-1.5">
+          <div className="text-[9px] font-heading tracking-[0.2em] text-purple-400/80 uppercase">
+            🎯 Amacını biliyorsun: <span className="text-purple-300">{hand.amac_eylem.amac_label}</span>
+          </div>
+          <div className="flex gap-1.5">
+            <button
+              disabled={busy || hand.amac_eylem.yardim_edildi}
+              onClick={() => goalAction("yardim")}
+              className={`flex-1 px-2 py-1.5 text-[10px] border rounded-sm transition-colors ${
+                hand.amac_eylem.yardim_edildi
+                  ? "border-stone-800 text-stone-600 opacity-50"
+                  : "border-emerald-900/60 text-emerald-300 hover:bg-emerald-950/20"
+              }`}>
+              {hand.amac_eylem.yardim_edildi
+                ? "✓ Yardım ettin"
+                : `💛 Yardım Et (${hand.amac_eylem.yardim_cost} altın)`}
+            </button>
+            <button
+              disabled={busy || hand.amac_eylem.koz}
+              onClick={() => goalAction("somur")}
+              className={`flex-1 px-2 py-1.5 text-[10px] border rounded-sm transition-colors ${
+                hand.amac_eylem.koz
+                  ? "border-stone-800 text-stone-600 opacity-50"
+                  : "border-red-900/60 text-red-300 hover:bg-red-950/20"
+              }`}>
+              {hand.amac_eylem.koz ? "✓ Koz yaptın" : "🗡 Sömür (pazarlık kozu)"}
+            </button>
           </div>
         </div>
       )}

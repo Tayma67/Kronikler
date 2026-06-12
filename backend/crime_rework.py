@@ -316,7 +316,8 @@ def _outcome_seen(state, j):
         rels[w["id"]] = max(-100, rels.get(w["id"], 0) - 10)
         try:
             from npc_profile import push_personal_memory
-            push_personal_memory(w, f"{player.get('name','Biri')}: onu {j['label'].lower()} sırasında gördü")
+            push_personal_memory(w, f"{player.get('name','Biri')}: onu {j['label'].lower()} sırasında gördü",
+                                 tur="suc_tanigi", hafta=state.get("turn", 0))
         except Exception:
             pass
     note = "Paçayı kurtardın ama bir çift göz seni tanıdı."

@@ -682,11 +682,22 @@ def push_recent_event(npc, etype, day, extra=""):
             npc["current_mood"] = mood
 
 
-def push_personal_memory(npc, line):
+def push_personal_memory(npc, line, tur=None, hafta=0, yuk=None, taniklar=None):
+    """Düz hafıza satırı + (tur verilirse) S2 yapısal anı.
+
+    Eski çağrılar (sadece line) aynen çalışır; tur geçen çağrılar
+    npc["anilar"]'a duygu yüklü, unutma hızlı, tanıklı anı nesnesi ekler.
+    """
     ensure_profile(npc)
     npc["personal_memory"].append(line)
     if len(npc["personal_memory"]) > 12:
         npc["personal_memory"] = npc["personal_memory"][-12:]
+    if tur:
+        try:
+            from npc_mind import add_memory
+            add_memory(npc, tur, hafta, yuk=yuk, taniklar=taniklar, detay=line)
+        except Exception:
+            pass
 
 
 def recompute_mood(npc):
@@ -747,7 +758,7 @@ def npc_weekly_tick(npc, state, rng):
         else:
             push_recent_event(npc, et, state["turn"])
 
-    # Goal progress
+    # Goal progress — amaçlar kendi başına ilerler (S2)
     if rng.random() < 0.18:
         npc["goal_progress"] = min(100, npc.get("goal_progress", 0) + rng.randint(1, 4))
         if npc["goal_progress"] >= 100:
@@ -755,6 +766,31 @@ def npc_weekly_tick(npc, state, rng):
             npc["goal_history"].append(npc["goal"])
             npc["goal"] = _pick_goal_for_npc(npc, rng)
             npc["goal_progress"] = 0
+            npc.pop("amac_yardim_edildi", None)
+            # S2 tohumu: amacına oyuncu sayesinde ulaşan NPC borcunu öder
+            if npc.pop("owes_player", None):
+                player = state.get("player", {})
+                pay = rng.randint(15, 40)
+                npc["savings"] = max(0, npc.get("savings", 0) - pay // 2)
+                player["money"] = round(player.get("money", 0) + pay, 1)
+                push_personal_memory(
+                    npc, f"{player.get('name', 'Velinimetim')}'e borcumu ödedim",
+                    tur="soz_tutma", hafta=state["turn"])
+                try:
+                    from simulation import _push_event
+                    _push_event(state, state["turn"], "vefa",
+                                f"{npc['name']} amacına ulaştı ve eski iyiliğini "
+                                f"unutmadı: sana {pay} altın gönderdi.",
+                                scope="kişisel")
+                except Exception:
+                    pass
+
+    # S2: anılar haftalık sönümlenir — travmalar asla
+    try:
+        from npc_mind import decay_memories
+        decay_memories(npc)
+    except Exception:
+        pass
 
     recompute_mood(npc)
 

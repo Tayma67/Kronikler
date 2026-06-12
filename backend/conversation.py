@@ -81,20 +81,45 @@ def _personal_card(state, npc, ctx_rng):
 
 
 def deal_cards(state, npc):
-    """3 kartlık eli dağıt (haftaya göre deterministik)."""
+    """3 kartlık eli dağıt (haftaya göre deterministik). S2: el, NPC'nin
+    zihninden geçer — etkin ilişki, davranış kademesi ve hatırladıkları."""
+    from npc_mind import effective_rel, behavior_tier, top_memories, goal_help_cost
     rng = _hand_rng(npc["id"], state.get("turn", 0))
     cards = [_safe_cards(npc, rng), _risky_card(state, npc, rng),
              _personal_card(state, npc, rng)]
     rel = state.get("relationships", {}).get(npc["id"], 0)
+    eff = effective_rel(state, npc)
+    tier = behavior_tier(eff)
     intel = state.get("npc_intel", {}).get(npc["id"], {})
-    return {
+    warning = None
+    if tier["key"] == "aktif_dusman":
+        warning = f"{npc['name']} selamını bile almıyor — burada her söz ters teper."
+    elif tier["key"] == "soguk":
+        warning = f"{npc['name']} sana karşı soğuk; bilgi paylaşmaz."
+    elif eff < 20:
+        warning = "Onu pek tanımıyorsun — kişisel sorular ters tepebilir."
+    out = {
         "cards": cards,
         "relationship": rel,
-        "band": relation_band(rel),
+        "effective_rel": eff,
+        "tier": {"key": tier["key"], "label": tier["label"], "desc": tier["desc"]},
+        "band": relation_band(eff),
+        "remembers": top_memories(npc, n=2),
         "intel": intel,
-        "warning": ("Onu pek tanımıyorsun — kişisel sorular ters tepebilir."
-                    if rel < 20 else None),
+        "warning": warning,
     }
+    # Amacı biliniyorsa amaç eylemleri sunulur (Yardım Et / Sömür)
+    if intel.get("amac"):
+        from npc_profile import GOAL_BY_KEY
+        cost, _ctype = goal_help_cost(state, npc)
+        out["amac_eylem"] = {
+            "amac": intel["amac"],
+            "amac_label": GOAL_BY_KEY.get(intel["amac"], {}).get("label", intel["amac"]),
+            "yardim_cost": cost,
+            "yardim_edildi": bool(npc.get("amac_yardim_edildi")),
+            "koz": bool(intel.get("koz")),
+        }
+    return out
 
 
 # ── Kart oynama ──────────────────────────────────────────────────────────
@@ -112,18 +137,35 @@ def play_card(state, npc, card_id):
     charisma = player.get("stats", {}).get("charisma", 1)
     turn = state.get("turn", 0)
 
+    # S2: zihin etkileri — etkin ilişki, düşmanlık cezası, mert nam bonusu
+    from npc_mind import effective_rel, behavior_tier, nam_effects
+    eff = effective_rel(state, npc)
+    tier = behavior_tier(eff)
+    nam_bonus = 0.0
+    try:
+        nam_bonus = nam_effects(state).get("bilgi_bonus", 0.0)
+    except Exception:
+        pass
+
     kind = card["id"][0]  # g/r/k
     if kind == "g":
         success, delta_win, delta_lose = True, None, None
     elif kind == "r":
         chance = min(0.9, 0.45 + social * 0.05 + charisma * 0.03)
-        success = random.random() < chance
+        if tier["key"] == "aktif_dusman":
+            chance -= 0.25
+        success = random.random() < max(0.08, chance)
         delta_win, delta_lose = 4, -4
     else:  # kişisel
-        chance = min(0.92, 0.30 + social * 0.05 + charisma * 0.04 + max(0, rel) * 0.006)
-        if rel < 20:
+        chance = min(0.92, 0.30 + social * 0.05 + charisma * 0.04
+                     + max(0, eff) * 0.006 + nam_bonus)
+        if eff < 20:
             chance -= 0.18   # tanımadığına kişisel soru — ters tepme riski
-        success = random.random() < max(0.08, chance)
+        if tier["key"] == "aktif_dusman":
+            chance -= 0.25
+        elif not tier["bilgi"]:
+            chance -= 0.12   # soğuk: bilgi paylaşmaz
+        success = random.random() < max(0.05, chance)
         delta_win, delta_lose = 6, -8
 
     # Delta: güvenli kartlar mevcut relationship_delta'yı kullanır
@@ -168,13 +210,19 @@ def play_card(state, npc, card_id):
             intel_gain = {"type": "sir",
                           "text": "Geçmişinden karanlık bir parça öğrendin. Bu bilgi bir koz."}
 
-    # NPC anısı + sonuç cümlesi
+    # NPC anısı + sonuç cümlesi — S2: yapısal anı türüyle
     try:
         from npc_profile import push_personal_memory
         if kind != "g":
-            iz = "içten bir sohbet ettiniz" if success else \
-                 ("haddini aşan bir soru sordun" if kind == "k" else "tatsız bir konuya girdin")
-            push_personal_memory(npc, f"{player.get('name','Biri')}: {iz}")
+            if success:
+                iz, tur_key = "içten bir sohbet ettiniz", \
+                    ("icten_sohbet" if kind == "k" else "guzel_sohbet")
+            elif kind == "k":
+                iz, tur_key = "haddini aşan bir soru sordun", "haddini_asma"
+            else:
+                iz, tur_key = "tatsız bir konuya girdin", "tatsiz_konu"
+            push_personal_memory(npc, f"{player.get('name','Biri')}: {iz}",
+                                 tur=tur_key, hafta=turn)
     except Exception:
         pass
 
@@ -186,10 +234,13 @@ def play_card(state, npc, card_id):
     elif kind == "k" and success and not intel_gain:
         closing = f"{npc['name']} sana biraz daha açıldı."
 
+    eff_after = effective_rel(state, npc)
     return {
         "success": success,
         "delta": delta,
         "relationship": rels[npc["id"]],
+        "effective_rel": eff_after,
+        "tier": behavior_tier(eff_after)["label"],
         "band": relation_band(rels[npc["id"]]),
         "text": text,
         "proactive": proactive or None,

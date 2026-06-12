@@ -85,16 +85,17 @@ def npc_family(state, npc):
     return [n for n in state["world"]["npcs"] if n["id"] in ids and n.get("alive")]
 
 
-def spread_word(state, npc, event_text, rel_delta, max_spread=3):
+def spread_word(state, npc, event_text, rel_delta, max_spread=3, tur=None):
     """
     Bir eylem haberini çevredeki NPC'lere yayar.
     Yakındaki NPC'lerin ilişkisini ve NPC'nin itibarını etkiler.
+    tur verilirse tanıklar yapısal anı tutar (S2) → dedikoduya sızabilir.
     """
     affected = []
     nearby = nearby_npcs(state, exclude_id=npc["id"])[:max_spread]
     for witness in nearby:
         change_rel(state, witness["id"], rel_delta)
-        push_personal_memory(witness, event_text)
+        push_personal_memory(witness, event_text, tur=tur, hafta=state.get("turn", 0))
         affected.append(witness["name"])
     return affected
 
@@ -176,7 +177,8 @@ def do_compliment(state, npc_id):
     change_rel(state, npc_id, gain)
     npc["mood"] = npc_mood_after
     set_cooldown(state, npc_id, "compliment")
-    push_personal_memory(npc, f"{player['name']} bana iltifat etti")
+    push_personal_memory(npc, f"{player['name']} bana iltifat etti",
+                         tur="iltifat", hafta=turn)
 
     # Yakında biri varsa sosyal itibar hafifçe artar
     nearby = nearby_npcs(state, exclude_id=npc_id)
@@ -295,7 +297,8 @@ def do_gift(state, npc_id, item_key, qty=1):
         for m in rep_msgs:
             consequences.append(m)
 
-    push_personal_memory(npc, f"{player['name']} bana {item_data['name']} hediye etti")
+    push_personal_memory(npc, f"{player['name']} bana {item_data['name']} hediye etti",
+                         tur="comert_hediye" if gain >= 10 else "hediye", hafta=turn)
     _push_event(state, turn, "hediye",
                 f"{player['name']}, {npc['name']}'e {item_data['name']} hediye etti.")
     advance_time(state, weeks=1)
@@ -376,7 +379,8 @@ def do_give_money(state, npc_id, amount):
 
     change_rel(state, npc_id, gain)
     set_cooldown(state, npc_id, "give_money")
-    push_personal_memory(npc, f"{player['name']} bana {amount} altın verdi")
+    push_personal_memory(npc, f"{player['name']} bana {amount} altın verdi",
+                         tur="sadaka", hafta=turn)
     _push_event(state, turn, "para_verme",
                 f"{player['name']}, {npc['name']}'e {amount} altın verdi.")
     advance_time(state, weeks=1)
@@ -477,7 +481,10 @@ def do_insult(state, npc_id):
         consequences.append(f"İlişki -{loss}")
 
     change_rel(state, npc_id, -loss)
-    push_personal_memory(npc, f"{player['name']} bana hakaret etti — {turn}. haftada")
+    witnesses = nearby_npcs(state, exclude_id=npc_id)
+    push_personal_memory(npc, f"{player['name']} bana hakaret etti — {turn}. haftada",
+                         tur="hakaret", hafta=turn,
+                         taniklar=[w["id"] for w in witnesses[:4]])
 
     # Yüksek statüslü biri hakaret ederse itibar kaybı
     if profession in ("kral", "lord", "general", "veliaht"):
@@ -486,7 +493,6 @@ def do_insult(state, npc_id):
         player["crime"] = player.get("crime", 0) + 10
 
     # Tanıklar varsa itibar kaybı
-    witnesses = nearby_npcs(state, exclude_id=npc_id)
     if witnesses:
         player["reputation"] = player.get("reputation", 0) - 2
         wnames = [w["name"] for w in witnesses[:2]]
@@ -560,6 +566,13 @@ def do_flirt(state, npc_id):
     if "suskun" in personality:
         base_chance -= 0.03
 
+    # S2 nam etkisi: çapkın namı flörtü kolaylaştırır
+    try:
+        from npc_mind import nam_effects
+        base_chance += nam_effects(state).get("flort_bonus", 0)
+    except Exception:
+        pass
+
     accepted = random.random() < min(0.88, max(0.05, base_chance))
     consequences = []
 
@@ -573,7 +586,8 @@ def do_flirt(state, npc_id):
         witnesses = nearby_npcs(state, exclude_id=npc_id)
         if witnesses:
             witness = witnesses[0]
-            push_personal_memory(witness, f"{player['name']} ile {npc['name']} çıkmaya başladı")
+            push_personal_memory(witness, f"{player['name']} ile {npc['name']} çıkmaya başladı",
+                                 tur="flort_tanigi", hafta=turn)
             consequences.append(f"💬 {witness['name']} bunu gördü")
 
         # Eğer NPC'nin başka hayranı varsa kıskanç olabilir
@@ -599,6 +613,8 @@ def do_flirt(state, npc_id):
         gain = random.randint(-3, 0)
         change_rel(state, npc_id, gain)
         npc["mood"] = "soğuk"
+        push_personal_memory(npc, f"{player['name']}'in teklifini geri çevirdim",
+                             tur="reddedilme", hafta=turn)
 
         if "kibirli" in personality:
             response = f"{npc['name']}: 'Seninle mi? Ciddi misin?'"
@@ -656,8 +672,24 @@ def do_propose(state, npc_id):
     if "vefasız" in personality:
         accept_chance -= 0.05
 
+    # S2 nam etkisi: zalim namı iyi aileleri kaçırır, çapkın namı şüphe doğurur
+    nam_note = None
+    try:
+        from npc_mind import nam_effects
+        fx = nam_effects(state)
+        if fx.get("evlilik_ret"):
+            accept_chance -= 0.40
+            nam_note = "💀 Namın önünden gidiyor: 'zalim' diye biliniyorsun — iyi aileler çekiniyor"
+        elif fx.get("evlilik_suphesi"):
+            accept_chance -= fx["evlilik_suphesi"]
+            nam_note = "🌹 Çapkın namın ciddiyetine gölge düşürüyor"
+    except Exception:
+        pass
+
     accepted = random.random() < min(0.93, max(0.05, accept_chance))
     consequences = []
+    if nam_note:
+        consequences.append(nam_note)
 
     if accepted:
         player["spouse_id"] = npc_id
@@ -668,10 +700,12 @@ def do_propose(state, npc_id):
         change_rel(state, npc_id, gain)
 
         # Aile üyeleri haberi duyar
+        push_personal_memory(npc, f"{player['name']} ile evlendik", tur="dugun", hafta=turn)
         family = npc_family(state, npc)
         for member in family[:3]:
             change_rel(state, member["id"], +10)
-            push_personal_memory(member, f"{npc['name']} ile {player['name']} evlendi")
+            push_personal_memory(member, f"{npc['name']} ile {player['name']} evlendi",
+                                 tur="dugun", hafta=turn)
         if family:
             consequences.append(f"👨‍👩‍👦 {npc['name']}'ın ailesi seni artık aile sayıyor (+10 ilişki)")
 
@@ -810,7 +844,8 @@ def do_gossip(state, npc_id):
                 f"{player['name']}, {npc['name']} hakkında dedikodu yaydı.")
     advance_time(state, weeks=1)
     set_cooldown(state, npc_id, "gossip")  # cooldown kaydet
-    push_personal_memory(npc, f"Hakkımda dedikodu yayıldı — {player['name']}")
+    push_personal_memory(npc, f"Hakkımda dedikodu yayıldı — {player['name']}",
+                         tur="iftira", hafta=turn)
 
     return {
         "response": response,
@@ -852,21 +887,23 @@ def do_kidnap(state, npc_id):
         player["money"] = round(player.get("money", 0) + ransom, 1)
         npc["health"] = max(10, npc.get("health", 100) - random.randint(15, 35))
         npc["mood"] = "korkmuş"
-        push_personal_memory(npc, f"{player['name']} beni kaçırdı")
+        push_personal_memory(npc, f"{player['name']} beni kaçırdı",
+                             tur="kacirma", hafta=turn)
 
-        # Aile üyeleri seni düşman sayar
+        # Aile üyeleri seni düşman sayar — travma, asla unutulmaz
         family = npc_family(state, npc)
         for member in family:
             change_rel(state, member["id"], -40)
             member["mood"] = "öfkeli"
-            push_personal_memory(member, f"{player['name']}, {npc['name']}'i kaçırdı")
+            push_personal_memory(member, f"{player['name']}, {npc['name']}'i kaçırdı",
+                                 tur="yakinima_zarar", hafta=turn)
         if family:
             consequences.append(f"☠ {npc['name']}'ın ailesi seni ölümüne düşman oldu")
 
         # Yerel NPC'ler olumsuz etkilenir
         affected = spread_word(state, npc,
                                f"{player['name']}, {npc['name']}'i kaçırdı",
-                               rel_delta=-15, max_spread=4)
+                               rel_delta=-15, max_spread=4, tur="suc_tanigi")
         if affected:
             consequences.append(f"😱 {', '.join(affected)} kaçırmayı duydu")
 
@@ -883,6 +920,8 @@ def do_kidnap(state, npc_id):
         player["reputation"] = player.get("reputation", 0) - 8
         npc["mood"] = "öfkeli"
         npc["revenge_pending"] = True
+        push_personal_memory(npc, f"{player['name']} beni kaçırmaya kalkıştı",
+                             tur="saldiri", hafta=turn)
 
         # Tanıklar olduysa çok daha kötü
         witnesses = nearby_npcs(state, exclude_id=npc_id)
@@ -1007,6 +1046,11 @@ def do_attack(state: dict, npc_id: str) -> dict:
         _push_event(state, state["turn"], "savaş_kaçış",
                     f"{player['name']}, {npc['name']}'a saldırdı ama geri çekildi.")
         outcome = "kaçış"
+
+    # S2: hayatta kalan kurban saldırıyı asla unutmaz (travma)
+    if npc.get("alive"):
+        push_personal_memory(npc, f"{player['name']} bana saldırdı",
+                             tur="saldiri", hafta=state["turn"])
 
     advance_time(state, weeks=1)
     enf = soldier_check(state)

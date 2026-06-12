@@ -1537,7 +1537,8 @@ def _graduate(state):
         rels[m["npc_id"]] = min(100, rels.get(m["npc_id"], 0) + 10)
         try:
             from npc_profile import push_personal_memory
-            push_personal_memory(npc, f"{player.get('name', 'Biri')}: mektepte sıra arkadaşıydı")
+            push_personal_memory(npc, f"{player.get('name', 'Biri')}: mektepte sıra arkadaşıydı",
+                                 tur="sira_arkadasi", hafta=state.get("turn", 0))
         except Exception:
             pass
     if mate_ids:

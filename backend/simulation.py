@@ -1213,6 +1213,12 @@ def advance_time(state, weeks=1, days=None):
             actionable_rumors_tick(state, day)
         except Exception:
             pass
+        # S2 NPC Zihni: tanıklı skandal anılar oyuncu söylentisine dönüşür
+        try:
+            from npc_mind import gossip_tick
+            gossip_tick(state)
+        except Exception:
+            pass
         if len(state["history"]) > 250:
             state["history"] = state["history"][-250:]
     # Auto-unlock family quests at the end of advancement

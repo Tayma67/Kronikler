@@ -38,12 +38,25 @@ def _stubbornness(vendor, rel):
 
 
 def start_bargain(state, loc, good, qty, action, base_total):
-    """Pazarlığı başlat. base_total = normal trade toplamı (mult dahil)."""
+    """Pazarlığı başlat. base_total = normal trade toplamı (mult dahil).
+    S2: satıcının ZİHNİ konuşur — etkin ilişki kademesi fiyatı oynatır,
+    baskın nam korku/sıcaklık olarak tezgâha yansır."""
     if state.get("pending_bargain"):
         state.pop("pending_bargain", None)   # eski el düşer
     player = state["player"]
     vendor = _find_vendor(state, loc)
-    rel = state.get("relationships", {}).get(vendor["id"], 0) if vendor["id"] else 0
+    tier = None
+    tier_note = None
+    if vendor["id"]:
+        npc = next((n for n in state["world"]["npcs"] if n["id"] == vendor["id"]), None)
+        try:
+            from npc_mind import effective_rel, behavior_tier
+            rel = effective_rel(state, npc) if npc else 0
+            tier = behavior_tier(rel)
+        except Exception:
+            rel = state.get("relationships", {}).get(vendor["id"], 0)
+    else:
+        rel = 0
     stub = _stubbornness(vendor, rel)
 
     if action == "al":
@@ -53,6 +66,36 @@ def start_bargain(state, loc, good, qty, action, base_total):
         opening = base_total * random.uniform(0.80 - stub * 0.06, 0.90 - stub * 0.04)
         floor = base_total * (1.04 + (1 - stub) * 0.08)  # çıkabileceği tavan
 
+    # Davranış kademesi: düşman %20 zam yapar, dost/sadık indirir (GDD tablosu)
+    if tier and tier["al_carpan"] != 1.0:
+        carpan = tier["al_carpan"] if action == "al" else round(2 - tier["al_carpan"], 3)
+        opening *= carpan
+        floor *= (1 + (carpan - 1) * 0.6)
+        if tier["key"] == "aktif_dusman":
+            tier_note = f"{vendor['name']} yüzüne bile bakmadan fahiş fiyat söyledi."
+        elif tier["key"] in ("dost", "sadik"):
+            tier_note = f"{vendor['name']} seni görünce yumuşadı: 'Sana ayrı fiyatım var.'"
+
+    # Baskın nam: zalim → korku iskontosu (insanlar senden çekiniyor)
+    try:
+        from npc_mind import nam_effects
+        fx = nam_effects(state)
+        if fx.get("korku_iskontosu") and action == "al":
+            opening *= 0.96
+            floor *= 0.96
+            tier_note = f"{vendor['name']} gözlerini kaçırdı — kimse seninle uğraşmak istemiyor."
+        elif fx.get("pazarlik_sicaklik"):
+            stub = max(0.1, stub - 0.05)
+    except Exception:
+        pass
+
+    # S2 koz: amacını sömürdüğün satıcının tabanını ezersin
+    if vendor["id"] and state.get("npc_intel", {}).get(vendor["id"], {}).get("koz"):
+        if action == "al":
+            floor *= 0.93
+        else:
+            floor *= 1.07
+
     bargain = {
         "loc_id": loc["id"], "good": good, "qty": int(qty), "action": action,
         "base": round(base_total, 1),
@@ -60,6 +103,8 @@ def start_bargain(state, loc, good, qty, action, base_total):
         "floor": round(floor, 1),
         "round": 1, "max_rounds": 2,
         "vendor": vendor, "rel": rel, "stub": round(stub, 2),
+        "tier": tier["key"] if tier else "notr",
+        "tier_note": tier_note,
         "soured": False,
     }
     state["pending_bargain"] = bargain
@@ -69,7 +114,9 @@ def start_bargain(state, loc, good, qty, action, base_total):
 def _view(state, b):
     intel = state.get("npc_intel", {}).get(b["vendor"]["id"] or "", {})
     trade_skill = state["player"].get("skills", {}).get("trade", 0)
-    floor_visible = bool(intel.get("ticaret")) or trade_skill >= 6
+    # S2: ticaret bilgisi, koz, yüksek skill veya sadık müttefik tabanı gösterir
+    floor_visible = (bool(intel.get("ticaret")) or bool(intel.get("koz"))
+                     or trade_skill >= 6 or b.get("tier") == "sadik")
     verb = "istiyor" if b["action"] == "al" else "veriyor"
     return {
         "vendor": b["vendor"]["name"],
@@ -79,6 +126,8 @@ def _view(state, b):
         "floor": b["floor"] if floor_visible else None,
         "floor_visible": floor_visible,
         "round": b["round"], "max_rounds": b["max_rounds"],
+        "tier": b.get("tier", "notr"),
+        "tier_note": b.get("tier_note"),
         "soured": b["soured"],
         "line": f"{b['vendor']['name']}: \"{b['offer']} akçe {verb}um. "
                 + ("Son sözüm bu.\"" if b["round"] >= b["max_rounds"] else "Düşün taşın.\""),
@@ -183,7 +232,8 @@ def bargain_move(state, move, counter_offer=None):
                 npc = next((n for n in state["world"]["npcs"]
                             if n["id"] == b["vendor"]["id"]), None)
                 if npc:
-                    push_personal_memory(npc, f"{player.get('name','Biri')}: pazarlıkta blöf yapmaya kalktı")
+                    push_personal_memory(npc, f"{player.get('name','Biri')}: pazarlıkta blöf yapmaya kalktı",
+                                         tur="bluf", hafta=state.get("turn", 0))
             except Exception:
                 pass
         b["round"] += 1

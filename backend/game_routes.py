@@ -716,6 +716,57 @@ def build_game_router(db):
         result["state"] = _decorate(state)
         return result
 
+    # ---------- S2: NPC amaç eylemleri (Yardım Et / Sömür) ----------
+    @router.post("/npc/{npc_id}/amac")
+    async def npc_goal_action(npc_id: str, body: dict = Body(default={}),
+                              user: dict = Depends(get_current_user)):
+        """S2: öğrenilen amaca eylem — yardim | somur."""
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        npc = next((n for n in state["world"]["npcs"]
+                    if n["id"] == npc_id and n.get("alive")), None)
+        if not npc:
+            raise HTTPException(status_code=404, detail="NPC bulunamadı veya ölü")
+        from npc_mind import goal_action
+        result, err = goal_action(state, npc, body.get("eylem"))
+        if err:
+            raise HTTPException(status_code=400, detail=err)
+        await _save_state(db, user["_id"], state)
+        result["state"] = _decorate(state)
+        return result
+
+    # ---------- S2: Nam profili & hakkındaki söylentiler ----------
+    @router.get("/nam")
+    async def get_nam(user: dict = Depends(get_current_user)):
+        """S2: nam profili, baskın nam etkileri ve oyuncu hakkındaki söylentiler."""
+        state = await _load_state(db, user["_id"])
+        from npc_mind import nam_effects
+        fx = nam_effects(state)
+        return {
+            "profil": fx["profil"],
+            "dominant": fx["dominant"],
+            "etkiler": fx["etkiler"],
+            "soylentiler": list(reversed(state.get("player_rumors", []))),
+            "turn": state.get("turn", 0),
+        }
+
+    @router.post("/nam/eylem")
+    async def nam_rumor_action(body: dict = Body(default={}),
+                               user: dict = Depends(get_current_user)):
+        """S2: söylentiye tepki — yuzles | yay | sustur (rüşvet)."""
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        from npc_mind import rumor_action, nam_effects
+        result, err = rumor_action(state, body.get("rumor_id"), body.get("eylem"))
+        if err:
+            raise HTTPException(status_code=400, detail=err)
+        await _save_state(db, user["_id"], state)
+        fx = nam_effects(state)
+        result["profil"] = fx["profil"]
+        result["dominant"] = fx["dominant"]
+        result["soylentiler"] = list(reversed(state.get("player_rumors", [])))
+        return result
+
     # ---------- chat ----------
     @router.post("/chat")
     async def chat(body: ChatIn, user: dict = Depends(get_current_user)):
@@ -732,6 +783,20 @@ def build_game_router(db):
                 "band": relation_band(rel),
                 "hostile": True,
             }
+
+        # S2 davranış eşiği: aktif düşman selam vermez (GDD tablosu)
+        if body.topic == "selam":
+            try:
+                from npc_mind import effective_rel, behavior_tier
+                if behavior_tier(effective_rel(state, npc))["key"] == "aktif_dusman":
+                    return {
+                        "response": f"{npc['name']} yüzünü çevirdi — selamını almadı bile.",
+                        "relationship": rel,
+                        "band": relation_band(rel),
+                        "snub": True,
+                    }
+            except Exception:
+                pass
 
         npc.setdefault("interactions", {})
         current_turn = state.get("turn", 0)
@@ -795,12 +860,14 @@ def build_game_router(db):
         if len(npc["memory"]) > 20:
             npc["memory"] = npc["memory"][-20:]
 
-        # Strong-interaction → personal memory
+        # Strong-interaction → personal memory (S2: yapısal anı türüyle)
         from npc_profile import push_personal_memory
         if stage == "düşmanlık":
-            push_personal_memory(npc, f"{state['player']['name']} beni rahatsız etti")
+            push_personal_memory(npc, f"{state['player']['name']} beni rahatsız etti",
+                                 tur="rahatsizlik", hafta=current_turn)
         elif delta >= 2:
-            push_personal_memory(npc, f"{state['player']['name']} ile güzel sohbet ettik")
+            push_personal_memory(npc, f"{state['player']['name']} ile güzel sohbet ettik",
+                                 tur="guzel_sohbet", hafta=current_turn)
 
         npc.pop("_loc_supply_signal", None)
 
