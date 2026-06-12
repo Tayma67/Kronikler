@@ -442,7 +442,23 @@ def _decorate(state):
     ][:5]
     state["recent_crises"] = recent_crises
 
-    return state
+    # ── RAILWAY DİYETİ: yanıt küçültme (DB'ye DOKUNMAZ — kopya döner) ──
+    # ~1000 NPC'nin frontend'in HİÇ okumadığı ağır alanları her istekte
+    # gidip geliyordu (megabaytlarca egress + JSON CPU'su). NPC başına
+    # kopya sözlük kurulur; state'in kendisi (kaydedilen) değişmez.
+    _GEREKSIZ = ("personal_memory", "daily_log", "recent_events",
+                 "goal_history", "npc_relationships", "personal_events",
+                 "turn_interactions", "interactions")
+    slim_npcs = []
+    for n in state["world"]["npcs"]:
+        if not n.get("alive", True):
+            slim_npcs.append(n)        # mezar taşı zaten küçük
+            continue
+        slim_npcs.append({k: v for k, v in n.items() if k not in _GEREKSIZ})
+    out = dict(state)
+    out["world"] = dict(state["world"])
+    out["world"]["npcs"] = slim_npcs
+    return out
 
 
 def _require_adult(state, what="bu eylemi"):

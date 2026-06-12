@@ -9,6 +9,7 @@ import os
 import logging
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from auth_routes import build_auth_router
@@ -29,6 +30,9 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ["DB_NAME"]]
 
 app = FastAPI(title="Kronikler: Küllerin Mirası API")
+
+# Railway diyeti: megabaytlık state JSON'ları sıkışsın (egress ~%85 düşer)
+app.add_middleware(GZipMiddleware, minimum_size=2048)
 
 
 @app.on_event("startup")

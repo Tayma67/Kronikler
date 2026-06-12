@@ -24,7 +24,11 @@ function getOrCreateDeviceId() {
   return deviceId;
 }
 
-const BACKEND_URL = "https://kronikler-production.up.railway.app";
+// Railway'den taşınma: yeni backend adresi Vercel env'inden gelir
+// (REACT_APP_BACKEND_URL). Tanımlı değilse eski Railway adresi kullanılır.
+const BACKEND_URL =
+  process.env.REACT_APP_BACKEND_URL ||
+  "https://kronikler-production.up.railway.app";
 export const API = `${BACKEND_URL.replace(/\/$/, "")}/api`;
 
 export const api = axios.create({ baseURL: API });
