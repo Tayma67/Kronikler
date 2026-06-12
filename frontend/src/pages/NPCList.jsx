@@ -8,6 +8,7 @@ import { profLabel } from "@/lib/labels";
 import { Link } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
 import { PageHeader, Panel, Pill, EmptyState } from "@/components/ui/Kit";
+import { Portre } from "@/components/ui/Gorsel";
 
 // İlişki skoru → bant, renk
 function bandFromScore(score = 0) {
@@ -143,16 +144,14 @@ export default function NPCList() {
                 className="row-frame"
                 style={{ textDecoration: "none" }}
               >
-                {/* Avatar */}
-                <span style={{
-                  position: "relative", fontSize: "1.25rem", flexShrink: 0,
-                  filter: "drop-shadow(0 0 6px rgba(201,168,76,0.2))",
-                }}>
-                  {npcAvatar(n)}
+                {/* Avatar — gerçek portre (yoksa emoji), royal'a altın halka + taç */}
+                <span style={{ position: "relative", flexShrink: 0, display: "inline-flex" }}>
+                  <Portre age={n.age} gender={n.gender} id={n.id}
+                          emoji={npcAvatar(n)} size="2.4rem" ring={isRoyal} />
                   {isRoyal && (
                     <span style={{
-                      position: "absolute", top: "-0.5rem", left: "50%",
-                      transform: "translateX(-50%)", fontSize: "0.6rem",
+                      position: "absolute", top: "-0.45rem", left: "50%",
+                      transform: "translateX(-50%)", fontSize: "0.6rem", zIndex: 2,
                       filter: "drop-shadow(0 0 4px rgba(240,192,64,0.7))",
                     }}>👑</span>
                   )}
