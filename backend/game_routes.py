@@ -919,8 +919,16 @@ def build_game_router(db):
 
         mult = trade_price_multiplier(state["player"], action)
         total_raw, avg_raw, first_p, last_p = _simulate_bulk_trade(loc, good, qty, action)
-        total = round(total_raw * mult, 2)
-        avg   = round(avg_raw   * mult, 2)
+
+        # R3.2: kalite çarpanı (alımda parti kalitesi, satışta envanter bayrağı)
+        from quality import buy_quality, QUALITIES, lot_view
+        if action == "al":
+            q_mult, _, _ = buy_quality(state, loc, good)
+        else:
+            kal = state["player"].get("inv_quality", {}).get(good)
+            q_mult = QUALITIES[kal]["mult"] if kal in ("iyi", "usta_işi") else 1.0
+        total = round(total_raw * mult * q_mult, 2)
+        avg   = round(avg_raw   * mult * q_mult, 2)
 
         # Fiyat etkisi: (son - ilk) / ilk  → %kaç değişti
         price_impact_pct = round(((last_p - first_p) / max(0.01, first_p)) * 100, 1) if qty > 1 else 0
@@ -928,10 +936,11 @@ def build_game_router(db):
         return {
             "total":            total,
             "avg_unit_price":   avg,
-            "first_unit_price": round(first_p * mult, 2),
-            "last_unit_price":  round(last_p  * mult, 2),
+            "first_unit_price": round(first_p * mult * q_mult, 2),
+            "last_unit_price":  round(last_p  * mult * q_mult, 2),
             "price_impact_pct": price_impact_pct,
             "has_impact":       abs(price_impact_pct) >= 5,  # %5+ fark varsa uyar
+            "lot": lot_view(state, loc, good),
         }
 
     @router.post("/trade")
@@ -948,6 +957,7 @@ def build_game_router(db):
         m = loc["market"][body.good]
         player = state["player"]
         inv = player.setdefault("inventory", {})
+        trade_note = None
 
         if body.action == "al":
             if m["supply"] < body.qty:
@@ -956,12 +966,17 @@ def build_game_router(db):
             # Kayan fiyat: her birim piyasayı etkiler, gerçek toplam hesaplanır
             total_raw, avg_raw, _, _ = _simulate_bulk_trade(loc, body.good, body.qty, "al")
             total = round(total_raw * buy_mult, 1)
+            # R3.2: parti kalitesi — görünür prim ya da gizli kusur tuzağı
+            from quality import buy_quality, apply_bought_quality
+            q_mult, bought_kalite, trade_note = buy_quality(state, loc, body.good)
+            total = round(total * q_mult, 1)
             from bargain import consume_voucher
             total, bargain_used = consume_voucher(state, loc["id"], body.good, "al", total)
             if player["money"] < total:
                 raise HTTPException(status_code=400, detail="Yeterli paran yok")
             player["money"] = round(player["money"] - total, 1)
             inv[body.good] = inv.get(body.good, 0) + body.qty
+            apply_bought_quality(player, body.good, bought_kalite)
             m["supply"] = max(0, m["supply"] - body.qty)
             m["demand"] += body.qty
             _recompute_prices(loc)
@@ -977,11 +992,16 @@ def build_game_router(db):
             # Kayan fiyat: stok arttıkça fiyat düşer, gerçek toplam hesaplanır
             total_raw, avg_raw, _, _ = _simulate_bulk_trade(loc, body.good, body.qty, "sat")
             total = round(total_raw * sell_mult, 1)
+            # R3.2: kaliteli mal prim yapar; kusurluyu kakalama riskli
+            from quality import sell_quality, clear_sold_quality
+            q_mult, trade_note, caught = sell_quality(state, body.good, body.qty)
+            total = round(total * q_mult, 1)
             from bargain import consume_voucher
             total, bargain_used = consume_voucher(state, loc["id"], body.good, "sat", total)
             inv[body.good] -= body.qty
             if inv[body.good] == 0:
                 del inv[body.good]
+            clear_sold_quality(player, body.good)
             player["money"] = round(player["money"] + total, 1)
             m["supply"] += body.qty
             m["demand"] = max(1, m["demand"] - body.qty)
@@ -990,6 +1010,10 @@ def build_game_router(db):
                         f"{player['name']} {loc['name']}'de {body.qty} {body.good} sattı "
                         f"(ort. {avg_raw:.1f}A × {body.qty} = {total} altın"
                         + (", pazarlıklı" if bargain_used else "") + ").")
+            if caught:
+                _push_event(state, state["turn"], "ticaret",
+                            f"{loc['name']} çarşısında {player['name']}'in kusurlu mal "
+                            f"kakaladığı konuşuluyor.")
         else:
             raise HTTPException(status_code=400, detail="Geçersiz işlem")
 
@@ -1001,7 +1025,28 @@ def build_game_router(db):
 
         progress_quest(state, "inventory_changed")
         await _save_state(db, user["_id"], state)
-        return _decorate(state)
+        resp = dict(_decorate(state))
+        if trade_note:
+            resp["_trade_note"] = trade_note
+        return resp
+
+    # ---------- mal inceleme (GDD v7 R3.2) ----------
+    @router.post("/trade/inspect")
+    async def trade_inspect(body: dict, user: dict = Depends(get_current_user)):
+        """İncele — zekâ testiyle partinin gerçek kalitesini açığa çıkar."""
+        from quality import inspect_lot
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        loc_id = body.get("location_id")
+        good = body.get("good")
+        loc = next((l for l in state["world"]["locations"] if l["id"] == loc_id), None)
+        if not loc or good not in loc.get("market", {}):
+            raise HTTPException(404, "Konum veya ürün bulunamadı")
+        if state["player"].get("location_id") != loc["id"]:
+            raise HTTPException(400, "Malı incelemek için tezgâhın başında olmalısın")
+        result = inspect_lot(state, loc, good)
+        await _save_state(db, user["_id"], state)
+        return result
 
     # ---------- pazarlık (GDD v7 R3.1) ----------
     @router.post("/bargain/start")
@@ -1024,7 +1069,14 @@ def build_game_router(db):
             raise HTTPException(400, "Elinde bu maldan yeterince yok")
         mult = trade_price_multiplier(player, body.action)
         total_raw, _, _, _ = _simulate_bulk_trade(loc, body.good, body.qty, body.action)
-        base_total = round(total_raw * mult, 1)
+        # R3.2: pazarlık tabanı kalite primini de içerir (kusur riski satışta çözülür)
+        from quality import buy_quality, QUALITIES
+        if body.action == "al":
+            q_mult, _, _ = buy_quality(state, loc, body.good)
+        else:
+            kal = player.get("inv_quality", {}).get(body.good)
+            q_mult = QUALITIES[kal]["mult"] if kal in ("iyi", "usta_işi") else 1.0
+        base_total = round(total_raw * mult * q_mult, 1)
         view = start_bargain(state, loc, body.good, body.qty, body.action, base_total)
         await _save_state(db, user["_id"], state)
         return view

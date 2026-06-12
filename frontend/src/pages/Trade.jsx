@@ -30,6 +30,27 @@ const GOOD_ICONS = {
   "ipek": "🪡", "baharat": "🌶️",
 };
 
+/* ─── R3.2: Mal Kalitesi ───────────────────────────────────────────── */
+const QUALITY_GOODS = new Set([
+  "kıyafet", "kumaş", "silah", "alet", "zırh", "çizme",
+  "işlenmiş_deri", "mobilya", "şarap",
+]);
+const QUALITY_BADGES = {
+  "kusurlu":  { icon: "⚠️", label: "Kusurlu",  cls: "text-red-400 border-red-900/40 bg-red-950/10" },
+  "iyi":      { icon: "✨", label: "İyi",      cls: "text-amber-400 border-amber-900/40 bg-amber-950/10" },
+  "usta_işi": { icon: "🏆", label: "Usta İşi", cls: "text-purple-300 border-purple-900/40 bg-purple-950/10" },
+};
+
+function QualityBadge({ kalite }) {
+  const b = QUALITY_BADGES[kalite];
+  if (!b) return null;
+  return (
+    <span className={`text-[9px] px-1.5 py-0.5 rounded-sm border ${b.cls}`}>
+      {b.icon} {b.label}
+    </span>
+  );
+}
+
 /* ─── S4: Fiyat Trendi Yardımcısı ──────────────────────────────────── */
 /**
  * Lokasyonun price_history'sine bakarak belirli bir malın
@@ -220,7 +241,7 @@ function ArbitrageTable({ locations, goods }) {
 }
 
 /* ─── Pazar Paneli ──────────────────────────────────────────────────── */
-function MarketPanel({ loc, playerInv, onTrade, onBargain, busy }) {
+function MarketPanel({ loc, playerInv, onTrade, onBargain, onInspect, turn, qualityIntel, busy }) {
   const [qty, setQty] = useState({});
   const [previews, setPreviews] = useState({});   // { "buğday_al": {total, avg, ...}, ... }
   const [previewBusy, setPreviewBusy] = useState({});
@@ -288,6 +309,16 @@ function MarketPanel({ loc, playerInv, onTrade, onBargain, busy }) {
           const buyImpact  = buyPreview?.has_impact  && q > 1;
           const sellImpact = sellPreview?.has_impact && q > 1;
 
+          // R3.2: parti kalitesi — iyi/usta görünür; kusurlu ancak incelemeyle
+          const lotQ = m.kalite;
+          const intelKey = `${loc.id}|${good}|${turn}`;
+          const intelVal = qualityIntel?.[intelKey];
+          const visibleQ =
+            lotQ === "iyi" || lotQ === "usta_işi" ? lotQ
+            : lotQ === "kusurlu" && intelVal === "revealed" ? "kusurlu"
+            : null;
+          const canInspect = QUALITY_GOODS.has(good) && !visibleQ && !intelVal;
+
           return (
             <div key={good} className="border border-stone-800/60 rounded-sm p-3 space-y-2">
               {/* Başlık satırı */}
@@ -295,6 +326,16 @@ function MarketPanel({ loc, playerInv, onTrade, onBargain, busy }) {
                 <div className="flex items-center gap-2">
                   <span className="text-base">{GOOD_ICONS[good]}</span>
                   <span className="text-sm text-stone-200">{GOOD_LABELS[good] || good}</span>
+                  {visibleQ && <QualityBadge kalite={visibleQ} />}
+                  {canInspect && (
+                    <button
+                      onClick={() => onInspect?.(loc.id, good)}
+                      disabled={busy}
+                      title="İncele — işçiliği elden geçir (zekâ)"
+                      className="text-[10px] px-1.5 py-0.5 border border-stone-700 rounded-sm text-stone-400 hover:text-stone-200 hover:border-stone-500 transition-all">
+                      🔍
+                    </button>
+                  )}
                 </div>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-stone-500">
@@ -1170,14 +1211,45 @@ export default function Trade() {
     setBusy(true);
     try {
       const { data } = await api.post("/game/trade", { location_id: locId, good, action, qty });
+      const note = data._trade_note;
+      delete data._trade_note;
       setState(data);
       toast.success(
         action === "al"
           ? `${qty} ${GOOD_LABELS[good] || good} aldın`
           : `${qty} ${GOOD_LABELS[good] || good} sattın`
       );
+      // R3.2: kalite notu — kusur tuzağı / prim / kakalama sonucu
+      if (note) {
+        if (note.includes("⚠️") || note.includes("KUSURLU")) toast.warning(note, { duration: 6000 });
+        else toast.message(note, { duration: 5000 });
+      }
     } catch (e) {
       toast.error(e.response?.data?.detail || "İşlem başarısız.");
+    } finally { setBusy(false); }
+  };
+
+  /* ── Pazar: İncele (R3.2) ── */
+  const handleInspect = async (locId, good) => {
+    setBusy(true);
+    try {
+      const { data } = await api.post("/game/trade/inspect", { location_id: locId, good });
+      if (data.ok) toast.success(data.note, { duration: 6000 });
+      else toast.message(data.note, { duration: 5000 });
+      // Yerel intel'i güncelle ki rozet/buton anında değişsin
+      const key = `${locId}|${good}|${state?.turn}`;
+      const val = data.ok ? "revealed" : data.tried ? "tried" : null;
+      if (val) {
+        setState(s => ({
+          ...s,
+          player: {
+            ...s.player,
+            quality_intel: { ...(s.player?.quality_intel || {}), [key]: val },
+          },
+        }));
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "İnceleme yapılamadı.");
     } finally { setBusy(false); }
   };
 
@@ -1285,6 +1357,9 @@ export default function Trade() {
                       <span>{GOOD_ICONS[good] || "📦"}</span>
                       <span className="text-stone-300">{GOOD_LABELS[good] || good}</span>
                       <span className="text-amber-400 font-heading">×{qty}</span>
+                      {player.inv_quality?.[good] && (
+                        <QualityBadge kalite={player.inv_quality[good]} />
+                      )}
                     </div>
                   ))}
               </div>
@@ -1298,6 +1373,9 @@ export default function Trade() {
               playerInv={inventory}
               onTrade={handleTrade}
               onBargain={setBargainTarget}
+              onInspect={handleInspect}
+              turn={state?.turn}
+              qualityIntel={player.quality_intel}
               busy={busy}
             />
           )}

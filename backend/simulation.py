@@ -219,6 +219,8 @@ def _ensure_state_fields(state):
     p.setdefault("fame", 0)        # ün
     p.setdefault("wanted_in", [])
     p.setdefault("interaction_counts", {})
+    p.setdefault("inv_quality", {})      # R3.2: mal başına kalite bayrağı
+    p.setdefault("quality_intel", {})    # R3.2: incelenen partiler
     p.setdefault("dead", False)
     p.setdefault("hunger", 100)
     p.setdefault("base_age", p.get("age", 7))
@@ -497,6 +499,10 @@ def _economy_tick(state, day):
             m["supply"] = max(0, m["supply"])
 
         _recompute_prices(loc, season=season, turn=day)
+
+        # R3.2: Zanaat mallarının haftalık parti kalitesi
+        from quality import tick_market_quality
+        tick_market_quality(loc, day)
 
         # AÇLIK CASCADE: Buğday veya ekmek arzı sıfırda kalırsa şehir cezalanır
         wheat_out = loc["market"]["buğday"]["supply"] == 0
