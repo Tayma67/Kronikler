@@ -111,7 +111,7 @@ def job_listing(state):
         if j["needs"] == "asistan" and not has_assistant(state):
             locked = "Yardımcı gerekir: dövüş 3+ ya da eşkıya çetesi üyeliği."
         elif j["needs"] == "plan" and not recon:
-            locked = "Önce keşif yapmalısın (1 hafta hedefi izle)."
+            locked = "Önce keşif yapmalısın (1 ay hedefi izle)."
         out.append({
             "id": jid, "label": j["label"], "risk": j["risk"],
             "desc": j["desc"],
@@ -136,7 +136,7 @@ def _success_chance(state, job_id, security, recon):
 
 
 def do_scout(state, job_id):
-    """Keşif: 1 hafta hedefi izle → +%20 ve kaçış planı. (Süreyi route yakar.)"""
+    """Keşif: 1 ay hedefi izle → +%20 ve kaçış planı. (Süreyi route yakar.)"""
     j = _job_or_none(job_id)
     if not j:
         return None, "Geçersiz iş."
@@ -146,7 +146,7 @@ def do_scout(state, job_id):
         "job": job_id,
         "loc_id": player.get("location_id"),
         "turn": turn,
-        "expires": turn + 3,     # keşif ~3 hafta taze kalır
+        "expires": turn + 3,     # keşif ~3 ay taze kalır
         "escape_plan": True,
     }
     notes = {
@@ -157,7 +157,7 @@ def do_scout(state, job_id):
     }
     return {
         "scouted": True, "job": job_id,
-        "note": notes.get(job_id, "Hedefi bir hafta izledin."),
+        "note": notes.get(job_id, "Hedefi bir ay izledin."),
         "bonus": "+%20 başarı · Kaçış planı hazır",
     }, None
 
@@ -326,7 +326,7 @@ def _outcome_seen(state, j):
             sow_seed(state, "suc_tanigi",
                      f"{w['name']} o geceyi unutmamıştı. Yıllar sonra karşına "
                      "dikildi: 'Seni gördüm. Susmamın bir bedeli var.'",
-                     hafta_min=52, hafta_max=260, agirlik="buyuk",
+                     hafta_min=12, hafta_max=60, agirlik="buyuk",
                      nesil_asabilir=True, npc_id=w["id"],
                      etki={"money": -40, "reputation": -4})
         except Exception:

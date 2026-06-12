@@ -217,7 +217,7 @@ export function SagaTab({ saga }) {
             fontSize: "0.58rem", color: "var(--color-parchment-muted)",
             fontFamily: "Crimson Text, serif", fontStyle: "italic", flexShrink: 0,
           }}>
-            {p.bitis == null ? "yazılıyor…" : `H${p.baslangic}–${p.bitis}`}
+            {p.bitis == null ? "yazılıyor…" : `${1247 + Math.floor(p.baslangic / 12)}–${1247 + Math.floor(p.bitis / 12)}`}
           </span>
         </div>
       ))}

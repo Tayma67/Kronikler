@@ -66,7 +66,7 @@ def build_combat_router(db):
         await _save_state(db, user["_id"], state)
 
     def _maybe_finish(state, view_or_result):
-        """Çatışma bittiyse hafta ilerlet (savaş 1 hafta sürer)."""
+        """Çatışma bittiyse hafta ilerlet (savaş 1 ay sürer)."""
         if view_or_result and "outcome" in view_or_result:
             from simulation import advance_time
             advance_time(state, weeks=1)

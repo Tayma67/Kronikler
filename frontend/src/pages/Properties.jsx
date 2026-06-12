@@ -215,7 +215,7 @@ function PropertyCard({ prop, catalog, npcs, busy, onConfigure, onHire, onFire, 
           <span className="text-xl shrink-0">{prop.icon}</span>
           <div className="min-w-0">
             <h3 className="text-sm text-stone-200 font-heading truncate">{prop.name}</h3>
-            <p className="text-[10px] text-stone-500">{prop.location_name} · bakım {prop.maintenance}a/hafta</p>
+            <p className="text-[10px] text-stone-500">{prop.location_name} · bakım {prop.maintenance}a/ay</p>
           </div>
         </div>
         <div className={`flex items-center gap-1 text-xs shrink-0 ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>

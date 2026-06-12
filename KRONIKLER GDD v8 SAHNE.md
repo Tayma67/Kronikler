@@ -39,6 +39,29 @@ Sahne katmanından şimdiye dek inenler (MAKYAJ 1-3):
 
 -----
 
+## 0.5 ZAMAN REFORMU — 1 Tur = 1 Ay ✅
+
+Hafta tabanlı zamanın matematiği oyunu öldürüyordu: 7→13 yaş **312
+ilerleme**, tam ömür ~3000 dokunuş. Reform:
+
+| | Eski (hafta) | Yeni (ay) |
+|---|---|---|
+| Çocukluk (7→13) | 312 tur | **72 tur** |
+| 7→35 yaş | 1456 tur | **336 tur** |
+| Tam ömür (~70) | ~3270 tur | **~750 tur** |
+| Mevsim | 12 turda silik | **3 tur — hissedilir** |
+| Okul dönemi | 12 hafta (yapay) | 12 ay = **tam 1 yıl** |
+
+Uygulama: takvimin kalbi tek sabit (`calendar_tr.WEEKS_PER_MONTH=1`);
+yıl-anlamlı sabitler ay birimine ölçeklendi (nam penceresi 2 yıl=24,
+tohum vadeleri, doruk aralığı, perde ömrü, elçi sabrı 6 ay); 130+
+görünür "hafta" ifadesi "ay"a çevrildi (veri anahtarlarına dokunulmadı).
+Tur-bazlı ekonomi/his değerleri bilinçli korundu — dokunuş başına maliyet
+ve ritim aynı, sadece hayat 4× daha hızlı akıyor. Yan kazanç: tarla
+yıllık verimi 4× şişkinlikten kurtulup tasarım hedefine oturdu.
+
+-----
+
 ## 1. His Anayasası
 
 v7'nin Üç Katman Kuralı mekaniğin anayasasıydı. Bu beşli, **sunumun**

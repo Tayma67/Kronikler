@@ -1263,7 +1263,7 @@ def advance_time(state, weeks=1, days=None):
 
 
 # ─────────────────────────────────────────────────────────────
-# PARÇA 5 — Event Ağırlıklandırma (Hafta Planına Göre)
+# PARÇA 5 — Event Ağırlıklandırma (Ay Planına Göre)
 # ─────────────────────────────────────────────────────────────
 
 # Her event kategorisini tanıyan sinyal kelimeleri
@@ -1314,7 +1314,7 @@ def _event_category_weight(event: dict, composite: dict) -> float:
 
 def _composite_plan_weights(state: dict) -> dict[str, float]:
     """
-    Oyuncunun hafta planındaki 3 slot seçeneğinin event_weights'lerini
+    Oyuncunun ay planındaki 3 slot seçeneğinin event_weights'lerini
     tek bir düzleştirilmiş dict'e birleştirir.
     Aynı kategori birden fazla slotta varsa en büyük ağırlık kazanır.
     """
@@ -1337,7 +1337,7 @@ def _composite_plan_weights(state: dict) -> dict[str, float]:
 
 def _hafta_weighted_life_event(state: dict, eligible: list) -> dict:
     """
-    Uygun eventler arasından hafta planına göre ağırlıklı seçim yapar.
+    Uygun eventler arasından ay planına göre ağırlıklı seçim yapar.
     Ağırlık hesaplanamayan / sıfır olan eventler minimum 0.1 ağırlık alır.
     """
     composite = _composite_plan_weights(state)

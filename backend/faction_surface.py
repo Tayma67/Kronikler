@@ -147,7 +147,7 @@ _OFFICERS = ["Ustabaşı", "Kıdemli üyelerden biri", "Liderin sağ kolu", "Esk
 
 
 def ensure_weekly_scene(state):
-    """Üyeysen ve bu hafta sahne yoksa %65 şansla bir tane kur."""
+    """Üyeysen ve bu ay sahne yoksa %65 şansla bir tane kur."""
     player = state["player"]
     fac_id = player.get("faction_id")
     if not fac_id:

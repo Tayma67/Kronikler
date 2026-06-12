@@ -29,11 +29,11 @@ from inheritance import begin_inheritance, get_heir_options, has_heir
 from game_engine import (
     build_action_result, get_suggested_actions,
     snapshot_player, diff_snapshots, check_state_triggers,
-    # R1 Hafta Planı (GDD v7)
+    # R1 Ay Planı (GDD v7)
     HAFTA_PLANI_SECENEKLERI, get_default_hafta_plani,
     validate_hafta_plani, get_hafta_plani_state,
     hafta_plani_beklenti_metni,
-    # R9 Hafta Sonu Hasadı (GDD v7)
+    # R9 Ay Sonu Hasadı (GDD v7)
     _build_hafta_hasadi,
 )
 from npc_interactions import (
@@ -84,7 +84,7 @@ _WORK_NARRATIVES = {
     "çiftçi": [
         "{name} sabah erkenden tarlaya çıktı. Güneş tam tepedeyken beli ağrımaya başladı ama dur diyemedi — mahsul beklemez. Günün sonunda {income} akçelik ürün pazara gitti.",
         "Toprak bugün işbirliği yapmak istemedi. {name} kazma ile uğraşırken komşu çocuklar şarkı söylüyordu. Yine de {income} akçe kazandı — emek boşa gitmedi.",
-        "Mevsim tam zamanında geldi. {name}'in tarlasından bu hafta iyi mahsul çıktı. Alıcılar güldü, kasa {income} akçe şişti.",
+        "Mevsim tam zamanında geldi. {name}'in tarlasından bu ay iyi mahsul çıktı. Alıcılar güldü, kasa {income} akçe şişti.",
         "Yağmur beklenmiyordu — ama yağdı. {name} can havliyle hasatı toplamaya koştu. Islandı, yoruldu, ama {income} akçeyi kurtardı.",
         "Sabahın erken saatinde tarlaya varan {name}, hayvanların bir kısmının sınırı aştığını fark etti. Komşuyla kısa bir tartışma yaşandı. Ama gün sonunda iş tamam: {income} akçe.",
     ],
@@ -135,7 +135,7 @@ _WORK_NARRATIVES = {
         "Çocuk ateşliydi. {name} gece boyunca uğraştı. Sabah ateş düştü. Anne ellerini öptü, {income} akçe bıraktı.",
         "Salgın söylentisi var kasabada. {title} {name} hazırlık yapmaya başladı. Bugün {income} akçe — ileride daha fazla olacak.",
         "Basit bir kırık. {name} sardı, konuştu, sakinleştirdi. {income} akçe.",
-        "Yaşlı adam her hafta geliyor. Şikâyeti değişiyor ama {name} artık anlıyor. {income} akçe ve teşekkür.",
+        "Yaşlı adam her ay geliyor. Şikâyeti değişiyor ama {name} artık anlıyor. {income} akçe ve teşekkür.",
     ],
     "katip": [
         "{name} bugün üç belge yazdı. Hepsi önemli — biri çok önemli. {income} akçe.",
@@ -594,11 +594,11 @@ def build_game_router(db):
         await db.game_states.delete_one({"user_id": user["_id"]})
         return {"ok": True}
 
-    # ── R1 Hafta Planı (GDD v7, Bölüm I R1 — Parça 1.1) ────────────
+    # ── R1 Ay Planı (GDD v7, Bölüm I R1 — Parça 1.1) ────────────
     @router.get("/hafta-plani")
     async def get_hafta_plani(user: dict = Depends(get_current_user)):
         """
-        Mevcut hafta planını + tüm seçenekleri + beklenti metnini döner.
+        Mevcut ay planını + tüm seçenekleri + beklenti metnini döner.
         Frontend dashboard kartı için kullanılır.
         """
         state = await _load_state(db, user["_id"])
@@ -616,7 +616,7 @@ def build_game_router(db):
         user: dict = Depends(get_current_user),
     ):
         """
-        Oyuncunun hafta planını günceller.
+        Oyuncunun ay planını günceller.
         Body örneği: {"is": "fazla_mesai", "sosyal": "hamam", "kisisel": "dinlen"}
         Geçersiz seçim 400 döner.
         """
@@ -645,7 +645,7 @@ def build_game_router(db):
     async def advance(weeks: int = 1, user: dict = Depends(get_current_user)):
         state = await _load_state(db, user["_id"])
         _require_alive(state)
-        # R9 Hafta Sonu Hasadı: advance öncesi turn'ü ve snapshot'ı sakla
+        # R9 Ay Sonu Hasadı: advance öncesi turn'ü ve snapshot'ı sakla
         turn_before = state.get("turn", 0)
         before = snapshot_player(state["player"])
         advance_time(state, weeks=max(1, min(weeks, 52)))
@@ -663,7 +663,7 @@ def build_game_router(db):
             ev for ev in get_active_world_events(state)
             if ev.get("started_day") == current_turn
         ]
-        # R9 Hafta Sonu Hasadı (GDD v7 R9): manşet + kazançlar + kulak misafiri
+        # R9 Ay Sonu Hasadı (GDD v7 R9): manşet + kazançlar + kulak misafiri
         hafta_hasadi = _build_hafta_hasadi(state, before, after, turn_before)
         await _save_state(db, user["_id"], state)
         result = _decorate(state)
@@ -1472,7 +1472,7 @@ def build_game_router(db):
 
     @router.post("/crime/scout")
     async def crime_scout(body: dict, user: dict = Depends(get_current_user)):
-        """Keşif: 1 hafta hedefi izle → +%20 başarı + kaçış planı."""
+        """Keşif: 1 ay hedefi izle → +%20 başarı + kaçış planı."""
         from crime_rework import do_scout
         state = await _load_state(db, user["_id"])
         _require_alive(state)
@@ -1481,7 +1481,7 @@ def build_game_router(db):
         if err:
             raise HTTPException(400, err)
         _push_event(state, state["turn"], "suç",
-                    f"{state['player']['name']} bir hafta boyunca ortalığı kolaçan etti.")
+                    f"{state['player']['name']} bir ay boyunca ortalığı kolaçan etti.")
         advance_time(state, weeks=1)
         await _save_state(db, user["_id"], state)
         result["state"] = _decorate(state)
@@ -1756,7 +1756,7 @@ def build_game_router(db):
         help_done = player.setdefault("parent_help_done", {})
         last_help = help_done.get(parent_id)
         if last_help == current_turn:
-            raise HTTPException(400, "Bu hafta zaten yardım ettin")
+            raise HTTPException(400, "Bu ay zaten yardım ettin")
         # Ebeveyn bul
         npc = next((n for n in state["world"]["npcs"] if n["id"] == parent_id), None)
         if not npc:
@@ -3077,7 +3077,7 @@ def build_game_router(db):
 
     @router.post("/factions/wars/avoid")
     async def war_avoid(user: dict = Depends(get_current_user)):
-        """Oyuncu bu haftaki savaş çağrısından kaçınır — itibar ve onur cezası."""
+        """Oyuncu bu ayki savaş çağrısından kaçınır — itibar ve onur cezası."""
         state = await _load_state(db, user["_id"])
         _require_alive(state)
         player = state["player"]

@@ -278,7 +278,7 @@ export default function School() {
           <div style={{ marginTop: 6, fontFamily: "'Lora', serif", fontSize: 9.5, color: C.textDim, display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ color: C.goldBright }}>⏳</span>
             SINAVA: <span style={{ color: C.textMid, fontWeight: 600 }}>
-              {examDue === 0 ? "bu hafta!" : `${examDue} hafta kaldı`}
+              {examDue === 0 ? "bu hafta!" : `${examDue} ay kaldı`}
             </span>
           </div>
         </Card>

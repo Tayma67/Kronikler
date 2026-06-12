@@ -217,7 +217,7 @@ export default function StoryModal({ open, onClose, onComplete }) {
               )}
               {result.wait_weeks ? (
                 <p className="text-center text-xs text-zinc-500">
-                  ⏳ Devamı {result.wait_weeks} hafta sonra — haftaları ilerlet.
+                  ⏳ Devamı {result.wait_weeks} ay sonra — ayları ilerlet.
                 </p>
               ) : null}
               <button onClick={continueChain}

@@ -444,7 +444,7 @@ def _find_location_by_id(state, location_id):
 def _apply_event_ongoing(state, event, day):
     """
     Aktif olayların zayıflatılmış haftalık devam etkisi (S1 düzeltmesi).
-    Başlangıç etkisinin yaklaşık %25'i her hafta tekrar uygulanır.
+    Başlangıç etkisinin yaklaşık %25'i her ay tekrar uygulanır.
     """
     from simulation import _recompute_prices
 
@@ -505,7 +505,7 @@ def _apply_event_ongoing(state, event, day):
 
 def tick_world_events(state, day):
     """
-    Her haftada çağrılır:
+    Her ayda çağrılır:
     - Süresi dolanları kapat
     - Aktif olaylara haftalık devam etkisi uygula (S1)
     - Her ay (4 haftada 1) yeni olay üret
@@ -518,7 +518,7 @@ def tick_world_events(state, day):
             # YENİ S1: Aktif olayların haftalık devam etkisi
             _apply_event_ongoing(state, ev, day)
 
-    # Her 4 haftada bir olay üret (ay başı)
+    # Her 4 ayda bir olay üret (ay başı)
     turn = state.get("turn", 0)
     if turn % 4 == 0:  # 4 hafta = 1 ay
         generate_world_event(state, day)

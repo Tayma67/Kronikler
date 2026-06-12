@@ -41,7 +41,7 @@ def change_rel(state, npc_id, delta):
 
 
 def get_cooldown(state, npc_id, action):
-    """Kaç hafta önce bu eylem yapıldı? (0 = hiç yapılmadı)"""
+    """Kaç ay önce bu eylem yapıldı? (0 = hiç yapılmadı)"""
     key = f"cooldown_{action}_{npc_id}"
     last = state["player"].get("interaction_counts", {}).get(key, 0)
     if last == 0:
@@ -52,7 +52,7 @@ def get_cooldown(state, npc_id, action):
 def set_cooldown(state, npc_id, action):
     counts = state["player"].setdefault("interaction_counts", {})
     counts[f"cooldown_{action}_{npc_id}"] = state["turn"]
-    # Stale entry trim: 200+ hafta önceki kayıtları sil (state şişmesini önler)
+    # Stale entry trim: 200+ ay önceki kayıtları sil (state şişmesini önler)
     current_turn = state["turn"]
     stale_keys = [k for k, v in counts.items() if current_turn - v > 200]
     for k in stale_keys:
@@ -331,7 +331,7 @@ def do_give_money(state, npc_id, amount):
     weeks_since = get_cooldown(state, npc_id, "give_money")
     if weeks_since < 1:
         return {
-            "error": "Bu haftanın bağışını zaten yaptın",
+            "error": "Bu aynın bağışını zaten yaptın",
             "cooldown_weeks_left": 1,
         }
 
@@ -405,7 +405,7 @@ def do_insult(state, npc_id):
     profession = npc.get("profession", "köylü")
     turn = state["turn"]
 
-    # Cooldown kontrolü: aynı NPC'ye 3 haftada bir hakaret yapılabilir
+    # Cooldown kontrolü: aynı NPC'ye 3 ayda bir hakaret yapılabilir
     weeks_since = get_cooldown(state, npc_id, "insult")
     if weeks_since < 3:
         weeks_left = 3 - weeks_since
@@ -414,7 +414,7 @@ def do_insult(state, npc_id):
             "loss": 0,
             "cooldown_weeks_left": weeks_left,
             "relationship": get_rel(state, npc_id),
-            "consequences": [f"⏳ {weeks_left} hafta daha bekle"],
+            "consequences": [f"⏳ {weeks_left} ay daha bekle"],
             "cascade": [],
             "npc_mood": npc.get("mood", "nötr"),
         }
@@ -482,7 +482,7 @@ def do_insult(state, npc_id):
 
     change_rel(state, npc_id, -loss)
     witnesses = nearby_npcs(state, exclude_id=npc_id)
-    push_personal_memory(npc, f"{player['name']} bana hakaret etti — {turn}. haftada",
+    push_personal_memory(npc, f"{player['name']} bana hakaret etti — {turn}. ayda",
                          tur="hakaret", hafta=turn,
                          taniklar=[w["id"] for w in witnesses[:4]])
 
@@ -535,7 +535,7 @@ def do_flirt(state, npc_id):
     rel = get_rel(state, npc_id)
     turn = state["turn"]
 
-    # Cooldown kontrolü: aynı NPC'ye 4 haftada bir flört yapılabilir
+    # Cooldown kontrolü: aynı NPC'ye 4 ayda bir flört yapılabilir
     weeks_since = get_cooldown(state, npc_id, "flirt")
     if weeks_since < 4:
         weeks_left = 4 - weeks_since
@@ -544,7 +544,7 @@ def do_flirt(state, npc_id):
             "accepted": False,
             "cooldown_weeks_left": weeks_left,
             "relationship": get_rel(state, npc_id),
-            "consequences": [f"⏳ {weeks_left} hafta daha bekle"],
+            "consequences": [f"⏳ {weeks_left} ay daha bekle"],
             "npc_mood": npc.get("mood", "nötr"),
         }
 
@@ -761,7 +761,7 @@ def do_gossip(state, npc_id):
     social = player.get("skills", {}).get("social", 0)
     turn = state["turn"]
 
-    # Cooldown kontrolü: aynı NPC hakkında 4 haftada bir dedikodu yapılabilir
+    # Cooldown kontrolü: aynı NPC hakkında 4 ayda bir dedikodu yapılabilir
     weeks_since = get_cooldown(state, npc_id, "gossip")
     if weeks_since < 4:
         weeks_left = 4 - weeks_since
@@ -770,7 +770,7 @@ def do_gossip(state, npc_id):
             "success": False,
             "cooldown_weeks_left": weeks_left,
             "relationship": get_rel(state, npc_id),
-            "consequences": [f"⏳ {weeks_left} hafta daha bekle"],
+            "consequences": [f"⏳ {weeks_left} ay daha bekle"],
             "npc_mood": npc.get("mood", "nötr"),
         }
 

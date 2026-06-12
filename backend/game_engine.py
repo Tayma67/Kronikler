@@ -199,7 +199,7 @@ GOAL_ROUTINES = {
 
 def run_npc_daily_routines(state, turn):
     """
-    Her hafta çalışır. NPC'ler günlük rutinlerini yapar,
+    Her ay çalışır. NPC'ler günlük rutinlerini yapar,
     hedeflerine doğru ilerler, ve reaktif kararlar alır.
     """
     player = state["player"]
@@ -682,7 +682,7 @@ def get_suggested_actions(state):
             suggestions.append({
                 "priority": "normal",
                 "icon": "📖",
-                "title": "Bu hafta ders işle",
+                "title": "Bu ay ders işle",
                 "desc": "Mektepte henüz ders işlemedin.",
                 "action": "school",
                 "route": "/oyun/mektep",
@@ -834,7 +834,7 @@ def get_suggested_actions(state):
 # ─────────────────────────────────────────────────────────────
 
 def apply_crime_decay(state):
-    """Her hafta suç puanı biraz düşer — zaman geçince unutulur."""
+    """Her ay suç puanı biraz düşer — zaman geçince unutulur."""
     player = state["player"]
     decay = CRIME.get("crime_decay_per_week", 1)
     if player.get("crime", 0) > 0:
@@ -926,7 +926,7 @@ _DEFAULT_HAFTA_PLANI = {
 
 
 def get_default_hafta_plani() -> dict:
-    """Varsayılan hafta planını döner (değiştirilebilir kopya)."""
+    """Varsayılan ay planını döner (değiştirilebilir kopya)."""
     return dict(_DEFAULT_HAFTA_PLANI)
 
 
@@ -952,7 +952,7 @@ def validate_hafta_plani(plan: dict) -> tuple[bool, str]:
 
 def get_hafta_plani_state(state: dict) -> dict:
     """
-    Oyuncunun aktif hafta planını state'den çeker.
+    Oyuncunun aktif ay planını state'den çeker.
     Yoksa varsayılanı döner ve state'e yazar.
     """
     player = state["player"]
@@ -1016,18 +1016,18 @@ _EVENT_MANSET_WEIGHT: dict[str, int] = {
 
 # Sessiz hafta — haber yoksa gösterilecek fallback manşetler
 _MANSET_FALLBACK: list[str] = [
-    "Bu hafta sessiz geçti. Belki de fırtına öncesi sükunettir.",
+    "Bu ay sessiz geçti. Belki de fırtına öncesi sükunettir.",
     "Pek bir şey olmadı. Ya da olan şeyler henüz konuşulmaya başlanmadı.",
     "Şehir sakin, ama sükûnet bazen en büyük haberdir.",
-    "Herkes kendi işiyle meşguldü bu hafta. Belki öyle olmalı.",
+    "Herkes kendi işiyle meşguldü bu ay. Belki öyle olmalı.",
     "Bir şeyler oldu, ama akıllara kazınacak türden değildi.",
 ]
 
 # Kulak misafiri — söylenti yoksa gösterilecek fallback satırlar
 _KULAK_FALLBACK: list[str] = [
-    "Bir seyyah bu hafta şehirden geçti; nereye gittiğini kimse sormadı.",
+    "Bir seyyah bu ay şehirden geçti; nereye gittiğini kimse sormadı.",
     "Kalabalık içinde bir isim fısıldandı — ama rüzgâr götürdü.",
-    "Bu hafta pek söylenti dolaşmadı. Sessizlik de bir işarettir.",
+    "Bu ay pek söylenti dolaşmadı. Sessizlik de bir işarettir.",
     "Biri bir şey söyledi, kulağa geldi; ama kimse üstüne basmadı.",
     "Çarşı bugün temkinliydi — dedikodu bile kısık sesle yapılır oldu.",
 ]
@@ -1040,11 +1040,11 @@ def _build_hafta_hasadi(
     turn_before: int,
 ) -> dict:
     """
-    Hafta Sonu Hasadı paketini 3 bölüm halinde döner.
+    Ay Sonu Hasadı paketini 3 bölüm halinde döner.
 
     Bölümler
     --------
-    manset        : Bu haftanın en önemli 1 olayı (text + type + weight).
+    manset        : Bu aynın en önemli 1 olayı (text + type + weight).
                     Ağırlık tablosuna göre seçilir; eşitler arasında rastgele.
     kazanclar     : diff_snapshots(before, after) listesi.
                     Para / sağlık / itibar / stat delta'ları.

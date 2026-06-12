@@ -14,7 +14,7 @@ def _p(state):
 ACHIEVEMENTS = [
     # ── Yaşam yolculuğu ──────────────────────────────────────────────────
     {"id": "ilk_adim", "icon": "👣", "title": "İlk Adım",
-     "desc": "İlk haftayı ilerlet.", "check": lambda s: s.get("turn", 0) >= 1},
+     "desc": "İlk ayı ilerlet.", "check": lambda s: s.get("turn", 0) >= 1},
     {"id": "bir_yil", "icon": "🌱", "title": "Dört Mevsim",
      "desc": "Bir yıl hayatta kal.", "check": lambda s: s.get("turn", 0) >= 52},
     {"id": "bes_yil", "icon": "🌳", "title": "Kök Salmak",

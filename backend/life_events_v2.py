@@ -103,7 +103,7 @@ LIFE_EVENTS_V2 = [
         "choices": [
             {"text": "Borcunu kapat", "effects": {"money": -60, "honor": 5}, "result": "Gözlerindeki minnet paradan değerliydi. Belki bir gün öder."},
             {"text": "Yarısını ver", "effects": {"money": -30, "honor": 2}, "result": "Kalanı için zaman kazandı. Az da olsa nefes aldırdın."},
-            {"text": "'Kendi batağın' de", "effects": {"honor": -4}, "result": "Kapıyı kapattın. Bir hafta sonra kolu askıda gördün onu."},
+            {"text": "'Kendi batağın' de", "effects": {"honor": -4}, "result": "Kapıyı kapattın. Bir ay sonra kolu askıda gördün onu."},
         ],
     },
     {
@@ -513,7 +513,7 @@ LIFE_EVENTS_V2 = [
         "conditions": {"age_min": 30, "age_max": 60},
         "choices": [
             {"text": "Evine al, evladın gibi büyüt", "effects": {"money": -20, "honor": 8, "reputation": 5}, "result": "Sofraya bir tabak daha kondu. Hayır dualar eksilmeyecek."},
-            {"text": "Çıraklığa yerleştir, gözet", "effects": {"honor": 4, "social": 1}, "result": "İyi bir ustaya verdin; her hafta yoklarsın. Dostun rahat uyusun."},
+            {"text": "Çıraklığa yerleştir, gözet", "effects": {"honor": 4, "social": 1}, "result": "İyi bir ustaya verdin; her ay yoklarsın. Dostun rahat uyusun."},
             {"text": "Akrabalarına yolla", "effects": {"honor": -3}, "result": "Çocuk uzak akrabalara gitti. Dostunun yüzü gözünün önünden gitmiyor."},
         ],
     },

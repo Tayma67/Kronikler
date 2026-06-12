@@ -89,7 +89,7 @@ CLUBS = {
     "medrese_korosu": {
         "name": "Medrese Korosu",
         "icon": "🎶",
-        "description": "Haftada bir toplanır, ilahiler ve şiirler söylenir. Sesi güzel olanlar davet edilir.",
+        "description": "Ayda bir toplanır, ilahiler ve şiirler söylenir. Sesi güzel olanlar davet edilir.",
         "weekly_xp": {"skill_xp": {"social": 2}, "stat_xp": {"charisma": 3}},
         "join_req": {"stat": "charisma", "min_val": 2},
         "family_quest_unlock": "koro_performansi",
@@ -662,7 +662,7 @@ LESSON_EVENTS = {
         },
         {
             "id": "turnuva",
-            "scene": "Hoca ani bir duyuru yaptı: \"Bu hafta güreş turnuvası! Katılmak isteyen var mı?\" Birkaç el kalktı. Seni de bekliyor.",
+            "scene": "Hoca ani bir duyuru yaptı: \"Bu ay güreş turnuvası! Katılmak isteyen var mı?\" Birkaç el kalktı. Seni de bekliyor.",
             "icon": "🏆",
             "choices": [
                 {
@@ -864,7 +864,7 @@ def resolve_lesson_event(state, lesson_id, event_id, choice_id):
         if len(mem) > 6:
             school["teacher_memory"][lesson_id] = mem[-6:]
 
-    # Bu haftaki görülen olaylar
+    # Bu ayki görülen olaylar
     seen = school.get("events_seen_this_week", [])
     if event_id not in seen:
         seen.append(event_id)
@@ -953,18 +953,18 @@ def ensure_school_state(state):
     p = state["player"]
     p.setdefault("school", {
         "enrolled": True,
-        "lessons_this_week": 0,          # Bu hafta kaç ders işlendi (max 1)
+        "lessons_this_week": 0,          # Bu ay kaç ders işlendi (max 1)
         "total_lessons": 0,
         "lesson_counts": {k: 0 for k in LESSONS},  # Per-lesson count
-        "exam_week_counter": 0,          # 4 haftada bir sınav
+        "exam_week_counter": 0,          # 4 ayda bir sınav
         "exam_history": [],              # [{lesson, passed, turn}]
         "clubs": [],                     # Üye olunan kulüp idleri
         "club_xp_weeks": 0,              # Pasif XP hafta sayacı
         "teacher_relations": {},         # {lesson_id: relation_score}
         "activity_log": [],              # Son 10 aktivite
-        "special_event_this_week": None, # Bu hafta tamamlanan özel etkinlik id'si
-        "seasonal_done_this_week": [],   # Bu hafta yapılan mevsimsel aktivite id'leri (list, MongoDB uyumlu)
-        "events_seen_this_week": [],     # Bu hafta görülen ders olayı id'leri
+        "special_event_this_week": None, # Bu ay tamamlanan özel etkinlik id'si
+        "seasonal_done_this_week": [],   # Bu ay yapılan mevsimsel aktivite id'leri (list, MongoDB uyumlu)
+        "events_seen_this_week": [],     # Bu ay görülen ders olayı id'leri
     })
     # Migration: eski kayıtlara yeni alanları ekle
     school = p["school"]
@@ -1110,7 +1110,7 @@ def attend_lesson(state, lesson_id):
     if age < lesson["min_age"]:
         return {"ok": False, "error": f"Bu ders {lesson['min_age']} yaşından itibaren açılır."}
     if school["lessons_this_week"] >= 1:
-        return {"ok": False, "error": "Bu hafta zaten bir ders işledin. Bir sonraki haftaya kadar bekle."}
+        return {"ok": False, "error": "Bu ay zaten bir ders işledin. Bir sonraki haftaya kadar bekle."}
 
     # Ders olayı tetikle?
     event = pick_lesson_event(state, lesson_id)
@@ -1234,7 +1234,7 @@ def attend_lesson_with_choice(state, lesson_id, event_id, choice_id):
     if age >= 13:
         return {"ok": False, "error": "Artık mektep çağında değilsin."}
     if school["lessons_this_week"] >= 1:
-        return {"ok": False, "error": "Bu hafta zaten bir ders işledin."}
+        return {"ok": False, "error": "Bu ay zaten bir ders işledin."}
 
     # Olayı çöz
     event_result = resolve_lesson_event(state, lesson_id, event_id, choice_id)
@@ -1246,7 +1246,7 @@ def attend_lesson_with_choice(state, lesson_id, event_id, choice_id):
 
 
 def _run_exam(state, lesson_id):
-    """4 haftada bir sınav. Stat'e göre başarı şansı."""
+    """4 ayda bir sınav. Stat'e göre başarı şansı."""
     player = state["player"]
     lesson = LESSONS.get(lesson_id, {})
     exam_stat = lesson.get("exam_stat", "intelligence")
@@ -1352,14 +1352,14 @@ def do_seasonal_activity(state, activity_id):
     if age >= 13:
         return {"ok": False, "error": "Artık çocukluk aktiviteleri yapamıyorsun."}
 
-    # Tekrar kullanım koruması: bu aktivite bu hafta zaten yapıldı mı?
+    # Tekrar kullanım koruması: bu aktivite bu ay zaten yapıldı mı?
     done_list = school.get("seasonal_done_this_week", [])
     if activity_id in done_list:
-        return {"ok": False, "error": f"Bu hafta '{act['name']}' aktivitesine zaten katıldın. Bir sonraki haftaya kadar bekle."}
+        return {"ok": False, "error": f"Bu ay '{act['name']}' aktivitesine zaten katıldın. Bir sonraki haftaya kadar bekle."}
 
     leveled = _apply_xp(player, act.get("stat_xp"), act.get("skill_xp"))
 
-    # Bu haftaki tamamlananlar listesine ekle
+    # Bu ayki tamamlananlar listesine ekle
     done_list.append(activity_id)
     school["seasonal_done_this_week"] = done_list
 
@@ -1392,11 +1392,11 @@ def do_special_event(state, event_id):
     if age >= 13:
         return {"ok": False, "error": "Artık çocukluk aktiviteleri yapamıyorsun."}
 
-    # Tekrar kullanım koruması: bu hafta zaten bir özel etkinlik tamamlandı mı?
+    # Tekrar kullanım koruması: bu ay zaten bir özel etkinlik tamamlandı mı?
     if school.get("special_event_this_week") is not None:
         done_id = school["special_event_this_week"]
         done_name = next((e["name"] for e in SPECIAL_EVENTS if e["id"] == done_id), done_id)
-        return {"ok": False, "error": f"Bu hafta zaten bir özel etkinliğe katıldın ({done_name}). Bir sonraki haftaya kadar bekle."}
+        return {"ok": False, "error": f"Bu ay zaten bir özel etkinliğe katıldın ({done_name}). Bir sonraki haftaya kadar bekle."}
 
     leveled = _apply_xp(player, event.get("stat_xp"), event.get("skill_xp"))
     money = event.get("money_bonus", 0)
@@ -1405,7 +1405,7 @@ def do_special_event(state, event_id):
     if money:
         player["money"] = round(player.get("money", 0) + money, 1)
 
-    # Bu haftanın etkinliğini kaydet + tamamlananlar listesine ekle
+    # Bu aynın etkinliğini kaydet + tamamlananlar listesine ekle
     school["special_event_this_week"] = event_id
     completed = school.setdefault("completed_special_events", [])
     if event_id not in completed:
@@ -1426,7 +1426,7 @@ def do_special_event(state, event_id):
 
 
 def weekly_school_tick(state):
-    """advance_time içinden çağrılır — her hafta."""
+    """advance_time içinden çağrılır — her ay."""
     player = state.get("player", {})
     school = player.get("school")
     if player.get("age", 99) >= 13:

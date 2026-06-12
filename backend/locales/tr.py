@@ -70,7 +70,7 @@ STRINGS = {
     "mulk.satildi": "{name} satıldı (+{value} altın).",
     "mulk.hasat_hazir": "{name} hasada hazır: {qty} {crop} seni bekliyor.",
     "mulk.hasat_toplandi": "{name}'den {qty} {crop} hasat ettin.",
-    "mulk.islik_hammadde_yok": "{name} bu hafta hammadde bulamadı; tezgâhlar boş kaldı.",
+    "mulk.islik_hammadde_yok": "{name} bu ay hammadde bulamadı; tezgâhlar boş kaldı.",
     "mulk.han_soyuldu": "{name} soyuldu! {loss} altın kayıp. Muhafız tutmayı düşün.",
     "mulk.yagmalandi": "{name} yağmalandı! Kondisyon -{dmg}. Bölge güvenliği çok düşük.",
     "mulk.isci_tutuldu": "{name}, {prop} için işe alındı.",

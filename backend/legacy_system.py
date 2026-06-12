@@ -364,7 +364,7 @@ EPOCH_INTERVAL = (60, 100)   # hafta aralığı
 
 
 def epoch_tick(state, day):
-    """50-100 haftada bir büyük dönüm noktası: dünya kalıcı değişir."""
+    """50-100 ayda bir büyük dönüm noktası: dünya kalıcı değişir."""
     nxt = state.get("_next_epoch_turn")
     if nxt is None:
         state["_next_epoch_turn"] = day + random.randint(*EPOCH_INTERVAL)

@@ -7,7 +7,7 @@ Bir yay örneği (state["story_quests"] içinde):
 {
   "arc_id": "kayip_kervan", "status": "aktif",     # aktif|tamamlandı|başarısız|süresi_doldu
   "step_id": "a1", "started_turn": 12, "deadline_turn": 20,
-  "wait_until": None,          # hafta arası bekleme ("2 hafta sonra haberci gelir")
+  "wait_until": None,          # hafta arası bekleme ("2 ay sonra haberci gelir")
   "npc_name": "Ayaz Demirsoy", # bağlam enjeksiyonu için yaya bağlanan NPC
   "log": [{"step": "a1", "secim": "...", "sonuc": "..."}],
 }

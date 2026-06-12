@@ -306,7 +306,7 @@ _PEACE = [
 ]
 
 _FAMINE = [
-    "{location}'da ekmek fiyatı geçen hafta ikiydi, bu hafta üç. "
+    "{location}'da ekmek fiyatı geçen ay ikiydi, bu ay üç. "
     "Ambarlar kapandı, insanlar içine çekildi. Kıtlık kapıda.",
 
     "Kıtlık {location}'a ulaştı. "

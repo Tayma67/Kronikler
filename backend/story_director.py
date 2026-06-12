@@ -352,7 +352,7 @@ def _spark_cards(state, y):
         sow_seed(state, "gizemli_yabanci",
                  "O madalyonun sahibi seni buldu: meğer bir hanedanın kayıp "
                  "vârisini arıyormuş — ve iz sendeymiş. Teşekkür kesesi ağır.",
-                 hafta_min=52, hafta_max=208, agirlik="buyuk",
+                 hafta_min=12, hafta_max=48, agirlik="buyuk",
                  nesil_asabilir=True, etki={"money": 120, "reputation": 6})
     push_card("gizemli_yabanci", True, _yabanci)
 
@@ -364,7 +364,7 @@ def _spark_cards(state, y):
         sow_seed(state, "yarali_yolcu",
                  "Yıllar önce yarasını sardığın yolcu bir kervan ağası çıktı. "
                  "Seni buldu: 'Borcum var' — yanında çalışma teklifi ve hediye.",
-                 hafta_min=156, hafta_max=312, agirlik="orta",
+                 hafta_min=36, hafta_max=72, agirlik="orta",
                  nesil_asabilir=False, etki={"money": 60, "reputation": 4})
     push_card("yarali_yolcu", True, _yolcu)
 
@@ -378,7 +378,7 @@ def _spark_cards(state, y):
         sow_seed(state, "kayip_kese",
                  "Kesenin sahibi yıllar sonra karşına çıktı — o gün seni "
                  "gören bir çift göz varmış. Hesap soruldu.",
-                 hafta_min=26, hafta_max=104, agirlik="kucuk",
+                 hafta_min=6, hafta_max=24, agirlik="kucuk",
                  etki={"money": -20, "reputation": -3})
     push_card("kayip_kese", True, _kese)
 
@@ -492,7 +492,7 @@ def _breath_tick(state, y):
         player = state["player"]
         secenek = [
             "Komşular kapına sıcak ekmek bıraktı. Küçük şey — ama iyi geldi.",
-            "Bu hafta işler yolunda gitti; akşamları erken ve huzurlu bitti.",
+            "Bu ay işler yolunda gitti; akşamları erken ve huzurlu bitti.",
             "Çocuklar sokakta adını bir oyuna kattı. Gülümsedin.",
             "Pazarda bir yabancı borcunu senin yerine ödedi: 'İyiliğin dolaşır.'",
         ]
@@ -541,7 +541,7 @@ def _open_act(state, y, baslik):
     perdeler = y["perdeler"]
     if perdeler:
         son = perdeler[-1]
-        if son["baslangic"] >= turn - 4 and son["bitis"] is None:
+        if son["baslangic"] >= turn - 3 and son["bitis"] is None:
             son["baslik"] = f"Bölüm {_ROMA[min(son['no']-1, 14)]}: {baslik}"
             return                      # çok taze perdeyi yeniden adlandır
         son["bitis"] = turn
@@ -599,14 +599,14 @@ def director_event_bias(state, eligible):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# ANA TİCK — simulation.advance_time haftada bir çağırır
+# ANA TİCK — simulation.advance_time ayda bir çağırır
 # ═══════════════════════════════════════════════════════════════════════════
 
 def director_tick(state, day):
     y = ensure_director(state)
     turn = state.get("turn", 0)
 
-    # Bu hafta oyuncunun hikâyesine dokunan olay oldu mu?
+    # Bu ay oyuncunun hikâyesine dokunan olay oldu mu?
     for e in reversed(state.get("history", [])[-12:]):
         if e.get("day") != turn:
             break
@@ -625,7 +625,7 @@ def director_tick(state, day):
         return
 
     # Doruk Üretimi
-    if (y["gerilim"] >= 80 and turn - y["son_doruk_haftasi"] >= 26):
+    if (y["gerilim"] >= 80 and turn - y["son_doruk_haftasi"] >= 12):
         if _climax(state, y):
             return
 
@@ -642,7 +642,7 @@ def director_tick(state, day):
 def _update_acts(state, y, turn):
     yay = y["aktif_yay"]
     perde_yasi = turn - (y["perdeler"][-1]["baslangic"] if y["perdeler"] else 0)
-    if yay == "kurulus" and turn >= 26:
+    if yay == "kurulus" and turn >= 12:
         _set_act(state, y, "yukselis")
     elif yay in ("yukselis", "durgun") and y["gerilim"] >= 60:
         _set_act(state, y, "kriz")
@@ -650,10 +650,10 @@ def _update_acts(state, y, turn):
         _set_act(state, y, "kriz" if y["gerilim"] >= 60 else "yukselis")
     # Sakin geçişler bir perdeyi en az 20 hafta yaşatır — roman, takvim değil
     elif yay == "yukselis" and y["gerilim"] < 35 \
-            and turn - y["son_onemli_hafta"] >= 16 and perde_yasi >= 20:
+            and turn - y["son_onemli_hafta"] >= 10 and perde_yasi >= 12:
         _set_act(state, y, "durgun")
     elif yay == "durgun" and turn - y["son_onemli_hafta"] < 4 \
-            and perde_yasi >= 20:
+            and perde_yasi >= 12:
         _set_act(state, y, "yukselis")
 
 
@@ -665,31 +665,31 @@ def _update_acts(state, y, turn):
 LIFE_EVENT_SEEDS = {
     # Bulunan parayı kestir → sahibi o gün seni görmüş (GDD örneği)
     ("event_found_money", 0): dict(
-        kaynak="bulunan_para", hafta_min=104, hafta_max=520, agirlik="kucuk",
+        kaynak="bulunan_para", hafta_min=24, hafta_max=120, agirlik="kucuk",
         text="Çocukken çamurdan aldığın o keseyi biri görmüştü. Yıllar sonra "
              "karşına dikildi: 'O para babamındı.' Çarşı dinliyordu.",
         etki={"money": -20, "reputation": -4}),
     # Parayı teslim et → muhtarlık unutmaz
     ("event_found_money", 1): dict(
-        kaynak="durust_cocuk", hafta_min=156, hafta_max=520, agirlik="kucuk",
+        kaynak="durust_cocuk", hafta_min=36, hafta_max=120, agirlik="kucuk",
         text="Muhtar ölmeden önce seni anlatmış: 'O çocuk para teslim "
              "etmişti, ona güvenin.' Bu söz kapıları açıyor.",
         etki={"reputation": 6}),
     # Yaralı hayvana yardım → sahibi iş önerir, 3-6 yıl (GDD örneği)
     ("event_stray_animal", 0): dict(
-        kaynak="yarali_hayvan", hafta_min=156, hafta_max=312, agirlik="orta",
+        kaynak="yarali_hayvan", hafta_min=36, hafta_max=72, agirlik="orta",
         text="O köpek yavrusunu hatırlıyor musun? Meğer kervan ağasının "
              "kayıp tazısıymış. Sahibi seni buldu: minnetin karşılığı ağır "
              "bir kese ve dostluk.",
         etki={"money": 70, "reputation": 4}),
     ("event_stray_animal", 1): dict(
-        kaynak="yarali_hayvan", hafta_min=156, hafta_max=312, agirlik="orta",
+        kaynak="yarali_hayvan", hafta_min=36, hafta_max=72, agirlik="orta",
         text="Şifacıya taşıdığın o yavrunun sahibi yıllar sonra kapını "
              "çaldı — unutmamış. 'Borçluyum' dedi ve sözünü tuttu.",
         etki={"money": 50, "reputation": 3}),
     # Okul kavgasında zayıfı savun → lonca başı oldu, borçlu (GDD örneği)
     ("event_schoolfight", 1): dict(
-        kaynak="zayifi_savundu", hafta_min=520, hafta_max=1040,
+        kaynak="zayifi_savundu", hafta_min=120, hafta_max=240,
         agirlik="buyuk", nesil_asabilir=True,
         text="O gün okulda savunduğun çelimsiz çocuk bugün lonca başı. "
              "Seni görünce ayağa kalktı: 'Bu adam benim için yumruk yedi.' "
@@ -697,7 +697,7 @@ LIFE_EVENT_SEEDS = {
         etki={"money": 100, "reputation": 8}),
     # Güçlünün yanını tut → zayıf geri döndü, affetmedi (GDD örneği)
     ("event_schoolfight", 0): dict(
-        kaynak="guclunun_yani", hafta_min=520, hafta_max=1040,
+        kaynak="guclunun_yani", hafta_min=120, hafta_max=240,
         agirlik="buyuk", nesil_asabilir=True,
         text="Okulda ezilmesine seyirci kalıp güçlünün yanında durduğun "
              "çocuk geri döndü — ve affetmedi. Şimdi sözü geçen biri; "
@@ -705,7 +705,7 @@ LIFE_EVENT_SEEDS = {
         etki={"reputation": -8}),
     # Yangında donakal → kurban yükseldi, hatırlıyor (GDD örneği)
     ("event_village_fire", 2): dict(
-        kaynak="yangin_sustun", hafta_min=260, hafta_max=624,
+        kaynak="yangin_sustun", hafta_min=60, hafta_max=144,
         agirlik="buyuk", nesil_asabilir=True,
         text="Ahırı yanarken izlediğin komşu bugün şehirde sözü geçen bir "
              "adam. Seni tanıdı: 'Sen o gece duran çocuksun.' Bakışı buz "
@@ -713,20 +713,20 @@ LIFE_EVENT_SEEDS = {
         etki={"reputation": -6}),
     # Yangında kova taşı → köy unutmaz
     ("event_village_fire", 0): dict(
-        kaynak="yangin_kahramani", hafta_min=156, hafta_max=520,
+        kaynak="yangin_kahramani", hafta_min=36, hafta_max=120,
         agirlik="orta",
         text="O yangın gecesini köy hâlâ anlatıyor — ve hikâyede sen "
              "varsın. Yaşlılar çocuklarına seni örnek gösteriyor.",
         etki={"reputation": 6}),
     # Hasatta yaşlıyı geç → ailesi soğudu
     ("event_harvest_help", 2): dict(
-        kaynak="hasat_gecti", hafta_min=104, hafta_max=416, agirlik="kucuk",
+        kaynak="hasat_gecti", hafta_min=24, hafta_max=96, agirlik="kucuk",
         text="O kış zorlanan yaşlı çiftçinin oğlu büyüdü ve değirmeni "
              "devraldı. Babasını yalnız bırakanları tek tek biliyor.",
         etki={"reputation": -3}),
     # Hasatta yardım → vefa
     ("event_harvest_help", 0): dict(
-        kaynak="hasat_vefa", hafta_min=156, hafta_max=520, agirlik="orta",
+        kaynak="hasat_vefa", hafta_min=36, hafta_max=120, agirlik="orta",
         text="Hasadına koştuğun yaşlı adam vasiyetinde seni anmış: 'Ellerine "
              "sağlık' diye bir kese bırakmış.",
         etki={"money": 45, "reputation": 3}),

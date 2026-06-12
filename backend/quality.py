@@ -80,7 +80,7 @@ def lot_view(state, loc, good):
 
 
 def inspect_lot(state, loc, good):
-    """İncele — zekâ testi. Haftada bir deneme hakkı (lokasyon+mal başına)."""
+    """İncele — zekâ testi. Ayda bir deneme hakkı (lokasyon+mal başına)."""
     if good not in QUALITY_GOODS:
         return {"ok": False, "note": "Bu malın incelenecek bir işçiliği yok."}
     player = state["player"]
@@ -88,7 +88,7 @@ def inspect_lot(state, loc, good):
     intel = player.setdefault("quality_intel", {})
     key = _intel_key(loc["id"], good, turn)
     if intel.get(key):
-        return {"ok": False, "note": "Bu partiyi bu hafta zaten elden geçirdin."}
+        return {"ok": False, "note": "Bu partiyi bu ay zaten elden geçirdin."}
     iq = player.get("stats", {}).get("intelligence", 1)
     trade = player.get("skills", {}).get("trade", 0)
     chance = min(0.9, 0.35 + iq * 0.06 + trade * 0.03)

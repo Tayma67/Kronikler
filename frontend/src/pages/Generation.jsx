@@ -660,7 +660,7 @@ export default function Generation() {
                 <div className="space-y-0.5 pt-1">
                   {inheritSummary.hayat_romani.perdeler.slice(-5).map((p) => (
                     <div key={p.no} className="text-[10px] text-stone-500">
-                      {p.baslik} <span className="text-stone-700">H{p.baslangic}–{p.bitis ?? "…"}</span>
+                      {p.baslik} <span className="text-stone-700">{1247 + Math.floor(p.baslangic / 12)}–{p.bitis != null ? 1247 + Math.floor(p.bitis / 12) : "…"}</span>
                     </div>
                   ))}
                 </div>

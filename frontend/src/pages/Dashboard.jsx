@@ -140,14 +140,12 @@ function fameLabel(fame) {
 }
 
 function timeAgo(eventTurn, currentTurn) {
+  // Zaman Reformu: 1 tur = 1 ay
   const diff = (currentTurn || 0) - (eventTurn || 0);
-  if (diff <= 0) return 'Az önce';
-  if (diff === 1) return '1 hafta önce';
-  if (diff < 4)  return `${diff} hafta önce`;
-  const months = Math.floor(diff / 4);
-  if (months === 1)  return '1 ay önce';
-  if (months < 12)   return `${months} ay önce`;
-  return `${Math.floor(months / 12)} yıl önce`;
+  if (diff <= 0) return 'Bu ay';
+  if (diff === 1) return 'Geçen ay';
+  if (diff < 12)  return `${diff} ay önce`;
+  return `${Math.floor(diff / 12)} yıl önce`;
 }
 
 function mapChronicleEvent(ev, currentTurn) {
@@ -445,7 +443,7 @@ export default function Dashboard() {
         if (result.hafta_hasadi) {
           setHarvest(result.hafta_hasadi);
         } else {
-          toast.success('1 hafta geçti', {
+          toast.success('1 ay geçti', {
             description: 'Yeni olaylar günlüğünde belirdi.',
             duration: 2500,
           });
@@ -860,7 +858,7 @@ export default function Dashboard() {
                 letterSpacing: '0.2em',
                 textShadow: '0 0 14px rgba(201,168,76,0.6)',
               }}>
-              {advancing ? 'HAFTA İLERLİYOR…' : 'HAFTAYI İLERLE'}
+              {advancing ? 'AY İLERLİYOR…' : 'AYI İLERLE'}
             </div>
             <div className="font-serif"
               style={{

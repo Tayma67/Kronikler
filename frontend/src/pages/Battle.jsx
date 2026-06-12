@@ -54,7 +54,7 @@ function InjuryList({ injuries }) {
           <span className="text-stone-300">{inj.label}
             <span className="text-stone-600 ml-1">({inj.stat} {inj.delta})</span></span>
           <span className="text-[10px] text-stone-500">
-            {inj.permanent ? "Kalıcı" : `${inj.weeks_left} hafta`}
+            {inj.permanent ? "Kalıcı" : `${inj.weeks_left} ay`}
           </span>
         </div>
       ))}

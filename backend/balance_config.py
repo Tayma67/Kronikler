@@ -40,7 +40,7 @@ SKILL = {
     "xp_per_level_base": 10,
     "xp_per_level_scale": 5,
     "hard_cap": 10,
-    # Aşağıdaki değerler kaç haftada bir skill XP azalır (kullanılmazsa)
+    # Aşağıdaki değerler kaç ayda bir skill XP azalır (kullanılmazsa)
     "decay_weeks": 0,            # 0 = decay yok
 }
 
@@ -66,7 +66,7 @@ SURVIVAL = {
 NPC = {
     # Günlük rutine göre haftalık pasif XP kazanımı
     "routine_xp_per_week": 2,
-    # Goal progress — her hafta kadar ilerler
+    # Goal progress — her ay kadar ilerler
     "goal_progress_per_week_min": 1,
     "goal_progress_per_week_max": 4,
     # İlişki haftalık doğal bozulması (aktif olmayan ilişkiler)
@@ -89,7 +89,7 @@ RELATIONSHIP = {
     "min": -100,
     "dating_threshold": 20,      # Çıkma teklifi için min ilişki
     "proposal_threshold": 50,    # Evlilik teklifi için min ilişki
-    # İltifat cooldown — kaç haftada bir etkili
+    # İltifat cooldown — kaç ayda bir etkili
     "compliment_cooldown_weeks": 3,
     # Spam cezası başladığı penalty oranı
     "compliment_spam_threshold": 0.5,
@@ -103,7 +103,7 @@ CRIME = {
     "jail_weeks_max": 6,
     "fine_base": 50,
     "fine_per_crime_point": 2,
-    "crime_decay_per_week": 1,       # Her hafta crime puanı düşer (zaman geçince unutulur)
+    "crime_decay_per_week": 1,       # Her ay crime puanı düşer (zaman geçince unutulur)
     # Eylem başına suç maliyetleri
     "cost": {
         "saldırı": 25,
@@ -117,7 +117,7 @@ CRIME = {
 # ─── EKONOMİ ──────────────────────────────────────────────────────────────
 ECONOMY = {
     # Fiyat dalgalanması
-    "price_volatility": 0.15,        # Her hafta ±%15 fiyat değişimi
+    "price_volatility": 0.15,        # Her ay ±%15 fiyat değişimi
     "min_price_ratio": 0.3,          # Base fiyatın en az %30'u
     "max_price_ratio": 3.0,          # Base fiyatın en fazla 3 katı
     # Ticaret kâr marjı

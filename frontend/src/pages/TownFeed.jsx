@@ -38,7 +38,7 @@ function FeedEvent({ event, turn }) {
         <p className="text-sm text-stone-200">{event.text || event.summary || "Bilinmeyen olay"}</p>
         <div className="flex items-center gap-2 mt-1 text-[10px] text-stone-600">
           <Clock className="w-2.5 h-2.5" />
-          {ago === 0 ? "Bu hafta" : `${ago} hafta önce`}
+          {ago === 0 ? "Bu hafta" : `${ago} ay önce`}
           {event.location && (
             <><span>·</span><span className="capitalize">{event.location}</span></>
           )}

@@ -137,7 +137,7 @@ function WorkResult({ result, onClose }) {
           {result.week_passed && (
             <div className="flex items-center gap-2 text-sm text-stone-400">
               <Zap className="w-3.5 h-3.5 shrink-0 text-amber-600" />
-              Bir hafta tamamlandı — eğitim uygulandı
+              Bir ay tamamlandı — eğitim uygulandı
             </div>
           )}
 
@@ -353,10 +353,10 @@ export default function Profession() {
             )}
           </div>
 
-          {/* Haftalık çalışma progress — 7 gün kutusu */}
+          {/* Aylık çalışma progress — 7 gün kutusu */}
           <div className="mb-4">
             <div className="flex justify-between text-xs mb-1.5">
-              <span className="text-stone-500">Haftalık çalışma</span>
+              <span className="text-stone-500">Aylık çalışma</span>
               <span className="text-stone-500">{player?.work_units || 0}/7 gün</span>
             </div>
             <div className="flex gap-1">
@@ -369,7 +369,7 @@ export default function Profession() {
                 />
               ))}
             </div>
-            <div className="text-[10px] text-stone-600 mt-1">7 günde hafta tamamlanır — stat eğitimi uygulanır</div>
+            <div className="text-[10px] text-stone-600 mt-1">Ay sonunda eğitim uygulanır — stat eğitimi uygulanır</div>
           </div>
 
           {/* R2: Çalışma Tarzı — görünür risk/ödül farkıyla 4 seçenek */}

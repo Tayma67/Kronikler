@@ -142,7 +142,7 @@ function NovelActs({ director }) {
           <div key={p.no} className={`flex items-baseline gap-2 text-xs ${p.bitis == null ? "text-stone-200" : "text-stone-500"}`}>
             <span className="font-heading tracking-wider">{p.baslik}</span>
             <span className="text-[9px] text-stone-600 ml-auto shrink-0">
-              H{p.baslangic}{p.bitis != null ? `–${p.bitis}` : " — sürüyor"}
+              {1247 + Math.floor(p.baslangic / 12)}{p.bitis != null ? `–${1247 + Math.floor(p.bitis / 12)}` : " — sürüyor"}
             </span>
           </div>
         ))}

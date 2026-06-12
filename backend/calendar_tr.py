@@ -1,4 +1,14 @@
-"""Turkish in-game calendar: 1 turn = 1 week. 4 weeks = 1 month. 12 months = 1 year (48 weeks).
+"""Turkish in-game calendar — ZAMAN REFORMU (GDD v8).
+
+1 tur = 1 AY. 12 ay = 1 yıl. Mevsim = 3 tur.
+
+Neden: hafta bazında 7→13 yaş 312 ilerleme, tam ömür ~3000 dokunuştu —
+oyunu öldüren tempo. Ay bazında: çocukluk 72, tam ömür ~750 ilerleme;
+mevsimler gerçekten hissediliyor.
+
+NOT: Değişken adları geriye uyum için korunur (WEEKS_PER_* her yerde
+import ediliyor) — anlamları artık 'tur' birimidir. Tüm motor tur-bazlı
+çalıştığı için tek kaynaktan senkron olur.
 
 Months 1..12: Ocak ... Aralık.
 Seasons:
@@ -8,9 +18,9 @@ Seasons:
   Kış:      Aralık, Ocak, Şubat (12,1,2)
 """
 
-WEEKS_PER_MONTH = 4
+WEEKS_PER_MONTH = 1                 # 1 tur = 1 ay
 MONTHS_PER_YEAR = 12
-WEEKS_PER_YEAR = WEEKS_PER_MONTH * MONTHS_PER_YEAR  # 48
+WEEKS_PER_YEAR = WEEKS_PER_MONTH * MONTHS_PER_YEAR  # 12 tur = 1 yıl
 BASE_YEAR = 1247  # in-world starting year
 
 MONTHS_TR = [

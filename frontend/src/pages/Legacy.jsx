@@ -115,7 +115,7 @@ export default function Legacy() {
       {data.children.length > 0 && (
         <Section icon={GraduationCap} title="Çocuk Eğitimi">
           <p className="text-[10px] text-stone-500">
-            Eğitim yönü seç; haftalık masraf işler, nesil geçişinde başlangıç bonusu olur.
+            Eğitim yönü seç; aylık masraf işler, nesil geçişinde başlangıç bonusu olur.
           </p>
           {data.children.map((c) => (
             <div key={c.id} className="border border-stone-800/50 rounded-sm p-2 space-y-1.5">
@@ -125,7 +125,7 @@ export default function Legacy() {
                 </span>
                 {c.track && (
                   <span className="text-[10px] text-emerald-400">
-                    {data.tracks[c.track]?.label} · {c.weeks} hafta
+                    {data.tracks[c.track]?.label} · {c.weeks} ay
                   </span>
                 )}
               </div>

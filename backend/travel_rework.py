@@ -7,7 +7,7 @@ Işınlanma devrinin sonu: yol bir mekân.
   - Yolcu profilleri (derviş, kaçak, tüccar, asker) sohbet lezzeti taşır.
 
 Akış: /travel/start rota+event kurar → /travel/resolve seçimi çözer,
-oyuncuyu taşır ve haftayı ilerletir.
+oyuncuyu taşır ve ayı ilerletir.
 """
 import random
 

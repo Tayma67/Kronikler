@@ -717,14 +717,14 @@ export default function NPCDetail() {
             }`}
           >
             {alreadyHelpedThisWeek
-              ? "✓ Bu hafta yardım ettin"
+              ? "✓ Bu ay yardım ettin"
               : busy
               ? <span className="text-xs">...</span>
               : "Yardım Et"}
           </button>
           {alreadyHelpedThisWeek && (
             <p className="text-[10px] text-stone-600 italic text-center">
-              Haftaya tekrar yardım edebilirsin.
+              Gelecek ay tekrar yardım edebilirsin.
             </p>
           )}
         </div>
@@ -782,8 +782,8 @@ export default function NPCDetail() {
               .sort((a, b) => Math.abs(b.duygu_yuku) - Math.abs(a.duygu_yuku))
               .slice(0, 5)
               .map((m, i) => {
-                const hafta = (state.turn || 0) - (m.hafta || 0);
-                const zaman = hafta < 4 ? "geçenlerde" : hafta < 52 ? `${Math.round(hafta / 4)} ay önce` : `${Math.round(hafta / 52)} yıl önce`;
+                const ay = (state.turn || 0) - (m.hafta || 0);
+                const zaman = ay < 2 ? "geçenlerde" : ay < 12 ? `${ay} ay önce` : `${Math.round(ay / 12)} yıl önce`;
                 return (
                   <li key={i} className="flex items-start gap-2 text-xs">
                     <span className="shrink-0 mt-0.5">

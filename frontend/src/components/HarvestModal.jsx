@@ -46,7 +46,7 @@ export default function HarvestModal({ harvest, onClose }) {
               letterSpacing: "0.28em", color: "#C9A84C", marginBottom: 6,
               display: "flex", alignItems: "center", gap: 6,
             }}>
-              <span>📜</span> BU HAFTANIN MANŞETİ
+              <span>📜</span> BU AYIN MANŞETİ
             </div>
             <p style={{
               margin: 0, fontFamily: "'Lora', serif",
@@ -55,7 +55,7 @@ export default function HarvestModal({ harvest, onClose }) {
               fontStyle: "italic", lineHeight: 1.55,
               color: manset?.weight >= 7 ? "#F0C040" : "#D8C8A0",
             }}>
-              {manset?.text || "Sakin bir hafta geçti."}
+              {manset?.text || "Sakin bir ay geçti."}
             </p>
           </div>
 
@@ -127,7 +127,7 @@ export default function HarvestModal({ harvest, onClose }) {
             fontFamily: "'Cinzel', serif", fontSize: "0.72rem", fontWeight: 700,
             letterSpacing: "0.15em", color: "#F0C040",
           }}>
-            HAFTAYA DEVAM →
+            YENİ AYA DEVAM →
           </button>
         </div>
       </div>

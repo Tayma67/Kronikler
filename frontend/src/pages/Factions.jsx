@@ -56,7 +56,7 @@ function FactionFeedSection({ feed, onSceneChoice, busy }) {
       {/* 8.1 Haftalık sahne */}
       {scene && (
         <div className="card-frame p-4 border border-amber-800/50 bg-amber-950/15 space-y-3">
-          <div className="label-tiny text-amber-400">BU HAFTA OCAKTA</div>
+          <div className="label-tiny text-amber-400">BU AY OCAKTA</div>
           <p className="text-sm text-stone-200 italic">{scene.text}</p>
           <div className="space-y-1.5">
             {scene.choices.map(c => (
@@ -224,7 +224,7 @@ function WarAlertBanner({ warDetail, onOpenDecision, loading }) {
         <span><span className="text-stone-400">Sebep:</span> {causeLabel}</span>
         <span>·</span>
         <span className="flex items-center gap-1">
-          <Clock className="w-3 h-3" /> {duration_weeks} hafta
+          <Clock className="w-3 h-3" /> {duration_weeks} ay
         </span>
         <span>·</span>
         <span>{warDetail.battles_count} çatışma</span>
@@ -475,7 +475,7 @@ function BattleLogEntry({ battle, ourFactionId, turn }) {
             {isWin ? "Zafer" : "Mağlubiyet"} — {battle.region_name}
           </span>
           {weeksAgo != null && (
-            <span className="text-[9px] text-stone-600">{weeksAgo} hafta önce</span>
+            <span className="text-[9px] text-stone-600">{weeksAgo} ay önce</span>
           )}
         </div>
         <div className="text-[10px] text-stone-500 mt-0.5 flex gap-3 flex-wrap">
@@ -590,7 +590,7 @@ function RankProgress({ faction, player }) {
       )}
       {player?.faction_joined_turn != null && (
         <div className="text-xs text-stone-500">
-          Üyelik süresi: <span className="text-stone-300">{Math.max(0, (player.turn || 0) - player.faction_joined_turn)} hafta</span>
+          Üyelik süresi: <span className="text-stone-300">{Math.max(0, (player.turn || 0) - player.faction_joined_turn)} ay</span>
         </div>
       )}
     </div>
@@ -1000,7 +1000,7 @@ function FactionCard({
           ) : joinBlocked ? (
             <div className="flex-1 py-1.5 text-xs text-orange-700 italic text-center flex items-center justify-center gap-1">
               <AlertTriangle className="w-3 h-3" />
-              {joinWeeksLeft === -1 ? "Kalıcı yasak" : `${joinWeeksLeft} hafta yasak`}
+              {joinWeeksLeft === -1 ? "Kalıcı yasak" : `${joinWeeksLeft} ay yasak`}
             </div>
           ) : (
             <div className="text-xs text-amber-700 italic flex-1 text-center py-1">Katılmak için biraz daha büyümen gerekiyor</div>
@@ -1437,7 +1437,7 @@ export default function Factions() {
       const { data } = await api.post("/game/factions/leave");
       if (data.success) {
         const weeks = data.cooldown_weeks;
-        toast(data.permanent ? "Ayrıldın — kalıcı yasak." : `Ayrıldın. ${weeks} hafta yasak.`);
+        toast(data.permanent ? "Ayrıldın — kalıcı yasak." : `Ayrıldın. ${weeks} ay yasak.`);
         await load(); await refreshState();
       } else {
         toast.error(data.reason || data.message || "Ayrılamadın.");

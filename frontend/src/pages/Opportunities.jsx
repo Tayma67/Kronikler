@@ -47,7 +47,7 @@ function UrgencyBadge({ weeks }) {
   const tier = urgencyTier(weeks);
   if (!tier) return null;
   const s = URGENCY_STYLES[tier];
-  const label = tier === "critical" ? "Son Hafta!" : `${weeks} hafta kaldı`;
+  const label = tier === "critical" ? "Son Ay!" : `${weeks} ay kaldı`;
   return (
     <span
       className={`inline-flex items-center gap-1 text-[9px] font-heading tracking-wider uppercase px-1.5 py-0.5 rounded-sm ${s.badge} ${s.pulse ? "animate-pulse" : ""}`}
@@ -652,7 +652,7 @@ export default function Opportunities() {
         <div className="space-y-2">
           <div className="label-tiny flex items-center gap-2 text-red-400">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            Son Şans — Bu Hafta Kapanıyor
+            Son Şans — Bu Ay Kapanıyor
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {criticalOpps.map(o => <OpportunityCard key={o.id} opp={o} {...cardProps} />)}
@@ -702,7 +702,7 @@ export default function Opportunities() {
             <Zap className="w-8 h-8 mx-auto mb-2 opacity-30" />
             <p className="text-sm">
               {filter === "all"
-                ? "Şu an fırsat yok. Bir hafta geçir, yenileri çıkar."
+                ? "Şu an fırsat yok. Bir ay geçir, yenileri çıkar."
                 : "Bu kategoride şu an fırsat yok."}
             </p>
           </div>

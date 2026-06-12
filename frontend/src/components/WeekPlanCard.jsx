@@ -60,7 +60,7 @@ export default function WeekPlanCard() {
           <div style={{
             fontFamily: "'Cinzel', serif", fontSize: "0.55rem", fontWeight: 700,
             letterSpacing: "0.22em", color: "#7A7060",
-          }}>HAFTA PLANIN</div>
+          }}>AY PLANIN</div>
           <div style={{
             fontFamily: "'Lora', serif", fontSize: "0.72rem", color: "#D8C8A0",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",

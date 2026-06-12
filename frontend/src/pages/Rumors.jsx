@@ -170,13 +170,12 @@ function TruthBadge({ truth = 0.5 }) {
 
 // ─── Zaman etiketi ────────────────────────────────────────────────────────────
 function timeAgo(turn, rumorDay) {
+  // Zaman Reformu: 1 tur = 1 ay
   const diff = Math.max(0, turn - rumorDay);
-  if (diff === 0) return "Bu hafta";
-  if (diff === 1) return "Geçen hafta";
-  if (diff < 4)  return `${diff} hafta önce`;
-  const months = Math.round(diff / 4);
-  if (months < 12) return `${months} ay önce`;
-  return `${Math.round(months / 12)} yıl önce`;
+  if (diff === 0) return "Bu ay";
+  if (diff === 1) return "Geçen ay";
+  if (diff < 12) return `${diff} ay önce`;
+  return `${Math.round(diff / 12)} yıl önce`;
 }
 
 // ─── Rumor kartı ──────────────────────────────────────────────────────────────

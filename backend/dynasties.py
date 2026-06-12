@@ -240,7 +240,7 @@ def dynasty_world_tick(state, day):
             continue
         _income_tick(state, d)
         _attitude_drift(state, d)
-        # Haftada %60 ihtimalle eylem — her hafta hamle yapmak robotik olur
+        # Haftada %60 ihtimalle eylem — her ay hamle yapmak robotik olur
         if random.random() < 0.60:
             _take_action(state, d, day)
 
@@ -444,7 +444,7 @@ def _do_evlilik(state, d, day):
                 "id": new_id(), "type": "evlilik", "dynasty_id": d["id"],
                 "dynasty_ad": d["ad"], "sembol": d["sembol"],
                 "npc_id": aday["id"], "npc_name": aday["name"],
-                "hafta": state.get("turn", 0), "expires": state.get("turn", 0) + 12,
+                "hafta": state.get("turn", 0), "expires": state.get("turn", 0) + 6,
                 "text": (f"{d['sembol']} {d['ad']} hanedanı resmî bir elçi gönderdi: "
                          f"{aday['name']} ile evlilik bağı kurup iki haneyi "
                          "birleştirmeyi teklif ediyorlar."),
@@ -524,7 +524,7 @@ def _do_ittifak(state, d, day):
     state.setdefault("dynasty_offers", []).append({
         "id": new_id(), "type": "ittifak", "dynasty_id": d["id"],
         "dynasty_ad": d["ad"], "sembol": d["sembol"],
-        "hafta": state.get("turn", 0), "expires": state.get("turn", 0) + 12,
+        "hafta": state.get("turn", 0), "expires": state.get("turn", 0) + 6,
         "text": (f"{d['sembol']} {d['ad']} hanedanı ittifak öneriyor: ortak "
                  "kervan, ortak düşman, zor günde omuz."),
     })

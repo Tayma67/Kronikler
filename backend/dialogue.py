@@ -215,7 +215,7 @@ PROFESSION_TALK = {
         "Tuzak kurmak sabır ister, ama biter.",
         "Ormanda sesler var bu sıralar, normal değil.",
         "Avlanmak bir sanattır; güç değil sabır gerekir.",
-        "Geçen hafta kocaman bir geyik kestim, eti yetti.",
+        "Geçen ay kocaman bir geyik kestim, eti yetti.",
         "Kurt izleri gördüm yakında, dikkat lazım.",
         "Ormanda yalnız olmak bazen iyi geliyor, bazen değil.",
         "Hava bozuksa av olmaz. Bugün gibi.",
@@ -239,7 +239,7 @@ PROFESSION_TALK = {
         "İnsan neye inanırsa ona benzer.",
         "Kilisede dua edenlerin yüzü aydınlık, görürsün.",
         "Günahın ağırlığı omuzlarda hissedilir, itirafla hafifler.",
-        "Bu hafta fakire yardım ettim. Tanrı razıdır inşallah.",
+        "Bu ay fakire yardım ettim. Tanrı razıdır inşallah.",
         "Vaaz hazırlamak zor. İnsanlara ne söylemeliyim?",
         "Ölüm de bir kapıdır; biz onu hayat sanırız.",
         "İyi insan olmak kolay değil ama hedef bu.",
@@ -333,7 +333,7 @@ PROFESSION_TALK = {
         "Bir öğrenci başarılı olsa, emek değer.",
     ],
     "han sahibi": [
-        "Yolcular geldi geçen hafta, iyi para kazandım.",
+        "Yolcular geldi geçen ay, iyi para kazandım.",
         "Hanın damı sızıyor, tamir ettirmem lazım.",
         "Şarap bitmek üzere, bir kervan bekleyeceğim.",
         "Yabancıları ağırlamak zahmetli ama kârlı.",
@@ -374,7 +374,7 @@ MOOD_LINE_POOL = {
     ],
     "umutlu": [
         "İşler düzelecek gibi, hissediyorum.",
-        "Bu hafta iyi bir habere gebe.",
+        "Bu ay iyi bir habere gebe.",
         "Bir şeyler değişiyor, iyiye doğru.",
         "Ümidini kesme demişler, haklılar.",
     ],
@@ -643,7 +643,7 @@ def _spontaneous_line(npc, ctx, rng, band):
 
     if ev == "robbed":
         return rng.choice([
-            "Dur dur, sana bir şey söyleyeyim — soyuldum bu hafta!",
+            "Dur dur, sana bir şey söyleyeyim — soyuldum bu ay!",
             "İyi geldin, başıma bir iş geldi...",
         ])
     if ev == "child_lost":
@@ -652,7 +652,7 @@ def _spontaneous_line(npc, ctx, rng, band):
         return "Eşimi kaybettim geçenlerde. Henüz hazmedebilmiş değilim."
     if ev == "promoted":
         return rng.choice([
-            "Haberim var! Terfi aldım bu hafta.",
+            "Haberim var! Terfi aldım bu ay.",
             "Sevinçliyim — bir yükseliş geldi beklemediğim yerden.",
         ])
 
@@ -1022,8 +1022,8 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
         if log and rng.random() < 0.65:
             activity = log[-1]["text"]
             parts.append(_pick(rng, [
-                f"Bu hafta {activity}.",
-                f"Geçen hafta {activity}, yoruldum açıkçası.",
+                f"Bu ay {activity}.",
+                f"Geçen ay {activity}, yoruldum açıkçası.",
                 f"Yaptıklarım arasında {activity} da var.",
             ]))
 

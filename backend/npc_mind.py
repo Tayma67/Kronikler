@@ -268,7 +268,7 @@ def goal_action(state, npc, eylem):
                      f"{npc['name']} yükselmişti — ve seni unutmamıştı. Bir gün "
                      "kapına adamları geldi: 'Velinimetimiz seni çağırıyor.' "
                      "Eski iyiliğin sofrayla, keseyle ve itibarla döndü.",
-                     hafta_min=104, hafta_max=416, agirlik="buyuk",
+                     hafta_min=24, hafta_max=96, agirlik="buyuk",
                      nesil_asabilir=True, npc_id=npc["id"],
                      etki={"money": 90, "reputation": 6})
         except Exception:
@@ -348,7 +348,7 @@ def gossip_tick(state):
         for m in npc.get("anilar", []):
             if m.get("yayildi") or m.get("hedef") != "player":
                 continue
-            if turn - m.get("hafta", 0) > 8:
+            if turn - m.get("hafta", 0) > 4:
                 m["yayildi"] = True   # bayat — artık dile düşmez
                 continue
             spec = MEMORY_TYPES.get(m["tur"], {})
@@ -386,12 +386,12 @@ def gossip_tick(state):
 # ═══════════════════════════════════════════════════════════════════════════
 
 def compute_nam(state):
-    """Nam profili: tüm NPC anıları (son 104 hafta) + aktif söylentiler."""
+    """Nam profili: tüm NPC anıları (son 24 ay) + aktif söylentiler."""
     turn = state.get("turn", 0)
     nam = {t: 0 for t in NAM_TRAITS}
     for npc in state["world"]["npcs"]:
         for m in npc.get("anilar", []):
-            if m.get("hedef") != "player" or turn - m.get("hafta", 0) > 104:
+            if m.get("hedef") != "player" or turn - m.get("hafta", 0) > 24:
                 continue
             trait = MEMORY_TYPES.get(m["tur"], {}).get("nam")
             if trait:

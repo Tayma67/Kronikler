@@ -512,7 +512,7 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
         # Daily log flavor
         log = npc.get("daily_log") or []
         if log and rng.random() < 0.5:
-            parts.append(f"Geçen hafta {log[-1]['text']}.")
+            parts.append(f"Geçen ay {log[-1]['text']}.")
 
     elif topic == "aile":
         if npc.get("spouse_id"):

@@ -196,7 +196,7 @@ LIFE_EVENTS = [
         "icon": "⚒️",
         "conditions": {"age_min": 7, "age_max": 12},
         "choices": [
-            {"text": "Hevesle kabul et", "effects": {"stamina": 2, "crafting": 1, "money": 10}, "result": "Bir hafta boyunca her gün gidip çalıştın. Demir işlemeyi öğrenmeye başladın."},
+            {"text": "Hevesle kabul et", "effects": {"stamina": 2, "crafting": 1, "money": 10}, "result": "Bir ay boyunca her gün gidip çalıştın. Demir işlemeyi öğrenmeye başladın."},
             {"text": "Dene, beğenmezsen bırak", "effects": {"stamina": 1, "intelligence": 1}, "result": "İki gün çalıştın. Çok yorucuydu ama demirci gülerek anladı."},
             {"text": "Hayır, zamanım yok", "effects": {}, "result": "Demirci başını sallayıp döndü. Bir kapı kapandı."}
         ]
@@ -755,7 +755,7 @@ LIFE_EVENTS = [
         "choices": [
             {"text": "Katıl, şampiyonluğa oyna", "effects": {"health": -15, "combat": 3, "stamina": 1, "fame": 10, "money": 100}, "result": "Finale kadar gelebildin. Şampiyon olamadın ama halk senin adını bağırdı. 100 altın ikramiye aldın."},
             {"text": "Bahse gir, iyi bir ata yatır", "effects": {"money": 80, "trade": 1}, "result": "Doğru atı seçtin. Bahis kazandın. Savaşmadan para kazanmak da bir sanattır."},
-            {"text": "İzle, keyif çıkar", "effects": {"social": 1}, "result": "Harika bir gösteri izledin. Yeni insanlarla tanıştın. Keyifli bir hafta geçti."}
+            {"text": "İzle, keyif çıkar", "effects": {"social": 1}, "result": "Harika bir gösteri izledin. Yeni insanlarla tanıştın. Keyifli bir ay geçti."}
         ]
     },
     {
@@ -1318,8 +1318,8 @@ def get_eligible_events(state: dict) -> list:
 # ─────────────────────────────────────────────────────────────
 
 def maybe_trigger_life_event(state: dict):
-    """Her hafta %30 ihtimalle bir life event tetikler.
-    Seçim, oyuncunun hafta planına göre ağırlıklı yapılır (Parça 5)."""
+    """Her ay %30 ihtimalle bir life event tetikler.
+    Seçim, oyuncunun ay planına göre ağırlıklı yapılır (Parça 5)."""
     if state.get("pending_life_event"):
         return  # Zaten bekleyen event var
     if random.random() > 0.30:
@@ -1334,7 +1334,7 @@ def maybe_trigger_life_event(state: dict):
         eligible = director_event_bias(state, eligible) or eligible
     except Exception:
         pass
-    # Hafta planına göre ağırlıklı seçim — plan yoksa random.choice fallback
+    # Ay planına göre ağırlıklı seçim — plan yoksa random.choice fallback
     try:
         from simulation import _hafta_weighted_life_event
         event = _hafta_weighted_life_event(state, eligible)

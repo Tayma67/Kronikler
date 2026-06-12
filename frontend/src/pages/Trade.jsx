@@ -1149,7 +1149,7 @@ function BargainModal({ target, onTrade, onClose }) {
                 </button>
                 <button onClick={onClose}
                   className="w-full py-1.5 text-[10px] text-stone-500 hover:text-stone-300 transition-colors">
-                  Şimdi değil (söz bu hafta geçerli)
+                  Şimdi değil (söz bu ay geçerli)
                 </button>
               </>
             )}

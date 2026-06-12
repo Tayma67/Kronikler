@@ -2790,7 +2790,7 @@ def _trigger_leader_change(fac: dict, state: dict, turn: int, reason: str):
 
 def faction_world_tick(state: dict, turn: int):
     """
-    Her hafta simulation.py'deki advance_time() tarafından çağrılır.
+    Her ay simulation.py'deki advance_time() tarafından çağrılır.
     GDD v3: ekonomi → stabilite → korku → itibar → NPC → bölge → savaş → v3_conflict → AI
     """
     world = state.get("world", {})
@@ -2798,7 +2798,7 @@ def faction_world_tick(state: dict, turn: int):
     regions = world.get("regions", [])
     wars = world.get("wars", [])
 
-    # ── TREND SNAPSHOT: her 4 haftada bir toplam nüfuzu kayıt et ──
+    # ── TREND SNAPSHOT: her 4 ayda bir toplam nüfuzu kayıt et ──
     if turn % 4 == 0:
         for fac in factions:
             total = sum(fac.get("city_influence", {}).values())
@@ -2880,7 +2880,7 @@ def faction_world_tick(state: dict, turn: int):
 
         _check_war_end(war, fac_a, fac_b, state, turn)
 
-    # ── FAZA 5: Faction AI kararları (8 haftada bir, %35 atlama şansı) ──
+    # ── FAZA 5: Faction AI kararları (8 ayda bir, %35 atlama şansı) ──
     if turn % 8 == 0:
         for fac in factions:
             if random.random() < 0.35:   # her tick her faction karar vermez
@@ -2898,7 +2898,7 @@ def faction_world_tick(state: dict, turn: int):
                 _expose_secret_society(fac, state, turn)
 
     # ── FAZA 5b: Nüfuz operasyonları (her lokasyonda aktif factionlar) ──
-    if turn % 3 == 0:   # 3 haftada bir nüfuz operasyonu
+    if turn % 3 == 0:   # 3 ayda bir nüfuz operasyonu
         for fac in factions:
             if not fac.get("city_influence"):
                 continue
@@ -3096,12 +3096,12 @@ def player_join_faction(state: dict, faction_id: str, turn: int) -> dict:
             )
         elif membership_status == "rebel":
             reason = (
-                f"İsyan girişimcisi olarak {weeks_left} hafta daha hiçbir factiona "
+                f"İsyan girişimcisi olarak {weeks_left} ay daha hiçbir factiona "
                 f"katılamazsın. ({status_labels['rebel']})"
             )
         elif membership_status == "kicked":
             reason = (
-                f"Kovulma cezası nedeniyle {weeks_left} hafta daha factiona "
+                f"Kovulma cezası nedeniyle {weeks_left} ay daha factiona "
                 f"katılamazsın. ({status_labels['kicked']})"
             )
         else:
@@ -3298,7 +3298,7 @@ def player_start_rebellion(state: dict, turn: int) -> dict:
     player["faction_membership_status"] = "rebel" if weeks != -1 else "banned"
     player["faction_join_banned_until"] = (turn + weeks) if weeks != -1 else -1
 
-    ban_desc = "Kalıcı yasak uygulandı." if weeks == -1 else f"{weeks} hafta boyunca hiçbir faction seni kabul etmez."
+    ban_desc = "Kalıcı yasak uygulandı." if weeks == -1 else f"{weeks} ay boyunca hiçbir faction seni kabul etmez."
     discount_note = " (Temiz geçmiş indirimi uygulandı.)" if discount else ""
 
     _log_event(state, turn, "oyuncu_isyan",
@@ -3427,8 +3427,8 @@ def player_manipulate_npc(state: dict, npc_id: str, method: str, turn: int) -> d
             "success": False,
             "cooldown_weeks_left": weeks_left,
             "reason": (
-                f"{label} cooldown aktif: {npc_name} için {weeks_left} hafta daha beklemelisin. "
-                f"(Her {min_weeks} haftada bir kullanılabilir.)"
+                f"{label} cooldown aktif: {npc_name} için {weeks_left} ay daha beklemelisin. "
+                f"(Her {min_weeks} ayda bir kullanılabilir.)"
             ),
         }
     # ─────────────────────────────────────────────────────────────────────
@@ -4058,7 +4058,7 @@ def player_rank_up(state: dict, turn: int) -> dict:
     if weeks_in < req["min_weeks"]:
         left = req["min_weeks"] - weeks_in
         return {"success": False,
-                "reason": f"Yeterli süre geçmedi. {left} hafta daha bekle."}
+                "reason": f"Yeterli süre geçmedi. {left} ay daha bekle."}
 
     if contribution < req["contribution"]:
         left = req["contribution"] - contribution

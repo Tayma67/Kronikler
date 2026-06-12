@@ -487,7 +487,7 @@ SKILL_PERK_CHOICES = {
             {
                 "key": "efsane_eser",
                 "name": "Efsane Eser",
-                "desc": "Her 10 haftada bir efsane eser yapabilirsin. Tarihe geçer.",
+                "desc": "Her 10 ayda bir efsane eser yapabilirsin. Tarihe geçer.",
                 "icon": "✨",
                 "effect_preview": "Tarihe geçen eser üretimi",
             },
@@ -528,7 +528,7 @@ SKILL_PERK_CHOICES = {
             {
                 "key": "dedikodu_ağı",
                 "name": "Dedikodu Ağı",
-                "desc": "Her hafta kasabadan 2 ücretsiz dedikodu alırsın.",
+                "desc": "Her ay kasabadan 2 ücretsiz dedikodu alırsın.",
                 "icon": "🕵️",
                 "effect_preview": "Haftalık 2 ücretsiz dedikodu",
             },

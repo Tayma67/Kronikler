@@ -119,7 +119,7 @@ export default function NewGame() {
           iki dilim ekmek. Hayat seni bekliyor.
         </p>
         <p className="text-stone-300 leading-relaxed mb-3 text-sm sm:text-base">
-          1 tur = 1 hafta. 48 hafta sonra bir yaş büyüyeceksin.
+          1 tur = 1 ay. 12 ay sonra bir yaş büyüyeceksin.
           Her kış sandığın incelecek, her yaz tarlalar dolacak. Aç kalırsan zayıflarsın,
           aç bırakmazsan büyürsün. Çocukken yaptığın her şey —ne kadar tahta sopa salladığın,
           kaç kez pazarda pazarlık ettiğin— büyüyünce <span className="text-amber-400">kalıcı statlara</span> dönüşecek.

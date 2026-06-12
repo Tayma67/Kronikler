@@ -338,7 +338,7 @@ def disband_caravan(state: dict) -> dict:
 
 def process_caravan_tick(state: dict) -> Optional[dict]:
     """
-    Her hafta advance_time() içinden çağrılır.
+    Her ay advance_time() içinden çağrılır.
     Kervanı bir adım ilerletir; saldırı riski ve varış kontrolü yapar.
     Returns: event dict (UI'da gösterilecek bilgi) ya da None.
     """

@@ -77,7 +77,7 @@ function DynastyRow({ row, busy, onOverture, delta }) {
               </div>
               {row.log.map((l, i) => (
                 <div key={i} className="text-[10px] text-stone-400 italic">
-                  H{l.hafta}: {l.text}
+                  {1247 + Math.floor(l.hafta / 12)}: {l.text}
                 </div>
               ))}
             </div>
@@ -102,7 +102,7 @@ function OfferCard({ offer, busy, onRespond, turn }) {
       <p className="text-xs text-stone-200 leading-relaxed">{offer.text}</p>
       {kalan > 0 && (
         <p className={`text-[10px] mt-1 italic ${kalan <= 3 ? "text-red-400" : "text-stone-500"}`}>
-          ⏳ Elçi {kalan} hafta daha bekleyecek{kalan <= 3 ? " — sabrı tükeniyor!" : "."}
+          ⏳ Elçi {kalan} ay daha bekleyecek{kalan <= 3 ? " — sabrı tükeniyor!" : "."}
         </p>
       )}
       <div className="flex gap-1.5 mt-2.5">
