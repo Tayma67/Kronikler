@@ -1,0 +1,197 @@
+/* Kül & Köz — tasarım sistemi stilleri (uygulama CSS'inden türetildi).
+   Kaynak gerçeği: frontend/src/index.css — değişiklik ÖNCE orada yapılır,
+   sonra bu dosya tools/ds-kit-sync notuyla tazelenir. */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;
+
+:root {
+  --color-bg:              #0D0A06;
+  --color-surface:         #15110A;
+  --color-card:            #1C160D;
+  --color-card-hi:         #221A0F;
+  --color-border:          #2E2416;
+  --color-border-hi:       #4A3820;
+  --color-gold:            #C9A84C;
+  --color-gold-bright:     #F0C040;
+  --color-gold-dim:        #8B6914;
+  --color-parchment:       #E8D5B0;
+  --color-parchment-dim:   #B8A880;
+  --color-parchment-muted: #7A6A4F;
+
+  --space-xs: 0.375rem;
+  --space-sm: 0.625rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+}
+
+.font-display { font-family: 'Cinzel', Georgia, serif; }
+
+.font-serif   { font-family: 'Crimson Text', Georgia, serif; }
+
+.label-tiny {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-parchment-muted);
+}
+
+.card-frame {
+  background:
+    linear-gradient(165deg, rgba(201,168,76,0.05) 0%, transparent 30%),
+    linear-gradient(180deg, var(--color-card-hi) 0%, var(--color-card) 55%, #18120A 100%);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45), 0 1px 0 rgba(201,168,76,0.07),
+              inset 0 1px 0 rgba(201,168,76,0.07);
+  position: relative;
+}
+
+.card-frame::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 8%; right: 35%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(201,168,76,0.35), transparent);
+  pointer-events: none;
+  border-radius: 8px 8px 0 0;
+}
+
+.card-frame:hover {
+  border-color: var(--color-border-hi);
+  box-shadow: 0 6px 22px rgba(0,0,0,0.55), 0 0 14px rgba(201,168,76,0.07),
+              inset 0 1px 0 rgba(201,168,76,0.10);
+}
+
+.row-frame {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  background: linear-gradient(180deg, rgba(255,255,255,0.015), transparent);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.row-frame:hover { border-color: var(--color-border-hi); background: rgba(201,168,76,0.03); }
+
+.btn-ember {
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #3D2A08 0%, #2A1C06 50%, #1C1204 100%);
+  color: var(--color-gold);
+  border: 1.5px solid rgba(201,168,76,0.55);
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(201,168,76,0.20), 0 4px 12px rgba(0,0,0,0.55),
+              inset 0 1px 0 rgba(201,168,76,0.18);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.btn-ember::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(240,192,64,0.7), transparent);
+}
+
+.btn-ember:hover:not(:disabled) {
+  box-shadow: 0 0 24px rgba(201,168,76,0.35), 0 4px 16px rgba(0,0,0,0.65),
+              inset 0 1px 0 rgba(201,168,76,0.25);
+  border-color: rgba(201,168,76,0.75);
+}
+
+.btn-ember:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chip-urgent {
+  animation: urgent-pulse 2.2s ease-in-out infinite;
+}
+
+.chip-envoy {
+  animation: envoy-pulse 2.2s ease-in-out infinite;
+}
+
+.tension-track {
+  height: 3px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tension-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(to right, #8B6914, #C9A84C 40%, #E05A30 75%, #C84040);
+  box-shadow: 0 0 6px rgba(224,90,48,0.45);
+  transition: width 0.8s ease;
+}
+
+.tension-fill { animation: tension-pulse 1.6s ease-in-out infinite; }
+
+.btn-ghost-ash {
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--color-parchment-muted);
+  border: 1px solid var(--color-border-hi);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ghost-ash:hover:not(:disabled) {
+  color: var(--color-parchment);
+  border-color: var(--color-gold-dim);
+  background: rgba(201,168,76,0.06);
+}
+
+.btn-ghost-ash:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.divider-ash {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(201,168,76,0.25) 30%,
+    rgba(201,168,76,0.40) 50%,
+    rgba(201,168,76,0.25) 70%,
+    transparent
+  );
+}
+
+.page-shell { max-width: 560px; margin: 0 auto; }
+
+@keyframes urgent-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200,64,64,0.0); border-color: rgba(200,64,64,0.45); }
+  50%      { box-shadow: 0 0 10px 1px rgba(200,64,64,0.35); border-color: rgba(200,64,64,0.8); }
+}
+
+@keyframes envoy-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(123,79,175,0.0); border-color: rgba(123,79,175,0.45); }
+  50%      { box-shadow: 0 0 10px 1px rgba(123,79,175,0.4); border-color: rgba(123,79,175,0.85); }
+}
+
+@keyframes tension-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(224,90,48,0.45); }
+  50%      { box-shadow: 0 0 14px rgba(200,64,64,0.85); }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 8px rgba(201,168,76,0.30); }
+  50%       { box-shadow: 0 0 16px rgba(201,168,76,0.60), 0 0 32px rgba(201,168,76,0.20); }
+}

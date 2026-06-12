@@ -1,0 +1,15 @@
+{
+  "name": "kronikler-kul-koz",
+  "version": "1.0.0",
+  "description": "Kronikler — Kül & Köz tasarım sistemi (claude.ai/design senkronu için bağımsız paket)",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "style": "styles.css",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/index.jsx --bundle --format=esm --external:react --external:react-dom --outfile=dist/index.js --jsx=automatic"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}
