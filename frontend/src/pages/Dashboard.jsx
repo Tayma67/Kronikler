@@ -9,6 +9,7 @@ import LifeEventModal from '@/components/LifeEventModal';
 import StoryModal from '@/components/StoryModal';
 import WeekPlanCard from '@/components/WeekPlanCard';
 import HarvestModal from '@/components/HarvestModal';
+import SagaStrip, { SagaTab, useSaga } from '@/components/SagaStrip';
 
 // ── SEASON → HERO IMAGE MAP ──────────────────────────────────────────────────
 const SEASON_IMAGE = {
@@ -320,6 +321,7 @@ export default function Dashboard() {
   }, []);
   const [activeTab, setActiveTab]     = useState('gunluk');
   const [advancing, setAdvancing]     = useState(false);
+  const saga = useSaga(state);
 
   // ── Loading / no state ─────────────────────────────────────────────────────
   if (!state || !state.player) {
@@ -586,6 +588,9 @@ export default function Dashboard() {
       {/* ── SCROLLABLE CONTENT ─────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflow: 'hidden', paddingBottom: '10.5rem', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column' }}>
 
+        {/* S3 Makyaj: Hayat Romanı şeridi — perde, gerilim, kapındaki elçiler */}
+        <SagaStrip saga={saga} />
+
         {/* ── JOURNAL PANEL ─────────────────────────────────────────────── */}
         {/* R1: Hafta Planı kartı (kompakt; dokununca 3 slotlu seçici) */}
         <WeekPlanCard />
@@ -672,7 +677,7 @@ export default function Dashboard() {
               {[
                 { key: 'gunluk', icon: '📋', label: 'GÜNLÜK' },
                 { key: 'dunya',  icon: '🌍', label: 'DÜNYA' },
-                { key: 'icsel',  icon: '✨', label: 'İÇSEL ARZU' },
+                { key: 'roman',  icon: '📖', label: 'ROMAN' },
               ].map(tab => {
                 const isActive = activeTab === tab.key;
                 return (
@@ -717,7 +722,9 @@ export default function Dashboard() {
             background: 'linear-gradient(180deg, #271D0C 0%, #231808 50%, #1F1507 100%)',
             boxShadow: 'inset 0 0 50px rgba(201,168,76,0.05), inset 0 2px 0 rgba(201,168,76,0.07), inset 0 -2px 0 rgba(201,168,76,0.04)',
           }}>
-            {currentTabEvents.length > 0 ? (
+            {activeTab === 'roman' ? (
+              <SagaTab saga={saga} />
+            ) : currentTabEvents.length > 0 ? (
               currentTabEvents.map((ev, i) => (
                 <EventCard
                   key={ev.day + '_' + ev.type + '_' + i}
@@ -731,14 +738,12 @@ export default function Dashboard() {
                 color: 'var(--color-parchment-muted)',
               }}>
                 <div style={{ fontSize: '1.4rem', marginBottom: '0.5rem', opacity: 0.4 }}>
-                  {activeTab === 'gunluk' ? '📜' : activeTab === 'dunya' ? '🌍' : '✨'}
+                  {activeTab === 'gunluk' ? '📜' : '🌍'}
                 </div>
                 <p className="font-serif" style={{ fontSize: '0.85rem', fontStyle: 'italic', lineHeight: 1.5 }}>
                   {activeTab === 'gunluk'
                     ? 'Günlüğün henüz boş.\nHaftayı ilerlet, yeni hikayeler başlasın.'
-                    : activeTab === 'dunya'
-                    ? 'Dünyadan henüz haber yok.\nBüyük olaylar yakında gelecek.'
-                    : 'İçsel arzuların şekilleniyor...\nFırsatlar bölümünü keşfet.'}
+                    : 'Dünyadan henüz haber yok.\nBüyük olaylar yakında gelecek.'}
                 </p>
               </div>
             )}

@@ -408,3 +408,47 @@ nav button:active {
 
 /* ── Rounded-sm consistency ──────────────────────────────────── */
 .rounded-sm { border-radius: 4px; }
+
+/* ════ S3 MAKYAJ: Hayat Romanı şeridi ═══════════════════════════ */
+
+/* Gerilim közü: sönük altın → kor kırmızısı; yüksek gerilimde nabız */
+.tension-track {
+  height: 3px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.tension-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(to right, #8B6914, #C9A84C 40%, #E05A30 75%, #C84040);
+  box-shadow: 0 0 6px rgba(224,90,48,0.45);
+  transition: width 0.8s ease;
+}
+@keyframes tension-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(224,90,48,0.45); }
+  50%      { box-shadow: 0 0 14px rgba(200,64,64,0.85); }
+}
+.tension-hot .tension-fill { animation: tension-pulse 1.6s ease-in-out infinite; }
+
+/* Acil rozet: elçi / nemesis / söylenti — yumuşak tehlike nabzı */
+@keyframes urgent-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200,64,64,0.0); border-color: rgba(200,64,64,0.45); }
+  50%      { box-shadow: 0 0 10px 1px rgba(200,64,64,0.35); border-color: rgba(200,64,64,0.8); }
+}
+.chip-urgent {
+  animation: urgent-pulse 2.2s ease-in-out infinite;
+}
+@keyframes envoy-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(123,79,175,0.0); border-color: rgba(123,79,175,0.45); }
+  50%      { box-shadow: 0 0 10px 1px rgba(123,79,175,0.4); border-color: rgba(123,79,175,0.85); }
+}
+.chip-envoy {
+  animation: envoy-pulse 2.2s ease-in-out infinite;
+}
+
+/* Perde başlığı altın çizgisi */
+.saga-rule {
+  height: 1px;
+  background: linear-gradient(to right, rgba(201,168,76,0.5), rgba(201,168,76,0.12), transparent);
+}

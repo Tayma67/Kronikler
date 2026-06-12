@@ -768,8 +768,39 @@ export default function NPCDetail() {
         </div>
       </div>
 
-      {/* Memory */}
-      {(npc.memory || []).length > 0 && (
+      {/* S2: Onun Zihninde — yapısal anılar (duygu yüklü, travmalar kalıcı) */}
+      {(npc.anilar || []).filter(m => m.hedef === "player").length > 0 ? (
+        <div className="card-frame p-4 mt-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Brain className="w-3.5 h-3.5 text-amber-600" />
+            <span className="label-tiny">Onun Zihninde</span>
+          </div>
+          <ul className="space-y-1.5">
+            {(npc.anilar || []).filter(m => m.hedef === "player")
+              .sort((a, b) => Math.abs(b.duygu_yuku) - Math.abs(a.duygu_yuku))
+              .slice(0, 5)
+              .map((m, i) => {
+                const hafta = (state.turn || 0) - (m.hafta || 0);
+                const zaman = hafta < 4 ? "geçenlerde" : hafta < 52 ? `${Math.round(hafta / 4)} ay önce` : `${Math.round(hafta / 52)} yıl önce`;
+                return (
+                  <li key={i} className="flex items-start gap-2 text-xs">
+                    <span className="shrink-0 mt-0.5">
+                      {m.travma ? "⚡" : m.duygu_yuku > 0 ? "🤍" : "🩸"}
+                    </span>
+                    <span className={`flex-1 italic leading-snug ${
+                      m.travma ? "text-red-300"
+                      : m.duygu_yuku > 0 ? "text-emerald-300/90" : "text-orange-300/90"
+                    }`}>
+                      {m.detay || m.tur.replace(/_/g, " ")}
+                      <span className="text-stone-600 not-italic"> — {zaman}</span>
+                      {m.travma && <span className="text-red-400 not-italic font-heading text-[9px] tracking-wider"> · ASLA UNUTMAZ</span>}
+                    </span>
+                  </li>
+                );
+              })}
+          </ul>
+        </div>
+      ) : (npc.memory || []).length > 0 && (
         <div className="card-frame p-4 mt-3">
           <div className="flex items-center gap-1.5 mb-2">
             <Brain className="w-3.5 h-3.5 text-stone-600" />

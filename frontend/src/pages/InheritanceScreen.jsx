@@ -10,7 +10,14 @@
  */
 import { useState, useEffect } from "react";
 import { profLabel } from "@/lib/labels";
+import { api } from "@/lib/api";
 import { Skull, Baby, ChevronRight, Sparkles } from "lucide-react";
+
+const STAT_TR = {
+  strength: "KUVVET", intelligence: "ZEKÂ",
+  charisma: "KARİZMA", stamina: "DAYANIKLILIK",
+  combat: "savaş", trade: "ticaret", crafting: "zanaat", social: "sosyal",
+};
 
 function StatRow({ label, value, inherited }) {
   return (
@@ -53,9 +60,11 @@ export default function InheritanceScreen({
   const [selected, setSelected] = useState(null);
   const [phase, setPhase]       = useState("eulogy"); // eulogy → choice → confirm
   const [visible, setVisible]   = useState(false);
+  const [saga, setSaga]         = useState(null);   // ölen hayatın perdeleri
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 100);
+    api.get("/game/yonetmen").then((r) => setSaga(r.data)).catch(() => {});
     return () => clearTimeout(t);
   }, []);
 
@@ -106,11 +115,38 @@ export default function InheritanceScreen({
               </div>
 
               <div className="inh-divider" />
-              <p className="inh-quote">
-                "Her son bir başlangıçtır.<br />
-                Küllerin içinde bir miras saklıdır<br />
-                ve o miras seninle devam eder."
-              </p>
+
+              {/* S3 Chronicle 2.0: romanın son sayfası — hayat perde perde */}
+              {saga?.perdeler?.length > 0 ? (
+                <div style={{ margin: "0 8px" }}>
+                  <div className="inh-section" style={{ textAlign: "center" }}>
+                    Hikâyesi {saga.perdeler.length} Perde Sürdü
+                  </div>
+                  {saga.perdeler.slice(-5).map((p) => (
+                    <div key={p.no} className="inh-quote"
+                      style={{ fontSize: 13, lineHeight: 1.9, opacity: p.bitis == null ? 1 : 0.65 }}>
+                      {p.baslik}
+                    </div>
+                  ))}
+                  {(saga.nemesisler || []).filter(n => n.alive).map((n) => (
+                    <div key={n.id} className="inh-quote"
+                      style={{ fontSize: 12, color: "#a05050", marginTop: 6 }}>
+                      🗡 {n.name} ile defter kapanmadı — hesap mirasla geçer.
+                    </div>
+                  ))}
+                  {saga.bekleyen_tohum > 0 && (
+                    <div className="inh-quote" style={{ fontSize: 12, marginTop: 6 }}>
+                      🌰 Toprağın altında {saga.bekleyen_tohum} tohum hâlâ bekliyor.
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="inh-quote">
+                  "Her son bir başlangıçtır.<br />
+                  Küllerin içinde bir miras saklıdır<br />
+                  ve o miras seninle devam eder."
+                </p>
+              )}
               <div className="inh-divider" />
 
               {(Object.keys(inheritedStats || {}).length > 0 || inheritedMoney > 0) && (
@@ -118,10 +154,10 @@ export default function InheritanceScreen({
                   <div className="inh-section" style={{ marginBottom: 10 }}>Nesle Bırakılan Miras</div>
                   <div className="flex flex-wrap">
                     {Object.entries(inheritedStats || {}).map(([k, v]) => v > 1 && (
-                      <span key={k} className="inh-badge">+{v} {k.toUpperCase()}</span>
+                      <span key={k} className="inh-badge">+{v} {STAT_TR[k] || k.toUpperCase()}</span>
                     ))}
                     {Object.entries(inheritedSkills || {}).map(([k, v]) => v > 0 && (
-                      <span key={k} className="inh-badge" style={{ color: "#7aaa60" }}>+{v} {k}</span>
+                      <span key={k} className="inh-badge" style={{ color: "#7aaa60" }}>+{v} {STAT_TR[k] || k}</span>
                     ))}
                     {inheritedMoney > 0 && (
                       <span className="inh-badge" style={{ color: "#d4a96a" }}>+{inheritedMoney} Altın</span>
@@ -205,7 +241,7 @@ export default function InheritanceScreen({
                   <div className="inh-section" style={{ marginBottom: 10 }}>Bu Nesle Aktarılan</div>
                   <div className="flex flex-wrap">
                     {Object.entries(inheritedStats || {}).map(([k, v]) => v > 1 && (
-                      <span key={k} className="inh-badge">+{v} {k.toUpperCase()}</span>
+                      <span key={k} className="inh-badge">+{v} {STAT_TR[k] || k.toUpperCase()}</span>
                     ))}
                     {inheritedMoney > 0 && (
                       <span className="inh-badge" style={{ color: "#d4a96a" }}>+{inheritedMoney} Altın</span>

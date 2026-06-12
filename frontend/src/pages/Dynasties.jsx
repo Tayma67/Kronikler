@@ -90,10 +90,16 @@ function DynastyRow({ row, busy, onOverture }) {
 }
 
 // ─── Teklif kartı ─────────────────────────────────────────────────────────────
-function OfferCard({ offer, busy, onRespond }) {
+function OfferCard({ offer, busy, onRespond, turn }) {
+  const kalan = Math.max(0, (offer.expires || 0) - (turn || 0));
   return (
     <div className="card-frame p-3.5 border border-purple-900/40 bg-purple-950/10 rise-in">
       <p className="text-xs text-stone-200 leading-relaxed">{offer.text}</p>
+      {kalan > 0 && (
+        <p className={`text-[10px] mt-1 italic ${kalan <= 3 ? "text-red-400" : "text-stone-500"}`}>
+          ⏳ Elçi {kalan} hafta daha bekleyecek{kalan <= 3 ? " — sabrı tükeniyor!" : "."}
+        </p>
+      )}
       <div className="flex gap-1.5 mt-2.5">
         <button disabled={busy} onClick={() => onRespond(offer.id, "kabul")}
           className="flex-1 py-1.5 text-[10px] font-heading tracking-wider border border-emerald-800 text-emerald-300 hover:bg-emerald-950/30 rounded-sm flex items-center justify-center gap-1">
@@ -179,7 +185,7 @@ export default function Dynasties() {
             📜 Kapında Elçiler Var
           </div>
           {data.teklifler.map((o) => (
-            <OfferCard key={o.id} offer={o} busy={busy} onRespond={respond} />
+            <OfferCard key={o.id} offer={o} busy={busy} onRespond={respond} turn={data.turn} />
           ))}
         </div>
       )}
