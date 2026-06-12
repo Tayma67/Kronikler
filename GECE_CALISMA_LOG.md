@@ -164,6 +164,18 @@ Yapılanlar:
     sohbette paylaşıldı). Oynanış ekranları backend+Mongo gerektirdiğinden render
     edilemedi (ortamda Mongo yok); onlar derleme + statik analizle doğrulandı.
 
+### [01:50] ✅ İŞ 14: Yeni Oyun ekranı SİNEMATİK yeniden tasarım (kullanıcı mockup'ı)
+Kullanıcı bir mockup gönderdi: tam ekran köy-çocuk arka planı + sade form. Uzun
+metinli koyu kart → sinematik, immersive, kargaşasız ilk-izlenim:
+- Arka plan: ürettiğim `cocuk_sonbahar` hero (sırtı dönük çocuk, köye bakan yol) +
+  atmosferik degrade örtüler (okunabilirlik).
+- "YENİ OYUN" altın başlık + ⚜ süs ayracı + tek satır atmosferik alt yazı.
+- Tek "Ad Soyad" alanı (backend için boşluktan ad/soyad'a bölünür).
+- ♂ Erkek / ♀ Kız (7 yaş çocuk → "kız/erkek" doğru; backend değeri erkek/kadın korunur).
+- Alttaki "DÜNYAYI YARAT" btn-ember; çocuk sahnesi form ile buton arasında görünür.
+Doğrulama: build yeşil + headless tarayıcıda render edilip mockup'la karşılaştırıldı,
+ekran görüntüsü sohbette paylaşıldı. Mockup'a sadık.
+
 **EN KRİTİK İKİ BULGU:** (a) production build gece başlamadan ÖNCE de kırıktı →
 düzeltildi; (b) üretilen uygulama ikonu hiçbir yere bağlı değildi → bağlandı.
 İkisi de kozmetik değil, gerçek sonuç doğuran düzeltmeler.
