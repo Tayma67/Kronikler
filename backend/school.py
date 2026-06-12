@@ -1305,7 +1305,10 @@ def join_club(state, club_id):
     req_stat = club["join_req"]["stat"]
     req_val  = club["join_req"]["min_val"]
     if player.get("stats", {}).get(req_stat, 1) < req_val:
-        return {"ok": False, "error": f"{req_stat.upper()} en az {req_val} olmalı."}
+        stat_tr = {"strength": "Kuvvet", "intelligence": "Zekâ",
+                   "charisma": "Karizma", "stamina": "Dayanıklılık"}
+        return {"ok": False,
+                "error": f"{stat_tr.get(req_stat, req_stat)} en az {req_val} olmalı."}
 
     school["clubs"].append(club_id)
 

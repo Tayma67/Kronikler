@@ -836,6 +836,9 @@ def _family_support_tick(state, day):
 def _player_tick(state):
     """Weekly tick for player: hunger, age, buffs decay."""
     player = state["player"]
+    # İtibar sınırı: hiçbir yerde kelepçe yoktu — event ödülleriyle sonsuz
+    # stack'lenip 100+ değerlere taşıyordu (etiketler/etkiler 0-100 varsayar)
+    player["reputation"] = max(-100, min(100, player.get("reputation", 0)))
     season = season_for_turn(state.get("turn", 0))
     hunger_mult = SEASON_EFFECTS[season]["hunger_mult"]
     # Hunger -5 per week (modified by season). Stamina passive lowers loss slightly.
