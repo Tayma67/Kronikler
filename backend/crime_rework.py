@@ -320,6 +320,17 @@ def _outcome_seen(state, j):
                                  tur="suc_tanigi", hafta=state.get("turn", 0))
         except Exception:
             pass
+        # S4 tohum: o çift göz yıllar sonra hesap sorabilir
+        try:
+            from story_director import sow_seed
+            sow_seed(state, "suc_tanigi",
+                     f"{w['name']} o geceyi unutmamıştı. Yıllar sonra karşına "
+                     "dikildi: 'Seni gördüm. Susmamın bir bedeli var.'",
+                     hafta_min=52, hafta_max=260, agirlik="buyuk",
+                     nesil_asabilir=True, npc_id=w["id"],
+                     etki={"money": -40, "reputation": -4})
+        except Exception:
+            pass
     note = "Paçayı kurtardın ama bir çift göz seni tanıdı."
     if witness_name:
         note += f" {witness_name} gördüklerini unutmayacak."

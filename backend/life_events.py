@@ -1327,6 +1327,13 @@ def maybe_trigger_life_event(state: dict):
     eligible = get_eligible_events(state)
     if not eligible:
         return
+    # S3 Dramaturjik Seçim: yönetmen havuzu tona göre süzer
+    # (nefes haftasında gergin event gelmez; kriz yayında öne çıkar)
+    try:
+        from story_director import director_event_bias
+        eligible = director_event_bias(state, eligible) or eligible
+    except Exception:
+        pass
     # Hafta planına göre ağırlıklı seçim — plan yoksa random.choice fallback
     try:
         from simulation import _hafta_weighted_life_event

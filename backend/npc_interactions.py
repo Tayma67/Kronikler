@@ -1008,6 +1008,12 @@ def do_attack(state: dict, npc_id: str) -> dict:
         log.append(f"{npc['name']} seni dövdü, kaçtın.")
         _push_event(state, state["turn"], "savaş_kaybı",
                     f"{player['name']}, {npc['name']}'a saldırdı ama kaybetti.")
+        # S3 Nemesis: seni yenen NPC aday olur — geri dönecek
+        try:
+            from story_director import mark_nemesis_candidate
+            mark_nemesis_candidate(state, npc)
+        except Exception:
+            pass
         outcome = "kayıp"
 
     elif enemy_hp <= 0:

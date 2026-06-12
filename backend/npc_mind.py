@@ -261,6 +261,18 @@ def goal_action(state, npc, eylem):
         npc["owes_player"] = True
         npc["goal_progress"] = min(100, npc.get("goal_progress", 0) + 30)
         progress_now = npc["goal_progress"]
+        # S4 tohum: bu iyilik yıllar sonra beklenmedik biçimde döner
+        try:
+            from story_director import sow_seed
+            sow_seed(state, "amac_yardimi",
+                     f"{npc['name']} yükselmişti — ve seni unutmamıştı. Bir gün "
+                     "kapına adamları geldi: 'Velinimetimiz seni çağırıyor.' "
+                     "Eski iyiliğin sofrayla, keseyle ve itibarla döndü.",
+                     hafta_min=104, hafta_max=416, agirlik="buyuk",
+                     nesil_asabilir=True, npc_id=npc["id"],
+                     etki={"money": 90, "reputation": 6})
+        except Exception:
+            pass
         try:
             from simulation import _push_event, advance_time
             _push_event(state, turn, "yardım",

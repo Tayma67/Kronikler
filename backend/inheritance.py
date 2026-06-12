@@ -231,6 +231,13 @@ def begin_inheritance(state, chosen_child_id: str = None) -> dict:
     except Exception:
         pass
 
+    # S3/S4: nesil aşan tohumlar kalır, yönetmen yeni perde açar
+    try:
+        from story_director import inherit_seeds
+        inherit_seeds(state)
+    except Exception:
+        pass
+
     return state
 
 

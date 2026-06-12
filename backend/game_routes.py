@@ -776,6 +776,14 @@ def build_game_router(db):
         result["state"] = _decorate(state)
         return result
 
+    # ---------- S3: Hikâye Yönetmeni — hayat romanı ----------
+    @router.get("/yonetmen")
+    async def get_director(user: dict = Depends(get_current_user)):
+        """S3: gerilim, aktif yay, perdeler (Chronicle 2.0), nemesisler."""
+        state = await _load_state(db, user["_id"])
+        from story_director import director_view
+        return director_view(state)
+
     # ---------- S2: Nam profili & hakkındaki söylentiler ----------
     @router.get("/nam")
     async def get_nam(user: dict = Depends(get_current_user)):

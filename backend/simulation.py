@@ -1225,6 +1225,12 @@ def advance_time(state, weeks=1, days=None):
             dynasty_world_tick(state, day)
         except Exception:
             pass
+        # S3 Hikâye Yönetmeni: gerilim + tempo + nemesis + tohumlar
+        try:
+            from story_director import director_tick
+            director_tick(state, day)
+        except Exception:
+            pass
         if len(state["history"]) > 250:
             state["history"] = state["history"][-250:]
     # Auto-unlock family quests at the end of advancement

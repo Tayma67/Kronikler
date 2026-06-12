@@ -116,10 +116,60 @@ function YearStory({ yearData, defaultOpen = false }) {
   );
 }
 
+// ── S3 Chronicle 2.0: Hayat Romanı perdeleri ─────────────────────────────────
+function NovelActs({ director }) {
+  if (!director?.perdeler?.length) return null;
+  const yayCls = {
+    kriz: "text-red-400 border-red-900/50", doruk: "text-orange-400 border-orange-900/50",
+    cozulme: "text-sky-400 border-sky-900/50", yukselis: "text-emerald-400 border-emerald-900/50",
+    durgun: "text-stone-400 border-stone-700", kurulus: "text-amber-400 border-amber-900/50",
+  }[director.aktif_yay] || "text-stone-400 border-stone-700";
+  return (
+    <div className="card-frame p-4 space-y-2 border-purple-900/30 bg-purple-950/5">
+      <div className="flex items-center justify-between">
+        <div className="label-tiny text-purple-400">Hayat Romanı</div>
+        <div className="flex items-center gap-2">
+          <span className={`text-[9px] px-1.5 py-0.5 border rounded-sm font-heading tracking-wider ${yayCls}`}>
+            {director.yay_label?.toUpperCase()}
+          </span>
+          <span className="text-[10px] text-stone-600" title="Dramatik gerilim">
+            🌡 {director.gerilim}
+          </span>
+        </div>
+      </div>
+      <div className="space-y-1">
+        {[...director.perdeler].reverse().slice(0, 6).map((p) => (
+          <div key={p.no} className={`flex items-baseline gap-2 text-xs ${p.bitis == null ? "text-stone-200" : "text-stone-500"}`}>
+            <span className="font-heading tracking-wider">{p.baslik}</span>
+            <span className="text-[9px] text-stone-600 ml-auto shrink-0">
+              H{p.baslangic}{p.bitis != null ? `–${p.bitis}` : " — sürüyor"}
+            </span>
+          </div>
+        ))}
+      </div>
+      {(director.nemesisler || []).length > 0 && (
+        <div className="pt-1.5 border-t border-stone-800">
+          {director.nemesisler.map((n) => (
+            <div key={n.id} className="text-[11px] text-red-300/90 italic">
+              🗡 {n.name} seni unutmadı — gölgesi üstünde.
+            </div>
+          ))}
+        </div>
+      )}
+      {director.bekleyen_tohum > 0 && (
+        <div className="text-[10px] text-stone-600 italic">
+          🌰 Geçmişte ekilmiş {director.bekleyen_tohum} tohum hâlâ toprağın altında…
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Chronicle() {
   const { state } = useGame();
   const [summary, setSummary] = useState(null);
   const [full, setFull] = useState(null);
+  const [director, setDirector] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("full"); // "summary" | "full"
 
@@ -129,9 +179,11 @@ export default function Chronicle() {
     Promise.all([
       api.get("/game/chronicle/summary").catch(() => null),
       api.get("/game/chronicle/full?limit=80").catch(() => null),
-    ]).then(([s, f]) => {
+      api.get("/game/yonetmen").catch(() => null),
+    ]).then(([s, f, d]) => {
       if (s?.data) setSummary(s.data);
       if (f?.data) setFull(f.data);
+      if (d?.data) setDirector(d.data);
     }).finally(() => setLoading(false));
   }, [state]);
 
@@ -182,6 +234,9 @@ export default function Chronicle() {
           <Loader2 className="w-4 h-4 animate-spin" /> Kronik yükleniyor…
         </div>
       )}
+
+      {/* ── S3: Hayat Romanı — perdeler, gerilim, nemesis ── */}
+      <NovelActs director={director} />
 
       {/* ── Yılın Özeti (narrative_engine'den) ── */}
       {summary?.brief && (
