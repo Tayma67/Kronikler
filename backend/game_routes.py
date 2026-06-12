@@ -674,6 +674,36 @@ def build_game_router(db):
             result["advance_early_stop"] = early_stop
         return result
 
+    # ---------- R4: Sohbet Eli ----------
+    @router.get("/npc/{npc_id}/cards")
+    async def npc_cards(npc_id: str, user: dict = Depends(get_current_user)):
+        """R4: NPC'ye yaklaşınca dağıtılan 3 konu kartı (haftalık el)."""
+        state = await _load_state(db, user["_id"])
+        npc = next((n for n in state["world"]["npcs"]
+                    if n["id"] == npc_id and n.get("alive")), None)
+        if not npc:
+            raise HTTPException(status_code=404, detail="NPC bulunamadı veya ölü")
+        from conversation import deal_cards
+        return deal_cards(state, npc)
+
+    @router.post("/npc/{npc_id}/card")
+    async def npc_play_card(npc_id: str, body: dict = Body(default={}),
+                            user: dict = Depends(get_current_user)):
+        """R4: seçilen konu kartını oyna — sohbet sahnesi + ilişki + bilgi."""
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        npc = next((n for n in state["world"]["npcs"]
+                    if n["id"] == npc_id and n.get("alive")), None)
+        if not npc:
+            raise HTTPException(status_code=404, detail="NPC bulunamadı veya ölü")
+        from conversation import play_card
+        result, err = play_card(state, npc, body.get("card_id"))
+        if err:
+            raise HTTPException(status_code=400, detail=err)
+        await _save_state(db, user["_id"], state)
+        result["state"] = _decorate(state)
+        return result
+
     # ---------- chat ----------
     @router.post("/chat")
     async def chat(body: ChatIn, user: dict = Depends(get_current_user)):

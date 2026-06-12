@@ -136,14 +136,44 @@ function ChatModal({ npc, state, onClose }) {
   const [lastTopic, setLastTopic] = useState(null);
   const logRef = useRef(null);
 
+  // R4 Sohbet Eli: haftalık 3 konu kartı
+  const [hand, setHand] = useState(null);
+  const [playedCards, setPlayedCards] = useState([]);
+
   useEffect(() => {
     api.get("/game/dialog-topics").then((r) => setTopics(r.data));
+    api.get(`/game/npc/${npc.id}/cards`).then((r) => setHand(r.data)).catch(() => {});
     // Mevcut NPC hafızasından son topic'i çek
     const mem = npc?.memory;
     if (mem && mem.length > 0) {
       setLastTopic(mem[mem.length - 1].topic);
     }
   }, [npc]);
+
+  const playCard = async (card) => {
+    setBusy(true);
+    setLog((c) => [...c, { from: "p", text: card.label }]);
+    try {
+      const { data } = await api.post(`/game/npc/${npc.id}/card`, { card_id: card.id });
+      if (data.proactive) {
+        setLog((c) => [...c, { from: "n", text: data.proactive, isProactive: true }]);
+      }
+      setLog((c) => [...c, { from: "n", text: data.text, delta: data.delta }]);
+      if (data.closing) {
+        setLog((c) => [...c, { from: "n", text: data.closing, isProactive: true }]);
+      }
+      if (data.intel) {
+        setLog((c) => [...c, { from: "i", text: `📖 ${data.intel.text}` }]);
+        toast.success(data.intel.text, { duration: 4000 });
+      }
+      setPlayedCards((p) => [...p, card.id]);
+      if (data.state) setGameState(data.state);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Sohbet ters gitti.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -184,7 +214,11 @@ function ChatModal({ npc, state, onClose }) {
         {log.length === 0 && (
           <p className="text-stone-600 text-xs italic">Bir konu seçerek konuşmaya başla…</p>
         )}
-        {log.map((m, i) => (
+        {log.map((m, i) => m.from === "i" ? (
+          <div key={i} className="text-[11px] text-amber-300 bg-amber-950/20 border border-amber-900/40 rounded-sm px-3 py-2 italic">
+            {m.text}
+          </div>
+        ) : (
           <div key={i} className={`max-w-[88%] ${m.from === "p" ? "ml-auto" : ""}`}>
             {m.isProactive && (
               <div className="text-amber-400/60 text-[10px] italic mb-0.5 pl-1">
@@ -208,22 +242,50 @@ function ChatModal({ npc, state, onClose }) {
           </div>
         ))}
       </div>
-      {/* topic buttons */}
-      <div className="flex flex-wrap gap-1.5 border-t border-stone-800 pt-3">
-        {topics.map((t) => (
+      {/* R4: Konu Kartları — bu haftanın eli */}
+      {hand?.cards && (
+        <div className="border-t border-stone-800 pt-3 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-heading tracking-[0.2em] text-amber-600/80 uppercase">
+              🃏 Konu Kartların
+            </span>
+            {hand.warning && playedCards.length === 0 && (
+              <span className="text-[9px] text-red-400/70 italic">{hand.warning}</span>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {hand.cards.map((c) => {
+              const used = playedCards.includes(c.id);
+              const tone = c.id.startsWith("g") ? "emerald" : c.id.startsWith("r") ? "amber" : "purple";
+              return (
+                <button key={c.id} disabled={busy || used || !npc.alive}
+                  onClick={() => playCard(c)}
+                  className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-sm border text-center transition-colors ${
+                    used ? "border-stone-800 text-stone-700 opacity-40"
+                    : tone === "emerald" ? "border-emerald-900/60 text-emerald-200 hover:bg-emerald-950/20"
+                    : tone === "amber" ? "border-amber-900/60 text-amber-200 hover:bg-amber-950/20"
+                    : "border-purple-900/60 text-purple-200 hover:bg-purple-950/20"}`}>
+                  <span className="text-[10px] leading-tight">{c.label}</span>
+                  <span className="text-[8px] opacity-60">{used ? "konuşuldu" : c.hint}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Hızlı konular (basit selamlaşma) */}
+      <div className="flex flex-wrap gap-1.5 pt-2">
+        {topics.slice(0, 4).map((t) => (
           <button
             key={t.id}
             onClick={() => speak(t.id, t.label)}
             disabled={busy || !npc.alive}
-            className={`btn-ghost-ash px-3 py-1.5 text-xs disabled:opacity-40 ${
+            className={`btn-ghost-ash px-2.5 py-1 text-[10px] disabled:opacity-40 ${
               t.id === lastTopic ? "border-amber-900/50 text-amber-500/80" : ""
             }`}
-            title={t.id === lastTopic ? "Son konuştuğun konu" : undefined}
           >
             {t.label}
-            {t.id === lastTopic && (
-              <span className="ml-1 text-amber-600/60 text-[9px]">↩</span>
-            )}
           </button>
         ))}
       </div>

@@ -258,6 +258,25 @@ def do_gift(state, npc_id, item_key, qty=1):
         npc["mood"] = "memnun"
         consequences = [f"İlişki +{gain}"]
 
+    # R4.2: meslek+kişilik hediye tercihi — sevilen hediye ×2.5,
+    # sevilmeyen sıfırlar ve küçük kırgınlık bırakır
+    try:
+        from conversation import gift_multiplier
+        _mult, _pref_line = gift_multiplier(npc, item_key)
+        if _mult == 0.0:
+            gain = -3
+            response = _pref_line or response
+            npc["mood"] = "kırgın"
+            consequences = ["İlişki -3 (yanlış hediye seçimi)",
+                            "💡 Sohbetle zevklerini öğrenebilirsin"]
+        elif _mult > 1.0 and gain > 0:
+            gain = round(gain * _mult)
+            if _pref_line:
+                response = _pref_line
+            consequences = [f"İlişki +{gain} (tam zevkine göre!)"]
+    except Exception:
+        pass
+
     gain = max(-5, min(30, gain))
     change_rel(state, npc_id, gain)
 
