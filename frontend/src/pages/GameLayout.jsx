@@ -318,7 +318,7 @@ export default function GameLayout() {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.4rem',
                         fontFamily: 'Cinzel, serif', fontSize: '0.55rem' }}>
             <span style={{ color: 'var(--color-parchment-muted)' }}>Altın</span>
-            <span style={{ color: 'var(--color-gold)' }} data-testid="layout-money">{player.money || 0}A</span>
+            <span style={{ color: 'var(--color-gold)' }} data-testid="layout-money">{player.money || 0} ⚜</span>
           </div>
         </div>
 
@@ -426,7 +426,7 @@ export default function GameLayout() {
                   <span>·</span>
                   <span>❤{player.health || 0}</span>
                   <span>·</span>
-                  <span>{player.money || 0}A</span>
+                  <span>{player.money || 0} ⚜</span>
                 </div>
               </div>
             </div>

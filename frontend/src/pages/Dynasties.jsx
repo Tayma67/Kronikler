@@ -55,7 +55,7 @@ function DynastyRow({ row, busy, onOverture, delta }) {
           <div className="text-[10px] text-stone-500 truncate">{row.strateji}</div>
         </div>
         <div className="text-right shrink-0">
-          <div className="text-sm font-heading text-amber-200">{row.servet.toLocaleString()} 🪙</div>
+          <div className="text-sm font-heading text-amber-200">{row.servet.toLocaleString()} ⚜</div>
           <div className="text-[10px] text-stone-500">
             {row.mulk_sayisi} mülk · itibar {row.itibar} · {row.nesil}. nesil
           </div>

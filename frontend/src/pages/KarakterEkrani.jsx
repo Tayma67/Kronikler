@@ -588,7 +588,7 @@ export default function KarakterEkrani({
             {/* Altın */}
             <div style={{ flex: 0.9, display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 3, marginBottom: 3 }}>
-                <span style={{ fontSize: 12 }}>🪙</span>
+                <span style={{ fontSize: 12, color: C.gold }}>⚜</span>
                 <span style={{ fontSize: 14, fontWeight: 700, color: C.gold, fontFamily: "'Cinzel', serif" }}>
                   {d.gold}
                 </span>
@@ -793,7 +793,7 @@ export default function KarakterEkrani({
 
               {/* Satış */}
               <div style={{ flex: 1, textAlign: "center", padding: "0 12px" }}>
-                <div style={{ fontSize: 20, marginBottom: 4 }}>🪙</div>
+                <div style={{ fontSize: 20, marginBottom: 4, color: C.gold }}>⚜</div>
                 <div style={{
                   fontSize: 8, letterSpacing: "0.14em",
                   color: C.textDim, fontFamily: "'Cinzel', serif", marginBottom: 5,
