@@ -215,59 +215,77 @@ function ArbitrageTable({ locations, goods }) {
   const spread = Math.round(((dearest - cheapest) / cheapest) * 100);
 
   return (
-    <div className="card-frame p-4 space-y-3">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="label-tiny">Arbitraj Analizi</div>
-        <div className="flex gap-1 flex-wrap">
-          {goods.map(g => (
-            <button key={g} onClick={() => setSortGood(g)}
-              className={`text-[10px] px-2 py-0.5 rounded-sm font-heading tracking-wider border transition-all ${
-                sortGood === g
-                  ? "border-orange-800 bg-stone-900 text-orange-400"
-                  : "border-stone-800 text-stone-500 hover:text-stone-300"
-              }`}>
-              {GOOD_ICONS[g]} {GOOD_LABELS[g]}
-            </button>
-          ))}
-        </div>
+    <Panel title="Terazi — Şehir Şehir Fiyat" icon="⚖" tone="ink"
+      right={spread > 5 ? <Pill tone="sage">%{spread} fark</Pill> : null}>
+      <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap", marginBottom: "0.6rem" }}>
+        {goods.map(g => (
+          <button key={g} onClick={() => setSortGood(g)}
+            className="font-display"
+            style={{
+              padding: "0.22rem 0.5rem", borderRadius: "4px", cursor: "pointer",
+              fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.08em", transition: "all 0.15s",
+              border: `1px solid ${sortGood === g ? "rgba(201,168,76,0.55)" : "var(--color-border)"}`,
+              background: sortGood === g ? "rgba(201,168,76,0.1)" : "transparent",
+              color: sortGood === g ? "var(--color-gold)" : "var(--color-parchment-muted)",
+            }}>
+            {GOOD_ICONS[g]} {GOOD_LABELS[g]}
+          </button>
+        ))}
       </div>
       {spread > 5 && (
-        <div className="text-xs text-emerald-400 border border-emerald-900/40 bg-emerald-950/15 px-3 py-1.5 rounded-sm flex items-center gap-2">
-          <TrendingUp className="w-3 h-3" />
+        <div className="font-serif" style={{
+          fontSize: "0.74rem", fontStyle: "italic", color: TONES.sage.text,
+          border: `1px solid ${TONES.sage.border}`, background: TONES.sage.bg,
+          borderRadius: "5px", padding: "0.45rem 0.65rem", marginBottom: "0.6rem",
+          display: "flex", alignItems: "center", gap: "0.4rem",
+        }}>
+          <TrendingUp className="w-3 h-3" style={{ flexShrink: 0 }} />
           <span>
-            <strong>{GOOD_LABELS[sortGood]}</strong>: En ucuzdan al, en pahalıya sat →{" "}
+            <strong>{GOOD_LABELS[sortGood]}</strong>: en ucuzdan al, en pahalıya sat →{" "}
             <strong>%{spread} kâr marjı</strong>
           </span>
         </div>
       )}
-      <div className="space-y-1">
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
         {rows.map((row, i) => {
           const ratio = row.price / row.base;
           const isMin = i === 0, isMax = i === rows.length - 1;
+          const rowTone = isMin ? TONES.sage : isMax ? TONES.blood : null;
           return (
             <div key={row.id}
-              className={`flex items-center gap-3 text-xs p-2 rounded-sm ${
-                isMin ? "bg-emerald-950/20 border border-emerald-900/30" :
-                isMax ? "bg-red-950/10 border border-red-900/20" : "border border-transparent"
-              }`}>
-              <span className="text-stone-500 w-4 text-[10px]">{i + 1}</span>
-              <div className="flex-1 min-w-0">
-                <span className="text-stone-200 capitalize">{row.name}</span>
-                <span className="text-stone-600 text-[10px] ml-1">({row.kind})</span>
+              style={{
+                display: "flex", alignItems: "center", gap: "0.6rem",
+                padding: "0.4rem 0.55rem", borderRadius: "5px",
+                border: rowTone ? `1px solid ${rowTone.border}` : "1px solid transparent",
+                background: rowTone ? rowTone.bg : "transparent",
+              }}>
+              <span className="font-display" style={{ width: "1rem", fontSize: "0.6rem", color: "var(--color-parchment-muted)" }}>
+                {i + 1}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span className="font-serif" style={{ fontSize: "0.8rem", color: "var(--color-parchment)", textTransform: "capitalize" }}>
+                  {row.name}
+                </span>
+                <span className="font-serif" style={{ fontSize: "0.64rem", fontStyle: "italic", color: "var(--color-parchment-muted)", marginLeft: "0.3rem" }}>
+                  ({row.kind})
+                </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <PriceBar price={row.price} base={row.base} max={dearest * 1.1} />
-                <span className={`font-heading w-10 text-right ${
-                  ratio > 1.15 ? "text-red-400" : ratio < 0.85 ? "text-emerald-400" : "text-stone-300"
-                }`}>{row.price}A</span>
+                <span className="font-display" style={{
+                  width: "3rem", textAlign: "right", fontSize: "0.74rem", fontWeight: 700,
+                  color: ratio > 1.15 ? TONES.blood.text : ratio < 0.85 ? TONES.sage.text : "var(--color-parchment-dim)",
+                }}>
+                  {row.price} ⚜
+                </span>
               </div>
-              {isMin && <TrendingDown className="w-3 h-3 text-emerald-400 shrink-0" />}
-              {isMax && <TrendingUp className="w-3 h-3 text-red-400 shrink-0" />}
+              {isMin && <TrendingDown className="w-3 h-3 shrink-0" style={{ color: TONES.sage.text }} />}
+              {isMax && <TrendingUp className="w-3 h-3 shrink-0" style={{ color: TONES.blood.text }} />}
             </div>
           );
         })}
       </div>
-    </div>
+    </Panel>
   );
 }
 
@@ -317,13 +335,9 @@ function MarketPanel({ loc, playerInv, onTrade, onBargain, onInspect, turn, qual
   const maxPriceInMarket = Math.max(...goods.map(g => loc.market[g].price));
 
   return (
-    <div className="card-frame p-4 space-y-4">
-      <div className="flex items-center gap-2">
-        <ShoppingCart className="w-4 h-4 text-orange-500" />
-        <span className="font-heading text-stone-100">{loc.name} Pazarı</span>
-        <span className="label-tiny capitalize ml-auto">{loc.kind} · Zenginlik {loc.wealth}</span>
-      </div>
-      <div className="space-y-2">
+    <Panel title={`${loc.name} Pazarı`} icon="🛒" tone="gold"
+      right={<Pill tone="ash">{loc.kind} · zenginlik {loc.wealth}</Pill>}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
         {goods.map(good => {
           const m = loc.market[good];
           const inInv = playerInv[good] || 0;
@@ -352,12 +366,14 @@ function MarketPanel({ loc, playerInv, onTrade, onBargain, onInspect, turn, qual
           const canInspect = QUALITY_GOODS.has(good) && !visibleQ && !intelVal;
 
           return (
-            <div key={good} className="border border-stone-800/60 rounded-sm p-3 space-y-2">
+            <div key={good} className="row-frame" style={{
+              flexDirection: "column", alignItems: "stretch", gap: "0.5rem", padding: "0.65rem 0.75rem",
+            }}>
               {/* Başlık satırı */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">{GOOD_ICONS[good]}</span>
-                  <span className="text-sm text-stone-200">{GOOD_LABELS[good] || good}</span>
+                  <span style={{ fontSize: "1.05rem", filter: "drop-shadow(0 0 6px rgba(201,168,76,0.25))" }}>{GOOD_ICONS[good]}</span>
+                  <span className="font-display" style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--color-parchment)" }}>{GOOD_LABELS[good] || good}</span>
                   {visibleQ && <QualityBadge kalite={visibleQ} />}
                   {canInspect && (
                     <button
@@ -370,17 +386,17 @@ function MarketPanel({ loc, playerInv, onTrade, onBargain, onInspect, turn, qual
                   )}
                 </div>
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="text-stone-500">
-                    Stok: <span className="text-stone-300">{m.supply}</span>
+                  <span className="label-tiny">
+                    Stok <span style={{ color: "var(--color-parchment-dim)" }}>{m.supply}</span>
                   </span>
                   <PriceBar price={m.price} base={m.base} max={maxPriceInMarket} />
                   {prevP != null && prevP !== m.price && (
-                    <span className="text-[9px] text-stone-600" title="Geçen kaydedilen fiyat">
-                      geçen {prevP}A
+                    <span className="font-serif" style={{ fontSize: "0.6rem", fontStyle: "italic", color: "var(--color-parchment-muted)" }} title="Geçen kaydedilen fiyat">
+                      geçen {prevP}⚜
                     </span>
                   )}
                   <TrendIcon trend={trend} />
-                  <span className="font-heading text-amber-400 w-10 text-right">{m.price}A</span>
+                  <span style={{ minWidth: "2.8rem", textAlign: "right" }}><Coin value={m.price} /></span>
                 </div>
               </div>
 
@@ -408,7 +424,7 @@ function MarketPanel({ loc, playerInv, onTrade, onBargain, onInspect, turn, qual
                   {previewBusy[`${good}_al`]
                     ? <Loader2 className="w-3 h-3 animate-spin" />
                     : <Coins className="w-3 h-3" />}
-                  AL ({buyCost}A)
+                  AL ({buyCost} ⚜)
                 </button>
 
                 <button onClick={() => onTrade(loc.id, good, "sat", q)}
@@ -417,7 +433,7 @@ function MarketPanel({ loc, playerInv, onTrade, onBargain, onInspect, turn, qual
                   {previewBusy[`${good}_sat`]
                     ? <Loader2 className="w-3 h-3 animate-spin" />
                     : <Package className="w-3 h-3" />}
-                  SAT ({sellEarn}A)
+                  SAT ({sellEarn} ⚜)
                 </button>
 
                 <button
@@ -441,20 +457,20 @@ function MarketPanel({ loc, playerInv, onTrade, onBargain, onInspect, turn, qual
                 <div className="flex flex-wrap gap-2 text-[10px] text-stone-500">
                   {buyAvg && (
                     <span>
-                      Alım ort.: <span className="text-amber-400">{buyAvg}A/birim</span>
+                      Alım ort.: <span className="text-amber-400">{buyAvg}⚜/birim</span>
                       {buyPreview && (
                         <span className="text-stone-600">
-                          {" "}({buyPreview.first_unit_price}A → {buyPreview.last_unit_price}A)
+                          {" "}({buyPreview.first_unit_price}⚜ → {buyPreview.last_unit_price}⚜)
                         </span>
                       )}
                     </span>
                   )}
                   {sellAvg && (
                     <span>
-                      Satış ort.: <span className="text-emerald-400">{sellAvg}A/birim</span>
+                      Satış ort.: <span className="text-emerald-400">{sellAvg}⚜/birim</span>
                       {sellPreview && (
                         <span className="text-stone-600">
-                          {" "}({sellPreview.first_unit_price}A → {sellPreview.last_unit_price}A)
+                          {" "}({sellPreview.first_unit_price}⚜ → {sellPreview.last_unit_price}⚜)
                         </span>
                       )}
                     </span>
@@ -477,7 +493,7 @@ function MarketPanel({ loc, playerInv, onTrade, onBargain, onInspect, turn, qual
           );
         })}
       </div>
-    </div>
+    </Panel>
   );
 }
 
@@ -508,17 +524,13 @@ function CaravanStatusCard({ status, onDisband, busy }) {
   const cfg = statusConfig[caravan.status] || statusConfig.traveling;
 
   return (
-    <div className="card-frame p-4 space-y-4">
-      {/* Başlık */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Truck className="w-4 h-4 text-amber-500" />
-          <span className="font-heading text-stone-100">Aktif Kervan</span>
-        </div>
+    <Panel title="Aktif Kervan" icon="🐫" tone="ember"
+      right={
         <span className={`text-[10px] px-2 py-0.5 rounded-sm border font-heading tracking-wider flex items-center gap-1 ${cfg.bg} ${cfg.color}`}>
           {cfg.icon} {cfg.label}
         </span>
-      </div>
+      }>
+      <div className="space-y-4">
 
       {/* Rota */}
       <div className="flex items-center gap-1 flex-wrap text-xs">
@@ -546,10 +558,13 @@ function CaravanStatusCard({ status, onDisband, busy }) {
           <span>{steps_completed}/{total_steps} adım</span>
           <span>%{progress_pct}</span>
         </div>
-        <div className="h-1.5 bg-stone-800 rounded-full overflow-hidden">
+        <div style={{ height: "6px", background: "rgba(255,255,255,0.07)", borderRadius: "3px", overflow: "hidden" }}>
           <div
-            className="h-full bg-amber-600 transition-all duration-500"
-            style={{ width: `${progress_pct}%` }}
+            style={{
+              height: "100%", width: `${progress_pct}%`, borderRadius: "3px",
+              background: "linear-gradient(to right, #8B6914, #C9A84C 60%, #E05A30)",
+              boxShadow: "0 0 8px rgba(224,90,48,0.4)", transition: "width 0.5s ease",
+            }}
           />
         </div>
       </div>
@@ -567,7 +582,7 @@ function CaravanStatusCard({ status, onDisband, busy }) {
         {caravan.cash_on_hand > 0 && (
           <div className="flex items-center gap-1 text-[11px] border border-stone-700/60 rounded-sm px-2 py-1">
             <Coins className="w-3 h-3 text-amber-400" />
-            <span className="text-amber-300 font-heading">{caravan.cash_on_hand}A nakit</span>
+            <span className="text-amber-300 font-heading"><Coin value={caravan.cash_on_hand} size="0.7rem" /> nakit</span>
           </div>
         )}
       </div>
@@ -579,7 +594,7 @@ function CaravanStatusCard({ status, onDisband, busy }) {
             <div key={i}
               className="text-[10px] text-red-400 flex items-center gap-1.5 border border-red-900/30 bg-red-950/10 px-2 py-1 rounded-sm">
               <AlertTriangle className="w-3 h-3 shrink-0" />
-              <span>{ev.summary} (−{ev.lost_value}A)</span>
+              <span>{ev.summary} (−{ev.lost_value} ⚜)</span>
             </div>
           ))}
         </div>
@@ -591,7 +606,8 @@ function CaravanStatusCard({ status, onDisband, busy }) {
         {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
         Kervanı Dağıt (Mallar Geri Alınır)
       </button>
-    </div>
+      </div>
+    </Panel>
   );
 }
 
@@ -636,11 +652,8 @@ function CaravanCreateForm({ locations, inventory, playerMoney, onSubmit, busy }
   const canSubmit = destId && totalUnits > 0 && cashOnHand <= playerMoney && !busy;
 
   return (
-    <div className="card-frame p-4 space-y-5">
-      <div className="flex items-center gap-2">
-        <Truck className="w-4 h-4 text-amber-500" />
-        <span className="font-heading text-stone-100">Kervan Kur</span>
-      </div>
+    <Panel title="Kervan Kur" icon="🐫" tone="ember">
+      <div className="space-y-5">
 
       {/* Hedef Şehir */}
       <div className="space-y-1.5">
@@ -673,7 +686,8 @@ function CaravanCreateForm({ locations, inventory, playerMoney, onSubmit, busy }
           <span className="text-[10px] text-stone-500">{totalUnits}/200 birim</span>
         </div>
         {invGoods.length === 0 ? (
-          <p className="text-xs text-stone-500 italic">Envanterde mal yok.</p>
+          <EmptyState icon="🎒" title="Heybende yüklenecek mal yok."
+            sub="Önce pazara in — kervan boş yola çıkmaz." />
         ) : (
           <div className="space-y-1.5">
             {invGoods.map(([good, maxQty]) => {
@@ -690,7 +704,7 @@ function CaravanCreateForm({ locations, inventory, playerMoney, onSubmit, busy }
                     <div className="text-[10px] text-stone-500">
                       Envanter: {maxQty}
                       {destPrice && (
-                        <span className="text-emerald-500 ml-2">→ {destPrice}A</span>
+                        <span className="text-emerald-500 ml-2">→ {destPrice} ⚜</span>
                       )}
                     </div>
                   </div>
@@ -726,8 +740,8 @@ function CaravanCreateForm({ locations, inventory, playerMoney, onSubmit, busy }
               className="px-2 py-1.5 text-stone-400 hover:text-stone-200 text-xs border-r border-stone-700">
               <Minus className="w-3 h-3" />
             </button>
-            <span className="px-3 text-xs text-amber-300 bg-stone-900 py-1.5 font-heading w-16 text-center">
-              {cashOnHand}A
+            <span className="px-3 text-xs bg-stone-900 py-1.5 w-16 text-center">
+              <Coin value={cashOnHand} size="0.72rem" />
             </span>
             <button onClick={() => setCashOnHand(c => Math.min(playerMoney, c + 10))}
               disabled={cashOnHand >= playerMoney}
@@ -735,7 +749,7 @@ function CaravanCreateForm({ locations, inventory, playerMoney, onSubmit, busy }
               <Plus className="w-3 h-3" />
             </button>
           </div>
-          <span className="text-[10px] text-stone-500">Mevcut: {playerMoney}A</span>
+          <span className="text-[10px] text-stone-500">Mevcut: <Coin value={playerMoney} size="0.62rem" /></span>
         </div>
       </div>
 
@@ -769,7 +783,8 @@ function CaravanCreateForm({ locations, inventory, playerMoney, onSubmit, busy }
         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
         Kervanı Başlat
       </button>
-    </div>
+      </div>
+    </Panel>
   );
 }
 
@@ -818,7 +833,7 @@ function CaravanHistory({ history }) {
                 </div>
                 {!isNeutral ? (
                   <span className={`shrink-0 font-heading text-xs ml-2 ${isGood ? "text-emerald-400" : "text-red-400"}`}>
-                    {isGood ? "+" : ""}{profit?.toFixed(1)}A
+                    {isGood ? "+" : ""}{profit?.toFixed(1)} ⚜
                   </span>
                 ) : (
                   <span className="shrink-0 text-[10px] text-stone-600 ml-2 capitalize">
@@ -901,14 +916,14 @@ function CaravanResultModal({ event, onClose }) {
                     <span className="text-stone-500 ml-1">×{row.qty}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-[10px] text-stone-500 shrink-0">
-                    <span>{row.buyPrice.toFixed(1)}A</span>
+                    <span>{row.buyPrice.toFixed(1)}⚜</span>
                     <ArrowRight className="w-2.5 h-2.5" />
-                    <span className="text-stone-300">{row.sellPrice.toFixed(1)}A</span>
+                    <span className="text-stone-300">{row.sellPrice.toFixed(1)}⚜</span>
                   </div>
                   <span className={`font-heading text-xs w-14 text-right shrink-0 ${
                     row.profit >= 0 ? "text-emerald-400" : "text-red-400"
                   }`}>
-                    {row.profit >= 0 ? "+" : ""}{row.profit.toFixed(1)}A
+                    {row.profit >= 0 ? "+" : ""}{row.profit.toFixed(1)}⚜
                   </span>
                 </div>
               ))}
@@ -918,7 +933,7 @@ function CaravanResultModal({ event, onClose }) {
             <div className="flex items-center justify-between border border-amber-900/30 bg-amber-950/10 rounded-sm px-3 py-2">
               <span className="text-xs text-stone-400 font-heading tracking-wider">TOPLAM KÂR</span>
               <span className={`font-heading text-base ${totalProfit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                {totalProfit >= 0 ? "+" : ""}{totalProfit.toFixed(1)} Akçe
+                {totalProfit >= 0 ? "+" : ""}{totalProfit.toFixed(1)} ⚜
               </span>
             </div>
 
@@ -938,7 +953,7 @@ function CaravanResultModal({ event, onClose }) {
             <div className="label-tiny">Hasar Raporu</div>
             <div className="flex items-center justify-between border border-red-900/30 bg-red-950/10 rounded-sm px-3 py-2">
               <span className="text-xs text-stone-400">Toplam Kayıp</span>
-              <span className="font-heading text-base text-red-400">−{lostValue.toFixed(1)} Akçe</span>
+              <span className="font-heading text-base text-red-400">−{lostValue.toFixed(1)} ⚜</span>
             </div>
 
             {/* Kalan mallar (saldırıda hayatta kaldıysa) */}
