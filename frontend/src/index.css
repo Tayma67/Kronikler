@@ -452,3 +452,52 @@ nav button:active {
   height: 1px;
   background: linear-gradient(to right, rgba(201,168,76,0.5), rgba(201,168,76,0.12), transparent);
 }
+
+/* ════ MAKYAJ: yetişkin hero sahneleri (görsel varlık yok — atmosfer
+   degradeleri; mevsim rengi + ufuk çizgisi + doku serpintisi) ═════ */
+.hero-scene {
+  position: absolute;
+  inset: 0;
+}
+.hero-scene::after {            /* ufuk çizgisi + zemin */
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0; height: 38%;
+  background: linear-gradient(to top, rgba(8,5,2,0.9), rgba(8,5,2,0.0));
+}
+.hero-scene--ilkbahar {
+  background:
+    radial-gradient(ellipse at 75% 20%, rgba(240,192,64,0.30) 0%, transparent 40%),
+    radial-gradient(ellipse at 20% 80%, rgba(74,154,90,0.25) 0%, transparent 55%),
+    linear-gradient(to bottom, #2A3320 0%, #3A4226 45%, #2E2A14 100%);
+}
+.hero-scene--yaz {
+  background:
+    radial-gradient(circle at 78% 22%, rgba(240,192,64,0.55) 0%, rgba(240,192,64,0.12) 18%, transparent 38%),
+    linear-gradient(to bottom, #3D2E10 0%, #54400F 50%, #3A2C0E 100%);
+}
+.hero-scene--sonbahar {
+  background:
+    radial-gradient(ellipse at 70% 25%, rgba(224,90,48,0.35) 0%, transparent 45%),
+    linear-gradient(to bottom, #33200E 0%, #4A2C10 50%, #2E1C0C 100%);
+}
+.hero-scene--kis {
+  background:
+    radial-gradient(ellipse at 70% 18%, rgba(200,210,230,0.22) 0%, transparent 40%),
+    linear-gradient(to bottom, #1A2028 0%, #232B36 50%, #161A20 100%);
+}
+.hero-scene--kis::before {       /* kar tanesi serpintisi */
+  content: "";
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1.5px);
+  background-size: 46px 46px;
+  opacity: 0.25;
+}
+.hero-scene--yaz::before,
+.hero-scene--ilkbahar::before {  /* sıcak toz zerreleri */
+  content: "";
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(240,192,64,0.4) 1px, transparent 1.6px);
+  background-size: 64px 64px;
+  opacity: 0.18;
+}

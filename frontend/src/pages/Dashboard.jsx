@@ -464,7 +464,15 @@ export default function Dashboard() {
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <div className="hero-section" style={{ flexShrink: 0 }}>
-        <div className="hero-image" style={{ backgroundImage: `url(${heroImage})` }} />
+        {/* Çocuklukta gerçek görsel; yetişkinlikte mevsim sahnesi
+            (çocuk fotoğrafı 40 yaşındaki karakterde aldatmaca olur) */}
+        {playerAge < 13 ? (
+          <div className="hero-image" style={{ backgroundImage: `url(${heroImage})` }} />
+        ) : (
+          <div className={`hero-scene hero-scene--${
+            season === 'Kış' ? 'kis' : season === 'Sonbahar' ? 'sonbahar'
+            : season === 'İlkbahar' ? 'ilkbahar' : 'yaz'}`} />
+        )}
         <div className="hero-bg" />
         <div className="hero-overlay" />
 

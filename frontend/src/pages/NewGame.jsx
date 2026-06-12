@@ -85,7 +85,27 @@ export default function NewGame() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-950 flex items-start justify-center p-4 py-8 overflow-y-auto">
+    <div className="min-h-screen bg-stone-950 flex flex-col items-center justify-start p-4 py-8 overflow-y-auto">
+      {/* Oyunun manşeti — ilk izlenim */}
+      <div className="text-center mb-6 rise-in" style={{ marginTop: "2vh" }}>
+        <div className="font-heading" style={{
+          fontSize: "clamp(1.6rem, 7vw, 2.6rem)", letterSpacing: "0.3em",
+          color: "var(--color-gold)", textShadow: "0 0 30px rgba(201,168,76,0.35)",
+        }}>
+          KRONİKLER
+        </div>
+        <div className="font-serif italic" style={{
+          fontSize: "0.85rem", color: "var(--color-parchment-dim)",
+          letterSpacing: "0.12em", marginTop: "0.1rem",
+        }}>
+          — Küllerin Mirası —
+        </div>
+        <div style={{
+          width: "120px", height: "1px", margin: "0.8rem auto 0",
+          background: "linear-gradient(to right, transparent, rgba(201,168,76,0.6), transparent)",
+        }} />
+      </div>
+
       <div className="card-frame max-w-2xl w-full p-6 sm:p-10 rise-in">
         <div className="flex items-center gap-3 mb-6">
           <Flame className="w-8 h-8 text-orange-600 ember-flicker" />
