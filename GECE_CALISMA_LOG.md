@@ -113,3 +113,47 @@ uygulamadaki sayfa/kart giriş animasyonu hiç çalışmıyordu. Guidelines'ın
 "subtle fade-in" hedefi tanımlanıp canlandırıldı (mount'ta bir kez,
 prefers-reduced-motion'da kapanır). Risk: yok (saf eklenti). Etki: her ekran
 artık nazikçe beliriyor — "yaşayan, cilalı" his. Bedava şaheser dokunuşu.
+
+### [23:25] ✅ İŞ 9: İlk-izlenim ekranı — altyapı sızıntısı temizlendi
+NewGame yükleme metni oyuncuya "Railway backend uyku modunda" diyordu →
+diyar/küller temalı oyuncu-dostu metin. NewGame'in geri kalanı zaten çok cilalı
+(card-frame, btn-ember, "1 tur=1 ay" yazıyor, rise-in artık çalışıyor).
+
+### [23:30] ✅ İŞ 10: Zaman modeli son sızıntı (Dashboard boş-durum)
+Kapsamlı grep: tek kalan görünür "hafta" → Dashboard "Haftayı ilerlet" → "Ayı".
+WeekPlanCard zaten "AY PLANIN" gösteriyor. Artık TÜM arayüz ay modeliyle tutarlı.
+
+### [23:40] ✅ İŞ 11: Mobil dokunma hedefleri (CityDetail pazar)
+Çekirdek ticaret döngüsü: −/+ steppers ~24px'ti → 40×40; AL/SAT butonları min 40px.
+aria-label eklendi. Tablo yapısı korundu. Diğer sayfalarda küçük stepper yok.
+
+---
+
+## 🌅 GECE ÖZETİ (sabah için)
+
+**13 commit, hepsi `claude/gifted-volta-fwqcqn` dalında, push'landı. Baseline
+korundu: 58/58 backend testi + 106/106 frontend söz dizimi temiz. Main'e dokunulmadı.**
+
+Tema/felsefe: mevcut olgun "Kül & Köz" sistemini BOZMADAN, tek estetikte
+tutarlılık + mobil cila + kargaşa azaltma. Riskli/tasarım-kararı işlere (denge
+değişiklikleri) otonom girilmedi.
+
+Yapılanlar:
+1. 🖼️ Görseller: 37 varlık + ikon üretildi (yerel SD-Turbo; Pollinations bu
+   ortamdan erişilemedi — paylaşımlı IP).
+2. ⏳ Zaman modeli: tüm "hafta" sızıntıları temizlendi → her yer "ay" (senin kararın).
+3. 🎨 Tema köprüsü: palet-dışı ham renkler (red/emerald/zinc/purple/sky…)
+   anlamsal Kül & Köz tokenlarına çekildi — onlarca ekran tek dosyada hizalandı.
+4. 👤 NPCDetail (en çok ziyaret): menü 7 hue → 3 anlamlı ton; native confirm → modal.
+5. 🪟 Tüm native popup'lar (Trade/Properties/Legacy/Factions/GameContext) → tek
+   temalı ConfirmModal/toast. Oyunda artık ham tarayıcı penceresi yok.
+6. 📈 Pazar grafiği palete çekildi; X ekseni yıl gösteriyor.
+7. ⚜ Para birimi simgesi her ekranda tek tip.
+8. ✨ rise-in giriş animasyonu CANLANDI (33 sayfada tanımsızdı).
+9. 🧹 Ölü .bak'lar silindi; design_guidelines.json DEPRECATED işaretlendi.
+10. 📱 CityDetail pazar dokunma hedefleri ≥40px.
+
+Devam eden departman backlog'u (yarın/istek üzerine): NPCDetail tam Kit
+migrasyonu, diğer sayfaların derin Kit'e geçişi, EmptyState yaygınlaştırma,
+ortak Bar bileşeni. Denge maddeleri (itibar enflasyonu vb.) BİLİNÇLİ olarak
+sana bırakıldı — tasarım kararı.
