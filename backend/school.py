@@ -714,8 +714,73 @@ LESSON_EVENTS = {
     ],
 }
 
-# EVENT_TRIGGER_CHANCE — ders başına olay tetiklenme olasılığı
-LESSON_EVENT_CHANCE = 0.65
+# EVENT_TRIGGER_CHANCE — ders başına olay tetiklenme olasılığı (R5.1: 0.65 → 0.85)
+LESSON_EVENT_CHANCE = 0.85
+
+
+# ── R5.1: Her olaya eklenen "cesur" seçenek — yüksek risk, hoca anısına yazılır
+BRAVE_CHOICES = {
+    "din": {
+        "id": "cesur", "label": "⚡ Hocaya kendi yorumunu savun",
+        "hint": "Cesur — hoca ya bayılır ya köpürür",
+        "stat_check": {"stat": "intelligence", "threshold": 5},
+        "success": {
+            "flavor": "Sözlerin sınıfı sessizliğe boğdu. Hoca uzun uzun baktı: \"Bu yaşta bu idrak...\" Defterine bir şey not etti.",
+            "stat_xp": {"intelligence": 18, "charisma": 10}, "skill_xp": {"social": 6},
+            "teacher_rel": 12, "memory": "derste kendi yorumunu savunacak kadar cesurdu",
+        },
+        "failure": {
+            "flavor": "Yorumun haddini aştı. Hoca kaşlarını çattı: \"Önce öğren, sonra konuş.\" Sınıf önünde küçüldün.",
+            "stat_xp": {"intelligence": 5}, "skill_xp": {},
+            "teacher_rel": -8, "memory": "haddini aşan laflar etti, kulağına küpe olsun",
+        },
+    },
+    "matematik": {
+        "id": "cesur", "label": "⚡ Hocanın çözümünde açık bulduğunu söyle",
+        "hint": "Cesur — haklıysan parlarsın, değilsen yanarsın",
+        "stat_check": {"stat": "intelligence", "threshold": 5},
+        "success": {
+            "flavor": "Tahtaya çıkıp eksik adımı gösterdin. Hoca önce sustu, sonra güldü: \"Pes. Bu çocuk beni geçecek.\"",
+            "stat_xp": {"intelligence": 20, "charisma": 8}, "skill_xp": {"trade": 6},
+            "teacher_rel": 12, "memory": "hocasının hesabındaki açığı yakaladı",
+        },
+        "failure": {
+            "flavor": "\"Açık\" dediğin şey kendi yanlışındı. Hoca tebeşiri uzattı: \"Buyur, düzelt bakalım.\" Düzeltemedin.",
+            "stat_xp": {"intelligence": 6}, "skill_xp": {},
+            "teacher_rel": -8, "memory": "bilmeden hocasına kafa tuttu",
+        },
+    },
+    "edebiyat": {
+        "id": "cesur", "label": "⚡ Kendi yazdığın dizeleri oku",
+        "hint": "Cesur — şair çıkarsın ya da rezil olursun",
+        "stat_check": {"stat": "charisma", "threshold": 5},
+        "success": {
+            "flavor": "Dizelerini okudun; sınıf nefesini tuttu. Hoca: \"Bu mısralar senin mi gerçekten?\" Gözleri parlıyordu.",
+            "stat_xp": {"charisma": 18, "intelligence": 8}, "skill_xp": {"social": 8},
+            "teacher_rel": 12, "memory": "kendi dizeleriyle sınıfı büyüledi",
+        },
+        "failure": {
+            "flavor": "Kafiyeler döküldü, vezin şaştı. Arka sıradan kıkırdamalar yükseldi. Hoca nazikçe oturttu.",
+            "stat_xp": {"charisma": 5}, "skill_xp": {},
+            "teacher_rel": -6, "memory": "şairlik hevesi vezinden önce bitti",
+        },
+    },
+    "beden": {
+        "id": "cesur", "label": "⚡ Hocayla güreş tutmayı teklif et",
+        "hint": "Cesur — efsane olursun ya da toza yapışırsın",
+        "stat_check": {"stat": "strength", "threshold": 5},
+        "success": {
+            "flavor": "Hocayı kündeye getiremedin ama üç nefes dayandın. Hoca seni kaldırırken gülüyordu: \"Bu cesaret terbiye edilirse pehlivan olur.\"",
+            "stat_xp": {"strength": 16, "stamina": 12}, "skill_xp": {"combat": 8},
+            "teacher_rel": 12, "memory": "hocasına güreş teklif edecek kadar yürekliydi",
+        },
+        "failure": {
+            "flavor": "İki saniyede sırtın mindere yapıştı. Sınıf güldü; hoca elini uzattı: \"Cesaret iyi, ölçü şart.\"",
+            "stat_xp": {"strength": 6, "stamina": 4}, "skill_xp": {},
+            "teacher_rel": -4, "memory": "gözü kara ama bileği ham",
+        },
+    },
+}
 
 
 def pick_lesson_event(state, lesson_id):
@@ -747,7 +812,11 @@ def resolve_lesson_event(state, lesson_id, event_id, choice_id):
     event = next((e for e in events if e["id"] == event_id), None)
     if not event:
         return {"ok": False, "error": "Olay bulunamadı."}
-    choice = next((c for c in event["choices"] if c["id"] == choice_id), None)
+    # R5.1: "cesur" her olayda var — derse özgü tanımdan gelir
+    if choice_id == "cesur":
+        choice = BRAVE_CHOICES.get(lesson_id)
+    else:
+        choice = next((c for c in event["choices"] if c["id"] == choice_id), None)
     if not choice:
         return {"ok": False, "error": "Seçenek bulunamadı."}
 
@@ -787,6 +856,13 @@ def resolve_lesson_event(state, lesson_id, event_id, choice_id):
     if teacher_delta:
         rel = school.get("teacher_relations", {}).get(lesson_id, 0)
         school.setdefault("teacher_relations", {})[lesson_id] = max(-20, min(100, rel + teacher_delta))
+
+    # R5.1: cesur seçimler hoca hafızasına yazılır
+    if outcome.get("memory"):
+        mem = school.setdefault("teacher_memory", {}).setdefault(lesson_id, [])
+        mem.append(outcome["memory"])
+        if len(mem) > 6:
+            school["teacher_memory"][lesson_id] = mem[-6:]
 
     # Bu haftaki görülen olaylar
     seen = school.get("events_seen_this_week", [])
@@ -894,6 +970,17 @@ def ensure_school_state(state):
     school = p["school"]
     school.setdefault("special_event_this_week", None)
     school.setdefault("events_seen_this_week", [])
+    # R5: sınıf rekabeti + hoca hafızası
+    school.setdefault("teacher_memory", {})
+    school.setdefault("term_week", 0)
+    school.setdefault("term_no", 1)
+    school.setdefault("player_score", 0.0)
+    school.setdefault("last_term", None)
+    school.setdefault("graduated", False)
+    if not school.get("classmates"):
+        school["classmates"] = _make_classmates(state)
+    else:
+        _adopt_real_classmates(state, school["classmates"])
     if "seasonal_done_this_week" not in school:
         school["seasonal_done_this_week"] = []
     # set olarak kaydedilmiş eski veriyi düzelt
@@ -919,6 +1006,60 @@ def ensure_school_state(state):
                 "type": "school",
                 "club_required": sq.get("club_required"),
             })
+
+
+_FALLBACK_CLASSMATES = ["Veli", "Ayşe", "Mahmut", "Zeliha", "İbrahim", "Hatice", "Yusuf"]
+
+
+def _make_classmates(state):
+    """R5.2: 5 sınıf arkadaşı — mümkünse dünyadaki gerçek çocuk NPC'ler.
+    Gerçek id'ler 5.3'te (yetişkinlikte geri dönüş) işe yarar."""
+    player = state.get("player", {})
+    loc_id = player.get("location_id")
+    kids = [n for n in state.get("world", {}).get("npcs", [])
+            if n.get("alive") and 6 <= n.get("age", 99) <= 12]
+    kids.sort(key=lambda n: 0 if n.get("location_id") == loc_id else 1)
+    mates = []
+    for n in kids[:5]:
+        mates.append({
+            "npc_id": n["id"],
+            "name": n["name"].split()[0] if n.get("name") else "Çocuk",
+            "aptitude": round(random.uniform(0.6, 1.4), 2),
+            "score": 0.0,
+        })
+    i = 0
+    while len(mates) < 5:
+        mates.append({
+            "npc_id": None,
+            "name": _FALLBACK_CLASSMATES[i % len(_FALLBACK_CLASSMATES)],
+            "aptitude": round(random.uniform(0.6, 1.4), 2),
+            "score": 0.0,
+        })
+        i += 1
+    return mates
+
+
+def _adopt_real_classmates(state, mates):
+    """Dünya başta hep yetişkin doğar; çocuk NPC'ler sonradan doğar.
+    Uydurma sıra arkadaşlarını, ortaya çıkan gerçek çocuklarla değiştir
+    (5.3'teki geri dönüş gerçek id ister)."""
+    synth = [m for m in mates if not m.get("npc_id")]
+    if not synth:
+        return
+    used = {m.get("npc_id") for m in mates}
+    kids = [n for n in state.get("world", {}).get("npcs", [])
+            if n.get("alive") and 6 <= n.get("age", 99) <= 12
+            and n["id"] not in used]
+    if not kids:
+        return
+    loc_id = state.get("player", {}).get("location_id")
+    kids.sort(key=lambda n: 0 if n.get("location_id") == loc_id else 1)
+    for m in synth:
+        if not kids:
+            break
+        n = kids.pop(0)
+        m["npc_id"] = n["id"]
+        m["name"] = n["name"].split()[0] if n.get("name") else m["name"]
 
 
 def _add_activity_log(state, entry):
@@ -982,6 +1123,13 @@ def attend_lesson(state, lesson_id):
                 "label": c["label"],
                 "hint": c.get("hint", ""),
             })
+        # R5.1: her olaya derse özgü "cesur" seçenek eklenir
+        brave = BRAVE_CHOICES.get(lesson_id)
+        if brave:
+            safe_choices.append({
+                "id": "cesur", "label": brave["label"],
+                "hint": brave["hint"], "brave": True,
+            })
         return {
             "ok": True,
             "needs_event_choice": True,
@@ -1017,6 +1165,10 @@ def _complete_lesson(state, lesson_id, event_result=None):
     school["lesson_counts"][lesson_id] = school["lesson_counts"].get(lesson_id, 0) + 1
     school["exam_week_counter"] += 1
     school.setdefault("events_seen_this_week", [])  # migration
+
+    # R5.2: sınıf puanı — ders +1, olaydan yüzünün akıyla çıkmak +0.5
+    bonus = 0.5 if event_result and event_result.get("teacher_rel_delta", 0) > 0 else 0.0
+    school["player_score"] = round(school.get("player_score", 0.0) + 1.0 + bonus, 2)
 
     # Hoca ilişkisi (base dersten küçük bonus)
     rel = school["teacher_relations"].get(lesson_id, 0)
@@ -1273,9 +1425,12 @@ def do_special_event(state, event_id):
 def weekly_school_tick(state):
     """advance_time içinden çağrılır — her hafta."""
     player = state.get("player", {})
-    if player.get("age", 99) >= 13:
-        return
     school = player.get("school")
+    if player.get("age", 99) >= 13:
+        # R5.3: mezuniyet — sıra arkadaşları unutmaz
+        if school and not school.get("graduated"):
+            _graduate(state)
+        return
     if not school:
         return
 
@@ -1284,6 +1439,14 @@ def weekly_school_tick(state):
     school["special_event_this_week"] = None
     school["seasonal_done_this_week"] = []
     school["events_seen_this_week"] = []
+
+    # R5.2: sınıf rekabeti — arkadaşlar da boş durmuyor
+    for m in school.get("classmates", []):
+        m["score"] = round(m.get("score", 0.0)
+                           + m.get("aptitude", 1.0) * random.uniform(0.5, 1.2), 2)
+    school["term_week"] = school.get("term_week", 0) + 1
+    if school["term_week"] >= 12:
+        _finish_term(state)
 
     # Kulüp pasif XP
     for club_id in school.get("clubs", []):
@@ -1307,6 +1470,86 @@ def weekly_school_tick(state):
         if eligible:
             event = random.choice(eligible)
             state.setdefault("pending_special_event", event["id"])
+
+
+def _standings(school, player_name="Sen"):
+    """Sınıf sıralaması: oyuncu + 5 arkadaş, puana göre."""
+    rows = [{"name": player_name, "score": round(school.get("player_score", 0.0), 1),
+             "is_player": True}]
+    for m in school.get("classmates", []) or []:
+        rows.append({"name": m["name"], "score": round(m.get("score", 0.0), 1),
+                     "is_player": False})
+    rows.sort(key=lambda r: r["score"], reverse=True)
+    for i, r in enumerate(rows):
+        r["rank"] = i + 1
+    return rows
+
+
+def _finish_term(state):
+    """R5.2: dönem sonu sıralaması. Birinciye özel ödül."""
+    player = state["player"]
+    school = player["school"]
+    rows = _standings(school, player.get("name", "Sen").split()[0])
+    player_rank = next(r["rank"] for r in rows if r["is_player"])
+    first = rows[0]
+
+    from simulation import _push_event
+    if player_rank == 1:
+        _apply_xp(player, {"intelligence": 15, "charisma": 10}, {"social": 8})
+        player["reputation"] = player.get("reputation", 0) + 3
+        line = (f"Dönem sonu: hoca herkesin önünde adını okudu — SINIF BİRİNCİSİ! "
+                f"Babalar çocuklarına seni örnek gösteriyor (+3 itibar).")
+    elif player_rank == 2:
+        line = f"Dönem sonu: ikincisin. Birinci {first['name']} — adı kulağında küpe olsun."
+    else:
+        line = (f"Dönem sonu: {player_rank}. sıradasın. Birinci {first['name']} "
+                f"burnu havada dolaşıyor.")
+    _push_event(state, state.get("turn", 0), "ders", line)
+    _add_activity_log(state, {"type": "dönem", "flavor": line})
+
+    school["last_term"] = {
+        "term_no": school.get("term_no", 1),
+        "player_rank": player_rank,
+        "first_name": first["name"],
+        "standings": rows,
+    }
+    school["term_no"] = school.get("term_no", 1) + 1
+    school["term_week"] = 0
+    school["player_score"] = 0.0
+    for m in school.get("classmates", []) or []:
+        m["score"] = 0.0
+
+
+def _graduate(state):
+    """R5.3: mektep biter ama sıra arkadaşlığı kalır (S4 tohumu)."""
+    player = state["player"]
+    school = player["school"]
+    school["graduated"] = True
+    mate_ids = []
+    rels = state.setdefault("relationships", {})
+    for m in school.get("classmates", []) or []:
+        if not m.get("npc_id"):
+            continue
+        npc = next((n for n in state["world"]["npcs"] if n["id"] == m["npc_id"]), None)
+        if not npc or not npc.get("alive"):
+            continue
+        mate_ids.append(m["npc_id"])
+        rels[m["npc_id"]] = min(100, rels.get(m["npc_id"], 0) + 10)
+        try:
+            from npc_profile import push_personal_memory
+            push_personal_memory(npc, f"{player.get('name', 'Biri')}: mektepte sıra arkadaşıydı")
+        except Exception:
+            pass
+    if mate_ids:
+        state.setdefault("seeds", []).append({
+            "type": "eski_sira_arkadasi",
+            "npc_ids": mate_ids,
+            "turn": state.get("turn", 0),
+        })
+        from simulation import _push_event
+        _push_event(state, state.get("turn", 0), "ders",
+                    f"{player['name']} mektep çağını geride bıraktı. "
+                    f"Sıra arkadaşları bu günleri unutmayacak.")
 
 
 def get_school_summary(state):
@@ -1356,6 +1599,15 @@ def get_school_summary(state):
         "activity_log": school["activity_log"][-10:],
         "current_season": season,
         "exam_due_in": max(0, 4 - school["exam_week_counter"]),
+        # R5.2: sınıf rekabeti
+        "rekabet": {
+            "standings": _standings(school, state["player"].get("name", "Sen").split()[0]),
+            "term_week": school.get("term_week", 0),
+            "term_no": school.get("term_no", 1),
+            "weeks_left": max(0, 12 - school.get("term_week", 0)),
+            "last_term": school.get("last_term"),
+        },
+        "teacher_memory": school.get("teacher_memory", {}),
     }
 
 

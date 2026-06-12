@@ -98,16 +98,24 @@ function LessonEventModal({ event, busy, onChoose }) {
           <p style={{
             fontFamily: "'Lora', serif", fontSize: 12, color: C.text,
             textAlign: "center", lineHeight: 1.5, fontStyle: "italic", margin: 0,
-          }}>{event.text || event.description}</p>
+          }}>{event.scene || event.text || event.description}</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
             {(event.choices || []).map((c) => (
               <button key={c.id} disabled={busy} onClick={() => onChoose(c.id)}
                 style={{
                   padding: "10px 12px", borderRadius: 10, cursor: "pointer",
-                  background: C.goldBg, border: `1px solid ${C.goldBorder}`,
+                  background: c.brave ? "rgba(178, 34, 34, 0.12)" : C.goldBg,
+                  border: `1px solid ${c.brave ? "#b2222266" : C.goldBorder}`,
                   color: C.text, fontFamily: "'Lora', serif", fontSize: 12,
                   textAlign: "left",
-                }}>{c.text}</button>
+                }}>
+                <div>{c.label || c.text}</div>
+                {c.hint && (
+                  <div style={{ fontSize: 10, color: C.textDim, marginTop: 2 }}>
+                    {c.hint}
+                  </div>
+                )}
+              </button>
             ))}
           </div>
         </div>
@@ -152,7 +160,7 @@ export default function School() {
     act(async () => {
       const res = await api.post(`/game/school/lesson/${id}`);
       if (res?.data?.result?.needs_event_choice) {
-        setLessonEvent({ lessonId: id, event: res.data.result.event });
+        setLessonEvent({ lessonId: id, event: res.data.result.lesson_event });
       } else if (res?.data?.result?.flavor) {
         toast.success(res.data.result.flavor, { duration: 3500 });
       }
@@ -400,6 +408,54 @@ export default function School() {
           </div>
         </Card>
 
+        {/* ── R5.2: SINIF SIRALAMASI ── */}
+        {summary.rekabet?.standings?.length > 0 && (
+          <>
+            <SectionTitle right={
+              <span style={{ fontFamily: "'Cinzel', serif", fontSize: 7.5, color: C.textDim, letterSpacing: "0.12em" }}>
+                {summary.rekabet.weeks_left > 0
+                  ? `DÖNEM SONUNA ${summary.rekabet.weeks_left} HAFTA`
+                  : "DÖNEM KAPANIYOR"}
+              </span>
+            }>SINIF SIRALAMASI</SectionTitle>
+            <Card>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                {summary.rekabet.standings.map((r) => (
+                  <div key={r.rank} style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "6px 9px", borderRadius: 8,
+                    background: r.is_player ? "rgba(201,168,76,0.10)" : "transparent",
+                    border: r.is_player ? `1px solid ${C.gold}55` : "1px solid transparent",
+                  }}>
+                    <span style={{
+                      fontFamily: "'Cinzel', serif", fontSize: 10, fontWeight: 700,
+                      width: 20, color: r.rank === 1 ? C.goldBright : C.textDim,
+                    }}>{r.rank === 1 ? "👑" : `${r.rank}.`}</span>
+                    <span style={{
+                      flex: 1, fontFamily: "'Lora', serif", fontSize: 11,
+                      color: r.is_player ? C.goldBright : C.text,
+                      fontWeight: r.is_player ? 700 : 400,
+                    }}>{r.name}{r.is_player ? " (sen)" : ""}</span>
+                    <span style={{ fontFamily: "'Cinzel', serif", fontSize: 9.5, color: C.textMid }}>
+                      {r.score} puan
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {summary.rekabet.last_term && (
+                <div style={{
+                  marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.goldBorder}`,
+                  fontFamily: "'Lora', serif", fontSize: 9.5, color: C.textDim, fontStyle: "italic",
+                }}>
+                  Geçen dönem: {summary.rekabet.last_term.player_rank}. oldun
+                  {summary.rekabet.last_term.player_rank !== 1 &&
+                    ` — birinci ${summary.rekabet.last_term.first_name}`}.
+                </div>
+              )}
+            </Card>
+          </>
+        )}
+
         {/* ── HOCALARIM ── */}
         <SectionTitle>HOCALARIM</SectionTitle>
         <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
@@ -425,6 +481,15 @@ export default function School() {
                   <div style={{ fontFamily: "'Lora', serif", fontSize: 8.5, color: C.textDim }}>
                     {l.name} · {l.count} ders
                   </div>
+                  {(summary.teacher_memory?.[id] || []).length > 0 && (
+                    <div style={{
+                      fontFamily: "'Lora', serif", fontSize: 8, color: C.gold,
+                      fontStyle: "italic", marginTop: 2,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      "…{summary.teacher_memory[id][summary.teacher_memory[id].length - 1]}"
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
                   <Stars value={rel} />
