@@ -796,32 +796,32 @@ export default function CityDetail() {
             <LineChart data={loc.price_history} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
               <XAxis
                 dataKey="turn"
-                tick={{ fontSize: 10, fill: "#78716c" }}
-                tickFormatter={(v) => `T${v}`}
-                stroke="#44403c"
+                tick={{ fontSize: 10, fill: "#7A6A4F" }}
+                tickFormatter={(v) => `${1247 + Math.floor(v / 12)}`}
+                stroke="#4A3820"
               />
               <YAxis
-                tick={{ fontSize: 10, fill: "#78716c" }}
-                stroke="#44403c"
-                tickFormatter={(v) => `${v}a`}
+                tick={{ fontSize: 10, fill: "#7A6A4F" }}
+                stroke="#4A3820"
+                tickFormatter={(v) => `${v}⚜`}
               />
               <Tooltip
-                contentStyle={{ background: "#0c0a09", border: "1px solid #44403c", fontSize: 11, borderRadius: 2 }}
-                labelFormatter={(v) => `Tur ${v}`}
-                formatter={(val, name) => [`${Number(val).toFixed(1)}a`, name]}
+                contentStyle={{ background: "#15110A", border: "1px solid #4A3820", fontSize: 11, borderRadius: 6, color: "#E8D5B0" }}
+                labelFormatter={(v) => `${1247 + Math.floor(v / 12)} yılı`}
+                formatter={(val, name) => [`${Number(val).toFixed(1)} ⚜`, name]}
               />
               <Legend
                 wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                formatter={(val) => <span style={{ color: "#a8a29e" }}>{val}</span>}
+                formatter={(val) => <span style={{ color: "#B8A880" }}>{val}</span>}
               />
               {[
-                ["buğday", "#f59e0b"],
-                ["ekmek",  "#84cc16"],
-                ["et",     "#fb923c"],
-                ["demir",  "#94a3b8"],
-                ["odun",   "#78716c"],
-                ["kumaş",  "#c084fc"],
-                ["silah",  "#f87171"],
+                ["buğday", "#C9A84C"],
+                ["ekmek",  "#D98C40"],
+                ["et",     "#C84040"],
+                ["demir",  "#8A94A8"],
+                ["odun",   "#7A6A4F"],
+                ["kumaş",  "#7B4FAF"],
+                ["silah",  "#E05A30"],
               ].map(([g, color]) => (
                 <Line
                   key={g}
