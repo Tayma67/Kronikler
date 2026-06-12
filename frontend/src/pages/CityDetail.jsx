@@ -448,19 +448,25 @@ export default function CityDetail() {
                             <div className="flex items-center border border-stone-700 rounded-sm overflow-hidden">
                               <button
                                 onClick={(e) => { e.stopPropagation(); setTradeQty(q => Math.max(1, q - 1)); }}
-                                className="px-2 py-1 text-stone-400 hover:text-stone-200 hover:bg-stone-800 text-sm"
+                                className="text-stone-400 hover:text-stone-200 hover:bg-stone-800 font-display flex items-center justify-center"
+                                style={{ minWidth: 40, minHeight: 40, fontSize: "1.15rem", lineHeight: 1 }}
+                                aria-label="azalt"
                               >−</button>
-                              <span className="px-3 py-1 text-sm font-display text-stone-200 min-w-[2rem] text-center">{tradeQty}</span>
+                              <span className="font-display text-stone-200 text-center flex items-center justify-center"
+                                style={{ minWidth: "2.5rem", minHeight: 40, fontSize: "0.95rem" }}>{tradeQty}</span>
                               <button
                                 onClick={(e) => { e.stopPropagation(); setTradeQty(q => q + 1); }}
-                                className="px-2 py-1 text-stone-400 hover:text-stone-200 hover:bg-stone-800 text-sm"
+                                className="text-stone-400 hover:text-stone-200 hover:bg-stone-800 font-display flex items-center justify-center"
+                                style={{ minWidth: 40, minHeight: 40, fontSize: "1.15rem", lineHeight: 1 }}
+                                aria-label="artır"
                               >+</button>
                             </div>
                             <span className="text-xs text-stone-500">= <Coin value={tradeQty * m.price} size="0.72rem" /></span>
                             <button
                               onClick={(e) => { e.stopPropagation(); trade("al"); }}
                               disabled={busy}
-                              className="btn-ember px-3 py-1.5 text-[11px] font-display tracking-wider disabled:opacity-50"
+                              className="btn-ember px-4 text-[11px] font-display tracking-wider disabled:opacity-50"
+                              style={{ minHeight: 40 }}
                             >
                               SATIN AL
                             </button>
@@ -468,7 +474,8 @@ export default function CityDetail() {
                               <button
                                 onClick={(e) => { e.stopPropagation(); trade("sat"); }}
                                 disabled={busy}
-                                className="btn-ghost-ash px-3 py-1.5 text-[11px] font-display tracking-wider disabled:opacity-50"
+                                className="btn-ghost-ash px-4 text-[11px] font-display tracking-wider disabled:opacity-50"
+                                style={{ minHeight: 40 }}
                               >
                                 SAT ({invQty} var)
                               </button>
