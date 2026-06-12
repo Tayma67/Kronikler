@@ -147,7 +147,7 @@ export default function NewGame() {
 
           <form onSubmit={start} style={{ display: "flex", flexDirection: "column", gap: "1.15rem" }}>
             <div>
-              <label className="label-tiny" style={{ display: "block", marginBottom: "0.5rem", letterSpacing: "0.22em" }}>
+              <label className="font-display" style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: "var(--color-gold-dim)", textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}>
                 Ad Soyad
               </label>
               <input
@@ -163,7 +163,7 @@ export default function NewGame() {
             </div>
 
             <div>
-              <label className="label-tiny" style={{ display: "block", marginBottom: "0.5rem", letterSpacing: "0.22em" }}>
+              <label className="font-display" style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: "var(--color-gold-dim)", textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}>
                 Cinsiyet
               </label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.7rem" }}>
