@@ -14,6 +14,7 @@ import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useActionRedirect } from "@/hooks/useActionRedirect";
+import StoryEventFeed from "@/components/StoryEventFeed";
 import {
   Shield, Swords, Crown, Users, Coins, AlertTriangle,
   Loader2, MapPin, LogIn, LogOut, Plus, X, Star,
@@ -25,7 +26,7 @@ import {
 
 // ─── Faction Tip Konfigürasyonu ───────────────────────────────────────────────
 const FACTION_TYPES = {
-  krallık_ordusu:    { label: "Krallık Ordusu",       color: "text-sky-300",     border: "border-sky-900/60",    bg: "bg-sky-950/20",    Icon: Shield  },
+  krallık_ordusu:    { label: "Sultanın Ordusu",      color: "text-sky-300",     border: "border-sky-900/60",    bg: "bg-sky-950/20",    Icon: Shield  },
   tuccar_loncasi:    { label: "Tüccar Loncası",        color: "text-amber-400",   border: "border-amber-900/60",  bg: "bg-amber-950/20",  Icon: Coins   },
   zanaatkar_loncasi: { label: "Zanaatkar Loncası",     color: "text-violet-400",  border: "border-violet-900/60", bg: "bg-violet-950/15", Icon: Landmark },
   paralı_asker:      { label: "Paralı Asker Loncası",  color: "text-red-400",     border: "border-red-900/60",    bg: "bg-red-950/15",    Icon: Swords  },
@@ -36,6 +37,89 @@ const FACTION_TYPES = {
   eskiya_cetesi:     { label: "Eşkıya Çetesi",         color: "text-orange-400",  border: "border-orange-900/60", bg: "bg-orange-950/20", Icon: Skull   },
   gizli_cemiyet:     { label: "Gizli Cemiyet",         color: "text-teal-400",    border: "border-teal-900/60",   bg: "bg-teal-950/15",   Icon: Lock    },
 };
+
+// ─── R8: Fraksiyon Yüzeyi — haftalık sahne + rütbe imtiyaz kartı + olay feed'i ──
+function FactionFeedSection({ feed, onSceneChoice, busy }) {
+  const [showPerks, setShowPerks] = useState(false);
+  if (!feed) return null;
+  const scene = feed.scene && !feed.scene.resolved ? feed.scene : null;
+  const card = feed.perk_card;
+  const events = (feed.events || []).slice(0, 5).map((e, i) => ({
+    type: e.type,
+    text: e.title || e.lines?.[0] || "",
+    narrative: e.title ? (e.lines || []).join(" ") : null,
+    _key: `${e.day}-${i}`,
+  }));
+
+  return (
+    <div className="space-y-3">
+      {/* 8.1 Haftalık sahne */}
+      {scene && (
+        <div className="card-frame p-4 border border-amber-800/50 bg-amber-950/15 space-y-3">
+          <div className="label-tiny text-amber-400">BU HAFTA OCAKTA</div>
+          <p className="text-sm text-stone-200 italic">{scene.text}</p>
+          <div className="space-y-1.5">
+            {scene.choices.map(c => (
+              <button key={c.id} onClick={() => onSceneChoice(c.id)} disabled={busy}
+                className="w-full text-left px-3 py-2 border border-amber-900/40 rounded-sm hover:bg-amber-950/25 transition-all disabled:opacity-40">
+                <span className="font-heading text-xs tracking-wider text-stone-200">{c.label}</span>
+                <span className="text-[10px] text-stone-500 ml-2">{c.hint}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 8.2 Rütbe imtiyaz kartı */}
+      {card && (
+        <div className="card-frame p-3">
+          <button onClick={() => setShowPerks(s => !s)}
+            className="w-full flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Crown className="w-4 h-4 text-amber-500" />
+              <span className="font-heading text-sm text-stone-100">{card.title}</span>
+              {card.next_title && (
+                <span className="text-[10px] text-stone-600">→ {card.next_title}</span>
+              )}
+            </div>
+            {showPerks
+              ? <ChevronDown className="w-4 h-4 text-stone-500" />
+              : <ChevronRight className="w-4 h-4 text-stone-500" />}
+          </button>
+          {showPerks && (
+            <div className="mt-3 space-y-1.5">
+              {card.perks.map((p, i) => (
+                <div key={i} className={`flex items-start gap-2 text-xs px-2 py-1.5 rounded-sm border ${
+                  p.unlocked
+                    ? "border-amber-900/40 bg-amber-950/10 text-stone-200"
+                    : "border-stone-800/50 text-stone-600"
+                }`}>
+                  {p.unlocked
+                    ? <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                    : <Lock className="w-3.5 h-3.5 shrink-0 mt-0.5" />}
+                  <div className="flex-1">
+                    {p.perk}
+                    {!p.unlocked && (
+                      <span className="text-[10px] text-stone-700 ml-1">({p.rank_title} rütbesinde)</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 8.3 Olaylar — mini sahneler */}
+      {events.length > 0 && (
+        <div>
+          <div className="label-tiny mb-2">OCAKTAN HABERLER</div>
+          <StoryEventFeed events={events} showTimeline={false} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ftCfg(type) {
   return FACTION_TYPES[type] || FACTION_TYPES["tuccar_loncasi"];
@@ -1235,6 +1319,7 @@ export default function Factions() {
   const [influenceFac,  setInfluenceFac]  = useState(null);
   const [showDecision,  setShowDecision]  = useState(false);  // Adım 6
   const [warOutcome,    setWarOutcome]    = useState(null);   // Adım 6
+  const [feed,          setFeed]          = useState(null);   // R8
 
   const player          = state?.player || {};
   const playerFactionId = player.faction_id || null;
@@ -1252,16 +1337,18 @@ export default function Factions() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [fRes, wRes, cRes, wdRes] = await Promise.all([
+      const [fRes, wRes, cRes, wdRes, feedRes] = await Promise.all([
         api.get("/game/factions"),
         api.get("/game/factions/wars"),
         api.get("/game/factions/gizli-cemiyet/clues").catch(() => ({ data: { clues: [] } })),
         api.get("/game/factions/wars/detail").catch(() => ({ data: { war: null } })),
+        api.get("/game/factions/feed").catch(() => ({ data: null })),
       ]);
       setFactions(fRes.data.factions || []);
       setWars(wRes.data.wars || []);
       setClues(cRes.data.clues || []);
       setWarDetail(wdRes.data.war || null);
+      setFeed(feedRes.data);
     } catch {
       toast.error("Örgüt bilgileri yüklenemedi.");
     } finally {
@@ -1270,6 +1357,21 @@ export default function Factions() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // R8: haftalık fraksiyon sahnesi seçimi
+  const handleSceneChoice = async (choiceId) => {
+    setBusy("scene");
+    try {
+      const { data } = await api.post("/game/factions/scene", { choice: choiceId });
+      if (data.state) setState(data.state);
+      if (data.result?.note) toast.success(data.result.note, { duration: 6000 });
+      setFeed(f => (f ? { ...f, scene: { ...f.scene, resolved: true } } : f));
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Seçim çözülemedi.");
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const refreshState = async () => {
     try {
@@ -1540,6 +1642,15 @@ export default function Factions() {
           </div>
         );
       })()}
+
+      {/* R8: Fraksiyon yüzeyi — sahne + imtiyazlar + ocaktan haberler */}
+      {playerFactionId && (
+        <FactionFeedSection
+          feed={feed}
+          onSceneChoice={handleSceneChoice}
+          busy={busy === "scene"}
+        />
+      )}
 
       {/* İstatistik özet */}
       <div className="grid grid-cols-3 gap-2">
