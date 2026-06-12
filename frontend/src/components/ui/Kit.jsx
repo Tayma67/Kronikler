@@ -207,3 +207,53 @@ export function Coin({ value, size = "0.8rem" }) {
     </span>
   );
 }
+
+/* ── Onay modalı — native window.confirm yerine, her yerde aynı ───────────
+   Kullanım: <ConfirmModal message="..." confirmLabel="Sat" onConfirm={fn}
+             onClose={()=>setConfirm(null)} /> (open varsayılan true). */
+export function ConfirmModal({
+  open = true, title = "Emin misin?", message, confirmLabel = "Onayla",
+  cancelLabel = "Vazgeç", tone = "blood", onConfirm, onClose,
+}) {
+  if (!open) return null;
+  const t = TONES[tone] || TONES.blood;
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 80, padding: "1rem",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      background: "radial-gradient(ellipse at 50% 30%, rgba(30,20,8,0.88) 0%, rgba(6,4,2,0.94) 70%)",
+      backdropFilter: "blur(3px)",
+    }}>
+      <div onClick={(e) => e.stopPropagation()} className="card-frame rise-in"
+        style={{ width: "100%", maxWidth: "22rem", padding: "1.1rem 1.15rem" }}>
+        <div className="font-display" style={{
+          fontSize: "0.95rem", fontWeight: 700, color: t.text,
+          letterSpacing: "0.06em", marginBottom: "0.5rem",
+        }}>
+          {title}
+        </div>
+        <p className="font-serif" style={{
+          fontSize: "0.85rem", lineHeight: 1.55,
+          color: "var(--color-parchment-dim)", marginBottom: "1.1rem",
+        }}>
+          {message}
+        </p>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button onClick={onClose} className="btn-ghost-ash"
+            style={{ flex: 1, padding: "0.6rem", fontSize: "0.62rem" }}>
+            {cancelLabel}
+          </button>
+          <button onClick={() => { onConfirm?.(); onClose?.(); }} style={{
+            flex: 1, padding: "0.6rem", fontSize: "0.62rem", borderRadius: "6px",
+            cursor: "pointer", fontFamily: "Cinzel, serif", fontWeight: 700,
+            letterSpacing: "0.1em", textTransform: "uppercase",
+            background: `linear-gradient(180deg, ${t.bg}, transparent)`,
+            color: t.text, border: `1px solid ${t.border}`,
+          }}>
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

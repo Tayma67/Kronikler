@@ -10,7 +10,7 @@ import { useGame } from "@/lib/GameContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { playSfx } from "@/lib/audio";
-import { PageHeader, Panel, Pill, GoldRule, Coin } from "@/components/ui/Kit";
+import { PageHeader, Panel, Pill, GoldRule, Coin, ConfirmModal } from "@/components/ui/Kit";
 
 const WILL_STYLES = [
   { id: "eşit", label: "Eşit Pay", desc: "Her çocuğa eşit; küslük çıkmaz. (%60 para mirası)" },
@@ -26,6 +26,7 @@ export default function Legacy() {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
   const [settlementName, setSettlementName] = useState("");
+  const [confirm, setConfirm] = useState(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -70,6 +71,7 @@ export default function Legacy() {
 
   return (
     <div className="page-shell rise-in" data-testid="legacy-page" style={{ padding: "0 0 1.5rem" }}>
+      {confirm && <ConfirmModal {...confirm} onClose={() => setConfirm(null)} />}
       <PageHeader
         kicker="Soyumun Mührü"
         icon="👑"
@@ -292,8 +294,11 @@ export default function Legacy() {
             </div>
             <GoldRule />
             <button disabled={busy || !throneReady}
-              onClick={() => {
-                if (window.confirm("Taht iddiası tehlikelidir: kampanya 3000 altın; başarısızlık sürgün ve itibar kaybı demek. Devam?")) {
+              onClick={() => setConfirm({
+                title: "Taht İddiası",
+                message: "Taht iddiası tehlikelidir: kampanya 3000 altına mal olur; başarısızlık sürgün ve itibar kaybı demektir. Yine de devam edecek misin?",
+                confirmLabel: "Tahtı İddia Et",
+                onConfirm: () => {
                   playSfx("sword");
                   act(async () => {
                     const res = (await api.post("/legacy/claim-throne")).data;
@@ -304,8 +309,8 @@ export default function Legacy() {
                     navigate("/oyun");
                     return res;
                   });
-                }
-              }}
+                },
+              })}
               className={throneReady ? "btn-ember" : "btn-ghost-ash"}
               style={{ width: "100%", padding: "0.65rem", fontSize: "0.7rem" }}>
               ⚔ Taht İddiasında Bulun

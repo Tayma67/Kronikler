@@ -83,3 +83,13 @@ temizledi; üstüne iki cerrahi düzeltme:
 Doğrulama: jsxcheck ✓. Risk: düşük (renk dizesi + izole modal).
 Keşif: Trade/Properties/Legacy/Factions'ta 4 native window.confirm + GameContext'te
 ham alert() daha var → paylaşımlı Kit ConfirmModal'a taşınacak (sıradaki).
+
+### [22:35] ✅ İŞ 4: Tüm native popup'lar → tek temalı ConfirmModal
+Kullanıcı uyandığında oyunda HİÇBİR yerde ham tarayıcı penceresi görmesin diye:
+- `Kit.jsx`'e kanonik `<ConfirmModal>` eklendi (card-frame + köz scrim + ton seçimi).
+- Taşınanlar (hepsi "doer+opener" deseniyle, genel ad korunarak — minimal blast):
+  · Trade: kervan dağıt · Properties: mülk sat · Legacy: taht iddiası · Factions: isyan
+- GameContext'teki ham `alert()` (oyun kurulum hatası) → `toast.error`.
+- Onay metinleri sahici Türkçeye çevrildi (kuru "emin misin?" değil, sonucu anlatan).
+Doğrulama: jsxcheck 106/106 ✓. Native dialog kalmadı (grep temiz). Risk: düşük
+(her dönüşüm izole, mantık korundu, sadece tetikleme akışı modal'a sarıldı).

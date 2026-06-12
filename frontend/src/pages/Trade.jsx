@@ -9,7 +9,7 @@ import {
   Truck, MapPin, AlertTriangle, CheckCircle2, XCircle,
   History, Plus, Minus, Navigation, Trophy, Swords, X,
 } from "lucide-react";
-import { PageHeader, Panel, Pill, GoldRule, EmptyState, Coin, TONES } from "@/components/ui/Kit";
+import { PageHeader, Panel, Pill, GoldRule, EmptyState, Coin, TONES, ConfirmModal } from "@/components/ui/Kit";
 
 /* ─── Sabitler ─────────────────────────────────────────────────────── */
 const GOOD_LABELS = {
@@ -1312,6 +1312,7 @@ export default function Trade() {
   const [caravanLoading, setCaravanLoading] = useState(false);
   const [resultEvent, setResultEvent] = useState(null);
   const [bargainTarget, setBargainTarget] = useState(null);
+  const [confirm, setConfirm] = useState(null);
 
   const player    = state?.player || {};
   const locations = useMemo(() => state?.world?.locations || [], [state?.world?.locations]);
@@ -1437,8 +1438,13 @@ export default function Trade() {
   };
 
   /* ── Kervan: Dağıt ── */
-  const handleCaravanDisband = async () => {
-    if (!window.confirm("Kervanı dağıtmak istediğine emin misin? Mallar geri alınır.")) return;
+  const handleCaravanDisband = () => setConfirm({
+    title: "Kervanı Dağıt",
+    message: "Kervanı dağıtmak istediğine emin misin? Yüklü mallar envanterine geri alınır.",
+    confirmLabel: "Dağıt",
+    onConfirm: doCaravanDisband,
+  });
+  const doCaravanDisband = async () => {
     setBusy(true);
     try {
       const { data } = await api.post("/game/caravan/disband");
@@ -1453,6 +1459,9 @@ export default function Trade() {
   /* ─── Render ─────────────────────────────────────────────────────── */
   return (
     <div className="page-shell rise-in space-y-5" style={{ paddingBottom: "1.5rem" }}>
+      {confirm && (
+        <ConfirmModal {...confirm} onClose={() => setConfirm(null)} />
+      )}
       {/* Kervan Sonuç Modalı */}
       {resultEvent && (
         <CaravanResultModal

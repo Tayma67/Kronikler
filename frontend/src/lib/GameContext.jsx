@@ -55,7 +55,9 @@ export function GameProvider({ children }) {
       return data;
     } catch (error) {
       const hataMesaji = error.response?.data?.detail || error.message;
-      alert("OYUN KURULURKEN HATA OLUŞTU: " + JSON.stringify(hataMesaji));
+      toast.error("Oyun kurulurken bir hata oluştu", {
+        description: typeof hataMesaji === "string" ? hataMesaji : JSON.stringify(hataMesaji),
+      });
       return null;
     }
   }, []);

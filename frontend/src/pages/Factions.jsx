@@ -20,7 +20,7 @@ import { useActionRedirect } from "@/hooks/useActionRedirect";
 import StoryEventFeed from "@/components/StoryEventFeed";
 import { playSfx } from "@/lib/audio";
 import { Loader2 } from "lucide-react";
-import { PageHeader, Panel, Pill, GoldRule, EmptyState, Coin } from "@/components/ui/Kit";
+import { PageHeader, Panel, Pill, GoldRule, EmptyState, Coin, ConfirmModal } from "@/components/ui/Kit";
 
 // ─── Faction Tip Konfigürasyonu ───────────────────────────────────────────────
 const FACTION_TYPES = {
@@ -1785,6 +1785,7 @@ export default function Factions() {
   const [showDecision,  setShowDecision]  = useState(false);  // Adım 6
   const [warOutcome,    setWarOutcome]    = useState(null);   // Adım 6
   const [feed,          setFeed]          = useState(null);   // R8
+  const [confirm,       setConfirm]       = useState(null);
 
   const player          = state?.player || {};
   const playerFactionId = player.faction_id || null;
@@ -1912,8 +1913,13 @@ export default function Factions() {
     } finally { setBusy(null); }
   };
 
-  const handleRebel = async (factionId) => {
-    if (!window.confirm("İsyan başlatmak seni İsyancı damgalar. Emin misin?")) return;
+  const handleRebel = (factionId) => setConfirm({
+    title: "İsyan Başlat",
+    message: "İsyan başlatmak seni herkesin gözünde İsyancı damgalar — geri dönüşü zordur. Emin misin?",
+    confirmLabel: "İsyan Et",
+    onConfirm: () => doRebel(factionId),
+  });
+  const doRebel = async (factionId) => {
     setBusy(factionId);
     try {
       const { data } = await api.post("/game/factions/rebel");
@@ -2059,6 +2065,7 @@ export default function Factions() {
 
   return (
     <div className="page-shell rise-in" style={{ padding: "0 0 1.5rem" }}>
+      {confirm && <ConfirmModal {...confirm} onClose={() => setConfirm(null)} />}
       {/* Başlık */}
       <PageHeader
         kicker="Örgütler & Güç Dengesi"

@@ -10,7 +10,7 @@ import { api, extractErrorMessage } from "@/lib/api";
 import { useActionRedirect } from "@/hooks/useActionRedirect";
 import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
-import { PageHeader, Panel, Pill, GoldRule, EmptyState, Coin, TONES } from "@/components/ui/Kit";
+import { PageHeader, Panel, Pill, GoldRule, EmptyState, Coin, TONES, ConfirmModal } from "@/components/ui/Kit";
 
 const GOOD_LABELS = {
   "buğday": "Buğday", "un": "Un", "ekmek": "Ekmek", "et": "Et",
@@ -417,6 +417,7 @@ export default function Properties() {
   const [properties, setProperties] = useState(null);
   const [money, setMoney] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -457,15 +458,18 @@ export default function Properties() {
       return data;
     }).catch((e) => toast.error(extractErrorMessage(e)));
 
-  const onSell = (prop) => {
-    if (!window.confirm(`${prop.name} ${prop.sale_value} altına satılsın mı?`)) return;
-    withRedirect(async () => {
+  const onSell = (prop) => setConfirm({
+    title: "Mülkü Sat",
+    message: `${prop.name} adlı mülkü ${prop.sale_value} altına satmak istiyor musun? Bu geri alınamaz.`,
+    confirmLabel: "Sat",
+    tone: "gold",
+    onConfirm: () => withRedirect(async () => {
       const { data } = await api.post("/property/sell", { property_id: prop.id });
       playSfx("coin");
       toast.success("Mülk satıldı.");
       return data;
-    }).catch((e) => toast.error(extractErrorMessage(e)));
-  };
+    }).catch((e) => toast.error(extractErrorMessage(e))),
+  });
 
   const onConfigure = (propertyId, updates, upgrade = false) =>
     act(async () => (await api.post("/property/configure",
@@ -499,6 +503,7 @@ export default function Properties() {
 
   return (
     <div className="page-shell rise-in" style={{ padding: "0 0 1.5rem" }} data-testid="properties-page">
+      {confirm && <ConfirmModal {...confirm} onClose={() => setConfirm(null)} />}
       <PageHeader
         kicker="Toprak & Taş"
         icon="🏰"
