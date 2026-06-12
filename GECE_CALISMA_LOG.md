@@ -176,6 +176,22 @@ metinli koyu kart → sinematik, immersive, kargaşasız ilk-izlenim:
 Doğrulama: build yeşil + headless tarayıcıda render edilip mockup'la karşılaştırıldı,
 ekran görüntüsü sohbette paylaşıldı. Mockup'a sadık.
 
+### [02:10] ✅ İŞ 15: Oynanış-ekranı GÖRSEL DOĞRULAMA hattı + 6 ekran teyidi
+Backend mantığı Mongo'suz çalıştığından (testler kanıtlı) bir oyun state'i ürettim
+(`/tmp/genstate.py` → world_gen+simulation+manuel dekorasyon, yaş 14 yetişkin),
+playwright'ta `/game/state`'i mock'layıp diğer uçları abort ederek (app'in .catch
+savunması devreye girer) GERÇEK oynanış ekranlarını render ettim.
+Görsel teyit edilen 6 ekran (hepsi sohbette paylaşıldı / kontrol edildi):
+- **Dashboard**: ürettiğim yetişkin hero görseli görünüyor (= görsel üretimi + build
+  hook düzeltmesi çalışıyor), "AYI İLERLE" (= ay modeli), tema bütün.
+- **Trade/Pazar**: ⚜ para birimi, büyütülmüş AL/SAT + stepper'lar, market listesi.
+- **Karakter**: statlar, kariyer, toplumsal statü, ⚜.
+- **Dynasties / İlişkiler**: temalı boş-durumlar.
+- (NewGame ayrıca yukarıda.)
+Sonuç: tema köprüsü + zaman modeli + görseller + rise-in HEPSİ gerçek render'da
+doğrulandı. Neon renk yok, layout sağlam, tek estetik. Hat tekrar kullanılabilir
+(spa.js + multishot.js + genstate.py) — gelecekte sayfa cilası görsel doğrulanabilir.
+
 **EN KRİTİK İKİ BULGU:** (a) production build gece başlamadan ÖNCE de kırıktı →
 düzeltildi; (b) üretilen uygulama ikonu hiçbir yere bağlı değildi → bağlandı.
 İkisi de kozmetik değil, gerçek sonuç doğuran düzeltmeler.
