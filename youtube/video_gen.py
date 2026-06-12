@@ -2,8 +2,7 @@
 """
 Video üretici — 1080x1920 dikey Shorts.
 
-Görsel dil oyunla aynı (design_guidelines.json — Kül & Köz):
-koyu kül zemini, köz turuncusu vurgu, defter çizgisi çerçeve, serif yazı.
+Görsel dil: koyu zemin, turuncu vurgu, ince çerçeve, serif yazı.
 Ses: edge-tts (ücretsiz Microsoft TTS, tr-TR). --silent ile sessiz test.
 """
 import asyncio
@@ -18,14 +17,15 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 W, H = 1080, 1920
 MARGIN = 72
 
-BG = (12, 10, 9)          # #0c0a09
-SURFACE = (28, 25, 23)    # #1c1917
-PRIMARY = (194, 65, 12)   # #c2410c
-EMBER = (249, 115, 22)    # #f97316
-TEXT = (231, 229, 228)    # #e7e5e4
-MUTED = (168, 162, 158)   # #a8a29e
-BORDER = (87, 83, 78)     # #57534e
+BG = (12, 10, 9)
+SURFACE = (28, 25, 23)
+PRIMARY = (194, 65, 12)
+EMBER = (249, 115, 22)
+TEXT = (231, 229, 228)
+MUTED = (168, 162, 158)
+BORDER = (87, 83, 78)
 
+BRAND = "GÜNDE BİR BİLGİ"   # videoların altındaki kanal yazısı
 VOICE = "tr-TR-AhmetNeural"
 
 FONT_CANDIDATES = [
@@ -67,7 +67,7 @@ def _wrap(draw, text, font, max_w):
 
 
 def _base_frame():
-    """Kül zemin + köz parıltısı + tane dokusu + defter çerçevesi."""
+    """Koyu zemin + alt parıltı + tane dokusu + ince çerçeve."""
     img = Image.new("RGB", (W, H), BG)
 
     glow = Image.new("RGB", (W, H), BG)
@@ -98,9 +98,21 @@ def _label(d, text, y, color=MUTED):
 
 def _brand(d):
     f = _font(30, bold=True)
-    text = "K R O N İ K L E R"
+    text = " ".join(BRAND)
     w = d.textlength(text, font=f)
     d.text(((W - w) / 2, H - 130), text, font=f, fill=MUTED)
+
+
+def _centered_block(d, text, font, line_h, color, underline=False):
+    lines = _wrap(d, text, font, W - 2 * MARGIN)
+    y = (H - len(lines) * line_h) / 2 - 60
+    for ln in lines:
+        w = d.textlength(ln, font=font)
+        d.text(((W - w) / 2, y), ln, font=font, fill=color)
+        y += line_h
+    if underline:
+        d.rectangle([(W - 240) / 2, y + 40, (W + 240) / 2, y + 46], fill=PRIMARY)
+    return y
 
 
 def render_frame(segment, path: Path):
@@ -108,19 +120,17 @@ def render_frame(segment, path: Path):
     scr = segment["screen"]
     kind = segment["kind"]
 
-    _label(d, scr["label"], 200, color=EMBER if kind == "hook" else MUTED)
+    _label(d, scr["label"], 200,
+           color=EMBER if kind in ("hook", "cta") else MUTED)
 
     if kind == "hook":
-        f = _font(92, bold=True)
-        lines = _wrap(d, scr["title"], f, W - 2 * MARGIN)
-        y = (H - len(lines) * 120) / 2 - 60
-        for ln in lines:
-            w = d.textlength(ln, font=f)
-            d.text(((W - w) / 2, y), ln, font=f, fill=TEXT)
-            y += 120
-        d.rectangle([(W - 240) / 2, y + 40, (W + 240) / 2, y + 46], fill=PRIMARY)
+        _centered_block(d, scr["title"], _font(84, bold=True), 112, TEXT,
+                        underline=True)
 
-    elif kind == "story":
+    elif kind == "reveal":
+        _centered_block(d, scr["title"], _font(110, bold=True), 140, EMBER)
+
+    elif kind == "detail":
         f = _font(58)
         lines = _wrap(d, scr["body"], f, W - 2 * MARGIN - 60)
         y = (H - len(lines) * 86) / 2 - 40
@@ -131,36 +141,10 @@ def render_frame(segment, path: Path):
             d.text(((W - w) / 2, y), ln, font=f, fill=TEXT)
             y += 86
 
-    elif kind == "choices":
-        fl = _font(56, bold=True)
-        fc = _font(48)
-        n = len(scr["choices"])
-        card_h = 230
-        gap = 56
-        y = (H - n * card_h - (n - 1) * gap) / 2
-        for i, choice in enumerate(scr["choices"]):
-            top = y + i * (card_h + gap)
-            d.rectangle([MARGIN, top, W - MARGIN, top + card_h],
-                        fill=SURFACE, outline=BORDER, width=2)
-            d.rectangle([MARGIN, top, MARGIN + 8, top + card_h], fill=PRIMARY)
-            label = ["A", "B", "C", "D"][i]
-            d.text((MARGIN + 48, top + 36), label + ")", font=fl, fill=EMBER)
-            lines = _wrap(d, choice, fc, W - 2 * MARGIN - 220)[:2]
-            ty = top + (card_h - len(lines) * 64) / 2
-            for ln in lines:
-                d.text((MARGIN + 170, ty), ln, font=fc, fill=TEXT)
-                ty += 64
-
     elif kind == "cta":
-        f = _font(88, bold=True)
-        lines = _wrap(d, scr["body"], f, W - 2 * MARGIN)
-        y = H / 2 - len(lines) * 116 / 2 - 80
-        for ln in lines:
-            w = d.textlength(ln, font=f)
-            d.text(((W - w) / 2, y), ln, font=f, fill=EMBER)
-            y += 116
+        y = _centered_block(d, scr["body"], _font(88, bold=True), 116, EMBER)
         f2 = _font(46)
-        sub = "Yorumlarda görüşelim ↓"
+        sub = "Takip et — yarın yenisi var ↓"
         w = d.textlength(sub, font=f2)
         d.text(((W - w) / 2, y + 50), sub, font=f2, fill=MUTED)
 

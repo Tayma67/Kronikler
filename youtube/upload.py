@@ -45,7 +45,7 @@ def upload_video(path: Path, metadata: dict) -> str:
             "title": metadata["title"],
             "description": metadata["description"],
             "tags": metadata.get("tags", []),
-            "categoryId": "20",  # Gaming
+            "categoryId": "27",  # Education
             "defaultLanguage": "tr",
             "defaultAudioLanguage": "tr",
         },

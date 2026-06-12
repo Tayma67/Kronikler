@@ -1,5 +1,5 @@
-# Kronikler — günlük YouTube Shorts otomasyonu
-# Her gün 17:00 (TR saati) bir oyun hikâyesinden Short üretir ve kanala yükler.
+# Günlük YouTube Shorts otomasyonu — "Biliyor muydun?" bilgi videoları
+# Her gün 17:00 (TR saati) bir video üretir ve kanala yükler.
 # Elle tetiklemek için: Actions → "YouTube Shorts" → Run workflow
 
 name: YouTube Shorts
@@ -9,8 +9,8 @@ on:
     - cron: "0 14 * * *"   # 14:00 UTC = 17:00 TRT
   workflow_dispatch:
     inputs:
-      event_id:
-        description: "Belirli bir event id (boş = rastgele)"
+      fact_id:
+        description: "Belirli bir bilgi id'si (boş = rastgele)"
         required: false
         default: ""
 
@@ -42,9 +42,9 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           YT_PRIVACY: ${{ vars.YT_PRIVACY || 'public' }}
         run: |
-          EVENT_ID="${{ github.event.inputs.event_id }}"
-          if [ -n "$EVENT_ID" ]; then
-            python run_pipeline.py --event-id "$EVENT_ID"
+          FACT_ID="${{ github.event.inputs.fact_id }}"
+          if [ -n "$FACT_ID" ]; then
+            python run_pipeline.py --fact-id "$FACT_ID"
           else
             python run_pipeline.py
           fi

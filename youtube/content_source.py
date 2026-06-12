@@ -1,44 +1,43 @@
 # -*- coding: utf-8 -*-
 """
-İçerik kaynağı — oyunun kendi life-event havuzundan Shorts senaryosu üretir.
+İçerik kaynağı — facts.py destesinden günlük "Biliyor muydun?" senaryosu üretir.
 
-Her event bir "Sen Olsan Ne Yapardın?" videosu olur:
-  kanca → hikâye → seçenekler → CTA (yorumlara yaz)
-Yayınlananlar youtube/published.json'da tutulur; havuz bitince sıfırlanır.
+Video akışı: soru (kanca) → cevap (reveal) → açıklama (detay) → CTA.
+Yayınlananlar youtube/published.json'da tutulur; deste bitince sıfırlanır.
 """
 import json
 import random
 import re
-import sys
 from pathlib import Path
 
+from facts import FACTS
+
 ROOT = Path(__file__).resolve().parent
-BACKEND = ROOT.parent / "backend"
 PUBLISHED_FILE = ROOT / "published.json"
 
-sys.path.insert(0, str(BACKEND))
+_EMOJI_RE = re.compile("[\U0001F000-\U0001FAFF☀-➿⬀-⯿️]+")
 
-_EMOJI_RE = re.compile(
-    "[\U0001F000-\U0001FAFF☀-➿⬀-⯿️]+"
-)
+# Kategori → ek SEO etiketleri
+CATEGORY_TAGS = {
+    "UZAY": ["uzay", "astronomi", "gezegenler", "nasa"],
+    "HAYVANLAR": ["hayvanlar", "doğa", "hayvanlar alemi", "vahşi yaşam"],
+    "İNSAN VÜCUDU": ["insan vücudu", "sağlık", "biyoloji", "anatomi"],
+    "TARİH": ["tarih", "tarihi olaylar", "tarih bilgisi"],
+    "BİLİM": ["bilim", "fizik", "teknoloji", "bilimsel gerçekler"],
+    "DÜNYA": ["coğrafya", "dünya", "ülkeler", "gezi"],
+}
 
-CHOICE_LABELS = ["A", "B", "C", "D"]
-CHOICE_WORDS = ["Birinci seçenek", "İkinci seçenek", "Üçüncü seçenek", "Dördüncü seçenek"]
+BASE_TAGS = [
+    "biliyor muydun", "ilginç bilgiler", "şaşırtıcı gerçekler",
+    "genel kültür", "bilgi", "shorts", "öğretici",
+]
+
+HASHTAGS = "#biliyormuydun #ilginçbilgiler #bilgi #genelkültür #keşfet #shorts"
 
 
 def temizle(text: str) -> str:
     """Emoji ve fazla boşlukları at (font/TTS güvenliği)."""
     return _EMOJI_RE.sub("", text or "").strip()
-
-
-def load_events():
-    from life_events import LIFE_EVENTS
-    from life_events_v2 import LIFE_EVENTS_V2
-    events = LIFE_EVENTS + LIFE_EVENTS_V2
-    return [
-        e for e in events
-        if e.get("title") and e.get("description") and len(e.get("choices", [])) >= 2
-    ]
 
 
 def load_published():
@@ -53,81 +52,71 @@ def save_published(data):
     )
 
 
-def pick_event(event_id: str | None = None):
-    """Yayınlanmamış rastgele bir event seç (veya id ile belirli birini)."""
-    events = load_events()
-    if event_id:
-        for e in events:
-            if e["id"] == event_id:
-                return e
-        raise SystemExit(f"Event bulunamadı: {event_id}")
+def pick_fact(fact_id: str | None = None):
+    """Yayınlanmamış rastgele bir bilgi seç (veya id ile belirli birini)."""
+    if fact_id:
+        for f in FACTS:
+            if f["id"] == fact_id:
+                return f
+        raise SystemExit(f"Bilgi bulunamadı: {fact_id}")
 
     done = set(load_published()["published"])
-    pool = [e for e in events if e["id"] not in done]
-    if not pool:  # havuz bitti — baştan başla
-        pool = events
+    pool = [f for f in FACTS if f["id"] not in done]
+    if not pool:  # deste bitti — baştan başla
+        pool = FACTS
     return random.choice(pool)
 
 
-def build_script(event):
-    """Videonun bölümlerini üret: her bölüm = (ekran metni, seslendirme metni)."""
-    title = temizle(event["title"])
-    desc = temizle(event["description"])
-    choices = [temizle(c["text"]) for c in event["choices"][:4]]
+def build_script(fact):
+    """Videonun bölümlerini üret: her bölüm = (ekran içeriği, seslendirme metni)."""
+    soru = temizle(fact["soru"])
+    cevap = temizle(fact["cevap"])
+    aciklama = temizle(fact["aciklama"])
+    kategori = fact["kategori"]
 
     segments = [
         {
             "kind": "hook",
-            "screen": {"label": "SEN OLSAN NE YAPARDIN?", "title": title},
-            "voice": f"Sen olsan ne yapardın? {title}.",
+            "screen": {"label": "BİLİYOR MUYDUN?", "title": soru},
+            "voice": f"Biliyor muydun? {soru}",
         },
         {
-            "kind": "story",
-            "screen": {"label": "HİKÂYE", "body": desc},
-            "voice": desc,
+            "kind": "reveal",
+            "screen": {"label": kategori, "title": cevap},
+            "voice": cevap,
         },
         {
-            "kind": "choices",
-            "screen": {"label": "SEÇİMİN HANGİSİ?", "choices": choices},
-            "voice": " ".join(
-                f"{CHOICE_WORDS[i]}: {c}." for i, c in enumerate(choices)
-            ),
+            "kind": "detail",
+            "screen": {"label": kategori, "body": aciklama},
+            "voice": aciklama,
         },
         {
             "kind": "cta",
-            "screen": {
-                "label": "KRONİKLER — KÜLLERİN MİRASI",
-                "body": "Cevabını yorumlara yaz!",
-            },
-            "voice": "Cevabını yorumlara yaz. Bu hikâye ve yüzlercesi, Kronikler'de seni bekliyor.",
+            "screen": {"label": "HER GÜN YENİ BİR BİLGİ",
+                       "body": "Bildin mi? Yorumlara yaz!"},
+            "voice": "Peki sen bunu biliyor muydun? Yorumlara yaz. "
+                     "Her gün yeni bir bilgi için takip et.",
         },
     ]
 
-    choice_lines = "\n".join(
-        f"{CHOICE_LABELS[i]}) {c}" for i, c in enumerate(choices)
-    )
     metadata = {
-        "title": f"{title} — Sen Olsan Ne Yapardın? #Shorts"[:100],
+        "title": f"{soru} 🤯 #shorts"[:100],
         "description": (
-            f"{desc}\n\n{choice_lines}\n\n"
-            "Cevabını yorumlara yaz! 👇\n\n"
-            "Kronikler: Küllerin Mirası — yaşayan bir ortaçağ dünyasında "
-            "hayat simülasyonu. Her seçim kalıcı, her nesil bir roman.\n\n"
-            "#kronikler #oyun #hikaye #senolsan #interaktif #rpg #shorts"
+            f"{soru}\n\nCevap: {cevap} {aciklama}\n\n"
+            "🔔 Her gün yeni bir şaşırtıcı bilgi için abone ol!\n"
+            "💬 Sen bunu biliyor muydun? Yorumlara yaz!\n\n"
+            f"{HASHTAGS}"
         ),
-        "tags": [
-            "kronikler", "sen olsan ne yapardın", "interaktif hikaye",
-            "yaşam simülasyonu", "rpg", "türkçe oyun", "shorts",
-        ],
+        "tags": (BASE_TAGS + CATEGORY_TAGS.get(kategori, []))[:15],
     }
     return segments, metadata
 
 
-def mark_published(event_id: str, video_id: str | None, date: str):
+def mark_published(fact_id: str, video_id: str | None, date: str):
     data = load_published()
-    if event_id not in data["published"]:
-        data["published"].append(event_id)
+    if fact_id not in data["published"]:
+        data["published"].append(fact_id)
     data.setdefault("log", []).append(
-        {"event_id": event_id, "video_id": video_id, "date": date}
+        {"fact_id": fact_id, "video_id": video_id, "date": date}
     )
     save_published(data)

@@ -115,11 +115,10 @@ GDD'deki Başarı Testi tablosu ✅ olarak güncellendi.
 
 ## YouTube Otomasyonu (2026-06-12) — `youtube/` + `.github/workflows/youtube-shorts.yml`
 
-Günlük otomatik Shorts: life_events havuzundan (238 hikâye) "Sen Olsan Ne
-Yapardın?" videosu üretir (Pillow + edge-tts + ffmpeg, Kül & Köz teması) ve
-YouTube Data API ile kanala yükler. Tamamı ücretsiz. Kurulum (Google OAuth +
-3 GitHub Secret) için `youtube/README.md`. Durum: kod hazır + lokal render
-testi geçti; kullanıcının tek seferlik OAuth kurulumu bekleniyor.
+OYUNDAN BAĞIMSIZ bölüm: günlük "Biliyor muydun?" bilgi Shorts'ları üretir
+(facts.py destesi + Pillow + edge-tts + ffmpeg) ve YouTube Data API ile
+kanala yükler. Tamamı ücretsiz. Kurulum için `youtube/README.md`. Durum:
+kod hazır + lokal render testi geçti; tek seferlik OAuth kurulumu bekleniyor.
 
 ## Sıradaki İş (Adım 7 — kalan lansman kalemleri)
 
