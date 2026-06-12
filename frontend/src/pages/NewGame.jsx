@@ -75,9 +75,9 @@ export default function NewGame() {
         <Loader2 className="w-6 h-6 animate-spin" />
         {slowBackend && (
           <div className="text-center text-xs text-stone-600 max-w-xs">
-            <p className="text-stone-400 mb-1">Sunucu uyanıyor…</p>
-            <p>Railway backend uyku modunda olabilir.</p>
-            <p>Lütfen biraz bekle (30–60 saniye sürebilir).</p>
+            <p className="text-stone-400 mb-1">Diyar uyanıyor…</p>
+            <p>Küller yeniden tutuşuyor, biraz sabır.</p>
+            <p>Bu birkaç saniye sürebilir.</p>
           </div>
         )}
       </div>
