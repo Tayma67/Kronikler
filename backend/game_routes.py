@@ -561,6 +561,9 @@ def build_game_router(db):
         # Faction sistemini başlat
         from faction_system import init_factions_for_world
         init_factions_for_world(state, 0)
+        # S1: 6 rakip hanedanı dünyaya yerleştir
+        from dynasties import ensure_dynasties
+        ensure_dynasties(state)
         # Unlock starting quests
         unlock_age_appropriate(state)
         refresh_opportunities(state)
@@ -729,6 +732,44 @@ def build_game_router(db):
             raise HTTPException(status_code=404, detail="NPC bulunamadı veya ölü")
         from npc_mind import goal_action
         result, err = goal_action(state, npc, body.get("eylem"))
+        if err:
+            raise HTTPException(status_code=400, detail=err)
+        await _save_state(db, user["_id"], state)
+        result["state"] = _decorate(state)
+        return result
+
+    # ---------- S1: Rakip Hanedanlar ----------
+    @router.get("/hanedanlar")
+    async def get_dynasties(user: dict = Depends(get_current_user)):
+        """S1: lig tablosu (6 hanedan + oyuncu) + bekleyen teklifler."""
+        state = await _load_state(db, user["_id"])
+        from dynasties import league_table
+        result = league_table(state)
+        await _save_state(db, user["_id"], state)   # lazy init + teklif temizliği
+        return result
+
+    @router.post("/hanedanlar/teklif")
+    async def dynasty_offer_response(body: dict = Body(default={}),
+                                     user: dict = Depends(get_current_user)):
+        """S1: hanedan teklifine cevap — kabul | red."""
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        from dynasties import respond_offer
+        result, err = respond_offer(state, body.get("offer_id"), body.get("karar"))
+        if err:
+            raise HTTPException(status_code=400, detail=err)
+        await _save_state(db, user["_id"], state)
+        result["state"] = _decorate(state)
+        return result
+
+    @router.post("/hanedanlar/{dynasty_id}/yakinlasma")
+    async def dynasty_overture(dynasty_id: str,
+                               user: dict = Depends(get_current_user)):
+        """S1: hanedana hediye konvoyu — tutum kazan, ittifaka zemin döşe."""
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        from dynasties import player_overture
+        result, err = player_overture(state, dynasty_id)
         if err:
             raise HTTPException(status_code=400, detail=err)
         await _save_state(db, user["_id"], state)

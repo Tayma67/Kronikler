@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useGame } from "@/lib/GameContext";
 import {
   Scroll, Flame, Shield, Castle, Users,
-  Briefcase, Sword, Hourglass, Loader2,
+  Briefcase, Sword, Swords, Hourglass, Loader2,
   Zap, Newspaper, GraduationCap, ArrowUpDown,
   GitBranch, Coffee, X, Heart, Apple, Home, BookOpen, Crown, Settings,
 } from "lucide-react";
@@ -31,6 +31,7 @@ const SECONDARY_NAV = [
   { to: "/oyun/suc",             label: "Gölge",        icon: Sword,          testid: "nav-crime"       },
   { to: "/oyun/ticaret",         label: "Pazar",        icon: ArrowUpDown,    testid: "nav-trade"       },
   { to: "/oyun/mulkler",         label: "Mülkler",      icon: Home,           testid: "nav-properties"  },
+  { to: "/oyun/hanedanlar",      label: "Rakipler",     icon: Swords,         testid: "nav-dynasties"   },
   { to: "/oyun/hikayeler",       label: "Hikâyeler",    icon: BookOpen,       testid: "nav-stories"     },
   { to: "/oyun/hanedan",         label: "Hanedan",      icon: Crown,          testid: "nav-legacy"      },
   { to: "/oyun/ayarlar",         label: "Ayarlar",      icon: Settings,       testid: "nav-settings"    },

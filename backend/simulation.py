@@ -1219,6 +1219,12 @@ def advance_time(state, weeks=1, days=None):
             gossip_tick(state)
         except Exception:
             pass
+        # S1 Rakip Hanedanlar: hanedan başına tek eylem (hafif tick)
+        try:
+            from dynasties import dynasty_world_tick
+            dynasty_world_tick(state, day)
+        except Exception:
+            pass
         if len(state["history"]) > 250:
             state["history"] = state["history"][-250:]
     # Auto-unlock family quests at the end of advancement

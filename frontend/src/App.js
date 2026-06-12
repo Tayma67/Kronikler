@@ -28,6 +28,7 @@ import Trade from "@/pages/Trade";
 import Generation from "@/pages/Generation";
 import TownFeed from "@/pages/TownFeed";
 import Properties from "@/pages/Properties";
+import Dynasties from "@/pages/Dynasties";
 import StoryJournal from "@/pages/StoryJournal";
 import Legacy from "@/pages/Legacy";
 import Settings from "@/pages/Settings";
@@ -67,6 +68,7 @@ export default function App() {
             <Route path="nesil" element={<Generation />} />
             <Route path="kasaba" element={<TownFeed />} />
             <Route path="mulkler" element={<Properties />} />
+            <Route path="hanedanlar" element={<Dynasties />} />
             <Route path="hikayeler" element={<StoryJournal />} />
             <Route path="hanedan" element={<Legacy />} />
             <Route path="ayarlar" element={<Settings />} />

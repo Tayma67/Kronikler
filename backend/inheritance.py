@@ -224,6 +224,13 @@ def begin_inheritance(state, chosen_child_id: str = None) -> dict:
     except Exception:
         pass
 
+    # S1 Rakip Hanedanlar: tutum mirası — babanın düşmanı oğlunun da düşmanı
+    try:
+        from dynasties import inherit_attitudes
+        inherit_attitudes(state)
+    except Exception:
+        pass
+
     return state
 
 

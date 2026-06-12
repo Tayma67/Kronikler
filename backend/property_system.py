@@ -154,6 +154,17 @@ def buy_property(state, ptype_key, loc_id, day):
     loc = _loc_of(state, loc_id)
     if not loc:
         return None, t("mulk.hata_lokasyon")
+    # S1 Rakip Hanedanlar: lokasyon mülk slotları KIT — hanedanlar kapmış olabilir
+    try:
+        from dynasties import free_slots, slot_owners
+        if free_slots(state, loc) <= 0:
+            owners = slot_owners(state, loc_id)
+            who = ", ".join(sorted({f"{o['sembol']} {o['sahip']}" for o in owners})) \
+                or "yerel aileler"
+            return None, (f"{loc['name']}'de boş mülk kalmadı — {who} kapmış. "
+                          "Biri satana kadar bekle ya da başka diyara bak.")
+    except Exception:
+        pass
     # Fiyat lokasyon zenginliğiyle oynar (zengin şehirde mülk pahalı)
     cost = int(ptype["cost"] * (0.8 + loc.get("wealth", 50) / 125))
     if player.get("money", 0) < cost:
