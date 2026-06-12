@@ -1,0 +1,20 @@
+{
+  "short_name": "Kronikler",
+  "name": "Kronikler — Küllerin Mirası",
+  "description": "Yedi Tepe Diyarı'nda bir ömür: doğ, büyü, hanedan kur, miras bırak.",
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0D0A06",
+  "background_color": "#0D0A06"
+}

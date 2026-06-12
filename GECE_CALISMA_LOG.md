@@ -166,6 +166,16 @@ Sonuç: **"Compiled successfully" ✅** — hem bu bug düzeldi hem de TÜM gece
 frontend değişikliklerinin gerçekten derlendiği kanıtlandı.
 ÖNEMLİ: Vercel deploy'un bu yüzden başarısız oluyor olabilir — kontrol et.
 
+### [00:25] ✅ İŞ 13: Uygulama ikonu PWA'ya bağlandı (üretilen ikon kullanılmıyordu!)
+Döngü kapama kontrolü: ürettiğim icon-512.png public/'te duruyordu ama index.html
+HİÇBİR yerden referans vermiyordu → favicon yok, apple-touch-icon yok, manifest yok.
+Yani commit 2bb041b'nin "iPhone Ana Ekrana Ekle" hedefi EKSİKTİ (ikon linki olmadan
+iOS ekran görüntüsüne düşer). Eklendi:
+- index.html: <link rel="icon"> + apple-touch-icon + manifest
+- Yeni public/manifest.json: ad/ikon/standalone/portrait/tema rengi (Android PWA install)
+Artık tarayıcı sekmesinde + telefon ana ekranında gerçek Kronikler ikonu görünür.
+Doğrulama: build → ikon & manifest build/'e kopyalandı, linkler index.html'de çözüldü.
+
 Devam eden departman backlog'u (yarın/istek üzerine): NPCDetail tam Kit
 migrasyonu, diğer sayfaların derin Kit'e geçişi, EmptyState yaygınlaştırma,
 ortak Bar bileşeni. Denge maddeleri (itibar enflasyonu vb.) BİLİNÇLİ olarak
