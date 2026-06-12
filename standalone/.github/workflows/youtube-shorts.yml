@@ -1,0 +1,65 @@
+# Günlük YouTube Shorts otomasyonu — "Biliyor muydun?" bilgi videoları
+# Her gün 17:00 (TR saati) bir video üretir ve kanala yükler.
+# Elle tetiklemek için: Actions → "YouTube Shorts" → Run workflow
+
+name: YouTube Shorts
+
+on:
+  schedule:
+    - cron: "0 14 * * *"   # 14:00 UTC = 17:00 TRT
+  workflow_dispatch:
+    inputs:
+      fact_id:
+        description: "Belirli bir bilgi id'si (boş = rastgele)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write   # published.json'u geri commitlemek için
+
+concurrency:
+  group: youtube-shorts
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Bağımlılıkları kur
+        run: pip install -r requirements.txt
+
+      - name: Video üret ve yükle
+        working-directory: .
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          YT_PRIVACY: ${{ vars.YT_PRIVACY || 'public' }}
+        run: |
+          FACT_ID="${{ github.event.inputs.fact_id }}"
+          if [ -n "$FACT_ID" ]; then
+            python run_pipeline.py --fact-id "$FACT_ID"
+          else
+            python run_pipeline.py
+          fi
+
+      - name: Yayın kaydını commitle
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add published.json
+          git diff --cached --quiet || git commit -m "YouTube: günlük short yayınlandı [skip ci]"
+          git push
+
+      - name: Videoyu artefakt olarak sakla (7 gün)
+        uses: actions/upload-artifact@v4
+        with:
+          name: short-video
+          path: out/*.mp4
+          retention-days: 7
