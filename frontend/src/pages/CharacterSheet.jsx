@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
+import { profLabel } from "@/lib/labels";
 import { useNavigate, Link } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
@@ -911,7 +912,7 @@ function TabDunya() {
                           padding: "2px 7px", borderRadius: 10,
                           background: "rgba(201,168,76,0.08)", border: `1px solid ${C.goldBorder}`,
                           color: C.textMid, letterSpacing: "0.05em",
-                        }}>{npc.profession}</span>
+                        }}>{profLabel(npc.profession)}</span>
                       )}
                     </div>
                   </div>

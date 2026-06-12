@@ -28,8 +28,8 @@ RUMOR_TEMPLATES = {
         "Bir savaş çıkacağı söyleniyor.",
     ],
     "tahta_çıkış": [
-        "Yeni bir kral oturdu tahta.",
-        "{name} taç giydi, halk merakla bekliyor.",
+        "Yeni sultan tahta oturdu, kılıç kuşandı.",
+        "Tahtın yeni sahibi var; halk hutbede yeni adı bekliyor.",
     ],
     "cinayet": [
         "{loc}'de kanlı bir iş döndü, fail belli değil.",
@@ -94,6 +94,11 @@ def auto_rumors_from_events(state, new_events):
         etype = ev.get("type")
         rtype = HISTORY_TO_RUMOR.get(etype)
         if not rtype:
+            continue
+        # Sıradan NPC yaşam olayları (arkaplan doğum/ölüm/evlilik) söylenti olmaz —
+        # oyuncunun dünyasıyla ilgisi yok. Hanedan ve oyuncuya yakın olanlar geçer.
+        if etype in ("ölüm", "doğum", "evlilik") \
+                and ev.get("scope") not in ("makro", "kişisel"):
             continue
         # Skip player's own actions (those are already public knowledge)
         if etype in ("ticaret", "yolculuk", "çalışma", "kullanım", "kuşanma"):

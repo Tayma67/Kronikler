@@ -112,8 +112,8 @@ SURNAMES = [
 ]
 
 KINGDOM_NAMES = [
-    "Külhanlı Hanedanı", "Demirhan Krallığı", "Altınyay Beyliği",
-    "Kuzgun İmparatorluğu", "Akpınar Eyaleti", "Bozkır Hanlığı",
+    "Külhanlı Hanedanı", "Demirhan Beyliği", "Altınyay Beyliği",
+    "Kuzgun Hanedanı", "Akpınar Eyaleti", "Bozkır Hanlığı",
     "Tunca Beylerbeyliği", "Karahan Sultanlığı",
 ]
 KINGDOM_CULTURES = [
@@ -231,7 +231,7 @@ _BACKSTORY_TEMPLATES = {
     ],
     "demirci": [
         "Ondört yaşından beri körük başında; kolları kütük gibi.",
-        "Bir zamanlar kral için kılıç yaptı; hikâyesini her fırsatta anlatır.",
+        "Bir zamanlar sultan için kılıç yaptı; hikâyesini her fırsatta anlatır.",
         "Ustasının sırrını taşır: demiri karanlıkta bile göre göre çalışır.",
         "Köyün en saygın esnafı; yetim çocuklara ücretsiz nal taktığı söylenir.",
     ],

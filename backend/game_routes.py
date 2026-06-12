@@ -969,6 +969,8 @@ def build_game_router(db):
             raise HTTPException(404, "Konum veya ürün bulunamadı")
 
         mult = trade_price_multiplier(state["player"], action)
+        from faction_surface import faction_trade_mult
+        mult *= faction_trade_mult(state, action)   # R8.2 lonca imtiyazı
         total_raw, avg_raw, first_p, last_p = _simulate_bulk_trade(loc, good, qty, action)
 
         # R3.2: kalite çarpanı (alımda parti kalitesi, satışta envanter bayrağı)
@@ -1014,6 +1016,9 @@ def build_game_router(db):
             if m["supply"] < body.qty:
                 raise HTTPException(status_code=400, detail=f"Stokta sadece {m['supply']} adet var")
             buy_mult = trade_price_multiplier(player, "al")
+            # R8.2: lonca üyeliği imtiyazı
+            from faction_surface import faction_trade_mult
+            buy_mult *= faction_trade_mult(state, "al")
             # Kayan fiyat: her birim piyasayı etkiler, gerçek toplam hesaplanır
             total_raw, avg_raw, _, _ = _simulate_bulk_trade(loc, body.good, body.qty, "al")
             total = round(total_raw * buy_mult, 1)
@@ -1040,6 +1045,9 @@ def build_game_router(db):
             if inv.get(body.good, 0) < body.qty:
                 raise HTTPException(status_code=400, detail="Yeterli ürünün yok")
             sell_mult = trade_price_multiplier(player, "sat")
+            # R8.2: lonca üyeliği imtiyazı
+            from faction_surface import faction_trade_mult
+            sell_mult *= faction_trade_mult(state, "sat")
             # Kayan fiyat: stok arttıkça fiyat düşer, gerçek toplam hesaplanır
             total_raw, avg_raw, _, _ = _simulate_bulk_trade(loc, body.good, body.qty, "sat")
             total = round(total_raw * sell_mult, 1)
@@ -2665,6 +2673,33 @@ def build_game_router(db):
         init_factions_for_world(state, state.get("turn", 0))
         await _save_state(db, user["_id"], state)
         return {"factions": get_faction_summary(state, state["player"])}
+
+    # ── R8: Fraksiyon Yüzeyi — haftalık sahne + rütbe kartı + olay feed'i ──
+
+    @router.get("/factions/feed")
+    async def factions_feed(user: dict = Depends(get_current_user)):
+        """Üyelik yüzeyi: haftalık sahne, rütbe imtiyaz kartı, mini-sahne olaylar."""
+        from faction_surface import ensure_weekly_scene, player_perk_card, dress_events
+        state = await _load_state(db, user["_id"])
+        scene = ensure_weekly_scene(state)
+        await _save_state(db, user["_id"], state)
+        return {
+            "scene": scene,
+            "perk_card": player_perk_card(state),
+            "events": dress_events(state),
+        }
+
+    @router.post("/factions/scene")
+    async def factions_scene_resolve(body: dict, user: dict = Depends(get_current_user)):
+        """Haftalık fraksiyon sahnesindeki seçimi çöz."""
+        from faction_surface import resolve_scene
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        result, err = resolve_scene(state, body.get("choice"))
+        if err:
+            raise HTTPException(400, err)
+        await _save_state(db, user["_id"], state)
+        return {"result": result, "state": _decorate(state)}
 
     # ── P3a: Gizli Cemiyet Dedektif Endpoint'leri ──
 

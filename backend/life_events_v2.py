@@ -25,7 +25,7 @@ LIFE_EVENTS_V2 = [
     {
         "id": "v2_asker_cagrisi",
         "title": "Sefer Çağrısı",
-        "description": "Tellal bağırıyor: kral orduya gönüllü topluyor. Sefere katılanlara ganimet payı sözü var.",
+        "description": "Tellal bağırıyor: sultan orduya gönüllü topluyor. Sefere katılanlara ganimet payı sözü var.",
         "icon": "⚔️",
         "conditions": {"age_min": 18, "age_max": 30},
         "choices": [
@@ -500,7 +500,7 @@ LIFE_EVENTS_V2 = [
         "icon": "🏛️",
         "conditions": {"age_min": 35, "age_max": 60},
         "choices": [
-            {"text": "Reformcu genci destekle", "effects": {"reputation": 4, "social": 1}, "result": "Genç kazandı; loncaya taze kan geldi. Sana 'kral yapıcı' diyorlar."},
+            {"text": "Reformcu genci destekle", "effects": {"reputation": 4, "social": 1}, "result": "Genç kazandı; loncaya taze kan geldi. Sana 'bey yapıcı' diyorlar."},
             {"text": "Tecrübeli ustayı destekle", "effects": {"reputation": 3, "crafting": 1}, "result": "Usta kazandı; istikrar sürdü. Minnetini esirgemedi."},
             {"text": "Tarafsız kal", "effects": {}, "result": "Seçim bitti; iki taraf da sana mesafeli artık. Tarafsızlığın bedeli."},
         ],

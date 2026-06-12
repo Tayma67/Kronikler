@@ -1060,12 +1060,34 @@ def _build_hafta_hasadi(
     turn_before  — advance çağrılmadan önceki state['turn'] değeri
     """
     current_turn: int = state.get("turn", 0)
+    player      = state["player"]
+    player_name = player.get("name", "")
+    player_first = player_name.split()[0] if player_name else ""
 
     # ── MANŞET ──────────────────────────────────────────────────
-    # Bu turda tarihe geçen olaylar (turn_before < day <= current_turn)
+    # Bu turda tarihe geçen olaylar (turn_before < day <= current_turn).
+    # Oyuncunun dünyası kuralı: sıradan NPC yaşam olayları (arkaplan
+    # doğum/ölüm/evlilik vb.) manşet OLAMAZ — hanedan haberi (makro),
+    # oyuncuya yakın kişiler (kişisel) ya da adının geçtiği olaylar geçer.
+    _BACKGROUND_TYPES = {"ölüm", "doğum", "evlilik", "meslek_edinme",
+                         "göç", "aile_destek", "zanaat_durgun"}
+
+    def _player_relevant(ev: dict) -> bool:
+        scope = ev.get("scope")
+        if scope == "arkaplan":
+            return False
+        if scope in ("makro", "kişisel"):
+            return True
+        if ev.get("type") in _BACKGROUND_TYPES:
+            # Kapsamsız (eski/başka kaynaklı) yaşam olayı: ancak oyuncunun
+            # adı geçiyorsa oyuncunun dünyasına aittir.
+            return bool(player_first and len(player_first) > 2
+                        and player_first in ev.get("text", ""))
+        return True
+
     this_week: list[dict] = [
         e for e in state.get("history", [])
-        if turn_before < e.get("day", 0) <= current_turn
+        if turn_before < e.get("day", 0) <= current_turn and _player_relevant(e)
     ]
 
     if this_week:
@@ -1094,14 +1116,23 @@ def _build_hafta_hasadi(
 
     # ── KULAK MİSAFİRİ ───────────────────────────────────────────
     all_rumors: list[dict] = state.get("rumors", [])
-    player      = state["player"]
-    player_name = player.get("name", "")
     # Söylentiler kingdom_id taşır — oyuncunun krallığını lokasyonundan bul
     _loc = next((l for l in state.get("world", {}).get("locations", [])
                  if l.get("id") == player.get("location_id")), None)
     player_loc  = _loc.get("kingdom_id") if _loc else None
 
+    # Sıradan NPC doğum/ölüm/evlilik dedikodusu kulak misafirine giremez
+    # (eski kayıtlardan kalanlar dahil) — oyuncunun adı geçiyorsa istisna.
+    _GOSSIP_TYPES = {"ölüm", "doğum", "evlilik", "evlat"}
+
+    def _rumor_ok(r: dict) -> bool:
+        if r.get("type") not in _GOSSIP_TYPES:
+            return True
+        return bool(player_first and len(player_first) > 2
+                    and player_first in r.get("text", ""))
+
     kulak_misafiri: dict
+    all_rumors = [r for r in all_rumors if _rumor_ok(r)]
     if all_rumors:
         recent = all_rumors[-25:]  # sadece en yeni 25 söylenti
         # 1. Oyuncunun adını içeren söylentiler (itibar yansıması)

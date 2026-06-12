@@ -366,6 +366,8 @@ export default function Dashboard() {
     firstName && firstName.length > 2 && (e.text || '').includes(firstName);
 
   const isPersonal = (e) => {
+    // Backend kapsamı önceliklidir: kişisel → günlüğe, arkaplan → hiçbir yere
+    if (e.scope === 'kişisel') return true;
     const cfg = EVENT_MAP[e.type];
     if (cfg?.personal === true) return true;
     if (cfg?.personal === 'isim') return mentionsPlayer(e);
@@ -373,8 +375,23 @@ export default function Dashboard() {
     return mentionsPlayer(e);
   };
 
+  // Dünya sekmesi = MAKRO olaylar. Sıradan NPC yaşamı (falanca doğdu/öldü/
+  // evlendi, meslek edindi, göçtü) oyuncunun dünyasına ait değil — gösterme.
+  // Hanedan haberleri (scope: makro) ve devlet/ekonomi olayları kalır.
+  const BACKGROUND_TYPES = new Set([
+    'ölüm', 'doğum', 'evlilik', 'death',
+    'meslek_edinme', 'göç', 'aile_destek', 'zanaat_durgun',
+  ]);
+  const isWorldWorthy = (e) => {
+    if (e.scope === 'makro') return true;
+    if (e.scope === 'arkaplan') return false;
+    return !BACKGROUND_TYPES.has(e.type);
+  };
+
   const personalEvents = reversed.filter(isPersonal).slice(0, 8);
-  const worldEvents = reversed.filter(e => !isPersonal(e)).slice(0, 8);
+  const worldEvents = reversed
+    .filter(e => !isPersonal(e) && isWorldWorthy(e))
+    .slice(0, 8);
 
   const currentTabEvents =
     activeTab === 'gunluk' ? personalEvents :

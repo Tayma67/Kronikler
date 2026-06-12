@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { profLabel } from "@/lib/labels";
 import { Link } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
@@ -47,7 +48,7 @@ function ChildCard({ child }) {
           : <span className="font-heading text-sm text-stone-600 line-through">{child.name}</span>}
         <p className="text-[10px] text-stone-600 mt-0.5">
           {child.age} yaş
-          {child.profession && child.age >= 10 ? ` · ${child.profession}` : ""}
+          {child.profession && child.age >= 10 ? ` · ${profLabel(child.profession)}` : ""}
           {!isAlive ? " · Hayatını kaybetti" : ""}
         </p>
       </div>

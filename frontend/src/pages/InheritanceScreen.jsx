@@ -9,6 +9,7 @@
  *   { options, previous_player, generation, inherited_stats, inherited_skills, inherited_money }
  */
 import { useState, useEffect } from "react";
+import { profLabel } from "@/lib/labels";
 import { Skull, Baby, ChevronRight, Sparkles } from "lucide-react";
 
 function StatRow({ label, value, inherited }) {
@@ -154,7 +155,7 @@ export default function InheritanceScreen({
                       onClick={() => handleSelect(h)}
                     >
                       <div className="inh-heir-name">{h.name}</div>
-                      <div className="inh-heir-info">{h.age} yaşında · {h.gender} · {h.profession}</div>
+                      <div className="inh-heir-info">{h.age} yaşında · {h.gender} · {profLabel(h.profession)}</div>
                     </button>
                   ))}
                   <div className="inh-divider" />

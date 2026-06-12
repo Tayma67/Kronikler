@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { profLabel } from "@/lib/labels";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -218,7 +219,7 @@ function ChildDetailModal({ child, isHeir, playerMoney, factions, onClose, onSet
                 <span>{age} yaş</span>
                 <span>·</span>
                 <span>{child.gender === "erkek" ? "Erkek" : "Kız"}</span>
-                {child.profession && <><span>·</span><span className="capitalize">{child.profession}</span></>}
+                {child.profession && <><span>·</span><span className="capitalize">{profLabel(child.profession)}</span></>}
               </div>
             </div>
             <div className="flex flex-col items-end gap-1.5">
@@ -353,7 +354,7 @@ function ChildCard({ child, isHeir, factions, onSetHeir, onOpenDetail }) {
             <span>{age} yaş</span>
             <span>·</span>
             <span>{child.gender === "erkek" ? "Erkek" : "Kız"}</span>
-            {child.profession && <><span>·</span><span className="capitalize">{child.profession}</span></>}
+            {child.profession && <><span>·</span><span className="capitalize">{profLabel(child.profession)}</span></>}
           </div>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -484,7 +485,7 @@ function SpouseCard({ spouse }) {
       <div className="flex-1 min-w-0">
         <div className="label-tiny">Eş</div>
         <div className="font-heading text-stone-100 truncate">{spouse.name}</div>
-        <div className="text-xs text-stone-500">{spouse.age} yaş · {spouse.profession}</div>
+        <div className="text-xs text-stone-500">{spouse.age} yaş · {profLabel(spouse.profession)}</div>
       </div>
       <div className="text-xs text-stone-500 shrink-0">
         <Heart className="w-3 h-3 text-red-400 inline mr-1" />

@@ -280,7 +280,7 @@ LIFE_EVENTS = [
     {
         "id": "event_military_call",
         "title": "Askerlik Çağrısı",
-        "description": "Kral habercisi köye geldi. 'Savaş zamanı — gençler sıraya!' diye bağırıyor. Adın listede.",
+        "description": "Sultanın habercisi köye geldi. 'Savaş zamanı — gençler sıraya!' diye bağırıyor. Adın listede.",
         "icon": "⚔️",
         "conditions": {"age_min": 16, "age_max": 19},
         "choices": [

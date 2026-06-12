@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { profLabel } from "@/lib/labels";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
@@ -482,7 +483,7 @@ export default function CityDetail() {
                         {relScore > 0 ? `+${relScore}` : relScore}
                       </span>
                     )}
-                    <span className="text-stone-500">{n.profession}</span>
+                    <span className="text-stone-500">{profLabel(n.profession)}</span>
                   </div>
                 </li>
               );

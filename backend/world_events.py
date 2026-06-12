@@ -226,7 +226,7 @@ def _event_texts(event_type, loc_name, extra=None):
             "title": f"Asker Çağrısı: {loc_name}",
             "headline": f"{loc_name}'de Asker Toplanıyor",
             "detail": (
-                f"Kral fermanı geldi: {loc_name}'den genç erkekler askere çağrıldı. "
+                f"Sultan fermanı geldi: {loc_name}'den genç erkekler askere çağrıldı. "
                 f"Silah ve teçhizat talebi fırladı. "
                 f"Ayrılacak olanlar için veda törenleri düzenlendi."
             ),

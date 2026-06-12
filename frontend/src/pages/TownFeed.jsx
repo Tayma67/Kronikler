@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { profLabel } from "@/lib/labels";
 import { useGame } from "@/lib/GameContext";
 import { Link } from "react-router-dom";
 import {
@@ -66,7 +67,7 @@ function NPCCard({ npc }) {
         <div className="text-[10px] text-stone-500 flex items-center gap-2">
           <span>{npc.age} yaş</span>
           <span>·</span>
-          <span className="capitalize">{npc.profession}</span>
+          <span className="capitalize">{profLabel(npc.profession)}</span>
           {npc.spouse_id && <><span>·</span><span className="flex items-center gap-0.5"><Heart className="w-2.5 h-2.5 text-rose-500" /> Evli</span></>}
         </div>
       </div>

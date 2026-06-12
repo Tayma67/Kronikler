@@ -252,15 +252,15 @@ PROFESSION_TALK = {
         "Şikayetler çok, çözüm az — lordluk böyle.",
         "Bir askerim gelmedi bugün, disiplin bozuluyor.",
         "Köy meselelerini dinlemek zorundayım.",
-        "Lordluk görkemli görünür, gerçek öyle değil.",
+        "Beylik görkemli görünür, gerçek öyle değil.",
         "Hazineye bakıyorum, durumu iyi sayılmaz.",
     ],
     "kral": [
-        "Krallığım dimdik durduğu sürece sözüm fermandır.",
+        "Devletim dimdik durduğu sürece sözüm fermandır.",
         "İhanetin cezası ölümdür, aklında bulunsun.",
         "Bu taht kanla kazanıldı, kanla korunur.",
-        "Lordlarım sadık mı bilmiyorum, ama boyun eğiyorlar.",
-        "Krallık yönetmek uykusuz geceleri beraberinde getirir.",
+        "Beylerim sadık mı bilmiyorum, ama boyun eğiyorlar.",
+        "Devlet yönetmek uykusuz geceleri beraberinde getirir.",
         "Bir düşman sınırda bekliyorsa, o düşman yakında ölüdür.",
     ],
     "veliaht": [
@@ -465,7 +465,7 @@ PLAYER_PROFESSION_CALLBACKS = {
 CHILD_REACTIONS = {
     "kral": [
         "Çocuk! Sarayda işin ne? Annenle babanı bul, geri dön.",
-        "Krallar çocuklarla muhatap olmaz. Çık dışarı.",
+        "Sultanlar çocuklarla muhatap olmaz. Çık dışarı.",
         "Burası çocuklara göre yer değil. Git eve.",
     ],
     "lord": [
@@ -981,7 +981,7 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
 
         if npc["profession"] == "kral" and band != "düşman":
             parts.append(_pick(rng, [
-                f"Yaklaş {pname}. Krallığım nezdinde ne istersin?",
+                f"Yaklaş {pname}. Divanımız nezdinde ne istersin?",
                 "Kelamını ölç, vakit dardır.",
                 "Sözünü söyle ve git.",
                 f"Huzuruma girdin {pname}. Kısa ve öz konuş.",

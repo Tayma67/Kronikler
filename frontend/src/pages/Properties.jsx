@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { profLabel } from "@/lib/labels";
 import { useGame } from "@/lib/GameContext";
 import { api, extractErrorMessage } from "@/lib/api";
 import { useActionRedirect } from "@/hooks/useActionRedirect";
@@ -56,7 +57,7 @@ function WorkerSection({ prop, npcs, onHire, onFire, busy }) {
       {prop.workers.map((w) => (
         <div key={w.id} className="flex items-center justify-between text-xs border border-stone-800/40 rounded-sm px-2 py-1">
           <span className="text-stone-300">{w.name}
-            <span className="text-stone-600 ml-1">({w.profession} · ×{w.productivity})</span></span>
+            <span className="text-stone-600 ml-1">({profLabel(w.profession)} · ×{w.productivity})</span></span>
           <button disabled={busy} onClick={() => onFire(prop.id, w.id)}
             className="text-red-400/70 hover:text-red-400"><X className="w-3 h-3" /></button>
         </div>
@@ -71,7 +72,7 @@ function WorkerSection({ prop, npcs, onHire, onFire, busy }) {
               onClick={() => { onHire(prop.id, n.id); setOpen(false); }}
               className="w-full flex items-center justify-between text-xs px-2 py-1 rounded-sm hover:bg-stone-900 text-left">
               <span className="text-stone-300">{n.name}</span>
-              <span className="text-stone-600 text-[10px]">{n.profession}</span>
+              <span className="text-stone-600 text-[10px]">{profLabel(n.profession)}</span>
             </button>
           ))}
         </div>

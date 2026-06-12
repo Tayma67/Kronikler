@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { profLabel } from "@/lib/labels";
 import { useEffect, useState, useRef } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
@@ -563,7 +564,7 @@ export default function NPCDetail() {
                 <span className="text-[9px] font-heading text-red-400 border border-red-700 bg-red-950/50 px-1.5 py-0.5 rounded-sm shrink-0">⚔ İŞGALCİ</span>
               )}
             </div>
-            <div className="text-xs text-stone-500">{npc.profession} · {npc.age} yaş · {npc.location_name}</div>
+            <div className="text-xs text-stone-500">{profLabel(npc.profession)} · {npc.age} yaş · {npc.location_name}</div>
             <div className="mt-1.5">
               <RelBar value={rel} />
             </div>

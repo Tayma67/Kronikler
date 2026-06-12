@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { profLabel } from "@/lib/labels";
 import { Link } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
 import { Crown, Search, Heart, Sword, Minus, MapPin } from "lucide-react";
@@ -154,7 +155,7 @@ export default function NPCList() {
                     <span className="text-[9px] font-heading text-red-400 border border-red-700 bg-red-950/40 px-1 py-0.5 rounded-sm shrink-0">⚔ İŞGALCİ</span>
                   )}
                 </div>
-                <div className="text-xs text-stone-500 truncate">{n.profession} · {n.age} yaş</div>
+                <div className="text-xs text-stone-500 truncate">{profLabel(n.profession)} · {n.age} yaş</div>
 
                 {/* İlişki bar */}
                 <div className="mt-1.5 h-1 bg-stone-900 rounded-full overflow-hidden w-32">

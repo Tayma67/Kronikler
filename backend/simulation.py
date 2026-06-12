@@ -66,7 +66,7 @@ PROFESSION_NEEDS = {
 
 HISTORY_MAX = 300  # Son N event tutulur, eskisi atilir
 
-def _push_event(state, day, etype, text, narrative=None):
+def _push_event(state, day, etype, text, narrative=None, scope=None):
     event = {
         "id": new_id(),
         "day": day,
@@ -75,6 +75,8 @@ def _push_event(state, day, etype, text, narrative=None):
     }
     if narrative:
         event["narrative"] = narrative  # Zengin, kişisel anlatı metni
+    if scope:
+        event["scope"] = scope  # "makro" | "kişisel" | "arkaplan"
     state["history"].append(event)
     # Uzun oyunlarda sismemeyi onle
     if len(state["history"]) > HISTORY_MAX:
@@ -83,6 +85,44 @@ def _push_event(state, day, etype, text, narrative=None):
     state.setdefault("chronicle", [])
     state["chronicle"].append(event.copy())
     state["chronicle"] = state["chronicle"][-250:]
+
+
+# ── Olay kapsamı: bu haber oyuncunun dünyasına mı ait? ──────────────────
+# "makro"   : hanedan/devlet haberi (sultan öldü, şehzade doğdu) — dünya feed'i
+# "kişisel" : oyuncunun ailesi / dostu / düşmanı — günlüğe girer
+# "arkaplan": sıradan NPC yaşamı — manşet, kulak misafiri ve günlükten gizlenir
+_ROYAL_PROFESSIONS = ("kral", "veliaht")
+
+
+def _player_family_ids(state):
+    p = state.get("player", {})
+    ids = set()
+    if p.get("spouse_id"):
+        ids.add(p["spouse_id"])
+    ids.update(p.get("children_ids") or [])
+    ids.update(p.get("parent_ids") or [])
+    ids.update(p.get("sibling_ids") or [])
+    return ids
+
+
+def _npc_event_scope(state, *npcs):
+    """Bir NPC yaşam olayının (doğum/ölüm/evlilik) oyuncu için kapsamı."""
+    fam = _player_family_ids(state)
+    rels = state.get("relationships", {})
+    scope = "arkaplan"
+    for n in npcs:
+        if not n:
+            continue
+        if n.get("profession") in _ROYAL_PROFESSIONS:
+            return "makro"
+        nid = n.get("id")
+        if (nid in fam or n.get("spouse_id") == "PLAYER"
+                or "PLAYER" in (n.get("parent_ids") or [])
+                or "PLAYER" in (n.get("children_ids") or [])):
+            scope = "kişisel"
+        elif abs(rels.get(nid, 0)) >= 25:
+            scope = "kişisel"
+    return scope
 
 
 def _random_name(gender):
@@ -299,9 +339,18 @@ def _age_and_die(state, day):
                 fam = next((x for x in state["world"]["npcs"] if x["id"] == nid and x["alive"]), None)
                 if fam:
                     push_recent_event(fam, "spouse_lost" if fam.get("spouse_id") == npc["id"] else "friend_died", day)
-            _push_event(state, day, "ölüm",
-                        f"{npc['name']} ({npc['age']}) {npc['location_name']}'de hayata gözlerini yumdu.",
-                        narrative=narrate_death(npc, state["player"], state, day))
+            _scope = _npc_event_scope(state, npc)
+            if npc.get("profession") == "kral":
+                _death_text = (f"Sultan {npc['name']} ({npc['age']}) vefat etti — "
+                               f"{npc['kingdom_name']} yasa büründü, taht boş kaldı.")
+            elif npc.get("profession") == "veliaht":
+                _death_text = (f"Şehzade {npc['name']} ({npc['age']}) genç yaşta vefat etti; "
+                               f"{npc['kingdom_name']} sarayında kara haber.")
+            else:
+                _death_text = f"{npc['name']} ({npc['age']}) {npc['location_name']}'de hayata gözlerini yumdu."
+            _push_event(state, day, "ölüm", _death_text,
+                        narrative=narrate_death(npc, state["player"], state, day),
+                        scope=_scope)
             # Mark relatives' personal events
             for rid in [npc["spouse_id"]] + list(npc["children_ids"]) + list(npc["parent_ids"]):
                 if not rid or rid == "PLAYER":
@@ -395,9 +444,15 @@ def _marry_and_birth(state, day):
             push_recent_event(a, "spouse_married", day, b["name"])
             push_recent_event(b, "spouse_married", day, a["name"])
             used.add(a["id"]); used.add(b["id"])
-            _push_event(state, day, "evlilik",
-                        f"{a['name']} ile {b['name']}, {a['location_name']}'de dünya evine girdi.",
-                        narrative=narrate_marriage(a, b, state["player"], state))
+            _scope = _npc_event_scope(state, a, b)
+            if _scope == "makro":
+                _wed_text = (f"Saray düğünü! {a['name']} ile {b['name']} dünya evine girdi; "
+                             f"{a['location_name']}'de davullar yedi gün sustu mu bilinmez.")
+            else:
+                _wed_text = f"{a['name']} ile {b['name']}, {a['location_name']}'de dünya evine girdi."
+            _push_event(state, day, "evlilik", _wed_text,
+                        narrative=narrate_marriage(a, b, state["player"], state),
+                        scope=_scope)
             break
 
     couples_seen = set()
@@ -444,9 +499,16 @@ def _marry_and_birth(state, day):
             push_recent_event(a, "child_born", day, child["name"])
             push_recent_event(partner, "child_born", day, child["name"])
             state["world"]["npcs"].append(child)
-            _push_event(state, day, "doğum",
-                        f"{a['name']} ve {partner['name']}'in çocuğu {child['name']} doğdu.",
-                        narrative=narrate_birth(child, a, state["player"], state, day))
+            _scope = _npc_event_scope(state, a, partner)
+            if _scope == "makro":
+                _unvan = "şehzade" if gender == "erkek" else "sultan kızı"
+                _birth_text = (f"Sarayda müjde: bir {_unvan} doğdu! {child['name']}, "
+                               f"{a['kingdom_name']} hanedanına katıldı.")
+            else:
+                _birth_text = f"{a['name']} ve {partner['name']}'in çocuğu {child['name']} doğdu."
+            _push_event(state, day, "doğum", _birth_text,
+                        narrative=narrate_birth(child, a, state["player"], state, day),
+                        scope=_scope)
 
 
 # ---------- Economy ----------
@@ -806,7 +868,7 @@ _INVADER_KINGDOMS = [
     "Kızıl Bozkır Hanlığı", "Tunç Denizi İmparatorluğu", "Sis Ötesi Konfederasyonu",
     "Kara Orman Kabileleri", "Demir Dağ Sultanlığı", "Yedi Nehir Birliği",
     "Güneş Tapınağı Devleti", "Gümüş Hilal Emirliği", "Derin Vadi Cumhuriyeti",
-    "Bozkır Kartalları Beyliği", "Taş Taht Krallığı", "Kuzey Buz Hanedanı",
+    "Bozkır Kartalları Beyliği", "Taş Taht Sultanlığı", "Kuzey Buz Hanedanı",
 ]
 
 _INVASION_PROFESSIONS = ["asker", "asker", "asker", "şövalye", "general", "haydut", "tüccar"]
