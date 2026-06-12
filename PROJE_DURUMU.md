@@ -6,10 +6,12 @@
 
 Son güncelleme: 2026-06-12 · Branch: `main` (doğrudan main'e push ediliyor — Vercel)
 
-## Görsel Varlıklar (2026-06-12) — üretim sürüyor (yerel SD-Turbo)
+## Görsel Varlıklar (2026-06-12) — ÜRETİLDİ ✅ (yerel SD-Turbo)
 
-37 varlık (12 hero + 6 arma + 18 portre + ikon — eski notta "43" yanlış
-sayımdı) `frontend/public/images/` + `icon-512.png` hedefine üretiliyor.
+37 varlık repoda (12 hero + 6 arma + 18 portre + ikon — eski notta "43"
+yanlış sayımdı): `frontend/public/images/` + `frontend/public/icon-512.png`.
+Sıfır hatayla üretildi; köprü (Gorsel.jsx) sayesinde Dashboard/NPC/
+Rakipler otomatik resimli moda geçer.
 Pollinations bu ortamdan KULLANILAMADI: bulut ortamının çıkış IP'si
 paylaşımlı → anonim IP kuyruğu sürekli dolu (HTTP 402), HF ZeroGPU anonim
 kotası da aynı sebepten 0. Çözüm: `tools/gorsel_uret_yerel.py` — aynı
