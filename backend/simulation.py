@@ -225,6 +225,9 @@ def _ensure_state_fields(state):
     # R6: yarım kalmış icra sahnesi başka haftaya sarkmasın
     if state.get("pending_crime") and state["pending_crime"].get("turn") != state.get("turn"):
         state.pop("pending_crime", None)
+    # R7: yarım kalmış yol eventi de öyle
+    if state.get("pending_travel") and state["pending_travel"].get("turn") != state.get("turn"):
+        state.pop("pending_travel", None)
     p.setdefault("dead", False)
     p.setdefault("hunger", 100)
     p.setdefault("base_age", p.get("age", 7))

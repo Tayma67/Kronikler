@@ -857,6 +857,57 @@ def build_game_router(db):
         await _save_state(db, user["_id"], state)
         return {"state": _decorate(state), "enforcement": outcome}
 
+    # ---------- seyahat reworku (GDD v7 R7) ----------
+    @router.get("/travel/routes")
+    async def travel_routes(user: dict = Depends(get_current_user)):
+        """Rota seçenekleri: Ana Yol / Patika / Kervan."""
+        from travel_rework import route_list
+        return {"routes": route_list()}
+
+    @router.post("/travel/start")
+    async def travel_start(body: dict, user: dict = Depends(get_current_user)):
+        """Yolculuğu başlat: rota seç → garantili yol eventi sahnesi döner."""
+        from travel_rework import start_travel
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        loc = next((l for l in state["world"]["locations"]
+                    if l["id"] == body.get("location_id")), None)
+        if not loc:
+            raise HTTPException(404, "Konum bulunamadı")
+        if loc["id"] == state["player"].get("location_id"):
+            raise HTTPException(400, "Zaten oradasın")
+        if state["player"]["age"] < ADULT_AGE and loc["kind"] in ("kale",):
+            raise HTTPException(403, "Çocuk olarak kaleye gidemezsin.")
+        if loc["kingdom_id"] in state["player"].get("wanted_in", []):
+            return {"blocked": True,
+                    "message": f"{loc['name']} {loc['kingdom_name']} sınırlarında, "
+                               f"oraya başın için ödül var."}
+        scene, err = start_travel(state, loc, body.get("route", "ana_yol"))
+        if err:
+            raise HTTPException(400, err)
+        await _save_state(db, user["_id"], state)
+        return scene
+
+    @router.post("/travel/resolve")
+    async def travel_resolve(body: dict, user: dict = Depends(get_current_user)):
+        """Yol eventini çöz ve varışı tamamla."""
+        from travel_rework import resolve_travel
+        state = await _load_state(db, user["_id"])
+        _require_alive(state)
+        result, err = resolve_travel(state, body.get("choice"))
+        if err:
+            raise HTTPException(400, err)
+        player = state["player"]
+        player["location_id"] = result["dest_id"]
+        player["location_name"] = result["dest_name"]
+        _push_event(state, state["turn"], "yolculuk",
+                    f"{player['name']} {result['dest_name']}'e vardı.")
+        advance_time(state, weeks=1)
+        outcome = soldier_check(state)
+        progress_quest(state, "travel", {"location_id": result["dest_id"]})
+        await _save_state(db, user["_id"], state)
+        return {"result": result, "state": _decorate(state), "enforcement": outcome}
+
     # ---------- trade ----------
 
     def _simulate_bulk_trade(loc, good, qty, action):

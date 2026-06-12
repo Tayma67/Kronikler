@@ -36,6 +36,152 @@ const ALTYAPI_CARPAN = {
   5: "×4.0",
 };
 
+// ─── R7: Yolculuk Modalı — rota seç → yol eventi → varış ─────────────────
+const ROUTE_STYLES = {
+  ana_yol: "border-emerald-900/50 hover:bg-emerald-950/15",
+  patika:  "border-red-900/50 hover:bg-red-950/15",
+  kervan:  "border-amber-900/50 hover:bg-amber-950/15",
+};
+
+function TravelModal({ loc, onDone, onClose }) {
+  const [phase, setPhase] = useState("route");  // route | event | done
+  const [routes, setRoutes] = useState(null);
+  const [scene, setScene] = useState(null);
+  const [result, setResult] = useState(null);
+  const [busyT, setBusyT] = useState(false);
+
+  useEffect(() => {
+    api.get("/game/travel/routes")
+      .then(({ data }) => setRoutes(data.routes))
+      .catch(() => setRoutes([
+        { id: "ana_yol", label: "Ana Yol", icon: "🛤", risk: "düşük",
+          desc: "Taş döşeli, bekçili yol.", perk: "Güvenli" },
+      ]));
+  }, []);
+
+  const pickRoute = async (routeId) => {
+    setBusyT(true);
+    try {
+      const { data } = await api.post("/game/travel/start", {
+        location_id: loc.id, route: routeId,
+      });
+      if (data.blocked) {
+        toast.error(data.message);
+        onClose();
+        return;
+      }
+      setScene(data);
+      setPhase("event");
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Yola çıkılamadı.");
+      onClose();
+    } finally { setBusyT(false); }
+  };
+
+  const choose = async (choiceId) => {
+    setBusyT(true);
+    try {
+      const { data } = await api.post("/game/travel/resolve", { choice: choiceId });
+      setResult(data);
+      setPhase("done");
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Seçim çözülemedi.");
+    } finally { setBusyT(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+      <div className="w-full max-w-sm card-frame p-5 space-y-4 rise-in">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-heading text-amber-400">
+            <MapPin className="w-4 h-4" />
+            <span>{loc.name} Yolculuğu</span>
+          </div>
+          {phase === "route" && (
+            <button onClick={onClose} className="text-stone-500 hover:text-stone-300 text-xs">✕</button>
+          )}
+        </div>
+
+        {/* ── ROTA SEÇİMİ ── */}
+        {phase === "route" && (
+          <div className="space-y-2">
+            <p className="text-xs text-stone-400">Hangi yoldan gideceksin? Yol bir mekândır — her rotanın kendi hikâyesi var.</p>
+            {!routes && <div className="text-center text-stone-500 text-xs py-4">Yollar haritaya bakılıyor…</div>}
+            {routes?.map(r => (
+              <button key={r.id} onClick={() => pickRoute(r.id)} disabled={busyT}
+                className={`w-full text-left p-3 border rounded-sm transition-all disabled:opacity-40 ${ROUTE_STYLES[r.id] || "border-stone-700"}`}>
+                <div className="flex items-center justify-between">
+                  <span className="font-heading text-sm text-stone-100">{r.icon} {r.label}</span>
+                  <span className={`text-[9px] uppercase tracking-wider font-heading ${
+                    r.risk === "yüksek" ? "text-red-400" : "text-emerald-400"
+                  }`}>{r.risk} risk</span>
+                </div>
+                <p className="text-[11px] text-stone-400 mt-1">{r.desc}</p>
+                <p className="text-[10px] text-amber-500/80 mt-0.5">{r.perk}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── YOL EVENTİ ── */}
+        {phase === "event" && scene && (
+          <div className="space-y-3">
+            <div className="text-[10px] text-stone-500 uppercase tracking-wider">
+              {scene.route_label} · {scene.dest_name} yolunda
+              {scene.traveler && <span className="text-amber-500/80"> · {scene.traveler}</span>}
+            </div>
+            <p className="text-sm text-stone-200 italic border border-stone-800/60 bg-stone-900/40 rounded-sm px-3 py-2.5">
+              {scene.text}
+            </p>
+            <div className="space-y-2">
+              {scene.choices.map(c => (
+                <button key={c.id} onClick={() => choose(c.id)} disabled={busyT}
+                  className="w-full text-left px-3 py-2.5 border border-amber-900/40 rounded-sm hover:bg-amber-950/15 transition-all disabled:opacity-40">
+                  <div className="flex items-center justify-between">
+                    <span className="font-heading text-xs tracking-wider text-stone-200">{c.label}</span>
+                    {c.test && (
+                      <span className="text-[9px] text-stone-500 border border-stone-800 rounded-sm px-1.5 py-0.5">
+                        🎲 {c.test}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-stone-500 mt-0.5">{c.hint}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── VARIŞ ── */}
+        {phase === "done" && result && (
+          <div className="space-y-3">
+            <div className="text-center space-y-1">
+              <div className="text-2xl">🏙</div>
+              <div className="font-heading text-lg text-amber-400 tracking-widest">
+                {result.result?.dest_name?.toUpperCase()}'E VARDIN
+              </div>
+            </div>
+            {result.result?.effects?.map((t, i) => (
+              <p key={i} className="text-xs text-stone-300 border border-stone-800/60 bg-stone-900/40 rounded-sm px-3 py-2">
+                {t}
+              </p>
+            ))}
+            {result.enforcement && (
+              <p className="text-xs text-red-400 border border-red-900/40 bg-red-950/10 rounded-sm px-3 py-2">
+                {result.enforcement.by} seni karşıladı: {result.enforcement.fine} altın ceza.
+              </p>
+            )}
+            <button onClick={() => onDone(result)}
+              className="w-full btn-ember py-2 text-xs font-heading tracking-widest">
+              ŞEHRE GİR
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // İnanç renkleri
 const INANC_RENK = {
   "geleneksel": "bg-amber-700",
@@ -67,6 +213,8 @@ export default function CityDetail() {
   // Governance state
   const [governance, setGovernance] = useState(null);
   const [taxAmount, setTaxAmount] = useState(10);
+  // R7: yolculuk modalı
+  const [travelOpen, setTravelOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -159,26 +307,12 @@ export default function CityDetail() {
     }
   };
 
-  const travel = async () => {
-    setBusy(true);
-    try {
-      const { data } = await api.post("/game/travel", { location_id: loc.id });
-      if (data.blocked) {
-        toast.error(data.message);
-        setState(data.state);
-        return;
-      }
-      setState(data.state);
-      if (data.enforcement) {
-        toast.error(`${data.enforcement.by} seni karşıladı: ${data.enforcement.fine} altın ceza.`);
-      } else {
-        toast.success(`${loc.name}'e ulaştın.`);
-      }
-    } catch (e) {
-      toast.error("Yolculuk başarısız.");
-    } finally {
-      setBusy(false);
-    }
+  // R7: yolculuk artık rota + yol eventi ile (TravelModal)
+  const travel = () => setTravelOpen(true);
+  const onTravelDone = (data) => {
+    if (data.state) setState(data.state);
+    setTravelOpen(false);
+    toast.success(`${loc.name}'e ulaştın.`);
   };
 
   const trade = async (action) => {
@@ -204,6 +338,13 @@ export default function CityDetail() {
 
   return (
     <div className="space-y-6 rise-in">
+      {travelOpen && (
+        <TravelModal
+          loc={loc}
+          onDone={onTravelDone}
+          onClose={() => setTravelOpen(false)}
+        />
+      )}
       <button onClick={() => navigate("/oyun/harita")} className="text-stone-400 hover:text-stone-200 flex items-center gap-2 text-sm" data-testid="city-back">
         <ArrowLeft className="w-4 h-4" /> Dünya Haritasına Dön
       </button>
