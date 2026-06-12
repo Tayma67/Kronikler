@@ -1,3 +1,20 @@
+# ⚡ SONRAKİ OTURUMA İLK GÖREV (2026-06-12)
+
+Kullanıcı ortam ağ izinlerine `image.pollinations.ai` EKLEDİ ama izinler
+oturum başında yüklendiği için eski oturumda etkinleşmedi. Bu oturumda
+İLK İŞ olarak:
+
+1. Erişimi doğrula:
+   curl -sL "https://image.pollinations.ai/prompt/test?width=64&height=64" -o /tmp/t.jpg && file /tmp/t.jpg
+   (JPEG görmelisin; "allowlist" metni dönerse kullanıcıya domain adını
+   teyit ettir: tam olarak image.pollinations.ai)
+2. Çalışıyorsa: python frontend/tools/gorsel_uret.py
+   (43 görsel üretir → frontend/public/images/ + icon-512.png; mevcutları
+   atlar, başarısızlarda 3 deneme)
+3. Üretilenleri commit + push et (main). Frontend köprüsü hazır —
+   görseller repoya girince Dashboard/NPC/Rakipler otomatik resimli olur.
+4. Bu bölümü PROJE_DURUMU.md'den sil.
+
 # PROJE DURUMU — Kronikler: Küllerin Mirası
 
 > Bu dosya oturumlar/hesaplar arası devir içindir. Yeni bir Claude oturumu
