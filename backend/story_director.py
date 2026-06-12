@@ -328,10 +328,77 @@ def _spark_cards(state, y):
     player = state["player"]
     turn = state.get("turn", 0)
     cards = []
+    cocuk = player.get("age", 20) < 13
 
     def push_card(cid, ok, fn):
         if ok and cid not in y["kullanilan_kartlar"][-6:]:
             cards.append((cid, fn))
+
+    # ══ ÇOCUKLUK DESTESİ — 72 turluk keşif dönemi kendi masallarını
+    #    hak eder; sıcak kartlar, çoğu nesil aşan tohum eker ══
+    if cocuk:
+        def _dede_masali():
+            text = ("Ocak başında yaşlı bir komşu sana eski bir masal anlattı: "
+                    "'Bu köyün altında bir sandık yatar, ama onu ancak adı "
+                    "temiz biri bulur.' Gözlerinde tuhaf bir parıltı vardı.")
+            _push(state, "kıvılcım", f"✨ {text}", narrative=text)
+            sow_seed(state, "dede_masali",
+                     "Çocukken dinlediğin o masal... Yaşlı adam ölmüş, sana "
+                     "mühürlü bir kese bırakmış: 'Adı temiz çocuğa.' İçinden "
+                     "eski sikkeler çıktı.",
+                     hafta_min=48, hafta_max=180, agirlik="buyuk",
+                     nesil_asabilir=True, kosul={"itibar_min": 20},
+                     etki={"money": 80, "reputation": 4})
+        push_card("dede_masali", True, _dede_masali)
+
+        def _oyun_arkadasi():
+            aday = next((n for n in state["world"]["npcs"]
+                         if n.get("alive") and n.get("age", 99) < 14
+                         and n.get("location_id") == player.get("location_id")), None)
+            if aday:
+                try:
+                    from npc_mind import add_memory
+                    add_memory(aday, "sira_arkadasi", turn,
+                               detay="çocuklukta beraber oynadık")
+                except Exception:
+                    pass
+                text = (f"Bütün günü {aday['name']} ile dere kenarında "
+                        "geçirdin. Taş sektirdiniz, kale kurdunuz. Böyle "
+                        "günler unutulmaz — onun için de.")
+            else:
+                text = ("Bütün günü dere kenarında tek başına oynayarak "
+                        "geçirdin. İyi gelmişti.")
+            _push(state, "kıvılcım", f"✨ {text}", narrative=text)
+        push_card("oyun_arkadasi", True, _oyun_arkadasi)
+
+        def _ilk_harclik():
+            kazanc = random.randint(3, 8)
+            player["money"] = round(player.get("money", 0) + kazanc, 1)
+            text = (f"Pazarda bir tüccarın devrilmiş çuvallarını toplamasına "
+                    f"yardım ettin. Avucuna {kazanc} akçe saydı: 'Helal olsun "
+                    "evlat.' İlk alın terin.")
+            _push(state, "kıvılcım", f"✨ {text}", narrative=text)
+            sow_seed(state, "ilk_harclik",
+                     "Çocukken çuvallarını topladığın tüccar seni hatırladı: "
+                     "'Sen o çalışkan çocuksun!' — pazarda artık sana "
+                     "güvenen bir yüz var.",
+                     hafta_min=36, hafta_max=120, agirlik="kucuk",
+                     etki={"reputation": 3})
+        push_card("ilk_harclik", True, _ilk_harclik)
+
+        def _cinar_kovugu():
+            text = ("Köyün dışında, devrik bir çınarın kovuğunda kimsenin "
+                    "bilmediği bir saklanma yeri buldun. İçine en kıymetli "
+                    "üç taşını koydun. Burası artık senin sırrın.")
+            _push(state, "kıvılcım", f"✨ {text}", narrative=text)
+            sow_seed(state, "cinar_kovugu",
+                     "Yıllar sonra yolun o devrik çınara düştü. Kovuktaki "
+                     "çocukluk hazinen duruyordu — ve taşların arasında, "
+                     "birinin sonradan bıraktığı bir not: 'Ben de buradaydım.'",
+                     hafta_min=96, hafta_max=300, agirlik="orta",
+                     nesil_asabilir=True, etki={"reputation": 2})
+        push_card("cinar_kovugu", True, _cinar_kovugu)
+        return cards  # çocuk yetişkin kartlarını görmez
 
     # Eski dost — sıra arkadaşı / yardım ettiğin biri çıkagelir
     dost = next((n for n in state["world"]["npcs"] if n.get("alive")
@@ -439,8 +506,43 @@ def _draw_spark(state, y):
 def _climax(state, y):
     turn = state.get("turn", 0)
     yapildi = False
+
+    # Öncelik 0: POZİTİF DORUK — cömert/mert namlı oyuncunun krizi
+    # fırsata döner. Doruk her zaman felaket değildir; iyi ad, fırtınada
+    # liman bulur. (Gerilim yine boşalır — dramaturji aynı, renk farklı.)
+    try:
+        from npc_mind import compute_nam, dominant_nam
+        dom = dominant_nam(compute_nam(state))
+    except Exception:
+        dom = None
+    if dom in ("cömert", "mert") and random.random() < 0.5:
+        player = state["player"]
+        secenekler = []
+        # Halk arkanda: zor günde kapına erzak ve kese gelir
+        def _halk_destegi():
+            destek = random.randint(40, 90)
+            player["money"] = round(player.get("money", 0) + destek, 1)
+            return (f"🌅 Fırtınanın ortasında kapın çalındı — komşuların. "
+                    f"'Sen bizim için ne yaptıysan...' Erzak, kese ({destek} "
+                    "akçe) ve omuz. İyi ad, kara günde liman olurmuş.")
+        secenekler.append(_halk_destegi)
+        # En sıcak hanedan koruma kanadını açar
+        dost_h = next((d for d in state["world"].get("dynasties", [])
+                       if not d.get("sonmus") and d.get("oyuncuya_tutum", 0) >= 25), None)
+        if dost_h:
+            def _hanedan_kanadi():
+                dost_h["oyuncuya_tutum"] = min(100, dost_h["oyuncuya_tutum"] + 10)
+                player["reputation"] = min(100, player.get("reputation", 0) + 6)
+                return (f"🌅 {dost_h['sembol']} {dost_h['ad']} hanedanı "
+                        "fırtınada kanadını üstüne gerdi: 'Bu adama dokunan "
+                        "bize dokunmuş sayılır.' Adın bir gecede büyüdü.")
+            secenekler.append(_hanedan_kanadi)
+        text = random.choice(secenekler)()
+        _push(state, "doruk", text, narrative=text)
+        yapildi = True
+
     # Öncelik 1: nemesis hesaplaşması
-    if y["nemesis_ids"]:
+    if not yapildi and y["nemesis_ids"]:
         yapildi = _nemesis_showdown(state, y)
     # Öncelik 2: bekleyen büyük tohum
     if not yapildi:
@@ -724,6 +826,27 @@ LIFE_EVENT_SEEDS = {
         text="O kış zorlanan yaşlı çiftçinin oğlu büyüdü ve değirmeni "
              "devraldı. Babasını yalnız bırakanları tek tek biliyor.",
         etki={"reputation": -3}),
+    # — Yetişkin tohumları (v2 event'leri) —
+    # Kumarda kasayı tanı: zar masasının sahibi unutmaz
+    ("v2_kumarhane", 0): dict(
+        kaynak="kumar_borcu", hafta_min=12, hafta_max=60, agirlik="kucuk",
+        text="Hanın arka odasındaki zar gecesini hatırlıyor musun? Masanın "
+             "sahibi seni hatırlıyor — ve 'şanslı eller' yeniden davetli.",
+        etki={"money": 15}),
+    # Sefer çağrısından saklan → adın 'kaçak' kalır
+    ("v2_asker_cagrisi", 2): dict(
+        kaynak="seferden_kacti", hafta_min=24, hafta_max=120,
+        agirlik="orta", nesil_asabilir=True,
+        text="Seferden dönen gaziler meydanda anlatıyor. Biri seni gösterdi: "
+             "'Bu da samanlıkta saklananlardan.' Bazı lekeler kolay çıkmıyor.",
+        etki={"reputation": -5}),
+    # Komşunun arsasını yarı fiyata al → vasiyet borcu
+    ("v2_ilk_ev_teklifi", 0): dict(
+        kaynak="komsu_arsasi", hafta_min=36, hafta_max=144, agirlik="orta",
+        text="Arsasını yarı fiyatına aldığın yaşlı komşu vefat etmiş. "
+             "Vasiyetinde bir satır: 'O toprağa iyi baktı — kalan aletlerim "
+             "de onun olsun.'",
+        etki={"money": 35, "reputation": 3}),
     # Hasatta yardım → vefa
     ("event_harvest_help", 0): dict(
         kaynak="hasat_vefa", hafta_min=36, hafta_max=120, agirlik="orta",

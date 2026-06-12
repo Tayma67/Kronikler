@@ -291,3 +291,57 @@ def test_final_page_composes_story():
     assert "tohum" in metin
     assert sayfa["epitaf"]
     assert y["perdeler"][-1]["bitis"] is not None   # son perde kapandı
+
+
+# ── İçerik genişletmesi: çocukluk destesi + pozitif doruk ──────────────────
+
+def test_child_gets_childhood_deck_only():
+    state = make_state()
+    y = ensure_director(state)
+    state["player"]["age"] = 9
+    ids = [c[0] for c in sd._spark_cards(state, y)]
+    assert "dede_masali" in ids and "cinar_kovugu" in ids
+    assert "nemesis_izi" not in ids and "hanedan_elcisi" not in ids
+    state["player"]["age"] = 25
+    ids = [c[0] for c in sd._spark_cards(state, y)]
+    assert "dede_masali" not in ids
+    assert "gizemli_yabanci" in ids
+
+
+def test_childhood_card_sows_generational_seed(monkeypatch):
+    state = make_state()
+    y = ensure_director(state)
+    state["player"]["age"] = 8
+    monkeypatch.setattr(sd.random, "choice",
+                        lambda x: x[0] if isinstance(x[0], tuple) else x[0])
+    cards = dict(sd._spark_cards(state, y))
+    cards["dede_masali"]()
+    assert any(t["kaynak"] == "dede_masali" and t["nesil_asabilir"]
+               for t in state["tohumlar"])
+
+
+def test_positive_climax_for_good_nam(monkeypatch):
+    state = make_state()
+    y = ensure_director(state)
+    state["player"]["age"] = 30
+    # Cömert nam kur: 5 NPC'ye yardım anısı
+    from npc_mind import add_memory
+    for n in state["world"]["npcs"][:5]:
+        add_memory(n, "yardim", 100)
+    monkeypatch.setattr(sd.random, "random", lambda: 0.1)   # pozitif yol
+    para0 = state["player"]["money"]
+    ok = sd._climax(state, y)
+    assert ok is True
+    metin = [e for e in state["history"] if e["type"] == "doruk"][-1]["text"]
+    assert "🌅" in metin
+    assert state["player"]["money"] > para0 or "kanadını" in metin
+    assert y["nefes_kalan"] >= 3
+
+
+def test_new_seed_map_entries_valid():
+    from life_events import LIFE_EVENTS
+    by_id = {e["id"]: e for e in LIFE_EVENTS}
+    for eid in ("v2_kumarhane", "v2_asker_cagrisi", "v2_ilk_ev_teklifi"):
+        assert eid in by_id
+    for (eid, ci) in sd.LIFE_EVENT_SEEDS:
+        assert eid in by_id and ci < len(by_id[eid]["choices"])
