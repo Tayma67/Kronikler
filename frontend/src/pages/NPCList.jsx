@@ -1,21 +1,33 @@
+/**
+ * Yakınındakiler — KÜL & KÖZ.
+ * Duygu görevi: "Tanıdığım yüzler" — kişi satırları canlı, ilişki bandı görünür.
+ * İşlevsellik (filtre/sıralama/arama mantığı, data-testid'ler) birebir korunur.
+ */
 import { useMemo, useState } from "react";
 import { profLabel } from "@/lib/labels";
 import { Link } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
-import { Crown, Search, Heart, Sword, Minus, MapPin } from "lucide-react";
+import { PageHeader, Panel, Pill, EmptyState } from "@/components/ui/Kit";
 
-// İlişki skoru → bant, renk, ikon
+// İlişki skoru → bant, renk
 function bandFromScore(score = 0) {
-  if (score >=  50) return { label: "Dost",      cls: "text-emerald-400", bar: "bg-emerald-500",  icon: Heart,  iconCls: "text-emerald-400" };
-  if (score >=  20) return { label: "Arkadaş",   cls: "text-emerald-300", bar: "bg-emerald-700",  icon: Heart,  iconCls: "text-emerald-300" };
-  if (score >  -20) return { label: "Nötr",      cls: "text-stone-400",   bar: "bg-stone-600",    icon: Minus,  iconCls: "text-stone-500"   };
-  if (score >  -50) return { label: "Rakip",     cls: "text-red-300",     bar: "bg-red-700",      icon: Sword,  iconCls: "text-red-300"     };
-  return              { label: "Düşman",    cls: "text-red-400",     bar: "bg-red-500",      icon: Sword,  iconCls: "text-red-400"     };
+  if (score >=  50) return { label: "Dost",    color: "#4A9A5A", icon: "💚" };
+  if (score >=  20) return { label: "Arkadaş", color: "#6FBF7F", icon: "🍵" };
+  if (score >  -20) return { label: "Tanış",   color: "#B8A880", icon: "🕯" };
+  if (score >  -50) return { label: "Rakip",   color: "#E05A30", icon: "🗡" };
+  return              { label: "Düşman",  color: "#C84040", icon: "⚔" };
 }
 
 // Skor → bar genişliği: -100…+100 → 0…100%
 function scoreToWidth(score) {
   return Math.max(0, Math.min(100, ((score + 100) / 200) * 100));
+}
+
+// Yaş/cinsiyete göre avatar
+function npcAvatar(npc) {
+  const age = npc.age || 30;
+  if (npc.gender === "kadın") return age >= 55 ? "👵" : age < 13 ? "👧" : "👩";
+  return age >= 55 ? "🧓" : age < 13 ? "👦" : "🧔";
 }
 
 export default function NPCList() {
@@ -58,132 +70,169 @@ export default function NPCList() {
   const dusmanCount = localNpcs.filter(n => (relMap[n.id] ?? 0) <= -20).length;
 
   return (
-    <div className="space-y-5 rise-in">
-      {/* Başlık + konum bilgisi */}
-      <div className="flex items-end justify-between flex-wrap gap-3">
-        <div>
-          <div className="label-tiny">Çevre Algısı</div>
-          <h1 className="font-heading text-3xl text-stone-100">Yakınındakiler</h1>
-          {/* Konum etiketi */}
-          <div className="flex items-center gap-1.5 mt-1 text-xs text-stone-400">
-            <MapPin className="w-3 h-3 text-amber-500" />
-            <span className="text-amber-400 font-heading">{playerLocationName}</span>
-            <span className="text-stone-600">·</span>
-            <span>{localNpcs.length} kişi</span>
+    <div className="page-shell rise-in" style={{ padding: "0 0 1.5rem" }}>
+      <PageHeader
+        kicker="Tanıdığım Yüzler"
+        icon="🏘"
+        title="Yakınındakiler"
+        sub={`${playerLocationName} sokaklarında ${localNpcs.length} can dolaşıyor — kimi dost, kimi diken.`}
+        right={
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", alignItems: "flex-end" }}>
+            <Pill tone="sage">💚 {dostCount} dost</Pill>
+            <Pill tone="blood">⚔ {dusmanCount} hasım</Pill>
           </div>
-          <div className="flex items-center gap-3 mt-1 text-xs">
-            <span className="text-emerald-400 flex items-center gap-1">
-              <Heart className="w-3 h-3" /> {dostCount} dost / arkadaş
-            </span>
-            <span className="text-stone-600">·</span>
-            <span className="text-red-400 flex items-center gap-1">
-              <Sword className="w-3 h-3" /> {dusmanCount} rakip / düşman
-            </span>
-          </div>
-        </div>
+        }
+      />
 
-        {/* Filtre + sıralama + arama */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-stone-500" />
-            <input
-              data-testid="npc-search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="İsim ara…"
-              className="pl-8 pr-3 py-2 bg-stone-950 border border-stone-800 text-sm rounded-sm"
-            />
-          </div>
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            data-testid="npc-filter"
-            className="bg-stone-950 border border-stone-800 px-3 py-2 text-sm rounded-sm"
-          >
-            <option value="hepsi">Hepsi ({localNpcs.length})</option>
-            <option value="krali">Soylular</option>
-            <option value="dostlar">Dostlar & Arkadaşlar</option>
-            <option value="dusman">Rakipler & Düşmanlar</option>
-          </select>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className="bg-stone-950 border border-stone-800 px-3 py-2 text-sm rounded-sm"
-          >
-            <option value="isim">İsme Göre</option>
-            <option value="iliski_iyi">En Yakın Önce</option>
-            <option value="iliski_kotu">En Düşman Önce</option>
-          </select>
+      {/* Filtre + sıralama + arama */}
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", marginBottom: "0.85rem" }}>
+        <div style={{ position: "relative", flex: "1 1 10rem", minWidth: 0 }}>
+          <span style={{
+            position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)",
+            fontSize: "0.75rem", opacity: 0.6, pointerEvents: "none",
+          }}>🔍</span>
+          <input
+            data-testid="npc-search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="İsim ara…"
+            style={{
+              width: "100%", padding: "0.5rem 0.7rem 0.5rem 1.9rem",
+              fontSize: "0.84rem",
+            }}
+          />
         </div>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          data-testid="npc-filter"
+          style={{ padding: "0.5rem 0.6rem", fontSize: "0.8rem" }}
+        >
+          <option value="hepsi">Hepsi ({localNpcs.length})</option>
+          <option value="krali">Soylular</option>
+          <option value="dostlar">Dostlar & Arkadaşlar</option>
+          <option value="dusman">Rakipler & Düşmanlar</option>
+        </select>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          style={{ padding: "0.5rem 0.6rem", fontSize: "0.8rem" }}
+        >
+          <option value="isim">İsme Göre</option>
+          <option value="iliski_iyi">En Yakın Önce</option>
+          <option value="iliski_kotu">En Düşman Önce</option>
+        </select>
       </div>
 
       {/* Liste */}
-      <div className="card-frame divide-y divide-stone-900">
-        {npcs.slice(0, 200).map((n) => {
-          const rel   = state.relationships?.[n.id] ?? 0;
-          const band  = bandFromScore(rel);
-          const width = scoreToWidth(rel);
-          const RelIcon = band.icon;
-          const isRoyal   = ["kral", "veliaht"].includes(n.profession);
-          const isInvader = n.is_invader === true;
+      <Panel title={`${playerLocationName} Ahalisi`} icon="🏘" tone="gold"
+        right={<Pill tone="ash">{npcs.length} kişi</Pill>}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+          {npcs.slice(0, 200).map((n) => {
+            const rel   = state.relationships?.[n.id] ?? 0;
+            const band  = bandFromScore(rel);
+            const width = scoreToWidth(rel);
+            const isRoyal   = ["kral", "veliaht"].includes(n.profession);
+            const isInvader = n.is_invader === true;
 
-          return (
-            <Link
-              key={n.id}
-              to={`/oyun/npc/${n.id}`}
-              data-testid={`npc-row-${n.id}`}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-stone-900/60 transition-colors"
-            >
-              {/* Soylu ikonu */}
-              {isRoyal && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+            return (
+              <Link
+                key={n.id}
+                to={`/oyun/npc/${n.id}`}
+                data-testid={`npc-row-${n.id}`}
+                className="row-frame"
+                style={{ textDecoration: "none" }}
+              >
+                {/* Avatar */}
+                <span style={{
+                  position: "relative", fontSize: "1.25rem", flexShrink: 0,
+                  filter: "drop-shadow(0 0 6px rgba(201,168,76,0.2))",
+                }}>
+                  {npcAvatar(n)}
+                  {isRoyal && (
+                    <span style={{
+                      position: "absolute", top: "-0.5rem", left: "50%",
+                      transform: "translateX(-50%)", fontSize: "0.6rem",
+                      filter: "drop-shadow(0 0 4px rgba(240,192,64,0.7))",
+                    }}>👑</span>
+                  )}
+                </span>
 
-              {/* İlişki ikon göstergesi */}
-              <RelIcon className={`w-3.5 h-3.5 shrink-0 ${band.iconCls}`} />
+                {/* NPC bilgileri */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+                    <span className="font-serif" style={{
+                      fontSize: "0.88rem", fontWeight: 600, color: "var(--color-parchment)",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>{n.name}</span>
+                    {state.player?.relationship_status?.[n.id] === "married" && (
+                      <Pill tone="gold">💍 Eşin</Pill>
+                    )}
+                    {state.player?.relationship_status?.[n.id] === "dating" && (
+                      <Pill tone="ember">💞 Gönül Yoldaşın</Pill>
+                    )}
+                    {/* BUG-5 FIX: İşgalci etiketi */}
+                    {isInvader && (
+                      <Pill tone="blood" pulse="danger">⚔ İşgalci</Pill>
+                    )}
+                  </div>
+                  <div className="font-serif" style={{
+                    fontSize: "0.7rem", fontStyle: "italic",
+                    color: "var(--color-parchment-muted)",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>
+                    {profLabel(n.profession)} · {n.age} yaşında
+                  </div>
 
-              {/* NPC bilgileri */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-stone-100 text-sm truncate">{n.name}</span>
-                  {state.player?.relationship_status?.[n.id] === "married" && (
-                    <span className="text-[9px] font-heading text-rose-400 border border-rose-900 px-1 py-0.5 rounded-sm shrink-0">EVLİ</span>
-                  )}
-                  {state.player?.relationship_status?.[n.id] === "dating" && (
-                    <span className="text-[9px] font-heading text-orange-400 border border-orange-900 px-1 py-0.5 rounded-sm shrink-0">ÇIKIYOR</span>
-                  )}
-                  {/* BUG-5 FIX: İşgalci etiketi */}
-                  {isInvader && (
-                    <span className="text-[9px] font-heading text-red-400 border border-red-700 bg-red-950/40 px-1 py-0.5 rounded-sm shrink-0">⚔ İŞGALCİ</span>
-                  )}
+                  {/* İlişki bandı: kırmızı→taş→yeşil */}
+                  <div style={{
+                    marginTop: "0.35rem", height: "4px", width: "8.5rem", maxWidth: "100%",
+                    borderRadius: "2px", overflow: "hidden",
+                    background: "rgba(255,255,255,0.06)",
+                  }}>
+                    <div style={{
+                      height: "100%", width: `${width}%`, borderRadius: "2px",
+                      background: "linear-gradient(to right, #C84040, #7A6A4F 50%, #4A9A5A)",
+                      backgroundSize: `${width > 0 ? 10000 / width : 100}% 100%`,
+                      boxShadow: `0 0 5px ${band.color}55`,
+                      transition: "width 0.4s ease",
+                    }} />
+                  </div>
                 </div>
-                <div className="text-xs text-stone-500 truncate">{profLabel(n.profession)} · {n.age} yaş</div>
 
-                {/* İlişki bar */}
-                <div className="mt-1.5 h-1 bg-stone-900 rounded-full overflow-hidden w-32">
-                  <div
-                    className={`h-full ${band.bar} rounded-full transition-all`}
-                    style={{ width: `${width}%` }}
-                  />
+                {/* Skor + bant etiketi */}
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div className="font-display" style={{
+                    fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.08em",
+                    textTransform: "uppercase", color: band.color,
+                  }}>{band.icon} {band.label}</div>
+                  <div className="font-display" style={{
+                    fontSize: "0.62rem", color: "var(--color-parchment-muted)",
+                  }}>{rel > 0 ? `+${rel}` : rel}</div>
                 </div>
-              </div>
-
-              {/* Skor + bant etiketi */}
-              <div className="text-right shrink-0">
-                <div className={`text-xs font-heading ${band.cls}`}>{band.label}</div>
-                <div className="text-[10px] text-stone-600 font-mono">{rel > 0 ? `+${rel}` : rel}</div>
-              </div>
-            </Link>
-          );
-        })}
-        {npcs.length === 0 && localNpcs.length > 0 && (
-          <div className="px-4 py-6 text-stone-500 text-sm">Bu filtreyle kimse bulunamadı.</div>
-        )}
-        {localNpcs.length === 0 && (
-          <div className="px-4 py-6 text-stone-500 text-sm">Bu konumda kimse yok.</div>
-        )}
-      </div>
+              </Link>
+            );
+          })}
+          {npcs.length === 0 && localNpcs.length > 0 && (
+            <EmptyState icon="🔍"
+              title="Bu süzgeçten kimse geçemedi."
+              sub="Aramayı genişlet ya da süzgeci değiştir." />
+          )}
+          {localNpcs.length === 0 && (
+            <EmptyState icon="🏚"
+              title="Bu diyarda in cin top oynuyor."
+              sub="Yola düş; kalabalık bir kasaba bul." />
+          )}
+        </div>
+      </Panel>
 
       {npcs.length > 200 && (
-        <div className="text-xs text-stone-500">İlk 200 sonuç gösteriliyor.</div>
+        <p className="font-serif" style={{
+          fontSize: "0.72rem", fontStyle: "italic",
+          color: "var(--color-parchment-muted)", marginTop: "0.6rem",
+        }}>
+          İlk 200 yüz gösteriliyor — gerisi kalabalıkta kayboldu.
+        </p>
       )}
     </div>
   );

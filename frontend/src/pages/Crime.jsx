@@ -1,83 +1,136 @@
+/**
+ * Gölge İşleri — KÜL & KÖZ.
+ * Duygu görevi: "Gölgede iş çeviriyorum" — ink/blood tonlar, risk merdiveni,
+ * keşif rozeti. İşlevsellik (API çağrıları, state akışı) birebir korunur.
+ */
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
+import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
-import {
-  Eye, Coins, AlertTriangle, ShieldAlert, Lock, CheckCircle,
-  XCircle, Loader2, TrendingDown, Users, Sword, Star, Footprints, Flame,
-} from "lucide-react";
+import { PageHeader, Panel, Pill, GoldRule, EmptyState, Coin, TONES } from "@/components/ui/Kit";
 
-// ─── R6: Risk merdiveni görselleri ───────────────────────────────────────────
-const RISK_STYLES = {
-  "düşük":  { color: "text-emerald-400", border: "border-emerald-900/50", bg: "bg-emerald-950/10" },
-  "orta":   { color: "text-amber-400",   border: "border-amber-900/50",   bg: "bg-amber-950/10" },
-  "yüksek": { color: "text-orange-400",  border: "border-orange-900/50",  bg: "bg-orange-950/10" },
-  "kritik": { color: "text-red-400",     border: "border-red-900/50",     bg: "bg-red-950/15" },
+// ─── R6: Risk merdiveni — basamak basamak karanlık ──────────────────────────
+const RISK_TONES = {
+  "düşük":  { tone: "sage",  step: 1 },
+  "orta":   { tone: "gold",  step: 2 },
+  "yüksek": { tone: "ember", step: 3 },
+  "kritik": { tone: "blood", step: 4 },
 };
 const JOB_ICONS = {
   yankesicilik: "🤏", dukkan_soyma: "🏚", kervan_baskini: "🐫", konak_soygunu: "🏰",
 };
 const GOOD_LABELS = { "ipek": "İpek", "baharat": "Baharat", "mücevher": "Mücevher" };
 
+/* Risk merdiveni göstergesi — 4 basamak */
+function RiskLadder({ risk }) {
+  const cfg = RISK_TONES[risk] || RISK_TONES["orta"];
+  const t = TONES[cfg.tone];
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: "2px" }} title={`Risk: ${risk}`}>
+      {[1, 2, 3, 4].map((s) => (
+        <div key={s} style={{
+          width: "5px", height: `${4 + s * 3}px`, borderRadius: "1px",
+          background: s <= cfg.step ? t.text : "rgba(122,106,79,0.3)",
+          boxShadow: s <= cfg.step ? `0 0 5px ${t.text}66` : "none",
+        }} />
+      ))}
+    </div>
+  );
+}
+
 // ─── Güvenlik Risk Göstergesi ─────────────────────────────────────────────────
 function SecurityBadge({ security }) {
+  const t = security >= 70 ? TONES.blood : security >= 40 ? TONES.gold : TONES.sage;
   return (
-    <div className="flex items-center justify-between text-xs">
-      <span className="text-stone-500 flex items-center gap-1">
-        <ShieldAlert className="w-3 h-3" /> Bölge güvenliği
-      </span>
-      <span className={`font-heading ${
-        security >= 70 ? "text-red-400" : security >= 40 ? "text-amber-400" : "text-emerald-400"
-      }`}>{security}/100</span>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+      <span className="label-tiny">🛡 Bölge Güvenliği</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flex: 1, maxWidth: "55%" }}>
+        <div style={{ flex: 1, height: "4px", background: "rgba(255,255,255,0.07)", borderRadius: "2px", overflow: "hidden" }}>
+          <div style={{
+            height: "100%", width: `${security}%`, borderRadius: "2px",
+            background: `linear-gradient(to right, ${t.text}99, ${t.text})`,
+            boxShadow: `0 0 6px ${t.text}55`,
+          }} />
+        </div>
+        <span className="font-display" style={{ fontSize: "0.66rem", fontWeight: 700, color: t.text, flexShrink: 0 }}>
+          {security}/100
+        </span>
+      </div>
     </div>
   );
 }
 
 // ─── R6.1: İş Kartı ──────────────────────────────────────────────────────────
 function JobCard({ job, selected, onSelect, disabled }) {
-  const st = RISK_STYLES[job.risk] || RISK_STYLES["orta"];
+  const cfg = RISK_TONES[job.risk] || RISK_TONES["orta"];
+  const t = TONES[cfg.tone];
   const locked = !!job.locked;
   return (
     <button
-      onClick={() => onSelect(job.id)}
+      onClick={() => { playSfx("click"); onSelect(job.id); }}
       disabled={disabled}
-      className={`w-full text-left p-4 border rounded-sm transition-all space-y-2 ${
-        selected
-          ? `${st.border} ${st.bg} ring-1 ring-inset ${st.border}`
-          : `${st.border} ${locked ? "opacity-60" : st.bg} hover:opacity-90`
-      }`}
+      style={{
+        width: "100%", textAlign: "left", padding: "0.8rem 0.85rem", borderRadius: "8px",
+        cursor: "pointer", transition: "all 0.2s",
+        display: "flex", flexDirection: "column", gap: "0.45rem",
+        border: selected ? `1.5px solid ${t.text}` : `1px solid ${t.border}`,
+        background: selected
+          ? `linear-gradient(160deg, ${t.bg}, rgba(10,7,4,0.7))`
+          : `linear-gradient(160deg, ${locked ? "rgba(10,7,4,0.5)" : t.bg}, transparent)`,
+        boxShadow: selected ? `0 0 16px ${t.text}33, inset 0 1px 0 ${t.text}22` : "none",
+        opacity: locked && !selected ? 0.6 : 1,
+      }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-base">{JOB_ICONS[job.id] || "🗡"}</span>
-          <span className={`font-heading text-sm ${st.color}`}>{job.label}</span>
-          {job.scouted && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded-sm border border-sky-900/50 bg-sky-950/20 text-sky-300">
-              🔭 Keşfedildi
-            </span>
-          )}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+          <span style={{ fontSize: "1.05rem", filter: `drop-shadow(0 0 6px ${t.text}44)` }}>
+            {JOB_ICONS[job.id] || "🗡"}
+          </span>
+          <span className="font-display" style={{ fontSize: "0.82rem", fontWeight: 700, color: t.text }}>
+            {job.label}
+          </span>
+          {job.scouted && <Pill tone="ink">🔭 Keşfedildi</Pill>}
         </div>
-        <span className={`text-[10px] font-heading tracking-wider uppercase ${st.color}`}>
-          {job.risk}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
+          <RiskLadder risk={job.risk} />
+          <span className="font-display" style={{
+            fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.14em",
+            textTransform: "uppercase", color: t.text,
+          }}>
+            {job.risk}
+          </span>
+        </div>
       </div>
 
-      <p className="text-xs text-stone-400">{job.desc}</p>
+      <p className="font-serif" style={{
+        fontSize: "0.78rem", fontStyle: "italic", color: "var(--color-parchment-dim)",
+        margin: 0, lineHeight: 1.45,
+      }}>
+        {job.desc}
+      </p>
 
-      <div className="flex flex-wrap gap-3 text-[10px] text-stone-500">
-        <span className="flex items-center gap-1 text-amber-500/80">
-          <Coins className="w-3 h-3" /> {job.reward_min}–{job.reward_max} akçe
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.7rem" }}>
+        <Coin value={`${job.reward_min}–${job.reward_max}`} size="0.7rem" />
+        <span className="font-display" style={{ fontSize: "0.6rem", color: "var(--color-parchment-muted)" }}>
+          suç +{job.crime_pts}
         </span>
-        <span className="flex items-center gap-1">suç +{job.crime_pts}</span>
-        <span className={`flex items-center gap-1 ${
-          job.chance_pct >= 55 ? "text-emerald-400" : job.chance_pct >= 35 ? "text-amber-400" : "text-red-400"
-        }`}>şans %{job.chance_pct}</span>
+        <span className="font-display" style={{
+          fontSize: "0.6rem", fontWeight: 700,
+          color: job.chance_pct >= 55 ? TONES.sage.text : job.chance_pct >= 35 ? TONES.gold.text : TONES.blood.text,
+        }}>
+          şans %{job.chance_pct}
+        </span>
       </div>
 
       {locked && (
-        <div className="flex items-center gap-1.5 text-[10px] text-stone-500 border border-stone-800/60 rounded-sm px-2 py-1">
-          <Lock className="w-3 h-3 shrink-0" /> {job.locked}
+        <div className="font-serif" style={{
+          display: "flex", alignItems: "center", gap: "0.4rem",
+          fontSize: "0.68rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+          border: "1px dashed rgba(122,106,79,0.4)", borderRadius: "4px", padding: "0.3rem 0.5rem",
+        }}>
+          🔒 {job.locked}
         </div>
       )}
     </button>
@@ -86,39 +139,72 @@ function JobCard({ job, selected, onSelect, disabled }) {
 
 // ─── R6.2: İcra Sahnesi Modalı ───────────────────────────────────────────────
 function SceneModal({ scene, onChoose, busy }) {
-  const CHOICE_STYLES = {
-    saklan:      "border-sky-900/50 text-sky-300 hover:bg-sky-950/20",
-    sustur:      "border-red-900/50 text-red-400 hover:bg-red-950/20",
-    kac:         "border-amber-900/50 text-amber-400 hover:bg-amber-950/20",
-    kacis_plani: "border-emerald-800/60 text-emerald-300 hover:bg-emerald-950/20",
+  const CHOICE_TONES = {
+    saklan:      "ink",
+    sustur:      "blood",
+    kac:         "ember",
+    kacis_plani: "sage",
   };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-      <div className="w-full max-w-sm card-frame p-5 space-y-4 rise-in border-red-900/40">
-        <div className="flex items-center gap-2 text-sm font-heading text-red-400">
-          <AlertTriangle className="w-4 h-4" />
-          <span>{scene.label} — İşler Sarpa Sardı</span>
+    <div className="bg-black/75" style={{
+      position: "fixed", inset: 0, zIndex: 50, display: "flex",
+      alignItems: "center", justifyContent: "center", padding: "1rem",
+    }}>
+      <div className="card-frame rise-in" style={{
+        width: "100%", maxWidth: "24rem", padding: "1.25rem",
+        border: "1px solid rgba(200,64,64,0.4)",
+        display: "flex", flexDirection: "column", gap: "0.9rem",
+      }}>
+        <div className="font-display" style={{
+          display: "flex", alignItems: "center", gap: "0.5rem",
+          fontSize: "0.82rem", fontWeight: 700, color: TONES.blood.text,
+          textShadow: "0 0 10px rgba(200,64,64,0.3)",
+        }}>
+          ⚠ {scene.label} — İşler Sarpa Sardı
         </div>
-        <p className="text-sm text-stone-200 italic border border-red-900/30 bg-red-950/10 rounded-sm px-3 py-2.5">
+        <p className="font-serif" style={{
+          fontSize: "0.88rem", fontStyle: "italic", color: "var(--color-parchment)",
+          border: "1px solid rgba(200,64,64,0.25)", background: "rgba(200,64,64,0.06)",
+          borderRadius: "6px", padding: "0.65rem 0.75rem", margin: 0, lineHeight: 1.5,
+        }}>
           {scene.scene}
         </p>
-        <div className="space-y-2">
-          {scene.choices.map(c => (
-            <button key={c.id} onClick={() => onChoose(c.id)} disabled={busy}
-              className={`w-full text-left px-3 py-2.5 border rounded-sm transition-all disabled:opacity-40 ${CHOICE_STYLES[c.id] || "border-stone-700 text-stone-300"}`}>
-              <div className="flex items-center justify-between">
-                <span className="font-heading text-xs tracking-wider">{c.label}</span>
-                {c.test && (
-                  <span className="text-[9px] text-stone-500 border border-stone-800 rounded-sm px-1.5 py-0.5">
-                    🎲 {c.test}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          {scene.choices.map(c => {
+            const t = TONES[CHOICE_TONES[c.id] || "ash"];
+            return (
+              <button key={c.id} onClick={() => onChoose(c.id)} disabled={busy}
+                style={{
+                  width: "100%", textAlign: "left", padding: "0.6rem 0.75rem",
+                  borderRadius: "6px", cursor: "pointer", transition: "all 0.15s",
+                  border: `1px solid ${t.border}`, background: t.bg,
+                  opacity: busy ? 0.4 : 1,
+                }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.4rem" }}>
+                  <span className="font-display" style={{
+                    fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.12em",
+                    textTransform: "uppercase", color: t.text,
+                  }}>
+                    {c.label}
                   </span>
-                )}
-              </div>
-              <p className="text-[10px] text-stone-500 mt-0.5">{c.hint}</p>
-            </button>
-          ))}
+                  {c.test && <Pill tone="ash">🎲 {c.test}</Pill>}
+                </div>
+                <p className="font-serif" style={{
+                  fontSize: "0.7rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+                  margin: "0.15rem 0 0",
+                }}>
+                  {c.hint}
+                </p>
+              </button>
+            );
+          })}
         </div>
-        <p className="text-[10px] text-stone-600 text-center">Geri dönüş yok — bir yol seç.</p>
+        <p className="font-serif" style={{
+          fontSize: "0.66rem", fontStyle: "italic", textAlign: "center",
+          color: "var(--color-parchment-muted)", margin: 0,
+        }}>
+          Geri dönüş yok — bir yol seç.
+        </p>
       </div>
     </div>
   );
@@ -127,72 +213,91 @@ function SceneModal({ scene, onChoose, busy }) {
 // ─── Sonuç Ekranı ─────────────────────────────────────────────────────────────
 function CrimeResult({ result, onDone }) {
   const cfg = {
-    temiz:      { icon: <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto" />, cls: "border-emerald-800/60 bg-emerald-950/10", color: "text-emerald-400" },
-    goruldun:   { icon: <Eye className="w-8 h-8 text-amber-500 mx-auto" />,          cls: "border-amber-800/60 bg-amber-950/15",    color: "text-amber-400" },
-    kacti:      { icon: <Footprints className="w-8 h-8 text-stone-400 mx-auto" />,   cls: "border-stone-700/60 bg-stone-900/40",    color: "text-stone-300" },
-    yakalandin: { icon: <XCircle className="w-8 h-8 text-red-500 mx-auto" />,        cls: "border-red-900/60 bg-red-950/20",        color: "text-red-400" },
-  }[result.outcome] || { icon: null, cls: "border-stone-800", color: "text-stone-300" };
+    temiz:      { icon: "🕊", tone: "sage" },
+    goruldun:   { icon: "👁", tone: "gold" },
+    kacti:      { icon: "👣", tone: "ash" },
+    yakalandin: { icon: "⛓", tone: "blood" },
+  }[result.outcome] || { icon: "🗡", tone: "ash" };
+  const t = TONES[cfg.tone];
 
   return (
-    <div className="space-y-4 rise-in">
-      <div className={`card-frame p-5 text-center border space-y-3 ${cfg.cls}`}>
-        {cfg.icon}
-        <div className={`font-heading text-2xl tracking-widest ${cfg.color}`}>
+    <div className="rise-in" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+      <div className="card-frame" style={{
+        padding: "1.25rem", textAlign: "center",
+        border: `1px solid ${t.border}`,
+        background: `linear-gradient(165deg, ${t.bg}, rgba(15,11,6,0.6))`,
+        display: "flex", flexDirection: "column", gap: "0.6rem",
+      }}>
+        <div style={{ fontSize: "2rem", filter: `drop-shadow(0 0 12px ${t.text}55)` }}>{cfg.icon}</div>
+        <div className="font-display" style={{
+          fontSize: "1.4rem", fontWeight: 700, letterSpacing: "0.18em",
+          color: t.text, textShadow: `0 0 14px ${t.text}44`,
+        }}>
           {result.title}
         </div>
-        <p className="text-stone-300 text-sm">{result.note}</p>
+        <p className="font-serif" style={{
+          fontSize: "0.85rem", fontStyle: "italic", color: "var(--color-parchment-dim)", margin: 0,
+        }}>
+          {result.note}
+        </p>
         {result.gain > 0 && (
-          <div className="font-heading text-lg text-amber-300">+{result.gain} akçe</div>
+          <div><Coin value={result.gain} size="1.1rem" /></div>
         )}
         {result.fine > 0 && (
-          <div className="text-red-400 text-sm">
-            Ceza: <span className="font-heading">{result.fine} akçe</span> ödendi
+          <div className="font-serif" style={{ fontSize: "0.8rem", color: TONES.blood.text }}>
+            Ceza: <span className="font-display" style={{ fontWeight: 700 }}>{result.fine} ⚜</span> ödendi
           </div>
         )}
       </div>
 
       {/* Ganimet — sıcak mal işaretli */}
       {result.loot?.length > 0 && (
-        <div className="card-frame p-3 space-y-2">
-          <div className="label-tiny">Ganimet</div>
-          <div className="flex flex-wrap gap-2">
+        <Panel title="Ganimet" icon="💰" tone="ember">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
             {result.loot.map((l, i) => (
-              <span key={i} className="flex items-center gap-1.5 text-xs border border-orange-900/50 bg-orange-950/10 rounded-sm px-2 py-1">
-                {GOOD_LABELS[l.good] || l.good} ×{l.qty}
-                {l.hot && (
-                  <span className="text-[9px] text-orange-400 flex items-center gap-0.5">
-                    <Flame className="w-2.5 h-2.5" /> sıcak
-                  </span>
-                )}
-              </span>
+              <Pill key={i} tone="ember" pulse={l.hot ? "danger" : undefined}>
+                {GOOD_LABELS[l.good] || l.good} ×{l.qty}{l.hot ? " · 🔥 sıcak" : ""}
+              </Pill>
             ))}
           </div>
-          <p className="text-[10px] text-stone-500">
+          <p className="font-serif" style={{
+            fontSize: "0.7rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+            marginTop: "0.5rem", marginBottom: 0,
+          }}>
             Sıcak mal satarken dikkat: çalıntı olduğu anlaşılırsa adın lekelenir.
             Çete bağlantısı malı güvenle eritir.
           </p>
-        </div>
+        </Panel>
       )}
 
       {result.witness && (
-        <div className="card-frame p-3 text-xs text-amber-400/90 flex items-center gap-2">
-          <Eye className="w-3.5 h-3.5 shrink-0" />
-          <span>{result.witness} seni gördü — bunu unutmayacak.</span>
+        <div className="row-frame" style={{
+          border: "1px solid rgba(201,168,76,0.4)", background: "rgba(201,168,76,0.05)",
+        }}>
+          <span style={{ fontSize: "0.9rem" }}>👁</span>
+          <span className="font-serif" style={{ fontSize: "0.78rem", fontStyle: "italic", color: TONES.gold.text }}>
+            {result.witness} seni gördü — bunu unutmayacak.
+          </span>
         </div>
       )}
 
       {result.rep_notes?.length > 0 && (
-        <div className="card-frame p-3 space-y-1">
-          <div className="label-tiny mb-1">İtibar Etkileri</div>
+        <Panel title="İtibar Etkileri" icon="🎭" tone="ink">
           {result.rep_notes.map((msg, i) => (
-            <p key={i} className="text-xs text-stone-400">{msg}</p>
+            <p key={i} className="font-serif" style={{
+              fontSize: "0.78rem", fontStyle: "italic", color: "var(--color-parchment-dim)",
+              margin: "0.1rem 0",
+            }}>
+              {msg}
+            </p>
           ))}
-        </div>
+        </Panel>
       )}
 
       <button onClick={onDone}
-        className="w-full btn-ghost-ash py-2.5 text-xs font-heading tracking-widest">
-        Tamam
+        className="btn-ghost-ash"
+        style={{ width: "100%", padding: "0.65rem 0", fontSize: "0.68rem" }}>
+        Gölgeye Karış
       </button>
     </div>
   );
@@ -214,25 +319,26 @@ function EskiyaPanel({ state, onResult, busy, setBusy, setState }) {
       id: "kervan_soygunu",
       label: "Kervan Soygunu",
       desc: "Tüccar kervanlarına baskın yap. Yüksek kâr, yüksek risk.",
-      reward: "100–500 altın",
-      icon: Sword,
-      color: "text-orange-400",
+      reward: "100–500",
+      icon: "⚔",
+      tone: "ember",
     },
     {
       id: "haraç",
       label: "Haraç Al",
       desc: "Kasaba ve köylerden koruma parası topla.",
-      reward: "40–200 altın",
-      icon: Users,
-      color: "text-amber-400",
+      reward: "40–200",
+      icon: "🤝",
+      tone: "gold",
     },
     {
       id: "faction_baskını",
       label: "Faction Baskını",
       desc: "Rakip faction üslerine saldır, değerli şeyler çal.",
-      reward: "50–300 altın + nüfuz kaybı",
-      icon: Star,
-      color: "text-red-400",
+      reward: "50–300",
+      rewardNote: "+ nüfuz kaybı",
+      icon: "🔥",
+      tone: "blood",
     },
   ];
 
@@ -242,6 +348,7 @@ function EskiyaPanel({ state, onResult, busy, setBusy, setState }) {
       const { data } = await api.post("/game/crime", { crime_type: "kaçakçılık" });
       if (data.state) setState(data.state);
       const o = data.outcome || {};
+      playSfx(o.success ? "success" : "fail");
       onResult({
         outcome: o.success ? "temiz" : "yakalandin",
         title: o.success ? "OPERASYON BAŞARILI" : "YAKALANDIN",
@@ -261,87 +368,102 @@ function EskiyaPanel({ state, onResult, busy, setBusy, setState }) {
 
   if (!eskiyaFactions.length && !isEskiya) {
     return (
-      <div className="card-frame p-4 space-y-2 border-stone-800/50">
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-stone-500" />
-          <span className="font-heading text-stone-400">Eşkıya Çetesi</span>
-        </div>
-        <p className="text-xs text-stone-500">
-          Bu bölgede aktif bir eşkıya çetesi yok. Bir faction kur ya da dün kurulmuş bir çeteye katıl.
-        </p>
-      </div>
+      <Panel title="Eşkıya Çetesi" icon="🏴" tone="ash">
+        <EmptyState
+          icon="🏴"
+          title="Bu bölgede aktif bir eşkıya çetesi yok."
+          sub="Bir faction kur ya da dün kurulmuş bir çeteye katıl."
+        />
+      </Panel>
     );
   }
 
   return (
-    <div className="card-frame p-4 space-y-4 border-orange-900/40 bg-orange-950/10">
-      <div className="flex items-center gap-2">
-        <Users className="w-4 h-4 text-orange-500" />
-        <span className="font-heading text-orange-400">Eşkıya Operasyonu</span>
-        {isEskiya && (
-          <span className="ml-auto label-tiny text-orange-400 border border-orange-900/40 px-2 py-0.5 rounded-sm">
-            {playerFaction?.name}
-          </span>
-        )}
-      </div>
+    <Panel title="Eşkıya Operasyonu" icon="🏴" tone="ember"
+      right={isEskiya ? <Pill tone="ember">{playerFaction?.name}</Pill> : null}>
 
       {eskiyaFactions.length > 1 && !isEskiya && (
-        <div className="space-y-1">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", marginBottom: "0.75rem" }}>
           <div className="label-tiny">Birlikte Çalış</div>
           {eskiyaFactions.map(f => (
             <button
               key={f.id}
               onClick={() => setSelectedFaction(f.id)}
-              className={`w-full text-left px-3 py-2 text-xs rounded-sm border transition-all ${
-                selectedFaction === f.id
-                  ? "border-orange-800 bg-stone-900 text-orange-400"
-                  : "border-stone-800 text-stone-400 hover:text-stone-200"
-              }`}
+              className="row-frame"
+              style={{
+                width: "100%", textAlign: "left", cursor: "pointer",
+                border: selectedFaction === f.id
+                  ? "1px solid rgba(224,90,48,0.55)" : "1px solid var(--color-border)",
+                background: selectedFaction === f.id ? "rgba(224,90,48,0.08)" : undefined,
+              }}
             >
-              {f.name} · {f.member_count || 0} üye
+              <span className="font-serif" style={{
+                fontSize: "0.8rem",
+                color: selectedFaction === f.id ? TONES.ember.text : "var(--color-parchment-dim)",
+              }}>
+                {f.name} · {f.member_count || 0} üye
+              </span>
             </button>
           ))}
         </div>
       )}
 
-      <div className="space-y-1.5">
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
         <div className="label-tiny">Operasyon Türü</div>
         {ESKIYA_ACTIONS.map(a => {
-          const Icon = a.icon;
+          const t = TONES[a.tone];
+          const active = actionType === a.id;
           return (
             <button
               key={a.id}
-              onClick={() => setActionType(a.id)}
-              className={`w-full text-left p-3 border rounded-sm transition-all space-y-1 ${
-                actionType === a.id
-                  ? "border-orange-800/60 bg-orange-950/20"
-                  : "border-stone-800/60 hover:border-stone-700"
-              }`}
+              onClick={() => { playSfx("click"); setActionType(a.id); }}
+              style={{
+                width: "100%", textAlign: "left", padding: "0.65rem 0.75rem",
+                borderRadius: "7px", cursor: "pointer", transition: "all 0.15s",
+                display: "flex", flexDirection: "column", gap: "0.25rem",
+                border: active ? `1.5px solid ${t.text}` : `1px solid ${t.border}`,
+                background: active ? t.bg : "transparent",
+                boxShadow: active ? `0 0 12px ${t.text}33` : "none",
+              }}
             >
-              <div className="flex items-center gap-2">
-                <Icon className={`w-4 h-4 ${a.color}`} />
-                <span className={`font-heading text-sm ${a.color}`}>{a.label}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ fontSize: "0.95rem" }}>{a.icon}</span>
+                <span className="font-display" style={{ fontSize: "0.78rem", fontWeight: 700, color: t.text }}>
+                  {a.label}
+                </span>
               </div>
-              <p className="text-xs text-stone-400">{a.desc}</p>
-              <span className="text-[10px] text-amber-500/80 flex items-center gap-1">
-                <Coins className="w-3 h-3" /> {a.reward}
+              <p className="font-serif" style={{
+                fontSize: "0.74rem", fontStyle: "italic", color: "var(--color-parchment-dim)", margin: 0,
+              }}>
+                {a.desc}
+              </p>
+              <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                <Coin value={a.reward} size="0.66rem" />
+                {a.rewardNote && (
+                  <span className="font-display" style={{ fontSize: "0.56rem", color: "var(--color-parchment-muted)" }}>
+                    {a.rewardNote}
+                  </span>
+                )}
               </span>
             </button>
           );
         })}
       </div>
 
+      <div style={{ height: "0.75rem" }} />
+
       <button
         onClick={handleAction}
         disabled={busy || !selectedFaction}
-        className="w-full btn-ember py-2.5 font-heading tracking-widest text-sm flex items-center justify-center gap-2 disabled:opacity-40"
+        className="btn-ember"
+        style={{
+          width: "100%", padding: "0.7rem 0", fontSize: "0.74rem",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
+        }}
       >
-        {busy
-          ? <><Loader2 className="w-4 h-4 animate-spin" /> Operasyon…</>
-          : <><Sword className="w-4 h-4" /> OPERASYONA GEÇ</>
-        }
+        {busy ? "⏳ Operasyon…" : "⚔ OPERASYONA GEÇ"}
       </button>
-    </div>
+    </Panel>
   );
 }
 
@@ -367,10 +489,10 @@ export default function Crime() {
 
   const crimeRecord = player.crime ?? 0;
   const crimeTier =
-    crimeRecord >= 80 ? { label: "Aranan Suçlu", color: "text-red-400", border: "border-red-900/60" } :
-    crimeRecord >= 40 ? { label: "Şüpheli", color: "text-orange-400", border: "border-orange-800/60" } :
-    crimeRecord >= 15 ? { label: "Kayıt Var", color: "text-amber-400", border: "border-amber-800/60" } :
-    { label: "Temiz", color: "text-emerald-400", border: "border-emerald-900/60" };
+    crimeRecord >= 80 ? { label: "Aranan Suçlu", tone: "blood" } :
+    crimeRecord >= 40 ? { label: "Şüpheli", tone: "ember" } :
+    crimeRecord >= 15 ? { label: "Kayıt Var", tone: "gold" } :
+    { label: "Temiz", tone: "sage" };
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -392,6 +514,7 @@ export default function Crime() {
     try {
       const { data } = await api.post("/game/crime/scout", { job_id: selected });
       if (data.state) setState(data.state);
+      playSfx("success");
       toast.success(`${data.note} (${data.bonus})`, { duration: 6000 });
       await fetchJobs();
     } catch (e) {
@@ -403,12 +526,14 @@ export default function Crime() {
   const handleExecute = async () => {
     if (!selected) { toast.error("Bir iş seç."); return; }
     setBusy(true);
+    playSfx("sword");
     try {
       const { data } = await api.post("/game/crime/execute", { job_id: selected });
       if (data.needs_choice) {
         setScene(data);
       } else {
         if (data.state) setState(data.state);
+        playSfx(data.result?.outcome === "temiz" ? "success" : "fail");
         setResult(data.result);
         await fetchJobs();
       }
@@ -423,6 +548,7 @@ export default function Crime() {
       const { data } = await api.post("/game/crime/resolve", { choice: choiceId });
       if (data.state) setState(data.state);
       setScene(null);
+      playSfx(data.result?.outcome === "temiz" ? "success" : "fail");
       setResult(data.result);
       await fetchJobs();
     } catch (e) {
@@ -432,37 +558,39 @@ export default function Crime() {
 
   if (tooYoung) {
     return (
-      <div className="rise-in space-y-4">
-        <div>
-          <div className="label-tiny">Gölge</div>
-          <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-            <Eye className="w-6 h-6 text-stone-500" /> Yasadışı Aktivite
-          </h1>
-        </div>
-        <div className="card-frame p-6 text-center space-y-3 border-stone-800/50">
-          <Lock className="w-8 h-8 text-stone-700 mx-auto" />
-          <p className="text-stone-400 font-heading">Henüz çok küçüksün.</p>
-          <p className="text-stone-600 text-sm">13 yaşında bu yollar açılır.</p>
-        </div>
+      <div className="page-shell rise-in">
+        <PageHeader
+          kicker="Gölge"
+          icon="🌒"
+          title="Yasadışı İşler"
+          sub="Geceyle iş tutanın adı gündüz anılmaz."
+        />
+        <Panel title="Kapalı Kapı" icon="🔒" tone="ash">
+          <EmptyState
+            icon="🔒"
+            title="Henüz çok küçüksün."
+            sub="13 yaşında bu yollar açılır — acele etme, gölge bekler."
+          />
+        </Panel>
       </div>
     );
   }
 
   if (result) {
     return (
-      <div className="rise-in space-y-4">
-        <div>
-          <div className="label-tiny">Gölge</div>
-          <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-            <Eye className="w-6 h-6 text-stone-500" /> Yasadışı Aktivite
-          </h1>
-        </div>
+      <div className="page-shell rise-in">
+        <PageHeader
+          kicker="Gölge"
+          icon="🌒"
+          title="Yasadışı İşler"
+          sub="Geceyle iş tutanın adı gündüz anılmaz."
+        />
         <CrimeResult
           result={result}
           onDone={() => {
             setResult(null);
             setSelected(null);
-            // Eylem tamamlandı — hafta ilerledi, anasayfaya dön (geri dön butonlu)
+            // Eylem tamamlandı — tur ilerledi, anasayfaya dön (geri dön butonlu)
             setLastActionPage?.({ path: location.pathname, label: "Gölge" });
             navigate("/oyun");
           }}
@@ -472,69 +600,83 @@ export default function Crime() {
   }
 
   return (
-    <div className="space-y-5 rise-in">
+    <div className="page-shell rise-in" style={{ padding: "0 0 1.5rem" }}>
       {/* İcra sahnesi */}
       {scene && <SceneModal scene={scene} onChoose={handleResolve} busy={busy} />}
 
-      <div>
-        <div className="label-tiny">Gölge</div>
-        <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-          <Eye className="w-6 h-6 text-stone-500" /> Yasadışı Aktivite
-        </h1>
-        <p className="text-stone-400 text-sm mt-1">
-          İş seç, istersen önce keşfet, sonra harekete geç. Her şeyin bir bedeli var.
-        </p>
-      </div>
+      <PageHeader
+        kicker="Gölge"
+        icon="🌒"
+        title="Yasadışı İşler"
+        sub="İş seç, istersen önce keşfet, sonra harekete geç — her şeyin bir bedeli var."
+        right={<Pill tone={crimeTier.tone} pulse={crimeRecord >= 80 ? "danger" : undefined}>{crimeTier.label}</Pill>}
+      />
 
       {/* Suç sicili */}
-      <div className={`card-frame p-3 flex items-center justify-between border ${crimeTier.border}`}>
-        <div className="flex items-center gap-2">
-          <ShieldAlert className={`w-4 h-4 ${crimeTier.color}`} />
-          <span className="label-tiny">Suç Sicili</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="stat-bar w-24">
-            <div
-              className="h-full stat-bar-fill-bad"
-              style={{ width: `${Math.min(100, crimeRecord)}%` }}
-            />
+      <Panel title="Suç Sicili" icon="⚖" tone={crimeTier.tone}
+        right={
+          <span className="font-display" style={{ fontSize: "0.66rem", color: "var(--color-parchment-muted)" }}>
+            {crimeRecord}/100
+          </span>
+        }>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+          <div style={{ flex: 1, height: "5px", background: "rgba(255,255,255,0.07)", borderRadius: "2px", overflow: "hidden" }}>
+            <div style={{
+              height: "100%", width: `${Math.min(100, crimeRecord)}%`, borderRadius: "2px",
+              background: "linear-gradient(to right, #8B6914, #C9A84C 40%, #E05A30 75%, #C84040)",
+              boxShadow: "0 0 6px rgba(224,90,48,0.45)", transition: "width 0.8s ease",
+            }} />
           </div>
-          <span className={`text-xs font-heading ${crimeTier.color}`}>{crimeTier.label}</span>
-          <span className="text-stone-600 text-xs">({crimeRecord})</span>
+          <span className="font-display" style={{
+            fontSize: "0.7rem", fontWeight: 700, flexShrink: 0,
+            color: TONES[crimeTier.tone].text,
+          }}>
+            {crimeTier.label}
+          </span>
         </div>
-      </div>
+        {currentLoc && (
+          <>
+            <GoldRule />
+            <SecurityBadge security={currentLoc.security} />
+            {Object.keys(player.hot_goods || {}).length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.45rem" }}>
+                <span style={{ fontSize: "0.8rem" }}>🔥</span>
+                <span className="font-serif" style={{
+                  fontSize: "0.72rem", fontStyle: "italic", color: TONES.ember.text,
+                }}>
+                  Elinde sıcak mal var:{" "}
+                  {Object.entries(player.hot_goods)
+                    .map(([g, q]) => `${GOOD_LABELS[g] || g} ×${q}`)
+                    .join(", ")}
+                </span>
+              </div>
+            )}
+          </>
+        )}
+      </Panel>
 
-      {/* Konum güvenliği + sıcak mal uyarısı */}
-      {currentLoc && (
-        <div className="card-frame p-3 space-y-1.5">
-          <SecurityBadge security={currentLoc.security} />
-          {Object.keys(player.hot_goods || {}).length > 0 && (
-            <div className="flex items-center gap-1.5 text-[10px] text-orange-400">
-              <Flame className="w-3 h-3 shrink-0" />
-              <span>
-                Elinde sıcak mal var:{" "}
-                {Object.entries(player.hot_goods)
-                  .map(([g, q]) => `${GOOD_LABELS[g] || g} ×${q}`)
-                  .join(", ")}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+      <div style={{ height: "0.75rem" }} />
 
       {/* Tab switcher */}
-      <div className="flex gap-1 border border-stone-800 rounded-sm overflow-hidden">
+      <div style={{
+        display: "flex", gap: 0, border: "1px solid var(--color-border)",
+        borderRadius: "6px", overflow: "hidden", marginBottom: "0.85rem",
+      }}>
         {["bireysel", "eskiya"].map(t => (
           <button
             key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 py-2 text-xs font-heading tracking-wider transition-all ${
-              tab === t
-                ? "bg-stone-900 text-orange-400 border-r border-stone-800"
-                : "text-stone-500 hover:text-stone-300"
-            }`}
+            onClick={() => { playSfx("page"); setTab(t); }}
+            className="font-display"
+            style={{
+              flex: 1, padding: "0.6rem 0", cursor: "pointer", transition: "all 0.2s",
+              fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase",
+              border: "none",
+              background: tab === t ? "rgba(123,79,175,0.12)" : "transparent",
+              color: tab === t ? TONES.ink.text : "var(--color-parchment-muted)",
+              boxShadow: tab === t ? "inset 0 -2px 0 rgba(123,79,175,0.6)" : "none",
+            }}
           >
-            {t === "bireysel" ? "Bireysel İş" : "⚔ Çete Operasyonu"}
+            {t === "bireysel" ? "🗡 Bireysel İş" : "⚔ Çete Operasyonu"}
           </button>
         ))}
       </div>
@@ -550,12 +692,10 @@ export default function Crime() {
       ) : (
         <>
           {/* İş kartları */}
-          <div className="space-y-2">
-            <div className="label-tiny">İş Seç</div>
+          <GoldRule label="İş Seç" />
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
             {!jobs && (
-              <div className="card-frame p-4 flex items-center justify-center text-stone-500">
-                <Loader2 className="w-4 h-4 animate-spin" />
-              </div>
+              <EmptyState icon="🕯" title="Sokaklar dinleniyor…" sub="Gölgedeki işler toparlanıyor." />
             )}
             {jobs?.jobs?.map((job) => (
               <JobCard
@@ -570,41 +710,48 @@ export default function Crime() {
 
           {/* Eylem butonları */}
           {selectedJob && (
-            <div className="space-y-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "0.85rem" }}>
               {!selectedJob.scouted && (
                 <button
                   onClick={handleScout}
                   disabled={busy}
-                  className="w-full btn-ghost-ash py-2.5 text-xs font-heading tracking-widest flex items-center justify-center gap-2 disabled:opacity-40"
+                  className="btn-ghost-ash"
+                  style={{
+                    width: "100%", padding: "0.65rem 0", fontSize: "0.64rem",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
+                  }}
                 >
-                  {busy
-                    ? <Loader2 className="w-4 h-4 animate-spin" />
-                    : "🔭"} KEŞİF YAP (1 hafta) — +%20 şans & kaçış planı
+                  {busy ? "⏳" : "🔭"} KEŞİF YAP (1 ay) — +%20 şans & kaçış planı
                 </button>
               )}
               <button
                 onClick={handleExecute}
                 disabled={busy || !!selectedJob.locked}
-                className="w-full btn-ember py-3 font-heading tracking-widest text-sm flex items-center justify-center gap-2 disabled:opacity-40"
+                className="btn-ember"
+                style={{
+                  width: "100%", padding: "0.8rem 0", fontSize: "0.76rem",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
+                }}
               >
-                {busy ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> İş başında…</>
-                ) : (
-                  <><Eye className="w-4 h-4" /> HAREKETE GEÇ (%{selectedJob.chance_pct})</>
-                )}
+                {busy ? "⏳ İş başında…" : `🌒 HAREKETE GEÇ (%${selectedJob.chance_pct})`}
               </button>
               {selectedJob.locked && (
-                <p className="text-[10px] text-stone-500 flex items-center gap-1.5">
-                  <Lock className="w-3 h-3" /> {selectedJob.locked}
+                <p className="font-serif" style={{
+                  fontSize: "0.68rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+                  display: "flex", alignItems: "center", gap: "0.35rem", margin: 0,
+                }}>
+                  🔒 {selectedJob.locked}
                 </p>
               )}
             </div>
           )}
 
           {/* Uyarı */}
-          <div className="border border-stone-800/40 rounded-sm p-3 text-xs text-stone-500 flex items-start gap-2">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-stone-600" />
-            <span>
+          <div className="row-frame" style={{ marginTop: "0.85rem", alignItems: "flex-start" }}>
+            <span style={{ fontSize: "0.85rem", marginTop: "0.05rem" }}>⚠</span>
+            <span className="font-serif" style={{
+              fontSize: "0.72rem", fontStyle: "italic", color: "var(--color-parchment-muted)", lineHeight: 1.5,
+            }}>
               İş ortasında işler sarpa sarabilir: saklan, sustur ya da kaç.
               Görülürsen tanık unutmaz; yakalanırsan ceza ödersin. Büyük işlerin
               ganimeti sıcaktır — satarken yakalanma riski taşır.

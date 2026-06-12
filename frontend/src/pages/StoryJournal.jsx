@@ -1,12 +1,15 @@
+/**
+ * Hikâyelerim — KÜL & KÖZ görsel katman.
+ * Duygu görevi: yay (arc) kartları kitap sırtı gibi; tamamlanan yaylar mühürlü.
+ * İşlevsellik (API/state/koşul akışı, test kimlikleri) birebir korunur.
+ */
 import { useEffect, useState, useCallback } from "react";
 import { api, extractErrorMessage } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
 import { toast } from "sonner";
-import {
-  BookOpen, Loader2, Hourglass, ChevronDown, ChevronUp,
-  CheckCircle2, XCircle, Sparkles, Clock, Dices,
-} from "lucide-react";
+import { playSfx } from "@/lib/audio";
+import { PageHeader, Panel, Pill, EmptyState, TONES } from "@/components/ui/Kit";
 
 const TEST_LABELS = {
   strength: "Güç", intelligence: "Zeka", charisma: "Karizma", stamina: "Dayanıklılık",
@@ -19,8 +22,8 @@ function TestBadge({ test }) {
   for (const [k, v] of Object.entries(test.stat || {})) parts.push(`${TEST_LABELS[k] || k} ${v}`);
   for (const [k, v] of Object.entries(test.skill || {})) parts.push(`${TEST_LABELS[k] || k} ${v}`);
   return (
-    <span className="inline-flex items-center gap-1 text-[9px] text-purple-300 bg-purple-950/40 border border-purple-900 rounded-sm px-1.5 py-0.5 ml-2 shrink-0">
-      <Dices className="w-2.5 h-2.5" /> {parts.join(" + ")}
+    <span style={{ marginLeft: "0.5rem", flexShrink: 0 }}>
+      <Pill tone="ink">🎲 {parts.join(" + ")}</Pill>
     </span>
   );
 }
@@ -29,19 +32,39 @@ function ArcLog({ log }) {
   const [open, setOpen] = useState(false);
   if (!log?.length) return null;
   return (
-    <div className="pt-1">
+    <div style={{ paddingTop: "0.25rem" }}>
       <button onClick={() => setOpen(!open)}
-        className="text-[10px] text-stone-500 flex items-center gap-1">
-        Geçmiş ({log.length}) {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        className="font-display"
+        style={{
+          background: "none", border: "none", padding: 0, cursor: "pointer",
+          fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.14em",
+          textTransform: "uppercase", color: "var(--color-parchment-muted)",
+          display: "inline-flex", alignItems: "center", gap: "0.3rem",
+        }}>
+        Geçmiş ({log.length}) {open ? "▴" : "▾"}
       </button>
       {open && (
-        <div className="mt-1.5 space-y-1.5 border-l border-stone-800 pl-2.5">
+        <div style={{
+          marginTop: "0.4rem", paddingLeft: "0.65rem",
+          borderLeft: "1px solid rgba(201,168,76,0.25)",
+          display: "flex", flexDirection: "column", gap: "0.35rem",
+        }}>
           {log.map((l, i) => (
-            <div key={i} className="text-[10px] leading-relaxed">
-              <span className={l.basari === false ? "text-red-400/80" : "text-stone-400"}>
+            <div key={i} style={{ lineHeight: 1.45 }}>
+              <span className="font-serif" style={{
+                fontSize: "0.74rem", fontWeight: 600,
+                color: l.basari === false ? TONES.blood.text : "var(--color-parchment-dim)",
+              }}>
                 ▸ {l.secim}
               </span>
-              {l.sonuc && <p className="text-stone-500 italic">{l.sonuc}</p>}
+              {l.sonuc && (
+                <p className="font-serif" style={{
+                  fontSize: "0.72rem", fontStyle: "italic",
+                  color: "var(--color-parchment-muted)", margin: 0,
+                }}>
+                  {l.sonuc}
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -52,32 +75,62 @@ function ArcLog({ log }) {
 
 function ActiveArc({ arc, busy, onChoose }) {
   return (
-    <div className="border border-orange-900/40 bg-stone-950/40 rounded-sm p-3.5 space-y-3"
-      data-testid={`story-active-${arc.arc_id}`}>
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="font-heading text-sm text-orange-300">{arc.title}</h3>
+    <div data-testid={`story-active-${arc.arc_id}`}
+      className="card-frame"
+      style={{
+        padding: "0.85rem 0.85rem 0.85rem 1rem",
+        borderLeft: "4px solid rgba(201,168,76,0.55)",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.45), inset 4px 0 12px -6px rgba(201,168,76,0.25)",
+        display: "flex", flexDirection: "column", gap: "0.7rem",
+      }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+        <h3 className="font-display" style={{
+          fontSize: "0.85rem", fontWeight: 700, color: "var(--color-gold)",
+          letterSpacing: "0.05em", textShadow: "0 0 10px rgba(201,168,76,0.25)",
+          margin: 0, minWidth: 0,
+        }}>
+          📜 {arc.title}
+        </h3>
         {arc.deadline_weeks != null && (
-          <span className={`text-[9px] flex items-center gap-1 px-1.5 py-0.5 rounded-sm border shrink-0 ${
-            arc.deadline_weeks <= 2
-              ? "text-red-300 border-red-800 bg-red-950/40 animate-pulse"
-              : "text-stone-400 border-stone-700"}`}>
-            <Clock className="w-2.5 h-2.5" /> {arc.deadline_weeks} hafta
-          </span>
+          <Pill
+            tone={arc.deadline_weeks <= 2 ? "blood" : "ash"}
+            pulse={arc.deadline_weeks <= 2 ? "danger" : undefined}>
+            ⌛ {arc.deadline_weeks} ay
+          </Pill>
         )}
       </div>
-      <p className="text-xs text-stone-300 leading-relaxed italic">{arc.step_text}</p>
+      <p className="font-serif" style={{
+        fontSize: "0.86rem", fontStyle: "italic", lineHeight: 1.55,
+        color: "var(--color-parchment)", margin: 0,
+      }}>
+        {arc.step_text}
+      </p>
       {arc.waiting ? (
-        <div className="flex items-center gap-2 text-xs text-stone-500 border border-stone-800 rounded-sm px-3 py-2">
-          <Hourglass className="w-3.5 h-3.5 animate-pulse" />
-          Hikâye demleniyor — {arc.wait_weeks} hafta sonra devam edecek. Haftayı ilerlet.
+        <div className="row-frame" style={{
+          background: "linear-gradient(to right, rgba(122,106,79,0.08), transparent 70%)",
+        }}>
+          <span style={{ fontSize: "0.9rem", flexShrink: 0, opacity: 0.7 }}>⏳</span>
+          <span className="font-serif" style={{
+            fontSize: "0.78rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+          }}>
+            Hikâye demleniyor — {arc.wait_weeks} ay sonra devam edecek. Ayı ilerlet.
+          </span>
         </div>
       ) : (
-        <div className="space-y-1.5">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
           {arc.choices.map((c) => (
             <button key={c.index} disabled={busy}
-              onClick={() => onChoose(arc.arc_id, c.index)}
-              className="w-full text-left text-xs px-3 py-2 rounded-sm border border-stone-700 text-stone-200 hover:border-orange-800 hover:bg-stone-900 transition-colors flex items-center justify-between">
-              <span>{c.text}</span>
+              onClick={() => { playSfx("page"); onChoose(arc.arc_id, c.index); }}
+              className="row-frame"
+              style={{
+                width: "100%", textAlign: "left", cursor: busy ? "not-allowed" : "pointer",
+                justifyContent: "space-between", opacity: busy ? 0.6 : 1,
+              }}>
+              <span className="font-serif" style={{
+                fontSize: "0.82rem", color: "var(--color-parchment)", lineHeight: 1.4,
+              }}>
+                ❧ {c.text}
+              </span>
               <TestBadge test={c.test} />
             </button>
           ))}
@@ -147,95 +200,170 @@ export default function StoryJournal() {
 
   if (!journal) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-5 h-5 animate-spin text-stone-600" />
+      <div className="page-shell rise-in" style={{
+        display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", padding: "5rem 1rem", gap: "0.6rem",
+      }}>
+        <span style={{ fontSize: "1.5rem", opacity: 0.5,
+                       filter: "drop-shadow(0 0 10px rgba(201,168,76,0.3))" }}>📖</span>
+        <span className="font-serif" style={{
+          fontSize: "0.85rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+        }}>
+          Defterin sayfaları çevriliyor…
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-3 py-4 space-y-5" data-testid="story-journal-page">
-      <h1 className="text-lg font-heading text-stone-200 flex items-center gap-2">
-        <BookOpen className="w-4 h-4 text-orange-500" /> Hikâyeler
-      </h1>
+    <div className="page-shell rise-in"
+      style={{ display: "flex", flexDirection: "column", gap: "0.9rem", padding: "0 0.75rem 1.5rem" }}
+      data-testid="story-journal-page">
+      <PageHeader
+        kicker="Kader Defteri"
+        icon="📖"
+        title="Hikâyelerim"
+        sub="Her yay bir kitap sırtı — kimi açık durur, kimi mühürlenmiştir."
+      />
 
       {lastOutcome?.result && (
-        <div className={`border rounded-sm p-3 text-xs leading-relaxed italic ${
-          lastOutcome.ok ? "border-emerald-900/50 bg-emerald-950/20 text-emerald-200"
-                         : "border-red-900/50 bg-red-950/20 text-red-200"}`}>
-          {lastOutcome.result}
+        <div className="row-frame" style={{
+          alignItems: "flex-start",
+          borderLeft: `2px solid ${lastOutcome.ok ? TONES.sage.border : TONES.blood.border}`,
+          background: `linear-gradient(to right, ${lastOutcome.ok ? TONES.sage.bg : TONES.blood.bg}, transparent 65%)`,
+        }}>
+          <span style={{ fontSize: "0.9rem", flexShrink: 0, marginTop: "0.05rem" }}>
+            {lastOutcome.ok ? "🕊" : "🩸"}
+          </span>
+          <span className="font-serif" style={{
+            fontSize: "0.84rem", fontStyle: "italic", lineHeight: 1.5,
+            color: lastOutcome.ok ? TONES.sage.text : TONES.blood.text,
+          }}>
+            {lastOutcome.result}
+          </span>
         </div>
       )}
 
       {journal.offers.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-xs font-heading tracking-widest text-stone-500 uppercase flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Kapını Çalanlar
-          </h2>
-          {journal.offers.map((o) => (
-            <div key={o.arc_id} className="border border-amber-900/40 bg-amber-950/10 rounded-sm p-3 space-y-2">
-              <h3 className="font-heading text-sm text-amber-300">{o.title}</h3>
-              <p className="text-xs text-stone-400 italic leading-relaxed">{o.hook}</p>
-              <div className="flex gap-2">
-                <button disabled={busy} onClick={() => onStart(o.arc_id)}
-                  className="flex-1 py-1.5 rounded-sm text-xs font-heading border border-orange-800 text-orange-400 hover:bg-stone-900">
-                  Hikâyeye Gir
-                </button>
-                <button disabled={busy} onClick={() => onDecline(o.arc_id)}
-                  className="px-3 py-1.5 rounded-sm text-xs border border-stone-800 text-stone-500 hover:text-stone-300">
-                  Geri Çevir
-                </button>
+        <Panel title="Kapını Çalanlar" icon="✉" tone="gold"
+          right={<Pill tone="gold">{journal.offers.length} davet</Pill>}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            {journal.offers.map((o) => (
+              <div key={o.arc_id} style={{
+                padding: "0.75rem",
+                borderRadius: "6px",
+                border: "1px solid rgba(201,168,76,0.35)",
+                background: "linear-gradient(160deg, rgba(201,168,76,0.07) 0%, rgba(20,14,7,0.5) 65%)",
+                boxShadow: "inset 0 1px 0 rgba(201,168,76,0.12)",
+                display: "flex", flexDirection: "column", gap: "0.5rem",
+              }}>
+                <h3 className="font-display" style={{
+                  fontSize: "0.82rem", fontWeight: 700, color: "var(--color-gold)",
+                  letterSpacing: "0.05em", margin: 0,
+                  textShadow: "0 0 10px rgba(201,168,76,0.25)",
+                }}>
+                  ✉ {o.title}
+                </h3>
+                <p className="font-serif" style={{
+                  fontSize: "0.82rem", fontStyle: "italic", lineHeight: 1.5,
+                  color: "var(--color-parchment-dim)", margin: 0,
+                }}>
+                  {o.hook}
+                </p>
+                <div style={{ display: "flex", gap: "0.4rem" }}>
+                  <button disabled={busy}
+                    onClick={() => { playSfx("page"); onStart(o.arc_id); }}
+                    className="btn-ember"
+                    style={{ flex: 1, padding: "0.45rem 0.6rem", fontSize: "0.6rem" }}>
+                    Hikâyeye Gir
+                  </button>
+                  <button disabled={busy}
+                    onClick={() => { playSfx("click"); onDecline(o.arc_id); }}
+                    className="btn-ghost-ash"
+                    style={{ padding: "0.45rem 0.8rem", fontSize: "0.58rem" }}>
+                    Geri Çevir
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Panel>
       )}
 
       {journal.active.length > 0 ? (
-        <div className="space-y-3">
-          <h2 className="text-xs font-heading tracking-widest text-stone-500 uppercase">
-            Aktif Hikâyeler
-          </h2>
-          {journal.active.map((a) => (
-            <ActiveArc key={a.arc_id} arc={a} busy={busy} onChoose={onChoose} />
-          ))}
-        </div>
+        <Panel title="Aktif Hikâyeler" icon="🔥" tone="ember"
+          right={<Pill tone="ember">{journal.active.length} yay</Pill>}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            {journal.active.map((a) => (
+              <ActiveArc key={a.arc_id} arc={a} busy={busy} onChoose={onChoose} />
+            ))}
+          </div>
+        </Panel>
       ) : journal.offers.length === 0 && (
-        <div className="border border-dashed border-stone-800 rounded-sm p-6 text-center space-y-1">
-          <BookOpen className="w-6 h-6 text-stone-700 mx-auto" />
-          <p className="text-sm text-stone-400">Şu an seni bekleyen bir hikâye yok.</p>
-          <p className="text-[11px] text-stone-600">
-            Haftaları ilerlet — kader kapını çalacaktır. Bazı hikâyeler yaş, ün veya beceri ister.
-          </p>
+        <div className="card-frame">
+          <EmptyState icon="📖"
+            title="Şu an seni bekleyen bir hikâye yok."
+            sub="Ayları ilerlet — kader kapını çalacaktır. Bazı hikâyeler yaş, ün veya beceri ister." />
         </div>
       )}
 
       {journal.finished.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-xs font-heading tracking-widest text-stone-500 uppercase">
-            Kapanan Defterler
-          </h2>
-          {journal.finished.map((f) => (
-            <div key={f.arc_id} className="border border-stone-800/60 rounded-sm p-3 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-stone-400 font-heading">{f.title}</span>
-                {f.status === "tamamlandı" ? (
-                  <span className="text-[9px] text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Tamamlandı
-                  </span>
-                ) : (
-                  <span className="text-[9px] text-red-400/80 flex items-center gap-1">
-                    <XCircle className="w-3 h-3" />
-                    {f.status === "süresi_doldu" ? "Süresi doldu"
-                      : f.status === "yarım_kaldı" ? "Yarım kaldı (önceki nesil)"
-                      : "Kötü bitti"}
-                  </span>
-                )}
-              </div>
-              <ArcLog log={f.log} />
-            </div>
-          ))}
-        </div>
+        <Panel title="Kapanan Defterler" icon="🔏" tone="ash"
+          right={<Pill tone="ash">{journal.finished.length} cilt</Pill>}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            {journal.finished.map((f) => {
+              const sealed = f.status === "tamamlandı";
+              return (
+                <div key={f.arc_id} style={{
+                  padding: "0.65rem 0.75rem 0.65rem 0.9rem",
+                  borderRadius: "6px",
+                  border: "1px solid var(--color-border)",
+                  borderLeft: sealed
+                    ? "4px solid rgba(201,168,76,0.5)"
+                    : "4px solid rgba(122,106,79,0.35)",
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.015), transparent)",
+                  opacity: sealed ? 1 : 0.85,
+                  display: "flex", flexDirection: "column", gap: "0.3rem",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
+                      <span style={{
+                        width: "1.5rem", height: "1.5rem", flexShrink: 0, borderRadius: "50%",
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "0.65rem",
+                        border: sealed ? "1px solid rgba(201,168,76,0.5)" : "1px solid rgba(200,64,64,0.4)",
+                        background: sealed
+                          ? "radial-gradient(circle, rgba(201,168,76,0.25), rgba(139,105,20,0.1))"
+                          : "radial-gradient(circle, rgba(200,64,64,0.2), rgba(60,20,20,0.15))",
+                        boxShadow: sealed ? "0 0 8px rgba(201,168,76,0.25)" : "none",
+                      }}>
+                        {sealed ? "⚜" : "✕"}
+                      </span>
+                      <span className="font-display" style={{
+                        fontSize: "0.76rem", fontWeight: 700,
+                        color: sealed ? "var(--color-parchment)" : "var(--color-parchment-dim)",
+                        letterSpacing: "0.04em",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {f.title}
+                      </span>
+                    </span>
+                    {f.status === "tamamlandı" ? (
+                      <Pill tone="sage">🔏 Tamamlandı</Pill>
+                    ) : (
+                      <Pill tone="blood">
+                        {f.status === "süresi_doldu" ? "Süresi doldu"
+                          : f.status === "yarım_kaldı" ? "Yarım kaldı (önceki nesil)"
+                          : "Kötü bitti"}
+                      </Pill>
+                    )}
+                  </div>
+                  <ArcLog log={f.log} />
+                </div>
+              );
+            })}
+          </div>
+        </Panel>
       )}
     </div>
   );

@@ -1,13 +1,16 @@
+/**
+ * Mülkler — KÜL & KÖZ.
+ * Duygu görevi: "Toprağım büyüyor" — her kart bir tapu senedi gibi.
+ * İşlevsellik (API çağrıları, hook akışı, data-testid'ler) birebir korunur.
+ */
 import { useEffect, useState, useCallback } from "react";
 import { profLabel } from "@/lib/labels";
 import { useGame } from "@/lib/GameContext";
 import { api, extractErrorMessage } from "@/lib/api";
 import { useActionRedirect } from "@/hooks/useActionRedirect";
+import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
-import {
-  Coins, Loader2, Home, Hammer, Users, TrendingUp, TrendingDown,
-  ChevronDown, ChevronUp, Wheat, ShoppingBag, X, Plus, ArrowUp,
-} from "lucide-react";
+import { PageHeader, Panel, Pill, GoldRule, EmptyState, Coin, TONES } from "@/components/ui/Kit";
 
 const GOOD_LABELS = {
   "buğday": "Buğday", "un": "Un", "ekmek": "Ekmek", "et": "Et",
@@ -20,15 +23,32 @@ const GOOD_LABELS = {
 };
 const gl = (g) => GOOD_LABELS[g] || g;
 
+/* Seçilebilir küçük buton — config kontrolleri için ortak stil */
+const optBtn = (active) => ({
+  padding: "0.22rem 0.55rem", borderRadius: "4px", cursor: "pointer",
+  fontFamily: "Cinzel, serif", fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.08em",
+  border: `1px solid ${active ? "rgba(201,168,76,0.55)" : "rgba(122,106,79,0.4)"}`,
+  background: active ? "rgba(201,168,76,0.1)" : "transparent",
+  color: active ? "var(--color-gold)" : "var(--color-parchment-muted)",
+  transition: "all 0.15s",
+});
+
 /* ── Kondisyon çubuğu ─────────────────────────────────────────────── */
 function ConditionBar({ value }) {
-  const color = value > 60 ? "bg-emerald-600" : value > 30 ? "bg-amber-600" : "bg-red-600";
+  const t = value > 60 ? TONES.sage : value > 30 ? TONES.gold : TONES.blood;
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 bg-stone-800 rounded-sm overflow-hidden">
-        <div className={`h-full ${color}`} style={{ width: `${value}%` }} />
+    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+      <span className="label-tiny" style={{ flexShrink: 0 }}>Bakım</span>
+      <div style={{ flex: 1, height: "5px", background: "rgba(255,255,255,0.07)", borderRadius: "2px", overflow: "hidden" }}>
+        <div style={{
+          height: "100%", width: `${value}%`, borderRadius: "2px",
+          background: `linear-gradient(to right, ${t.text}99, ${t.text})`,
+          boxShadow: `0 0 6px ${t.text}55`, transition: "width 0.5s ease",
+        }} />
       </div>
-      <span className="text-[10px] text-stone-500">%{value}</span>
+      <span className="font-display" style={{ fontSize: "0.58rem", fontWeight: 700, color: t.text, flexShrink: 0 }}>
+        %{value}
+      </span>
     </div>
   );
 }
@@ -43,36 +63,61 @@ function WorkerSection({ prop, npcs, onHire, onFire, busy }) {
   ).slice(0, 12);
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-[10px] text-stone-500 font-heading tracking-wider uppercase">
-        <span className="flex items-center gap-1"><Users className="w-3 h-3" />
-          İşçiler {prop.workers.length}/{prop.max_workers}</span>
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span className="label-tiny">
+          👥 İşçiler {prop.workers.length}/{prop.max_workers}
+        </span>
         {prop.workers.length < prop.max_workers && (
           <button onClick={() => setOpen(!open)}
-            className="text-orange-400 flex items-center gap-0.5">
-            <Plus className="w-3 h-3" /> Tut
+            className="font-display"
+            style={{
+              background: "none", border: "none", padding: 0, cursor: "pointer",
+              fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.12em",
+              textTransform: "uppercase", color: "var(--color-gold)",
+            }}>
+            ＋ Tut
           </button>
         )}
       </div>
       {prop.workers.map((w) => (
-        <div key={w.id} className="flex items-center justify-between text-xs border border-stone-800/40 rounded-sm px-2 py-1">
-          <span className="text-stone-300">{w.name}
-            <span className="text-stone-600 ml-1">({profLabel(w.profession)} · ×{w.productivity})</span></span>
+        <div key={w.id} className="row-frame" style={{ padding: "0.35rem 0.6rem", justifyContent: "space-between" }}>
+          <span className="font-serif" style={{ fontSize: "0.78rem", color: "var(--color-parchment)" }}>
+            {w.name}
+            <span style={{ color: "var(--color-parchment-muted)", marginLeft: "0.3rem", fontSize: "0.68rem" }}>
+              ({profLabel(w.profession)} · ×{w.productivity})
+            </span>
+          </span>
           <button disabled={busy} onClick={() => onFire(prop.id, w.id)}
-            className="text-red-400/70 hover:text-red-400"><X className="w-3 h-3" /></button>
+            style={{
+              background: "none", border: "none", padding: "0 0.2rem", cursor: "pointer",
+              color: "rgba(200,64,64,0.7)", fontSize: "0.75rem",
+            }}>
+            ✕
+          </button>
         </div>
       ))}
       {open && (
-        <div className="border border-stone-800 rounded-sm p-2 space-y-1 max-h-40 overflow-y-auto bg-stone-950/40">
+        <div style={{
+          border: "1px solid var(--color-border)", borderRadius: "6px", padding: "0.45rem",
+          display: "flex", flexDirection: "column", gap: "0.2rem",
+          maxHeight: "10rem", overflowY: "auto", background: "rgba(10,7,4,0.45)",
+        }}>
           {candidates.length === 0 && (
-            <p className="text-[10px] text-stone-600">Bu yerleşimde uygun işçi yok.</p>
+            <p className="font-serif" style={{ fontSize: "0.7rem", fontStyle: "italic", color: "var(--color-parchment-muted)", margin: 0 }}>
+              Bu yerleşimde uygun işçi yok.
+            </p>
           )}
           {candidates.map((n) => (
             <button key={n.id} disabled={busy}
               onClick={() => { onHire(prop.id, n.id); setOpen(false); }}
-              className="w-full flex items-center justify-between text-xs px-2 py-1 rounded-sm hover:bg-stone-900 text-left">
-              <span className="text-stone-300">{n.name}</span>
-              <span className="text-stone-600 text-[10px]">{profLabel(n.profession)}</span>
+              style={{
+                width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "0.3rem 0.5rem", borderRadius: "4px", border: "none", cursor: "pointer",
+                background: "transparent", textAlign: "left",
+              }}>
+              <span className="font-serif" style={{ fontSize: "0.78rem", color: "var(--color-parchment)" }}>{n.name}</span>
+              <span className="label-tiny">{profLabel(n.profession)}</span>
             </button>
           ))}
         </div>
@@ -85,15 +130,12 @@ function WorkerSection({ prop, npcs, onHire, onFire, busy }) {
 function ConfigSection({ prop, catalog, onConfigure, busy }) {
   if (prop.type === "tarla") {
     return (
-      <div className="flex items-center gap-2 text-xs">
-        <span className="text-stone-500">Ekin:</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+        <span className="label-tiny">Ekin:</span>
         {(catalog?.crops || ["buğday", "üzüm"]).map((c) => (
           <button key={c} disabled={busy}
             onClick={() => onConfigure(prop.id, { crop: c })}
-            className={`px-2 py-0.5 rounded-sm border ${
-              prop.config.crop === c
-                ? "border-orange-800 text-orange-400 bg-stone-900"
-                : "border-stone-800 text-stone-500"}`}>
+            style={optBtn(prop.config.crop === c)}>
             {gl(c)}
           </button>
         ))}
@@ -102,31 +144,30 @@ function ConfigSection({ prop, catalog, onConfigure, busy }) {
   }
   if (prop.type === "dükkân") {
     return (
-      <div className="space-y-1.5 text-xs">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-stone-500">Stok:</span>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+          <span className="label-tiny">Stok:</span>
           <select
             value={prop.config.stock_good}
             disabled={busy}
             onChange={(e) => onConfigure(prop.id, { stock_good: e.target.value })}
-            className="bg-stone-950 border border-stone-800 rounded-sm px-1.5 py-0.5 text-stone-300">
+            style={{ fontSize: "0.75rem", padding: "0.2rem 0.4rem" }}>
             {Object.keys(GOOD_LABELS).map((g) => (
               <option key={g} value={g}>{gl(g)}</option>
             ))}
           </select>
-          <span className="text-stone-500">Marj:</span>
+          <span className="label-tiny">Marj:</span>
           {[0.15, 0.25, 0.4].map((m) => (
             <button key={m} disabled={busy}
               onClick={() => onConfigure(prop.id, { margin: m })}
-              className={`px-2 py-0.5 rounded-sm border ${
-                Math.abs(prop.config.margin - m) < 0.01
-                  ? "border-orange-800 text-orange-400 bg-stone-900"
-                  : "border-stone-800 text-stone-500"}`}>
+              style={optBtn(Math.abs(prop.config.margin - m) < 0.01)}>
               %{Math.round(m * 100)}
             </button>
           ))}
         </div>
-        <p className="text-[10px] text-stone-600">Yüksek marj = az satış, düşük marj = çok satış.</p>
+        <p className="font-serif" style={{ fontSize: "0.66rem", fontStyle: "italic", color: "var(--color-parchment-muted)", margin: 0 }}>
+          Yüksek marj az ama kârlı satış; düşük marj çok ama cüzi satış demektir.
+        </p>
       </div>
     );
   }
@@ -134,8 +175,8 @@ function ConfigSection({ prop, catalog, onConfigure, busy }) {
     const options = catalog?.recipe_options || [];
     const current = `${prop.config.recipe_prof}:${prop.config.recipe_id}`;
     return (
-      <div className="flex items-center gap-2 text-xs flex-wrap">
-        <span className="text-stone-500">Ürün hattı:</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+        <span className="label-tiny">Ürün hattı:</span>
         <select
           value={current}
           disabled={busy}
@@ -143,7 +184,7 @@ function ConfigSection({ prop, catalog, onConfigure, busy }) {
             const [rp, rid] = e.target.value.split(":");
             onConfigure(prop.id, { recipe_prof: rp, recipe_id: rid });
           }}
-          className="bg-stone-950 border border-stone-800 rounded-sm px-1.5 py-0.5 text-stone-300 max-w-full">
+          style={{ fontSize: "0.75rem", padding: "0.2rem 0.4rem", maxWidth: "100%" }}>
           {options.map((o) => {
             const inp = Object.entries(o.input).map(([g, q]) => `${q} ${gl(g)}`).join(" + ");
             const out = Object.entries(o.output).map(([g, q]) => `${q} ${gl(g)}`).join("");
@@ -159,26 +200,20 @@ function ConfigSection({ prop, catalog, onConfigure, busy }) {
   }
   if (prop.type === "han") {
     return (
-      <div className="flex items-center gap-2 text-xs flex-wrap">
-        <span className="text-stone-500">Oda:</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+        <span className="label-tiny">Oda:</span>
         {[3, 5, 8, 12].map((p) => (
           <button key={p} disabled={busy}
             onClick={() => onConfigure(prop.id, { room_price: p })}
-            className={`px-2 py-0.5 rounded-sm border ${
-              prop.config.room_price === p
-                ? "border-orange-800 text-orange-400 bg-stone-900"
-                : "border-stone-800 text-stone-500"}`}>
-            {p}a
+            style={optBtn(prop.config.room_price === p)}>
+            {p}⚜
           </button>
         ))}
-        <span className="text-stone-500 ml-1">Muhafız:</span>
+        <span className="label-tiny" style={{ marginLeft: "0.2rem" }}>Muhafız:</span>
         {[0, 1, 2].map((g) => (
           <button key={g} disabled={busy}
             onClick={() => onConfigure(prop.id, { guards: g })}
-            className={`px-2 py-0.5 rounded-sm border ${
-              prop.config.guards === g
-                ? "border-orange-800 text-orange-400 bg-stone-900"
-                : "border-stone-800 text-stone-500"}`}>
+            style={optBtn(prop.config.guards === g)}>
             {g}
           </button>
         ))}
@@ -187,14 +222,22 @@ function ConfigSection({ prop, catalog, onConfigure, busy }) {
   }
   if (prop.type === "ev") {
     return (
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-stone-400">{prop.tier_label}</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+        <span className="font-serif" style={{ fontSize: "0.78rem", fontStyle: "italic", color: "var(--color-parchment-dim)" }}>
+          {prop.tier_label}
+        </span>
         {prop.next_tier && (
           <button disabled={busy}
             onClick={() => onConfigure(prop.id, null, true)}
-            className="flex items-center gap-1 px-2 py-1 rounded-sm border border-amber-900 text-amber-400 hover:bg-stone-900">
-            <ArrowUp className="w-3 h-3" />
-            {prop.next_tier.label} ({prop.next_tier.cost}a)
+            className="font-display"
+            style={{
+              display: "flex", alignItems: "center", gap: "0.3rem",
+              padding: "0.3rem 0.6rem", borderRadius: "4px", cursor: "pointer",
+              fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.1em",
+              border: "1px solid rgba(201,168,76,0.5)", background: "rgba(201,168,76,0.08)",
+              color: "var(--color-gold)",
+            }}>
+            ↑ {prop.next_tier.label} (<Coin value={prop.next_tier.cost} size="0.62rem" />)
           </button>
         )}
       </div>
@@ -203,43 +246,67 @@ function ConfigSection({ prop, catalog, onConfigure, busy }) {
   return null;
 }
 
-/* ── Mülk kartı ───────────────────────────────────────────────────── */
+/* ── Mülk kartı — tapu senedi ─────────────────────────────────────── */
 function PropertyCard({ prop, catalog, npcs, busy, onConfigure, onHire, onFire, onHarvest, onSell }) {
   const [showLedger, setShowLedger] = useState(false);
   const profit = prop.total_profit || 0;
   return (
-    <div className="border border-stone-800 rounded-sm p-3 space-y-2.5 bg-stone-950/30"
-      data-testid={`property-card-${prop.type}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xl shrink-0">{prop.icon}</span>
-          <div className="min-w-0">
-            <h3 className="text-sm text-stone-200 font-heading truncate">{prop.name}</h3>
-            <p className="text-[10px] text-stone-500">{prop.location_name} · bakım {prop.maintenance}a/ay</p>
+    <div className="card-frame"
+      data-testid={`property-card-${prop.type}`}
+      style={{ padding: "0.85rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+      {/* Tapu başlığı */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", minWidth: 0 }}>
+          <span style={{ fontSize: "1.4rem", flexShrink: 0, filter: "drop-shadow(0 0 8px rgba(201,168,76,0.3))" }}>
+            {prop.icon}
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <h3 className="font-display" style={{
+              fontSize: "0.85rem", fontWeight: 700, color: "var(--color-parchment)",
+              margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              textShadow: "0 0 10px rgba(201,168,76,0.15)",
+            }}>
+              {prop.name}
+            </h3>
+            <p className="font-serif" style={{
+              fontSize: "0.68rem", fontStyle: "italic", color: "var(--color-parchment-muted)", margin: 0,
+            }}>
+              {prop.location_name} · bakım <Coin value={prop.maintenance} size="0.62rem" />/ay
+            </p>
           </div>
         </div>
-        <div className={`flex items-center gap-1 text-xs shrink-0 ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-          {profit >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-          {profit >= 0 ? "+" : ""}{Math.round(profit)}a
-        </div>
+        <Pill tone={profit >= 0 ? "sage" : "blood"}>
+          {profit >= 0 ? "▲ +" : "▼ "}{Math.round(profit)} ⚜
+        </Pill>
       </div>
+
+      <GoldRule />
 
       <ConditionBar value={prop.condition} />
       <ConfigSection prop={prop} catalog={catalog} onConfigure={onConfigure} busy={busy} />
 
       {prop.type === "tarla" && prop.pending_harvest > 0 && (
         <button disabled={busy} onClick={() => onHarvest(prop.id)}
-          className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-sm bg-amber-900/40 border border-amber-800 text-amber-300 text-xs font-heading">
-          <Wheat className="w-3.5 h-3.5" />
-          Hasadı Topla ({prop.pending_harvest} {gl(prop.config.crop)})
+          className="btn-ember font-display"
+          style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
+            gap: "0.4rem", padding: "0.5rem 0", fontSize: "0.66rem",
+          }}>
+          🌾 Hasadı Topla ({prop.pending_harvest} {gl(prop.config.crop)})
         </button>
       )}
 
       {/* GDD v8 D3: defter eksideyken oyuncu 'zarar' sanmasın — toprakta
           büyüyen değer görünür olsun */}
       {prop.type === "tarla" && prop.bekleyen_hasat_degeri > 0 && prop.pending_harvest <= 0 && (
-        <div className="text-[10px] text-emerald-400/80 italic flex items-center gap-1">
-          🌱 Toprakta büyüyen: ~{prop.bekleyen_hasat_degeri} altın değerinde ekin
+        <div className="row-frame" style={{
+          padding: "0.4rem 0.6rem",
+          border: "1px solid rgba(74,154,90,0.35)", background: "rgba(74,154,90,0.06)",
+        }}>
+          <span style={{ fontSize: "0.85rem" }}>🌱</span>
+          <span className="font-serif" style={{ fontSize: "0.72rem", fontStyle: "italic", color: "#6FBF7F" }}>
+            Toprakta büyüyen: ~<Coin value={prop.bekleyen_hasat_degeri} size="0.7rem" /> değerinde ekin
+          </span>
         </div>
       )}
 
@@ -247,24 +314,46 @@ function PropertyCard({ prop, catalog, npcs, busy, onConfigure, onHire, onFire, 
         <WorkerSection prop={prop} npcs={npcs} onHire={onHire} onFire={onFire} busy={busy} />
       )}
 
-      <div className="flex items-center justify-between pt-1 border-t border-stone-800/50">
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        paddingTop: "0.4rem", borderTop: "1px solid var(--color-border)",
+      }}>
         <button onClick={() => setShowLedger(!showLedger)}
-          className="text-[10px] text-stone-500 flex items-center gap-1">
-          Defter {showLedger ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          className="font-display"
+          style={{
+            background: "none", border: "none", padding: 0, cursor: "pointer",
+            fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase",
+            color: "var(--color-parchment-muted)", display: "flex", alignItems: "center", gap: "0.25rem",
+          }}>
+          📜 Defter {showLedger ? "▲" : "▼"}
         </button>
         <button disabled={busy} onClick={() => onSell(prop)}
-          className="text-[10px] text-red-400/70 hover:text-red-400">
-          Sat ({prop.sale_value}a)
+          className="font-display"
+          style={{
+            background: "none", border: "none", padding: 0, cursor: "pointer",
+            fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+            color: "rgba(200,64,64,0.8)",
+          }}>
+          Sat ({prop.sale_value} ⚜)
         </button>
       </div>
       {showLedger && (
-        <div className="space-y-0.5 max-h-32 overflow-y-auto">
-          {prop.ledger.length === 0 && <p className="text-[10px] text-stone-600">Henüz kayıt yok.</p>}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem", maxHeight: "8rem", overflowY: "auto" }}>
+          {prop.ledger.length === 0 && (
+            <p className="font-serif" style={{ fontSize: "0.68rem", fontStyle: "italic", color: "var(--color-parchment-muted)", margin: 0 }}>
+              Deftere henüz mürekkep değmedi.
+            </p>
+          )}
           {prop.ledger.map((l, i) => (
-            <div key={i} className="flex items-center justify-between text-[10px] text-stone-500">
-              <span>T{l.day} · {l.kind}{l.note ? ` · ${l.note}` : ""}</span>
-              <span className={l.amount >= 0 ? "text-emerald-500/80" : "text-red-500/80"}>
-                {l.amount >= 0 ? "+" : ""}{l.amount}a
+            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span className="font-serif" style={{ fontSize: "0.68rem", color: "var(--color-parchment-muted)" }}>
+                T{l.day} · {l.kind}{l.note ? ` · ${l.note}` : ""}
+              </span>
+              <span className="font-display" style={{
+                fontSize: "0.62rem", fontWeight: 700,
+                color: l.amount >= 0 ? "rgba(111,191,127,0.85)" : "rgba(200,64,64,0.85)",
+              }}>
+                {l.amount >= 0 ? "+" : ""}{l.amount} ⚜
               </span>
             </div>
           ))}
@@ -278,40 +367,45 @@ function PropertyCard({ prop, catalog, npcs, busy, onConfigure, onHire, onFire, 
 function Catalog({ catalog, money, busy, onBuy }) {
   if (!catalog) return null;
   return (
-    <div className="space-y-2">
-      <h2 className="text-xs font-heading tracking-widest text-stone-500 uppercase flex items-center gap-1.5">
-        <ShoppingBag className="w-3.5 h-3.5" />
-        Satın Al — {catalog.location}
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+    <Panel title={`Tapu Dairesi — ${catalog.location}`} icon="🪶" tone="gold">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.6rem" }}>
         {catalog.types.map((t) => {
           const affordable = money >= t.cost;
           return (
-            <div key={t.type} className="border border-stone-800 rounded-sm p-3 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-stone-200">{t.icon} {t.label}</span>
-                <span className={`text-xs font-heading ${affordable ? "text-amber-400" : "text-stone-600"}`}>
-                  {t.cost}a
+            <div key={t.type} className="row-frame" style={{
+              flexDirection: "column", alignItems: "stretch", gap: "0.4rem", padding: "0.7rem",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span className="font-display" style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--color-parchment)" }}>
+                  {t.icon} {t.label}
+                </span>
+                <span style={{ opacity: affordable ? 1 : 0.45 }}>
+                  <Coin value={t.cost} />
                 </span>
               </div>
-              <p className="text-[10px] text-stone-500 leading-relaxed">{t.desc}</p>
+              <p className="font-serif" style={{
+                fontSize: "0.7rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+                lineHeight: 1.5, margin: 0,
+              }}>
+                {t.desc}
+              </p>
               {!t.eligible ? (
-                <p className="text-[10px] text-red-400/70">En az {t.min_age} yaş gerekli.</p>
+                <p className="font-serif" style={{ fontSize: "0.68rem", fontStyle: "italic", color: "rgba(200,64,64,0.8)", margin: 0 }}>
+                  En az {t.min_age} yaş gerekli.
+                </p>
               ) : (
                 <button disabled={busy || !affordable}
                   onClick={() => onBuy(t.type)}
-                  className={`w-full py-1.5 rounded-sm text-xs font-heading border ${
-                    affordable
-                      ? "border-orange-800 text-orange-400 hover:bg-stone-900"
-                      : "border-stone-800 text-stone-600 cursor-not-allowed"}`}>
-                  Satın Al
+                  className={affordable ? "btn-ember" : "btn-ghost-ash"}
+                  style={{ width: "100%", padding: "0.45rem 0", fontSize: "0.62rem" }}>
+                  Senedi İmzala
                 </button>
               )}
             </div>
           );
         })}
       </div>
-    </div>
+    </Panel>
   );
 }
 
@@ -347,6 +441,7 @@ export default function Properties() {
       if (data?.properties) setProperties(data.properties);
       if (data?.money != null) setMoney(data.money);
       if (successMsg) toast.success(successMsg);
+      playSfx("click");
     } catch (e) {
       toast.error(extractErrorMessage(e));
     } finally {
@@ -357,6 +452,7 @@ export default function Properties() {
   const onBuy = (type) =>
     withRedirect(async () => {
       const { data } = await api.post("/property/buy", { type });
+      playSfx("coin");
       toast.success("Mülk satın alındı!");
       return data;
     }).catch((e) => toast.error(extractErrorMessage(e)));
@@ -365,6 +461,7 @@ export default function Properties() {
     if (!window.confirm(`${prop.name} ${prop.sale_value} altına satılsın mı?`)) return;
     withRedirect(async () => {
       const { data } = await api.post("/property/sell", { property_id: prop.id });
+      playSfx("coin");
       toast.success("Mülk satıldı.");
       return data;
     }).catch((e) => toast.error(extractErrorMessage(e)));
@@ -385,6 +482,7 @@ export default function Properties() {
   const onHarvest = (propertyId) =>
     withRedirect(async () => {
       const { data } = await api.post("/property/harvest", { property_id: propertyId });
+      playSfx("success");
       toast.success("Hasat toplandı!");
       return data;
     }).catch((e) => toast.error(extractErrorMessage(e)));
@@ -393,33 +491,37 @@ export default function Properties() {
 
   if (properties === null) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-5 h-5 animate-spin text-stone-600" />
+      <div className="page-shell rise-in">
+        <EmptyState icon="📜" title="Tapular sandıktan çıkarılıyor…" sub="Kayıtlar mühürleniyor, bir nefes bekle." />
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-3 py-4 space-y-5" data-testid="properties-page">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-heading text-stone-200 flex items-center gap-2">
-          <Home className="w-4 h-4 text-orange-500" /> Mülklerim
-        </h1>
-        <span className="flex items-center gap-1 text-sm text-amber-400 font-heading">
-          <Coins className="w-3.5 h-3.5" /> {Math.round(money)}a
-        </span>
-      </div>
+    <div className="page-shell rise-in" style={{ padding: "0 0 1.5rem" }} data-testid="properties-page">
+      <PageHeader
+        kicker="Toprak & Taş"
+        icon="🏰"
+        title="Mülklerim"
+        sub="Adının yazdığı her tapu, çocuklarına kalacak bir hikâyedir."
+        right={
+          <div style={{ textAlign: "right" }}>
+            <div className="label-tiny" style={{ marginBottom: "0.1rem" }}>Kese</div>
+            <Coin value={Math.round(money)} size="1rem" />
+          </div>
+        }
+      />
 
       {properties.length === 0 ? (
-        <div className="border border-dashed border-stone-800 rounded-sm p-6 text-center space-y-1">
-          <Hammer className="w-6 h-6 text-stone-700 mx-auto" />
-          <p className="text-sm text-stone-400">Henüz mülkün yok.</p>
-          <p className="text-[11px] text-stone-600">
-            Tarladan başla: 800 akçe civarı. Hasat, dükkân ve atölyelerle servetini büyüt.
-          </p>
-        </div>
+        <Panel title="Tapu Sandığı" icon="🗝" tone="ash">
+          <EmptyState
+            icon="🏚"
+            title="Henüz adına yazılı bir karış toprak yok."
+            sub="Tarladan başla — 800 akçe civarı. Hasat, dükkân ve atölyelerle servetini büyüt."
+          />
+        </Panel>
       ) : (
-        <div className="space-y-3">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {properties.map((p) => (
             <PropertyCard key={p.id} prop={p} catalog={catalog} npcs={npcs} busy={busy}
               onConfigure={onConfigure} onHire={onHire} onFire={onFire}
@@ -427,6 +529,8 @@ export default function Properties() {
           ))}
         </div>
       )}
+
+      <GoldRule label="Yeni Senet" />
 
       <Catalog catalog={catalog} money={money} busy={busy} onBuy={onBuy} />
     </div>

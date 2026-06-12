@@ -1,15 +1,16 @@
+/**
+ * Nesil & Aile — KÜL & KÖZ görsel yeniden tasarım.
+ * Duygu görevi: "Çocuklarım, geleceğim." — çocuk kartları sevgiyle
+ * çerçevelenmiş, vâris seçimi törensel.
+ * İşlevsellik (API çağrıları, hook akışı, koşullar) birebir korunur.
+ */
 import { useState, useMemo } from "react";
 import { profLabel } from "@/lib/labels";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
+import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
-import {
-  Baby, Heart, Sword, BookOpen, Star, Crown,
-  Loader2, UserCircle, GitBranch, Hourglass,
-  ChevronDown, ChevronUp, X, Coins, Shield,
-  Hammer, MessageSquare, Stethoscope, Briefcase,
-  TrendingUp, Scroll,
-} from "lucide-react";
+import { PageHeader, Panel, Pill, GoldRule, Coin, EmptyState, TONES } from "@/components/ui/Kit";
 
 /* ─────────────────── Sabitler ─────────────────── */
 const STAT_ICONS  = { strength: "⚔", intelligence: "📖", charisma: "💬", stamina: "🛡", str: "⚔", agi: "🏃", int: "📖", cha: "💬", end: "🛡" };
@@ -17,11 +18,11 @@ const STAT_LABELS = { strength: "Güç", intelligence: "Zeka", charisma: "Karizm
 const SKILL_LABELS= { combat: "Dövüş", trade: "Ticaret", crafting: "Zanaat", social: "Sosyal" };
 
 const INVEST_OPTIONS = [
-  { type: "egitim",         label: "Eğitim",         desc: "Zekasını artır",       cost: 50, icon: BookOpen,     color: "text-sky-400",    gainLabel: "+5 Zeka" },
-  { type: "savas_egitimi",  label: "Savaş Eğitimi",  desc: "Gücünü ve dövüşünü artır", cost: 50, icon: Sword, color: "text-red-400",  gainLabel: "+5 Güç, +5 Dövüş" },
-  { type: "zanaat_egitimi", label: "Zanaat Eğitimi", desc: "Zanaat becerisini artır",   cost: 40, icon: Hammer, color: "text-orange-400", gainLabel: "+5 Zanaat" },
-  { type: "sosyal_egitim",  label: "Sosyal Eğitim",  desc: "Karizmasını ve sosyal becerisini artır", cost: 40, icon: MessageSquare, color: "text-emerald-400", gainLabel: "+5 Karizma, +5 Sosyal" },
-  { type: "saglik_bakimi",  label: "Sağlık Bakımı",  desc: "Sağlığını yenile",      cost: 30, icon: Stethoscope,  color: "text-rose-400",   gainLabel: "+15 Sağlık" },
+  { type: "egitim",         label: "Eğitim",         desc: "Zekasını artır",       cost: 50, icon: "📖", tone: "ink",   gainLabel: "+5 Zeka" },
+  { type: "savas_egitimi",  label: "Savaş Eğitimi",  desc: "Gücünü ve dövüşünü artır", cost: 50, icon: "⚔", tone: "blood", gainLabel: "+5 Güç, +5 Dövüş" },
+  { type: "zanaat_egitimi", label: "Zanaat Eğitimi", desc: "Zanaat becerisini artır",   cost: 40, icon: "🔨", tone: "ember", gainLabel: "+5 Zanaat" },
+  { type: "sosyal_egitim",  label: "Sosyal Eğitim",  desc: "Karizmasını ve sosyal becerisini artır", cost: 40, icon: "💬", tone: "sage", gainLabel: "+5 Karizma, +5 Sosyal" },
+  { type: "saglik_bakimi",  label: "Sağlık Bakımı",  desc: "Sağlığını yenile",      cost: 30, icon: "🌿", tone: "sage",  gainLabel: "+15 Sağlık" },
 ];
 
 const PROFESSION_OPTIONS = [
@@ -33,19 +34,33 @@ const PROFESSION_OPTIONS = [
 /* ─────────────────── Yardımcı Bileşenler ─────────────────── */
 function StatBar({ val, max = 100 }) {
   const pct = Math.min(100, Math.round(((val || 0) / max) * 100));
-  const color = val >= 70 ? "stat-bar-fill-good" : val >= 40 ? "stat-bar-fill" : "stat-bar-fill-bad";
+  const color = val >= 70 ? "#4A9A5A" : val >= 40 ? "#C9A84C" : "#C84040";
   return (
-    <div className="stat-bar flex-1">
-      <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
+    <div style={{ flex: 1, height: "4px", background: "rgba(255,255,255,0.07)", borderRadius: "2px", overflow: "hidden" }}>
+      <div style={{
+        height: "100%", width: `${pct}%`, borderRadius: "2px",
+        background: `linear-gradient(to right, ${color}99, ${color})`,
+        boxShadow: `0 0 6px ${color}55`, transition: "width 0.5s ease",
+      }} />
     </div>
   );
 }
 
-function Pill({ children, color = "border-stone-700 text-stone-400" }) {
+const modalOverlay = {
+  position: "fixed", inset: 0, display: "flex", alignItems: "center",
+  justifyContent: "center", padding: "1rem",
+  background: "radial-gradient(ellipse at 50% 30%, rgba(30,20,8,0.88) 0%, rgba(6,4,2,0.94) 70%)",
+  backdropFilter: "blur(3px)",
+};
+
+function CloseX({ onClick }) {
   return (
-    <span className={`inline-flex items-center gap-1 border rounded-sm px-2 py-0.5 text-[10px] font-heading tracking-wider ${color}`}>
-      {children}
-    </span>
+    <button onClick={onClick} className="font-display" style={{
+      background: "none", border: "none", cursor: "pointer",
+      fontSize: "0.9rem", color: "var(--color-parchment-muted)", padding: "0.2rem",
+    }}>
+      ✕
+    </button>
   );
 }
 
@@ -54,46 +69,70 @@ function InvestModal({ child, playerMoney, onClose, onConfirm, busy }) {
   const [selected, setSelected] = useState(null);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-sm card-frame rounded-sm space-y-4 p-5 rise-in">
-        <div className="flex items-center justify-between">
+    <div style={{ ...modalOverlay, zIndex: 50 }}>
+      <div className="card-frame rise-in" style={{
+        width: "100%", maxWidth: "24rem", padding: "1.25rem",
+        display: "flex", flexDirection: "column", gap: "0.85rem",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div className="label-tiny">Yatırım Yap</div>
-            <div className="font-heading text-stone-100 text-lg">{child.name}</div>
+            <div className="font-display" style={{
+              fontSize: "1.1rem", fontWeight: 700, color: "var(--color-parchment)",
+              textShadow: "0 0 12px rgba(201,168,76,0.15)",
+            }}>
+              {child.name}
+            </div>
           </div>
-          <button onClick={onClose} className="text-stone-600 hover:text-stone-300"><X className="w-5 h-5" /></button>
+          <CloseX onClick={onClose} />
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-stone-400 border border-stone-800 rounded-sm px-3 py-2">
-          <Coins className="w-3.5 h-3.5 text-amber-400" />
-          <span>Mevcut altın:</span>
-          <span className="text-amber-400 font-heading">{playerMoney}A</span>
+        <div className="row-frame">
+          <span style={{ fontSize: "0.9rem" }}>💰</span>
+          <span className="label-tiny" style={{ flex: 1 }}>Mevcut altın</span>
+          <Coin value={playerMoney} />
         </div>
 
-        <div className="space-y-2">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
           {INVEST_OPTIONS.map((opt) => {
             const canAfford = playerMoney >= opt.cost;
             const isSelected = selected?.type === opt.type;
-            const Icon = opt.icon;
+            const t = TONES[opt.tone] || TONES.gold;
             return (
               <button
                 key={opt.type}
                 disabled={!canAfford}
-                onClick={() => setSelected(opt)}
-                className={`w-full text-left border rounded-sm px-3 py-2.5 transition-all
-                  ${isSelected ? "border-orange-700 bg-orange-950/30" : "border-stone-800 bg-stone-900/40"}
-                  ${!canAfford ? "opacity-40 cursor-not-allowed" : "hover:border-stone-600 cursor-pointer"}`}
+                onClick={() => { playSfx("click"); setSelected(opt); }}
+                style={{
+                  width: "100%", textAlign: "left", padding: "0.6rem 0.75rem",
+                  borderRadius: "6px",
+                  border: isSelected ? "1px solid rgba(201,168,76,0.6)" : `1px solid ${t.border}`,
+                  background: isSelected
+                    ? "linear-gradient(160deg, rgba(201,168,76,0.12) 0%, rgba(20,14,7,0.6) 60%)"
+                    : "rgba(10,7,4,0.4)",
+                  boxShadow: isSelected ? "0 0 14px rgba(201,168,76,0.15)" : "none",
+                  opacity: canAfford ? 1 : 0.4,
+                  cursor: canAfford ? "pointer" : "not-allowed",
+                }}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Icon className={`w-3.5 h-3.5 ${opt.color}`} />
-                    <span className="font-heading text-stone-200 text-sm">{opt.label}</span>
-                  </div>
-                  <span className="text-amber-400 font-heading text-sm">{opt.cost}A</span>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span className="font-display" style={{
+                    fontSize: "0.78rem", fontWeight: 700, color: "var(--color-parchment)",
+                    display: "flex", alignItems: "center", gap: "0.4rem",
+                  }}>
+                    <span style={{ fontSize: "0.85rem" }}>{opt.icon}</span> {opt.label}
+                  </span>
+                  <Coin value={opt.cost} size="0.72rem" />
                 </div>
-                <div className="flex items-center justify-between mt-0.5">
-                  <span className="text-stone-500 text-xs">{opt.desc}</span>
-                  <span className={`text-xs font-heading ${opt.color}`}>{opt.gainLabel}</span>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "0.15rem" }}>
+                  <span className="font-serif" style={{
+                    fontSize: "0.7rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+                  }}>
+                    {opt.desc}
+                  </span>
+                  <span className="font-display" style={{ fontSize: "0.6rem", fontWeight: 700, color: t.text }}>
+                    {opt.gainLabel}
+                  </span>
                 </div>
               </button>
             );
@@ -102,11 +141,15 @@ function InvestModal({ child, playerMoney, onClose, onConfirm, busy }) {
 
         <button
           disabled={!selected || busy}
-          onClick={() => selected && onConfirm(child.id, selected.type)}
-          className="w-full btn-primary-ash py-2.5 font-heading tracking-wider text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          onClick={() => { if (selected) { playSfx("coin"); onConfirm(child.id, selected.type); } }}
+          className="btn-ember"
+          style={{
+            width: "100%", padding: "0.65rem", fontSize: "0.68rem",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+          }}
         >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          {selected ? `${selected.label} — ${selected.cost}A Harca` : "Yatırım Seç"}
+          {busy ? <span className="ember-flicker">⏳</span> : null}
+          {selected ? `${selected.label} — ${selected.cost}⚜ Harca` : "Yatırım Seç"}
         </button>
       </div>
     </div>
@@ -121,45 +164,66 @@ function SetProfessionModal({ child, onClose, onConfirm, busy }) {
   const finalProfession = custom.trim() || profession;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-sm card-frame rounded-sm space-y-4 p-5 rise-in">
-        <div className="flex items-center justify-between">
+    <div style={{ ...modalOverlay, zIndex: 50 }}>
+      <div className="card-frame rise-in" style={{
+        width: "100%", maxWidth: "24rem", padding: "1.25rem",
+        display: "flex", flexDirection: "column", gap: "0.85rem",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div className="label-tiny">Meslek Ata</div>
-            <div className="font-heading text-stone-100 text-lg">{child.name}</div>
+            <div className="font-display" style={{
+              fontSize: "1.1rem", fontWeight: 700, color: "var(--color-parchment)",
+              textShadow: "0 0 12px rgba(201,168,76,0.15)",
+            }}>
+              {child.name}
+            </div>
           </div>
-          <button onClick={onClose} className="text-stone-600 hover:text-stone-300"><X className="w-5 h-5" /></button>
+          <CloseX onClick={onClose} />
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
           {PROFESSION_OPTIONS.map((p) => (
             <button
               key={p}
-              onClick={() => { setProfession(p); setCustom(""); }}
-              className={`text-xs px-2.5 py-1 border rounded-sm font-heading tracking-wider transition-all
-                ${profession === p && !custom ? "border-orange-700 text-orange-300 bg-orange-950/30" : "border-stone-800 text-stone-500 hover:border-stone-600 hover:text-stone-300"}`}
+              onClick={() => { playSfx("click"); setProfession(p); setCustom(""); }}
+              className="font-display"
+              style={{
+                padding: "0.3rem 0.6rem", borderRadius: "4px", cursor: "pointer",
+                fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.08em",
+                border: profession === p && !custom
+                  ? "1px solid rgba(201,168,76,0.6)"
+                  : "1px solid var(--color-border)",
+                background: profession === p && !custom ? "rgba(201,168,76,0.10)" : "transparent",
+                color: profession === p && !custom ? "var(--color-gold)" : "var(--color-parchment-muted)",
+                boxShadow: profession === p && !custom ? "0 0 10px rgba(201,168,76,0.15)" : "none",
+              }}
             >
               {p}
             </button>
           ))}
         </div>
 
-        <div className="space-y-1">
-          <div className="label-tiny">Veya Özel Meslek Gir</div>
+        <div>
+          <div className="label-tiny" style={{ marginBottom: "0.3rem" }}>Veya Özel Meslek Gir</div>
           <input
             value={custom}
             onChange={(e) => { setCustom(e.target.value); setProfession(""); }}
             placeholder="ör. kâhin, casus, gezgin..."
-            className="w-full bg-stone-900 border border-stone-800 rounded-sm px-3 py-2 text-sm text-stone-200 placeholder-stone-600 focus:outline-none focus:border-stone-600"
+            style={{ width: "100%", padding: "0.5rem 0.7rem", fontSize: "0.85rem" }}
           />
         </div>
 
         <button
           disabled={!finalProfession || busy}
-          onClick={() => finalProfession && onConfirm(child.id, finalProfession)}
-          className="w-full btn-primary-ash py-2.5 font-heading tracking-wider text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          onClick={() => { if (finalProfession) { playSfx("page"); onConfirm(child.id, finalProfession); } }}
+          className="btn-ember"
+          style={{
+            width: "100%", padding: "0.65rem", fontSize: "0.68rem",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+          }}
         >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          {busy ? <span className="ember-flicker">⏳</span> : null}
           {finalProfession ? `"${finalProfession}" Olarak Ata` : "Meslek Seç"}
         </button>
       </div>
@@ -188,7 +252,7 @@ function ChildDetailModal({ child, isHeir, playerMoney, factions, onClose, onSet
   const [showProfession, setShowProfession] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 p-4">
+    <div style={{ ...modalOverlay, zIndex: 40 }}>
       {/* Invest modal üstte */}
       {showInvest && (
         <InvestModal
@@ -209,73 +273,109 @@ function ChildDetailModal({ child, isHeir, playerMoney, factions, onClose, onSet
       )}
 
       {!showInvest && !showProfession && (
-        <div className="w-full max-w-sm card-frame rounded-sm space-y-4 p-5 rise-in max-h-[90vh] overflow-y-auto">
+        <div className="card-frame rise-in" style={{
+          width: "100%", maxWidth: "24rem", padding: "1.25rem",
+          maxHeight: "90vh", overflowY: "auto",
+          display: "flex", flexDirection: "column", gap: "0.85rem",
+          border: isHeir ? "1px solid rgba(201,168,76,0.5)" : undefined,
+          boxShadow: isHeir ? "0 0 24px rgba(201,168,76,0.12)" : undefined,
+        }}>
           {/* Başlık */}
-          <div className="flex items-start justify-between">
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
             <div>
               <div className="label-tiny">{isAdult ? "Yetişkin Çocuk" : isTeen ? "Genç" : "Çocuk"}</div>
-              <div className="font-heading text-stone-100 text-2xl">{child.name}</div>
-              <div className="text-xs text-stone-500 flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+              <div className="font-display" style={{
+                fontSize: "1.4rem", fontWeight: 700, color: "var(--color-parchment)",
+                textShadow: "0 2px 10px rgba(0,0,0,0.5), 0 0 16px rgba(201,168,76,0.12)",
+              }}>
+                {child.name}
+              </div>
+              <div className="font-serif" style={{
+                fontSize: "0.76rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+                display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.4rem", marginTop: "0.2rem",
+              }}>
                 <span>{age} yaş</span>
                 <span>·</span>
                 <span>{child.gender === "erkek" ? "Erkek" : "Kız"}</span>
-                {child.profession && <><span>·</span><span className="capitalize">{profLabel(child.profession)}</span></>}
+                {child.profession && <><span>·</span><span style={{ textTransform: "capitalize" }}>{profLabel(child.profession)}</span></>}
               </div>
             </div>
-            <div className="flex flex-col items-end gap-1.5">
-              {isHeir && <Pill color="border-amber-800/50 text-amber-400"><Crown className="w-2.5 h-2.5" /> Vâris</Pill>}
-              <button onClick={onClose} className="text-stone-600 hover:text-stone-300 mt-1"><X className="w-5 h-5" /></button>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.35rem" }}>
+              {isHeir && <Pill tone="gold">👑 Vâris</Pill>}
+              <CloseX onClick={onClose} />
             </div>
           </div>
 
           {/* Faction rozeti */}
           {childFaction && (
-            <div className="flex items-center gap-2 border border-stone-800 rounded-sm px-3 py-2 text-xs">
-              <Shield className="w-3.5 h-3.5 text-sky-400" />
-              <span className="text-stone-400">Faction:</span>
-              <span className="text-sky-300 font-heading">{childFaction.name}</span>
-              <Pill color="border-sky-800/40 text-sky-400">{childFaction.type || "grup"}</Pill>
+            <div className="row-frame">
+              <span style={{ fontSize: "0.85rem" }}>🛡</span>
+              <span className="label-tiny">Hizip</span>
+              <span className="font-display" style={{
+                fontSize: "0.74rem", fontWeight: 700, color: "#9D78CC", flex: 1,
+              }}>
+                {childFaction.name}
+              </span>
+              <Pill tone="ink">{childFaction.type || "grup"}</Pill>
             </div>
           )}
 
           {/* Sağlık */}
-          <div className="flex items-center gap-2 text-xs">
-            <Heart className="w-3.5 h-3.5 text-red-400 shrink-0" />
-            <span className="text-stone-500 w-16">Sağlık</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span style={{ fontSize: "0.8rem", flexShrink: 0 }}>❤</span>
+            <span className="label-tiny" style={{ width: "4rem", flexShrink: 0 }}>Sağlık</span>
             <StatBar val={child.health || 0} />
-            <span className="text-stone-400 w-8 text-right font-heading">{child.health || 0}</span>
+            <span className="font-display" style={{
+              fontSize: "0.74rem", fontWeight: 700, color: "var(--color-parchment)",
+              width: "2rem", textAlign: "right", flexShrink: 0,
+            }}>
+              {child.health || 0}
+            </span>
           </div>
 
           {/* Stats */}
-          <div className="space-y-1.5">
-            <div className="label-tiny">Özellikler</div>
-            {Object.entries(stats).length > 0
-              ? Object.entries(stats).map(([key, val]) => (
-                  <div key={key} className="flex items-center gap-2 text-xs">
-                    <span className="w-20 text-stone-500 flex items-center gap-1 shrink-0">
-                      <span>{STAT_ICONS[key] || "•"}</span>
-                      <span>{STAT_LABELS[key] || key}</span>
-                    </span>
-                    <StatBar val={val} max={100} />
-                    <span className="w-6 text-right text-stone-400 font-heading">{val}</span>
-                  </div>
-                ))
-              : <p className="text-xs text-stone-600 italic">Henüz stat verisi yok.</p>
-            }
+          <div>
+            <GoldRule label="Özellikler" />
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+              {Object.entries(stats).length > 0
+                ? Object.entries(stats).map(([key, val]) => (
+                    <div key={key} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span className="label-tiny" style={{
+                        width: "6rem", flexShrink: 0, display: "flex", alignItems: "center", gap: "0.3rem",
+                      }}>
+                        <span>{STAT_ICONS[key] || "•"}</span>
+                        <span>{STAT_LABELS[key] || key}</span>
+                      </span>
+                      <StatBar val={val} max={100} />
+                      <span className="font-display" style={{
+                        fontSize: "0.72rem", fontWeight: 700, color: "var(--color-parchment)",
+                        width: "1.6rem", textAlign: "right", flexShrink: 0,
+                      }}>
+                        {val}
+                      </span>
+                    </div>
+                  ))
+                : <p className="font-serif" style={{
+                    fontSize: "0.76rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+                  }}>
+                    Henüz stat verisi yok.
+                  </p>
+              }
+            </div>
           </div>
 
           {/* Skills */}
           {Object.keys(skills).length > 0 && (
-            <div className="space-y-1">
-              <div className="label-tiny">Beceriler</div>
-              <div className="flex flex-wrap gap-2">
+            <div>
+              <GoldRule label="Beceriler" />
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
                 {Object.entries(skills)
                   .filter(([, v]) => v > 0)
                   .map(([key, val]) => (
-                    <div key={key} className="flex items-center gap-1 text-[10px] border border-stone-800 rounded-sm px-2 py-1">
-                      <span className="text-stone-400">{SKILL_LABELS[key] || key}</span>
-                      <span className="text-amber-400 font-heading">{val}</span>
-                    </div>
+                    <Pill key={key} tone="ash">
+                      {SKILL_LABELS[key] || key}
+                      <span style={{ color: "var(--color-gold)" }}>{val}</span>
+                    </Pill>
                   ))}
               </div>
             </div>
@@ -283,39 +383,47 @@ function ChildDetailModal({ child, isHeir, playerMoney, factions, onClose, onSet
 
           {/* Büyüme ilerlemesi (reşit değilse) */}
           {!isAdult && (
-            <div className="border border-stone-800 rounded-sm px-3 py-2 space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-stone-500 flex items-center gap-1"><Hourglass className="w-3 h-3" /> Büyüme</span>
-                <span className="text-stone-400">{18 - age} yıl kaldı</span>
+            <div className="row-frame" style={{ flexDirection: "column", alignItems: "stretch", gap: "0.35rem" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span className="label-tiny">⏳ Büyüme</span>
+                <span className="font-serif" style={{
+                  fontSize: "0.72rem", fontStyle: "italic", color: "var(--color-parchment-dim)",
+                }}>
+                  {18 - age} yıl kaldı
+                </span>
               </div>
-              <div className="stat-bar">
-                <div className="h-full stat-bar-fill" style={{ width: `${Math.round((age / 18) * 100)}%` }} />
-              </div>
+              <StatBar val={Math.round((age / 18) * 100)} />
             </div>
           )}
 
           {/* Aksiyon butonları */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", paddingTop: "0.2rem" }}>
             {!isHeir && (
               <button
-                onClick={() => { onSetHeir(child.id); onClose(); }}
-                className="btn-ghost-ash py-2 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5"
+                onClick={() => { playSfx("success"); onSetHeir(child.id); onClose(); }}
+                className="btn-ember"
+                style={{ padding: "0.55rem", fontSize: "0.6rem" }}
               >
-                <Crown className="w-3.5 h-3.5" /> Vâris Yap
+                👑 Vâris Yap
               </button>
             )}
             <button
-              onClick={() => setShowInvest(true)}
-              className={`btn-primary-ash py-2 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 ${isHeir ? "col-span-2" : ""}`}
+              onClick={() => { playSfx("click"); setShowInvest(true); }}
+              className="btn-ghost-ash"
+              style={{
+                padding: "0.55rem", fontSize: "0.6rem",
+                gridColumn: isHeir ? "span 2" : undefined,
+              }}
             >
-              <TrendingUp className="w-3.5 h-3.5" /> Yatırım Yap
+              📈 Yatırım Yap
             </button>
             {(isTeen || isAdult) && (
               <button
-                onClick={() => setShowProfession(true)}
-                className="col-span-2 btn-ghost-ash py-2 text-xs font-heading tracking-wider flex items-center justify-center gap-1.5 border-stone-700"
+                onClick={() => { playSfx("click"); setShowProfession(true); }}
+                className="btn-ghost-ash"
+                style={{ padding: "0.55rem", fontSize: "0.6rem", gridColumn: "span 2" }}
               >
-                <Briefcase className="w-3.5 h-3.5" /> Meslek Ata
+                🛠 Meslek Ata
               </button>
             )}
           </div>
@@ -343,51 +451,80 @@ function ChildCard({ child, isHeir, factions, onSetHeir, onOpenDetail }) {
 
   return (
     <div
-      className={`card-frame p-4 space-y-2.5 cursor-pointer hover:border-stone-600 transition-all ${isHeir ? "border-amber-800/60 ring-1 ring-amber-900/40" : ""}`}
+      className="card-frame"
       onClick={onOpenDetail}
+      style={{
+        padding: "0.85rem", cursor: "pointer",
+        display: "flex", flexDirection: "column", gap: "0.6rem",
+        border: isHeir ? "1px solid rgba(201,168,76,0.55)" : undefined,
+        boxShadow: isHeir
+          ? "0 0 18px rgba(201,168,76,0.14), inset 0 1px 0 rgba(201,168,76,0.18)"
+          : undefined,
+      }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <div className="label-tiny">{ageLabel}</div>
-          <div className="font-heading text-stone-100 text-lg">{child.name}</div>
-          <div className="text-xs text-stone-500 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
+        <div style={{ minWidth: 0 }}>
+          <div className="label-tiny">{isHeir ? `${ageLabel} · Ocağın Umudu` : ageLabel}</div>
+          <div className="font-display" style={{
+            fontSize: "1.05rem", fontWeight: 700,
+            color: isHeir ? "var(--color-gold)" : "var(--color-parchment)",
+            textShadow: isHeir ? "0 0 12px rgba(201,168,76,0.35)" : "0 1px 6px rgba(0,0,0,0.5)",
+          }}>
+            {child.name}
+          </div>
+          <div className="font-serif" style={{
+            fontSize: "0.74rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+            display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.35rem", marginTop: "0.1rem",
+          }}>
             <span>{age} yaş</span>
             <span>·</span>
             <span>{child.gender === "erkek" ? "Erkek" : "Kız"}</span>
-            {child.profession && <><span>·</span><span className="capitalize">{profLabel(child.profession)}</span></>}
+            {child.profession && <><span>·</span><span style={{ textTransform: "capitalize" }}>{profLabel(child.profession)}</span></>}
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
-          {isHeir && <Pill color="border-amber-800/50 text-amber-400"><Crown className="w-2.5 h-2.5" /> Vâris</Pill>}
-          {childFaction && <Pill color="border-sky-800/40 text-sky-400"><Shield className="w-2.5 h-2.5" /> {childFaction.name}</Pill>}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.3rem", flexShrink: 0 }}>
+          {isHeir && <Pill tone="gold">👑 Vâris</Pill>}
+          {childFaction && <Pill tone="ink">🛡 {childFaction.name}</Pill>}
         </div>
       </div>
 
       {/* Sağlık + Büyüme çubuğu */}
-      <div className="grid grid-cols-2 gap-2 text-xs">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
         <div>
-          <div className="label-tiny mb-1">Sağlık</div>
-          <div className="flex items-center gap-1.5">
+          <div className="label-tiny" style={{ marginBottom: "0.25rem" }}>Sağlık</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
             <StatBar val={child.health || 0} />
-            <span className="text-stone-500 w-6 text-right">{child.health || 0}</span>
+            <span className="font-display" style={{
+              fontSize: "0.66rem", fontWeight: 700, color: "var(--color-parchment-dim)",
+              width: "1.6rem", textAlign: "right",
+            }}>
+              {child.health || 0}
+            </span>
           </div>
         </div>
         {!isAdult && (
           <div>
-            <div className="label-tiny mb-1">Büyüme</div>
-            <div className="flex items-center gap-1.5">
-              <div className="stat-bar flex-1">
-                <div className="h-full stat-bar-fill" style={{ width: `${pct}%` }} />
-              </div>
-              <span className="text-stone-500 w-8 text-right">{18 - age}y</span>
+            <div className="label-tiny" style={{ marginBottom: "0.25rem" }}>Büyüme</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <StatBar val={pct} />
+              <span className="font-display" style={{
+                fontSize: "0.66rem", fontWeight: 700, color: "var(--color-parchment-dim)",
+                width: "2rem", textAlign: "right",
+              }}>
+                {18 - age}y
+              </span>
             </div>
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-between text-[10px] text-stone-600 pt-0.5">
-        <span>Detay için dokun</span>
-        <ChevronDown className="w-3 h-3" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span className="font-serif" style={{
+          fontSize: "0.68rem", fontStyle: "italic", color: "var(--color-parchment-muted)", opacity: 0.7,
+        }}>
+          Detay için dokun
+        </span>
+        <span style={{ fontSize: "0.6rem", color: "var(--color-gold-dim)" }}>▾</span>
       </div>
     </div>
   );
@@ -400,40 +537,66 @@ function LegacyPanel({ legacyHistory, generation }) {
   if (!legacyHistory?.length && generation <= 1) return null;
 
   return (
-    <div className="card-frame p-4 space-y-3 border-stone-800/40">
+    <div className="card-frame" style={{ padding: "0.85rem" }}>
       <button
-        className="flex items-center justify-between w-full"
         onClick={() => setExpanded(e => !e)}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer",
+        }}
       >
-        <div className="flex items-center gap-2">
-          <Scroll className="w-4 h-4 text-stone-500" />
-          <span className="font-heading text-stone-300">Nesil Geçmişi</span>
-          <Pill color="border-stone-700 text-stone-500">{generation}. Kuşak</Pill>
-        </div>
-        {expanded ? <ChevronUp className="w-4 h-4 text-stone-600" /> : <ChevronDown className="w-4 h-4 text-stone-600" />}
+        <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ fontSize: "0.85rem" }}>📜</span>
+          <span className="font-display" style={{
+            fontSize: "0.74rem", fontWeight: 700, letterSpacing: "0.12em",
+            textTransform: "uppercase", color: "var(--color-parchment-dim)",
+          }}>
+            Nesil Geçmişi
+          </span>
+          <Pill tone="ash">{generation}. Kuşak</Pill>
+        </span>
+        <span style={{ fontSize: "0.65rem", color: "var(--color-parchment-muted)" }}>
+          {expanded ? "▴" : "▾"}
+        </span>
       </button>
 
       {expanded && (
-        <div className="space-y-2 pt-1">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "0.7rem" }}>
           {(!legacyHistory || legacyHistory.length === 0) ? (
-            <p className="text-xs text-stone-600 italic">Bu ilk nesil — geçmiş yok.</p>
+            <p className="font-serif" style={{
+              fontSize: "0.76rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+            }}>
+              Bu ilk nesil — geçmiş yok.
+            </p>
           ) : (
             legacyHistory.slice().reverse().map((entry, idx) => (
-              <div key={idx} className="border-l-2 border-stone-800 pl-3 py-1 space-y-0.5">
+              <div key={idx} style={{
+                borderLeft: "2px solid rgba(201,168,76,0.3)",
+                paddingLeft: "0.75rem", paddingTop: "0.2rem", paddingBottom: "0.2rem",
+              }}>
                 {entry.previous_name && (
-                  <div className="text-sm font-heading text-stone-300">{entry.previous_name}</div>
+                  <div className="font-display" style={{
+                    fontSize: "0.82rem", fontWeight: 700, color: "var(--color-parchment)",
+                  }}>
+                    {entry.previous_name}
+                  </div>
                 )}
-                <div className="text-xs text-stone-600">
+                <div className="font-serif" style={{
+                  fontSize: "0.7rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+                }}>
                   {entry.generation && <span>{entry.generation}. Nesil</span>}
-                  {entry.generation_turn != null && <span> · Tur {entry.generation_turn}</span>}
+                  {entry.generation_turn != null && <span> · {1247 + Math.floor(entry.generation_turn / 12)} yılı</span>}
                   {entry.origin && (
-                    <span className="ml-1">
+                    <span style={{ marginLeft: "0.25rem" }}>
                       · {entry.origin === "çocuk" ? "çocukla devam" : "sürgün olarak başladı"}
                     </span>
                   )}
                 </div>
                 {entry.inherited_money > 0 && (
-                  <div className="text-[10px] text-amber-700">+{entry.inherited_money}A miras</div>
+                  <div style={{ marginTop: "0.1rem" }}>
+                    <Coin value={entry.inherited_money} size="0.62rem" />
+                    <span className="label-tiny" style={{ marginLeft: "0.3rem" }}>miras</span>
+                  </div>
                 )}
               </div>
             ))
@@ -451,28 +614,46 @@ function InheritanceSummary({ player, children }) {
   const inherited_rep   = Math.round((player.reputation || 0) * 0.20);
 
   return (
-    <div className="card-frame p-4 space-y-3 border-stone-700/60">
-      <div className="flex items-center gap-2">
-        <GitBranch className="w-4 h-4 text-stone-400" />
-        <span className="font-heading text-stone-200">Miras Önizlemesi</span>
-      </div>
-      <p className="text-xs text-stone-400">{player.name} ölürse, seçili vâris şunları devralır:</p>
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="border border-stone-800 rounded-sm p-2">
+    <Panel title="Miras Önizlemesi" icon="🪶" tone="ash">
+      <p className="font-serif" style={{
+        fontSize: "0.78rem", fontStyle: "italic",
+        color: "var(--color-parchment-dim)", marginBottom: "0.6rem",
+      }}>
+        {player.name} ölürse, seçili vâris şunları devralır:
+      </p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+        <div className="row-frame" style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.15rem" }}>
           <div className="label-tiny">Altın Mirası</div>
-          <div className="font-heading text-amber-400 text-lg">{inherited_money}A</div>
-          <div className="text-stone-600 text-[10px]">toplam paranın %60'ı</div>
+          <Coin value={inherited_money} size="1rem" />
+          <div className="font-serif" style={{
+            fontSize: "0.64rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+          }}>
+            toplam paranın %60'ı
+          </div>
         </div>
-        <div className="border border-stone-800 rounded-sm p-2">
+        <div className="row-frame" style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.15rem" }}>
           <div className="label-tiny">İtibar Mirası</div>
-          <div className="font-heading text-sky-400 text-lg">{inherited_rep}</div>
-          <div className="text-stone-600 text-[10px]">toplam itibarın %20'si</div>
+          <div className="font-display" style={{
+            fontSize: "1rem", fontWeight: 700, color: "#9D78CC",
+            textShadow: "0 0 8px rgba(123,79,175,0.35)",
+          }}>
+            {inherited_rep}
+          </div>
+          <div className="font-serif" style={{
+            fontSize: "0.64rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+          }}>
+            toplam itibarın %20'si
+          </div>
         </div>
       </div>
-      <div className="text-xs text-stone-500">
-        Stat mirası: Ebeveyn statlarının <span className="text-stone-300">%30'u</span> alınır.
-      </div>
-    </div>
+      <p className="font-serif" style={{
+        fontSize: "0.72rem", fontStyle: "italic",
+        color: "var(--color-parchment-muted)", marginTop: "0.6rem",
+      }}>
+        Stat mirası: Ebeveyn statlarının{" "}
+        <span style={{ color: "var(--color-parchment-dim)" }}>%30'u</span> alınır.
+      </p>
+    </Panel>
   );
 }
 
@@ -480,17 +661,25 @@ function InheritanceSummary({ player, children }) {
 function SpouseCard({ spouse }) {
   if (!spouse) return null;
   return (
-    <div className="card-frame p-3 flex items-center gap-3">
-      <UserCircle className="w-8 h-8 text-rose-500/60 shrink-0" />
-      <div className="flex-1 min-w-0">
+    <div className="card-frame" style={{
+      padding: "0.75rem 0.85rem", display: "flex", alignItems: "center", gap: "0.75rem",
+    }}>
+      <span style={{ fontSize: "1.4rem", filter: "drop-shadow(0 0 8px rgba(200,64,64,0.3))" }}>💍</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div className="label-tiny">Eş</div>
-        <div className="font-heading text-stone-100 truncate">{spouse.name}</div>
-        <div className="text-xs text-stone-500">{spouse.age} yaş · {profLabel(spouse.profession)}</div>
+        <div className="font-display" style={{
+          fontSize: "0.92rem", fontWeight: 700, color: "var(--color-parchment)",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {spouse.name}
+        </div>
+        <div className="font-serif" style={{
+          fontSize: "0.72rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+        }}>
+          {spouse.age} yaş · {profLabel(spouse.profession)}
+        </div>
       </div>
-      <div className="text-xs text-stone-500 shrink-0">
-        <Heart className="w-3 h-3 text-red-400 inline mr-1" />
-        <span>{spouse.health}</span>
-      </div>
+      <Pill tone="blood">❤ {spouse.health}</Pill>
     </div>
   );
 }
@@ -498,12 +687,12 @@ function SpouseCard({ spouse }) {
 /* ─────────────────── EmptyFamily ─────────────────── */
 function EmptyFamily() {
   return (
-    <div className="card-frame p-8 text-center space-y-3 border-stone-800/50">
-      <Baby className="w-10 h-10 text-stone-700 mx-auto" />
-      <div className="font-heading text-stone-400">Henüz çocuğun yok</div>
-      <p className="text-stone-600 text-sm max-w-xs mx-auto">
-        Evlen ve aile kur. Çocukların büyür, onlarla devam edebilirsin.
-      </p>
+    <div className="card-frame">
+      <EmptyState
+        icon="🪺"
+        title="Ocağında henüz çocuk sesi yok."
+        sub="Evlen ve aile kur. Çocukların büyür, onlarla devam edebilirsin."
+      />
     </div>
   );
 }
@@ -581,7 +770,9 @@ export default function Generation() {
   const inheritSummary = state?.inheritance_summary;
 
   return (
-    <div className="space-y-5 rise-in">
+    <div className="page-shell rise-in" style={{
+      padding: "0 0 1.5rem", display: "flex", flexDirection: "column", gap: "0.85rem",
+    }}>
       {/* Detay modalı */}
       {activeChild && (
         <ChildDetailModal
@@ -597,104 +788,137 @@ export default function Generation() {
       )}
 
       {/* Başlık */}
-      <div>
-        <div className="label-tiny">Soy</div>
-        <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-          <Baby className="w-6 h-6 text-rose-500/80" /> Nesil & Aile
-        </h1>
-        <p className="text-stone-400 text-sm mt-1">Ailenin büyüsün. Çocukların güçlensin. Neslin yaşasın.</p>
-      </div>
-
-      {/* Nesil sayacı */}
-      <div className="card-frame p-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <GitBranch className="w-4 h-4 text-orange-500" />
-          <span className="label-tiny">Aktif Nesil</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="font-heading text-2xl text-orange-400">{generation}</span>
-          <span className="text-stone-500 text-xs">. Kuşak</span>
-        </div>
-      </div>
+      <PageHeader
+        kicker="Soyun Devamı"
+        icon="👶"
+        title="Nesil & Aile"
+        sub="Çocuklarım, geleceğim — adım onların nefesinde yaşayacak."
+        right={
+          <div style={{ textAlign: "right" }}>
+            <div className="label-tiny" style={{ marginBottom: "0.1rem" }}>Aktif Nesil</div>
+            <div className="font-display" style={{
+              fontSize: "1.3rem", fontWeight: 900, color: "#E05A30",
+              textShadow: "0 0 12px rgba(224,90,48,0.4)",
+            }}>
+              {generation}<span style={{ fontSize: "0.6rem", color: "var(--color-parchment-muted)" }}>. Kuşak</span>
+            </div>
+          </div>
+        }
+      />
 
       {/* Miras özeti (önceki oyuncudan) */}
       {inheritSummary && (
-        <div className="card-frame p-4 space-y-2 border-amber-900/40 bg-amber-950/10">
-          <div className="flex items-center gap-2">
-            <Star className="w-4 h-4 text-amber-400" />
-            <span className="font-heading text-amber-400">Miras Alındı</span>
-            <span className="text-xs text-stone-500">— {inheritSummary.previous_name}</span>
-          </div>
-          <div className="flex flex-wrap gap-3 text-xs">
+        <Panel title="Miras Alındı" icon="🌟" tone="gold"
+          right={<span className="font-serif" style={{
+            fontSize: "0.7rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+          }}>— {inheritSummary.previous_name}</span>}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
             {inheritSummary.inherited_money > 0 && (
-              <span><span className="text-stone-500">Altın: </span><span className="text-amber-400 font-heading">+{inheritSummary.inherited_money}A</span></span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                <span className="label-tiny">Altın</span>
+                <Coin value={inheritSummary.inherited_money} />
+              </span>
             )}
             {inheritSummary.inherited_reputation !== 0 && (
-              <span><span className="text-stone-500">İtibar: </span><span className="text-sky-400 font-heading">+{inheritSummary.inherited_reputation}</span></span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                <span className="label-tiny">İtibar</span>
+                <span className="font-display" style={{ fontSize: "0.8rem", fontWeight: 700, color: "#9D78CC" }}>
+                  +{inheritSummary.inherited_reputation}
+                </span>
+              </span>
             )}
           </div>
           {inheritSummary.inherited_stats && (
-            <div className="text-xs text-stone-400">
+            <p className="font-serif" style={{
+              fontSize: "0.74rem", fontStyle: "italic",
+              color: "var(--color-parchment-dim)", marginTop: "0.45rem",
+            }}>
               Stat bonusu: {Object.entries(inheritSummary.inherited_stats)
                 .filter(([, v]) => v > 0)
                 .map(([k, v]) => `+${v} ${STAT_LABELS[k] || k}`)
                 .join(", ")}
-            </div>
+            </p>
           )}
 
           {/* S3 Chronicle 2.0: romanın son sayfası */}
           {inheritSummary.hayat_romani && (
-            <div className="mt-2 pt-3 border-t border-stone-800 space-y-2">
-              <div className="font-heading text-xs text-purple-300 tracking-wider">
+            <div>
+              <GoldRule label="Romanın Son Sayfası" />
+              <div className="font-display" style={{
+                fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#9D78CC",
+              }}>
                 📖 {inheritSummary.hayat_romani.baslik}
               </div>
               {(inheritSummary.hayat_romani.satirlar || []).map((s, i) => (
-                <p key={i} className="text-xs text-stone-300 leading-relaxed italic">{s}</p>
+                <p key={i} className="font-serif" style={{
+                  fontSize: "0.78rem", fontStyle: "italic", lineHeight: 1.6,
+                  color: "var(--color-parchment-dim)", marginTop: "0.35rem",
+                }}>
+                  {s}
+                </p>
               ))}
               {inheritSummary.hayat_romani.epitaf && (
-                <p className="text-[11px] text-amber-300/90 font-heading tracking-wide text-center pt-1">
+                <p className="font-display" style={{
+                  fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.08em",
+                  textAlign: "center", color: "var(--color-gold)",
+                  textShadow: "0 0 10px rgba(201,168,76,0.3)", marginTop: "0.5rem",
+                }}>
                   "{inheritSummary.hayat_romani.epitaf}"
                 </p>
               )}
               {(inheritSummary.hayat_romani.perdeler || []).length > 0 && (
-                <div className="space-y-0.5 pt-1">
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem", marginTop: "0.45rem" }}>
                   {inheritSummary.hayat_romani.perdeler.slice(-5).map((p) => (
-                    <div key={p.no} className="text-[10px] text-stone-500">
-                      {p.baslik} <span className="text-stone-700">{1247 + Math.floor(p.baslangic / 12)}–{p.bitis != null ? 1247 + Math.floor(p.bitis / 12) : "…"}</span>
+                    <div key={p.no} className="font-serif" style={{
+                      fontSize: "0.68rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+                    }}>
+                      {p.baslik}{" "}
+                      <span style={{ color: "var(--color-gold-dim)" }}>
+                        {1247 + Math.floor(p.baslangic / 12)}–{p.bitis != null ? 1247 + Math.floor(p.bitis / 12) : "…"}
+                      </span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
           )}
-        </div>
+        </Panel>
       )}
 
       {/* Eş */}
       {spouse && <SpouseCard spouse={spouse} />}
       {!spouse && player.age >= 18 && (
-        <div className="card-frame p-3 text-center text-xs text-stone-500 border-stone-800/40">
-          Bekârsın · Evlilik için{" "}
-          <a href="/oyun/evlilik" className="text-orange-400 underline">Evlilik ekranına</a> git
+        <div className="card-frame" style={{ padding: "0.75rem", textAlign: "center" }}>
+          <span className="font-serif" style={{
+            fontSize: "0.78rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+          }}>
+            Bekârsın · Evlilik için{" "}
+            <a href="/oyun/evlilik" style={{ color: "#E05A30", textDecoration: "underline" }}>
+              Evlilik ekranına
+            </a>{" "}
+            git
+          </span>
         </div>
       )}
 
       {/* Çocuklar */}
-      <div className="space-y-3">
-        <div className="label-tiny">Çocuklar ({children.length})</div>
-        {children.length === 0
-          ? <EmptyFamily />
-          : children.map(child => (
-              <ChildCard
-                key={child.id}
-                child={child}
-                isHeir={child.id === effectiveHeirId}
-                factions={factions}
-                onSetHeir={setSelectedHeirId}
-                onOpenDetail={() => setActiveChildId(child.id)}
-              />
-            ))
-        }
+      <div>
+        <GoldRule label={`Çocuklar (${children.length})`} />
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          {children.length === 0
+            ? <EmptyFamily />
+            : children.map(child => (
+                <ChildCard
+                  key={child.id}
+                  child={child}
+                  isHeir={child.id === effectiveHeirId}
+                  factions={factions}
+                  onSetHeir={setSelectedHeirId}
+                  onOpenDetail={() => setActiveChildId(child.id)}
+                />
+              ))
+          }
+        </div>
       </div>
 
       {/* Miras önizlemesi */}

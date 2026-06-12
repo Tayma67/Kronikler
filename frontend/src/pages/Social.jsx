@@ -1,69 +1,82 @@
+/**
+ * Sosyal Statü — KÜL & KÖZ.
+ * Duygu görevi: "Namım ve şerefim" — itibar/şeref/korku/ün dört mühür.
+ * İşlevsellik (API çağrısı, eşikler, hesaplar) birebir korunur.
+ */
 import { useEffect, useState } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
-import { Loader2, Star, Shield, Eye, Flame, ShoppingBag, TrendingUp, TrendingDown } from "lucide-react";
+import { PageHeader, Panel, Pill, GoldRule, TONES } from "@/components/ui/Kit";
 
-// ─── Stat bar ─────────────────────────────────────────────────────────────────
-function StatBar({ value, max = 100, colorClass = "stat-bar-fill" }) {
+// ─── Mühür kartı ──────────────────────────────────────────────────────────────
+function SealCard({ icon, label, value, max = 100, tone, badgeLabel, badgeTone, description }) {
+  const t = TONES[tone] || TONES.gold;
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
-    <div className="stat-bar mt-1">
-      <div className={colorClass} style={{ width: `${pct}%`, height: "100%" }} />
-    </div>
-  );
-}
-
-// ─── Büyük stat kartı ─────────────────────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, max = 100, colorClass, badgeLabel, badgeColor, description }) {
-  return (
-    <div className="card-frame p-4 space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Icon className={`w-4 h-4 ${colorClass}`} />
-          <span className="label-tiny">{label}</span>
+    <div className="card-frame" style={{ padding: "0.8rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", minWidth: 0 }}>
+          <span style={{ fontSize: "1.05rem", filter: `drop-shadow(0 0 8px ${t.text}55)` }}>{icon}</span>
+          <span className="font-display" style={{
+            fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.18em",
+            textTransform: "uppercase", color: t.text,
+          }}>{label}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`text-[10px] px-1.5 py-0.5 border rounded-sm font-heading tracking-wider ${badgeColor}`}>
-            {badgeLabel}
-          </span>
-          <span className={`font-heading text-lg ${colorClass}`}>{Math.round(value)}</span>
-        </div>
+        <span className="font-display" style={{
+          fontSize: "1.15rem", fontWeight: 700, color: "var(--color-parchment)",
+          textShadow: `0 0 10px ${t.text}40`,
+        }}>{Math.round(value)}</span>
       </div>
-      <StatBar value={value} max={max} colorClass={colorClass === "text-amber-400" ? "stat-bar-fill" : colorClass === "text-emerald-400" ? "stat-bar-fill-good" : colorClass === "text-red-400" ? "stat-bar-fill-bad" : "stat-bar-fill-cool"} />
-      <p className="text-xs text-stone-500">{description}</p>
+      <div style={{
+        height: "5px", borderRadius: "3px", overflow: "hidden",
+        background: "rgba(255,255,255,0.06)", margin: "0.55rem 0",
+      }}>
+        <div style={{
+          height: "100%", width: `${pct}%`, borderRadius: "3px",
+          background: `linear-gradient(to right, ${t.text}88, ${t.text})`,
+          boxShadow: `0 0 8px ${t.text}55`, transition: "width 0.5s ease",
+        }} />
+      </div>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", justifyContent: "space-between" }}>
+        <p className="font-serif" style={{
+          fontSize: "0.7rem", fontStyle: "italic",
+          color: "var(--color-parchment-muted)", margin: 0, lineHeight: 1.45,
+        }}>{description}</p>
+        <Pill tone={badgeTone}>{badgeLabel}</Pill>
+      </div>
     </div>
   );
 }
 
 // ─── Etiket hesaplamaları ─────────────────────────────────────────────────────
 function repInfo(rep) {
-  if (rep >= 60) return { label: "Efsanevi", color: "border-amber-700 text-amber-400" };
-  if (rep >= 30) return { label: "Saygın", color: "border-emerald-700 text-emerald-400" };
-  if (rep >= 10) return { label: "Bilinen", color: "border-sky-700 text-sky-400" };
-  if (rep >= -10) return { label: "Sıradan", color: "border-stone-600 text-stone-400" };
-  if (rep >= -30) return { label: "Şüpheli", color: "border-orange-700 text-orange-400" };
-  return { label: "Kötü Şöhret", color: "border-red-700 text-red-400" };
+  if (rep >= 60) return { label: "Efsanevi", tone: "gold" };
+  if (rep >= 30) return { label: "Saygın", tone: "sage" };
+  if (rep >= 10) return { label: "Bilinen", tone: "ink" };
+  if (rep >= -10) return { label: "Sıradan", tone: "ash" };
+  if (rep >= -30) return { label: "Şüpheli", tone: "ember" };
+  return { label: "Kötü Şöhret", tone: "blood" };
 }
 
 function honorInfo(hon) {
-  if (hon >= 70) return { label: "Onurlu", color: "border-emerald-700 text-emerald-400" };
-  if (hon >= 40) return { label: "Dürüst", color: "border-sky-700 text-sky-400" };
-  if (hon >= 15) return { label: "Bilindik", color: "border-stone-600 text-stone-400" };
-  return { label: "Şerefsiz", color: "border-red-700 text-red-400" };
+  if (hon >= 70) return { label: "Onurlu", tone: "sage" };
+  if (hon >= 40) return { label: "Dürüst", tone: "ink" };
+  if (hon >= 15) return { label: "Bilindik", tone: "ash" };
+  return { label: "Şerefsiz", tone: "blood" };
 }
 
 function fearInfo(fear) {
-  if (fear >= 60) return { label: "Dehşet", color: "border-red-700 text-red-400" };
-  if (fear >= 35) return { label: "Ürkütücü", color: "border-orange-700 text-orange-400" };
-  if (fear >= 15) return { label: "Dikkat Çeken", color: "border-stone-600 text-stone-400" };
-  return { label: "Zararsız", color: "border-stone-700 text-stone-500" };
+  if (fear >= 60) return { label: "Dehşet", tone: "blood" };
+  if (fear >= 35) return { label: "Ürkütücü", tone: "ember" };
+  if (fear >= 15) return { label: "Dikkat Çeken", tone: "ash" };
+  return { label: "Zararsız", tone: "ash" };
 }
 
 function fameInfo(fame) {
-  if (fame >= 60) return { label: "Ünlü", color: "border-violet-700 text-violet-400" };
-  if (fame >= 30) return { label: "Tanınan", color: "border-purple-700 text-purple-400" };
-  if (fame >= 10) return { label: "Duyulan", color: "border-stone-600 text-stone-400" };
-  return { label: "Anonim", color: "border-stone-700 text-stone-500" };
+  if (fame >= 60) return { label: "Ünlü", tone: "ink" };
+  if (fame >= 30) return { label: "Tanınan", tone: "ink" };
+  if (fame >= 10) return { label: "Duyulan", tone: "ash" };
+  return { label: "Anonim", tone: "ash" };
 }
 
 // ─── Ticaret çarpanı göstergesi ───────────────────────────────────────────────
@@ -72,20 +85,29 @@ function TradeRow({ label, mult, type }) {
   const isGood = type === "buy" ? mult < 1 : mult > 1;
   const pct = Math.abs(Math.round(discount * 100));
   return (
-    <div className="flex items-center justify-between text-sm py-1.5 border-b border-stone-800/50 last:border-0">
-      <span className="text-stone-400">{label}</span>
-      <div className="flex items-center gap-1.5">
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "0.45rem 0", borderBottom: "1px solid rgba(46,36,22,0.6)",
+    }}>
+      <span className="font-serif" style={{ fontSize: "0.84rem", color: "var(--color-parchment-dim)" }}>
+        {label}
+      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
         {pct > 0 ? (
-          <>
-            {isGood ? <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> : <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
-            <span className={isGood ? "text-emerald-400" : "text-red-400"}>
-              {isGood ? "-" : "+"}{pct}%
-            </span>
-          </>
+          <span className="font-display" style={{
+            fontSize: "0.78rem", fontWeight: 700,
+            color: isGood ? "#4A9A5A" : "#C84040",
+          }}>
+            {isGood ? "▾ −" : "▴ +"}{pct}%
+          </span>
         ) : (
-          <span className="text-stone-500">Standart</span>
+          <span className="font-serif" style={{
+            fontSize: "0.76rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+          }}>Olağan</span>
         )}
-        <span className="text-stone-600 text-xs">(×{mult.toFixed(2)})</span>
+        <span className="font-display" style={{
+          fontSize: "0.62rem", color: "var(--color-parchment-muted)",
+        }}>(×{mult.toFixed(2)})</span>
       </div>
     </div>
   );
@@ -105,8 +127,12 @@ export default function Social() {
   }, [state?.turn]);
 
   if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <Loader2 className="w-6 h-6 animate-spin text-stone-600" />
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "5rem 0" }}>
+      <span className="font-display ember-flicker" style={{
+        fontSize: "0.62rem", letterSpacing: "0.25em", textTransform: "uppercase",
+      }}>
+        Nam salınıyor…
+      </span>
     </div>
   );
 
@@ -125,100 +151,125 @@ export default function Social() {
   const fai = fameInfo(fame);
 
   return (
-    <div className="space-y-5 rise-in">
-      {/* Başlık */}
-      <div>
-        <div className="label-tiny">Toplumdaki Yer</div>
-        <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-          <Star className="w-6 h-6 text-amber-600" /> Sosyal Statü
-        </h1>
-        <p className="text-stone-400 text-sm mt-1">
-          Adın nasıl anılıyor, senden nasıl çekiniyorlar.
-        </p>
-      </div>
+    <div className="page-shell rise-in" style={{ padding: "0 0 1.5rem" }}>
+      <PageHeader
+        kicker="Toplumdaki Yerin"
+        icon="🏅"
+        title="Namım & Şerefim"
+        sub="Adın nasıl anılıyor, kimler eğiliyor, kimler çekiniyor."
+      />
 
       {/* Unvan */}
-      <div className="card-frame p-4 flex items-center gap-4">
-        <div className="flex-1">
-          <div className="label-tiny mb-1">Genel Unvan</div>
-          <div className={`font-heading text-2xl ${ri.color.replace("border-", "text-").replace("/", "")}`}>
-            {ri.label}
+      <Panel title="Genel Unvan" icon="📯" tone={ri.tone}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div style={{ flex: 1 }}>
+            <div className="font-display" style={{
+              fontSize: "1.4rem", fontWeight: 700, color: TONES[ri.tone].text,
+              letterSpacing: "0.05em",
+              textShadow: `0 0 16px ${TONES[ri.tone].text}45`,
+            }}>
+              {ri.label}
+            </div>
+            <p className="font-serif" style={{
+              fontSize: "0.72rem", fontStyle: "italic",
+              color: "var(--color-parchment-muted)", margin: "0.2rem 0 0",
+            }}>
+              Çarşıda, handa, sarayda adın böyle anılıyor.
+            </p>
           </div>
-          <p className="text-stone-500 text-xs mt-0.5">İtibar değerine göre toplumsal konumun</p>
+          <div style={{ textAlign: "right", flexShrink: 0 }}>
+            <div className="label-tiny" style={{ marginBottom: "0.15rem" }}>İtibar</div>
+            <div className="font-display" style={{
+              fontSize: "1.7rem", fontWeight: 700, color: "var(--color-parchment)",
+              textShadow: "0 0 14px rgba(201,168,76,0.25)",
+            }}>{rep > 0 ? `+${rep}` : rep}</div>
+          </div>
         </div>
-        <div className="text-right">
-          <div className="label-tiny mb-1">İtibar</div>
-          <div className="font-heading text-3xl text-stone-100">{rep > 0 ? `+${rep}` : rep}</div>
-        </div>
-      </div>
+      </Panel>
+
+      <GoldRule label="Dört Mühür" />
 
       {/* 4 ana stat */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <StatCard
-          icon={Shield}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.6rem" }}>
+        <SealCard
+          icon="🛡"
           label="İtibar"
           value={rep}
           max={100}
-          colorClass="text-amber-400"
+          tone="gold"
           badgeLabel={ri.label}
-          badgeColor={ri.color}
-          description="NPC'lerin sana güvenini ve saygısını belirler. Yüksek itibar fiyatları etkiler."
+          badgeTone={ri.tone}
+          description="Halkın sana güveni ve saygısı. Yüksek itibar pazarda fiyatları yumuşatır."
         />
-        <StatCard
-          icon={Star}
+        <SealCard
+          icon="⚖"
           label="Şeref"
           value={honor}
           max={100}
-          colorClass="text-emerald-400"
+          tone="sage"
           badgeLabel={hi.label}
-          badgeColor={hi.color}
-          description="Verdiğin sözlere, dürüstlüğüne verilen değer. Lord'lar şerefine bakar."
+          badgeTone={hi.tone}
+          description="Verdiğin sözlere, dürüstlüğüne verilen değer. Beyler şerefine bakar."
         />
-        <StatCard
-          icon={Flame}
+        <SealCard
+          icon="🔥"
           label="Korku"
           value={fear}
           max={100}
-          colorClass="text-red-400"
+          tone="blood"
           badgeLabel={fi.label}
-          badgeColor={fi.color}
-          description="Senden çekinme seviyesi. Yüksek korku NPC saldırılarını azaltır ama ilişki kurmayı zorlaştırır."
+          badgeTone={fi.tone}
+          description="Senden çekinme seviyesi. Korku saldırıları savar ama gönül bağlarını zorlaştırır."
         />
-        <StatCard
-          icon={Eye}
+        <SealCard
+          icon="🌟"
           label="Ün"
           value={fame}
           max={100}
-          colorClass="text-violet-400"
+          tone="ink"
           badgeLabel={fai.label}
-          badgeColor={fai.color}
-          description="Adının ne kadar uzağa ulaştığı. Ünlü olunca yeni fırsatlar kapısı açılır."
+          badgeTone={fai.tone}
+          description="Adının ulaştığı menzil. Ünün yayıldıkça yeni kapılar aralanır."
         />
       </div>
 
+      <div style={{ height: "0.75rem" }} />
+
       {/* Ticaret etkileri */}
-      <div className="card-frame p-4 space-y-1">
-        <div className="flex items-center gap-2 mb-3">
-          <ShoppingBag className="w-4 h-4 text-amber-600" />
-          <span className="label-tiny">Pazar Etkileri</span>
-        </div>
+      <Panel title="Pazar Etkileri" icon="⚖" tone="gold">
         <TradeRow label="Satın alırken fiyat" mult={buyMult} type="buy" />
         <TradeRow label="Satarken fiyat" mult={sellMult} type="sell" />
-        <div className="flex items-center justify-between text-sm py-1.5 pt-2">
-          <span className="text-stone-400">NPC saldırı riski</span>
-          <span className={atkRisk > 0.15 ? "text-red-400" : atkRisk > 0.08 ? "text-orange-400" : "text-emerald-400"}>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0.55rem 0 0.1rem",
+        }}>
+          <span className="font-serif" style={{ fontSize: "0.84rem", color: "var(--color-parchment-dim)" }}>
+            Yol kesilme riski
+          </span>
+          <span className="font-display" style={{
+            fontSize: "0.82rem", fontWeight: 700,
+            color: atkRisk > 0.15 ? "#C84040" : atkRisk > 0.08 ? "#E05A30" : "#4A9A5A",
+          }}>
             %{Math.round(atkRisk * 100)}
           </span>
         </div>
-      </div>
+      </Panel>
+
+      <div style={{ height: "0.75rem" }} />
 
       {/* İpucu */}
-      <div className="border border-stone-800/50 rounded-sm p-3 text-xs text-stone-500 space-y-1">
-        <p>• <span className="text-stone-400">İtibar</span> arttırmak için: yardım et, görev tamamla, bağış yap</p>
-        <p>• <span className="text-stone-400">Şeref</span> için dürüst ve onurlu davran, sözünü tut</p>
-        <p>• <span className="text-stone-400">Ün</span> için savaş kazan, büyük olayların içinde ol</p>
-        <p>• <span className="text-stone-400">Korku</span> suç ve şiddetle artar — double-edged sword</p>
-      </div>
+      <Panel title="Kâtibin Notları" icon="🪶" tone="ash">
+        <ul className="font-serif" style={{
+          listStyle: "none", margin: 0, padding: 0, fontSize: "0.78rem",
+          fontStyle: "italic", color: "var(--color-parchment-dim)",
+          display: "flex", flexDirection: "column", gap: "0.35rem", lineHeight: 1.5,
+        }}>
+          <li>❧ <span style={{ color: "var(--color-gold)" }}>İtibar</span> için: yardım et, görev bitir, sadaka ver.</li>
+          <li>❧ <span style={{ color: "#4A9A5A" }}>Şeref</span> için dürüst ol, verdiğin sözü tut.</li>
+          <li>❧ <span style={{ color: "#7B4FAF" }}>Ün</span> için cenk kazan, büyük hadiselerin içinde ol.</li>
+          <li>❧ <span style={{ color: "#C84040" }}>Korku</span> suç ve kılıçla artar — iki ucu keskin bıçaktır.</li>
+        </ul>
+      </Panel>
     </div>
   );
 }

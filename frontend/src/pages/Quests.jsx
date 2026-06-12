@@ -1,54 +1,99 @@
+/**
+ * Görev Defteri — KÜL & KÖZ.
+ * Duygu görevi: "Verilmiş sözlerim" — görevler ferman/parşömen hissi taşır.
+ * İşlevsellik (kabul/tamamlama akışı, gruplama, data-testid'ler) birebir korunur.
+ */
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
+import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
-import { ListChecks, MapPin, Baby, Lock, CheckCircle2, Hourglass } from "lucide-react";
+import { PageHeader, Panel, Pill, EmptyState, Coin, GoldRule } from "@/components/ui/Kit";
 
 const STATUS_LABEL = {
   açık: "Açık",
-  kabul_edildi: "Kabul Edildi",
+  kabul_edildi: "Söz Verildi",
   tamamlandı: "Tamamlandı",
   başarısız: "Başarısız",
 };
 
-const STATUS_COLOR = {
-  açık: "text-amber-400 border-amber-900",
-  kabul_edildi: "text-orange-400 border-orange-900",
-  tamamlandı: "text-emerald-400 border-emerald-900",
-  başarısız: "text-red-400 border-red-900",
+const STATUS_TONE = {
+  açık: "gold",
+  kabul_edildi: "ember",
+  tamamlandı: "sage",
+  başarısız: "blood",
 };
 
 function QuestCard({ q, busy, onAccept, onComplete }) {
   const isLocal = q._isLocal;
+  const isPast = q.status === "tamamlandı" || q.status === "başarısız";
   return (
-    <div key={q.id} className="card-frame p-4" data-testid={`quest-${q.id}`}>
-      <div className="flex justify-between items-start mb-2">
-        <h3 className="font-heading text-stone-100">{q.title}</h3>
-        <span className={`text-[10px] px-2 py-0.5 border rounded-sm font-heading tracking-wider ${STATUS_COLOR[q.status]}`}>
-          {STATUS_LABEL[q.status]}
+    <div key={q.id} className="card-frame" data-testid={`quest-${q.id}`}
+      style={{
+        padding: "0.85rem",
+        opacity: isPast ? 0.65 : 1,
+        ...(isLocal && !isPast ? {
+          borderColor: "rgba(201,168,76,0.4)",
+          boxShadow: "0 0 14px rgba(201,168,76,0.1), 0 4px 16px rgba(0,0,0,0.45)",
+        } : {}),
+      }}>
+      <div style={{
+        display: "flex", justifyContent: "space-between",
+        alignItems: "flex-start", gap: "0.6rem", marginBottom: "0.45rem",
+      }}>
+        <h3 className="font-display" style={{
+          fontSize: "0.92rem", fontWeight: 700, margin: 0,
+          color: "var(--color-parchment)", display: "flex",
+          alignItems: "center", gap: "0.45rem",
+        }}>
+          <span style={{ fontSize: "0.85rem" }}>📜</span>
+          {q.title}
+        </h3>
+        <Pill tone={STATUS_TONE[q.status] || "ash"}>{STATUS_LABEL[q.status]}</Pill>
+      </div>
+      <p className="font-serif" style={{
+        fontSize: "0.82rem", fontStyle: "italic", lineHeight: 1.5,
+        color: "var(--color-parchment-dim)", margin: "0 0 0.6rem",
+      }}>
+        {q.description}
+      </p>
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem",
+      }}>
+        <span className="font-serif" style={{
+          fontSize: "0.72rem", fontStyle: "italic",
+          color: isLocal ? "var(--color-gold)" : "var(--color-parchment-muted)",
+          display: "inline-flex", alignItems: "center", gap: "0.3rem",
+        }}>
+          🗺 {q.location_name}
+          {isLocal && (
+            <span className="font-display" style={{
+              fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.12em",
+              color: "var(--color-gold-bright)", textTransform: "uppercase",
+            }}>· buradasın</span>
+          )}
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+          <span className="label-tiny">Ödül</span>
+          <Coin value={q.reward} size="0.76rem" />
         </span>
       </div>
-      <p className="text-sm text-stone-400 mb-3">{q.description}</p>
-      <div className="flex justify-between items-center text-xs text-stone-500">
-        <span className={`flex items-center gap-1 ${isLocal ? "text-amber-500" : ""}`}>
-          <MapPin className="w-3 h-3" />
-          {q.location_name}
-          {isLocal && <span className="text-amber-600 font-heading ml-1">BURADASIN</span>}
-        </span>
-        <span>Ödül: <span className="text-amber-400">{q.reward}a</span></span>
-      </div>
-      <div className="flex gap-2 mt-3">
-        {q.status === "açık" && (
-          <button onClick={() => onAccept(q.id)} disabled={busy === q.id} data-testid={`quest-accept-${q.id}`} className="btn-ghost-ash px-3 py-1.5 text-xs">
-            Kabul Et
+      {(q.status === "açık" || q.status === "kabul_edildi") && (
+        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.7rem" }}>
+          {q.status === "açık" && (
+            <button onClick={() => onAccept(q.id)} disabled={busy === q.id}
+              data-testid={`quest-accept-${q.id}`} className="btn-ghost-ash"
+              style={{ padding: "0.4rem 0.75rem", fontSize: "0.6rem" }}>
+              Söz Ver
+            </button>
+          )}
+          <button onClick={() => onComplete(q.id)} disabled={busy === q.id}
+            data-testid={`quest-complete-${q.id}`} className="btn-ember"
+            style={{ padding: "0.4rem 0.85rem", fontSize: "0.6rem", flex: 1 }}>
+            ⚜ Tamamlamayı Dene
           </button>
-        )}
-        {(q.status === "açık" || q.status === "kabul_edildi") && (
-          <button onClick={() => onComplete(q.id)} disabled={busy === q.id} data-testid={`quest-complete-${q.id}`} className="btn-ember px-3 py-1.5 text-xs font-heading tracking-wider">
-            Tamamlamayı Dene
-          </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -67,11 +112,14 @@ export default function Quests() {
 
   const accept = async (id) => {
     setBusy(id);
+    playSfx("click");
     try {
       const { data } = await api.post("/game/quest/accept", { quest_id: id });
       setState(data);
+      playSfx("page");
       toast.success("Görev kabul edildi.");
     } catch (e) {
+      playSfx("fail");
       toast.error(e.response?.data?.detail || "Hata");
     } finally {
       setBusy(null);
@@ -80,11 +128,14 @@ export default function Quests() {
 
   const complete = async (id) => {
     setBusy(id);
+    playSfx("click");
     try {
       const { data } = await api.post("/game/quest/complete", { quest_id: id });
       setState(data);
+      playSfx("success");
       toast.success("Görev sonuçlandı.");
     } catch (e) {
+      playSfx("fail");
       toast.error(e.response?.data?.detail || "Hata");
     } finally {
       setBusy(null);
@@ -105,116 +156,108 @@ export default function Quests() {
   }, [state.turn, state.player?.age]);
 
   return (
-    <div className="space-y-6 rise-in">
-      <div>
-        <div className="label-tiny">Görev Defteri</div>
-        <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-          <ListChecks className="w-7 h-7 text-orange-600" /> Yapılacaklar
-          {activeQuests.length > 0 && (
-            <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-full bg-orange-500 text-stone-950 text-xs font-heading font-bold">
-              {activeQuests.length}
-            </span>
-          )}
-        </h1>
-        <div className="flex items-center gap-3 mt-1 text-xs text-stone-500">
-          {localActive.length > 0 && (
-            <span className="flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-amber-500" />
-              <span className="text-amber-400 font-heading">{playerLocationName}</span>
-              <span className="text-stone-600">·</span>
-              <span>{localActive.length} burada</span>
-            </span>
-          )}
-          {localActive.length > 0 && remoteActive.length > 0 && <span className="text-stone-700">·</span>}
-          {remoteActive.length > 0 && (
-            <span>{remoteActive.length} başka şehirde</span>
-          )}
-          {activeQuests.length === 0 && (
-            <span>Aktif görev yok. Dünyayı gezmaya devam et.</span>
-          )}
-        </div>
-      </div>
+    <div className="page-shell rise-in" style={{ padding: "0 0 1.5rem" }}>
+      <PageHeader
+        kicker="Görev Defteri"
+        icon="📜"
+        title="Verilmiş Sözlerim"
+        sub={activeQuests.length === 0
+          ? "Defter boş — ama dünya kendi dertlerini yaratmakta gecikmez."
+          : `${activeQuests.length} söz açık duruyor; ${localActive.length > 0 ? `${localActive.length}'i bu diyarda` : "hepsi uzak diyarlarda"}.`}
+        right={activeQuests.length > 0 ? (
+          <Pill tone="ember" pulse="danger">{activeQuests.length} açık</Pill>
+        ) : null}
+      />
 
       {/* Yerel görevler */}
       {localActive.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <MapPin className="w-3.5 h-3.5 text-amber-500" />
-            <span className="label-tiny text-amber-600">{playerLocationName} — Buradaki Görevler</span>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
+        <Panel title={`${playerLocationName} — Buradaki Sözler`} icon="🗺" tone="gold"
+          right={<Pill tone="gold">{localActive.length}</Pill>}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
             {localActive.map(q => (
               <QuestCard key={q.id} q={q} busy={busy} onAccept={accept} onComplete={complete} />
             ))}
           </div>
-        </div>
+        </Panel>
       )}
+
+      {localActive.length > 0 && remoteActive.length > 0 && <div style={{ height: "0.75rem" }} />}
 
       {/* Uzak görevler */}
       {remoteActive.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="label-tiny text-stone-500">Diğer Şehirlerdeki Görevler</span>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
+        <Panel title="Uzak Diyarlardaki Sözler" icon="🐎" tone="ash"
+          right={<Pill tone="ash">{remoteActive.length}</Pill>}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
             {remoteActive.map(q => (
               <QuestCard key={q.id} q={q} busy={busy} onAccept={accept} onComplete={complete} />
             ))}
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* Tamamlanan / başarısız */}
       {pastQuests.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="label-tiny text-stone-600">Geçmiş</span>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {pastQuests.map(q => (
-              <QuestCard key={q.id} q={q} busy={busy} onAccept={accept} onComplete={complete} />
-            ))}
-          </div>
-        </div>
+        <>
+          <GoldRule label="Geçmişin Tozu" />
+          <Panel title="Kapanmış Defter" icon="🕯" tone="ash"
+            right={<Pill tone="ash">{pastQuests.length}</Pill>}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+              {pastQuests.map(q => (
+                <QuestCard key={q.id} q={q} busy={busy} onAccept={accept} onComplete={complete} />
+              ))}
+            </div>
+          </Panel>
+        </>
       )}
 
       {quests.length === 0 && (
-        <div className="text-stone-500">
-          Henüz bir görev yok. Birkaç gün geçir, dünya kendi sorunlarını yaratır.
-        </div>
+        <Panel title="Boş Defter" icon="🪶" tone="ash">
+          <EmptyState icon="📜"
+            title="Henüz kimse senden bir şey istemedi."
+            sub="Birkaç ay geçir; dünya kendi sorunlarını yaratır." />
+        </Panel>
       )}
 
       {/* ── Aile Yolu ── */}
       {activeFamilyQuests.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3 pt-4 border-t border-stone-800">
-            <Baby className="w-3.5 h-3.5 text-amber-500" />
-            <span className="label-tiny text-amber-600">Aile Yolu</span>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {activeFamilyQuests.map((q) => {
-              const Icon = q.status === "tamamlandı" ? CheckCircle2
-                         : q.status === "kilitli"    ? Lock : Hourglass;
-              return (
-                <div key={q.id} className="card-frame p-4">
-                  <div className="flex justify-between items-start mb-2 gap-3">
-                    <h3 className="font-heading text-stone-100 flex items-center gap-2">
-                      <Icon className="w-4 h-4 text-stone-400" />
+        <>
+          <GoldRule label="Aile Yolu" />
+          <Panel title="Ocağın Sözleri" icon="🏠" tone="ember"
+            right={<Pill tone="ember">{activeFamilyQuests.length}</Pill>}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+              {activeFamilyQuests.map((q) => (
+                <div key={q.id} className="card-frame" style={{ padding: "0.85rem" }}>
+                  <div style={{
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "flex-start", gap: "0.6rem", marginBottom: "0.45rem",
+                  }}>
+                    <h3 className="font-display" style={{
+                      fontSize: "0.9rem", fontWeight: 700, margin: 0,
+                      color: "var(--color-parchment)", display: "flex",
+                      alignItems: "center", gap: "0.45rem",
+                    }}>
+                      <span style={{ fontSize: "0.85rem" }}>
+                        {q.status === "tamamlandı" ? "✓" : q.status === "kilitli" ? "🔒" : "⏳"}
+                      </span>
                       {q.title}
                     </h3>
-                    <span className="text-[10px] px-2 py-0.5 border rounded-sm font-heading tracking-wider text-amber-400 border-amber-900">
-                      {q.status}
-                    </span>
+                    <Pill tone="gold">{q.status}</Pill>
                   </div>
-                  <p className="text-sm text-stone-400 mb-2">{q.description}</p>
-                  <div className="text-xs text-stone-500">
-                    Veren: {q.giver_role === "anne" ? "Annen" : "Baban"}
-                  </div>
+                  <p className="font-serif" style={{
+                    fontSize: "0.8rem", fontStyle: "italic", lineHeight: 1.5,
+                    color: "var(--color-parchment-dim)", margin: "0 0 0.5rem",
+                  }}>{q.description}</p>
+                  <span className="font-serif" style={{
+                    fontSize: "0.72rem", fontStyle: "italic",
+                    color: "var(--color-parchment-muted)",
+                  }}>
+                    {q.giver_role === "anne" ? "👩 Annenin sözü" : "🧔 Babanın sözü"}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              ))}
+            </div>
+          </Panel>
+        </>
       )}
     </div>
   );

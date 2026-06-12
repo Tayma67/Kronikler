@@ -1,50 +1,58 @@
+/**
+ * Diyardan Haberler — KÜL & KÖZ görsel katman.
+ * Duygu görevi: tellal/divan duyurusu estetiği — önemli haberler ferman gibi,
+ * tarih damgaları Cinzel. İşlevsellik (API/filtre akışı) birebir korunur.
+ */
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useGame } from "@/lib/GameContext";
-import {
-  Newspaper, Loader2, Sun, Cloud, Flame, Sword, ShoppingBag, Crosshair,
-  Heart, Users, Star, AlertTriangle, Leaf, Gem, Drumstick,
-  Globe, Clock, CheckCircle, Crown, Handshake, ArrowRightLeft,
-} from "lucide-react";
+import { playSfx } from "@/lib/audio";
+import { PageHeader, Panel, Pill, EmptyState, TONES } from "@/components/ui/Kit";
+
+// ─── Tarih damgası: 1 tur = 1 ay; yıl 1247'den yürür ─────────────────────────
+const tarihDamga = (t) => {
+  const n = Number(t) || 0;
+  return `${(n % 12) + 1}. Ay ${1247 + Math.floor(n / 12)}`;
+};
 
 // ─── Olay Kategorisi Ayarları ────────────────────────────────────────────────
 
 const CAT_CONFIG = {
-  doğa:    { label: "Doğa",    color: "text-emerald-400",  bg: "bg-emerald-900/30", border: "border-emerald-800", icon: Leaf },
-  sosyal:  { label: "Sosyal",  color: "text-amber-400",    bg: "bg-amber-900/30",   border: "border-amber-800",   icon: Heart },
-  ekonomi: { label: "Ekonomi", color: "text-sky-400",      bg: "bg-sky-900/30",     border: "border-sky-800",     icon: ShoppingBag },
-  tehlike: { label: "Tehlike", color: "text-red-400",      bg: "bg-red-900/30",     border: "border-red-800",     icon: AlertTriangle },
-  haber:   { label: "Haber",   color: "text-purple-400",   bg: "bg-purple-900/30",  border: "border-purple-800",  icon: Star },
-  kriz:    { label: "Kriz",    color: "text-red-400",      bg: "bg-red-900/30",     border: "border-red-800",     icon: AlertTriangle },
+  doğa:    { label: "Doğa",    tone: "sage",  icon: "🌿" },
+  sosyal:  { label: "Sosyal",  tone: "ember", icon: "🪕" },
+  ekonomi: { label: "Ekonomi", tone: "gold",  icon: "⚖" },
+  tehlike: { label: "Tehlike", tone: "blood", icon: "⚠" },
+  haber:   { label: "Haber",   tone: "ink",   icon: "📯" },
+  kriz:    { label: "Kriz",    tone: "blood", icon: "🔥" },
 };
 
 const TYPE_ICON = {
-  kuraklık:           Sun,
-  bereketli_hasat:    Leaf,
-  büyük_yangın:       Flame,
-  salgın_hastalık:    AlertTriangle,
-  haydut_saldırıları: Sword,
-  asker_toplama:      Sword,
-  ticaret_patlaması:  ShoppingBag,
-  yeni_maden:         Gem,
-  festival:           Drumstick,
-  dini_kutlama:       Star,
-  soylu_düğünü:       Heart,
-  göç_dalgası:        Users,
-  ünlü_ölümü:         Globe,
-  tahta_çıkış:        Crown,
-  savaş_ilanı:        Sword,
-  savaş_hareketi:     Sword,
-  barış:              Handshake,
-  göç:                ArrowRightLeft,
-  meslek_edinme:      Star,
+  kuraklık:           "☀",
+  bereketli_hasat:    "🌾",
+  büyük_yangın:       "🔥",
+  salgın_hastalık:    "💀",
+  haydut_saldırıları: "⚔",
+  asker_toplama:      "🛡",
+  ticaret_patlaması:  "⚖",
+  yeni_maden:         "💎",
+  festival:           "🍗",
+  dini_kutlama:       "⭐",
+  soylu_düğünü:       "💍",
+  göç_dalgası:        "👣",
+  ünlü_ölümü:         "🕯",
+  tahta_çıkış:        "👑",
+  savaş_ilanı:        "⚔",
+  savaş_hareketi:     "🐎",
+  barış:              "🕊",
+  göç:                "👣",
+  meslek_edinme:      "⭐",
   // GDD v4 Kriz Olayları
-  kriz_kuraklik:      Sun,
-  kriz_veba:          AlertTriangle,
-  kriz_yangin:        Flame,
-  uye_kazanildi:      Users,
-  darbe_hazırlık:     Crosshair,
-  faction_aktif:      Star,
+  kriz_kuraklik:      "☀",
+  kriz_veba:          "💀",
+  kriz_yangin:        "🔥",
+  uye_kazanildi:      "👥",
+  darbe_hazırlık:     "🗡",
+  faction_aktif:      "⭐",
 };
 
 // ─── Bileşenler ──────────────────────────────────────────────────────────────
@@ -52,75 +60,94 @@ const TYPE_ICON = {
 function EventBadge({ category, active }) {
   const cfg = CAT_CONFIG[category] || CAT_CONFIG.haber;
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-sm border font-heading tracking-wider ${cfg.color} ${cfg.border} ${cfg.bg}`}>
-      {active ? "● AKTİF" : cfg.label.toUpperCase()}
-    </span>
+    <Pill tone={cfg.tone} pulse={active && cfg.tone === "blood" ? "danger" : undefined}>
+      {active ? "● Aktif" : cfg.label}
+    </Pill>
   );
 }
 
 function EventCard({ event, compact = false }) {
   const cfg = CAT_CONFIG[event.category] || CAT_CONFIG.haber;
-  const IconComp = TYPE_ICON[event.type] || Globe;
+  const t = TONES[cfg.tone] || TONES.gold;
+  const icon = TYPE_ICON[event.type] || "📜";
   const isActive = event.active;
 
   return (
-    <div
-      className={`card-frame p-4 border-l-2 transition-all ${isActive ? cfg.border : "border-stone-700"} ${isActive ? cfg.bg : ""}`}
-    >
+    <div className="card-frame" style={{
+      padding: "0.85rem",
+      borderLeft: isActive ? `3px solid ${t.border}` : "3px solid var(--color-border)",
+      background: isActive
+        ? `linear-gradient(to right, ${t.bg}, transparent 55%)`
+        : undefined,
+      opacity: isActive ? 1 : 0.82,
+    }}>
       {/* Başlık satırı */}
-      <div className="flex items-start gap-3">
-        <div className={`shrink-0 w-9 h-9 rounded-sm flex items-center justify-center ${isActive ? cfg.bg : "bg-stone-900"} border ${isActive ? cfg.border : "border-stone-800"}`}>
-          <IconComp className={`w-4 h-4 ${isActive ? cfg.color : "text-stone-500"}`} />
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem" }}>
+        <div style={{
+          flexShrink: 0, width: "2.2rem", height: "2.2rem", borderRadius: "6px",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "1rem",
+          border: isActive ? `1px solid ${t.border}` : "1px solid var(--color-border)",
+          background: isActive ? t.bg : "rgba(10,7,4,0.5)",
+          filter: isActive ? "drop-shadow(0 0 6px rgba(201,168,76,0.2))" : "grayscale(0.4)",
+        }}>
+          {icon}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.25rem" }}>
             <EventBadge category={event.category} active={isActive} />
-            <span className="text-[10px] text-stone-500 uppercase tracking-wider">
-              {event.location_name}
-            </span>
+            <span className="label-tiny">{event.location_name}</span>
           </div>
-          <div className={`font-heading text-sm leading-tight ${isActive ? "text-stone-100" : "text-stone-400"}`}>
+          <div className="font-display" style={{
+            fontSize: "0.82rem", fontWeight: 700, lineHeight: 1.3,
+            color: isActive ? "var(--color-parchment)" : "var(--color-parchment-dim)",
+            textShadow: isActive ? "0 0 10px rgba(201,168,76,0.12)" : "none",
+          }}>
             {event.headline}
           </div>
         </div>
-        <div className="shrink-0 flex items-center gap-1 text-[10px] text-stone-600">
-          <Clock className="w-3 h-3" />
-          <span>T{event.started_day}</span>
+        <div className="font-display" style={{
+          flexShrink: 0, fontSize: "0.52rem", letterSpacing: "0.1em",
+          textTransform: "uppercase", color: "var(--color-gold-dim)",
+        }}>
+          ⌛ {tarihDamga(event.started_day)}
         </div>
       </div>
 
       {/* Detay (compact değilse) */}
       {!compact && (
         <>
-          <p className="text-sm text-stone-400 mt-3 leading-relaxed pl-12">
+          <p className="font-serif" style={{
+            fontSize: "0.84rem", fontStyle: "italic", lineHeight: 1.55,
+            color: "var(--color-parchment-dim)", marginTop: "0.6rem",
+          }}>
             {event.detail}
           </p>
 
           {/* Etkiler listesi */}
           {event.effects && event.effects.length > 0 && (
-            <div className="mt-3 pl-12 flex flex-wrap gap-2">
+            <div style={{ marginTop: "0.55rem", display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
               {event.effects.map((eff, i) => (
-                <span
-                  key={i}
-                  className={`text-[11px] px-2 py-0.5 rounded-sm border ${cfg.border} ${cfg.bg} ${cfg.color}`}
-                >
-                  {eff}
-                </span>
+                <Pill key={i} tone={cfg.tone}>{eff}</Pill>
               ))}
             </div>
           )}
 
           {/* Bitiş bilgisi */}
           {isActive && (
-            <div className="mt-3 pl-12 flex items-center gap-2 text-[10px] text-stone-500">
-              <Clock className="w-3 h-3" />
-              <span>Sona eriyor: Tur {event.ends_day}</span>
+            <div className="font-display" style={{
+              marginTop: "0.55rem", fontSize: "0.52rem", letterSpacing: "0.12em",
+              textTransform: "uppercase", color: "var(--color-parchment-muted)",
+            }}>
+              ⌛ Sona erer: {tarihDamga(event.ends_day)}
             </div>
           )}
           {!isActive && (
-            <div className="mt-3 pl-12 flex items-center gap-2 text-[10px] text-stone-600">
-              <CheckCircle className="w-3 h-3" />
-              <span>Sona erdi</span>
+            <div className="font-display" style={{
+              marginTop: "0.55rem", fontSize: "0.52rem", letterSpacing: "0.12em",
+              textTransform: "uppercase", color: "var(--color-parchment-muted)", opacity: 0.7,
+            }}>
+              🔏 Hükmü sona erdi
             </div>
           )}
         </>
@@ -132,22 +159,31 @@ function EventCard({ event, compact = false }) {
 function ActiveEventsBanner({ events }) {
   if (!events || events.length === 0) return null;
   return (
-    <div className="card-frame p-4 border border-orange-900 bg-orange-950/30">
-      <div className="label-tiny text-orange-500 mb-2">Şu An Aktif Olaylar</div>
-      <div className="space-y-2">
+    <Panel title="Tellal Bağırıyor" icon="📯" tone="ember"
+      right={<Pill tone="ember">{events.length} olay</Pill>}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
         {events.map((ev) => {
           const cfg = CAT_CONFIG[ev.category] || CAT_CONFIG.haber;
-          const IconComp = TYPE_ICON[ev.type] || Globe;
+          const icon = TYPE_ICON[ev.type] || "📜";
+          const t = TONES[cfg.tone] || TONES.gold;
           return (
-            <div key={ev.id} className="flex items-center gap-2 text-sm">
-              <IconComp className={`w-3.5 h-3.5 shrink-0 ${cfg.color}`} />
-              <span className="text-stone-300 leading-tight">{ev.headline}</span>
-              <span className="text-[10px] text-stone-600 shrink-0">— {ev.location_name}</span>
+            <div key={ev.id} className="row-frame" style={{
+              borderLeft: `2px solid ${t.border}`,
+              background: `linear-gradient(to right, ${t.bg}, transparent 70%)`,
+            }}>
+              <span style={{ fontSize: "0.9rem", flexShrink: 0 }}>{icon}</span>
+              <span className="font-serif" style={{
+                flex: 1, fontSize: "0.84rem", fontStyle: "italic",
+                color: "var(--color-parchment)", lineHeight: 1.4,
+              }}>
+                {ev.headline}
+              </span>
+              <span className="label-tiny" style={{ flexShrink: 0 }}>{ev.location_name}</span>
             </div>
           );
         })}
       </div>
-    </div>
+    </Panel>
   );
 }
 
@@ -182,31 +218,50 @@ const KRIZ_BASLIK = {
 function CrisisBanner({ crisisEvents }) {
   if (!crisisEvents || crisisEvents.length === 0) return null;
   const KRIZ_STYLE = {
-    kriz_kuraklik: { bg: "bg-amber-950/30", border: "border-amber-800/60", color: "text-amber-400", Icon: Sun },
-    kriz_veba:     { bg: "bg-purple-950/30", border: "border-purple-800/60", color: "text-purple-400", Icon: AlertTriangle },
-    kriz_yangin:   { bg: "bg-red-950/30",    border: "border-red-800/60",    color: "text-red-400",    Icon: Flame },
+    kriz_kuraklik: { tone: "ember", icon: "☀" },
+    kriz_veba:     { tone: "ink",   icon: "💀" },
+    kriz_yangin:   { tone: "blood", icon: "🔥" },
   };
   return (
-    <div className="space-y-2">
-      <div className="label-tiny text-red-400 flex items-center gap-1.5">
-        <AlertTriangle className="w-3 h-3" /> AKTİF KRİZ OLAYLARI
-      </div>
-      {crisisEvents.map((ev) => {
-        const style = KRIZ_STYLE[ev.type] || KRIZ_STYLE.kriz_yangin;
-        const { Icon } = style;
-        const baslik = KRIZ_BASLIK[ev.type] || "Kriz";
-        return (
-          <div key={ev.id} className={`flex items-start gap-3 p-3 rounded-sm border ${style.border} ${style.bg}`}>
-            <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${style.color}`} />
-            <div className="flex-1 min-w-0">
-              <div className={`text-sm font-heading ${style.color}`}>{baslik}</div>
-              <div className="text-xs text-stone-300 leading-snug mt-0.5">{ev.text}</div>
+    <Panel title="Aktif Kriz Olayları" icon="⚠" tone="blood"
+      right={<Pill tone="blood" pulse="danger">{crisisEvents.length}</Pill>}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+        {crisisEvents.map((ev) => {
+          const style = KRIZ_STYLE[ev.type] || KRIZ_STYLE.kriz_yangin;
+          const t = TONES[style.tone] || TONES.blood;
+          const baslik = KRIZ_BASLIK[ev.type] || "Kriz";
+          return (
+            <div key={ev.id} className="row-frame" style={{
+              alignItems: "flex-start",
+              borderLeft: `2px solid ${t.border}`,
+              background: `linear-gradient(to right, ${t.bg}, transparent 65%)`,
+            }}>
+              <span style={{ fontSize: "0.95rem", flexShrink: 0, marginTop: "0.05rem" }}>{style.icon}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="font-display" style={{
+                  fontSize: "0.74rem", fontWeight: 700, color: t.text,
+                  letterSpacing: "0.05em",
+                }}>
+                  {baslik}
+                </div>
+                <div className="font-serif" style={{
+                  fontSize: "0.8rem", fontStyle: "italic", lineHeight: 1.45,
+                  color: "var(--color-parchment-dim)", marginTop: "0.15rem",
+                }}>
+                  {ev.text}
+                </div>
+              </div>
+              <span className="font-display" style={{
+                flexShrink: 0, fontSize: "0.52rem", letterSpacing: "0.1em",
+                textTransform: "uppercase", color: "var(--color-gold-dim)",
+              }}>
+                ⌛ {tarihDamga(ev.day)}
+              </span>
             </div>
-            <span className="text-[10px] text-stone-600 shrink-0">T{ev.day}</span>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </Panel>
   );
 }
 
@@ -232,15 +287,36 @@ export default function WorldNews() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[200px] text-stone-500">
-        <Loader2 className="w-6 h-6 animate-spin" />
+      <div className="page-shell rise-in" style={{
+        display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", minHeight: "200px", gap: "0.6rem",
+      }}>
+        <span style={{ fontSize: "1.5rem", opacity: 0.5,
+                       filter: "drop-shadow(0 0 10px rgba(201,168,76,0.3))" }}>📯</span>
+        <span className="font-serif" style={{
+          fontSize: "0.85rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+        }}>
+          Tellal soluklanıyor, haberler yolda…
+        </span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-red-400 p-4">{error}</div>
+      <div className="page-shell rise-in" style={{ padding: "1rem" }}>
+        <div className="row-frame" style={{
+          borderLeft: `2px solid ${TONES.blood.border}`,
+          background: `linear-gradient(to right, ${TONES.blood.bg}, transparent 70%)`,
+        }}>
+          <span style={{ fontSize: "0.9rem" }}>⚠</span>
+          <span className="font-serif" style={{
+            fontSize: "0.85rem", fontStyle: "italic", color: TONES.blood.text,
+          }}>
+            {error}
+          </span>
+        </div>
+      </div>
     );
   }
 
@@ -254,19 +330,25 @@ export default function WorldNews() {
     : all_events.filter(ev => ev.category === filter);
 
   return (
-    <div className="space-y-6 rise-in">
+    <div className="page-shell rise-in" style={{ display: "flex", flexDirection: "column", gap: "0.9rem", paddingBottom: "1.5rem" }}>
       {/* Başlık */}
-      <div>
-        <div className="label-tiny">Gündem</div>
-        <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-          <Newspaper className="w-7 h-7 text-orange-600" /> Dünya Haberleri
-        </h1>
-        {calendar && (
-          <p className="text-sm text-stone-500 mt-1">
-            {calendar.month_name} {calendar.year} · {calendar.season}
-          </p>
+      <PageHeader
+        kicker="Tellal Nidası"
+        icon="📯"
+        title="Diyardan Haberler"
+        sub="Meydanda bağırılır, divandan mühürle çıkar — diyarın ahvali."
+        right={calendar && (
+          <div style={{ textAlign: "right" }}>
+            <div className="label-tiny" style={{ marginBottom: "0.1rem" }}>{calendar.season}</div>
+            <div className="font-display" style={{
+              fontSize: "0.78rem", fontWeight: 700, color: "var(--color-gold)",
+              letterSpacing: "0.06em", textShadow: "0 0 8px rgba(201,168,76,0.3)",
+            }}>
+              {calendar.month_name} {calendar.year}
+            </div>
+          </div>
         )}
-      </div>
+      />
 
       {/* Aktif olaylar banner */}
       <ActiveEventsBanner events={active_events} />
@@ -284,58 +366,82 @@ export default function WorldNews() {
         const nonCrisisPinned = pinned_events.filter(e => !KRIZ_TYPES.has(e.type));
         if (nonCrisisPinned.length === 0) return null;
         return (
-          <div className="card-frame p-4 border border-red-900/60 bg-red-950/20">
-            <div className="label-tiny text-red-400 mb-3 flex items-center gap-1.5">
-              <Crown className="w-3 h-3" /> KRİTİK HABERLER
-            </div>
-            <div className="space-y-2">
+          <Panel title="Kritik Haberler" icon="👑" tone="blood">
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
               {nonCrisisPinned.map((ev) => {
-                const IconComp = TYPE_ICON[ev.type] || Globe;
+                const icon = TYPE_ICON[ev.type] || "📜";
                 const isWar   = ev.type === "savaş_ilanı" || ev.type === "savaş_hareketi";
                 const isPeace = ev.type === "barış";
                 const isThrone = ev.type === "tahta_çıkış";
-                const colCls  = isWar ? "text-red-400" : isPeace ? "text-emerald-400" : isThrone ? "text-amber-400" : "text-purple-400";
+                const tone  = isWar ? "blood" : isPeace ? "sage" : isThrone ? "gold" : "ink";
+                const t = TONES[tone];
                 return (
-                  <div key={ev.id} className="flex items-start gap-2 text-sm">
-                    <IconComp className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${colCls}`} />
-                    <span className="text-stone-300 leading-snug">{ev.text}</span>
-                    <span className="text-[10px] text-stone-600 shrink-0 ml-auto">T{ev.day}</span>
+                  <div key={ev.id} className="row-frame" style={{
+                    alignItems: "flex-start",
+                    borderLeft: `2px solid ${t.border}`,
+                    background: `linear-gradient(to right, ${t.bg}, transparent 65%)`,
+                  }}>
+                    <span style={{ fontSize: "0.9rem", flexShrink: 0, marginTop: "0.05rem" }}>{icon}</span>
+                    <span className="font-serif" style={{
+                      flex: 1, fontSize: "0.84rem", fontStyle: "italic",
+                      color: "var(--color-parchment)", lineHeight: 1.45,
+                    }}>
+                      {ev.text}
+                    </span>
+                    <span className="font-display" style={{
+                      flexShrink: 0, fontSize: "0.52rem", letterSpacing: "0.1em",
+                      textTransform: "uppercase", color: "var(--color-gold-dim)",
+                    }}>
+                      ⌛ {tarihDamga(ev.day)}
+                    </span>
                   </div>
                 );
               })}
             </div>
-          </div>
+          </Panel>
         );
       })()}
 
       {/* Boş durum */}
       {active_events.length === 0 && (
-        <div className="card-frame p-6 text-center text-stone-500">
-          <Globe className="w-8 h-8 mx-auto mb-2 opacity-40" />
-          <div className="text-sm">Şu an aktif dünya olayı yok.</div>
-          <div className="text-xs text-stone-600 mt-1">Her ay yeni olaylar oluşur. Zamanı ilerlet!</div>
+        <div className="card-frame">
+          <EmptyState icon="🌍"
+            title="Şu an diyarda aktif olay yok."
+            sub="Her ay yeni olaylar doğar — zamanı ilerlet, tellal yine bağıracak." />
         </div>
       )}
 
       {/* Filtre butonları */}
       {all_events.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
           {FILTER_OPTIONS.map(opt => {
             const cfg = CAT_CONFIG[opt.key];
             const isActive = filter === opt.key;
+            const t = cfg ? TONES[cfg.tone] : TONES.gold;
             return (
               <button
                 key={opt.key}
-                onClick={() => setFilter(opt.key)}
-                className={`text-xs px-3 py-1 rounded-sm border font-heading tracking-wider transition-all ${
-                  isActive
-                    ? (cfg ? `${cfg.color} ${cfg.border} ${cfg.bg}` : "text-orange-400 border-orange-800 bg-orange-950/40")
-                    : "text-stone-500 border-stone-700 hover:text-stone-300 hover:border-stone-600"
-                }`}
+                onClick={() => { playSfx("click"); setFilter(opt.key); }}
+                className="font-display"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "0.3rem",
+                  padding: "0.28rem 0.6rem", borderRadius: "4px", cursor: "pointer",
+                  fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.1em",
+                  textTransform: "uppercase", transition: "all 0.15s",
+                  border: isActive ? `1px solid ${t.border}` : "1px solid var(--color-border)",
+                  background: isActive ? t.bg : "transparent",
+                  color: isActive ? t.text : "var(--color-parchment-muted)",
+                }}
               >
                 {opt.label}
                 {opt.key === "active" && active_events.length > 0 && (
-                  <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-[10px] bg-orange-600 text-white rounded-full">
+                  <span className="font-display" style={{
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    minWidth: "1rem", height: "1rem", borderRadius: "50%",
+                    fontSize: "0.55rem", fontWeight: 700,
+                    background: "rgba(224,90,48,0.85)", color: "#FFF1DE",
+                    boxShadow: "0 0 8px rgba(224,90,48,0.4)",
+                  }}>
                     {active_events.length}
                   </span>
                 )}
@@ -347,9 +453,11 @@ export default function WorldNews() {
 
       {/* Olay listesi */}
       {all_events.length > 0 && (
-        <div className="space-y-3 max-w-3xl">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
           {filtered.length === 0 && (
-            <div className="text-stone-500 text-sm p-4">Bu kategoride olay bulunamadı.</div>
+            <EmptyState icon="📜"
+              title="Bu kategoride olay bulunamadı."
+              sub="Tellal başka bahisten söz ediyor — filtreyi değiştir." />
           )}
           {filtered.map((ev) => (
             <EventCard key={ev.id} event={ev} />
@@ -358,16 +466,10 @@ export default function WorldNews() {
       )}
 
       {all_events.length === 0 && active_events.length === 0 && (
-        <div className="card-frame p-8 text-center space-y-2">
-          <Globe className="w-10 h-10 mx-auto text-stone-700" />
-          <div className="font-heading text-stone-400 text-lg">Dünya Sessiz</div>
-          <p className="text-sm text-stone-600 max-w-md mx-auto">
-            Henüz kayıtlı dünya olayı yok. Zamanı ilerletince dünya kendi kendine değişmeye başlayacak.
-            Her ay yeni olaylar oluşur: kuraklıklar, festivaller, salgınlar, ticaret patlamaları…
-          </p>
-          <div className="text-xs text-stone-700 italic mt-2">
-            Oyuncudan bağımsız, dünya kendi hikayesini yaşar.
-          </div>
+        <div className="card-frame">
+          <EmptyState icon="🌍"
+            title="Diyar sessiz — henüz kayıtlı olay yok."
+            sub="Zamanı ilerlet; her ay kuraklıklar, festivaller, salgınlar, ticaret patlamaları doğar. Oyuncudan bağımsız, dünya kendi hikâyesini yaşar." />
         </div>
       )}
     </div>

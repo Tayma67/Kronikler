@@ -1,127 +1,194 @@
 /**
- * SkillTree.jsx — Adım 16
- * Yeni 3-seçenekli perk sistemiyle güncellendi.
- * Her perk seviyesinde oyuncunun seçtiği perk gösterilir.
- * Henüz seçilmemiş (ama seçilebilir) seviyeler öne çıkar.
+ * SkillTree.jsx — Yetenek Ağacı, KÜL & KÖZ.
+ * Duygu görevi: "Ustalaşıyorum" — düğümler mühür gibi.
+ * 3-seçenekli perk sistemi: her perk seviyesinde oyuncunun seçtiği perk gösterilir,
+ * henüz seçilmemiş (ama seçilebilir) seviyeler köz gibi yanar.
+ * İşlevsellik (props, koşullar, veri akışı) birebir korunur.
  */
 import { useState } from "react";
-import { Sword, ShoppingBasket, Hammer, Users, Lock, CheckCircle2, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
+import { playSfx } from "@/lib/audio";
+import { PageHeader, Pill, EmptyState, TONES } from "@/components/ui/Kit";
 
 const SKILL_META = {
-  combat:   { label: "Savaş",   icon: Sword,          color: "text-red-400",    bg: "bg-red-950/40",   border: "border-red-900",   fill: "bg-red-700"   },
-  trade:    { label: "Ticaret", icon: ShoppingBasket,  color: "text-amber-400",  bg: "bg-amber-950/30", border: "border-amber-900", fill: "bg-amber-700" },
-  crafting: { label: "Zanaat",  icon: Hammer,          color: "text-stone-300",  bg: "bg-stone-900/40", border: "border-stone-700", fill: "bg-stone-500" },
-  social:   { label: "Sosyal",  icon: Users,           color: "text-pink-400",   bg: "bg-pink-950/40",  border: "border-pink-900",  fill: "bg-pink-700"  },
+  combat:   { label: "Savaş",   icon: "⚔",  tone: "blood" },
+  trade:    { label: "Ticaret", icon: "⚖",  tone: "gold"  },
+  crafting: { label: "Zanaat",  icon: "🔨", tone: "ember" },
+  social:   { label: "Sosyal",  icon: "🗣", tone: "ink"   },
 };
 
 const PERK_LEVELS = [3, 6, 9];
+
+/* Mühür rozeti — seviye damgası */
+function SealBadge({ level, state, tone }) {
+  const t = TONES[tone] || TONES.gold;
+  const palette = {
+    pending: { border: t.border, bg: t.bg, color: t.text, glow: `0 0 12px ${t.text}44` },
+    chosen:  { border: "rgba(201,168,76,0.55)", bg: "rgba(201,168,76,0.1)", color: "var(--color-gold)", glow: "0 0 10px rgba(201,168,76,0.3)" },
+    locked:  { border: "rgba(122,106,79,0.35)", bg: "rgba(10,7,4,0.4)", color: "var(--color-parchment-muted)", glow: "none" },
+  }[state];
+  return (
+    <span className="font-display" style={{
+      width: "2.2rem", height: "2.2rem", borderRadius: "50%", flexShrink: 0,
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      fontSize: "0.6rem", fontWeight: 700,
+      border: state === "locked" ? `1px dashed ${palette.border}` : `1.5px solid ${palette.border}`,
+      background: palette.bg, color: palette.color, boxShadow: palette.glow,
+    }}>
+      {level}
+    </span>
+  );
+}
 
 /**
  * Tek bir perk seviye düğümü.
  * Durumlar: locked | pending (skill ≥ level, henüz seçilmedi) | chosen | not_reached
  */
-function PerkLevelNode({ level, skillLevel, chosenPerk, perkOptions }) {
+function PerkLevelNode({ level, skillLevel, chosenPerk, perkOptions, tone }) {
   const [expanded, setExpanded] = useState(false);
   const reached = skillLevel >= level;
   const chosen = chosenPerk !== null && chosenPerk !== undefined;
   const pending = reached && !chosen; // Skill yeterli ama seçim yapılmadı
+  const t = TONES[tone] || TONES.gold;
 
   return (
-    <div className="flex flex-col items-stretch">
-      {/* Connector */}
-      <div className={`mx-auto w-px h-5 ${reached ? "bg-amber-700/60" : "bg-stone-800"}`} />
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch" }}>
+      {/* Bağlayıcı çizgi — ağacın gövdesi */}
+      <div style={{
+        margin: "0 auto", width: "1px", height: "1.1rem",
+        background: reached
+          ? `linear-gradient(to bottom, ${t.text}88, ${t.text}44)`
+          : "rgba(122,106,79,0.3)",
+      }} />
 
-      {/* Node header */}
+      {/* Düğüm başlığı — mühür */}
       <button
-        onClick={() => reached && setExpanded(e => !e)}
-        className={`rounded-lg border p-3 text-left transition-all duration-200 ${
-          pending
-            ? "border-amber-500/60 bg-amber-950/30 shadow-[0_0_10px_rgba(217,119,6,0.15)] cursor-pointer hover:bg-amber-950/50"
+        onClick={() => reached && (playSfx("click"), setExpanded(e => !e))}
+        className={pending ? "animate-pulse-gold" : ""}
+        style={{
+          textAlign: "left", borderRadius: "8px", padding: "0.6rem 0.7rem",
+          transition: "all 0.2s", cursor: reached ? "pointer" : "default",
+          border: pending
+            ? `1px solid ${t.border}`
             : chosen
-            ? "border-emerald-800/60 bg-emerald-950/20 cursor-pointer hover:bg-emerald-950/30"
-            : "border-stone-800 bg-stone-950/30 opacity-50 cursor-default"
-        }`}
+            ? "1px solid rgba(201,168,76,0.4)"
+            : "1px dashed rgba(122,106,79,0.35)",
+          background: pending
+            ? `linear-gradient(160deg, ${t.bg}, rgba(15,11,6,0.6))`
+            : chosen
+            ? "linear-gradient(160deg, rgba(201,168,76,0.07), rgba(15,11,6,0.55))"
+            : "rgba(10,7,4,0.35)",
+          opacity: reached ? 1 : 0.55,
+        }}
       >
-        <div className="flex items-center gap-3">
-          {/* Level badge */}
-          <span className={`text-xs font-bold px-2 py-0.5 rounded-sm shrink-0 ${
-            pending ? "bg-amber-700 text-amber-100" :
-            chosen  ? "bg-emerald-800 text-emerald-200" :
-            "bg-stone-800 text-stone-600"
-          }`}>
-            Sv {level}
-          </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+          {/* Seviye mührü */}
+          <SealBadge
+            level={level}
+            tone={tone}
+            state={pending ? "pending" : chosen ? "chosen" : "locked"}
+          />
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
+          {/* İçerik */}
+          <div style={{ flex: 1, minWidth: 0 }}>
             {pending && (
-              <div className="flex items-center gap-1.5">
-                <HelpCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span className="text-amber-300 text-xs font-semibold">Perk bekleniyor</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span style={{ fontSize: "0.8rem" }}>🔥</span>
+                <span className="font-display" style={{
+                  fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.1em", color: t.text,
+                }}>
+                  Mühür seçimi bekliyor
+                </span>
               </div>
             )}
             {chosen && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-lg">{chosenPerk.perk_icon || "⭐"}</span>
-                <div>
-                  <div className="text-emerald-300 text-xs font-semibold">{chosenPerk.perk_name}</div>
-                  <div className="text-stone-500 text-[10px] truncate">{chosenPerk.perk_desc}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+                <span style={{ fontSize: "1.1rem", filter: "drop-shadow(0 0 6px rgba(201,168,76,0.35))" }}>
+                  {chosenPerk.perk_icon || "⭐"}
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <div className="font-display" style={{
+                    fontSize: "0.7rem", fontWeight: 700, color: "var(--color-gold)",
+                  }}>
+                    {chosenPerk.perk_name}
+                  </div>
+                  <div className="font-serif" style={{
+                    fontSize: "0.66rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>
+                    {chosenPerk.perk_desc}
+                  </div>
                 </div>
               </div>
             )}
             {!reached && (
-              <div className="flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-stone-700 shrink-0" />
-                <span className="text-stone-700 text-xs">{level} seviye gerekli</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span style={{ fontSize: "0.75rem", opacity: 0.6 }}>🔒</span>
+                <span className="font-serif" style={{
+                  fontSize: "0.72rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+                }}>
+                  {level}. seviyede mühür açılır
+                </span>
               </div>
             )}
           </div>
 
-          {/* Status icon */}
-          <div className="shrink-0">
-            {chosen  && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-            {pending && <span className="text-amber-400 text-xs">●</span>}
+          {/* Durum işareti */}
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            {chosen  && <span style={{ color: "#6FBF7F", fontSize: "0.8rem" }}>✓</span>}
+            {pending && <span style={{ color: t.text, fontSize: "0.7rem" }}>●</span>}
+            {reached && (
+              <span style={{ color: "var(--color-parchment-muted)", fontSize: "0.6rem" }}>
+                {expanded ? "▲" : "▼"}
+              </span>
+            )}
           </div>
-
-          {/* Expand arrow */}
-          {reached && (
-            expanded
-              ? <ChevronUp className="w-3.5 h-3.5 text-stone-500 shrink-0" />
-              : <ChevronDown className="w-3.5 h-3.5 text-stone-500 shrink-0" />
-          )}
         </div>
       </button>
 
-      {/* Expanded: seçenekleri göster */}
+      {/* Açılmış: seçenekleri göster */}
       {expanded && reached && perkOptions && (
-        <div className="mt-1.5 ml-2 space-y-1.5 pb-1">
+        <div style={{ marginTop: "0.4rem", marginLeft: "0.5rem", paddingBottom: "0.25rem",
+                      display: "flex", flexDirection: "column", gap: "0.4rem" }}>
           {perkOptions.map((opt) => {
             const isChosen = chosen && chosenPerk.perk_key === opt.key;
             const isOther = chosen && !isChosen; // Başkası seçildi
             return (
               <div
                 key={opt.key}
-                className={`rounded-lg border px-3 py-2.5 transition-all ${
-                  isChosen
-                    ? "border-emerald-700/60 bg-emerald-950/30"
-                    : isOther
-                    ? "border-stone-800/40 bg-stone-950/20 opacity-40"
-                    : pending
-                    ? "border-amber-800/30 bg-amber-950/10 hover:bg-amber-950/20"
-                    : "border-stone-800/40 bg-stone-950/20"
-                }`}
+                style={{
+                  borderRadius: "7px", padding: "0.55rem 0.7rem", transition: "all 0.2s",
+                  border: isChosen
+                    ? "1px solid rgba(201,168,76,0.5)"
+                    : `1px solid ${isOther ? "rgba(122,106,79,0.25)" : t.border}`,
+                  background: isChosen
+                    ? "rgba(201,168,76,0.08)"
+                    : isOther ? "rgba(10,7,4,0.3)" : t.bg,
+                  opacity: isOther ? 0.45 : 1,
+                }}
               >
-                <div className="flex items-start gap-2.5">
-                  <span className={`text-xl shrink-0 ${isOther ? "grayscale" : ""}`}>{opt.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-xs font-semibold ${isChosen ? "text-emerald-300" : isOther ? "text-stone-600" : "text-stone-300"}`}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "0.55rem" }}>
+                  <span style={{ fontSize: "1.15rem", flexShrink: 0, filter: isOther ? "grayscale(1)" : "none" }}>
+                    {opt.icon}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="font-display" style={{
+                      fontSize: "0.7rem", fontWeight: 700,
+                      color: isChosen ? "var(--color-gold)" : isOther ? "var(--color-parchment-muted)" : "var(--color-parchment)",
+                      display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap",
+                    }}>
                       {opt.name}
-                      {isChosen && <span className="ml-2 text-[9px] bg-emerald-800 text-emerald-200 px-1.5 py-0.5 rounded-sm uppercase tracking-wider">Seçildi ✓</span>}
+                      {isChosen && <Pill tone="gold">Mühürlendi ✓</Pill>}
                     </div>
-                    <div className={`text-[10px] mt-0.5 leading-relaxed ${isOther ? "text-stone-700" : "text-stone-500"}`}>
+                    <div className="font-serif" style={{
+                      fontSize: "0.68rem", fontStyle: "italic", marginTop: "0.15rem", lineHeight: 1.45,
+                      color: isOther ? "rgba(122,106,79,0.7)" : "var(--color-parchment-dim)",
+                    }}>
                       {opt.desc}
                     </div>
-                    <div className={`text-[10px] mt-1 font-mono ${isChosen ? "text-emerald-500" : isOther ? "text-stone-700" : "text-stone-600"}`}>
+                    <div className="font-display" style={{
+                      fontSize: "0.58rem", marginTop: "0.25rem", letterSpacing: "0.05em",
+                      color: isChosen ? "#6FBF7F" : isOther ? "rgba(122,106,79,0.7)" : t.text,
+                    }}>
                       → {opt.effect_preview}
                     </div>
                   </div>
@@ -130,8 +197,11 @@ function PerkLevelNode({ level, skillLevel, chosenPerk, perkOptions }) {
             );
           })}
           {pending && (
-            <p className="text-[10px] text-amber-600 text-center pt-1 italic">
-              ⚡ Hafta ilerlet — perk seçim ekranı açılacak
+            <p className="font-serif" style={{
+              fontSize: "0.66rem", fontStyle: "italic", textAlign: "center",
+              color: "var(--color-gold-dim)", paddingTop: "0.2rem",
+            }}>
+              ⚡ Ayı ilerlet — mühür seçim ekranı açılacak
             </p>
           )}
         </div>
@@ -142,7 +212,7 @@ function PerkLevelNode({ level, skillLevel, chosenPerk, perkOptions }) {
 
 function SkillBranch({ skillKey, skillData, expanded, onToggle }) {
   const meta = SKILL_META[skillKey];
-  const Icon = meta.icon;
+  const t = TONES[meta.tone] || TONES.gold;
 
   const currentLevel = skillData?.level ?? 0;
   const currentXp = skillData?.xp ?? 0;
@@ -156,42 +226,65 @@ function SkillBranch({ skillKey, skillData, expanded, onToggle }) {
   ).length;
 
   return (
-    <div className={`card-frame border ${meta.border} ${meta.bg} overflow-hidden`}>
-      {/* Branch Header */}
+    <div className="card-frame" style={{
+      overflow: "hidden",
+      border: `1px solid ${t.border}`,
+      background: `linear-gradient(165deg, ${t.bg} 0%, rgba(20,14,7,0.5) 40%, transparent 100%)`,
+    }}>
+      {/* Dal başlığı */}
       <button
-        onClick={onToggle}
-        className="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors"
+        onClick={() => { playSfx("click"); onToggle(); }}
+        style={{
+          width: "100%", padding: "0.8rem 0.85rem", display: "flex", alignItems: "center",
+          gap: "0.7rem", background: "none", border: "none", cursor: "pointer", textAlign: "left",
+        }}
       >
-        <Icon className={`w-5 h-5 ${meta.color} shrink-0`} />
-        <div className="flex-1 text-left">
-          <div className={`font-heading text-sm ${meta.color}`}>{meta.label}</div>
-          <div className="flex items-center gap-2 mt-1">
-            <div className="text-xs text-stone-500">Seviye {currentLevel}</div>
-            <div className="flex-1 h-1 bg-stone-900 rounded-sm overflow-hidden max-w-[80px]">
-              <div className={`h-full ${meta.fill} transition-all`} style={{ width: `${xpPct}%` }} />
+        <span style={{ fontSize: "1.3rem", flexShrink: 0, filter: `drop-shadow(0 0 8px ${t.text}55)` }}>
+          {meta.icon}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="font-display" style={{
+            fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.12em",
+            textTransform: "uppercase", color: t.text,
+          }}>
+            {meta.label}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.3rem" }}>
+            <span className="font-display" style={{ fontSize: "0.6rem", color: "var(--color-parchment-dim)", flexShrink: 0 }}>
+              Seviye {currentLevel}
+            </span>
+            <div style={{ flex: 1, maxWidth: "90px", height: "4px", background: "rgba(255,255,255,0.07)", borderRadius: "2px", overflow: "hidden" }}>
+              <div style={{
+                height: "100%", width: `${xpPct}%`, borderRadius: "2px",
+                background: `linear-gradient(to right, ${t.text}99, ${t.text})`,
+                boxShadow: `0 0 6px ${t.text}55`, transition: "width 0.5s ease",
+              }} />
             </div>
-            <div className="text-[10px] text-stone-600">{currentXp}/{nextXp} XP</div>
+            <span className="font-display" style={{ fontSize: "0.52rem", color: "var(--color-parchment-muted)", flexShrink: 0 }}>
+              {currentXp}/{nextXp} XP
+            </span>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
           {chosenCount > 0 && (
-            <span className="text-[9px] font-heading px-1.5 py-0.5 rounded-sm bg-emerald-900/60 text-emerald-400">
-              {chosenCount}/{PERK_LEVELS.length} perk
-            </span>
+            <Pill tone="sage">{chosenCount}/{PERK_LEVELS.length} mühür</Pill>
           )}
-          {expanded
-            ? <ChevronUp className="w-4 h-4 text-stone-500" />
-            : <ChevronDown className="w-4 h-4 text-stone-500" />
-          }
+          <span style={{ color: "var(--color-parchment-muted)", fontSize: "0.65rem" }}>
+            {expanded ? "▲" : "▼"}
+          </span>
         </div>
       </button>
 
-      {/* Perk Tree */}
+      {/* Perk ağacı */}
       {expanded && (
-        <div className="px-4 pb-4">
-          <div className="flex flex-col items-stretch">
-            {/* Root */}
-            <div className={`mx-auto w-2 h-2 rounded-full ${currentLevel > 0 ? meta.fill : "bg-stone-800"}`} />
+        <div style={{ padding: "0 0.85rem 0.9rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch" }}>
+            {/* Kök */}
+            <div style={{
+              margin: "0 auto", width: "8px", height: "8px", borderRadius: "50%",
+              background: currentLevel > 0 ? t.text : "rgba(122,106,79,0.4)",
+              boxShadow: currentLevel > 0 ? `0 0 8px ${t.text}66` : "none",
+            }} />
 
             {PERK_LEVELS.map((level) => {
               const chosenPerk = chosenPerks.find(p => p.level === level) || null;
@@ -203,14 +296,18 @@ function SkillBranch({ skillKey, skillData, expanded, onToggle }) {
                   skillLevel={currentLevel}
                   chosenPerk={chosenPerk}
                   perkOptions={options}
+                  tone={meta.tone}
                 />
               );
             })}
           </div>
 
           {currentLevel >= 9 && chosenCount === PERK_LEVELS.length && (
-            <div className="mt-4 text-center text-[10px] text-amber-500 font-heading">
-              ✦ TÜM PERKLER AÇILDI ✦
+            <div className="font-display ember-flicker" style={{
+              marginTop: "0.9rem", textAlign: "center", fontSize: "0.6rem",
+              letterSpacing: "0.25em", color: "var(--color-gold)",
+            }}>
+              ✦ TÜM MÜHÜRLER VURULDU ✦
             </div>
           )}
         </div>
@@ -225,9 +322,11 @@ export default function SkillTree({ skillsData }) {
 
   if (!skillsData) {
     return (
-      <div className="text-stone-600 text-sm text-center py-8">
-        Skill verisi yükleniyor…
-      </div>
+      <EmptyState
+        icon="📜"
+        title="Ustalık defterin açılıyor…"
+        sub="Yetenek kayıtları getiriliyor, bir nefes bekle."
+      />
     );
   }
 
@@ -251,19 +350,24 @@ export default function SkillTree({ skillsData }) {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="label-tiny">Yetenek Ağacı</div>
+    <div className="page-shell rise-in">
+      <PageHeader
+        kicker="Ustalık"
+        icon="🜂"
+        title="Yetenek Ağacı"
+        sub="Her dal emekle uzar; her mühür bir ömrün damgasıdır."
+      />
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+        {["combat", "trade", "crafting", "social"].map(skillKey => (
+          <SkillBranch
+            key={skillKey}
+            skillKey={skillKey}
+            skillData={buildSkillData(skillKey)}
+            expanded={expanded[skillKey]}
+            onToggle={() => toggle(skillKey)}
+          />
+        ))}
       </div>
-      {["combat", "trade", "crafting", "social"].map(skillKey => (
-        <SkillBranch
-          key={skillKey}
-          skillKey={skillKey}
-          skillData={buildSkillData(skillKey)}
-          expanded={expanded[skillKey]}
-          onToggle={() => toggle(skillKey)}
-        />
-      ))}
     </div>
   );
 }

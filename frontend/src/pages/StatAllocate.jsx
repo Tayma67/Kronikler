@@ -1,19 +1,22 @@
+/**
+ * Stat Dağılımı — KÜL & KÖZ.
+ * Duygu görevi: "Bedenim ve aklım şekilleniyor."
+ * İşlevsellik (API çağrıları, state akışı) birebir korunur; yalnız görsel katman.
+ */
 import { useEffect, useState } from "react";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
+import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
-import { Zap, Brain, MessageCircle, Heart, Plus, Loader2, AlertCircle, TrendingUp, Star } from "lucide-react";
+import { PageHeader, Panel, Pill, GoldRule, EmptyState, TONES } from "@/components/ui/Kit";
 
 // ─── Stat konfigürasyonu ──────────────────────────────────────────────────────
 const STATS = [
   {
     key: "strength",
     label: "Güç",
-    icon: Zap,
-    color: "text-red-400",
-    border: "border-red-900/60",
-    bg: "bg-red-950/15",
-    fill: "bg-red-700",
+    icon: "💪",
+    tone: "ember",
     description: "Fiziksel güç. Savaşta saldırı, ağır işlerde kazanç.",
     perks: ["Savaş hasarı +", "Ağır yük taşıma", "Çiftçilik & demircilik geliri"],
     professions: ["asker", "şövalye", "demirci", "çiftçi", "haydut"],
@@ -21,11 +24,8 @@ const STATS = [
   {
     key: "intelligence",
     label: "Zeka",
-    icon: Brain,
-    color: "text-sky-400",
-    border: "border-sky-900/60",
-    bg: "bg-sky-950/15",
-    fill: "bg-sky-700",
+    icon: "🧠",
+    tone: "ink",
     description: "Düşünme kapasitesi. Ticaret, okul, gizli cemiyet araştırması.",
     perks: ["Ticaret kazancı +", "Gizli cemiyet ipucu şansı +", "Okul dersleri hızlanır"],
     professions: ["tüccar", "katip", "şifacı", "rahip", "zanaatkar"],
@@ -33,11 +33,8 @@ const STATS = [
   {
     key: "charisma",
     label: "Karizma",
-    icon: MessageCircle,
-    color: "text-violet-400",
-    border: "border-violet-900/60",
-    bg: "bg-violet-950/15",
-    fill: "bg-violet-700",
+    icon: "🗣",
+    tone: "gold",
     description: "Sosyal etki. NPC ilişkileri, pazarlık, faction yükselişi.",
     perks: ["NPC ilişki gelişimi +", "Pazarlık avantajı", "Faction katkı bonusu"],
     professions: ["tüccar", "rahip", "lord", "şövalye", "katip"],
@@ -45,11 +42,8 @@ const STATS = [
   {
     key: "stamina",
     label: "Dayanıklılık",
-    icon: Heart,
-    color: "text-emerald-400",
-    border: "border-emerald-900/60",
-    bg: "bg-emerald-950/15",
-    fill: "bg-emerald-700",
+    icon: "❤️",
+    tone: "sage",
     description: "Sağlamlık ve enerji. Maksimum can, açlık direnci, iyileşme.",
     perks: ["Maksimum can +", "Açlık azalması yavaşlar", "Savaş savunması +"],
     professions: ["asker", "avcı", "şövalye", "çiftçi", "demirci çırağı"],
@@ -78,46 +72,66 @@ function xpForNext(level) {
   return 10 + level * 15;
 }
 
-// ─── Tek stat kartı ───────────────────────────────────────────────────────────
+// ─── Tek stat kartı — beden ve akıl, mühür gibi büyür ────────────────────────
 function StatCard({ stat, value, xp = 0, onAllocate, busy, hasPoints, maxed, isRecommended }) {
-  const Icon = stat.icon;
+  const t = TONES[stat.tone] || TONES.gold;
   const pct      = Math.max(0, Math.min(100, (value / 10) * 100));
   const xpNeeded = xpForNext(value);
   const xpPct    = Math.min(100, (xp / xpNeeded) * 100);
 
   return (
-    <div className={`card-frame p-4 border ${stat.border} ${stat.bg} space-y-3 relative`}>
+    <div className="card-frame" style={{
+      position: "relative", padding: "1rem",
+      border: `1px solid ${t.border}`,
+      background: `linear-gradient(165deg, ${t.bg} 0%, rgba(20,14,7,0.4) 45%, transparent 100%)`,
+    }}>
       {/* Önerilen rozeti */}
       {isRecommended && (
-        <div className="absolute top-3 right-3 flex items-center gap-1 text-[9px] font-heading tracking-wider text-amber-400 border border-amber-800/60 bg-amber-950/30 px-1.5 py-0.5 rounded-sm">
-          <Star className="w-2.5 h-2.5" /> Önerilen
+        <div style={{ position: "absolute", top: "0.7rem", right: "0.7rem" }}>
+          <Pill tone="gold">★ Önerilen</Pill>
         </div>
       )}
 
       {/* Başlık + değer */}
-      <div className="flex items-center gap-2 pr-16">
-        <Icon className={`w-4 h-4 ${stat.color} shrink-0`} />
-        <span className="label-tiny">{stat.label}</span>
-        <span className={`font-heading text-2xl ${stat.color} ml-auto`}>{value}</span>
-        <span className="text-stone-600 text-xs font-heading">/ 10</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", paddingRight: isRecommended ? "5rem" : 0 }}>
+        <span style={{ fontSize: "1.5rem", filter: `drop-shadow(0 0 8px ${t.text}55)` }}>{stat.icon}</span>
+        <span className="font-display" style={{
+          fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.16em",
+          textTransform: "uppercase", color: t.text,
+        }}>
+          {stat.label}
+        </span>
+        <span className="font-display" style={{
+          marginLeft: "auto", fontSize: "1.7rem", fontWeight: 700, color: t.text,
+          textShadow: `0 0 14px ${t.text}55`, lineHeight: 1,
+        }}>
+          {value}
+        </span>
+        <span className="font-display" style={{ fontSize: "0.7rem", color: "var(--color-parchment-muted)" }}>
+          / 10
+        </span>
       </div>
 
       {/* Seviye barı */}
-      <div className="space-y-0.5">
-        <div className="stat-bar">
-          <div className={`h-full transition-all duration-500 ${stat.fill}`} style={{ width: `${pct}%` }} />
+      <div style={{ marginTop: "0.65rem" }}>
+        <div style={{ height: "6px", background: "rgba(255,255,255,0.07)", borderRadius: "3px", overflow: "hidden" }}>
+          <div style={{
+            height: "100%", width: `${pct}%`, borderRadius: "3px",
+            background: `linear-gradient(to right, ${t.text}88, ${t.text})`,
+            boxShadow: `0 0 8px ${t.text}66`, transition: "width 0.5s ease",
+          }} />
         </div>
 
         {/* XP barı */}
         {!maxed && (
-          <div className="flex items-center gap-2">
-            <div className="flex-1 h-0.5 bg-stone-800 rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all duration-700 opacity-60 ${stat.fill}`}
-                style={{ width: `${xpPct}%` }}
-              />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.3rem" }}>
+            <div style={{ flex: 1, height: "2px", background: "rgba(255,255,255,0.06)", borderRadius: "1px", overflow: "hidden" }}>
+              <div style={{
+                height: "100%", width: `${xpPct}%`, opacity: 0.6,
+                background: t.text, transition: "width 0.7s ease",
+              }} />
             </div>
-            <span className="text-[9px] text-stone-600 font-heading shrink-0">
+            <span className="font-display" style={{ fontSize: "0.52rem", color: "var(--color-parchment-muted)", flexShrink: 0 }}>
               {xp}/{xpNeeded} XP
             </span>
           </div>
@@ -125,39 +139,60 @@ function StatCard({ stat, value, xp = 0, onAllocate, busy, hasPoints, maxed, isR
       </div>
 
       {/* Açıklama */}
-      <p className="text-xs text-stone-500">{stat.description}</p>
+      <p className="font-serif" style={{
+        fontSize: "0.74rem", fontStyle: "italic", color: "var(--color-parchment-dim)",
+        marginTop: "0.6rem", lineHeight: 1.45,
+      }}>
+        {stat.description}
+      </p>
 
       {/* Bonuslar */}
-      <ul className="space-y-0.5">
+      <ul style={{ margin: "0.5rem 0 0", padding: 0, listStyle: "none" }}>
         {stat.perks.map((p) => (
-          <li key={p} className="text-xs text-stone-400 flex items-center gap-1.5">
-            <span className={`w-1 h-1 rounded-full shrink-0 ${stat.fill}`} />
+          <li key={p} className="font-serif" style={{
+            fontSize: "0.7rem", color: "var(--color-parchment-muted)",
+            display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.08rem 0",
+          }}>
+            <span style={{
+              width: "4px", height: "4px", borderRadius: "50%", flexShrink: 0,
+              background: t.text, boxShadow: `0 0 4px ${t.text}88`,
+            }} />
             {p}
           </li>
         ))}
       </ul>
 
       {/* Artır butonu */}
-      {maxed ? (
-        <div className="text-center text-xs text-stone-600 font-heading tracking-wider py-1 border border-stone-800/50 rounded-sm">
-          MAKSİMUM
-        </div>
-      ) : (
-        <button
-          onClick={() => onAllocate(stat.key)}
-          disabled={busy || !hasPoints}
-          className={`w-full flex items-center justify-center gap-1.5 py-2 text-xs font-heading tracking-wider border rounded-sm transition-all
-            ${hasPoints && !busy
-              ? `${stat.border} ${stat.color} hover:bg-white/5`
-              : "border-stone-800/50 text-stone-700 cursor-not-allowed"
-            }`}
-        >
-          {busy === stat.key
-            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            : <Plus className="w-3.5 h-3.5" />}
-          +1 Ekle
-        </button>
-      )}
+      <div style={{ marginTop: "0.7rem" }}>
+        {maxed ? (
+          <div className="font-display" style={{
+            textAlign: "center", fontSize: "0.6rem", letterSpacing: "0.2em",
+            color: "var(--color-gold-dim)", padding: "0.45rem 0",
+            border: "1px solid rgba(201,168,76,0.25)", borderRadius: "5px",
+          }}>
+            ✦ ZİRVE ✦
+          </div>
+        ) : (
+          <button
+            onClick={() => onAllocate(stat.key)}
+            disabled={busy || !hasPoints}
+            className="font-display"
+            style={{
+              width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
+              gap: "0.35rem", padding: "0.55rem 0", borderRadius: "5px",
+              fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase",
+              border: `1px solid ${hasPoints && !busy ? t.border : "rgba(122,106,79,0.3)"}`,
+              background: hasPoints && !busy ? t.bg : "transparent",
+              color: hasPoints && !busy ? t.text : "var(--color-parchment-muted)",
+              cursor: hasPoints && !busy ? "pointer" : "not-allowed",
+              boxShadow: hasPoints && !busy ? `0 0 12px ${t.text}22` : "none",
+              transition: "all 0.2s",
+            }}
+          >
+            {busy === stat.key ? "⏳" : "＋"} 1 Puan Ekle
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -187,9 +222,11 @@ export default function StatAllocate() {
     try {
       const { data } = await api.post("/game/stat/allocate", { stat: statKey });
       if (data.state) setState(data.state);
+      playSfx("success");
       const label = STATS.find(s => s.key === statKey)?.label || statKey;
       toast.success(`${label} → ${data.new_value} (${data.stat_points_remaining} puan kaldı)`);
     } catch (e) {
+      playSfx("fail");
       toast.error(e.response?.data?.detail || "Hata");
     } finally {
       setBusy(null);
@@ -199,54 +236,79 @@ export default function StatAllocate() {
   const totalStats = Object.values(stats).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="space-y-5 rise-in">
-      {/* Başlık */}
-      <div>
-        <div className="label-tiny">Karakter Gelişimi</div>
-        <h1 className="font-heading text-3xl text-stone-100">Stat Dağılımı</h1>
-        <p className="text-stone-400 text-sm mt-1">
-          Deneyim kazandıkça stat puanı kazanırsın. Nereye harcadığın karakterini şekillendirir.
-        </p>
-      </div>
+    <div className="page-shell rise-in" style={{ padding: "0 0 1.5rem" }}>
+      <PageHeader
+        kicker="Karakter Gelişimi"
+        icon="⚖"
+        title="Beden & Akıl"
+        sub="Nereye emek verirsen, orası şekillenir — taş yontulur gibi."
+        right={
+          <div style={{ textAlign: "right" }}>
+            <div className="label-tiny" style={{ marginBottom: "0.1rem" }}>Puan</div>
+            <span className="font-display" style={{
+              fontSize: "1.4rem", fontWeight: 700,
+              color: statPoints > 0 ? "var(--color-gold)" : "var(--color-parchment-muted)",
+              textShadow: statPoints > 0 ? "0 0 12px rgba(201,168,76,0.4)" : "none",
+            }}>
+              {statPoints}
+            </span>
+          </div>
+        }
+      />
 
       {/* Puan + meslek önerisi */}
-      <div className="space-y-2">
-        <div className={`card-frame p-4 flex items-center gap-4 ${statPoints > 0 ? "border-amber-800/60 bg-amber-950/15" : ""}`}>
-          <div className="flex-1">
-            <div className="label-tiny mb-0.5">Harcanabilir Puan</div>
-            <div className={`font-heading text-3xl ${statPoints > 0 ? "text-amber-400" : "text-stone-500"}`}>
+      <Panel
+        title="Harcanabilir Puan"
+        icon="✨"
+        tone={statPoints > 0 ? "gold" : "ash"}
+        right={statPoints > 0 ? <Pill tone="gold" pulse="envoy">Seçim bekliyor</Pill> : null}
+      >
+        {statPoints > 0 ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
+            <span className="font-display" style={{
+              fontSize: "2.2rem", fontWeight: 700, color: "var(--color-gold)",
+              textShadow: "0 0 16px rgba(201,168,76,0.45)", lineHeight: 1,
+            }}>
               {statPoints}
-            </div>
+            </span>
+            <p className="font-serif" style={{
+              fontSize: "0.82rem", fontStyle: "italic", color: "var(--color-parchment-dim)",
+            }}>
+              Birikmiş emeğin puan oldu — aşağıdaki dört yönden birine akıt.
+            </p>
           </div>
-          {statPoints > 0 ? (
-            <div className="text-xs text-amber-500/80 text-right max-w-[140px]">
-              Aşağıdaki statlardan birine ekleyebilirsin.
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 text-xs text-stone-600">
-              <AlertCircle className="w-4 h-4" />
-              <span>Şimdilik puan yok. Çalış, öğren, büyü.</span>
-            </div>
-          )}
-        </div>
+        ) : (
+          <p className="font-serif" style={{
+            fontSize: "0.82rem", fontStyle: "italic", color: "var(--color-parchment-muted)",
+          }}>
+            Şimdilik puan yok. Çalış, öğren, büyü — emek puana döner.
+          </p>
+        )}
 
         {/* Meslek önerisi */}
         {recommended.length > 0 && (
-          <div className="flex items-start gap-2 px-3 py-2 border border-amber-900/40 bg-amber-950/10 rounded-sm">
-            <TrendingUp className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-stone-400">
-              <span className="text-amber-400 font-heading">{profession}</span> mesleğin için{" "}
-              <span className="text-stone-200">
+          <>
+            <GoldRule label="Zanaatın Fısıltısı" />
+            <p className="font-serif" style={{
+              fontSize: "0.78rem", fontStyle: "italic", color: "var(--color-parchment-dim)",
+            }}>
+              <span className="font-display" style={{ color: "var(--color-gold)", fontStyle: "normal", textTransform: "capitalize" }}>
+                {profession}
+              </span>{" "}
+              yolunda yürüyene{" "}
+              <span style={{ color: "var(--color-parchment)" }}>
                 {recommended.map(k => STATS.find(s => s.key === k)?.label).filter(Boolean).join(", ")}
               </span>{" "}
-              statları öncelikli geliştirilmesi önerilir.
+              en çok yâr olur.
             </p>
-          </div>
+          </>
         )}
-      </div>
+      </Panel>
 
-      {/* Stat kartları */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div style={{ height: "0.75rem" }} />
+
+      {/* Stat kartları — 4 büyük kart */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "0.75rem" }}>
         {STATS.map((s) => (
           <StatCard
             key={s.key}
@@ -262,10 +324,16 @@ export default function StatAllocate() {
         ))}
       </div>
 
+      <GoldRule label="Toplam" />
+
       {/* Toplam */}
-      <div className="card-frame p-3 flex items-center justify-between text-sm">
-        <span className="text-stone-500">Toplam dağıtılan stat</span>
-        <span className="font-heading text-stone-300">{totalStats}</span>
+      <div className="row-frame" style={{ justifyContent: "space-between" }}>
+        <span className="font-serif" style={{ fontSize: "0.82rem", fontStyle: "italic", color: "var(--color-parchment-muted)" }}>
+          Bugüne dek yontulan toplam stat
+        </span>
+        <span className="font-display" style={{ fontSize: "1rem", fontWeight: 700, color: "var(--color-parchment)" }}>
+          {totalStats}
+        </span>
       </div>
     </div>
   );

@@ -1,20 +1,23 @@
+/**
+ * Evlilik & Aile — KÜL & KÖZ.
+ * Duygu görevi: "Bir ömür kararı" — adaylar zarif, teklif anı törensel.
+ * İşlevsellik (aday filtresi, teklif akışı, koşullar) birebir korunur.
+ */
 import { useMemo, useState } from "react";
 import { profLabel } from "@/lib/labels";
 import { Link } from "react-router-dom";
 import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
+import { playSfx } from "@/lib/audio";
 import { toast } from "sonner";
-import {
-  Heart, HeartOff, Crown, Users, Loader2, Lock,
-  CheckCircle2, Baby, Skull, Ribbon,
-} from "lucide-react";
+import { PageHeader, Panel, Pill, EmptyState, GoldRule } from "@/components/ui/Kit";
 
 // ─── Yardımcılar ──────────────────────────────────────────────────────────────
 function relColor(score) {
-  if (score >= 70) return "text-pink-400";
-  if (score >= 50) return "text-rose-400";
-  if (score >= 30) return "text-orange-400";
-  return "text-stone-500";
+  if (score >= 70) return "#E07B9A";
+  if (score >= 50) return "#C9A84C";
+  if (score >= 30) return "#E05A30";
+  return "#7A6A4F";
 }
 function relLabel(score) {
   if (score >= 70) return "Aşık";
@@ -22,12 +25,26 @@ function relLabel(score) {
   if (score >= 30) return "Arkadaş";
   return "Tanışık";
 }
+function npcAvatar(npc) {
+  const age = npc.age || 30;
+  if (npc.gender === "kadın") return age >= 55 ? "👵" : age < 13 ? "👧" : "👩";
+  return age >= 55 ? "🧓" : age < 13 ? "👦" : "🧔";
+}
+/* İlişki bandı: -100..+100 → kırmızı→taş→yeşil geçişli */
 function RelBar({ score }) {
   const pct = Math.max(0, Math.min(100, ((score + 100) / 200) * 100));
-  const color = score >= 50 ? "bg-pink-600" : score >= 30 ? "bg-orange-700" : "bg-stone-600";
   return (
-    <div className="stat-bar mt-1">
-      <div className={`h-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+    <div style={{
+      height: "5px", borderRadius: "3px", overflow: "hidden",
+      background: "rgba(255,255,255,0.06)", marginTop: "0.35rem",
+    }}>
+      <div style={{
+        height: "100%", width: `${pct}%`, borderRadius: "3px",
+        background: "linear-gradient(to right, #C84040, #7A6A4F 50%, #4A9A5A)",
+        backgroundSize: `${pct > 0 ? 10000 / pct : 100}% 100%`,
+        boxShadow: "0 0 6px rgba(201,168,76,0.3)",
+        transition: "width 0.5s ease",
+      }} />
     </div>
   );
 }
@@ -36,24 +53,32 @@ function RelBar({ score }) {
 function ChildCard({ child }) {
   const isAlive = child.alive !== false;
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-sm border ${isAlive ? "border-stone-800/50 bg-stone-900/20" : "border-stone-900/50 bg-stone-950/30 opacity-60"}`}>
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isAlive ? "bg-pink-950/40 border border-pink-900/40" : "bg-stone-900/40 border border-stone-800/40"}`}>
+    <div className="row-frame" style={!isAlive ? { opacity: 0.55 } : undefined}>
+      <span style={{ fontSize: "1.1rem", flexShrink: 0,
+                     filter: isAlive ? "drop-shadow(0 0 6px rgba(201,168,76,0.25))" : "grayscale(1)" }}>
+        {isAlive ? (child.gender === "kadın" ? "👧" : "👦") : "🪦"}
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
         {isAlive
-          ? <Baby className="w-4 h-4 text-pink-400" />
-          : <Skull className="w-3.5 h-3.5 text-stone-600" />}
-      </div>
-      <div className="flex-1 min-w-0">
-        {isAlive
-          ? <Link to={`/oyun/npc/${child.id}`} className="font-heading text-sm text-stone-200 hover:text-pink-400 transition-colors">{child.name}</Link>
-          : <span className="font-heading text-sm text-stone-600 line-through">{child.name}</span>}
-        <p className="text-[10px] text-stone-600 mt-0.5">
-          {child.age} yaş
+          ? <Link to={`/oyun/npc/${child.id}`} className="font-display" style={{
+              fontSize: "0.82rem", fontWeight: 700, color: "var(--color-parchment)",
+              textDecoration: "none",
+            }}>{child.name}</Link>
+          : <span className="font-display" style={{
+              fontSize: "0.82rem", fontWeight: 700,
+              color: "var(--color-parchment-muted)", textDecoration: "line-through",
+            }}>{child.name}</span>}
+        <p className="font-serif" style={{
+          fontSize: "0.7rem", fontStyle: "italic",
+          color: "var(--color-parchment-muted)", margin: "0.1rem 0 0",
+        }}>
+          {child.age} yaşında
           {child.profession && child.age >= 10 ? ` · ${profLabel(child.profession)}` : ""}
-          {!isAlive ? " · Hayatını kaybetti" : ""}
+          {!isAlive ? " · Hakk'a yürüdü" : ""}
         </p>
       </div>
       {isAlive && child.age >= 13 && (
-        <span className="label-tiny text-stone-600">Yetişkin</span>
+        <Pill tone="ash">Yetişkin</Pill>
       )}
     </div>
   );
@@ -66,19 +91,30 @@ function MarriedView({ spouse, relationship, children }) {
 
   if (!isAlive) {
     return (
-      <div className="space-y-4">
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         {/* Dul ekranı */}
-        <div className="card-frame p-5 border border-stone-800/50 bg-stone-950/20 text-center space-y-3">
-          <Ribbon className="w-8 h-8 text-stone-600 mx-auto" />
-          <div>
-            <div className="label-tiny mb-1 text-stone-600">Rahmetli Eşin</div>
-            <p className="font-heading text-xl text-stone-500">{spouse.name}</p>
-            <p className="text-stone-600 text-sm mt-0.5 italic">Hayatını kaybetti.</p>
+        <Panel title="Rahmetli Eşin" icon="🕯" tone="ash">
+          <div style={{ textAlign: "center", padding: "0.6rem 0" }}>
+            <div style={{ fontSize: "1.6rem", marginBottom: "0.4rem", opacity: 0.6 }}>🥀</div>
+            <p className="font-display" style={{
+              fontSize: "1.15rem", fontWeight: 700,
+              color: "var(--color-parchment-dim)", margin: 0,
+            }}>{spouse.name}</p>
+            <p className="font-serif" style={{
+              fontSize: "0.8rem", fontStyle: "italic",
+              color: "var(--color-parchment-muted)", marginTop: "0.25rem",
+            }}>
+              Hakk'a yürüdü; adı duanda yaşar.
+            </p>
+            <GoldRule />
+            <p className="font-serif" style={{
+              fontSize: "0.74rem", fontStyle: "italic",
+              color: "var(--color-parchment-muted)", margin: 0,
+            }}>
+              Yeniden ocak kurmak istersen birini bul, gönlünü kazan, bağını güçlendir.
+            </p>
           </div>
-          <p className="text-xs text-stone-600">
-            Yeniden evlenebilmek için birini bul, flört et ve ilişkini güçlendir.
-          </p>
-        </div>
+        </Panel>
         {/* Çocuklar (varsa) */}
         {children.length > 0 && <ChildrenSection children={children} />}
       </div>
@@ -86,45 +122,63 @@ function MarriedView({ spouse, relationship, children }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
       {/* Eş kartı */}
-      <div className="card-frame p-5 border border-pink-900/50 bg-pink-950/10 space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-pink-950/40 border border-pink-900/40 flex items-center justify-center shrink-0">
-            <Heart className="w-5 h-5 text-pink-400" />
-          </div>
-          <div className="flex-1">
-            <div className="label-tiny mb-0.5">Eşin</div>
+      <Panel title="Hayat Yoldaşın" icon="💍" tone="gold"
+        right={<Pill tone={score >= 50 ? "sage" : score >= 30 ? "ember" : "ash"}>{relLabel(score)}</Pill>}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <span style={{
+            fontSize: "1.8rem", flexShrink: 0,
+            filter: "drop-shadow(0 0 10px rgba(201,168,76,0.35))",
+          }}>
+            {npcAvatar(spouse)}
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <Link
               to={`/oyun/npc/${spouse.id}`}
-              className="font-heading text-xl text-stone-100 hover:text-pink-400 transition-colors"
+              className="font-display"
+              style={{
+                fontSize: "1.1rem", fontWeight: 700, color: "var(--color-parchment)",
+                textDecoration: "none", textShadow: "0 0 12px rgba(201,168,76,0.2)",
+              }}
             >
               {spouse.name}
             </Link>
-            <p className="text-stone-400 text-xs mt-0.5">
-              {spouse.age} yaş · {spouse.profession || "Bilinmiyor"}
+            <p className="font-serif" style={{
+              fontSize: "0.74rem", fontStyle: "italic",
+              color: "var(--color-parchment-muted)", margin: "0.15rem 0 0",
+            }}>
+              {spouse.age} yaşında · {spouse.profession || "Mesleği bilinmiyor"}
             </p>
           </div>
-          <div className="text-right">
-            <span className={`font-heading text-2xl ${relColor(score)}`}>{score > 0 ? `+${score}` : score}</span>
-            <p className={`text-[10px] font-heading tracking-wider ${relColor(score)}`}>{relLabel(score)}</p>
+          <div style={{ textAlign: "right", flexShrink: 0 }}>
+            <span className="font-display" style={{
+              fontSize: "1.35rem", fontWeight: 700, color: relColor(score),
+              textShadow: `0 0 10px ${relColor(score)}55`,
+            }}>{score > 0 ? `+${score}` : score}</span>
+            <div className="label-tiny">gönül bağı</div>
           </div>
         </div>
-        <div>
-          <RelBar score={score} />
-        </div>
+        <RelBar score={score} />
         {score < 30 && (
-          <p className="text-xs text-amber-600/80 italic border-l-2 border-amber-900/50 pl-2">
-            İlişkin zayıflıyor. Hediye ver, zaman geçir, iltifat et.
+          <p className="font-serif" style={{
+            fontSize: "0.74rem", fontStyle: "italic", color: "#E05A30",
+            borderLeft: "2px solid rgba(224,90,48,0.5)", paddingLeft: "0.5rem",
+            marginTop: "0.6rem", marginBottom: 0,
+          }}>
+            Aranızdaki köz sönüyor. Hediye ver, vakit ayır, gönlünü al.
           </p>
         )}
-      </div>
+      </Panel>
 
       {/* Çocuklar */}
       {children.length > 0 && <ChildrenSection children={children} />}
       {children.length === 0 && (
-        <p className="text-center text-stone-700 text-xs italic">
-          Henüz çocuğunuz yok. Zaman geçtikçe aile büyüyebilir.
+        <p className="font-serif" style={{
+          textAlign: "center", fontSize: "0.74rem", fontStyle: "italic",
+          color: "var(--color-parchment-muted)", margin: 0,
+        }}>
+          Henüz çocuğunuz yok. Aylar geçtikçe ocak kalabalıklaşabilir.
         </p>
       )}
     </div>
@@ -133,14 +187,12 @@ function MarriedView({ spouse, relationship, children }) {
 
 function ChildrenSection({ children }) {
   return (
-    <div>
-      <div className="label-tiny mb-2 flex items-center gap-1.5">
-        <Baby className="w-3 h-3" /> Çocuklarınız ({children.length})
-      </div>
-      <div className="space-y-2">
+    <Panel title="Çocukların" icon="👶" tone="sage"
+      right={<Pill tone="sage">{children.length}</Pill>}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
         {children.map((c) => <ChildCard key={c.id} child={c} />)}
       </div>
-    </div>
+    </Panel>
   );
 }
 
@@ -150,47 +202,75 @@ function CandidateCard({ npc, score, isDating, busy, onPropose }) {
   const needsDating = !isDating;
 
   return (
-    <div className={`card-frame p-4 space-y-3 border ${isDating ? "border-pink-900/50 bg-pink-950/10" : "border-stone-800/50"}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1">
-          <Link to={`/oyun/npc/${npc.id}`} className="font-heading text-stone-100 hover:text-orange-400 transition-colors">
+    <div className="card-frame" style={{
+      padding: "0.85rem",
+      ...(isDating ? {
+        borderColor: "rgba(201,168,76,0.45)",
+        boxShadow: "0 0 16px rgba(201,168,76,0.12), 0 4px 16px rgba(0,0,0,0.45)",
+      } : {}),
+    }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem" }}>
+        <span style={{ fontSize: "1.5rem", flexShrink: 0,
+                       filter: "drop-shadow(0 0 8px rgba(201,168,76,0.25))" }}>
+          {npcAvatar(npc)}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Link to={`/oyun/npc/${npc.id}`} className="font-display" style={{
+            fontSize: "0.92rem", fontWeight: 700, color: "var(--color-parchment)",
+            textDecoration: "none",
+          }}>
             {npc.name}
           </Link>
-          <p className="text-xs text-stone-500 mt-0.5">
-            {npc.age} yaş · {npc.profession || "?"} · {npc.gender === "kadın" ? "Kadın" : "Erkek"}
+          <p className="font-serif" style={{
+            fontSize: "0.72rem", fontStyle: "italic",
+            color: "var(--color-parchment-muted)", margin: "0.15rem 0 0",
+          }}>
+            {npc.age} yaşında · {npc.profession || "?"} · {npc.gender === "kadın" ? "Kadın" : "Erkek"}
           </p>
         </div>
-        <div className="text-right">
-          <span className={`font-heading text-lg ${relColor(score)}`}>{score > 0 ? `+${score}` : score}</span>
-          <p className={`text-[10px] font-heading tracking-wider ${relColor(score)}`}>{relLabel(score)}</p>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <span className="font-display" style={{
+            fontSize: "1.05rem", fontWeight: 700, color: relColor(score),
+          }}>{score > 0 ? `+${score}` : score}</span>
+          <div className="font-display" style={{
+            fontSize: "0.52rem", letterSpacing: "0.12em", textTransform: "uppercase",
+            color: relColor(score),
+          }}>{relLabel(score)}</div>
         </div>
       </div>
 
       <RelBar score={score} />
 
-      <div className="flex items-center justify-between gap-2 pt-0.5">
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: "0.5rem", marginTop: "0.65rem",
+      }}>
         {isDating ? (
-          <span className="flex items-center gap-1 text-xs text-pink-400 font-heading tracking-wider">
-            <Heart className="w-3 h-3" /> Çıkıyorsunuz
-          </span>
+          <Pill tone="gold">💞 Gönül yoldaşın</Pill>
         ) : (
-          <span className="text-xs text-stone-600 italic">Henüz çıkmıyorsunuz</span>
+          <span className="font-serif" style={{
+            fontSize: "0.72rem", fontStyle: "italic",
+            color: "var(--color-parchment-muted)",
+          }}>Henüz gönül bağı yok</span>
         )}
 
         {canPropose ? (
           <button
             onClick={() => onPropose(npc.id)}
             disabled={busy === npc.id}
-            className="btn-ember px-3 py-1.5 text-xs font-heading tracking-widest flex items-center gap-1.5"
+            className="btn-ember"
+            style={{ padding: "0.45rem 0.85rem", fontSize: "0.6rem" }}
           >
-            {busy === npc.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Heart className="w-3 h-3" />}
-            Evlenme Teklif Et
+            {busy === npc.id ? "⏳ " : "💍 "}İzdivaç Teklif Et
           </button>
         ) : (
-          <div className="flex items-center gap-1 text-xs text-stone-600">
-            <Lock className="w-3 h-3" />
-            {needsDating ? "Önce çıkın (flört et)" : `İlişki ${score}/50 gerekli`}
-          </div>
+          <span className="font-display" style={{
+            fontSize: "0.56rem", letterSpacing: "0.1em", textTransform: "uppercase",
+            color: "var(--color-parchment-muted)", display: "inline-flex",
+            alignItems: "center", gap: "0.3rem",
+          }}>
+            🔒 {needsDating ? "Önce gönlünü kazan (flört et)" : `Gönül bağı ${score}/50 gerekli`}
+          </span>
         )}
       </div>
     </div>
@@ -249,15 +329,19 @@ export default function Marry() {
 
   const handlePropose = async (npcId) => {
     setBusy(npcId);
+    playSfx("click");
     try {
       const { data } = await api.post(`/game/npc/${npcId}/propose`);
       if (data.state) setState(data.state);
       if (data.accepted) {
+        playSfx("success");
         toast.success("Teklif kabul edildi! Kutlu olsun.");
       } else {
+        playSfx("fail");
         toast("Teklif reddedildi.", { description: data.reason || "" });
       }
     } catch (e) {
+      playSfx("fail");
       toast.error(e.response?.data?.detail || "Teklif gönderilemedi.");
     } finally {
       setBusy(null);
@@ -266,72 +350,68 @@ export default function Marry() {
 
   if (playerAge < 13) {
     return (
-      <div className="rise-in space-y-4">
-        <div>
-          <div className="label-tiny">Aile</div>
-          <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-            <Heart className="w-6 h-6 text-pink-600" /> Evlilik
-          </h1>
-        </div>
-        <div className="card-frame p-6 text-center space-y-3 border border-stone-800/50">
-          <Lock className="w-8 h-8 text-stone-700 mx-auto" />
-          <p className="text-stone-400 font-heading">Henüz çok küçüksün.</p>
-          <p className="text-stone-600 text-sm">13 yaşına geldiğinde evlilik kapısı açılır.</p>
-        </div>
+      <div className="page-shell rise-in" style={{ padding: "0 0 1.5rem" }}>
+        <PageHeader
+          kicker="Aile Ocağı"
+          icon="💍"
+          title="Evlilik"
+          sub="Bir ömür kararı — ama her şeyin bir vakti var."
+        />
+        <Panel title="Vakti Değil" icon="🔒" tone="ash">
+          <EmptyState icon="🌱"
+            title="Henüz çok küçüksün."
+            sub="13 yaşına geldiğinde evlilik kapısı aralanır." />
+        </Panel>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5 rise-in">
-      {/* Başlık */}
-      <div>
-        <div className="label-tiny">Aile</div>
-        <h1 className="font-heading text-3xl text-stone-100 flex items-center gap-3">
-          <Heart className="w-6 h-6 text-pink-600" /> Evlilik & Aile
-        </h1>
-        <p className="text-stone-400 text-sm mt-1">
-          {isMarried ? "Evlisin." : spouseDead ? "Eşini kaybettin." : "Şu an bekar. Bulunduğun yerde uygun biri var mı?"}
-        </p>
-      </div>
+    <div className="page-shell rise-in" style={{ padding: "0 0 1.5rem" }}>
+      <PageHeader
+        kicker="Aile Ocağı"
+        icon="💍"
+        title="Evlilik & Aile"
+        sub={isMarried
+          ? "Ocağın tütüyor; yoldaşınla aynı yastığa baş koyuyorsun."
+          : spouseDead
+            ? "Eşini kaybettin; ocak sessiz ama hayat sürüyor."
+            : "Bir ömür kararı — bulunduğun diyarda gönlüne göre biri var mı?"}
+      />
 
       {/* Aile durumu */}
       {(isMarried || spouseDead) && spouse ? (
         <MarriedView spouse={spouse} relationship={relationships[spouse.id]} children={children} />
       ) : (
-        <>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {/* Varsa çocuklar (dul durumdayken de göster) */}
           {spouseDead && children.length > 0 && (
             <ChildrenSection children={children} />
           )}
 
           {candidates.length === 0 ? (
-            <div className="card-frame p-8 text-center space-y-3">
-              <HeartOff className="w-8 h-8 text-stone-700 mx-auto" />
-              <p className="text-stone-500 font-heading">Burada uygun aday yok.</p>
-              <p className="text-stone-600 text-xs">İlişkin en az 10 olan bekar birini bul, flört et, zaman geç.</p>
-            </div>
+            <Panel title="Gönül Defteri" icon="💔" tone="ash">
+              <EmptyState icon="🥀"
+                title="Bu diyarda gönlüne göre kimse yok."
+                sub="Bağı en az 10 olan bekâr birini bul, flört et, vakit geçir." />
+            </Panel>
           ) : (
             <>
-              <div className="border border-stone-800/50 rounded-sm p-3 text-xs text-stone-500 space-y-1">
-                <p className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3 h-3 text-stone-600" />
-                  NPC ile <span className="text-stone-400">"Flört Et"</span> → çıkıyorsunuz durumuna geç
-                </p>
-                <p className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3 h-3 text-stone-600" />
-                  İlişki <span className="text-stone-400">50+</span> olduğunda evlenme teklifi aktifleşir
-                </p>
-                <p className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3 h-3 text-stone-600" />
-                  NPC sayfasında hediye ver, iltifat et, zaman geçirerek güçlendir
-                </p>
-              </div>
-              <div>
-                <div className="label-tiny mb-3 flex items-center gap-2">
-                  <Users className="w-3 h-3" /> Bu bölgedeki adaylar ({candidates.length})
-                </div>
-                <div className="space-y-3">
+              <Panel title="İzdivaç Âdâbı" icon="📜" tone="ink">
+                <ul className="font-serif" style={{
+                  listStyle: "none", margin: 0, padding: 0, fontSize: "0.78rem",
+                  fontStyle: "italic", color: "var(--color-parchment-dim)",
+                  display: "flex", flexDirection: "column", gap: "0.35rem",
+                }}>
+                  <li>❧ Önce gönlünü kazan: kişiyle <span style={{ color: "var(--color-parchment)" }}>"Flört Et"</span> diyerek bağ kur.</li>
+                  <li>❧ Gönül bağı <span style={{ color: "var(--color-gold)" }}>50'yi</span> aşınca izdivaç teklifi mümkün olur.</li>
+                  <li>❧ Hediye ver, iltifat et, vakit geçir — bağ böyle perçinlenir.</li>
+                </ul>
+              </Panel>
+
+              <Panel title="Bu Diyardaki Adaylar" icon="🌹" tone="gold"
+                right={<Pill tone="gold">{candidates.length} aday</Pill>}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
                   {candidates.map(({ npc, score, isDating }) => (
                     <CandidateCard
                       key={npc.id}
@@ -343,10 +423,10 @@ export default function Marry() {
                     />
                   ))}
                 </div>
-              </div>
+              </Panel>
             </>
           )}
-        </>
+        </div>
       )}
     </div>
   );
