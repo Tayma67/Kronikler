@@ -173,7 +173,8 @@ def _germinate(state, tohum):
         text += " (O artık yaşamıyor; haber vasiyetiyle geldi.)"
     for k, v in (tohum.get("etki") or {}).items():
         if k == "money":
-            p["money"] = round(p.get("money", 0) + v, 1)
+            # Negatif tohum keseyi boşaltabilir ama borca sokamaz
+            p["money"] = round(max(0.0, p.get("money", 0) + v), 1)
         elif k == "reputation":
             p["reputation"] = p.get("reputation", 0) + v
         elif k == "health":

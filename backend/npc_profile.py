@@ -240,7 +240,7 @@ EVENT_LABELS = {
     "rumor_heard":       "Bir söylenti duydu",
     "secret_revealed":   "Sırrı ortaya çıktı",
     "debt_paid":         "Borcunu kapattı",
-    "new_rival":         "Yeni bir rakip edinди",
+    "new_rival":         "Yeni bir rakip edindi",
     "skill_improved":    "Sanatında ilerledi",
 }
 
@@ -734,6 +734,10 @@ def npc_weekly_tick(npc, state, rng):
     npc["daily_log"].append({"day": state["turn"], "text": act})
     if len(npc["daily_log"]) > 8:
         npc["daily_log"] = npc["daily_log"][-8:]
+    # personal_events sınırsız büyüyordu — sadece son 3'ü okunuyor, 6 yeter
+    pe = npc.get("personal_events")
+    if pe and len(pe) > 6:
+        npc["personal_events"] = pe[-6:]
 
     # Life event (~10%)
     if rng.random() < 0.10:

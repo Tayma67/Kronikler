@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from auth_routes import build_auth_router
 from game_routes import build_game_router
 from property_routes import build_property_router
 from story_routes import build_story_router
@@ -51,6 +52,7 @@ async def root():
     return {"app": "Kronikler: Küllerin Mirası", "status": "ok"}
 
 
+app.include_router(build_auth_router(db))
 app.include_router(build_game_router(db))
 app.include_router(build_property_router(db))
 app.include_router(build_story_router(db))

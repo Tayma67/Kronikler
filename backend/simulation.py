@@ -418,6 +418,14 @@ def _age_and_die(state, day):
 
 def _marry_and_birth(state, day):
     npcs = [n for n in state["world"]["npcs"] if n["alive"]]
+    # Nüfus tavanı: kuruluşun 1.5 katından sonra doğurganlık kademeli düşer,
+    # 2.5 katında fiilen durur — state şişmesini ve tick maliyetini frenler.
+    kurulus = state.setdefault("kurulus_nufusu", len(npcs))
+    oran = len(npcs) / max(1, kurulus)
+    if oran >= 2.5:
+        nufus_carpani = 0.03
+    else:
+        nufus_carpani = min(1.0, max(0.15, (2.5 - oran) / 1.0))
     singles = [n for n in npcs if 20 <= n["age"] <= 45 and not n["spouse_id"]]
     random.shuffle(singles)
     used = set()
@@ -468,7 +476,7 @@ def _marry_and_birth(state, day):
         couples_seen.add(key)
         if a["age"] > 42:
             continue
-        if random.random() < 0.05:
+        if random.random() < 0.05 * nufus_carpani:
             partner = next((p for p in npcs if p["id"] == a["spouse_id"]), None)
             if not partner:
                 continue
@@ -1059,7 +1067,9 @@ def _prune_dead_npcs(state):
         if npc.get("alive", True):
             pruned.append(npc)
         else:
-            # Büyük alanları temizle, tanımlayıcı bilgileri koru
+            # Büyük alanları temizle, tanımlayıcı bilgileri koru.
+            # Aile bağları KALIR: kan davası (nemesis mirası), miras ve
+            # anlatı ilişki tespiti ölünün çocuk/eş bağlarına bakar.
             pruned.append({
                 "id":         npc["id"],
                 "name":       npc.get("name", "?"),
@@ -1069,6 +1079,10 @@ def _prune_dead_npcs(state):
                 "gender":     npc.get("gender", "?"),
                 "kingdom_id": npc.get("kingdom_id"),
                 "location_id": npc.get("location_id"),
+                "parent_ids":   npc.get("parent_ids", []),
+                "children_ids": npc.get("children_ids", []),
+                "spouse_id":    npc.get("spouse_id"),
+                "dynasty_id":   npc.get("dynasty_id"),
             })
     state["world"]["npcs"] = pruned
 
