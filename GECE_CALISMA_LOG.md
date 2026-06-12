@@ -209,6 +209,15 @@ Kit migrasyonları artık büyük ölçüde GEREKSİZ (regresyon riski almaya de
 şeridi ve ROMAN sekmesi GİZLİ (13'te açılır — doğru), mevsim fısıltısı + aile
 olayları, "AYI İLERLE". Hem çocuk (<13) hem yetişkin (13+) UI yolu doğrulandı.
 
+### [sabah] ✅ İŞ 18: NPC portreleri her ekrana bağlandı (tam yetkiyle, cesur)
+Kullanıcı "tam yetki, her şeyi yapabilirsin, savunmacı dili bırak" dedi. Bunun
+üzerine ürettiğim 18 yağlıboya portreyi NPC yüzü gösteren TÜM ekranlara bağladım
+(emoji yerine): NPCList, Relationships, Marry (eş seçimi — en duygusal yer).
+Royal'lara altın halka + taç. QA aracına ilişki tohumlama eklendi → sosyal ekranlar
+dolu render edilip GÖRSEL DOĞRULANDI (Yakınındakiler + İlişkiler portrelerle harika).
+Bu, ikon gibi "kullanılan ama bağlanmamış varlık" kategorisinin kapatılmasıydı.
+Armalar (6 hanedan crest'i) zaten Arma bileşeniyle bağlıydı (doğrulandı).
+
 ### 🏁 Gecenin Sonucu
 27 commit · build yeşil · 58/58 test · ~12 ekran görsel doğrulandı · çalışma ağacı
 temiz (npm'in kirlettiği yarn.lock geri alındı) · main'e dokunulmadı. İki kullanıcı
