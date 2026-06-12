@@ -153,6 +153,19 @@ Yapılanlar:
 9. 🧹 Ölü .bak'lar silindi; design_guidelines.json DEPRECATED işaretlendi.
 10. 📱 CityDetail pazar dokunma hedefleri ≥40px.
 
+### [00:10] 🔴→🟢 İŞ 12: BUILD KIRIĞI DÜZELTİLDİ (gecenin en kritik bulgusu)
+Production build'i gerçek `npm run build` ile test ettim (node_modules kuruldu —
+emergent tgz bu ortamdan erişilebildi). **Build KIRMIZIYDI** ve bu gece başlamadan
+ÖNCE de kırıktı: Dashboard.jsx'te `useHeroGorsel` 345'teki erken return'den SONRA
+(385) çağrılıyordu → `react-hooks/rules-of-hooks: "error"` (craco.config.js).
+Bu commit 3d141ac'ten beri vardı (benim değişikliğim değil). GameLayout Dashboard'ı
+state hazır olmadan render etmediği için pratikte çökmüyordu ama **build'i kırıyor**
+(deploy engeli) ve "Rendered more hooks" riski taşıyordu.
+Düzeltme: hook'u erken return'den ÖNCE, state-güvenli değerlerle koşulsuz çağırdım.
+Sonuç: **"Compiled successfully" ✅** — hem bu bug düzeldi hem de TÜM gece yaptığım
+frontend değişikliklerinin gerçekten derlendiği kanıtlandı.
+ÖNEMLİ: Vercel deploy'un bu yüzden başarısız oluyor olabilir — kontrol et.
+
 Devam eden departman backlog'u (yarın/istek üzerine): NPCDetail tam Kit
 migrasyonu, diğer sayfaların derin Kit'e geçişi, EmptyState yaygınlaştırma,
 ortak Bar bileşeni. Denge maddeleri (itibar enflasyonu vb.) BİLİNÇLİ olarak

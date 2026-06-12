@@ -340,6 +340,12 @@ export default function Dashboard() {
   const [activeTab, setActiveTab]     = useState('gunluk');
   const [advancing, setAdvancing]     = useState(false);
   const saga = useSaga(state);
+  // Hook'lar erken return'den ÖNCE ve KOŞULSUZ çağrılmalı (rules-of-hooks).
+  // useHeroGorsel'i state-güvenli değerlerle burada çağırıyoruz; state
+  // yüklendiğinde değer aşağıdaki playerAge/season ile birebir aynı olur.
+  const _heroAge    = state?.player?.age || 0;
+  const _heroSeason = state?.calendar?.season || 'Yaz';
+  const yetiskinHero = useHeroGorsel(_heroAge, _heroSeason);
 
   // ── Loading / no state ─────────────────────────────────────────────────────
   if (!state || !state.player) {
@@ -382,7 +388,6 @@ export default function Dashboard() {
   const fame        = player.fame || 0;
   const repTitle    = fameLabel(fame);
   const heroImage   = SEASON_IMAGE[season] || SEASON_IMAGE['Yaz'];
-  const yetiskinHero = useHeroGorsel(playerAge, season);
   const heroHazir = playerAge >= 13 && !!yetiskinHero;
 
   const stats = {
