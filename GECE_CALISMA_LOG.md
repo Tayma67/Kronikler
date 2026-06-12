@@ -152,6 +152,21 @@ Yapılanlar:
 8. ✨ rise-in giriş animasyonu CANLANDI (33 sayfada tanımsızdı).
 9. 🧹 Ölü .bak'lar silindi; design_guidelines.json DEPRECATED işaretlendi.
 10. 📱 CityDetail pazar dokunma hedefleri ≥40px.
+11. 🔴→🟢 **BUILD KIRIĞI düzeltildi** (Dashboard koşullu hook) — production build
+    artık derleniyor. Vercel deploy'un bu yüzden başarısız oluyorsa: çözüldü.
+12. 🧩 Gerçek `npm run build` hattı kuruldu → tüm gece değişiklikleri DERLEMEDEN
+    geçti, 0 uyarı. (esbuild ile de 106/106 söz dizimi temiz.)
+13. 📲 Üretilen ikon PWA'ya bağlandı (favicon + iPhone Ana Ekran + Android manifest
+    + 192/512 ikonlar). Daha önce ikon hiç kullanılmıyordu.
+14. ⚡ Favicon 565KB → 10KB (mobil veri).
+15. 👁️ Görsel doğrulama: ilk-izlenim ekranı (Yeni Oyun) headless tarayıcıda iPhone
+    viewport'ta render edildi — Kül & Köz teması bütün, kargaşasız (ekran görüntüsü
+    sohbette paylaşıldı). Oynanış ekranları backend+Mongo gerektirdiğinden render
+    edilemedi (ortamda Mongo yok); onlar derleme + statik analizle doğrulandı.
+
+**EN KRİTİK İKİ BULGU:** (a) production build gece başlamadan ÖNCE de kırıktı →
+düzeltildi; (b) üretilen uygulama ikonu hiçbir yere bağlı değildi → bağlandı.
+İkisi de kozmetik değil, gerçek sonuç doğuran düzeltmeler.
 
 ### [00:10] 🔴→🟢 İŞ 12: BUILD KIRIĞI DÜZELTİLDİ (gecenin en kritik bulgusu)
 Production build'i gerçek `npm run build` ile test ettim (node_modules kuruldu —
