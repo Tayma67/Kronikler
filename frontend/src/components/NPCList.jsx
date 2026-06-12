@@ -16,6 +16,14 @@ import {
   Users, Heart, Baby, ChevronLeft, ChevronRight,
   Sword, Star, Skull, Briefcase, MapPin,
 } from "lucide-react";
+import { Portre } from "@/components/ui/Gorsel";
+
+// Yaş/cinsiyete göre emoji (portre yüklenemezse zarif geri dönüş)
+function npcEmoji(npc) {
+  const age = npc.age || 30;
+  if (npc.gender === "kadın") return age >= 55 ? "👵" : age < 13 ? "👧" : "👩";
+  return age >= 55 ? "🧓" : age < 13 ? "👦" : "🧔";
+}
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -96,11 +104,9 @@ function NPCRow({ npc }) {
       to={`/oyun/npc/${npc.id}`}
       className="card-frame px-3 py-2.5 flex items-center gap-3 hover:bg-stone-900/70 transition-colors group"
     >
-      {/* Avatar placeholder */}
-      <div className="shrink-0 w-8 h-8 rounded-sm border border-stone-700/70 bg-stone-900
-                      flex items-center justify-center group-hover:border-stone-600 transition-colors">
-        <Users className="w-3.5 h-3.5 text-stone-600" />
-      </div>
+      {/* Gerçek portre (yoksa emoji) */}
+      <Portre age={npc.age} gender={npc.gender} id={npc.id}
+              emoji={npcEmoji(npc)} size="2.1rem" ring={false} />
 
       {/* Main info */}
       <div className="flex-1 min-w-0">

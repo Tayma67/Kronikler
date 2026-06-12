@@ -20,13 +20,25 @@ export function useGorselVar(src) {
   return var_;
 }
 
+/** Yaş bandı (kullanıcı referansı: 7 kuşak) — yüz yaşa gerçekten uysun. */
+export function yasKusak(age) {
+  const a = age || 0;
+  if (a <= 12) return "cocuk";     // 7-12
+  if (a <= 17) return "ergen";     // 13-17
+  if (a <= 24) return "genc";      // 18-24 (genç yetişkin)
+  if (a <= 32) return "yetiskin";  // 25-32
+  if (a <= 45) return "olgun";     // 33-45
+  if (a <= 59) return "yasli";     // 46-59
+  return "ihtiyar";                // 60-75
+}
+
 /** Yaş/cinsiyetten portre yolu — varyant NPC kimliğinden deterministik. */
 export function portreYolu(age, gender, id = "") {
-  const kusak = age < 30 ? "genc" : age < 55 ? "orta" : "yasli";
+  const kusak = yasKusak(age);
   const cins = gender === "kadın" ? "k" : "e";
   let h = 0;
   for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return `/images/portre/${cins}_${kusak}_${(h % 3) + 1}.jpg`;
+  return `/images/portre/${cins}_${kusak}_${(h % 2) + 1}.jpg`;
 }
 
 /** Dairesel portre: resim varsa resim, yoksa emoji. */
