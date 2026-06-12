@@ -1391,6 +1391,13 @@ def apply_life_event_choice(state: dict, event_id: str, choice_index: int) -> di
         elif key in player:
             player[key] = round(max(0, player.get(key, 0) + delta), 1)
 
+    # S4 retroaktif: bu seçim bir tohum tarifine denk geliyorsa sessizce ek
+    try:
+        from story_director import sow_from_life_event
+        sow_from_life_event(state, event_id, choice_index)
+    except Exception:
+        pass
+
     state.setdefault("seen_life_events", []).append(event_id)
     state.pop("pending_life_event", None)
 

@@ -235,3 +235,59 @@ def test_director_view_shape():
     v = director_view(state)
     assert set(v) >= {"gerilim", "aktif_yay", "perdeler", "nemesisler",
                       "bekleyen_tohum", "yay_label"}
+
+
+# ── S4 retroaktif: life event seçimleri tohum eker ─────────────────────────
+
+def test_life_event_seed_map():
+    state = make_state()
+    ensure_director(state)
+    t = sd.sow_from_life_event(state, "event_schoolfight", 1)
+    assert t is not None and t["nesil_asabilir"] is True
+    assert sd.sow_from_life_event(state, "event_schoolfight", 2) is None
+    assert len(state["tohumlar"]) == 1
+
+
+def test_seed_map_ids_exist_in_life_events():
+    """Haritadaki her (event_id, choice_index) gerçek bir seçime denk gelmeli."""
+    from life_events import LIFE_EVENTS
+    by_id = {e["id"]: e for e in LIFE_EVENTS}
+    for (eid, ci) in sd.LIFE_EVENT_SEEDS:
+        assert eid in by_id, f"{eid} life event havuzunda yok"
+        assert ci < len(by_id[eid]["choices"]), f"{eid}[{ci}] seçenek yok"
+
+
+def test_apply_life_event_choice_sows(monkeypatch):
+    from life_events import apply_life_event_choice
+    state = make_state()
+    ensure_director(state)
+    state["player"]["stats"] = {}
+    state["player"]["skills"] = {}
+    apply_life_event_choice(state, "event_schoolfight", 1)
+    assert any(t["kaynak"] == "zayifi_savundu" for t in state["tohumlar"])
+
+
+# ── Romanın son sayfası ─────────────────────────────────────────────────────
+
+def test_final_page_composes_story():
+    state = make_state()
+    y = ensure_director(state)
+    state["player"]["age"] = 61
+    state["world"]["dynasties"] = [
+        {"id": "d1", "ad": "Karaoğlu", "sembol": "🐺", "sonmus": False,
+         "oyuncuya_tutum": -55},
+        {"id": "d2", "ad": "Nurdağlı", "sembol": "☪️", "sonmus": False,
+         "oyuncuya_tutum": 45},
+    ]
+    npc = state["world"]["npcs"][0]
+    y["nemesis_ids"] = [npc["id"]]
+    sow_seed(state, "x", "y", 1, 10, nesil_asabilir=True)
+    sayfa = sd.final_page(state)
+    metin = " ".join(sayfa["satirlar"])
+    assert "61" in sayfa["satirlar"][0]
+    assert "Nurdağlı" in metin            # dost hanedan cenazede
+    assert "Karaoğlu" in metin            # düşman emin olmaya geldi
+    assert npc["name"] in metin           # kapanmamış defter
+    assert "tohum" in metin
+    assert sayfa["epitaf"]
+    assert y["perdeler"][-1]["bitis"] is not None   # son perde kapandı

@@ -70,6 +70,13 @@ def begin_inheritance(state, chosen_child_id: str = None) -> dict:
     turn = state.get("turn", 0)
     world = state["world"]
 
+    # S3 Chronicle 2.0: ölüm sahnesi = romanın son sayfası (eski oyuncu için)
+    try:
+        from story_director import final_page
+        hayat_romani = final_page(state)
+    except Exception:
+        hayat_romani = None
+
     # ── Mirası hesapla ─────────────────────────────────────────
     # Faz 4C: vasiyet stili para çarpanını belirler (eşit 0.60 varsayılan)
     try:
@@ -212,6 +219,8 @@ def begin_inheritance(state, chosen_child_id: str = None) -> dict:
         "inherited_reputation": inherited_reputation,
         "generation": state.get("generation", 1) + 1,
     }
+    if hayat_romani:
+        state["inheritance_summary"]["hayat_romani"] = hayat_romani
     state["generation"] = state.get("generation", 1) + 1
 
     # Faz 4C: Miras Perki + çocuk eğitim bonusu + vasiyet yan etkileri

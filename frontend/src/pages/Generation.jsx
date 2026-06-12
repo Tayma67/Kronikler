@@ -641,6 +641,32 @@ export default function Generation() {
                 .join(", ")}
             </div>
           )}
+
+          {/* S3 Chronicle 2.0: romanın son sayfası */}
+          {inheritSummary.hayat_romani && (
+            <div className="mt-2 pt-3 border-t border-stone-800 space-y-2">
+              <div className="font-heading text-xs text-purple-300 tracking-wider">
+                📖 {inheritSummary.hayat_romani.baslik}
+              </div>
+              {(inheritSummary.hayat_romani.satirlar || []).map((s, i) => (
+                <p key={i} className="text-xs text-stone-300 leading-relaxed italic">{s}</p>
+              ))}
+              {inheritSummary.hayat_romani.epitaf && (
+                <p className="text-[11px] text-amber-300/90 font-heading tracking-wide text-center pt-1">
+                  "{inheritSummary.hayat_romani.epitaf}"
+                </p>
+              )}
+              {(inheritSummary.hayat_romani.perdeler || []).length > 0 && (
+                <div className="space-y-0.5 pt-1">
+                  {inheritSummary.hayat_romani.perdeler.slice(-5).map((p) => (
+                    <div key={p.no} className="text-[10px] text-stone-500">
+                      {p.baslik} <span className="text-stone-700">H{p.baslangic}–{p.bitis ?? "…"}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

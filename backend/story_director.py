@@ -657,6 +657,166 @@ def _update_acts(state, y, turn):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# S4 RETROAKTİF — mevcut life-event seçimleri tohum eker (GDD tablosu)
+# (event_id, choice_index) → tohum tarifi. apply_life_event_choice çağırır.
+# ═══════════════════════════════════════════════════════════════════════════
+
+LIFE_EVENT_SEEDS = {
+    # Bulunan parayı kestir → sahibi o gün seni görmüş (GDD örneği)
+    ("event_found_money", 0): dict(
+        kaynak="bulunan_para", hafta_min=104, hafta_max=520, agirlik="kucuk",
+        text="Çocukken çamurdan aldığın o keseyi biri görmüştü. Yıllar sonra "
+             "karşına dikildi: 'O para babamındı.' Çarşı dinliyordu.",
+        etki={"money": -20, "reputation": -4}),
+    # Parayı teslim et → muhtarlık unutmaz
+    ("event_found_money", 1): dict(
+        kaynak="durust_cocuk", hafta_min=156, hafta_max=520, agirlik="kucuk",
+        text="Muhtar ölmeden önce seni anlatmış: 'O çocuk para teslim "
+             "etmişti, ona güvenin.' Bu söz kapıları açıyor.",
+        etki={"reputation": 6}),
+    # Yaralı hayvana yardım → sahibi iş önerir, 3-6 yıl (GDD örneği)
+    ("event_stray_animal", 0): dict(
+        kaynak="yarali_hayvan", hafta_min=156, hafta_max=312, agirlik="orta",
+        text="O köpek yavrusunu hatırlıyor musun? Meğer kervan ağasının "
+             "kayıp tazısıymış. Sahibi seni buldu: minnetin karşılığı ağır "
+             "bir kese ve dostluk.",
+        etki={"money": 70, "reputation": 4}),
+    ("event_stray_animal", 1): dict(
+        kaynak="yarali_hayvan", hafta_min=156, hafta_max=312, agirlik="orta",
+        text="Şifacıya taşıdığın o yavrunun sahibi yıllar sonra kapını "
+             "çaldı — unutmamış. 'Borçluyum' dedi ve sözünü tuttu.",
+        etki={"money": 50, "reputation": 3}),
+    # Okul kavgasında zayıfı savun → lonca başı oldu, borçlu (GDD örneği)
+    ("event_schoolfight", 1): dict(
+        kaynak="zayifi_savundu", hafta_min=520, hafta_max=1040,
+        agirlik="buyuk", nesil_asabilir=True,
+        text="O gün okulda savunduğun çelimsiz çocuk bugün lonca başı. "
+             "Seni görünce ayağa kalktı: 'Bu adam benim için yumruk yedi.' "
+             "Artık loncada sözün geçiyor.",
+        etki={"money": 100, "reputation": 8}),
+    # Güçlünün yanını tut → zayıf geri döndü, affetmedi (GDD örneği)
+    ("event_schoolfight", 0): dict(
+        kaynak="guclunun_yani", hafta_min=520, hafta_max=1040,
+        agirlik="buyuk", nesil_asabilir=True,
+        text="Okulda ezilmesine seyirci kalıp güçlünün yanında durduğun "
+             "çocuk geri döndü — ve affetmedi. Şimdi sözü geçen biri; "
+             "kapılar yüzüne kapanıyor.",
+        etki={"reputation": -8}),
+    # Yangında donakal → kurban yükseldi, hatırlıyor (GDD örneği)
+    ("event_village_fire", 2): dict(
+        kaynak="yangin_sustun", hafta_min=260, hafta_max=624,
+        agirlik="buyuk", nesil_asabilir=True,
+        text="Ahırı yanarken izlediğin komşu bugün şehirde sözü geçen bir "
+             "adam. Seni tanıdı: 'Sen o gece duran çocuksun.' Bakışı buz "
+             "gibiydi.",
+        etki={"reputation": -6}),
+    # Yangında kova taşı → köy unutmaz
+    ("event_village_fire", 0): dict(
+        kaynak="yangin_kahramani", hafta_min=156, hafta_max=520,
+        agirlik="orta",
+        text="O yangın gecesini köy hâlâ anlatıyor — ve hikâyede sen "
+             "varsın. Yaşlılar çocuklarına seni örnek gösteriyor.",
+        etki={"reputation": 6}),
+    # Hasatta yaşlıyı geç → ailesi soğudu
+    ("event_harvest_help", 2): dict(
+        kaynak="hasat_gecti", hafta_min=104, hafta_max=416, agirlik="kucuk",
+        text="O kış zorlanan yaşlı çiftçinin oğlu büyüdü ve değirmeni "
+             "devraldı. Babasını yalnız bırakanları tek tek biliyor.",
+        etki={"reputation": -3}),
+    # Hasatta yardım → vefa
+    ("event_harvest_help", 0): dict(
+        kaynak="hasat_vefa", hafta_min=156, hafta_max=520, agirlik="orta",
+        text="Hasadına koştuğun yaşlı adam vasiyetinde seni anmış: 'Ellerine "
+             "sağlık' diye bir kese bırakmış.",
+        etki={"money": 45, "reputation": 3}),
+}
+
+
+def sow_from_life_event(state, event_id, choice_index):
+    """Life event seçimi tohum tarifine denk geliyorsa ek. Sessiz — oyuncu
+    bilmez; en güçlü an 'BUNU HATIRLIYORLAR MIYDI?' anıdır."""
+    spec = LIFE_EVENT_SEEDS.get((event_id, choice_index))
+    if not spec:
+        return None
+    return sow_seed(state, **spec)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ROMANIN SON SAYFASI — ölüm sahnesi / nesil devri özeti (Chronicle 2.0)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def final_page(state):
+    """Hayat romanın kapanış sayfası: perdeler + nam + nemesis + hanedanlar.
+    begin_inheritance, eski oyuncu için bunu üretip mirasa iliştirir."""
+    y = ensure_director(state)
+    player = state["player"]
+    turn = state.get("turn", 0)
+    isim = player.get("name", "Bir yolcu")
+    yas = player.get("age", "?")
+
+    satirlar = []
+    satirlar.append(f"{isim}, {yas} yaşında bu dünyadan göçtü. "
+                    f"Hikâyesi {len(y['perdeler'])} perde sürdü.")
+
+    # Nam — nasıl hatırlanacak
+    epitaf = "Sessizce yaşadı, sessizce gitti."
+    try:
+        from npc_mind import compute_nam, dominant_nam
+        dom = dominant_nam(compute_nam(state))
+        epitaflar = {
+            "cömert": "Sofrası açıktı; ardından dua edenler çok.",
+            "zalim": "Adı anıldığında hâlâ ürperenler var.",
+            "çapkın": "Gönlü geniş, sözü tatlıydı — fazlasıyla.",
+            "dindar": "Yüzü hep kıbleye dönüktü; öyle de gömüldü.",
+            "mert": "Sözünün eriydi. Bu az şey değildir.",
+        }
+        if dom:
+            epitaf = epitaflar.get(dom, epitaf)
+            satirlar.append(f"Halk onu '{dom}' diye bildi.")
+    except Exception:
+        dom = None
+
+    # Hanedan cephesi
+    dost = [d for d in state["world"].get("dynasties", [])
+            if not d.get("sonmus") and d.get("oyuncuya_tutum", 0) >= 30]
+    dusman = [d for d in state["world"].get("dynasties", [])
+              if not d.get("sonmus") and d.get("oyuncuya_tutum", 0) <= -30]
+    if dost:
+        satirlar.append("Cenazesinde " + ", ".join(
+            f"{d['sembol']} {d['ad']}" for d in dost[:2]) + " hanedanı saf tuttu.")
+    if dusman:
+        satirlar.append(", ".join(f"{d['sembol']} {d['ad']}" for d in dusman[:2])
+                        + " hanedanı ise sadece öldüğünden emin olmaya geldi.")
+
+    # Nemesis — kapanmamış defter
+    for nid in y.get("nemesis_ids", []):
+        npc = _npc(state, nid)
+        if npc and npc.get("alive"):
+            satirlar.append(f"{npc['name']} ile defteri kapanmadı — "
+                            "bu hesap mirasla birlikte geçer.")
+
+    # Toprağın altındakiler
+    kalan = [t for t in state.get("tohumlar", []) if t.get("nesil_asabilir")]
+    if kalan:
+        satirlar.append(f"Ve toprağın altında {len(kalan)} tohum hâlâ "
+                        "bekliyor: babanın ektiğini oğul biçecek.")
+
+    # Son perdeyi kapat
+    if y["perdeler"] and y["perdeler"][-1]["bitis"] is None:
+        y["perdeler"][-1]["bitis"] = turn
+
+    return {
+        "baslik": f"{isim}'in Hikâyesi — Son Sayfa",
+        "satirlar": satirlar,
+        "epitaf": epitaf,
+        "perdeler": list(y["perdeler"]),
+        "nam": dom,
+        "yas": yas,
+        "perde_sayisi": len(y["perdeler"]),
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # YÜZEY — GET /game/yonetmen
 # ═══════════════════════════════════════════════════════════════════════════
 
