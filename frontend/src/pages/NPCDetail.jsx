@@ -1,5 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { playSfx } from "@/lib/audio";
+import { Portre } from "@/components/ui/Gorsel";
 import { profLabel } from "@/lib/labels";
 import { useEffect, useState, useRef } from "react";
 import { useGame } from "@/lib/GameContext";
@@ -628,12 +629,11 @@ export default function NPCDetail() {
       <div className="card-frame p-4 mb-3">
         <div className="flex items-start gap-3">
           {/* Avatar circle */}
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 border ${band.cls} bg-stone-900`}>
-            <span className="text-xl">
-              {npc.profession === "kral" || npc.profession === "veliaht" ? "👑"
-               : npc.gender === "kadın" ? "👩"
-               : "👤"}
-            </span>
+          <div className={`rounded-full shrink-0 border ${band.cls}`} style={{ overflow: "hidden" }}>
+            <Portre age={npc.age} gender={npc.gender} id={npc.id}
+                    emoji={npc.profession === "kral" || npc.profession === "veliaht" ? "👑"
+                           : npc.gender === "kadın" ? "👩" : "👤"}
+                    size="3rem" ring={false} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">

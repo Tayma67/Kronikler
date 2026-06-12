@@ -10,6 +10,7 @@ import StoryModal from '@/components/StoryModal';
 import WeekPlanCard from '@/components/WeekPlanCard';
 import HarvestModal from '@/components/HarvestModal';
 import SagaStrip, { SagaTab, useSaga } from '@/components/SagaStrip';
+import { useGorselVar, heroYolu, Portre } from '@/components/ui/Gorsel';
 import { playSfx } from '@/lib/audio';
 
 // Mesleğe göre ünvan ikonu — tek tip ⚒ yerine kimlik hissi
@@ -381,6 +382,8 @@ export default function Dashboard() {
   const fame        = player.fame || 0;
   const repTitle    = fameLabel(fame);
   const heroImage   = SEASON_IMAGE[season] || SEASON_IMAGE['Yaz'];
+  const yetiskinHero = heroYolu(playerAge, season);
+  const heroHazir = useGorselVar(playerAge >= 13 ? yetiskinHero : null);
 
   const stats = {
     health: Math.round(player.health || 0),
@@ -469,6 +472,8 @@ export default function Dashboard() {
             (çocuk fotoğrafı 40 yaşındaki karakterde aldatmaca olur) */}
         {playerAge < 13 ? (
           <div className="hero-image" style={{ backgroundImage: `url(${heroImage})` }} />
+        ) : heroHazir ? (
+          <div className="hero-image" style={{ backgroundImage: `url(${yetiskinHero})` }} />
         ) : (
           <div className={`hero-scene hero-scene--${
             season === 'Kış' ? 'kis' : season === 'Sonbahar' ? 'sonbahar'
@@ -494,8 +499,10 @@ export default function Dashboard() {
                 boxShadow: '0 0 0 3px rgba(201,168,76,0.15), 0 0 16px rgba(201,168,76,0.45)',
                 background: 'linear-gradient(135deg, #3A2010 0%, #2A1808 50%, #1A0E06 100%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden',
               }}>
-                <span style={{ fontSize: '1.3rem' }}>{avatarEmoji}</span>
+                <Portre age={playerAge} gender={player.gender} id={player.name || 'oyuncu'}
+                        emoji={avatarEmoji} size="3.2rem" ring={false} />
               </div>
 
               {/* Mini stats */}

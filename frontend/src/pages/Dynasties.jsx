@@ -9,6 +9,7 @@ import {
   ChevronDown, ChevronUp, ScrollText,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/Kit";
+import { Arma } from "@/components/ui/Gorsel";
 
 // ─── Tutum göstergesi ─────────────────────────────────────────────────────────
 function AttitudeBadge({ value, allied }) {
@@ -42,7 +43,7 @@ function DynastyRow({ row, busy, onOverture, delta }) {
           {delta > 0 && <span className="text-emerald-400 text-[10px]">▲</span>}
           {delta < 0 && <span className="text-red-400 text-[10px]">▼</span>}
         </span>
-        <span className="text-xl shrink-0">{row.sembol}</span>
+        <span className="shrink-0"><Arma dynastyId={row.id} emoji={row.sembol} size="1.7rem" /></span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`font-heading text-sm ${row.oyuncu ? "text-amber-300" : "text-stone-100"}`}>
