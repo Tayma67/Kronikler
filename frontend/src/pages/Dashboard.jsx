@@ -10,7 +10,7 @@ import StoryModal from '@/components/StoryModal';
 import WeekPlanCard from '@/components/WeekPlanCard';
 import HarvestModal from '@/components/HarvestModal';
 import SagaStrip, { SagaTab, useSaga } from '@/components/SagaStrip';
-import { useGorselVar, heroYolu, Portre } from '@/components/ui/Gorsel';
+import { useHeroGorsel, Portre } from '@/components/ui/Gorsel';
 import { playSfx } from '@/lib/audio';
 
 // Mesleğe göre ünvan ikonu — tek tip ⚒ yerine kimlik hissi
@@ -382,8 +382,8 @@ export default function Dashboard() {
   const fame        = player.fame || 0;
   const repTitle    = fameLabel(fame);
   const heroImage   = SEASON_IMAGE[season] || SEASON_IMAGE['Yaz'];
-  const yetiskinHero = heroYolu(playerAge, season);
-  const heroHazir = useGorselVar(playerAge >= 13 ? yetiskinHero : null);
+  const yetiskinHero = useHeroGorsel(playerAge, season);
+  const heroHazir = playerAge >= 13 && !!yetiskinHero;
 
   const stats = {
     health: Math.round(player.health || 0),

@@ -72,3 +72,15 @@ export function heroYolu(age, season) {
     : season === "İlkbahar" ? "ilkbahar" : "yaz";
   return `/images/hero/${donem}_${mevsim}.jpg`;
 }
+
+/** Hero için basamaklı seçim: yaşa özel görsel yoksa genç seti kullanılır
+    — böylece mevsim başına TEK görsel bile tüm yetişkinliği giydirir. */
+export function useHeroGorsel(age, season) {
+  const ozel = heroYolu(age, season);
+  const genel = heroYolu(15, season);   // "genc" seti
+  const ozelVar = useGorselVar(ozel);
+  const genelVar = useGorselVar(ozelVar ? null : genel);
+  if (ozelVar) return ozel;
+  if (genelVar) return genel;
+  return null;
+}
