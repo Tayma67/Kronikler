@@ -193,8 +193,10 @@ def play_card(state, npc, card_id):
         key = card["intel"]
         if key == "amac" and npc.get("goal"):
             store["amac"] = npc["goal"]
+            from npc_profile import GOAL_BY_KEY
+            amac_lbl = GOAL_BY_KEY.get(npc["goal"], {}).get("label", npc["goal"])
             intel_gain = {"type": "amac",
-                          "text": f"Amacını öğrendin: {npc['goal']}."}
+                          "text": f"Amacını öğrendin: {amac_lbl.lower()}."}
         elif key == "ticaret":
             store["ticaret"] = True
             intel_gain = {"type": "ticaret",

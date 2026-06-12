@@ -779,11 +779,52 @@ def _is_child(player):
 #  ANA DIALOG FONKSİYONU
 # ─────────────────────────────────────────────
 
+def _child_npc_speech(npc, topic, rng, age):
+    """NPC çocuk/bebekse yaşına uygun konuşsun — bebek yetişkin gibi konuşamaz."""
+    ad = (npc.get("name") or "Çocuk").split()[0]
+    if age < 4:
+        return _pick(rng, [
+            f"({ad} sana merakla bakıyor; daha konuşmayı bilmiyor.)",
+            f"(Bebek {ad} parmağını emip anlamsız sesler çıkarıyor.)",
+            f"(Minik {ad} sana gülümsüyor ama bir şey demiyor.)",
+            f"({ad} eteğine tutunup arkasına saklanıyor.)",
+        ])
+    if age < 8:
+        pool = {
+            "selam": ["Merhaba! Sen kimsin?", "Benimle oynar mısın?", "Annemi gördün mü?", "Aa, biri geldi!"],
+            "iş": ["Ben daha çalışmıyorum ki, küçüğüm.", "Oyun oynamayı seviyorum!", "Babam çalışıyor, ben bakıyorum."],
+            "aile": ["Annemle babam var benim.", "Annem en iyisi!", "Kardeşimle oynuyoruz."],
+            "dünya": ["Büyükler hep bir şey konuşuyor, anlamıyorum.", "Dışarısı kocamaaan!"],
+            "hedef": ["Büyüyünce şövalye olucam!", "Çoook şeker yiyeceğim!", "Bilmem ki..."],
+            "üzgün": ["Düştüm, dizim acıdı.", "Yok bir şeyim.", "Annemi istiyorum."],
+            "veda": ["Bay bay!", "Güle güle!", "Yine gel oyna!"],
+        }.get(topic, ["Bilmiyorum...", "Hımm?", "Oyun oynayalım mı?"])
+        return _pick(rng, pool)
+    # 8-12 yaş
+    pool = {
+        "selam": ["Selam. Bir şey mi lazımdı?", "Merhaba, ben buralıyım.", "Aa, selam sana!"],
+        "iş": ["Babama yardım ediyorum bazen.", "Daha işe başlamadım, küçüğüm.", "Ufak tefek işler yapıyorum."],
+        "aile": ["Ailem köyde, kalabalığız.", "Annemle babamı çok severim.", "Evde herkes bir telaşta hep."],
+        "dünya": ["Büyükler bir şeyler konuşuyor ama pek anlamıyorum.", "Dünyayı daha öğreniyorum işte."],
+        "hedef": ["Büyüyünce önemli biri olacağım!", "Babam gibi olmak istiyorum.", "Daha düşünmedim doğrusu."],
+        "üzgün": ["Yok bir şeyim, geçer.", "Biraz canım sıkkın.", "İyiyim sayılır."],
+        "veda": ["Görüşürüz!", "Hadi, bay bay!", "Güle güle, yine gel."],
+    }.get(topic, ["Anlamadım pek.", "Ne demiştin?"])
+    return _pick(rng, pool)
+
+
 def generate_response(npc, relationship_score, topic, player, recent_world_events, day, turn, state=None):
     """4 katmanlı dialog motoru. Geriye (response_text, proactive_line) döner."""
     ensure_profile(npc)
     rng = _seed_rng(npc["id"], topic, day, turn)
     band = relation_band(relationship_score)
+
+    # ── NPC yaş kapısı: çocuk/bebek yetişkin gibi konuşmasın ──────────────
+    # (Dikkat: yaş 0 falsy'dir; `or` ile değil açık None kontrolüyle.)
+    _npc_age = npc.get("age")
+    _npc_age = 30 if _npc_age is None else _npc_age
+    if _npc_age < 13:
+        return _child_npc_speech(npc, topic, rng, _npc_age), ""
     ctx = _build_context(npc, player, state or {}, rng, day)
     parts = []
     proactive = ""
@@ -976,8 +1017,7 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
 
         spont = _spontaneous_line(npc, ctx, rng, band)
         if spont:
-            proactive = spont
-            parts.append(spont)
+            proactive = spont   # ayrı "öncül" baloncuğunda gösterilir; cevaba tekrar ekleme
 
         if npc["profession"] == "kral" and band != "düşman":
             parts.append(_pick(rng, [
@@ -1303,7 +1343,13 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
         if line:
             parts.insert(0, line)
 
-    return " ".join(p for p in parts if p), proactive
+    # ── Tutarlılık: NPC 4-6 kopuk cümle DEĞİL, konunun özü + en fazla bir
+    #    flavor söylesin. Motor çok parça ekliyordu (savruk his); kısa tut.
+    #    proactive (öncül) zaten ayrı baloncukta gösteriliyor, ondan ayrı. ──
+    clean = [p for p in parts if p and p.strip()]
+    if len(clean) > 2:
+        clean = clean[:2]
+    return " ".join(clean), proactive
 
 # ─────────────────────────────────────────────
 #  DIALOG TOPICLERİ & İLİŞKİ DELTASİ
