@@ -102,6 +102,19 @@ Her ekranın tek cümlelik **duygu görevi** var. Ona hizmet etmeyen her şey g�
 
 ## 4. Onboarding: İlk 10 Dakika
 
+### H6 — Aşamalı Keşif Kuralı (His Anayasası eki)
+
+> **7-13 yaş = keşif dönemi. Her şeyi baştan göstermek hevesi öldürür.**
+
+- Çocuklukta nav sadedir: mektep, aile, kasaba, pazar, hikâyeler.
+  Yetişkin sekmeleri (Meslek, Örgütler, Savaş, Gölge, Mülkler, Rakipler,
+  Nesil, Hanedan) **gizlidir** — kilit rozeti bile yok; varlıkları sürpriz.
+- SagaStrip, gerilim közü ve ROMAN sekmesi 13'te belirir — "dünya açıldı"
+  anının görsel parçasıdır.
+- Hanedanlar çocukla uğraşmaz (elçi/sabotaj 13+, backend garantisi).
+- Tek istisna: 12 yaşında İlerle butonu bir kez fısıldar —
+  *"Büyüyorsun… dünya yakında sana açılacak."* (merak kancası, ifşa değil)
+
 Hedef: ilk oturumda **10+ "Haftayı İlerle"** (v7 KPI). Akış:
 
 1. **Manşet + Yeni Yolculuk** (≤60 sn): isim/cinsiyet, tek ekran. ✅
