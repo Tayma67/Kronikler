@@ -30,7 +30,9 @@ export default function Inventory() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api.get("/game/items").then(({ data }) => setItems(data.items || {}));
+    api.get("/game/items")
+      .then(({ data }) => setItems(data.items || {}))
+      .catch(() => {});   // uç başarısız olursa sessizce geç (unhandled rejection olmasın)
   }, []);
 
   const inv = state.player.inventory || {};
