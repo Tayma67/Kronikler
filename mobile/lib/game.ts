@@ -459,3 +459,29 @@ export function fightEncounter(prev: GameState, id: string): GameState {
   }
   return s;
 }
+
+// ── Başarımlar — durumdan türetilir (kalıcı sayaç gerektirmez) ──
+export interface Achievement { id: string; name: string; desc: string; icon: string; done: (s: GameState) => boolean; }
+export const ACHIEVEMENTS: Achievement[] = [
+  { id: "resit",    name: "Reşit Oldun",     desc: "13 yaşına ulaş ve bir meslek edin.", icon: "anvil",        done: (s) => s.player.age >= 13 && s.player.profession !== "işsiz" },
+  { id: "ilkakce",  name: "İlk Kese",        desc: "100 akçe biriktir.",                icon: "coins",        done: (s) => s.player.money >= 100 },
+  { id: "zengin",   name: "Diyarın Zengini", desc: "1000 akçeye ulaş.",                 icon: "gems",         done: (s) => s.player.money >= 1000 },
+  { id: "mulk",     name: "Mülk Sahibi",     desc: "İlk mülkünü edin.",                 icon: "house",        done: (s) => s.player.properties.length >= 1 },
+  { id: "toprak",   name: "Toprak Ağası",    desc: "5 mülkün sahibi ol.",               icon: "castle",       done: (s) => s.player.properties.length >= 5 },
+  { id: "evli",     name: "Ocak Kuruldu",    desc: "Evlen.",                            icon: "ring",         done: (s) => s.player.married },
+  { id: "baba",     name: "Soyun Sürüyor",   desc: "İlk evladın olsun.",                icon: "baby",         done: (s) => s.player.children.length >= 1 },
+  { id: "kalabalik",name: "Kalabalık Sofra", desc: "4 evladın olsun.",                  icon: "family",       done: (s) => s.player.children.length >= 4 },
+  { id: "loncali",  name: "Loncalı",         desc: "Bir loncaya katıl.",                icon: "crown",        done: (s) => !!s.player.faction },
+  { id: "savasci",  name: "Savaş Görmüş",    desc: "Bir çatışmadan zaferle dön.",       icon: "trophy",       done: (s) => s.history.some((e) => e.type === "savaş_zafer") },
+  { id: "sohret",   name: "Destanlaşan",     desc: "Şöhretin 80'i aşsın.",              icon: "star",         done: (s) => s.player.fame >= 80 },
+  { id: "seref",    name: "Erdemin Timsali", desc: "Şerefin 80'i aşsın.",               icon: "medal",        done: (s) => s.player.honor >= 80 },
+  { id: "korku",    name: "Diyarın Kâbusu",  desc: "Korku salgını 80'i aşsın.",         icon: "hood",         done: (s) => s.player.fear >= 80 },
+  { id: "itibar",   name: "Diyarın İncisi",  desc: "İtibarın 80'i aşsın.",              icon: "prayer-beads", done: (s) => s.player.reputation >= 80 },
+  { id: "uzunomur", name: "Uzun Ömür",       desc: "60 yaşını gör.",                    icon: "hourglass",    done: (s) => s.player.age >= 60 },
+  { id: "hanedan",  name: "Hanedan Kuruldu", desc: "İkinci nesle geç.",                 icon: "banner",       done: (s) => s.player.generation >= 2 },
+  { id: "kokluhan", name: "Köklü Hanedan",   desc: "Dördüncü nesle ulaş.",              icon: "scroll-open",  done: (s) => s.player.generation >= 4 },
+  { id: "usta",     name: "Çok Yönlü",       desc: "Tüm özelliklerin 5+ olsun.",        icon: "shield",       done: (s) => Object.values(s.player.stats).every((v) => v >= 5) },
+];
+export function achievementsOf(s: GameState): { a: Achievement; done: boolean }[] {
+  return ACHIEVEMENTS.map((a) => ({ a, done: a.done(s) }));
+}
