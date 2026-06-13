@@ -142,7 +142,7 @@ const LANDMARK_TYPES = new Set([
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 function fameLabel(fame) {
   if (fame >= 80) return 'EFSANEVİ';
-  if (fame >= 60) return 'TANILMIŞ';
+  if (fame >= 60) return 'TANINMIŞ';
   if (fame >= 40) return 'DUYULAN';
   if (fame >= 20) return 'BİLİNEN';
   return 'TANINMAYAN';
