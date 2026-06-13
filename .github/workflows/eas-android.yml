@@ -1,0 +1,28 @@
+name: Android Derleme (EAS)
+
+# Elle tetiklenir: GitHub → Actions → "Android Derleme (EAS)" → Run workflow.
+# Gizli anahtar gerekir: repo Settings → Secrets → Actions → EXPO_TOKEN
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "preview = test APK · production = Play AAB"
+        type: choice
+        default: preview
+        options: [preview, production]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: EAS build (Android)
+        working-directory: mobile
+        run: eas build --platform android --profile ${{ github.event.inputs.profile }} --non-interactive --no-wait
