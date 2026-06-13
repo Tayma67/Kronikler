@@ -96,6 +96,18 @@ body::after {
   background-size: cover;
   background-position: center 35%;
   background-repeat: no-repeat;
+  /* Sinematik nefes: çok yavaş, hafif yakınlaşma-uzaklaşma (Ken Burns).
+     scale hep >1 olduğundan kenarlarda boşluk açılmaz. */
+  transform: scale(1.04);
+  animation: hero-breathe 32s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes hero-breathe {
+  0%   { transform: scale(1.04) translate(0, 0); }
+  100% { transform: scale(1.10) translate(-1.2%, -1.4%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-image { animation: none; transform: none; }
 }
 
 /* STEP 3: Atmospheric vignettes on top of real photo */
