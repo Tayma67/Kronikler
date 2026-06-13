@@ -1,13 +1,40 @@
 // Statik görsel haritası (RN require literal yol ister).
-const HERO_COCUK: Record<string, any> = {
-  "Yaz": require("../assets/hero/cocuk_yaz.jpg"),
-  "Kış": require("../assets/hero/cocuk_kis.jpg"),
-  "Sonbahar": require("../assets/hero/cocuk_sonbahar.jpg"),
-  "İlkbahar": require("../assets/hero/cocuk_ilkbahar.jpg"),
+// Yaş kuşağı × mevsim. cocuk (0-12) · genc (13-29) · orta (30-54) · yasli (55+).
+const HERO: Record<string, Record<string, any>> = {
+  cocuk: {
+    "Yaz": require("../assets/hero/cocuk_yaz.jpg"),
+    "Kış": require("../assets/hero/cocuk_kis.jpg"),
+    "Sonbahar": require("../assets/hero/cocuk_sonbahar.jpg"),
+    "İlkbahar": require("../assets/hero/cocuk_ilkbahar.jpg"),
+  },
+  genc: {
+    "Yaz": require("../assets/hero/genc_yaz.jpg"),
+    "Kış": require("../assets/hero/genc_kis.jpg"),
+    "Sonbahar": require("../assets/hero/genc_sonbahar.jpg"),
+    "İlkbahar": require("../assets/hero/genc_ilkbahar.jpg"),
+  },
+  orta: {
+    "Yaz": require("../assets/hero/orta_yaz.jpg"),
+    "Kış": require("../assets/hero/orta_kis.jpg"),
+    "Sonbahar": require("../assets/hero/orta_sonbahar.jpg"),
+    "İlkbahar": require("../assets/hero/orta_ilkbahar.jpg"),
+  },
+  yasli: {
+    "Yaz": require("../assets/hero/yasli_yaz.jpg"),
+    "Kış": require("../assets/hero/yasli_kis.jpg"),
+    "Sonbahar": require("../assets/hero/yasli_sonbahar.jpg"),
+    "İlkbahar": require("../assets/hero/yasli_ilkbahar.jpg"),
+  },
 };
+function heroBand(age: number): string {
+  if (age < 13) return "cocuk";
+  if (age < 30) return "genc";
+  if (age < 55) return "orta";
+  return "yasli";
+}
 export function heroImage(age: number, season: string): any {
-  // İlk milestone: çocuk mevsim görselleri. Yetişkin setleri sonra eklenecek.
-  return HERO_COCUK[season] || HERO_COCUK["Yaz"];
+  const set = HERO[heroBand(age)] || HERO.cocuk;
+  return set[season] || set["Yaz"];
 }
 
 // Portreler — yaş kuşağı + cinsiyete göre.
