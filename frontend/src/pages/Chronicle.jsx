@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { useGame } from "@/lib/GameContext";
 import { PageHeader } from "@/components/ui/Kit";
+import LifeNovel from "@/components/LifeNovel";
 import { api } from "@/lib/api";
 import { ScrollText, Star, Loader2, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
 
@@ -173,6 +174,7 @@ export default function Chronicle() {
   const [director, setDirector] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("full"); // "summary" | "full"
+  const [showNovel, setShowNovel] = useState(false);
 
   useEffect(() => {
     if (!state) return;
@@ -200,6 +202,42 @@ export default function Chronicle() {
         title="Küllerin Kroniği"
         sub="Yaşanmış her şey burada — senin romanın, mürekkep kurudukça."
       />
+
+      {/* ── Hayatın Romanı — sürükleyici okuma ── */}
+      <button
+        onClick={() => setShowNovel(true)}
+        className="w-full rise-in"
+        style={{
+          display: "flex", alignItems: "center", gap: "0.85rem",
+          padding: "0.9rem 1.1rem", borderRadius: "12px", cursor: "pointer", textAlign: "left",
+          background: "linear-gradient(135deg, rgba(201,168,76,0.14) 0%, rgba(201,168,76,0.04) 55%, var(--color-card) 100%)",
+          border: "1px solid rgba(201,168,76,0.4)",
+          boxShadow: "0 6px 22px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,168,76,0.12)",
+        }}
+      >
+        <span style={{ fontSize: "1.7rem", filter: "drop-shadow(0 0 8px rgba(201,168,76,0.4))" }}>📖</span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span className="font-display" style={{ display: "block", fontSize: "0.92rem", fontWeight: 700, color: "var(--color-gold)", letterSpacing: "0.08em" }}>
+            Hayatını Oku
+          </span>
+          <span className="font-serif" style={{ display: "block", fontSize: "0.76rem", fontStyle: "italic", color: "var(--color-parchment-muted)", marginTop: "0.1rem" }}>
+            Ömrünü bir roman gibi, bölüm bölüm.
+          </span>
+        </span>
+        <span style={{ color: "var(--color-gold-dim)", fontSize: "1.1rem" }}>→</span>
+      </button>
+
+      {showNovel && (
+        <LifeNovel
+          name={state?.player?.name}
+          baseAge={state?.player?.base_age ?? 7}
+          chapters={director?.perdeler || []}
+          yearStories={full?.year_stories || []}
+          history={state?.history || []}
+          alive={!state?.player?.dead}
+          onClose={() => setShowNovel(false)}
+        />
+      )}
 
       {/* ── Güncel Dünya Durumu ── */}
       {(() => {
