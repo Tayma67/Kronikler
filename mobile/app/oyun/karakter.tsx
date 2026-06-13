@@ -4,6 +4,7 @@ import { useGame } from "../../lib/store";
 import { useItem, allocateStat, Stats, factionById } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 import { Portre } from "../../lib/ui";
+import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 
 function Head({ t }: { t: string }) {
@@ -19,10 +20,14 @@ function Row({ k, v }: { k: string; v: string | number }) {
   );
 }
 
+const STAT_ICON: Record<string, string> = { strength: "guc", intelligence: "zeka", charisma: "karizma", stamina: "dayaniklilik" };
 function StatRow({ label, value, k, canAdd, onAdd }: { label: string; value: number; k: keyof Stats; canAdd: boolean; onAdd: (k: keyof Stats) => void }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border }}>
-      <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{label}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
+        <GameIcon name={STAT_ICON[k]} size={15} color={C.goldDim} />
+        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{label}</Text>
+      </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{value}</Text>
         {canAdd && (
