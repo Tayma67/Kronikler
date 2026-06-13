@@ -164,3 +164,13 @@ export function travelTo(prev: GameState, dest: string): GameState {
   push(s, "yolculuk", `${dest} yerleşimine gittin.`);
   return s;
 }
+
+export const ALL_PROFS = PROFS;
+// Meslek değiştir (13+). Yeni bir zanaata geçersin.
+export function changeProfession(prev: GameState, prof: string): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13 || prof === p.profession || !PROFS.includes(prof)) return s;
+  p.profession = prof;
+  push(s, "meslek_değişimi", `${cap(prof)} mesleğine geçtin.`, "kişisel", true);
+  return s;
+}

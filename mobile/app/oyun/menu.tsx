@@ -22,6 +22,7 @@ export default function Menu() {
       {[
         { to: "/oyun/sehir", icon: "🏰", label: "Şehir / Diyar" },
         { to: "/oyun/pazar", icon: "⚖️", label: "Pazar" },
+        { to: "/oyun/meslek", icon: "⚒", label: "Meslek" },
         { to: "/oyun/roman", icon: "📖", label: "Hayatın Romanı" },
       ].map((m) => (
         <Pressable key={m.to} onPress={() => router.push(m.to as any)} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.border, backgroundColor: C.card, marginBottom: 10 }}>

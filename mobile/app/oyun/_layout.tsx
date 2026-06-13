@@ -22,6 +22,7 @@ export default function OyunLayout() {
       {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}
       <Tabs.Screen name="pazar" options={{ href: null }} />
       <Tabs.Screen name="sehir" options={{ href: null }} />
+      <Tabs.Screen name="meslek" options={{ href: null }} />
       <Tabs.Screen name="roman" options={{ href: null }} />
       <Tabs.Screen name="npc/[id]" options={{ href: null }} />
     </Tabs>
