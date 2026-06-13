@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { travelTo, placeKind } from "../../../lib/game";
+import { travelBy, placeKind, TRAVEL_ROUTES } from "../../../lib/game";
 import { cityInfo, marketGoods, locSeed } from "../../../lib/world";
 import { C, F } from "../../../lib/theme";
 
@@ -53,9 +53,18 @@ export default function DiyarDetay() {
           <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>ŞU AN BURADASIN</Text>
         </View>
       ) : (
-        <Pressable onPress={() => { apply((s) => travelTo(s, name)); router.back(); }} style={{ paddingVertical: 15, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
-          <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206", letterSpacing: 1.5 }}>BURAYA GİT</Text>
-        </Pressable>
+        <>
+          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>YOLA ÇIK</Text>
+          {TRAVEL_ROUTES.map((r) => (
+            <Pressable key={r.id} onPress={() => { apply((s) => travelBy(s, name, r.id)); router.back(); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: C.card, marginBottom: 8 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{r.label}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{r.desc}</Text>
+              </View>
+              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>GİT ›</Text>
+            </Pressable>
+          ))}
+        </>
       )}
     </ScrollView>
   );

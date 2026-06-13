@@ -27,6 +27,7 @@ function migrate(s: GameState): GameState {
   if (!s.story) s.story = { active: null, completed: [], tension: 0 };
   if (!s.wars) s.wars = [];
   if (s.caravan === undefined) s.caravan = null;
+  if (s.econ === undefined) s.econ = 1;
   return s;
 }
 

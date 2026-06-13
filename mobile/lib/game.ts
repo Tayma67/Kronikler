@@ -88,6 +88,16 @@ export interface GameState {
   story: StoryProgress;
   wars: FactionWar[];
   caravan: { invested: number; returnTurn: number; dest: string } | null;
+  econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
+}
+// Piyasa çarpanına göre fiyat.
+export function marketPrice(base: number, econ: number): number { return Math.max(1, Math.round(base * (econ || 1))); }
+export function econLabel(econ: number): string {
+  if (econ >= 1.18) return "Kıtlık — fiyatlar yüksek";
+  if (econ >= 1.06) return "Pahalılık";
+  if (econ <= 0.85) return "Bolluk — fiyatlar düşük";
+  if (econ <= 0.94) return "Ucuzluk";
+  return "Piyasa dengeli";
 }
 // Ocak savaşı — iki lonca arasında, birkaç ay süren çatışma.
 export interface FactionWar { a: string; b: string; turnsLeft: number; aScore: number; bScore: number; }
@@ -152,7 +162,7 @@ export function npcsOf(s: GameState): NPC[] { return generateNPCs(s.seed); }
 export function newGame(first: string, surname: string, gender: "erkek" | "kadın"): GameState {
   return {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true },
-    relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null,
+    relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null, econ: 1,
     player: {
       name: surname ? `${first} ${surname}` : first, surname, gender, base_age: 7, age: 7,
       money: 12, profession: "işsiz", health: 100, hunger: 100,
@@ -231,6 +241,8 @@ export function advance(prev: GameState, n = 1): GameState {
     rollLifeEvents(s, cal);
     tickWars(s, i === n - 1);
     tickCaravan(s);
+    tickEconomy(s, i === n - 1);
+    if (s.story) s.story.tension = Math.min(100, s.story.tension + 1); // gerilim zamanla birikir
   }
   if (s.history.length > 250) s.history = s.history.slice(-250);
   return s;
@@ -262,6 +274,18 @@ function tickWars(s: GameState, announce: boolean) {
     if (s.player.faction === winner) { s.player.faction_standing[winner] = (s.player.faction_standing[winner] || 0) + 8; s.player.fame = Math.min(100, s.player.fame + 4); }
   }
   s.wars = s.wars.filter((w) => w.turnsLeft > 0);
+}
+
+// Ekonomi: piyasa zamanla dengeye döner; ara sıra kıtlık/bolluk şoku.
+function tickEconomy(s: GameState, announce: boolean) {
+  if (s.econ === undefined) s.econ = 1;
+  // dengeye dön
+  s.econ += (1 - s.econ) * 0.25;
+  if (Math.random() < 0.08) {
+    if (Math.random() < 0.5) { s.econ = Math.min(1.5, s.econ + 0.22); if (announce) push(s, "piyasa", "Kıtlık baş gösterdi; pazarda fiyatlar fırladı.", "makro"); }
+    else { s.econ = Math.max(0.7, s.econ - 0.18); if (announce) push(s, "piyasa", "Bereketli hasat; pazarda fiyatlar düştü.", "makro"); }
+  }
+  s.econ = Math.round(s.econ * 100) / 100;
 }
 
 // Kervan döndüğünde sonucu çöz (kâr ya da baskın).
@@ -373,7 +397,7 @@ export function buyItem(prev: GameState, id: string): GameState {
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   let disc = p.faction === "tuccar" ? 0.85 : 1;
   if (hasPerk(p, "pazarlikci")) disc -= 0.10;
-  const price = Math.max(1, Math.round(g.buy * disc));
+  const price = Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc));
   if (p.money < price) return s;
   p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
   gainSkill(s, "trade", 5);
@@ -386,7 +410,7 @@ export function bargainBuy(prev: GameState, id: string): GameState {
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   let disc = p.faction === "tuccar" ? 0.85 : 1;
   if (hasPerk(p, "pazarlikci")) disc -= 0.10;
-  const base = Math.max(1, Math.round(g.buy * disc));
+  const base = Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc));
   const ok = Math.random() < 0.4 + effStat(p, "charisma") * 0.04 + p.skills.trade * 0.03;
   const price = ok ? Math.max(1, Math.round(base * 0.8)) : base;
   if (p.money < price) return s;
@@ -401,7 +425,7 @@ export function sellItem(prev: GameState, id: string): GameState {
   if (!(p.inventory[id] > 0)) return s;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
-  let sell = g.sell;
+  let sell = marketPrice(g.sell, s.econ);
   if (hasPerk(p, "dilbaz")) sell = Math.round(sell * 1.25);
   p.money += sell; gainSkill(s, "trade", 5); push(s, "ticaret", `${g.name} sattın (+${sell} akçe).`);
   return s;
@@ -468,6 +492,39 @@ export function travelTo(prev: GameState, dest: string): GameState {
   if (p.dead || dest === p.location_name) return s;
   p.location_name = dest; p.hunger = Math.max(0, p.hunger - 5);
   push(s, "yolculuk", `${dest} yerleşimine gittin.`);
+  return s;
+}
+
+// Çok rotalı seyahat: ana yol (güvenli), patika (hızlı/riskli), kervan (rahat, ücretli).
+export type TravelRoute = "anayol" | "patika" | "kervan";
+export const TRAVEL_ROUTES: { id: TravelRoute; label: string; desc: string }[] = [
+  { id: "anayol", label: "Ana Yol", desc: "Güvenli ama yorucu." },
+  { id: "patika", label: "Patika", desc: "Kestirme — ama haydut riski var." },
+  { id: "kervan", label: "Kervanla", desc: "Rahat ve güvenli (8 akçe)." },
+];
+export function travelBy(prev: GameState, dest: string, route: TravelRoute): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || dest === p.location_name) return s;
+  if (route === "kervan") {
+    if (p.money < 8) { push(s, "yolculuk", "Kervana verecek akçen yok."); return s; }
+    p.money -= 8; p.hunger = Math.max(0, p.hunger - 3); p.location_name = dest;
+    push(s, "yolculuk", `Kervana katılıp ${dest}'e rahatça vardın.`);
+  } else if (route === "patika") {
+    p.hunger = Math.max(0, p.hunger - 7); p.location_name = dest;
+    const ambush = Math.random() < Math.max(0.08, 0.3 - combatPower(p) * 0.012);
+    if (ambush) {
+      const hurt = 8 + Math.floor(Math.random() * 10) - armorDefense(p);
+      const loss = Math.min(p.money, 5 + Math.floor(Math.random() * 15));
+      p.health = Math.max(0, p.health - Math.max(3, hurt)); p.money -= loss;
+      push(s, "yolculuk", `Patikada haydut bastı! ${dest}'e zor ulaştın (−sağlık, −${loss} akçe).`, "kişisel", true);
+      if (p.health <= 0) die(s, `${p.name}, patikada haydutlara yenik düştü.`);
+    } else {
+      push(s, "yolculuk", `Patikadan kestirerek ${dest}'e vardın.`);
+    }
+  } else {
+    p.hunger = Math.max(0, p.hunger - 5); p.location_name = dest;
+    push(s, "yolculuk", `Ana yoldan ${dest} yerleşimine gittin.`);
+  }
   return s;
 }
 
@@ -635,7 +692,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null,
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null, econ: 1,
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
       base_age: 7, age: 7, money: startMoney, profession: "işsiz", health: startHealth, hunger: 100,
