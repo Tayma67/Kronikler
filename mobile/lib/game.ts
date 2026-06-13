@@ -751,6 +751,27 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "hanedan",  name: "Hanedan Kuruldu", desc: "İkinci nesle geç.",                 icon: "banner",       done: (s) => s.player.generation >= 2 },
   { id: "kokluhan", name: "Köklü Hanedan",   desc: "Dördüncü nesle ulaş.",              icon: "scroll-open",  done: (s) => s.player.generation >= 4 },
   { id: "usta",     name: "Çok Yönlü",       desc: "Tüm özelliklerin 5+ olsun.",        icon: "shield",       done: (s) => Object.values(s.player.stats).every((v) => v >= 5) },
+  // Beceri & teçhizat
+  { id: "savas_sv", name: "Kılıç Ustası",    desc: "Savaş becerini 6'ya çıkar.",        icon: "crossed-swords", done: (s) => s.player.skills.combat >= 6 },
+  { id: "tic_sv",   name: "Bezirgân",        desc: "Ticaret becerini 6'ya çıkar.",      icon: "scales",       done: (s) => s.player.skills.trade >= 6 },
+  { id: "zan_sv",   name: "Usta Zanaatkâr",  desc: "Zanaat becerini 6'ya çıkar.",       icon: "anvil",        done: (s) => s.player.skills.crafting >= 6 },
+  { id: "sos_sv",   name: "Dilbaz",          desc: "Sosyal becerini 6'ya çıkar.",       icon: "lyre",         done: (s) => s.player.skills.social >= 6 },
+  { id: "hunerli",  name: "Hünerli",         desc: "En az 6 hüner edin.",               icon: "medal",        done: (s) => s.player.perks.length >= 6 },
+  { id: "kusanmis", name: "Teçhizatlı",      desc: "Hem silah hem zırh kuşan.",         icon: "shield",       done: (s) => !!s.player.equipped?.silah && !!s.player.equipped?.zirh },
+  { id: "celikli",  name: "Çelik Kılıç",     desc: "Çelik kılıç kuşan.",                icon: "crossed-swords", done: (s) => s.player.equipped?.silah === "celik_kilic" },
+  // Kariyer & ekonomi
+  { id: "kariyer",  name: "Zirvede",         desc: "Mesleğinde en üst unvana ulaş.",    icon: "crown",        done: (s) => { const pr = professionById(s.player.profession); return !!pr && careerTier(pr, s.player.career_xp) >= pr.tiers.length - 1; } },
+  { id: "tüccar2",  name: "Servet Sahibi",   desc: "5000 akçeye ulaş.",                 icon: "gems",         done: (s) => s.player.money >= 5000 },
+  // Hikâye & sosyal
+  { id: "hikayeci", name: "Hikâye Anlatıcısı",desc: "Bir hikâye yayını tamamla.",        icon: "scroll-open",  done: (s) => s.story.completed.length >= 1 },
+  { id: "destanci", name: "Kader Dokuyucusu",desc: "Üç hikâye yayını tamamla.",         icon: "book",         done: (s) => s.story.completed.length >= 3 },
+  { id: "comert_a", name: "Eli Açık",        desc: "Cömert namın 60'ı aşsın.",          icon: "coins",        done: (s) => (s.player.nam?.comert || 0) >= 60 },
+  { id: "zalim_a",  name: "Acımasız",        desc: "Zalim namın 60'ı aşsın.",           icon: "skull",        done: (s) => (s.player.nam?.zalim || 0) >= 60 },
+  { id: "dindar_a", name: "Sofu",            desc: "Dindar namın 50'yi aşsın.",         icon: "prayer-beads", done: (s) => (s.player.nam?.dindar || 0) >= 50 },
+  // Aile & gezi
+  { id: "yatirim",  name: "İyi Baba/Ana",    desc: "Bir çocuğa 3 yatırım yap.",         icon: "family",       done: (s) => Object.values(s.player.child_invests || {}).some((l) => l.length >= 3) },
+  { id: "gezgin",   name: "Diyar Gezgini",   desc: "Bir şehirde bulun.",                icon: "house",        done: (s) => placeKind(s.player.location_name) === "şehir" },
+  { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
 ];
 export function achievementsOf(s: GameState): { a: Achievement; done: boolean }[] {
   return ACHIEVEMENTS.map((a) => ({ a, done: a.done(s) }));
