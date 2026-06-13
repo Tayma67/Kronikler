@@ -86,7 +86,10 @@ export interface GameState {
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
+  wars: FactionWar[];
 }
+// Ocak savaşı — iki lonca arasında, birkaç ay süren çatışma.
+export interface FactionWar { a: string; b: string; turnsLeft: number; aScore: number; bScore: number; }
 // NPC ruh hali/hafıza kaydını getir veya başlat (saf değil — clone'lanmış state'te çağrılır).
 export function npcStateOf(s: GameState, id: string): NpcState {
   if (!s.npc_state) s.npc_state = {};
@@ -148,7 +151,7 @@ export function npcsOf(s: GameState): NPC[] { return generateNPCs(s.seed); }
 export function newGame(first: string, surname: string, gender: "erkek" | "kadın"): GameState {
   return {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true },
-    relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 },
+    relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [],
     player: {
       name: surname ? `${first} ${surname}` : first, surname, gender, base_age: 7, age: 7,
       money: 12, profession: "işsiz", health: 100, hunger: 100,
@@ -225,8 +228,66 @@ export function advance(prev: GameState, n = 1): GameState {
     if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", `Mülklerinden ${inc} akçe gelir geldi.`); }
     push(s, s.player.age < 13 ? "cocukluk" : "gunluk", monthlyFlavor(s, cal));
     rollLifeEvents(s, cal);
+    tickWars(s, i === n - 1);
   }
   if (s.history.length > 250) s.history = s.history.slice(-250);
+  return s;
+}
+
+// Ocak savaşlarını ilerlet: yeni savaş çıkar, sürenleri yürüt, biteni çöz.
+function tickWars(s: GameState, announce: boolean) {
+  if (!s.wars) s.wars = [];
+  // Yeni savaş (en fazla 1 aktif, %6 şans)
+  if (s.wars.length === 0 && Math.random() < 0.06) {
+    const ids = FACTIONS.map((f) => f.id);
+    const a = ids[Math.floor(Math.random() * ids.length)];
+    let b = ids[Math.floor(Math.random() * ids.length)];
+    if (b === a) b = ids[(ids.indexOf(a) + 1) % ids.length];
+    s.wars.push({ a, b, turnsLeft: 4 + Math.floor(Math.random() * 4), aScore: 0, bScore: 0 });
+    if (announce) push(s, "ocak_savasi", `${factionById(a)?.name} ile ${factionById(b)?.name} arasında savaş çıktı!`, "makro", true);
+  }
+  for (const w of s.wars) {
+    w.turnsLeft -= 1;
+    // doğal gidişat
+    w.aScore += Math.floor(Math.random() * 3); w.bScore += Math.floor(Math.random() * 3);
+  }
+  const ended = s.wars.filter((w) => w.turnsLeft <= 0);
+  for (const w of ended) {
+    const winner = w.aScore >= w.bScore ? w.a : w.b;
+    const wf = factionById(winner);
+    if (announce) push(s, "ocak_savasi", `Savaş sona erdi: ${wf?.name} üstün geldi.`, "makro", true);
+    // Oyuncu kazanan tarafın üyesiyse itibar
+    if (s.player.faction === winner) { s.player.faction_standing[winner] = (s.player.faction_standing[winner] || 0) + 8; s.player.fame = Math.min(100, s.player.fame + 4); }
+  }
+  s.wars = s.wars.filter((w) => w.turnsLeft > 0);
+}
+
+// Oyuncunun loncasının dahil olduğu aktif savaş (varsa).
+export function playerWar(s: GameState): FactionWar | null {
+  if (!s.player.faction) return null;
+  return s.wars.find((w) => w.a === s.player.faction || w.b === s.player.faction) || null;
+}
+// Cepheye git: loncan için savaş — risk/ödül, savaş skoruna katkı.
+export function supportWar(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  const w = playerWar(s); if (!w || p.dead || p.age < 13) return s;
+  const mine = w.a === p.faction ? "a" : "b";
+  const pw = combatPower(p);
+  const win = Math.random() < Math.max(0.2, Math.min(0.9, 0.4 + pw * 0.02));
+  gainSkill(s, "combat", 8);
+  if (win) {
+    if (mine === "a") w.aScore += 3; else w.bScore += 3;
+    const loot = 20 + Math.floor(Math.random() * 25);
+    p.money += loot; p.fame = Math.min(100, p.fame + 4); p.faction_standing[p.faction!] = (p.faction_standing[p.faction!] || 0) + 6;
+    bumpNam(p, "mert", 4);
+    p.health = Math.max(1, p.health - (8 - Math.min(6, Math.round(armorDefense(p) / 2))));
+    push(s, "ocak_savasi", `Cephede loncan için savaştın ve üstün geldin (+${loot} akçe, itibar).`, "kişisel", true);
+  } else {
+    const hurt = 14 + Math.floor(Math.random() * 12) - armorDefense(p);
+    p.health = Math.max(0, p.health - Math.max(4, hurt));
+    push(s, "ocak_savasi", `Cephede ağır bir gün; yaralandın.`, "kişisel");
+    if (p.health <= 0) die(s, `${p.name}, ocak savaşında şehit düştü.`);
+  }
   return s;
 }
 
@@ -508,7 +569,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {}, story: { active: null, completed: [], tension: 0 },
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [],
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
       base_age: 7, age: 7, money: startMoney, profession: "işsiz", health: startHealth, hunger: 100,

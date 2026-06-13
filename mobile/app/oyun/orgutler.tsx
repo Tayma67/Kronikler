@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold } from "../../lib/game";
+import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 
 const STAT_TR: Record<string, string> = { strength: "Güç", intelligence: "Zekâ", charisma: "Karizma", stamina: "Dayanıklılık" };
@@ -22,6 +22,8 @@ export default function Orgutler() {
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const current = factionById(p.faction);
+  const wars = state.wars || [];
+  const myWar = playerWar(state);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
@@ -44,6 +46,20 @@ export default function Orgutler() {
         </View>
       )}
 
+      {wars.length > 0 && (
+        <View style={{ marginHorizontal: 16, marginBottom: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(168,52,52,0.4)", backgroundColor: "rgba(168,52,52,0.08)" }}>
+          {wars.map((w, i) => (
+            <Text key={i} style={{ fontFamily: F.serif, fontSize: 12, color: C.parchment, marginBottom: 4 }}>
+              ⚔ {factionById(w.a)?.name} ⚔ {factionById(w.b)?.name} · {w.turnsLeft} ay
+            </Text>
+          ))}
+          {myWar && (
+            <Pressable onPress={() => apply(supportWar)} style={{ marginTop: 6, alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: "rgba(168,52,52,0.55)", backgroundColor: "rgba(168,52,52,0.16)" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood, letterSpacing: 1 }}>CEPHEYE GİT</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
         {FACTIONS.map((f) => {
           const standing = p.faction_standing[f.id] || 0;

@@ -25,6 +25,7 @@ function migrate(s: GameState): GameState {
   if (!s.dynasty) s.dynasty = [];
   if (!s.npc_state) s.npc_state = {};
   if (!s.story) s.story = { active: null, completed: [], tension: 0 };
+  if (!s.wars) s.wars = [];
   return s;
 }
 
