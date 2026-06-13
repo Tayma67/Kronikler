@@ -9,6 +9,7 @@ Her cevap şu katmanlardan oluşur:
 """
 import random
 import hashlib
+import re
 from npc_profile import (
     ensure_profile, latest_event_line, goal_line, mood_greeting,
     MOOD_GREETING, GOAL_TALK, GOAL_BY_KEY,
@@ -529,6 +530,20 @@ def _pick(rng, pool):
     if not pool:
         return ""
     return pool[rng.randrange(len(pool))]
+
+
+def _to_first_person(activity):
+    """daily_log metni 3. şahıstır ('geçimini sağladı'); NPC kendi ağzından
+    konuşurken 1. şahsa çevir ('geçimimi sağladım')."""
+    a = activity
+    # 3. şahıs iyelik+belirtme → 1. şahıs
+    a = re.sub(r'ini\b', 'imi', a); a = re.sub(r'ını\b', 'ımı', a)
+    a = re.sub(r'unu\b', 'umu', a); a = re.sub(r'ünü\b', 'ümü', a)
+    a = re.sub(r'ıyla\b', 'ımla', a); a = re.sub(r'iyle\b', 'imle', a)
+    a = re.sub(r'uyla\b', 'umla', a); a = re.sub(r'üyle\b', 'ümle', a)
+    # 3. şahıs geçmiş fiil → 1. şahıs (+m)
+    a = re.sub(r'(d[ıiuü]|t[ıiuü])$', lambda m: m.group(1) + 'm', a)
+    return a
 
 def emotional_stage(repeat_count: int) -> str:
     if repeat_count <= 1:
@@ -1064,11 +1079,11 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
 
         log = npc.get("daily_log") or []
         if log and rng.random() < 0.65:
-            activity = log[-1]["text"]
+            activity = _to_first_person(log[-1]["text"])  # 3. şahıs → 1. şahıs
             parts.append(_pick(rng, [
                 f"Bu ay {activity}.",
                 f"Geçen ay {activity}, yoruldum açıkçası.",
-                f"Yaptıklarım arasında {activity} da var.",
+                f"Daha geçen gün {activity}.",
             ]))
 
         if ctx.get("in_debt") and rng.random() < 0.4:
@@ -1215,7 +1230,7 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
             ]))
         elif mood == "umutlu":
             parts.append(_pick(rng, [
-                "Bir miktar derdiniz var ama ümidim sağlam.",
+                "Bir miktar derdim var ama ümidim sağlam.",
                 "Bugün iyi hissediyorum, umarım devam eder.",
             ]))
         else:
