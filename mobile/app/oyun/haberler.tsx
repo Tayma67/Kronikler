@@ -3,16 +3,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { worldNews, rumors } from "../../lib/lore";
+import { useI18n } from "../../lib/i18n";
 import { currentCalendar } from "../../lib/calendar";
 import { C, F } from "../../lib/theme";
 
 export default function Haberler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state } = useGame();
+  const { lang } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const cal = currentCalendar(state.turn);
   const news = worldNews(state.turn, state.seed);
-  const gossip = rumors(state.turn, state.seed);
+  const gossip = rumors(state.turn, state.seed, lang);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>

@@ -2,11 +2,13 @@ import { useState } from "react";
 import { View, Text, TextInput, Pressable, ImageBackground, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useGame } from "../lib/store";
+import { useI18n } from "../lib/i18n";
 import { C, F } from "../lib/theme";
 
 export default function YeniOyun() {
   const router = useRouter();
   const { startGame } = useGame();
+  const { t } = useI18n();
   const [fullName, setFullName] = useState("");
   const [gender, setGender] = useState<"erkek" | "kadın" | "">("");
   const [busy, setBusy] = useState(false);
@@ -20,8 +22,8 @@ export default function YeniOyun() {
     const parts = fullName.trim().split(/\s+/).filter(Boolean);
     const first = parts[0] || "";
     const surname = parts.slice(1).join(" ");
-    if (first.length < 2) { setError("Lütfen adını gir (en az 2 harf)"); return; }
-    if (!gender) { setError("Lütfen cinsiyetini seç"); return; }
+    if (first.length < 2) { setError(t("new.errName")); return; }
+    if (!gender) { setError(t("new.errGender")); return; }
     setBusy(true);
     try {
       await startGame(first, surname, gender);
@@ -54,7 +56,7 @@ export default function YeniOyun() {
             ))}
           </View>
           <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.parchmentMuted, textAlign: "center", marginTop: 28 }}>
-            {last ? "HAYATINA BAŞLA ›" : "DEVAM İÇİN DOKUN"}
+            {last ? t("new.beginLife") : t("new.tapNext")}
           </Text>
         </Pressable>
       </ImageBackground>
@@ -80,23 +82,23 @@ export default function YeniOyun() {
     <ImageBackground source={require("../assets/yeni_oyun_bg.png")} resizeMode="cover" style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ flex: 1, backgroundColor: "rgba(8,5,2,0.55)", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 70, paddingBottom: 40 }}>
         <View>
-          <Text style={{ fontFamily: F.display, fontSize: 34, letterSpacing: 8, color: C.parchment, textAlign: "center" }}>YENİ OYUN</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 34, letterSpacing: 8, color: C.parchment, textAlign: "center" }}>{t("new.title")}</Text>
           <Text style={{ color: C.gold, textAlign: "center", marginTop: 6, fontSize: 12 }}>⚜</Text>
 
           <View style={{ marginTop: 36 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim, marginBottom: 8 }}>AD SOYAD</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim, marginBottom: 8 }}>{t("new.nameLabel")}</Text>
             <TextInput
-              value={fullName} onChangeText={setFullName} placeholder="Adını ve soyadını gir"
+              value={fullName} onChangeText={setFullName} placeholder={t("new.namePlaceholder")}
               placeholderTextColor={C.parchmentMuted} maxLength={32} editable={!busy}
               style={{ backgroundColor: "rgba(8,5,2,0.7)", borderWidth: 1, borderColor: "rgba(160,130,70,0.3)", borderRadius: 8, color: C.parchment, fontFamily: F.serif, fontSize: 16, paddingHorizontal: 14, paddingVertical: 12 }}
             />
           </View>
 
           <View style={{ marginTop: 20 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim, marginBottom: 8 }}>CİNSİYET</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim, marginBottom: 8 }}>{t("new.gender")}</Text>
             <View style={{ flexDirection: "row", gap: 10 }}>
-              <GenderBtn val="erkek" sym="♂" label="Erkek" />
-              <GenderBtn val="kadın" sym="♀" label="Kız" />
+              <GenderBtn val="erkek" sym="♂" label={t("new.male")} />
+              <GenderBtn val="kadın" sym="♀" label={t("new.female")} />
             </View>
           </View>
 
@@ -109,7 +111,7 @@ export default function YeniOyun() {
         }}>
           {busy && <ActivityIndicator color="#2a1d08" size="small" />}
           <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 3, color: "#2a1d08" }}>
-            {busy ? "DÜNYA YARATILIYOR…" : "DÜNYAYI YARAT"}
+            {busy ? t("new.creating") : t("new.create")}
           </Text>
         </Pressable>
       </View>

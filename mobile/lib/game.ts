@@ -1,6 +1,7 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC } from "./world";
+import { Lang } from "./locale-data";
 import { converse, ConvResult } from "./dialogue";
 import { arcById, ArcChoice } from "./arcs";
 
@@ -157,7 +158,7 @@ const rnd = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 const chance = (p: number) => Math.random() < p;
 const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
 
-export function npcsOf(s: GameState): NPC[] { return generateNPCs(s.seed); }
+export function npcsOf(s: GameState, lang: Lang = "tr"): NPC[] { return generateNPCs(s.seed, 30, lang); }
 
 export function newGame(first: string, surname: string, gender: "erkek" | "kadın"): GameState {
   return {

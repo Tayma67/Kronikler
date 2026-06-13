@@ -9,6 +9,7 @@ import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, AchievementToast } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
+import { useI18n } from "../../lib/i18n";
 import { playTap, playAdvance } from "../../lib/sound";
 import { C, F } from "../../lib/theme";
 
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, doAdvance, doEat, doWork, resetGame, apply } = useGame();
+  const { t } = useI18n();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
   const [dilemma, setDilemma] = useState<Dilemma | null>(null);
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
@@ -156,17 +158,17 @@ export default function Dashboard() {
         <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border }}>
           <Pressable onPress={() => { playTap(); doEat(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
             <GameIcon name="ye" size={14} color={C.parchmentDim} />
-            <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>YE</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>{t("act.eat")}</Text>
           </Pressable>
           {p.age >= 13 && p.profession !== "işsiz" && (
             <Pressable onPress={() => { playTap(); doWork(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
               <GameIcon name="calis" size={14} color={C.parchmentDim} />
-              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>ÇALIŞ</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>{t("act.work")}</Text>
             </Pressable>
           )}
           <Pressable onPress={onAdvance} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
             <GameIcon name="ilerle" size={16} color="#1a1206" />
-            <Text style={{ fontFamily: F.display, fontSize: 14, color: "#1a1206", letterSpacing: 2 }}>AYI İLERLE</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 14, color: "#1a1206", letterSpacing: 2 }}>{t("act.advance")}</Text>
           </Pressable>
         </View>
       )}

@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { npcsOf } from "../../lib/game";
+import { useI18n } from "../../lib/i18n";
 import { Portre } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
 
@@ -18,8 +19,9 @@ export default function Iliskiler() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state } = useGame();
+  const { lang } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
-  const npcs = npcsOf(state);
+  const npcs = npcsOf(state, lang);
   const rel = state.relationships;
   const sorted = [...npcs].sort((a, b) => (rel[b.id] || 0) - (rel[a.id] || 0));
 

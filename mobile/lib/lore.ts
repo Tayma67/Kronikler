@@ -1,6 +1,7 @@
 // Yaşayan diyar — turdan ve tohumdan deterministik üretilen haber & dedikodu.
 // Tamamen çevrimdışı; her ay aynı tur için aynı sonucu verir.
 import { mkRng, generateNPCs } from "./world";
+import { Lang } from "./locale-data";
 
 export interface NewsItem { id: string; kind: "haber" | "dedikodu"; title: string; body: string; }
 
@@ -47,8 +48,8 @@ const DEDIKODU = [
   (n: string) => `${n} sancakbeyinin gözüne girmiş, yükseliyor.`,
 ];
 
-export function rumors(turn: number, seed: number): NewsItem[] {
-  const npcs = generateNPCs(seed);
+export function rumors(turn: number, seed: number, lang: Lang = "tr"): NewsItem[] {
+  const npcs = generateNPCs(seed, 30, lang);
   if (npcs.length === 0) return [];
   const r = mkRng((seed ^ (turn * 40503)) >>> 0);
   const n = 1 + Math.floor(r() * 2);

@@ -4,6 +4,8 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { buyItem, sellItem, launchCaravan, bargainBuy, marketPrice, econLabel } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
+import { useI18n } from "../../lib/i18n";
+import { placeName } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 
 const CARAVAN_AMOUNTS = [50, 120, 300];
@@ -12,6 +14,7 @@ export default function Pazar() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, apply } = useGame();
+  const { lang } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const econ = state.econ || 1;
@@ -21,7 +24,7 @@ export default function Pazar() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>‹ Geri</Text></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{p.location_name} Pazarı</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{placeName(p.location_name, lang)}</Text>
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money} ⚜</Text>
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: econ >= 1.06 ? C.blood : econ <= 0.94 ? C.sage : C.parchmentMuted, paddingHorizontal: 16, marginBottom: 6 }}>

@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { View, ActivityIndicator } from "react-native";
 import { useEffect } from "react";
 import { GameProvider } from "../lib/store";
+import { LanguageProvider } from "../lib/i18n";
 import { loadSoundSetting } from "../lib/sound";
 import { C } from "../lib/theme";
 
@@ -21,10 +22,12 @@ export default function RootLayout() {
   }
   return (
     <SafeAreaProvider>
-      <GameProvider>
-        <StatusBar style="light" />
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }} />
-      </GameProvider>
+      <LanguageProvider>
+        <GameProvider>
+          <StatusBar style="light" />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }} />
+        </GameProvider>
+      </LanguageProvider>
     </SafeAreaProvider>
   );
 }

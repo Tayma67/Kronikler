@@ -2,8 +2,11 @@ import { View, Text, Pressable, Alert, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
+import { useI18n } from "../../lib/i18n";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
+
+const SEC_KEY: Record<string, string> = { "Geçim": "sec.livelihood", "Güç & Mevki": "sec.power", "Diyar & Soy": "sec.realm", "Kayıt & Anı": "sec.records" };
 
 type Item = { to: string; icon: string; label: string };
 const SECTIONS: { title: string; items: Item[] }[] = [
@@ -43,24 +46,25 @@ export default function Menu() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { resetGame } = useGame();
+  const { t } = useI18n();
   const confirmReset = () => {
-    Alert.alert("Yeni Hayat", "Mevcut oyun silinsin mi?", [
-      { text: "Vazgeç", style: "cancel" },
-      { text: "Sil ve Başla", style: "destructive", onPress: async () => { await resetGame(); router.replace("/yeni-oyun"); } },
+    Alert.alert(t("settings.newLife"), t("settings.reset"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: "✓", style: "destructive", onPress: async () => { await resetGame(); router.replace("/yeni-oyun"); } },
     ]);
   };
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 90 }}>
-      <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginBottom: 4 }}>Menü</Text>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, marginBottom: 14 }}>Kül & Köz · çevrimdışı sürüm</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginBottom: 4 }}>{t("menu.title")}</Text>
+      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, marginBottom: 14 }}>{t("app.subtitle")}</Text>
 
       {SECTIONS.map((sec) => (
         <View key={sec.title} style={{ marginBottom: 6 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 12, marginBottom: 8 }}>{sec.title}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 12, marginBottom: 8 }}>{t(SEC_KEY[sec.title] || "")}</Text>
           {sec.items.map((m) => (
             <Pressable key={m.to} onPress={() => router.push(m.to as any)} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.border, backgroundColor: C.card, marginBottom: 8 }}>
               <View style={{ width: 24, alignItems: "center" }}><GameIcon name={m.icon} size={20} /></View>
-              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{m.label}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("scr." + (m.to.split("/").pop() || ""))}</Text>
             </Pressable>
           ))}
         </View>
@@ -68,7 +72,7 @@ export default function Menu() {
 
       <View style={{ height: 12 }} />
       <Pressable onPress={confirmReset} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
-        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood }}>YENİ HAYAT BAŞLAT</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood }}>{t("settings.newLife")}</Text>
       </Pressable>
     </ScrollView>
   );

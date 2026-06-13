@@ -3,6 +3,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { PLACES } from "../../lib/game";
+import { useI18n } from "../../lib/i18n";
+import { placeName } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 
 // Diyar üzerinde el ile yerleştirilmiş konumlar (yüzde).
@@ -17,6 +19,7 @@ const KIND_ICON: Record<string, string> = { "şehir": "🏙", "kale": "🏰", "k
 export default function Harita() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state } = useGame();
+  const { lang } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const here = state.player.location_name;
 
@@ -43,7 +46,7 @@ export default function Harita() {
                 <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: cur ? "rgba(201,168,76,0.22)" : "rgba(8,5,2,0.7)", borderWidth: cur ? 2 : 1, borderColor: cur ? C.gold : "rgba(201,168,76,0.3)" }}>
                   <Text style={{ fontSize: 16 }}>{KIND_ICON[pl.kind]}</Text>
                 </View>
-                <Text style={{ fontFamily: F.display, fontSize: 9, color: cur ? C.gold : C.parchmentMuted, marginTop: 3, letterSpacing: 0.5 }} numberOfLines={1}>{pl.name}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 9, color: cur ? C.gold : C.parchmentMuted, marginTop: 3, letterSpacing: 0.5 }} numberOfLines={1}>{placeName(pl.name, lang)}</Text>
               </Pressable>
             );
           })}

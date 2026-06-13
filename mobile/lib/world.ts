@@ -1,4 +1,5 @@
 // Dünya modeli — NPC'ler, eşyalar, pazar. Offline, deterministik üretim.
+import { NAME_POOLS, Lang } from "./locale-data";
 export interface NPC { id: string; name: string; age: number; gender: "erkek" | "kadın"; profession: string; trait: string; quirk: string; goal: string; }
 // Kişilik özellikleri (deterministik atanır).
 export const TRAITS = ["neşeli","ciddi","kibirli","cömert","dertli","yalnız","kurnaz","mert","dindar","hırslı","utangaç","sıcakkanlı"];
@@ -20,14 +21,15 @@ export function mkRng(seed: number) {
   return () => { s |= 0; s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 
-export function generateNPCs(seed: number, n = 30): NPC[] {
+export function generateNPCs(seed: number, n = 30, lang: Lang = "tr"): NPC[] {
   const r = mkRng(seed);
+  const pool = NAME_POOLS[lang] || NAME_POOLS.tr;
   const out: NPC[] = [];
   for (let i = 0; i < n; i++) {
     const gender: "erkek" | "kadın" = r() < 0.5 ? "erkek" : "kadın";
-    const ad = gender === "erkek" ? pick(AD_E, r) : pick(AD_K, r);
+    const ad = gender === "erkek" ? pick(pool.m, r) : pick(pool.f, r);
     out.push({
-      id: "npc_" + i, name: `${ad} ${pick(SOYAD, r)}`,
+      id: "npc_" + i, name: `${ad} ${pick(pool.s, r)}`,
       age: 14 + Math.floor(r() * 55), gender, profession: pick(NPC_PROFS, r),
       trait: pick(TRAITS, r), quirk: pick(QUIRKS, r), goal: pick(GOALS, r),
     });

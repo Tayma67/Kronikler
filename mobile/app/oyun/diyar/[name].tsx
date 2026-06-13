@@ -4,6 +4,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
 import { travelBy, placeKind, TRAVEL_ROUTES } from "../../../lib/game";
 import { cityInfo, marketGoods, locSeed, localSpecialty } from "../../../lib/world";
+import { useI18n } from "../../../lib/i18n";
+import { placeName } from "../../../lib/locale-data";
 import { C, F } from "../../../lib/theme";
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -19,6 +21,7 @@ export default function DiyarDetay() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { name } = useLocalSearchParams<{ name: string }>();
   const { state, apply } = useGame();
+  const { lang } = useI18n();
   if (!state || !name) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const kind = placeKind(name);
   const info = cityInfo(name, kind);
@@ -28,7 +31,7 @@ export default function DiyarDetay() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
       <Pressable onPress={() => router.back()} style={{ marginBottom: 12 }}><Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>‹ Geri</Text></Pressable>
-      <Text style={{ fontFamily: F.display, fontSize: 24, color: C.parchment, letterSpacing: 1 }}>{name}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 24, color: C.parchment, letterSpacing: 1 }}>{placeName(name, lang)}</Text>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 4 }}>{kind} · {info.population.toLocaleString("tr")} nüfus</Text>
       <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, lineHeight: 20, marginBottom: 14 }}>{info.blurb}</Text>
 

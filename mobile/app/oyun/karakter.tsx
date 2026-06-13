@@ -6,6 +6,8 @@ import { useItem, allocateStat, Stats, factionById, pendingPerkCount, equipItem,
 import { ITEMS } from "../../lib/world";
 import { Portre } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
+import { useI18n } from "../../lib/i18n";
+import { placeName } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 
 function Head({ t }: { t: string }) {
@@ -45,6 +47,7 @@ export default function Karakter() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, apply } = useGame();
+  const { lang } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const inv = Object.keys(p.inventory).filter((k) => p.inventory[k] > 0);
@@ -54,7 +57,7 @@ export default function Karakter() {
         <Portre age={p.age} gender={p.gender} size={64} />
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: F.display, fontSize: 20, color: C.parchment, letterSpacing: 1 }}>{p.name}</Text>
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold }}>{p.gender === "kadın" ? "Kadın" : "Erkek"} · {p.age} yaş · {p.location_name}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold }}>{p.gender === "kadın" ? "Kadın" : "Erkek"} · {p.age} yaş · {placeName(p.location_name, lang)}</Text>
         </View>
       </View>
 
