@@ -57,7 +57,7 @@ export default function ComingOfAgeModal({ data, onClose }) {
 
           <p className="coa-quote">
             Çocukluğun küllerinden bir genç doğdu.<br />
-            Artık baban da yanında değil, kararların senin.<br />
+            Artık kendi ayakların üstündesin, kararların senin.<br />
             Önünde koca bir dünya — kaderini kendin yazacaksın.
           </p>
 
