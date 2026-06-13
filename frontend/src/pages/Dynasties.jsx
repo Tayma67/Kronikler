@@ -213,7 +213,7 @@ export default function Dynasties() {
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-6 h-6 animate-spin text-stone-600" />
         </div>
-      ) : !data ? (
+      ) : !data?.tablo ? (
         <div className="card-frame p-10 text-center">
           <Crown className="w-8 h-8 text-stone-700 mx-auto mb-3" />
           <p className="text-stone-500 text-sm font-heading tracking-wider">Hanedanlar henüz sahneye çıkmadı.</p>

@@ -53,7 +53,7 @@ export default function Legacy() {
     }
   };
 
-  if (!data) {
+  if (!data?.throne || !data?.tracks) {
     return (
       <div className="page-shell" style={{ textAlign: "center", padding: "5rem 1rem" }}>
         <div className="ember-flicker" style={{ fontSize: "1.6rem", marginBottom: "0.6rem" }}>👑</div>

@@ -382,7 +382,7 @@ export default function Battle() {
   const onCommand = (picks) =>
     act(async () => (await api.post("/combat/commander", picks)).data);
 
-  if (!options) {
+  if (!options?.types) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "5rem 0" }}>
         <Loader2 className="animate-spin" style={{ width: "1.25rem", height: "1.25rem", color: "var(--color-gold-dim)" }} />
