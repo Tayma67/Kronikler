@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import InheritanceScreen from "@/pages/InheritanceScreen";
+import ComingOfAgeModal from "@/components/ComingOfAgeModal";
 import { api } from "@/lib/api";
 
 // ── Nav definitions ──────────────────────────────────────────────────────────
@@ -179,7 +180,8 @@ function MoreMenu({ items, state, onClose }) {
 
 // ── Main layout ──────────────────────────────────────────────────────────────
 export default function GameLayout() {
-  const { state, fetchState, advance, lastActionPage, clearLastActionPage } = useGame() || {};
+  const { state, fetchState, advance, lastActionPage, clearLastActionPage,
+          comingOfAge, clearComingOfAge } = useGame() || {};
   const navigate = useNavigate();
   const location = useLocation();
   const isDashboard = location.pathname === "/oyun" || location.pathname === "/oyun/";
@@ -517,6 +519,11 @@ export default function GameLayout() {
       {/* Inheritance screen */}
       {showInheritance && inheritanceData && (
         <InheritanceScreen data={inheritanceData} onSelect={onInherit} busy={inheritanceBusy} />
+      )}
+
+      {/* Reşit olma (13) sinematiği — çocukluk biter, dünya açılır */}
+      {comingOfAge && (
+        <ComingOfAgeModal data={comingOfAge} onClose={clearComingOfAge} />
       )}
     </div>
   );

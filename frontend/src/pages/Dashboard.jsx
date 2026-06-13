@@ -448,8 +448,10 @@ export default function Dashboard() {
     try {
       const result = await advance(1);
       if (result && !result.player?.dead) {
-        // R1: önce hafta sonu hasadı; kapanınca life event → hikâye zinciri
-        if (result.hafta_hasadi) {
+        // Reşit olma anı: sinematik tek başına dursun, rutin toast/zincir bu turda atlanır
+        if (result.coming_of_age) {
+          // ComingOfAgeModal GameLayout'ta açılır; başka popup tetikleme
+        } else if (result.hafta_hasadi) {
           setHarvest(result.hafta_hasadi);
         } else {
           toast.success('1 ay geçti', {

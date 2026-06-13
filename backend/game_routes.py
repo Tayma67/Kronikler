@@ -16,7 +16,7 @@ from dialogue import (
     DIALOG_TOPICS, npc_status, player_status, SOCIAL_STATUS,
     emotional_stage,
 )
-from calendar_tr import current_calendar, player_age
+from calendar_tr import current_calendar, player_age, WEEKS_PER_YEAR
 from items import ITEMS, EQUIPMENT_SLOTS, apply_use_effects, equipment_bonuses, get_item
 from skills import (
     JOB_REQUIREMENTS, check_job_eligible, list_eligible_jobs,
@@ -703,6 +703,17 @@ def build_game_router(db):
         early_stop = state.pop("advance_early_stop", None)
         if early_stop:
             result["advance_early_stop"] = early_stop
+        # Reşit olma (13): çocukluk→yetişkinlik — ölüm kadar büyük öbür dönüm.
+        # Bu turda 13'e basıldıysa UI sinematik bir "dünya sana açıldı" anı gösterir.
+        base_age = state["player"].get("base_age", 7)
+        age_before = base_age + turn_before // WEEKS_PER_YEAR
+        if age_before < 13 <= state["player"]["age"]:
+            result["coming_of_age"] = {
+                "name": state["player"].get("name", "Kahraman"),
+                "age": state["player"]["age"],
+                "year": (result.get("calendar") or {}).get("year"),
+                "unlocked": ["Meslek", "Savaş", "Ticaret", "Evlilik", "Örgütler", "Gölge"],
+            }
         return result
 
     # ---------- R4: Sohbet Eli ----------

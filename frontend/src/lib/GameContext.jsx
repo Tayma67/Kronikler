@@ -14,6 +14,7 @@ export function GameProvider({ children }) {
   const [lastCaravanEvent, setLastCaravanEvent] = useState(null);
   const [lastWorldEvent, setLastWorldEvent] = useState(null);
   const [lastCrisisEvents, setLastCrisisEvents] = useState([]);
+  const [comingOfAge, setComingOfAge] = useState(null);   // reşit olma (13) sinematiği
   const [lastActionPage, setLastActionPage] = useState(null);
   const [freshEvents, setFreshEvents] = useState([]);
 
@@ -98,6 +99,7 @@ export function GameProvider({ children }) {
         if (data?.caravan_event) setLastCaravanEvent(data.caravan_event);
         if (data?.new_world_events?.length > 0) setLastWorldEvent(data.new_world_events[0]);
         if (data?.crisis_events?.length > 0) setLastCrisisEvents(data.crisis_events);
+        if (data?.coming_of_age) setComingOfAge(data.coming_of_age);
         return data;
       } catch (error) {
         lastError = error;
@@ -145,6 +147,7 @@ export function GameProvider({ children }) {
         lastCaravanEvent, clearCaravanEvent: () => setLastCaravanEvent(null),
         lastWorldEvent, clearWorldEvent: () => setLastWorldEvent(null),   // Adım 9
         lastCrisisEvents, clearCrisisEvents: () => setLastCrisisEvents([]),   // GDD v4
+        comingOfAge, clearComingOfAge: () => setComingOfAge(null),        // reşit olma (13)
         lastActionPage, setLastActionPage,                                // Adım 14
         clearLastActionPage: () => setLastActionPage(null),              // Adım 14
         freshEvents, setFreshEvents,                                       // Anlık eylem olayları
