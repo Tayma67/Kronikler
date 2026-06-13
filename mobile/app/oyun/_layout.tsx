@@ -1,9 +1,9 @@
 import { Tabs } from "expo-router";
-import { Text } from "react-native";
 import { C, F } from "../../lib/theme";
+import { GameIcon } from "../../lib/icons";
 
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  return <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.5 }}>{label}</Text>;
+function TabIcon({ name, focused }: { name: string; focused: boolean }) {
+  return <GameIcon name={name} size={22} color={focused ? C.gold : C.parchmentMuted} />;
 }
 
 export default function OyunLayout() {
@@ -15,10 +15,10 @@ export default function OyunLayout() {
       tabBarInactiveTintColor: C.parchmentMuted,
       tabBarLabelStyle: { fontFamily: F.display, fontSize: 9, letterSpacing: 0.5 },
     }}>
-      <Tabs.Screen name="index" options={{ title: "Ana Sayfa", tabBarIcon: ({ focused }) => <TabIcon label="🔥" focused={focused} /> }} />
-      <Tabs.Screen name="karakter" options={{ title: "Karakter", tabBarIcon: ({ focused }) => <TabIcon label="🛡" focused={focused} /> }} />
-      <Tabs.Screen name="iliskiler" options={{ title: "İlişkiler", tabBarIcon: ({ focused }) => <TabIcon label="🫂" focused={focused} /> }} />
-      <Tabs.Screen name="menu" options={{ title: "Menü", tabBarIcon: ({ focused }) => <TabIcon label="📜" focused={focused} /> }} />
+      <Tabs.Screen name="index" options={{ title: "Ana Sayfa", tabBarIcon: ({ focused }) => <TabIcon name="ana" focused={focused} /> }} />
+      <Tabs.Screen name="karakter" options={{ title: "Karakter", tabBarIcon: ({ focused }) => <TabIcon name="karakter" focused={focused} /> }} />
+      <Tabs.Screen name="iliskiler" options={{ title: "İlişkiler", tabBarIcon: ({ focused }) => <TabIcon name="iliskiler" focused={focused} /> }} />
+      <Tabs.Screen name="menu" options={{ title: "Menü", tabBarIcon: ({ focused }) => <TabIcon name="menu" focused={focused} /> }} />
       {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}
       <Tabs.Screen name="pazar" options={{ href: null }} />
       <Tabs.Screen name="sehir" options={{ href: null }} />

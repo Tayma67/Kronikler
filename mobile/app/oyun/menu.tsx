@@ -2,32 +2,33 @@ import { View, Text, Pressable, Alert, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
+import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 
 type Item = { to: string; icon: string; label: string };
 const SECTIONS: { title: string; items: Item[] }[] = [
   { title: "Geçim", items: [
-    { to: "/oyun/meslek", icon: "⚒", label: "Meslek" },
-    { to: "/oyun/pazar", icon: "⚖️", label: "Pazar" },
-    { to: "/oyun/mulkler", icon: "🏰", label: "Mülkler" },
-    { to: "/oyun/firsatlar", icon: "🧭", label: "Fırsatlar" },
-    { to: "/oyun/mektep", icon: "🎓", label: "Mektep" },
+    { to: "/oyun/meslek", icon: "meslek", label: "Meslek" },
+    { to: "/oyun/pazar", icon: "pazar", label: "Pazar" },
+    { to: "/oyun/mulkler", icon: "mulkler", label: "Mülkler" },
+    { to: "/oyun/firsatlar", icon: "firsatlar", label: "Fırsatlar" },
+    { to: "/oyun/mektep", icon: "mektep", label: "Mektep" },
   ]},
   { title: "Güç & Mevki", items: [
-    { to: "/oyun/orgutler", icon: "⚜", label: "Örgütler / Loncalar" },
-    { to: "/oyun/sosyal", icon: "🕊", label: "Mevki & İtibar" },
-    { to: "/oyun/savas", icon: "⚔", label: "Çatışma" },
-    { to: "/oyun/suc", icon: "🌒", label: "Gölge İşleri" },
+    { to: "/oyun/orgutler", icon: "orgutler", label: "Örgütler / Loncalar" },
+    { to: "/oyun/sosyal", icon: "sosyal", label: "Mevki & İtibar" },
+    { to: "/oyun/savas", icon: "savas", label: "Çatışma" },
+    { to: "/oyun/suc", icon: "suc", label: "Gölge İşleri" },
   ]},
   { title: "Diyar & Soy", items: [
-    { to: "/oyun/sehir", icon: "🏯", label: "Şehir / Diyar" },
-    { to: "/oyun/haberler", icon: "📜", label: "Diyardan Haberler" },
-    { to: "/oyun/hanedan", icon: "🏛", label: "Hanedan" },
+    { to: "/oyun/sehir", icon: "sehir", label: "Şehir / Diyar" },
+    { to: "/oyun/haberler", icon: "haberler", label: "Diyardan Haberler" },
+    { to: "/oyun/hanedan", icon: "hanedan", label: "Hanedan" },
   ]},
   { title: "Kayıt & Anı", items: [
-    { to: "/oyun/tarih", icon: "🗞", label: "Kronik" },
-    { to: "/oyun/roman", icon: "📖", label: "Hayatın Romanı" },
-    { to: "/oyun/ayarlar", icon: "⚙️", label: "Ayarlar" },
+    { to: "/oyun/tarih", icon: "tarih", label: "Kronik" },
+    { to: "/oyun/roman", icon: "roman", label: "Hayatın Romanı" },
+    { to: "/oyun/ayarlar", icon: "ayarlar", label: "Ayarlar" },
   ]},
 ];
 
@@ -51,7 +52,7 @@ export default function Menu() {
           <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 12, marginBottom: 8 }}>{sec.title}</Text>
           {sec.items.map((m) => (
             <Pressable key={m.to} onPress={() => router.push(m.to as any)} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.border, backgroundColor: C.card, marginBottom: 8 }}>
-              <Text style={{ fontSize: 17, width: 22, textAlign: "center" }}>{m.icon}</Text>
+              <View style={{ width: 24, alignItems: "center" }}><GameIcon name={m.icon} size={20} /></View>
               <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{m.label}</Text>
             </Pressable>
           ))}

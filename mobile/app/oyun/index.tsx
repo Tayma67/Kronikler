@@ -7,13 +7,14 @@ import { continueAsHeir, GameEvent } from "../../lib/game";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
 import { MilestoneModal } from "../../lib/ui";
+import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 
 function StatBar({ icon, value, max, color }: { icon: string; value: number; max: number; color: string }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
-      <Text style={{ fontSize: 12, width: 16 }}>{icon}</Text>
+      <View style={{ width: 16, alignItems: "center" }}><GameIcon name={icon} size={13} color={color} /></View>
       <View style={{ flex: 1, height: 4, backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 2 }}>
         <View style={{ width: `${pct}%`, height: 4, backgroundColor: color, borderRadius: 2 }} />
       </View>
@@ -60,9 +61,9 @@ export default function Dashboard() {
             {cal.season.toUpperCase()} · {cal.month_name.toUpperCase()} {cal.year}
           </Text>
           <View style={{ marginTop: 12, paddingHorizontal: 20 }}>
-            <StatBar icon="❤" value={p.health} max={100} color={C.blood} />
-            <StatBar icon="🍎" value={p.hunger} max={100} color={C.sage} />
-            <StatBar icon="⚜" value={p.money} max={200} color={C.gold} />
+            <StatBar icon="saglik" value={p.health} max={100} color={C.blood} />
+            <StatBar icon="tokluk" value={p.hunger} max={100} color={C.sage} />
+            <StatBar icon="akce" value={p.money} max={200} color={C.gold} />
           </View>
           {p.dead && <Text style={{ color: C.blood, textAlign: "center", marginTop: 8, fontFamily: F.serifItalic }}>Hayatını tamamladı.</Text>}
         </View>
@@ -104,16 +105,19 @@ export default function Dashboard() {
         </View>
       ) : (
         <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border }}>
-          <Pressable onPress={() => doEat()} style={{ paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>🍞 YE</Text>
+          <Pressable onPress={() => doEat()} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+            <GameIcon name="ye" size={14} color={C.parchmentDim} />
+            <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>YE</Text>
           </Pressable>
           {p.age >= 13 && p.profession !== "işsiz" && (
-            <Pressable onPress={() => doWork()} style={{ paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
-              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>⚒ ÇALIŞ</Text>
+            <Pressable onPress={() => doWork()} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+              <GameIcon name="calis" size={14} color={C.parchmentDim} />
+              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>ÇALIŞ</Text>
             </Pressable>
           )}
-          <Pressable onPress={() => doAdvance(1)} style={{ flex: 1, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 14, color: "#1a1206", letterSpacing: 2 }}>⏳ AYI İLERLE</Text>
+          <Pressable onPress={() => doAdvance(1)} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
+            <GameIcon name="ilerle" size={16} color="#1a1206" />
+            <Text style={{ fontFamily: F.display, fontSize: 14, color: "#1a1206", letterSpacing: 2 }}>AYI İLERLE</Text>
           </Pressable>
         </View>
       )}
