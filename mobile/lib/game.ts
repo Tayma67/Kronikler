@@ -1003,3 +1003,30 @@ export function houseAttitude(p: Player, house: { pride: number; trait: string }
 export function attitudeLabel(a: number): string {
   if (a >= 40) return "Dost"; if (a >= 10) return "Dostane"; if (a > -10) return "Tarafsız"; if (a > -40) return "Soğuk"; return "Hasım";
 }
+
+// ── Zanaat / üretim zincirleri — hammaddeyi mamule çevir ──
+export interface Recipe { id: string; out: string; outQty: number; inputs: Record<string, number>; minSkill: number; }
+export const RECIPES: Recipe[] = [
+  { id: "un",        out: "un",        outQty: 1, inputs: { bugday: 2 },  minSkill: 0 },
+  { id: "ekmek",     out: "ekmek",     outQty: 2, inputs: { un: 1 },      minSkill: 0 },
+  { id: "corba",     out: "corba",     outQty: 1, inputs: { balik: 1 },   minSkill: 0 },
+  { id: "iksir",     out: "iksir",     outQty: 1, inputs: { sifa: 2 },    minSkill: 2 },
+  { id: "bicak",     out: "bicak",     outQty: 1, inputs: { demir: 2 },   minSkill: 1 },
+  { id: "kilic",     out: "kilic",     outQty: 1, inputs: { demir: 3 },   minSkill: 3 },
+  { id: "celik_kilic",out:"celik_kilic",outQty: 1, inputs: { demir: 5, kereste: 1 }, minSkill: 6 },
+  { id: "deri_zirh", out: "deri_zirh", outQty: 1, inputs: { deri: 2 },    minSkill: 2 },
+  { id: "kalkan",    out: "kalkan",    outQty: 1, inputs: { kereste: 2, demir: 1 }, minSkill: 3 },
+];
+export function canCraft(p: Player, r: Recipe): boolean {
+  if (p.skills.crafting < r.minSkill) return false;
+  return Object.entries(r.inputs).every(([id, q]) => (p.inventory[id] || 0) >= q);
+}
+export function craft(prev: GameState, id: string): GameState {
+  const s = clone(prev); const p = s.player; const r = RECIPES.find((x) => x.id === id);
+  if (!r || p.dead || !canCraft(p, r)) return s;
+  for (const [iid, q] of Object.entries(r.inputs)) { p.inventory[iid] -= q; if (p.inventory[iid] <= 0) delete p.inventory[iid]; }
+  p.inventory[r.out] = (p.inventory[r.out] || 0) + r.outQty;
+  gainSkill(s, "crafting", 6);
+  push(s, "zanaat", `${ITEMS[r.out]?.name || r.out} ürettin${r.outQty > 1 ? ` (×${r.outQty})` : ""}.`);
+  return s;
+}
