@@ -1044,7 +1044,7 @@ export default function CharacterSheet() {
     const routes = {
       anasayfa:    "/oyun",
       karakter:    "/oyun/karakter",
-      "şehir":     "/oyun/sehir",
+      "şehir":     "/oyun/harita",
       "ilişkiler": "/oyun/iliskiler",
       "menü":      "/oyun",
     };
