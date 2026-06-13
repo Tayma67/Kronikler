@@ -151,7 +151,8 @@ export default function StoryJournal() {
   const refresh = useCallback(async () => {
     try {
       const { data } = await api.get("/story/journal");
-      setJournal(data);
+      // Eksik/kısmi yanıtta da ekran çökmesin — diziler garanti
+      setJournal({ offers: [], active: [], finished: [], ...(data || {}) });
     } catch (e) {
       toast.error(extractErrorMessage(e));
     }

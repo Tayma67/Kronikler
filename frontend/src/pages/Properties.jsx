@@ -365,7 +365,7 @@ function PropertyCard({ prop, catalog, npcs, busy, onConfigure, onHire, onFire, 
 
 /* ── Satın alma kataloğu ──────────────────────────────────────────── */
 function Catalog({ catalog, money, busy, onBuy }) {
-  if (!catalog) return null;
+  if (!catalog?.types?.length) return null;
   return (
     <Panel title={`Tapu Dairesi — ${catalog.location}`} icon="🪶" tone="gold">
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.6rem" }}>
@@ -426,8 +426,8 @@ export default function Properties() {
         api.get("/property/mine"),
       ]);
       setCatalog(cat.data);
-      setProperties(mine.data.properties);
-      setMoney(mine.data.money);
+      setProperties(mine.data.properties || []);
+      setMoney(mine.data.money || 0);
     } catch (e) {
       toast.error(extractErrorMessage(e));
     }
