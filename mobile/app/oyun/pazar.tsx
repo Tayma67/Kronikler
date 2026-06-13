@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, sellItem, launchCaravan } from "../../lib/game";
+import { buyItem, sellItem, launchCaravan, bargainBuy } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { C, F } from "../../lib/theme";
 
@@ -54,10 +54,13 @@ export default function Pazar() {
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{g.name}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>Elinde: {have}</Text>
                 </View>
-                <Pressable onPress={() => apply((s) => buyItem(s, g.id))} disabled={p.money < g.buy} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < g.buy ? C.card : "rgba(201,168,76,0.12)", marginRight: 6 }}>
+                <Pressable onPress={() => apply((s) => buyItem(s, g.id))} disabled={p.money < g.buy} style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < g.buy ? C.card : "rgba(201,168,76,0.12)", marginRight: 5 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < g.buy ? C.parchmentMuted : C.gold }}>AL {g.buy}⚜</Text>
                 </Pressable>
-                <Pressable onPress={() => apply((s) => sellItem(s, g.id))} disabled={have <= 0} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+                <Pressable onPress={() => apply((s) => bargainBuy(s, g.id))} disabled={p.money < g.buy} style={{ paddingVertical: 8, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", backgroundColor: C.bg, marginRight: 5 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10, color: p.money < g.buy ? C.parchmentMuted : C.goldDim }}>PAZARLIK</Text>
+                </Pressable>
+                <Pressable onPress={() => apply((s) => sellItem(s, g.id))} disabled={have <= 0} style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
                   <Text style={{ fontFamily: F.display, fontSize: 11, color: have <= 0 ? C.parchmentMuted : C.parchmentDim }}>SAT {g.sell}⚜</Text>
                 </Pressable>
               </View>
