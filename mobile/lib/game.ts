@@ -387,3 +387,37 @@ export function intimidate(prev: GameState): GameState {
   else { p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); push(s, "sosyal", "Gözdağın ters tepti; itibarın zarar gördü."); }
   return s;
 }
+
+// ── Savaş / Çatışma ──
+export interface Encounter { id: string; title: string; desc: string; power: number; reward: number; fame: number; honor: number; danger: number; }
+export const ENCOUNTERS: Encounter[] = [
+  { id: "haydut",  title: "Yol Haydutları",   desc: "Pusudaki haydutlar kervanına göz dikti.", power: 6,  reward: 35,  fame: 4,  honor: 3,  danger: 14 },
+  { id: "duello",  title: "Meydan Okuma",     desc: "Bir yiğit seni teke tek dövüşe çağırdı.", power: 9,  reward: 25,  fame: 7,  honor: 6,  danger: 18 },
+  { id: "sinir",   title: "Sınır Çatışması",  desc: "Sancak beyinin emrinde sınırı koru.",      power: 13, reward: 70,  fame: 12, honor: 10, danger: 26 },
+  { id: "kusatma", title: "Kale Kuşatması",   desc: "Surların önünde kanlı bir kuşatma.",        power: 18, reward: 130, fame: 20, honor: 14, danger: 38 },
+];
+// Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
+export function combatPower(p: Player): number {
+  let pw = p.stats.strength * 2 + p.stats.stamina;
+  if ((p.inventory["bicak"] || 0) > 0) pw += 4;
+  if (p.faction === "asker") pw += 3;
+  return pw;
+}
+export function fightEncounter(prev: GameState, id: string): GameState {
+  const s = clone(prev); const p = s.player; const e = ENCOUNTERS.find((x) => x.id === id);
+  if (!e || p.dead || p.age < 13) return s;
+  const pw = combatPower(p);
+  const win = Math.random() < Math.max(0.1, Math.min(0.9, 0.5 + (pw - e.power) * 0.05));
+  if (win) {
+    p.money += e.reward; p.fame = Math.min(100, p.fame + e.fame); p.honor = Math.min(100, p.honor + e.honor);
+    p.fear = Math.min(100, p.fear + Math.round(e.fame / 2));
+    p.health = Math.max(1, p.health - Math.round(e.danger * 0.3));
+    push(s, "savaş_zafer", `${e.title}: Zafer senin! (+${e.reward} akçe, şöhretin arttı.)`, "kişisel", true);
+  } else {
+    const hurt = e.danger + Math.floor(Math.random() * 10);
+    p.health = Math.max(0, p.health - hurt);
+    push(s, "savaş_yenilgi", `${e.title}: Yara aldın, geri çekildin (−${hurt} sağlık).`, "kişisel");
+    if (p.health <= 0) die(s, `${p.name}, ${e.title.toLowerCase()} sırasında can verdi.`);
+  }
+  return s;
+}
