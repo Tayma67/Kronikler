@@ -41,6 +41,7 @@ export default function NpcDetail() {
         <Text style={{ fontFamily: F.display, fontSize: 18, color: C.parchment, marginTop: 10 }}>{npc.name}</Text>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.gold }}>{npc.profession} · {npc.age} yaş · {npc.trait}</Text>
         <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 4, textAlign: "center" }}>{npc.quirk[0].toUpperCase() + npc.quirk.slice(1)}.</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.goldDim, marginTop: 4, textAlign: "center" }}>Hayali: {npc.goal}.</Text>
         <View style={{ flexDirection: "row", gap: 16, marginTop: 8 }}>
           <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim }}>İlişki {v}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim }}>Ruh hali: {moodLabel(ns.mood)}</Text>

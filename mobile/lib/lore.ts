@@ -55,8 +55,9 @@ export function rumors(turn: number, seed: number): NewsItem[] {
   const out: NewsItem[] = [];
   for (let i = 0; i < n; i++) {
     const npc = npcs[Math.floor(r() * npcs.length)];
-    const tmpl = DEDIKODU[Math.floor(r() * DEDIKODU.length)];
-    out.push({ id: `rumor_${turn}_${i}`, kind: "dedikodu", title: npc.name, body: tmpl(npc.name) });
+    // Bazen NPC'nin hayat hedefine dair, bazen genel dedikodu.
+    const body = r() < 0.45 ? `${npc.name} ${npc.goal}.` : DEDIKODU[Math.floor(r() * DEDIKODU.length)](npc.name);
+    out.push({ id: `rumor_${turn}_${i}`, kind: "dedikodu", title: npc.name, body });
   }
   return out;
 }

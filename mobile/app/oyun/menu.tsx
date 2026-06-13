@@ -13,6 +13,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     { to: "/oyun/atolye", icon: "meslek", label: "Atölye" },
     { to: "/oyun/mulkler", icon: "mulkler", label: "Mülkler" },
     { to: "/oyun/firsatlar", icon: "firsatlar", label: "Fırsatlar" },
+    { to: "/oyun/gorevler", icon: "compass", label: "Açık İşler" },
     { to: "/oyun/mektep", icon: "mektep", label: "Mektep" },
     { to: "/oyun/beceriler", icon: "karakter", label: "Beceri Ağacı" },
   ]},
