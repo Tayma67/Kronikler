@@ -53,6 +53,23 @@ export default function Roman() {
           ))}
         </View>
       ))}
+      {state.player.dead && (() => {
+        const p = state.player;
+        const tally = [
+          `${p.age} yıl yaşadı`,
+          p.profession !== "işsiz" ? `${p.profession} olarak anıldı` : "bir zanaat edinemedi",
+          p.children.length ? `${p.children.length} evlat bıraktı` : "ardında evlat bırakmadı",
+          p.properties.length ? `${p.properties.length} mülkün sahibiydi` : null,
+          p.fame >= 50 ? "şöhreti diyarı aştı" : null,
+        ].filter(Boolean).join(" · ");
+        return (
+          <View style={{ borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 12, padding: 16, marginBottom: 16, backgroundColor: "rgba(201,168,76,0.06)" }}>
+            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textAlign: "center" }}>KÜNYE</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 14, color: C.parchment, textAlign: "center", lineHeight: 22, marginTop: 8 }}>{tally}.</Text>
+          </View>
+        );
+      })()}
+
       <Text style={{ color: C.gold, textAlign: "center", marginVertical: 14 }}>❧ ⚜ ❧</Text>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 14, color: C.parchmentMuted, textAlign: "center", lineHeight: 22 }}>
         {state.player.dead ? "Son. Ama küllerin altında bir tohum, yeni bir hikâyeyi bekliyor." : "…ve hikâye devam ediyor. Bir sonraki sayfayı sen yazacaksın."}
