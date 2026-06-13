@@ -8,6 +8,16 @@ import { useGame } from '@/lib/GameContext';
 import WeekPlanCard from '@/components/WeekPlanCard';
 import SagaStrip, { SagaTab, useSaga } from '@/components/SagaStrip';
 import { useHeroGorsel, Portre } from '@/components/ui/Gorsel';
+import GameIcon from '@/components/ui/GameIcon';
+
+// Meslek → game-icons.net ikonu (ASCII dosya adı; CC BY 3.0)
+const PROF_GAME_ICON = {
+  demirci:'anvil', çiftçi:'wheat', tüccar:'scales', asker:'crossed-swords', şövalye:'shield',
+  şifacı:'herbs', eczacı:'potion', rahip:'prayer-beads', haydut:'hood', balıkçı:'fishing',
+  fırıncı:'bread', avcı:'bow', marangoz:'saw', kunduracı:'boot', müzisyen:'lyre', katip:'scroll',
+  lord:'crown', kral:'crown', çoban:'sheep', kervancı:'camel', kuyumcu:'gems', dokumacı:'wool',
+  çömlekçi:'amphora', işsiz:'leaf', çocuk:'kite',
+};
 
 // Mesleğe göre ünvan ikonu — tek tip ⚒ yerine kimlik hissi
 const PROF_ICON = {
@@ -531,7 +541,9 @@ export default function Dashboard() {
                   textShadow: '0 1px 8px rgba(0,0,0,0.8)',
                   fontStyle: 'italic',
                 }}>
-                <span style={{ fontStyle: 'normal' }}>{titleIcon}</span>
+                {PROF_GAME_ICON[player.profession]
+                  ? <GameIcon name={PROF_GAME_ICON[player.profession]} size="0.95rem" title={careerTitle} />
+                  : <span style={{ fontStyle: 'normal' }}>{titleIcon}</span>}
                 {careerTitle}
               </div>
             </div>
