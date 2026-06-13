@@ -30,6 +30,7 @@ export default function OyunLayout() {
       <Tabs.Screen name="orgutler" options={{ href: null }} />
       <Tabs.Screen name="sosyal" options={{ href: null }} />
       <Tabs.Screen name="savas" options={{ href: null }} />
+      <Tabs.Screen name="haberler" options={{ href: null }} />
       <Tabs.Screen name="tarih" options={{ href: null }} />
       <Tabs.Screen name="ayarlar" options={{ href: null }} />
       <Tabs.Screen name="roman" options={{ href: null }} />

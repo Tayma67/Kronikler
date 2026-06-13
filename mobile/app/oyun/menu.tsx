@@ -21,6 +21,7 @@ export default function Menu() {
 
       {[
         { to: "/oyun/sehir", icon: "🏰", label: "Şehir / Diyar" },
+        { to: "/oyun/haberler", icon: "📜", label: "Diyardan Haberler" },
         { to: "/oyun/pazar", icon: "⚖️", label: "Pazar" },
         { to: "/oyun/meslek", icon: "⚒", label: "Meslek" },
         { to: "/oyun/firsatlar", icon: "🧭", label: "Fırsatlar" },

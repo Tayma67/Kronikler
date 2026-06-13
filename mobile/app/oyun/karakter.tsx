@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats } from "../../lib/game";
+import { useItem, allocateStat, Stats, factionById } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 import { Portre } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
@@ -61,6 +61,16 @@ export default function Karakter() {
         <Row k="Sağlık" v={Math.round(p.health)} />
         <Row k="Tokluk" v={Math.round(p.hunger)} />
         <Row k="Akçe" v={`${p.money} ⚜`} />
+      </View>
+
+      <Head t="Mevki & Bağlılık" />
+      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
+        <Row k="Lonca" v={factionById(p.faction)?.name || "Bağımsız"} />
+        <Row k="İtibar" v={Math.round(p.reputation)} />
+        <Row k="Şeref" v={Math.round(p.honor)} />
+        <Row k="Şöhret" v={Math.round(p.fame)} />
+        <Row k="Korku" v={Math.round(p.fear)} />
+        <Row k="Nesil" v={`${p.generation}. nesil`} />
       </View>
 
       <Head t="Aile" />
