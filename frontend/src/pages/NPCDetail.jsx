@@ -265,10 +265,10 @@ function ChatModal({ npc, state, onClose }) {
         {log.length === 0 && (
           <div className="text-center py-4 px-3">
             <div className="text-2xl mb-1.5 opacity-50">💬</div>
-            <p className="text-stone-300 text-sm mb-1">Aşağıdaki <span className="text-amber-400">konu kartlarından</span> birine dokun.</p>
+            <p className="text-stone-300 text-sm mb-1"><span className="text-amber-400">Ona soru sor</span>, onu tanı.</p>
             <p className="text-stone-500 text-[11px] italic leading-relaxed">
-              {npc.name} sana cevap verir, ilişkiniz değişir.<br/>
-              <span className="text-purple-300/70">Kişisel</span> kartlar sırlarını ve amacını açar.
+              İşini, ailesini, dünyayı, hayalini sor — {npc.name} sana anlatır.<br/>
+              <span className="text-purple-300/70">Özel hamleler</span> sırlarını ve amacını açar.
             </p>
           </div>
         )}
@@ -300,18 +300,43 @@ function ChatModal({ npc, state, onClose }) {
           </div>
         ))}
       </div>
-      {/* R4: Konu Kartları — bu haftanın eli */}
+      {/* ── ANA SOHBET: Ona soru sor, onu tanı — SINIRSIZ ── */}
+      {topics.length > 0 && (
+        <div className="border-t border-stone-800 pt-3">
+          <div className="text-[9px] font-heading tracking-[0.18em] text-amber-500/90 uppercase mb-2">
+            💬 Ona Sor <span className="text-stone-600 normal-case tracking-normal">· tanı, öğren — istediğin kadar</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {topics.filter((t) => t.id !== "veda").slice(0, 6).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => speak(t.id, t.label)}
+                disabled={busy || !npc.alive}
+                className={`text-left px-3 py-2 rounded-md border text-[11px] transition-colors disabled:opacity-40 ${
+                  t.id === lastTopic
+                    ? "border-amber-800/60 text-amber-300 bg-amber-950/10"
+                    : "border-stone-700/70 text-stone-200 hover:border-amber-800/50 hover:bg-amber-950/10"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── ÖZEL HAMLELER: derin/riskli — sırrını ve amacını açar (bu ay 3 hak) ── */}
       {hand?.cards && (
-        <div className="border-t border-stone-800 pt-3 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[9px] font-heading tracking-[0.2em] text-amber-600/80 uppercase">
-              🃏 Konu Kartların <span className="text-stone-600 normal-case tracking-normal">· bu ay, derin etki</span>
+        <div className="border-t border-stone-800/60 pt-2.5 mt-2.5">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[8px] font-heading tracking-[0.16em] text-purple-300/80 uppercase">
+              🎴 Özel Hamleler <span className="text-stone-600 normal-case tracking-normal">· bu ay 3 hak · sırrını açar</span>
             </span>
             {hand.warning && playedCards.length === 0 && (
               <span className="text-[9px] text-red-400/70 italic">{hand.warning}</span>
             )}
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-1.5">
             {hand.cards.map((c) => {
               const used = playedCards.includes(c.id);
               const kind = c.id[0];
@@ -320,15 +345,14 @@ function ChatModal({ npc, state, onClose }) {
               return (
                 <button key={c.id} disabled={busy || used || !npc.alive}
                   onClick={() => playCard(c)}
-                  style={{ minHeight: 78 }}
-                  className={`flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-md border text-center transition-colors ${
+                  style={{ minHeight: 70 }}
+                  className={`flex flex-col items-center justify-center gap-0.5 px-1.5 py-2 rounded-md border text-center transition-colors ${
                     used ? "border-stone-800 text-stone-700 opacity-40"
                     : tone === "emerald" ? "border-emerald-900/60 text-emerald-200 hover:bg-emerald-950/20"
                     : tone === "amber" ? "border-amber-900/60 text-amber-200 hover:bg-amber-950/20"
                     : "border-purple-900/60 text-purple-200 hover:bg-purple-950/20"}`}>
-                  <span className="text-[8px] font-heading tracking-[0.14em] uppercase opacity-70">{used ? "✓ konuşuldu" : tag}</span>
-                  <span className="text-[11px] leading-tight font-medium">{c.label}</span>
-                  {!used && <span className="text-[8px] opacity-55">{c.hint}</span>}
+                  <span className="text-[8px] font-heading tracking-[0.12em] uppercase opacity-70">{used ? "✓" : tag}</span>
+                  <span className="text-[10px] leading-tight font-medium">{c.label}</span>
                 </button>
               );
             })}
@@ -369,28 +393,6 @@ function ChatModal({ npc, state, onClose }) {
         </div>
       )}
 
-      {/* Serbest sohbet — kartların yanı sıra sınırsız laflama */}
-      {topics.length > 0 && (
-        <div className="pt-2.5 mt-1 border-t border-stone-800/60">
-          <div className="text-[8px] font-heading tracking-[0.16em] uppercase text-stone-600 mb-1.5">
-            💬 Serbest Sohbet <span className="text-stone-700 normal-case tracking-normal">· sınırsız, küçük etki</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {topics.slice(0, 4).map((t) => (
-              <button
-                key={t.id}
-                onClick={() => speak(t.id, t.label)}
-                disabled={busy || !npc.alive}
-                className={`btn-ghost-ash px-2.5 py-1 text-[10px] disabled:opacity-40 ${
-                  t.id === lastTopic ? "border-amber-900/50 text-amber-500/80" : ""
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </ModalShell>
   );
 }
