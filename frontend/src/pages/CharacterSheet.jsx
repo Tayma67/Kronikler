@@ -15,6 +15,7 @@ import { useGame } from "@/lib/GameContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import KarakterEkrani from "./KarakterEkrani";
+import { portreYolu } from "@/components/ui/Gorsel";
 
 /* ══════════════════════════════════════════════════════
    RENK PALETİ (KarakterEkrani ile aynı)
@@ -167,8 +168,9 @@ function Section({ children, style = {} }) {
   );
 }
 
-/** Yuvarlak portre */
-function CirclePortrait({ src, emoji = "👤", size = 52, name, age, extra }) {
+/** Yuvarlak portre — src yoksa yaş-kuşak portresine (gender/id) düşer */
+function CirclePortrait({ src, emoji = "👤", size = 52, name, age, gender, id, extra }) {
+  const resolved = src || (gender != null ? portreYolu(age, gender, id ?? name) : null);
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
       <div style={{
@@ -179,8 +181,8 @@ function CirclePortrait({ src, emoji = "👤", size = 52, name, age, extra }) {
         boxShadow: `0 0 12px rgba(201,168,76,0.15)`,
         flexShrink: 0,
       }}>
-        {src
-          ? <img src={src} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        {resolved
+          ? <img src={resolved} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           : <span style={{ fontSize: size * 0.44 }}>{emoji}</span>
         }
       </div>
@@ -670,6 +672,8 @@ function TabDunya() {
                     src={par.portrait_url}
                     name={par.name}
                     age={par.age}
+                    gender={par.gender}
+                    id={par.id}
                     size={48}
                   />
                 ))
@@ -693,6 +697,8 @@ function TabDunya() {
                   src={spouse.portrait_url}
                   name={spouse.name}
                   age={spouse.age}
+                  gender={spouse.gender}
+                  id={spouse.id}
                   size={48}
                   extra={
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, marginTop: 2 }}>
@@ -725,7 +731,7 @@ function TabDunya() {
             <GoldDivider />
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", paddingTop: 6 }}>
               {children.map(c => (
-                <CirclePortrait key={c.id} src={c.portrait_url} name={c.name} age={c.age} size={44} />
+                <CirclePortrait key={c.id} src={c.portrait_url} name={c.name} age={c.age} gender={c.gender} id={c.id} size={44} />
               ))}
               {/* + butonu */}
               <div style={{
@@ -878,10 +884,8 @@ function TabDunya() {
                     overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 20,
                   }}>
-                    {npc.portrait_url
-                      ? <img src={npc.portrait_url} alt={npc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      : "👤"
-                    }
+                    <img src={npc.portrait_url || portreYolu(npc.age, npc.gender, npc.id)} alt={npc.name}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
 
                   {/* İsim + bar + etiketler */}
@@ -960,7 +964,9 @@ function buildCharacter(p, skills) {
 
   return {
     name:          p.name           || "Karakter",
-    portrait:      p.portrait_url   || null,
+    // Oyuncunun portrait_url'i yok — dashboard'la aynı yaş-kuşak portresini
+    // kullan (cinsiyet + yaşa göre, isimden sabit varyant).
+    portrait:      p.portrait_url   || portreYolu(p.age, p.gender, p.id || p.name || "ben"),
     clan_crest:    p.clan_crest     || null,
     age:           p.age            ?? 0,
     gender:        p.gender         || "erkek",
