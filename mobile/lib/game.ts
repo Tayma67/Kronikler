@@ -17,7 +17,18 @@ export interface Player {
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
   injuries: Injury[]; career_xp: number;
+  nam: Nam;
 }
+// Nam profili — 5 boyut (söylentilerle halkın gözündeki kişiliğin).
+export interface Nam { comert: number; zalim: number; capkin: number; dindar: number; mert: number; }
+export const NAM_META: { key: keyof Nam; label: string; icon: string }[] = [
+  { key: "comert", label: "Cömert", icon: "coins" },
+  { key: "zalim",  label: "Zalim",  icon: "skull" },
+  { key: "capkin", label: "Çapkın", icon: "ring" },
+  { key: "dindar", label: "Dindar", icon: "prayer-beads" },
+  { key: "mert",   label: "Mert",   icon: "shield" },
+];
+function bumpNam(p: Player, key: keyof Nam, amt: number) { if (p.nam) p.nam[key] = Math.max(0, Math.min(100, p.nam[key] + amt)); }
 // Yaralanmalar bir özelliği geçici/kalıcı düşürür. Etkili (effective) değer.
 export function effStat(p: Player, key: keyof Stats): number {
   const pen = (p.injuries || []).filter((i) => i.stat === key).reduce((a, i) => a + i.delta, 0);
@@ -132,6 +143,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       faction: null, faction_standing: {},
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
       skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [], career_xp: 0,
+      nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 },
     },
     history: [],
   };
@@ -316,6 +328,7 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   const ok = Math.random() < Math.min(0.97, 0.25 + (rel - 50) * 0.012 + p.stats.charisma * 0.03 + karizmaBonus);
   if (ok) {
     p.married = true; p.spouse_name = npc.name; p.reputation = Math.min(100, p.reputation + 5);
+    bumpNam(p, "capkin", 5);
     push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true);
   } else {
     s.relationships[npc.id] = Math.max(0, rel - 8);
@@ -373,6 +386,7 @@ export function doCrime(prev: GameState, kind: "yankesicilik" | "soygun"): GameS
   if (success) {
     const loot = kind === "soygun" ? 25 + Math.floor(Math.random() * 40) : 6 + Math.floor(Math.random() * 16);
     p.money += loot; p.fear = Math.min(100, p.fear + (kind === "soygun" ? 5 : 2));
+    bumpNam(p, "zalim", kind === "soygun" ? 5 : 2);
     push(s, "suç", `${kind === "soygun" ? "Bir soygun" : "Bir yankesicilik"} işini başardın (+${loot} akçe).`);
   } else {
     const fine = Math.min(p.money, kind === "soygun" ? 30 : 10);
@@ -460,7 +474,7 @@ export function continueAsHeir(prev: GameState): GameState {
       inventory: { ekmek: 2 }, properties: props, generation: gen,
       faction: null, faction_standing: {},
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
-      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [], career_xp: 0,
+      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 },
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, atasının mirasını devraldı (${inheritMoney} akçe, ${props.length} mülk).`, scope: "kişisel", landmark: true }],
   };
@@ -534,7 +548,7 @@ export function hostFeast(prev: GameState): GameState {
   if (hasPerk(p, "sohret_avcisi")) fame += 5;
   if (hasPerk(p, "diplomat")) { fame = Math.round(fame * 1.5); rep = Math.round(rep * 1.5); }
   p.money -= cost; p.fame = Math.min(100, p.fame + fame); p.reputation = Math.min(100, p.reputation + rep);
-  gainSkill(s, "social", 5);
+  gainSkill(s, "social", 5); bumpNam(p, "comert", 8);
   push(s, "sosyal", "Köye bir ziyafet verdin; adın dilden dile dolaştı.", "kişisel", true);
   return s;
 }
@@ -550,6 +564,7 @@ export function giveAlms(prev: GameState): GameState {
   if (hasPerk(p, "diplomat")) { honor = Math.round(honor * 1.5); rep = Math.round(rep * 1.5); }
   p.money -= cost; p.honor = Math.min(100, p.honor + honor); p.reputation = Math.min(100, p.reputation + rep);
   gainSkill(s, "social", 5);
+  bumpNam(p, "comert", 6); bumpNam(p, "dindar", 5);
   push(s, "sosyal", "Yoksullara sadaka dağıttın; vicdanın hafifledi, şerefin yükseldi.");
   return s;
 }
@@ -559,7 +574,7 @@ export function intimidate(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
   const ok = hasPerk(p, "kan_donduran") || Math.random() < 0.5 + p.stats.strength * 0.04;
-  if (ok) { let fear = hasPerk(p, "kan_donduran") ? 12 : 8; if (hasPerk(p, "diplomat")) fear = Math.round(fear * 1.5); p.fear = Math.min(100, p.fear + fear); p.reputation = Math.max(-100, p.reputation - 3); push(s, "sosyal", "Birine gözdağı verdin; adın çekinilen biri oldu."); }
+  if (ok) { let fear = hasPerk(p, "kan_donduran") ? 12 : 8; if (hasPerk(p, "diplomat")) fear = Math.round(fear * 1.5); p.fear = Math.min(100, p.fear + fear); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 7); push(s, "sosyal", "Birine gözdağı verdin; adın çekinilen biri oldu."); }
   else { p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); push(s, "sosyal", "Gözdağın ters tepti; itibarın zarar gördü."); }
   return s;
 }
@@ -633,6 +648,7 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
     if (hasPerk(p, "savas_ustasi")) reward = Math.round(reward * 1.5);
     p.money += reward; p.fame = Math.min(100, p.fame + e.fame); p.honor = Math.min(100, p.honor + e.honor);
     p.fear = Math.min(100, p.fear + Math.round(e.fame / 2));
+    bumpNam(p, "mert", 6);
     const floor = hasPerk(p, "yilmaz") ? 5 : 1;
     p.health = Math.max(floor, Math.round(finalHp));
     maybeInjure(s, false);

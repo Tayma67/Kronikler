@@ -2,7 +2,8 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { SOCIAL_AXES, socialTier, hostFeast, giveAlms, intimidate, factionById } from "../../lib/game";
+import { SOCIAL_AXES, socialTier, hostFeast, giveAlms, intimidate, factionById, NAM_META } from "../../lib/game";
+import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 
 function Axis({ icon, label, value, tier, desc }: { icon: string; label: string; value: number; tier: string; desc: string }) {
@@ -51,6 +52,23 @@ export default function Sosyal() {
         {SOCIAL_AXES.map((a) => (
           <Axis key={a.key} icon={a.icon} label={a.label} value={(p as any)[a.key]} tier={socialTier(a, (p as any)[a.key])} desc={a.desc} />
         ))}
+
+        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 14, marginBottom: 8 }}>Nam Profili</Text>
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 6 }}>
+          {NAM_META.map((nm) => {
+            const val = (p.nam?.[nm.key]) || 0;
+            return (
+              <View key={nm.key} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <GameIcon name={nm.icon} size={14} color={C.goldDim} />
+                <Text style={{ width: 64, fontFamily: F.display, fontSize: 11, color: C.parchmentMuted }}>{nm.label}</Text>
+                <View style={{ flex: 1, height: 4, backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 2 }}>
+                  <View style={{ width: `${val}%`, height: 4, backgroundColor: C.gold, borderRadius: 2 }} />
+                </View>
+                <Text style={{ width: 26, textAlign: "right", fontFamily: F.display, fontSize: 11, color: C.parchment }}>{val}</Text>
+              </View>
+            );
+          })}
+        </View>
 
         <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 14, marginBottom: 8 }}>Mevkini İşle</Text>
         {actions.map((act) => (
