@@ -3,10 +3,11 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { continueAsHeir, GameEvent } from "../../lib/game";
+import { continueAsHeir, applyDilemma, GameEvent } from "../../lib/game";
+import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
-import { MilestoneModal } from "../../lib/ui";
+import { MilestoneModal, DilemmaModal } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { playTap, playAdvance } from "../../lib/sound";
 import { C, F } from "../../lib/theme";
@@ -29,7 +30,21 @@ export default function Dashboard() {
   const router = useRouter();
   const { state, doAdvance, doEat, doWork, resetGame, apply } = useGame();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
+  const [dilemma, setDilemma] = useState<Dilemma | null>(null);
   const seenLen = useRef<number>(state?.history.length ?? 0);
+
+  // Ayı ilerlet; ardından ara sıra (%28) bir ikilem çıkar.
+  const onAdvance = () => {
+    playAdvance();
+    doAdvance(1);
+    setTimeout(() => {
+      if (state && !state.player.dead && Math.random() < 0.28) {
+        const d = pickDilemma(state);
+        if (d) setDilemma(d);
+      }
+    }, 60);
+  };
+  const onChoose = (c: Choice) => { apply((s) => applyDilemma(s, c.delta, c.result)); setDilemma(null); };
 
   // Yeni eklenen landmark olayını perdede göster (ölüm hariç — ölüm ekranı ayrı).
   useEffect(() => {
@@ -51,6 +66,7 @@ export default function Dashboard() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <MilestoneModal visible={!!milestone} type={milestone?.type || ""} text={milestone?.text || ""} onClose={() => setMilestone(null)} />
+      <DilemmaModal dilemma={dilemma} onChoose={onChoose} />
       {/* Hero — mevsim görseli + koyu örtü */}
       <ImageBackground source={heroImage(p.age, cal.season)} resizeMode="cover" style={{ paddingTop: insets.top }}>
         <View style={{ backgroundColor: "rgba(8,5,2,0.55)", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
@@ -116,7 +132,7 @@ export default function Dashboard() {
               <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>ÇALIŞ</Text>
             </Pressable>
           )}
-          <Pressable onPress={() => { playAdvance(); doAdvance(1); }} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
+          <Pressable onPress={onAdvance} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
             <GameIcon name="ilerle" size={16} color="#1a1206" />
             <Text style={{ fontFamily: F.display, fontSize: 14, color: "#1a1206", letterSpacing: 2 }}>AYI İLERLE</Text>
           </Pressable>

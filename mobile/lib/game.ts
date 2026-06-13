@@ -488,3 +488,26 @@ export const ACHIEVEMENTS: Achievement[] = [
 export function achievementsOf(s: GameState): { a: Achievement; done: boolean }[] {
   return ACHIEVEMENTS.map((a) => ({ a, done: a.done(s) }));
 }
+
+// ── İkilem/olay sonucu uygula (tüm durum değişimi çekirdekte) ──
+export interface Delta {
+  money?: number; health?: number; hunger?: number;
+  reputation?: number; honor?: number; fear?: number; fame?: number;
+  stat_points?: number; addItem?: string;
+}
+const clampStat = (x: number) => Math.max(0, Math.min(100, x));
+export function applyDilemma(prev: GameState, delta: Delta, resultText: string): GameState {
+  const s = clone(prev); const p = s.player;
+  if (delta.money) p.money = Math.max(0, p.money + delta.money);
+  if (delta.health) p.health = clampStat(p.health + delta.health);
+  if (delta.hunger) p.hunger = clampStat(p.hunger + delta.hunger);
+  if (delta.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + delta.reputation));
+  if (delta.honor) p.honor = clampStat(p.honor + delta.honor);
+  if (delta.fear) p.fear = clampStat(p.fear + delta.fear);
+  if (delta.fame) p.fame = clampStat(p.fame + delta.fame);
+  if (delta.stat_points) p.stat_points += delta.stat_points;
+  if (delta.addItem) p.inventory[delta.addItem] = (p.inventory[delta.addItem] || 0) + 1;
+  push(s, "olay", resultText, "kişisel");
+  if (p.health <= 0) die(s, `${p.name} bu olaydan sağ çıkamadı.`);
+  return s;
+}

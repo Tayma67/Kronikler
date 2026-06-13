@@ -1,5 +1,7 @@
 import { View, Image, Modal, Text, Pressable } from "react-native";
 import { portreImage } from "./assets";
+import { GameIcon } from "./icons";
+import type { Dilemma, Choice } from "./events";
 import { C, F } from "./theme";
 
 export function Portre({ age, gender, size = 44, ring = true }: { age: number; gender: "erkek" | "kadın"; size?: number; ring?: boolean }) {
@@ -42,6 +44,30 @@ export function MilestoneModal({ visible, type, text, onClose }: { visible: bool
           </Pressable>
         </View>
       </Pressable>
+    </Modal>
+  );
+}
+
+// İkilem perdesi — anlatısal seçim. onChoose(choice) çağrılır.
+export function DilemmaModal({ dilemma, onChoose }: { dilemma: Dilemma | null; onChoose: (c: Choice) => void }) {
+  return (
+    <Modal visible={!!dilemma} transparent animationType="fade" onRequestClose={() => {}}>
+      <View style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.9)", alignItems: "center", justifyContent: "center", padding: 26 }}>
+        {dilemma && (
+          <View style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 14, padding: 22 }}>
+            <View style={{ alignItems: "center", marginBottom: 6 }}>
+              <GameIcon name={dilemma.icon} size={30} color={C.gold} />
+            </View>
+            <Text style={{ fontFamily: F.display, fontSize: 16, color: C.gold, textAlign: "center", letterSpacing: 0.5, marginTop: 6 }}>{dilemma.title}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: "center", lineHeight: 21, marginTop: 10, marginBottom: 16 }}>{dilemma.text}</Text>
+            {dilemma.choices.map((c, i) => (
+              <Pressable key={i} onPress={() => onChoose(c)} style={{ paddingVertical: 12, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", marginBottom: 9 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment, letterSpacing: 0.5, textAlign: "center" }}>{c.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+      </View>
     </Modal>
   );
 }
