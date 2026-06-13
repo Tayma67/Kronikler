@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useGame } from "@/lib/GameContext";
 import { PageHeader } from "@/components/ui/Kit";
 import LifeNovel from "@/components/LifeNovel";
+import HayatKarti from "@/components/HayatKarti";
 import { api } from "@/lib/api";
 import { ScrollText, Star, Loader2, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
 
@@ -175,6 +176,7 @@ export default function Chronicle() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("full"); // "summary" | "full"
   const [showNovel, setShowNovel] = useState(false);
+  const [showCard, setShowCard] = useState(false);
 
   useEffect(() => {
     if (!state) return;
@@ -227,6 +229,24 @@ export default function Chronicle() {
         <span style={{ color: "var(--color-gold-dim)", fontSize: "1.1rem" }}>→</span>
       </button>
 
+      {/* Hayat Kartı — romanın kapağı, paylaşılabilir kimlik */}
+      <button
+        onClick={() => setShowCard(true)}
+        className="w-full"
+        style={{
+          display: "flex", alignItems: "center", gap: "0.7rem",
+          padding: "0.7rem 1.1rem", borderRadius: "10px", cursor: "pointer", textAlign: "left",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.015), transparent)",
+          border: "1px solid var(--color-border-hi)", marginTop: "-0.6rem",
+        }}
+      >
+        <span style={{ fontSize: "1.2rem" }}>🪪</span>
+        <span className="font-serif" style={{ flex: 1, fontSize: "0.82rem", color: "var(--color-parchment-dim)" }}>
+          Hayat Kartını gör ve paylaş
+        </span>
+        <span style={{ color: "var(--color-gold-dim)", fontSize: "1rem" }}>→</span>
+      </button>
+
       {showNovel && (
         <LifeNovel
           name={state?.player?.name}
@@ -237,6 +257,9 @@ export default function Chronicle() {
           alive={!state?.player?.dead}
           onClose={() => setShowNovel(false)}
         />
+      )}
+      {showCard && (
+        <HayatKarti player={state?.player} calendar={state?.calendar} onClose={() => setShowCard(false)} />
       )}
 
       {/* ── Güncel Dünya Durumu ── */}

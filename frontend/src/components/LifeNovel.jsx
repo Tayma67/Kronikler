@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * LifeNovel — "Hayatın Romanı"
@@ -64,10 +65,21 @@ export default function LifeNovel({ name, baseAge = 7, chapters = [], yearStorie
     }
     return chapsSorted.length ? chapsSorted[chapsSorted.length - 1].no : 1;
   };
+  // Sadece OYUNCUNUN kendi dönüm noktaları (dünya olayları sızmasın)
+  const firstName = (name || "").split(" ")[0];
+  const PERSONAL_ONLY = new Set(["kariyer_terfi", "savaş_zaferi", "başarım",
+    "mülk_alım", "komutan_savaşı", "rank_bonusu", "tahta_çıkış",
+    "meslek_değişimi", "şehir_kuruluşu"]);
+  const isMine = (ev) => {
+    if (ev.scope === "kişisel") return true;
+    if (ev.scope === "makro" || ev.scope === "arkaplan") return false;
+    if (PERSONAL_ONLY.has(ev.type)) return true;
+    return firstName.length > 2 && (ev.text || "").includes(firstName);
+  };
   const milestonesByChapter = {};
   for (const ev of history) {
     const icon = MILESTONES[ev.type];
-    if (!icon) continue;
+    if (!icon || !isMine(ev)) continue;
     const t = ev.day ?? ev.turn ?? 0;
     const cn = turnToChapter(t);
     const line = (ev.text || "").split("\n")[0].replace(/^[^\wçğıöşüÇĞİÖŞÜ"']*/, "").trim();
@@ -88,7 +100,7 @@ export default function LifeNovel({ name, baseAge = 7, chapters = [], yearStorie
     return ["", baslik || ""];
   };
 
-  return (
+  return createPortal(
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;1,400;0,600&display=swap');
@@ -202,6 +214,7 @@ export default function LifeNovel({ name, baseAge = 7, chapters = [], yearStorie
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
