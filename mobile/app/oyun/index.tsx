@@ -1,7 +1,8 @@
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable, ImageBackground } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGame } from "../../lib/store";
 import { currentCalendar } from "../../lib/calendar";
+import { heroImage } from "../../lib/assets";
 import { C, F } from "../../lib/theme";
 
 function StatBar({ icon, value, max, color }: { icon: string; value: number; max: number; color: string }) {
@@ -26,23 +27,25 @@ export default function Dashboard() {
   const events = [...state.history].reverse();
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
-      {/* Hero */}
-      <View style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border }}>
-        <Text style={{ fontFamily: F.display, fontSize: 20, color: C.parchment, letterSpacing: 1, textAlign: "center" }}>{p.name}</Text>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.gold, textAlign: "center", marginTop: 2 }}>
-          {p.profession === "işsiz" ? "İşsiz" : p.profession} · {p.age} yaş
-        </Text>
-        <Text style={{ fontFamily: F.display, fontSize: 9, color: C.parchmentMuted, letterSpacing: 1, textAlign: "center", marginTop: 4 }}>
-          {cal.season.toUpperCase()} · {cal.month_name.toUpperCase()} {cal.year}
-        </Text>
-        <View style={{ marginTop: 12, paddingHorizontal: 20 }}>
-          <StatBar icon="❤" value={p.health} max={100} color={C.blood} />
-          <StatBar icon="🍎" value={p.hunger} max={100} color={C.sage} />
-          <StatBar icon="⚜" value={p.money} max={200} color={C.gold} />
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      {/* Hero — mevsim görseli + koyu örtü */}
+      <ImageBackground source={heroImage(p.age, cal.season)} resizeMode="cover" style={{ paddingTop: insets.top }}>
+        <View style={{ backgroundColor: "rgba(8,5,2,0.55)", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
+          <Text style={{ fontFamily: F.display, fontSize: 20, color: C.parchment, letterSpacing: 1, textAlign: "center", textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 8 }}>{p.name}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.gold, textAlign: "center", marginTop: 2 }}>
+            {p.profession === "işsiz" ? "İşsiz" : p.profession} · {p.age} yaş
+          </Text>
+          <Text style={{ fontFamily: F.display, fontSize: 9, color: C.parchmentDim, letterSpacing: 1, textAlign: "center", marginTop: 4 }}>
+            {cal.season.toUpperCase()} · {cal.month_name.toUpperCase()} {cal.year}
+          </Text>
+          <View style={{ marginTop: 12, paddingHorizontal: 20 }}>
+            <StatBar icon="❤" value={p.health} max={100} color={C.blood} />
+            <StatBar icon="🍎" value={p.hunger} max={100} color={C.sage} />
+            <StatBar icon="⚜" value={p.money} max={200} color={C.gold} />
+          </View>
+          {p.dead && <Text style={{ color: C.blood, textAlign: "center", marginTop: 8, fontFamily: F.serifItalic }}>Hayatını tamamladı.</Text>}
         </View>
-        {p.dead && <Text style={{ color: C.blood, textAlign: "center", marginTop: 8, fontFamily: F.serifItalic }}>Hayatını tamamladı.</Text>}
-      </View>
+      </ImageBackground>
 
       {/* Günlük */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 }}>
