@@ -3,11 +3,11 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { applyDilemma, careerTitle, GameEvent } from "../../lib/game";
+import { applyDilemma, careerTitle, achievementsOf, GameEvent } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
-import { MilestoneModal, DilemmaModal } from "../../lib/ui";
+import { MilestoneModal, DilemmaModal, AchievementToast } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { playTap, playAdvance } from "../../lib/sound";
 import { C, F } from "../../lib/theme";
@@ -31,7 +31,19 @@ export default function Dashboard() {
   const { state, doAdvance, doEat, doWork, resetGame, apply } = useGame();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
   const [dilemma, setDilemma] = useState<Dilemma | null>(null);
+  const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
   const seenLen = useRef<number>(state?.history.length ?? 0);
+  const seenAch = useRef<Set<string> | null>(null);
+
+  // Yeni açılan başarımları yakala (ilk yüklemede mevcutları görülmüş say).
+  useEffect(() => {
+    if (!state) return;
+    const done = achievementsOf(state).filter((x) => x.done);
+    if (seenAch.current === null) { seenAch.current = new Set(done.map((x) => x.a.id)); return; }
+    for (const x of done) {
+      if (!seenAch.current.has(x.a.id)) { seenAch.current.add(x.a.id); setAch({ name: x.a.name, icon: x.a.icon }); }
+    }
+  }, [state]);
 
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
   const onAdvance = () => { playAdvance(); doAdvance(1); };
@@ -72,6 +84,7 @@ export default function Dashboard() {
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <MilestoneModal visible={!!milestone} type={milestone?.type || ""} text={milestone?.text || ""} onClose={() => setMilestone(null)} />
       <DilemmaModal dilemma={dilemma} onChoose={onChoose} />
+      <AchievementToast name={ach?.name || null} icon={ach?.icon || "medal"} onClose={() => setAch(null)} />
       {/* Hero — mevsim görseli + koyu örtü */}
       <ImageBackground source={heroImage(p.age, cal.season)} resizeMode="cover" style={{ paddingTop: insets.top }}>
         <View style={{ backgroundColor: "rgba(8,5,2,0.55)", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>

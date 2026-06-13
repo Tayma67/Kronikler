@@ -48,6 +48,25 @@ export function MilestoneModal({ visible, type, text, onClose }: { visible: bool
   );
 }
 
+// Başarım açılış bildirimi (küçük, üstten).
+export function AchievementToast({ name, icon, onClose }: { name: string | null; icon: string; onClose: () => void }) {
+  return (
+    <Modal visible={!!name} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable onPress={onClose} style={{ flex: 1, justifyContent: "flex-start", paddingTop: 90, alignItems: "center" }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.6)", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 18, maxWidth: 340 }}>
+          <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(201,168,76,0.14)", borderWidth: 1, borderColor: "rgba(201,168,76,0.5)" }}>
+            <GameIcon name={icon} size={20} color={C.gold} />
+          </View>
+          <View>
+            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim }}>BAŞARIM AÇILDI</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 14, color: C.gold, marginTop: 2 }}>{name}</Text>
+          </View>
+        </View>
+      </Pressable>
+    </Modal>
+  );
+}
+
 // İkilem perdesi — anlatısal seçim. onChoose(choice) çağrılır.
 export function DilemmaModal({ dilemma, onChoose }: { dilemma: Dilemma | null; onChoose: (c: Choice) => void }) {
   return (
