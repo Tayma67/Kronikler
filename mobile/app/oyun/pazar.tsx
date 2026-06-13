@@ -2,9 +2,11 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, sellItem } from "../../lib/game";
+import { buyItem, sellItem, launchCaravan } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { C, F } from "../../lib/theme";
+
+const CARAVAN_AMOUNTS = [50, 120, 300];
 
 export default function Pazar() {
   const insets = useSafeAreaInsets();
@@ -22,6 +24,26 @@ export default function Pazar() {
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money} ⚜</Text>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        {/* Kervan seferi */}
+        <View style={{ backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5 }}>🐪 Kervan Seferi</Text>
+          {state.caravan ? (
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5 }}>
+              {state.caravan.dest} yolunda bir kervanın var ({state.caravan.invested}⚜). Dönüşü yakında.
+            </Text>
+          ) : (
+            <>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 4, marginBottom: 8 }}>Akçe yatır; birkaç ay sonra kârla döner — ya da baskına uğrar. Ticaret becerin riski azaltır.</Text>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {CARAVAN_AMOUNTS.map((amt) => (
+                  <Pressable key={amt} disabled={p.money < amt} onPress={() => apply((s) => launchCaravan(s, amt))} style={{ flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 7, borderWidth: 1, borderColor: p.money < amt ? C.border : "rgba(201,168,76,0.5)", backgroundColor: p.money < amt ? C.bg : "rgba(201,168,76,0.12)" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < amt ? C.parchmentMuted : C.gold }}>{amt}⚜</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </>
+          )}
+        </View>
         {goods.map((g) => {
           const have = p.inventory[g.id] || 0;
           return (

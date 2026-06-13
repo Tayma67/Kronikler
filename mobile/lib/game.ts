@@ -87,6 +87,7 @@ export interface GameState {
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
   wars: FactionWar[];
+  caravan: { invested: number; returnTurn: number; dest: string } | null;
 }
 // Ocak savaşı — iki lonca arasında, birkaç ay süren çatışma.
 export interface FactionWar { a: string; b: string; turnsLeft: number; aScore: number; bScore: number; }
@@ -151,7 +152,7 @@ export function npcsOf(s: GameState): NPC[] { return generateNPCs(s.seed); }
 export function newGame(first: string, surname: string, gender: "erkek" | "kadın"): GameState {
   return {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true },
-    relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [],
+    relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null,
     player: {
       name: surname ? `${first} ${surname}` : first, surname, gender, base_age: 7, age: 7,
       money: 12, profession: "işsiz", health: 100, hunger: 100,
@@ -229,6 +230,7 @@ export function advance(prev: GameState, n = 1): GameState {
     push(s, s.player.age < 13 ? "cocukluk" : "gunluk", monthlyFlavor(s, cal));
     rollLifeEvents(s, cal);
     tickWars(s, i === n - 1);
+    tickCaravan(s);
   }
   if (s.history.length > 250) s.history = s.history.slice(-250);
   return s;
@@ -260,6 +262,35 @@ function tickWars(s: GameState, announce: boolean) {
     if (s.player.faction === winner) { s.player.faction_standing[winner] = (s.player.faction_standing[winner] || 0) + 8; s.player.fame = Math.min(100, s.player.fame + 4); }
   }
   s.wars = s.wars.filter((w) => w.turnsLeft > 0);
+}
+
+// Kervan döndüğünde sonucu çöz (kâr ya da baskın).
+function tickCaravan(s: GameState) {
+  const c = s.caravan; if (!c) return;
+  if (s.turn < c.returnTurn) return;
+  const p = s.player;
+  const attacked = Math.random() < Math.max(0.05, 0.28 - p.skills.trade * 0.02);
+  if (attacked) {
+    const salvage = Math.round(c.invested * 0.3);
+    p.money += salvage;
+    push(s, "kervan", `${c.dest} kervanın yolda baskına uğradı! Sadece ${salvage} akçe kurtarıldı.`, "kişisel", true);
+  } else {
+    const mult = 1.4 + Math.random() * 0.5 + p.skills.trade * 0.03;
+    const ret = Math.round(c.invested * mult);
+    p.money += ret; gainSkill(s, "trade", 10);
+    push(s, "kervan", `${c.dest} kervanın sağ salim döndü: ${ret} akçe (${c.invested} yatırımdan).`, "kişisel", true);
+  }
+  s.caravan = null;
+}
+// Kervan gönder: akçe yatır, birkaç ay sonra kârla (ya da baskınla) döner.
+export function launchCaravan(prev: GameState, amount: number): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13 || s.caravan || amount <= 0 || p.money < amount) return s;
+  const dest = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
+  p.money -= amount;
+  s.caravan = { invested: amount, returnTurn: s.turn + 2 + Math.floor(Math.random() * 2), dest };
+  push(s, "kervan", `${amount} akçelik bir kervan ${dest} yoluna çıktı. Birkaç ay sonra dönecek.`);
+  return s;
 }
 
 // Oyuncunun loncasının dahil olduğu aktif savaş (varsa).
@@ -569,7 +600,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [],
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null,
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
       base_age: 7, age: 7, money: startMoney, profession: "işsiz", health: startHealth, hunger: 100,
