@@ -256,3 +256,35 @@ Devam eden departman backlog'u (yarın/istek üzerine): NPCDetail tam Kit
 migrasyonu, diğer sayfaların derin Kit'e geçişi, EmptyState yaygınlaştırma,
 ortak Bar bileşeni. Denge maddeleri (itibar enflasyonu vb.) BİLİNÇLİ olarak
 sana bırakıldı — tasarım kararı.
+
+---
+
+## 🌅 İKİNCİ OTURUM — Kullanıcı Yönlendirmeli İnceleme (2026-06-13)
+
+Kullanıcı uyandı, ekran görüntüleriyle gerçek-zamanlı QA yaptı. Talepler ve düzeltmeler:
+
+### Dashboard Günlüğü (%45-50)
+Olay çerçevesi ekranın dominantı oldu (ölü boşluk gitti); olaylar 8→60, çerçeve içi
+scroll; mini-statlar okunur (⚜).
+
+### 7 Yaş-Bandı Portre Sistemi (kullanıcı referans görseli)
+ÇOCUK/ERGEN/GENÇ/YETİŞKİN/OLGUN/YAŞLI/İHTİYAR × e/k × 2 = 28 portre. Artık 9
+yaşındaki çocuk, 68 yaşındaki ihtiyar gibi görünüyor. NPCList/Relationships/Marry/
+TownFeed/chat — yüz olan her yer portrelerle.
+
+### SOHBET KOMPLE YENİDEN — "bu sohbet mi?" eleştirisine
+Kullanıcı: "3 kart koymuşsun, ne soru soruyoruz ne bilgi alıyoruz ne sohbet ediyoruz."
+- **İçerik (motor)**: NPC yaş kapısı (bebek mırıldanır), tutarlılık (max 2 cümle, savruk
+  4-6 cümle bitti), spont tekrarı, gramer (3.→1. şahıs: 'geçimimi sağladım'), kademe
+  tutarlılığı (düşmana mutlu haber yok), 'derdiniz'→'derdim', ilk-ad hitabı ('Yavrum Onur').
+- **Yapı (UX)**: "💬 ONA SOR" BİRİNCİL — 7 soru (selam/iş/aile/dünya/sana-bakışı/üzgün/
+  hedef), SINIRSIZ, her seferinde farklı canlı cevap. Kartlar ikincil "🎴 özel hamle".
+- **Görünüm**: konuştuğun NPC'nin portresi sohbet başında; net yönerge.
+- Yeni "Beni nasıl buluyorsun?" sorusu (NPC seni nasıl gördüğünü söyler).
+Hepsi canlı render'da doğrulandı. 3 karttan gerçek bir konuşmaya döndü.
+
+### Görsel-QA hattı genişletildi
+Backend'siz oynanış-ekranı render (state mock + endpoint abort) ile bu oturumda
+~20 ekran + sohbet akışı + savaş girişi + yaşam-olayı modalı görsel doğrulandı.
+
+Durum: 46 commit, hepsi pushlı, 58/58 test, build yeşil, çalışma ağacı temiz.
