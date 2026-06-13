@@ -79,8 +79,13 @@ export default function HayatKarti({ player, calendar, onClose }) {
         .hk-inner { position: relative; height: 100%; display: flex; flex-direction: column; align-items: center; padding: 20px 20px 16px; text-align: center; }
         .hk-kicker { font-family:'Cinzel',serif; font-size:9px; letter-spacing:0.5em; color:#8a6a2a; text-transform:uppercase; }
         .hk-flourish { color:#7a5a22; font-size:12px; letter-spacing:0.4em; margin:6px 0 14px; }
-        .hk-portre-ring { border-radius:50%; padding:3px; background: conic-gradient(from 210deg, #6a4a1a, #e0bb58, #8b6914, #e0bb58, #6a4a1a);
-          box-shadow: 0 0 22px rgba(201,168,76,0.4); }
+        @property --hk-ang { syntax: '<angle>'; inherits: false; initial-value: 210deg; }
+        .hk-portre-ring { border-radius:50%; padding:3px;
+          background: conic-gradient(from var(--hk-ang, 210deg), #6a4a1a, #e0bb58, #8b6914, #e0bb58, #6a4a1a);
+          box-shadow: 0 0 22px rgba(201,168,76,0.4);
+          animation: hk-ring-spin 7s linear infinite; }
+        @keyframes hk-ring-spin { to { --hk-ang: 570deg; } }
+        @media (prefers-reduced-motion: reduce) { .hk-portre-ring { animation: none; } }
         .hk-name { font-family:'Cinzel Decorative',serif; font-size:clamp(22px,6vw,30px); color:#e0bb58; margin-top:14px; line-height:1.1;
           text-shadow:0 2px 14px rgba(0,0,0,0.9), 0 0 28px rgba(201,168,76,0.3); }
         .hk-title { font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.16em; color:#c9a84c; margin-top:7px; text-transform:uppercase; }
