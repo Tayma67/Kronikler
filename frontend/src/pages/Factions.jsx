@@ -1680,6 +1680,7 @@ function FactionGroupSection({
   canJoin, joinBlocked, joinWeeksLeft,
   onJoin, onLeave, onRebel, onInfluence, onDonate,
   onDarbaBaslat, onDarbaIptal, onMisyonerGonder,
+  onInvestigate, onReveal,
   busy, locations, player, warDetail, onOpenDecision, allFactions,
 }) {
   const [open, setOpen] = useState(false);
@@ -1742,7 +1743,7 @@ function FactionGroupSection({
                   <SecretSocietyCard faction={f}
                     clueCount={clueEntry.clue_count || 0}
                     threshold={clueEntry.threshold || 5}
-                    onInvestigate={() => {}} onReveal={() => {}} busy={busy} />
+                    onInvestigate={onInvestigate} onReveal={onReveal} busy={busy} />
                 </div>
               );
             }
@@ -2220,6 +2221,8 @@ export default function Factions() {
                     onDarbaBaslat={handleDarbaBaslat}
                     onDarbaIptal={handleDarbaIptal}
                     onMisyonerGonder={handleMisyonerGonder}
+                    onInvestigate={handleInvestigate}
+                    onReveal={handleReveal}
                     busy={busy}
                     locations={locations}
                     player={player}

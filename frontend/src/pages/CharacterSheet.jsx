@@ -140,7 +140,7 @@ function SectionHeader({ title, linkText, onLink }) {
       <span style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: 14, color: C.gold, letterSpacing: "0.1em" }}>
         {title}
       </span>
-      {linkText && (
+      {linkText && onLink && (
         <button onClick={onLink} style={{
           background: "none", border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", gap: 3,
@@ -485,7 +485,7 @@ function TabSeruven() {
       {/* ════ PERKLER ════ */}
       {perks.length > 0 && (
         <Section>
-          <SectionHeader title="PERKLER" linkText="Tüm Perkler" onLink={() => {}} />
+          <SectionHeader title="PERKLER" />
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
             {perks.map((perk, i) => (
               <div key={i} style={{
@@ -518,7 +518,7 @@ function TabSeruven() {
 
       {/* ════ TARİHİ BAŞARILAR ════ */}
       <Section>
-        <SectionHeader title="TARİHİ BAŞARILAR" linkText="Tüm Başarılar" onLink={() => {}} />
+        <SectionHeader title="TARİHİ BAŞARILAR" />
         {milestones.length === 0 ? (
           <p style={{ fontFamily: "'Lora', serif", fontStyle: "italic", color: C.textDim, fontSize: 12, textAlign: "center", padding: "10px 0" }}>
             Henüz tarihi bir olay yaşanmadı.
@@ -1055,7 +1055,7 @@ export default function CharacterSheet() {
     <KarakterEkrani
       character={buildCharacter(p, skills)}
       onBack={() => navigate(-1)}
-      onSettings={() => {}}
+      onSettings={() => navigate("/oyun/ayarlar")}
       onNavigate={handleNavigate}
       onCareerClick={() => navigate("/oyun/meslek")}
       dunyaContent={<TabDunya />}
