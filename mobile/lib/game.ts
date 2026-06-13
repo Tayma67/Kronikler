@@ -79,7 +79,7 @@ export function joinThreshold(p: Player, f: Faction): number { return p.perks.in
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; }
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; }
 export interface NpcState { mood: number; memories: string[]; }
-export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; }
+export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
   relationships: Record<string, number>; world: { ready: boolean };
@@ -910,6 +910,35 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
     if (p.health <= 0) { die(s, `${p.name}, ${e.title.toLowerCase()} sırasında can verdi.`); return s; }
     maybeInjure(s, true);
     push(s, "savaş_yenilgi", `${e.title}: Yenildin, yaralarını sardın.`, "kişisel");
+    // Yenilgi bir düşmanlık doğurabilir (nemesis)
+    if (s.story && !s.story.nemesis && Math.random() < 0.4) {
+      const name = `${NEMESIS_NAMES[Math.floor(Math.random() * NEMESIS_NAMES.length)]}`;
+      s.story.nemesis = { name, power: e.power + 4 };
+      push(s, "nemesis", `${name} seni yendiğiyle övünüyor; bir gün hesaplaşacaksınız.`, "kişisel", true);
+    }
+  }
+  return s;
+}
+const NEMESIS_NAMES = ["Kara Yusuf", "Çolak Murat", "Deli Hasan", "Topal Bekir", "Azrail Şahin", "Kanlı Doğan"];
+// Nemesis'le hesaplaşma çatışması (sentetik, ENCOUNTERS'ta değil).
+export function nemesisEncounter(s: GameState): Encounter | null {
+  const n = s.story?.nemesis; if (!n) return null;
+  return { id: "nemesis", title: `Nemesis: ${n.name}`, desc: `${n.name} ile son hesaplaşma.`, power: n.power, reward: 90, fame: 16, honor: 8, danger: 30 };
+}
+export function applyNemesisOutcome(prev: GameState, won: boolean, finalHp: number): GameState {
+  const s = clone(prev); const p = s.player; const n = s.story?.nemesis; if (!n) return s;
+  gainSkill(s, "combat", won ? 16 : 8);
+  if (won) {
+    p.money += 90; p.fame = Math.min(100, p.fame + 16); p.honor = Math.min(100, p.honor + 8);
+    bumpNam(p, "mert", 8);
+    const floor = hasPerk(p, "yilmaz") ? 5 : 1; p.health = Math.max(floor, Math.round(finalHp));
+    s.story.nemesis = null;
+    push(s, "nemesis", `${n.name}'ı alt ettin! Hesap kapandı, adın korkusuz diye anıldı.`, "kişisel", true);
+  } else {
+    p.health = Math.max(0, Math.round(finalHp));
+    if (p.health <= 0) { die(s, `${p.name}, ${n.name} ile hesaplaşmada can verdi.`); return s; }
+    maybeInjure(s, true);
+    push(s, "nemesis", `${n.name} yine üstün geldi; intikam bir başka bahara kaldı.`, "kişisel");
   }
   return s;
 }

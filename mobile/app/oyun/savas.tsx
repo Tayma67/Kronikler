@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { ENCOUNTERS, combatPower, applyBattleOutcome } from "../../lib/game";
+import { ENCOUNTERS, combatPower, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome } from "../../lib/game";
 import { startBattle, stepBattle, MOVES, BattleState, Move } from "../../lib/combat";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -34,10 +34,16 @@ export default function Savas() {
   const pw = combatPower(p);
   const canFight = p.age >= 13 && !p.dead;
 
+  const nemEnc = nemesisEncounter(state);
   const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); setBs(startBattle(p, e)); setApplied(false); };
+  const beginNemesis = () => { if (!nemEnc) return; setEncId("nemesis"); setBs(startBattle(p, nemEnc)); setApplied(false); };
   const play = (mv: Move) => { if (!bs || bs.over) return; setBs(stepBattle(bs, p, mv)); };
   const finish = () => {
-    if (bs && !applied) { apply((s) => applyBattleOutcome(s, encId, bs.won, bs.playerHp)); setApplied(true); }
+    if (bs && !applied) {
+      if (encId === "nemesis") apply((s) => applyNemesisOutcome(s, bs.won, bs.playerHp));
+      else apply((s) => applyBattleOutcome(s, encId, bs.won, bs.playerHp));
+      setApplied(true);
+    }
     setBs(null);
   };
 
@@ -89,6 +95,18 @@ export default function Savas() {
         Tur tabanlı dövüş: hamle / savuştur / özel. Taş-kağıt-makas gibi — düşmanın niyetini sez. {(p.inventory["bicak"] || 0) > 0 ? "Bıçağın yanında." : "Bir bıçak işine yarardı."}
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        {nemEnc && (
+          <View style={{ backgroundColor: "rgba(120,20,20,0.15)", borderWidth: 1, borderColor: "rgba(200,60,60,0.6)", borderRadius: 10, padding: 14, marginBottom: 12 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 14, color: C.blood }}>☠ {nemEnc.title}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood }}>güç {nemEnc.power}</Text>
+            </View>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5 }}>{nemEnc.desc} Hesaplaşma vakti.</Text>
+            <Pressable disabled={!canFight} onPress={beginNemesis} style={{ alignSelf: "flex-start", marginTop: 10, paddingVertical: 8, paddingHorizontal: 18, borderRadius: 7, borderWidth: 1, borderColor: "rgba(200,60,60,0.7)", backgroundColor: "rgba(200,60,60,0.2)" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood, letterSpacing: 1 }}>HESAPLAŞ</Text>
+            </Pressable>
+          </View>
+        )}
         {ENCOUNTERS.map((e) => {
           const tooStrong = e.power > pw + 8;
           return (
