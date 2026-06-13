@@ -263,7 +263,14 @@ function ChatModal({ npc, state, onClose }) {
       {/* chat log */}
       <div ref={logRef} className="flex-1 overflow-y-auto space-y-3 mb-4 min-h-0" style={{ maxHeight: 280 }}>
         {log.length === 0 && (
-          <p className="text-stone-600 text-xs italic">Bir konu seçerek konuşmaya başla…</p>
+          <div className="text-center py-4 px-3">
+            <div className="text-2xl mb-1.5 opacity-50">💬</div>
+            <p className="text-stone-300 text-sm mb-1">Aşağıdaki <span className="text-amber-400">konu kartlarından</span> birine dokun.</p>
+            <p className="text-stone-500 text-[11px] italic leading-relaxed">
+              {npc.name} sana cevap verir, ilişkiniz değişir.<br/>
+              <span className="text-purple-300/70">Kişisel</span> kartlar sırlarını ve amacını açar.
+            </p>
+          </div>
         )}
         {log.map((m, i) => m.from === "i" ? (
           <div key={i} className="text-[11px] text-amber-300 bg-amber-950/20 border border-amber-900/40 rounded-sm px-3 py-2 italic">
@@ -304,20 +311,24 @@ function ChatModal({ npc, state, onClose }) {
               <span className="text-[9px] text-red-400/70 italic">{hand.warning}</span>
             )}
           </div>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-3 gap-2">
             {hand.cards.map((c) => {
               const used = playedCards.includes(c.id);
-              const tone = c.id.startsWith("g") ? "emerald" : c.id.startsWith("r") ? "amber" : "purple";
+              const kind = c.id[0];
+              const tone = kind === "g" ? "emerald" : kind === "r" ? "amber" : "purple";
+              const tag = kind === "g" ? "Güvenli" : kind === "r" ? "Riskli" : "Kişisel";
               return (
                 <button key={c.id} disabled={busy || used || !npc.alive}
                   onClick={() => playCard(c)}
-                  className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-sm border text-center transition-colors ${
+                  style={{ minHeight: 78 }}
+                  className={`flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-md border text-center transition-colors ${
                     used ? "border-stone-800 text-stone-700 opacity-40"
                     : tone === "emerald" ? "border-emerald-900/60 text-emerald-200 hover:bg-emerald-950/20"
                     : tone === "amber" ? "border-amber-900/60 text-amber-200 hover:bg-amber-950/20"
                     : "border-purple-900/60 text-purple-200 hover:bg-purple-950/20"}`}>
-                  <span className="text-[10px] leading-tight">{c.label}</span>
-                  <span className="text-[8px] opacity-60">{used ? "konuşuldu" : c.hint}</span>
+                  <span className="text-[8px] font-heading tracking-[0.14em] uppercase opacity-70">{used ? "✓ konuşuldu" : tag}</span>
+                  <span className="text-[11px] leading-tight font-medium">{c.label}</span>
+                  {!used && <span className="text-[8px] opacity-55">{c.hint}</span>}
                 </button>
               );
             })}
