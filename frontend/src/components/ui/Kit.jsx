@@ -15,14 +15,18 @@
 import React from "react";
 import GameIcon from "./GameIcon";
 
-// Sayfa başlığı emojilerini tutarlı game-icons'a çevirir (yoksa emoji kalır).
-const HEADER_EMOJI_GI = {
-  "⚔️": "crossed-swords", "⚔": "crossed-swords", "📜": "scroll-open", "🌒": "hood",
+// Emojileri tutarlı game-icons'a çevirir (eşi yoksa emoji kalır).
+// Hem PageHeader hem EmptyState bunu kullanır → tüm sayfalarda tek dil.
+const EMOJI_GI = {
+  "⚔️": "crossed-swords", "⚔": "crossed-swords", "🗡": "crossed-swords", "🗡️": "crossed-swords",
+  "📜": "scroll-open", "🌒": "hood", "🗝": "hood", "🗝️": "hood",
   "🏰": "castle", "👶": "baby", "🎒": "backpack", "👑": "crown", "💍": "ring",
-  "🏘": "family", "🏘️": "family", "🔥": "flame", "🫂": "family", "👂": "speaker",
-  "🎓": "graduate-cap", "🏫": "graduate-cap", "🕯": "cog", "🕯️": "cog", "🏅": "medal",
-  "⚖": "scales", "⚖️": "scales", "📖": "book", "📯": "speaker", "🗺️": "map", "🗺": "map",
-  "🏠": "house", "🜂": "flame", "👥": "family",
+  "🏘": "family", "🏘️": "family", "🤝": "family", "👨‍👩‍👧": "family",
+  "🔥": "flame", "🫂": "family", "👂": "speaker",
+  "🎓": "graduate-cap", "🏫": "graduate-cap", "🕯": "cog", "🕯️": "cog", "🏅": "medal", "🏆": "trophy",
+  "⚖": "scales", "⚖️": "scales", "📖": "book", "📚": "book", "📯": "speaker", "🗺️": "map", "🗺": "map",
+  "🏠": "house", "🏚": "house", "🏚️": "house", "🜂": "flame", "👥": "family",
+  "🌍": "map", "🌎": "map", "⚱": "tombstone", "🪦": "tombstone", "💰": "coins", "⚜": "crown",
 };
 
 export const TONES = {
@@ -54,9 +58,9 @@ export function PageHeader({ kicker, title, sub, icon, right }) {
             alignItems: "center", gap: "0.6rem",
             textShadow: "0 2px 12px rgba(0,0,0,0.6), 0 0 24px rgba(201,168,76,0.12)",
           }}>
-            {icon && (HEADER_EMOJI_GI[icon]
+            {icon && (EMOJI_GI[icon]
               ? <span style={{ filter: "drop-shadow(0 0 8px rgba(201,168,76,0.4))", display: "inline-flex" }}>
-                  <GameIcon name={HEADER_EMOJI_GI[icon]} size="1.4rem" color="var(--color-gold)" />
+                  <GameIcon name={EMOJI_GI[icon]} size="1.4rem" color="var(--color-gold)" />
                 </span>
               : <span style={{ fontSize: "1.25rem", filter: "drop-shadow(0 0 8px rgba(201,168,76,0.4))" }}>{icon}</span>)}
             <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
@@ -188,9 +192,12 @@ export function GoldRule({ label }) {
 export function EmptyState({ icon = "🕯", title, sub }) {
   return (
     <div style={{ textAlign: "center", padding: "2.2rem 1rem" }}>
-      <div style={{ fontSize: "1.8rem", marginBottom: "0.6rem", opacity: 0.45,
-                    filter: "drop-shadow(0 0 12px rgba(201,168,76,0.3))" }}>
-        {icon}
+      <div style={{ marginBottom: "0.6rem", opacity: 0.5,
+                    filter: "drop-shadow(0 0 12px rgba(201,168,76,0.3))",
+                    display: "inline-flex", justifyContent: "center" }}>
+        {EMOJI_GI[icon]
+          ? <GameIcon name={EMOJI_GI[icon]} size="2rem" color="var(--color-gold)" />
+          : <span style={{ fontSize: "1.8rem" }}>{icon}</span>}
       </div>
       <p className="font-serif" style={{
         fontSize: "0.9rem", fontStyle: "italic", color: "var(--color-parchment-dim)",
