@@ -78,6 +78,69 @@ export const DILEMMAS: Dilemma[] = [
       { label: "Teşekkürle al", delta: { addItem: "sifa", honor: 2 }, result: "Şifalı otu heybene koydun. Bir gün lazım olur." },
     ],
   },
+  {
+    id: "kayip_cocuk", icon: "family", title: "Kaybolmuş Çocuk",
+    text: "Pazarda ağlayan bir çocuk annesini arıyor. Kalabalık aldırmıyor.",
+    when: (p) => p.age >= 14,
+    choices: [
+      { label: "Annesini bul", delta: { honor: 8, reputation: 4 }, result: "Çocuğu ailesine kavuşturdun; dualarını aldın." },
+      { label: "Görmezden gel", delta: { honor: -3 }, result: "Acelen vardı, yoluna devam ettin." },
+    ],
+  },
+  {
+    id: "kumar", icon: "coins", title: "Han Köşesinde Kumar",
+    text: "Hanın loş köşesinde zar atılıyor. Talihini denemek ister misin?",
+    when: (p) => p.age >= 16 && p.money >= 20,
+    choices: [
+      { label: "Oyna (−20 akçe)", delta: { money: 25 }, result: "Zar senden yana döndü; kasayı topladın." },
+      { label: "Uzak dur", delta: {}, result: "Kumarın sonu hüsran, dedin ve geçtin." },
+    ],
+  },
+  {
+    id: "borc", icon: "scales", title: "Dostun Borç İstiyor",
+    text: "Eski bir dostun zor durumda; senden borç istiyor.",
+    when: (p) => p.age >= 16 && p.money >= 30,
+    choices: [
+      { label: "Borç ver (−25)", delta: { money: -25, honor: 6, reputation: 3 }, result: "Dostuna el uzattın; mertliğin konuşuldu." },
+      { label: "Reddet", delta: { honor: -2 }, result: "Kesen sıkıydı; geri çevirdin." },
+    ],
+  },
+  {
+    id: "vaiz", icon: "prayer-beads", title: "Meydanda Vaiz",
+    text: "Bir vaiz halkı dine davet ediyor, bağış topluyor.",
+    when: (p) => p.age >= 13,
+    choices: [
+      { label: "Bağış yap (−8)", delta: { money: -8, honor: 4 }, result: "Bağışını verdin; içine huzur doldu." },
+      { label: "Dinle ve geç", delta: {}, result: "Vaazı dinledin ama kesene dokunmadın." },
+    ],
+  },
+  {
+    id: "usta_teklif", icon: "anvil", title: "Ustadan Teklif",
+    text: "Yaşlı bir usta çırağı olmanı, zanaatını öğretmeyi teklif ediyor.",
+    when: (p) => p.age >= 13 && p.age < 30,
+    choices: [
+      { label: "Kabul et", delta: { stat_points: 1 }, result: "Ustanın yanında çok şey öğrendin." },
+      { label: "Kendi yolum var", delta: {}, result: "Nazikçe reddettin." },
+    ],
+  },
+  {
+    id: "at_pazari", icon: "map", title: "At Pazarı",
+    text: "Bir at cambazı, sağlam görünen bir atı ucuza satıyor. Ama gözü kaçamak.",
+    when: (p) => p.age >= 16 && p.money >= 25,
+    choices: [
+      { label: "Satın al (−25)", delta: { money: -5, reputation: 2 }, result: "At iyi çıktı; kısa sürede masrafını çıkardı." },
+      { label: "Şüphelen, alma", delta: {}, result: "İçin rahat etmedi, vazgeçtin." },
+    ],
+  },
+  {
+    id: "yetim", icon: "baby", title: "Kapındaki Yetim",
+    text: "Soğuk bir gecede kapına bir yetim sığındı.",
+    when: (p) => p.age >= 18,
+    choices: [
+      { label: "İçeri al, doyur", delta: { honor: 10, reputation: 5 }, result: "Yetimi koruyup kolladın; vicdanın aydınlandı." },
+      { label: "Geri çevir", delta: { honor: -6 }, result: "Kapını açmadın; o gece uykun kaçtı." },
+    ],
+  },
 ];
 
 // Tura göre bir ikilem seç (deterministik değil; çağıran olasılıkla tetikler).

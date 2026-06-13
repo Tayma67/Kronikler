@@ -80,6 +80,45 @@ export const ARCS: Arc[] = [
   },
 ];
 
+ARCS.push(
+  {
+    id: "gizli_ask", title: "Gizli Aşk", icon: "ring",
+    blurb: "Kalbin, ulaşılması güç birine kapıldı.",
+    when: (p) => p.age >= 17 && !p.married,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Bir bey kızına/oğluna gönül verdin ama aileler arasında uçurum var. Aracı bir ihtiyar yol gösteriyor.", choices: [
+        { label: "Şiirle gönlünü kazan", result: "Yazdığın beyitler dilden dile dolaştı; kapı aralandı.", delta: { fame: 4 }, next: "s2" },
+        { label: "Servetinle etkile", result: "Cömert hediyelerle ailenin gözüne girdin.", delta: { money: -30 }, next: "s2" },
+      ]},
+      s2: { id: "s2", text: "Buluşma ayarlandı ama bir rakip de aynı kişinin peşinde. Ne yaparsın?", choices: [
+        { label: "Mertçe yarış", result: "Onurunla yarıştın ve kalbi kazandın.", delta: { honor: 8, reputation: 6, fame: 6 }, next: "end" },
+        { label: "Rakibi gözden düşür", result: "Entrikayla rakibi saf dışı bıraktın; muradına erdin ama için buruk.", delta: { fear: 6, honor: -5 }, next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "isyan", title: "Köylü İsyanı", icon: "crossed-swords",
+    blurb: "Ağır vergiler halkı ayağa kaldırdı; bir taraf seçmelisin.",
+    when: (p, tension) => p.age >= 18 && p.reputation >= 5,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Köylüler voyvodanın zulmüne baş kaldırdı. Hem halk hem bey senden yana olmanı bekliyor.", choices: [
+        { label: "Halkın yanında dur", result: "Mazlumun yanında saf tuttun; halk seni bağrına bastı.", delta: { reputation: 12, honor: 10, fear: 4 }, next: "s2h" },
+        { label: "Beyin yanında dur", result: "Düzenden yana çıktın; bey sana borçlandı ama halk küstü.", delta: { reputation: -6, money: 40, fear: 8 }, next: "s2b" },
+      ]},
+      s2h: { id: "s2h", text: "İsyan büyüdü. Önderlik sana düştü. Sonuna kadar gider misin?", choices: [
+        { label: "Önderlik et", result: "İsyanı zafere taşıdın; adın türkülere girdi.", delta: { fame: 18, reputation: 10 }, next: "end" },
+        { label: "Uzlaşma sağla", result: "Kan dökülmeden uzlaşma sağladın; bilgeliğin konuşuldu.", delta: { honor: 12, reputation: 8 }, next: "end" },
+      ]},
+      s2b: { id: "s2b", text: "İsyan bastırıldı. Bey seni ödüllendirmek istiyor ama halkın gözünde hainsin.", choices: [
+        { label: "Ödülü al", result: "Kese doldu ama sokakta yüzüne bakan olmadı.", delta: { money: 80, reputation: -10, fear: 10 }, next: "end" },
+        { label: "Ödülü reddet", result: "Ödülü reddedip halktan özür diledin; itibarın bir nebze onarıldı.", delta: { honor: 6, reputation: 4 }, next: "end" },
+      ]},
+    },
+  },
+);
+
 export function arcById(id: string | null): Arc | undefined { return ARCS.find((a) => a.id === id); }
 // Uygun, henüz tamamlanmamış ve aktif olmayan yaylar.
 export function availableArcs(p: Player, completed: string[], tension: number, activeId: string | null): Arc[] {
