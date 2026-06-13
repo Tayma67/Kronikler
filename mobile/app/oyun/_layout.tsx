@@ -34,6 +34,7 @@ export default function OyunLayout() {
       <Tabs.Screen name="hanedan" options={{ href: null }} />
       <Tabs.Screen name="basarimlar" options={{ href: null }} />
       <Tabs.Screen name="beceriler" options={{ href: null }} />
+      <Tabs.Screen name="hikayeler" options={{ href: null }} />
       <Tabs.Screen name="tarih" options={{ href: null }} />
       <Tabs.Screen name="ayarlar" options={{ href: null }} />
       <Tabs.Screen name="roman" options={{ href: null }} />

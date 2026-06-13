@@ -91,6 +91,15 @@ export default function Dashboard() {
         </View>
       </ImageBackground>
 
+      {/* Aktif hikâye çağrısı */}
+      {!p.dead && state.story?.active && (
+        <Pressable onPress={() => router.push("/oyun/hikayeler")} style={{ marginHorizontal: 16, marginTop: 10, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <GameIcon name="roman" size={16} color={C.gold} />
+          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>Bir hikâyenin ortasındasın — devam etmek için dokun.</Text>
+          <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>›</Text>
+        </Pressable>
+      )}
+
       {/* Günlük */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 }}>
         <View style={{ width: 3, height: 18, backgroundColor: C.gold, borderRadius: 2 }} />

@@ -20,6 +20,7 @@ function migrate(s: GameState): GameState {
   if (!s.relationships) s.relationships = {};
   if (!s.dynasty) s.dynasty = [];
   if (!s.npc_state) s.npc_state = {};
+  if (!s.story) s.story = { active: null, completed: [], tension: 0 };
   return s;
 }
 

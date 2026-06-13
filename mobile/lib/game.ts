@@ -2,6 +2,7 @@
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC } from "./world";
 import { converse, ConvResult } from "./dialogue";
+import { arcById, ArcChoice } from "./arcs";
 
 export interface Stats { strength: number; intelligence: number; charisma: number; stamina: number; }
 export interface Skills { combat: number; trade: number; crafting: number; social: number; }
@@ -50,11 +51,13 @@ export function joinThreshold(p: Player, f: Faction): number { return p.perks.in
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; }
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; }
 export interface NpcState { mood: number; memories: string[]; }
+export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
   relationships: Record<string, number>; world: { ready: boolean };
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
+  story: StoryProgress;
 }
 // NPC ruh hali/hafıza kaydını getir veya başlat (saf değil — clone'lanmış state'te çağrılır).
 export function npcStateOf(s: GameState, id: string): NpcState {
@@ -79,7 +82,7 @@ export function npcsOf(s: GameState): NPC[] { return generateNPCs(s.seed); }
 export function newGame(first: string, surname: string, gender: "erkek" | "kadın"): GameState {
   return {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true },
-    relationships: {}, dynasty: [], npc_state: {},
+    relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 },
     player: {
       name: surname ? `${first} ${surname}` : first, surname, gender, base_age: 7, age: 7,
       money: 12, profession: "işsiz", health: 100, hunger: 100,
@@ -401,7 +404,7 @@ export function continueAsHeir(prev: GameState): GameState {
   };
   const dynasty = [...(prev.dynasty || []), ancestor];
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {},
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {}, story: { active: null, completed: [], tension: 0 },
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
       base_age: 7, age: 7, money: inheritMoney, profession: "işsiz", health: 100, hunger: 100,
@@ -728,5 +731,46 @@ export function choosePerk(prev: GameState, id: string): GameState {
   if (pendingPerkTier(p, pk.tree) !== pk.tier) return s; // bu kademe zaten doldurulmuş
   p.perks.push(id);
   push(s, "hüner", `Yeni hüner: ${pk.name} — ${pk.desc}`, "kişisel", true);
+  return s;
+}
+
+// ── Hikâye yayları ──
+export function beginArc(prev: GameState, id: string): GameState {
+  const s = clone(prev); const a = arcById(id);
+  if (!a || s.player.dead) return s;
+  if (s.story.active || s.story.completed.includes(id)) return s;
+  s.story.active = { id, stage: a.start };
+  push(s, "hikaye_basladi", `Yeni bir hikâye başladı: ${a.title}.`, "kişisel", true);
+  return s;
+}
+// Aktif yayda bir seçim yap: etkiyi uygula, sahneyi ilerlet ya da bitir.
+export function advanceArc(prev: GameState, choiceIdx: number): GameState {
+  const s = clone(prev);
+  if (!s.story.active) return s;
+  const a = arcById(s.story.active.id); if (!a) { s.story.active = null; return s; }
+  const stage = a.stages[s.story.active.stage]; if (!stage) { s.story.active = null; return s; }
+  const c: ArcChoice | undefined = stage.choices[choiceIdx]; if (!c) return s;
+  if (c.delta) {
+    const p = s.player; const d = c.delta;
+    if (d.money) p.money = Math.max(0, p.money + d.money);
+    if (d.health) p.health = Math.max(0, Math.min(100, p.health + d.health));
+    if (d.hunger) p.hunger = Math.max(0, Math.min(100, p.hunger + d.hunger));
+    if (d.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + d.reputation));
+    if (d.honor) p.honor = Math.max(0, Math.min(100, p.honor + d.honor));
+    if (d.fear) p.fear = Math.max(0, Math.min(100, p.fear + d.fear));
+    if (d.fame) p.fame = Math.max(0, Math.min(100, p.fame + d.fame));
+    if (d.stat_points) p.stat_points += d.stat_points;
+    if (d.addItem) p.inventory[d.addItem] = (p.inventory[d.addItem] || 0) + 1;
+  }
+  push(s, "hikaye", c.result, "kişisel");
+  if (c.next === "end") {
+    push(s, "hikaye_bitti", `"${a.title}" sona erdi.`, "kişisel", true);
+    s.story.completed.push(a.id);
+    s.story.active = null;
+    s.story.tension = Math.max(0, s.story.tension - 2);
+  } else {
+    s.story.active = { id: a.id, stage: c.next };
+  }
+  if (s.player.health <= 0) die(s, `${s.player.name} hikâyesinin ortasında can verdi.`);
   return s;
 }
