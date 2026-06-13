@@ -11,17 +11,21 @@ import { toast, Toaster } from "sonner";
 import InheritanceScreen from "@/pages/InheritanceScreen";
 import ComingOfAgeModal from "@/components/ComingOfAgeModal";
 import EmberAmbiance from "@/components/EmberAmbiance";
+import HarvestModal from "@/components/HarvestModal";
+import LifeEventModal from "@/components/LifeEventModal";
+import StoryModal from "@/components/StoryModal";
+import { playSfx } from "@/lib/audio";
 import { api } from "@/lib/api";
 
 // ── Nav definitions ──────────────────────────────────────────────────────────
 const PRIMARY_NAV = [
   { to: "/oyun",           label: "Ana Sayfa", icon: Flame,  end: true, testid: "nav-world"     },
   { to: "/oyun/karakter",  label: "Karakter",  icon: Shield,            testid: "nav-character" },
-  { to: "/oyun/harita",    label: "Şehir",     icon: Castle,            testid: "nav-map"       },
   { to: "/oyun/iliskiler", label: "İlişkiler", icon: Users,             testid: "nav-relationships" },
 ];
 
 const SECONDARY_NAV = [
+  { to: "/oyun/harita",          label: "Şehir",        icon: Castle,         testid: "nav-map"         },
   { to: "/oyun/meslek",          label: "Meslek",       icon: Briefcase,      testid: "nav-profession"  },
   { to: "/oyun/factionlar",      label: "Örgütler",     icon: Shield,         testid: "nav-factions"    },
   { to: "/oyun/tarih",           label: "Tarih",        icon: Scroll,         testid: "nav-history"     },
@@ -91,6 +95,36 @@ function MobileNavItem({ to, label, icon: Icon, end, testid, pulse }) {
         </>
       )}
     </NavLink>
+  );
+}
+
+// ── Ayı İlerle — nav bardaki özel orta buton (ember stili, kalıbı bara entegre) ──
+function AdvanceNavButton({ advancing, onAdvance }) {
+  return (
+    <button onClick={() => onAdvance(1)} disabled={advancing} data-testid="nav-advance"
+      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+               justifyContent: 'center', gap: 3, paddingTop: 4,
+               background: 'none', border: 'none', cursor: advancing ? 'wait' : 'pointer' }}>
+      <div className={advancing ? '' : 'animate-pulse-gold'} style={{
+        width: 50, height: 50, borderRadius: 14, marginTop: -16,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: advancing
+          ? 'linear-gradient(180deg, #3D2A08 0%, #1E1404 100%)'
+          : 'linear-gradient(180deg, #F0D88A 0%, #D3BD86 52%, #B9963F 100%)',
+        border: '1.5px solid rgba(201,168,76,0.85)',
+        boxShadow: '0 0 20px rgba(201,168,76,0.5), 0 6px 16px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.25)',
+      }}>
+        {advancing
+          ? <Loader2 size={20} color="var(--color-gold)" className="animate-spin" />
+          : <Hourglass size={21} color="#2a1d06" strokeWidth={2} />}
+      </div>
+      <span style={{ fontSize: 9.5, fontFamily: 'Cinzel, serif', letterSpacing: '0.08em',
+                     textTransform: 'uppercase', fontWeight: 700,
+                     color: advancing ? 'var(--color-parchment-muted)' : 'var(--color-gold)',
+                     textShadow: '0 0 10px rgba(201,168,76,0.4)' }}>
+        {advancing ? 'İlerliyor' : 'Ay İlerle'}
+      </span>
+    </button>
   );
 }
 
@@ -192,6 +226,10 @@ export default function GameLayout() {
   const [inheritanceData, setInheritanceData] = useState(null);
   const [inheritanceBusy, setInheritanceBusy] = useState(false);
   const [showMore, setShowMore]         = useState(false);
+  // Ay ilerleme popup zinciri (eskiden Dashboard'daydı; artık global)
+  const [showLifeEvent, setShowLifeEvent] = useState(false);
+  const [showStory, setShowStory]         = useState(false);
+  const [harvest, setHarvest]             = useState(null);
 
   useEffect(() => {
     if (fetchState) fetchState().then(s => { if (s === false) navigate("/yeni-oyun"); });
@@ -207,15 +245,24 @@ export default function GameLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.player?.dead]);
 
-  const onAdvance = async (weeks) => {
+  const onAdvance = async (weeks = 1) => {
+    if (advancing) return;
     setAdvancing(true);
+    try { playSfx("week"); } catch (_) {}
     try {
-      const newState = await advance(weeks);
-      if (newState?.player?.dead) {
+      const result = await advance(weeks);
+      if (result?.player?.dead) {
         try { const { data } = await api.get("/game/inheritance/options"); setInheritanceData(data); setShowInheritance(true); }
         catch (_) {}
+      } else if (result?.coming_of_age) {
+        // ComingOfAgeModal aşağıda açılır; başka popup tetikleme
+      } else if (result?.hafta_hasadi) {
+        setHarvest(result.hafta_hasadi);
       } else {
-        toast.success(weeks === 1 ? "1 ay geçti." : `${weeks} ay geçti.`);
+        toast.success(weeks === 1 ? "1 ay geçti" : `${weeks} ay geçti`, {
+          description: "Yeni olaylar günlüğünde belirdi.", duration: 2500,
+        });
+        setShowLifeEvent(true);
       }
     } catch (e) { toast.error("Zaman ilerletilemedi."); }
     finally { setAdvancing(false); }
@@ -474,7 +521,14 @@ export default function GameLayout() {
         <div style={{ position: 'absolute', top: 0, left: '5%', right: '5%', height: '1px',
                       background: 'linear-gradient(to right, transparent, rgba(201,168,76,0.2) 50%, transparent)',
                       pointerEvents: 'none' }} />
-        {visiblePrimary.map(n => (
+        {visiblePrimary.slice(0, 2).map(n => (
+          <MobileNavItem key={n.to} {...n}
+            pulse={(n.testid === "nav-opportunities" && pulseOpportunities) ||
+                   (n.testid === "nav-world-news" && pulseNews)} />
+        ))}
+        {/* Ortadaki özel buton: Ayı İlerle — ember stili, nav bara entegre */}
+        <AdvanceNavButton advancing={advancing} onAdvance={onAdvance} />
+        {visiblePrimary.slice(2).map(n => (
           <MobileNavItem key={n.to} {...n}
             pulse={(n.testid === "nav-opportunities" && pulseOpportunities) ||
                    (n.testid === "nav-world-news" && pulseNews)} />
@@ -527,6 +581,22 @@ export default function GameLayout() {
       {comingOfAge && (
         <ComingOfAgeModal data={comingOfAge} onClose={clearComingOfAge} />
       )}
+
+      {/* Ay ilerleme popup zinciri (global): hasat → life event → hikâye */}
+      <HarvestModal
+        harvest={harvest}
+        onClose={() => { setHarvest(null); setShowLifeEvent(true); }}
+      />
+      <LifeEventModal
+        open={showLifeEvent}
+        onClose={() => { setShowLifeEvent(false); setShowStory(true); }}
+        onComplete={() => { if (fetchState) fetchState(); }}
+      />
+      <StoryModal
+        open={showStory}
+        onClose={() => setShowStory(false)}
+        onComplete={() => { if (fetchState) fetchState(); }}
+      />
     </div>
   );
 }

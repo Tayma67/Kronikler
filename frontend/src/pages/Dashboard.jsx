@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import {
   Coins, ChevronRight, Scroll, Shield,
-  Hourglass, Scale, BookMarked, Heart, Crown, Loader2, Sword, Star
+  Scale, BookMarked, Heart, Crown, Loader2, Sword, Star
 } from 'lucide-react';
 import { useGame } from '@/lib/GameContext';
-import LifeEventModal from '@/components/LifeEventModal';
-import StoryModal from '@/components/StoryModal';
 import WeekPlanCard from '@/components/WeekPlanCard';
-import HarvestModal from '@/components/HarvestModal';
 import SagaStrip, { SagaTab, useSaga } from '@/components/SagaStrip';
 import { useHeroGorsel, Portre } from '@/components/ui/Gorsel';
-import { playSfx } from '@/lib/audio';
 
 // Mesleğe göre ünvan ikonu — tek tip ⚒ yerine kimlik hissi
 const PROF_ICON = {
@@ -313,57 +308,12 @@ function EventCard({ event, isLast }) {
 }
 
 
-// ── CORNER ORNAMENT ───────────────────────────────────────────────────────────
-function CornerOrnament({ position }) {
-  const isTop  = position.includes('top');
-  const isLeft = position.includes('left');
-  return (
-    <div style={{
-      position: 'absolute',
-      top: isTop ? 0 : 'auto', bottom: isTop ? 'auto' : 0,
-      left: isLeft ? 0 : 'auto', right: isLeft ? 'auto' : 0,
-      width: '18px', height: '18px', pointerEvents: 'none',
-    }}>
-      <div style={{
-        position: 'absolute',
-        top: isTop ? '4px' : 'auto', bottom: isTop ? 'auto' : '4px',
-        left: isLeft ? '4px' : 'auto', right: isLeft ? 'auto' : '4px',
-        width: '10px', height: '1.5px',
-        background: 'rgba(201,168,76,0.75)', boxShadow: '0 0 4px rgba(201,168,76,0.4)',
-      }} />
-      <div style={{
-        position: 'absolute',
-        top: isTop ? '4px' : 'auto', bottom: isTop ? 'auto' : '4px',
-        left: isLeft ? '4px' : 'auto', right: isLeft ? 'auto' : '4px',
-        width: '1.5px', height: '10px',
-        background: 'rgba(201,168,76,0.75)', boxShadow: '0 0 4px rgba(201,168,76,0.4)',
-      }} />
-      <div style={{
-        position: 'absolute',
-        top: isTop ? '3.5px' : 'auto', bottom: isTop ? 'auto' : '3.5px',
-        left: isLeft ? '3.5px' : 'auto', right: isLeft ? 'auto' : '3.5px',
-        width: '2.5px', height: '2.5px', borderRadius: '50%',
-        background: 'var(--color-gold)', boxShadow: '0 0 4px rgba(201,168,76,0.8)',
-      }} />
-    </div>
-  );
-}
 
 // ── MAIN DASHBOARD ────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const { state, advance, fetchState } = useGame() || {};
-  // Popup zinciri: hafta ilerleyince önce life event, sonra hikâye popup'ı
-  const [showLifeEvent, setShowLifeEvent] = useState(false);
-  const [showStory, setShowStory] = useState(false);
-  const [harvest, setHarvest] = useState(null);   // R1: hafta sonu hasadı
-
-  React.useEffect(() => {
-    // Sayfa açılışında bekleyen popup'ları yokla (önceki oturumdan kalmış olabilir)
-    const t = setTimeout(() => setShowLifeEvent(true), 600);
-    return () => clearTimeout(t);
-  }, []);
+  const { state } = useGame() || {};
+  // Ay ilerletme + popup zinciri artık GameLayout'ta (nav bardaki butondan).
   const [activeTab, setActiveTab]     = useState('gunluk');
-  const [advancing, setAdvancing]     = useState(false);
   const navigate = useNavigate();
   const saga = useSaga(state);
   // Hook'lar erken return'den ÖNCE ve KOŞULSUZ çağrılmalı (rules-of-hooks).
@@ -409,18 +359,6 @@ export default function Dashboard() {
   const playerAge   = player.age || 0;
   const avatarEmoji = avatarFor(playerAge, player.gender);
 
-  // İlerle butonu alt yazısı — yönetmenin ağzından, atmosfer kurar.
-  // Çocuklukta sade: görmediği sistemlere gönderme yapmaz (aşamalı keşif).
-  const y = saga?.yonetmen;
-  const advanceSub = playerAge < 13
-    ? (playerAge === 12 ? 'Büyüyorsun… dünya yakında sana açılacak.'
-       : 'Yeni olaylar seni bekliyor…')
-    : (saga?.teklifler?.length > 0) ? 'Kapında bekleyen elçiler var…'
-    : (y?.gerilim >= 75) ? 'Havada fırtına kokusu var…'
-    : (y?.gerilim >= 55) ? 'Gerilim yükseliyor — dikkatli ol…'
-    : (y?.nefes_kalan > 0) ? 'Sakin günler — tadını çıkar…'
-    : (y?.aktif_yay === 'durgun') ? 'Sular durgun… fazla durgun.'
-    : 'Yeni olaylar seni bekliyor…';
   const season      = cal.season || 'Yaz';
   const dateStr     = `${cal.month_name || 'Ocak'} ${cal.year || 1247}`.toUpperCase();
   const fame        = player.fame || 0;
@@ -477,32 +415,6 @@ export default function Dashboard() {
     activeTab === 'gunluk' ? personalEvents :
     activeTab === 'dunya'  ? worldEvents    :
     [];
-
-  // ── Advance handler ────────────────────────────────────────────────────────
-  const handleAdvance = async () => {
-    if (advancing || !advance) return;
-    setAdvancing(true);
-    playSfx('week');
-    try {
-      const result = await advance(1);
-      if (result && !result.player?.dead) {
-        // Reşit olma anı: sinematik tek başına dursun, rutin toast/zincir bu turda atlanır
-        if (result.coming_of_age) {
-          // ComingOfAgeModal GameLayout'ta açılır; başka popup tetikleme
-        } else if (result.hafta_hasadi) {
-          setHarvest(result.hafta_hasadi);
-        } else {
-          toast.success('1 ay geçti', {
-            description: 'Yeni olaylar günlüğünde belirdi.',
-            duration: 2500,
-          });
-          setShowLifeEvent(true);
-        }
-      }
-    } finally {
-      setAdvancing(false);
-    }
-  };
 
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
@@ -695,9 +607,9 @@ export default function Dashboard() {
 
         <div style={{
           margin: '0.7rem 0.75rem 0',
-          // Sabit Haftayı İlerle butonu + alt nav'ın üzerinde bitir:
-          // panel içi scroll çalışır, içerik butonun altında kaybolmaz
-          marginBottom: 'calc(8.4rem + env(safe-area-inset-bottom, 0px))',
+          // Alt nav barın üzerinde bitir (Ayı İlerle artık nav barda):
+          // panel içi scroll çalışır, içerik nav'ın altında kaybolmaz
+          marginBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
           background: 'var(--color-card)',
           border: '1px solid var(--color-border-hi)',
           borderRadius: '10px',
@@ -858,85 +770,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-      </div>
-
-      {/* ── EVENT & HİKÂYE POPUP ZİNCİRİ ──────────────────────────────────── */}
-      <HarvestModal
-        harvest={harvest}
-        onClose={() => { setHarvest(null); setShowLifeEvent(true); }}
-      />
-      <LifeEventModal
-        open={showLifeEvent}
-        onClose={() => { setShowLifeEvent(false); setShowStory(true); }}
-        onComplete={() => { if (fetchState) fetchState(); }}
-      />
-      <StoryModal
-        open={showStory}
-        onClose={() => setShowStory(false)}
-        onComplete={() => { if (fetchState) fetchState(); }}
-      />
-
-      {/* ── ADVANCE BUTTON (fixed, above nav) ─────────────────────────────── */}
-      <div className="lg:hidden" style={{
-        position: 'fixed',
-        bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))',
-        left: '50%', transform: 'translateX(-50%)',
-        width: 'min(480px, 100vw)',
-        padding: '0 0.875rem', zIndex: 55,
-      }}>
-        <button
-          onClick={handleAdvance}
-          disabled={advancing}
-          className="w-full animate-pulse-gold"
-          style={{
-            background: advancing
-              ? 'linear-gradient(180deg, #2A1C06 0%, #1A1004 100%)'
-              : 'linear-gradient(180deg, #3D2A08 0%, #2C1E06 35%, #1E1404 70%, #160E02 100%)',
-            border: '1.5px solid rgba(201,168,76,0.55)',
-            borderRadius: '8px',
-            padding: '0.85rem 1.25rem',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: '0.9rem', cursor: advancing ? 'wait' : 'pointer',
-            boxShadow: '0 0 30px rgba(201,168,76,0.25), 0 6px 24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(201,168,76,0.25)',
-            position: 'relative', overflow: 'hidden',
-            opacity: advancing ? 0.7 : 1,
-            transition: 'opacity 0.2s',
-          }}>
-          <div style={{
-            position: 'absolute', top: 0, left: '5%', right: '5%', height: '1px',
-            background: 'linear-gradient(to right, transparent, rgba(240,192,64,0.7) 30%, rgba(240,192,64,0.9) 50%, rgba(240,192,64,0.7) 70%, transparent)',
-          }} />
-          <CornerOrnament position="top-left" />
-          <CornerOrnament position="top-right" />
-          <CornerOrnament position="bottom-left" />
-          <CornerOrnament position="bottom-right" />
-
-          {advancing ? (
-            <Loader2 size={20} color="var(--color-gold)" className="animate-spin" style={{ filter: 'drop-shadow(0 0 6px rgba(201,168,76,0.6))' }} />
-          ) : (
-            <span style={{ fontSize: '1.2rem', filter: 'drop-shadow(0 0 6px rgba(201,168,76,0.6))' }}>⏳</span>
-          )}
-          <div style={{ textAlign: 'left' }}>
-            <div className="font-display font-bold uppercase"
-              style={{
-                fontSize: '0.9rem', color: 'var(--color-gold)',
-                letterSpacing: '0.2em',
-                textShadow: '0 0 14px rgba(201,168,76,0.6)',
-              }}>
-              {advancing ? 'AY İLERLİYOR…' : 'AYI İLERLE'}
-            </div>
-            <div className="font-serif"
-              style={{
-                fontSize: '0.68rem', color: 'var(--color-parchment-muted)',
-                fontStyle: 'italic', marginTop: '0.08rem',
-              }}>
-              {advancing ? 'Birkaç saniye bekle...' : advanceSub}
-            </div>
-          </div>
-          <div style={{ position: 'absolute', right: '1rem', opacity: advancing ? 0 : 0.5 }}>
-            <ChevronRight size={14} color="var(--color-gold)" strokeWidth={1.5} />
-          </div>
-        </button>
       </div>
 
     </div>
