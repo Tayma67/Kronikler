@@ -26,7 +26,10 @@ export default function Menu() {
         { to: "/oyun/firsatlar", icon: "🧭", label: "Fırsatlar" },
         { to: "/oyun/mektep", icon: "🎓", label: "Mektep" },
         { to: "/oyun/suc", icon: "🌒", label: "Gölge İşleri" },
+        { to: "/oyun/mulkler", icon: "🏰", label: "Mülkler" },
+        { to: "/oyun/tarih", icon: "📜", label: "Kronik" },
         { to: "/oyun/roman", icon: "📖", label: "Hayatın Romanı" },
+        { to: "/oyun/ayarlar", icon: "⚙️", label: "Ayarlar" },
       ].map((m) => (
         <Pressable key={m.to} onPress={() => router.push(m.to as any)} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.border, backgroundColor: C.card, marginBottom: 10 }}>
           <Text style={{ fontSize: 18 }}>{m.icon}</Text>

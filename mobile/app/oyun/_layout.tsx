@@ -26,6 +26,9 @@ export default function OyunLayout() {
       <Tabs.Screen name="firsatlar" options={{ href: null }} />
       <Tabs.Screen name="suc" options={{ href: null }} />
       <Tabs.Screen name="mektep" options={{ href: null }} />
+      <Tabs.Screen name="mulkler" options={{ href: null }} />
+      <Tabs.Screen name="tarih" options={{ href: null }} />
+      <Tabs.Screen name="ayarlar" options={{ href: null }} />
       <Tabs.Screen name="roman" options={{ href: null }} />
       <Tabs.Screen name="npc/[id]" options={{ href: null }} />
     </Tabs>

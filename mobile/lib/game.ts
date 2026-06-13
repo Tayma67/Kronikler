@@ -9,8 +9,14 @@ export interface Player {
   reputation: number; honor: number; fear: number; fame: number;
   stats: Stats; stat_points: number; dead: boolean; location_name: string;
   married: boolean; spouse_name: string | null; children: string[];
-  inventory: Record<string, number>;
+  inventory: Record<string, number>; properties: string[]; generation: number;
 }
+export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: number; income: number }> = {
+  tarla:    { name: "Tarla",    icon: "🌾", cost: 80,  income: 6 },
+  ev:       { name: "Ev",       icon: "🏠", cost: 150, income: 10 },
+  dukkan:   { name: "Dükkân",   icon: "🏪", cost: 300, income: 22 },
+  degirmen: { name: "Değirmen", icon: "🏭", cost: 600, income: 48 },
+};
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
@@ -41,6 +47,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       stats: { strength: 1, intelligence: 1, charisma: 1, stamina: 2 },
       stat_points: 0, dead: false, location_name: rnd(LOCATIONS),
       married: false, spouse_name: null, children: [], inventory: { ekmek: 2 },
+      properties: [], generation: 1,
     },
     history: [],
   };
@@ -85,6 +92,9 @@ export function advance(prev: GameState, n = 1): GameState {
     if (s.player.hunger < 20) s.player.health = Math.max(0, s.player.health - 6);
     else if (s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
     if (s.player.health <= 0) { die(s, `${s.player.name} açlık ve hastalığa yenik düştü.`); break; }
+    // Mülk pasif geliri
+    const inc = s.player.properties.reduce((a, t) => a + (PROPERTY_TYPES[t]?.income || 0), 0);
+    if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", `Mülklerinden ${inc} akçe gelir geldi.`); }
     push(s, s.player.age < 13 ? "cocukluk" : "gunluk", monthlyFlavor(s, cal));
     rollLifeEvents(s, cal);
   }
@@ -234,4 +244,37 @@ export function opportunitiesFor(s: GameState): Opportunity[] {
   const seed = (s.turn * 2654435761) >>> 0;
   return pool.filter((_, i) => ((seed >> i) & 1) === 1 || i === seed % pool.length)
     .map((o, i) => ({ ...o, id: `opp_${s.turn}_${i}` }));
+}
+
+// Mülk satın al
+export function buyProperty(prev: GameState, type: string): GameState {
+  const s = clone(prev); const p = s.player; const t = PROPERTY_TYPES[type];
+  if (!t || p.dead || p.money < t.cost) return s;
+  p.money -= t.cost; p.properties.push(type);
+  push(s, "mülk_alım", `${t.name} satın aldın. Adına bir tapu daha.`, "kişisel", true);
+  return s;
+}
+
+// Nesil mirası: ölünce çocukla devam et (varsa). Mülk + akçenin yarısı miras kalır.
+export function continueAsHeir(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!p.dead || p.children.length === 0) return s;
+  const heir = p.children[0];
+  const inheritMoney = Math.floor(p.money / 2) + 20;
+  const props = [...p.properties];
+  const gen = p.generation + 1;
+  const surname = p.surname;
+  const ns: GameState = {
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {},
+    player: {
+      name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
+      base_age: 7, age: 7, money: inheritMoney, profession: "işsiz", health: 100, hunger: 100,
+      reputation: Math.floor(p.reputation / 2), honor: 0, fear: 0, fame: Math.floor(p.fame / 3),
+      stats: { strength: 1, intelligence: 1, charisma: 1, stamina: 2 }, stat_points: gen,
+      dead: false, location_name: p.location_name, married: false, spouse_name: null, children: [],
+      inventory: { ekmek: 2 }, properties: props, generation: gen,
+    },
+    history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, atasının mirasını devraldı (${inheritMoney} akçe, ${props.length} mülk).`, scope: "kişisel", landmark: true }],
+  };
+  return ns;
 }

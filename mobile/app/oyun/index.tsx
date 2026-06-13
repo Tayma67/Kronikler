@@ -2,6 +2,7 @@ import { View, Text, ScrollView, Pressable, ImageBackground } from "react-native
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
+import { continueAsHeir } from "../../lib/game";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
 import { C, F } from "../../lib/theme";
@@ -22,7 +23,7 @@ function StatBar({ icon, value, max, color }: { icon: string; value: number; max
 export default function Dashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { state, doAdvance, doEat, doWork, resetGame } = useGame();
+  const { state, doAdvance, doEat, doWork, resetGame, apply } = useGame();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const cal = currentCalendar(state.turn);
@@ -68,13 +69,20 @@ export default function Dashboard() {
 
       {/* Aksiyonlar */}
       {p.dead ? (
-        <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border }}>
-          <Pressable onPress={() => router.push("/oyun/roman")} style={{ flex: 1, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 1 }}>📖 HAYATINI OKU</Text>
-          </Pressable>
-          <Pressable onPress={async () => { await resetGame(); router.replace("/yeni-oyun"); }} style={{ flex: 1, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206", letterSpacing: 1 }}>🕊 YENİ HAYAT</Text>
-          </Pressable>
+        <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border, gap: 10 }}>
+          {p.children.length > 0 && (
+            <Pressable onPress={() => apply(continueAsHeir)} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206", letterSpacing: 1 }}>🕊 NESLİ DEVAM ETTİR ({p.children[0]})</Text>
+            </Pressable>
+          )}
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <Pressable onPress={() => router.push("/oyun/roman")} style={{ flex: 1, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>📖 HAYATINI OKU</Text>
+            </Pressable>
+            <Pressable onPress={async () => { await resetGame(); router.replace("/yeni-oyun"); }} style={{ flex: 1, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>🌱 YENİ HAYAT</Text>
+            </Pressable>
+          </View>
         </View>
       ) : (
         <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border }}>
