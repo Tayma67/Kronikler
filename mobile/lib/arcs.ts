@@ -119,6 +119,38 @@ ARCS.push(
   },
 );
 
+ARCS.push(
+  {
+    id: "kitlik_kisi", title: "Kıtlık Kışı", icon: "skull",
+    blurb: "Amansız bir kış kapıda; ambarlar boşalıyor.",
+    when: (p) => p.age >= 14,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Kar her şeyi yuttu, halk aç. Elindeki azığı ne yaparsın?", choices: [
+        { label: "Komşularla paylaş", result: "Azığını paylaştın; karnın aç kaldı ama vicdanın tok.", delta: { hunger: -15, honor: 12, reputation: 8 }, next: "s2" },
+        { label: "Kendine sakla", result: "Azığını sakladın; sağ çıktın ama gözler üstünde.", delta: { reputation: -6 }, next: "s2" },
+      ]},
+      s2: { id: "s2", text: "Kış nihayet kırıldı. Hayatta kalanlar baharı karşılıyor.", choices: [
+        { label: "Şükür ziyafeti ver", result: "Sağ kalanlara küçük bir ziyafet verdin; umut yeşerdi.", delta: { money: -15, fame: 8, honor: 6 }, next: "end" },
+        { label: "Sessizce devam et", result: "Bahar geldi, hayat kaldığı yerden sürdü.", next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "sahte_dervis", title: "Sahte Derviş", icon: "hood",
+    blurb: "Kutsal görünüşlü bir yabancı, halkın parasına göz dikti.",
+    when: (p) => p.age >= 16 && p.reputation >= 8,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Bir 'derviş' mucizeler vaat edip bağış topluyor. Sen sahtekârlığı sezdin.", choices: [
+        { label: "Halkı uyar", result: "Sahtekârı ifşa ettin; halk sana minnettar, o kaçtı.", delta: { honor: 8, reputation: 8, fear: 3 }, next: "end" },
+        { label: "Ortak ol (pay al)", result: "Dolaba ortak oldun; kesen doldu ama bir sır taşıyorsun.", delta: { money: 40, honor: -10, fear: 4 }, next: "end" },
+        { label: "Karışma", result: "Sessiz kaldın; ne kazandın ne kaybettin.", next: "end" },
+      ]},
+    },
+  },
+);
+
 export function arcById(id: string | null): Arc | undefined { return ARCS.find((a) => a.id === id); }
 // Uygun, henüz tamamlanmamış ve aktif olmayan yaylar.
 export function availableArcs(p: Player, completed: string[], tension: number, activeId: string | null): Arc[] {

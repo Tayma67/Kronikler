@@ -985,6 +985,12 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "yatirim",  name: "İyi Baba/Ana",    desc: "Bir çocuğa 3 yatırım yap.",         icon: "family",       done: (s) => Object.values(s.player.child_invests || {}).some((l) => l.length >= 3) },
   { id: "gezgin",   name: "Diyar Gezgini",   desc: "Bir şehirde bulun.",                icon: "house",        done: (s) => placeKind(s.player.location_name) === "şehir" },
   { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
+  { id: "bilge",    name: "Yaşlı Bilge",     desc: "70 yaşını gör.",                    icon: "prayer-beads", done: (s) => s.player.age >= 70 },
+  { id: "imparator",name: "Mülk İmparatoru", desc: "8 mülke sahip ol.",                 icon: "castle",       done: (s) => s.player.properties.length >= 8 },
+  { id: "hunerbaz", name: "Hünerbaz",        desc: "10 hüner edin.",                    icon: "medal",        done: (s) => s.player.perks.length >= 10 },
+  { id: "onder",    name: "Diyar Önderi",    desc: "İtibarın 90'ı aşsın.",              icon: "crown",        done: (s) => s.player.reputation >= 90 },
+  { id: "kervanci", name: "Kervancı",        desc: "Ticaret becerini 8'e çıkar.",       icon: "scales",       done: (s) => s.player.skills.trade >= 8 },
+  { id: "efsane",   name: "Yaşayan Efsane",  desc: "Şöhretin 95'i aşsın.",              icon: "trophy",       done: (s) => s.player.fame >= 95 },
 ];
 export function achievementsOf(s: GameState): { a: Achievement; done: boolean }[] {
   return ACHIEVEMENTS.map((a) => ({ a, done: a.done(s) }));
