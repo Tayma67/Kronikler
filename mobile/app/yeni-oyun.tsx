@@ -12,6 +12,9 @@ export default function YeniOyun() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  const [cinematic, setCinematic] = useState<string[] | null>(null);
+  const [beat, setBeat] = useState(0);
+
   const start = async () => {
     setError("");
     const parts = fullName.trim().split(/\s+/).filter(Boolean);
@@ -20,9 +23,43 @@ export default function YeniOyun() {
     if (first.length < 2) { setError("Lütfen adını gir (en az 2 harf)"); return; }
     if (!gender) { setError("Lütfen cinsiyetini seç"); return; }
     setBusy(true);
-    try { await startGame(first, surname, gender); router.replace("/oyun"); }
-    finally { setBusy(false); }
+    try {
+      await startGame(first, surname, gender);
+      const cocuk = gender === "kadın" ? "bir kız çocuğu" : "bir oğlan çocuğu";
+      setCinematic([
+        "1247. Anadolu — küllerin ve közün diyarı. Sınır boylarında beylikler yükselir, kervanlar tozlu yollarda yürür, her ocakta bir hikâye pişer.",
+        `Karlı bir kış gecesi, küçük bir köy evinde ${cocuk} olarak gözlerini dünyaya açtın. Sana ${first} adını verdiler.`,
+        "Önünde koca bir ömür var: ekmeğini kazanacak, seveceksin, savaşacak, belki bir hanedan kuracaksın. Küllerin altındaki köz, senin hikâyenle alevlenecek.",
+      ]);
+      setBeat(0);
+    } finally { setBusy(false); }
   };
+
+  const nextBeat = () => {
+    if (!cinematic) return;
+    if (beat < cinematic.length - 1) setBeat(beat + 1);
+    else router.replace("/oyun");
+  };
+
+  if (cinematic) {
+    const last = beat === cinematic.length - 1;
+    return (
+      <ImageBackground source={require("../assets/yeni_oyun_bg.png")} resizeMode="cover" style={{ flex: 1, backgroundColor: C.bg }}>
+        <Pressable onPress={nextBeat} style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.74)", justifyContent: "center", paddingHorizontal: 30 }}>
+          <Text style={{ color: C.gold, textAlign: "center", fontSize: 13, letterSpacing: 4, marginBottom: 22 }}>❧ ⚜ ❧</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 19, color: C.parchment, textAlign: "center", lineHeight: 30 }}>{cinematic[beat]}</Text>
+          <View style={{ flexDirection: "row", justifyContent: "center", gap: 7, marginTop: 30 }}>
+            {cinematic.map((_, i) => (
+              <View key={i} style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: i === beat ? C.gold : "rgba(201,168,76,0.3)" }} />
+            ))}
+          </View>
+          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.parchmentMuted, textAlign: "center", marginTop: 28 }}>
+            {last ? "HAYATINA BAŞLA ›" : "DEVAM İÇİN DOKUN"}
+          </Text>
+        </Pressable>
+      </ImageBackground>
+    );
+  }
 
   const GenderBtn = ({ val, sym, label }: { val: "erkek" | "kadın"; sym: string; label: string }) => {
     const active = gender === val;
