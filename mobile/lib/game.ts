@@ -64,8 +64,8 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): string {
 
 function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const p = s.player;
-  if (p.age === 13 && p.profession === "işsiz") { p.profession = rnd(PROFS); push(s, "meslek_edinme", `Reşit oldun. ${cap(p.profession)} olarak hayata atıldın — dünya sana açıldı.`, "kişisel", true); }
-  if (p.age < 13 && chance(0.2)) { const k = rnd(["strength","intelligence","charisma","stamina"] as (keyof Stats)[]); p.stats[k] += 1; }
+  if (p.age === 13 && p.profession === "işsiz") { p.profession = rnd(PROFS); p.stat_points += 3; push(s, "meslek_edinme", `Reşit oldun. ${cap(p.profession)} olarak hayata atıldın — dünya sana açıldı.`, "kişisel", true); }
+  if (p.age < 13 && chance(0.25)) { p.stat_points += 1; push(s, "cocukluk", "Yeni bir şeyler öğrendin (özellik puanı kazandın)."); }
   if (p.dead) return;
   if (!p.married && p.age >= 18 && p.age < 55 && chance(0.06 + p.fame / 1000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.reputation += 5; push(s, "evlilik", `${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true); }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true); }
@@ -172,5 +172,13 @@ export function changeProfession(prev: GameState, prof: string): GameState {
   if (p.dead || p.age < 13 || prof === p.profession || !PROFS.includes(prof)) return s;
   p.profession = prof;
   push(s, "meslek_değişimi", `${cap(prof)} mesleğine geçtin.`, "kişisel", true);
+  return s;
+}
+
+// Özellik puanı harca.
+export function allocateStat(prev: GameState, key: keyof Stats): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.stat_points <= 0) return s;
+  p.stat_points -= 1; p.stats[key] += 1;
   return s;
 }

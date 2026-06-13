@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGame } from "../../lib/store";
-import { useItem } from "../../lib/game";
+import { useItem, allocateStat, Stats } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 import { C, F } from "../../lib/theme";
 
@@ -18,6 +18,22 @@ function Row({ k, v }: { k: string; v: string | number }) {
   );
 }
 
+function StatRow({ label, value, k, canAdd, onAdd }: { label: string; value: number; k: keyof Stats; canAdd: boolean; onAdd: (k: keyof Stats) => void }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border }}>
+      <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{label}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment }}>{value}</Text>
+        {canAdd && (
+          <Pressable onPress={() => onAdd(k)} style={{ width: 26, height: 26, borderRadius: 6, borderWidth: 1, borderColor: "rgba(201,168,76,0.6)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: C.gold, fontSize: 16, lineHeight: 18 }}>+</Text>
+          </Pressable>
+        )}
+      </View>
+    </View>
+  );
+}
+
 export default function Karakter() {
   const insets = useSafeAreaInsets();
   const { state, apply } = useGame();
@@ -29,12 +45,12 @@ export default function Karakter() {
       <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1 }}>{p.name}</Text>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 4 }}>{p.gender === "kadın" ? "Kadın" : "Erkek"} · {p.age} yaş · {p.location_name}</Text>
 
-      <Head t="Özellikler" />
+      <Head t={p.stat_points > 0 ? `Özellikler · ${p.stat_points} puan` : "Özellikler"} />
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
-        <Row k="Güç" v={p.stats.strength} />
-        <Row k="Zekâ" v={p.stats.intelligence} />
-        <Row k="Karizma" v={p.stats.charisma} />
-        <Row k="Dayanıklılık" v={p.stats.stamina} />
+        <StatRow label="Güç" value={p.stats.strength} k="strength" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
+        <StatRow label="Zekâ" value={p.stats.intelligence} k="intelligence" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
+        <StatRow label="Karizma" value={p.stats.charisma} k="charisma" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
+        <StatRow label="Dayanıklılık" value={p.stats.stamina} k="stamina" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
         <Row k="Meslek" v={p.profession === "işsiz" ? "İşsiz" : p.profession} />
         <Row k="Sağlık" v={Math.round(p.health)} />
         <Row k="Tokluk" v={Math.round(p.hunger)} />
