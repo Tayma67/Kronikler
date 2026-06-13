@@ -347,6 +347,18 @@ export default function Dashboard() {
   const _heroSeason = state?.calendar?.season || 'Yaz';
   const yetiskinHero = useHeroGorsel(_heroAge, _heroSeason);
 
+  // ROMAN sekmesi reşit olunca (13) ilk kez belirir — sessizce açılmasın,
+  // oyuncu fark edene dek nazik bir "yeni" közü yansın (bir kez).
+  const [romanSeen, setRomanSeen] = useState(() => {
+    try { return localStorage.getItem('kr_roman_gorulus') === '1'; } catch { return true; }
+  });
+  React.useEffect(() => {
+    if (activeTab === 'roman' && !romanSeen) {
+      setRomanSeen(true);
+      try { localStorage.setItem('kr_roman_gorulus', '1'); } catch {}
+    }
+  }, [activeTab, romanSeen]);
+
   // ── Loading / no state ─────────────────────────────────────────────────────
   if (!state || !state.player) {
     return (
@@ -789,6 +801,15 @@ export default function Dashboard() {
                     )}
                     <span style={{ fontSize: '0.65rem' }}>{tab.icon}</span>
                     {tab.label}
+                    {tab.key === 'roman' && !romanSeen && (
+                      <span aria-label="yeni" style={{
+                        position: 'absolute', top: '4px', right: '6px',
+                        width: '7px', height: '7px', borderRadius: '50%',
+                        background: 'radial-gradient(circle, #F0C040 0%, #C9A84C 70%)',
+                        boxShadow: '0 0 8px rgba(240,192,64,0.9)',
+                        animation: 'yeni-koz 1.6s ease-in-out infinite',
+                      }} />
+                    )}
                   </button>
                 );
               })}

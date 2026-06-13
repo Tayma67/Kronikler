@@ -230,6 +230,12 @@ body::after {
 
 .animate-pulse-gold { animation: pulse-gold 3s ease-in-out infinite; }
 
+/* "yeni" közü — bir sekme/özellik ilk kez açılınca nazikçe atar (reşit olma) */
+@keyframes yeni-koz {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 6px rgba(240,192,64,0.75); }
+  50%      { transform: scale(1.45); box-shadow: 0 0 12px rgba(240,192,64,1), 0 0 20px rgba(240,192,64,0.35); }
+}
+
 /* ── rise-in: 33 sayfada KULLANILIYOR ama tanımı yoktu → sayfa/kart giriş
    animasyonu hiç çalışmıyordu. Guidelines'ın "subtle fade-in" hedefi.
    Mount anında bir kez; reduced-motion'da kapanır (erişilebilirlik). ── */
