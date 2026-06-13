@@ -11,6 +11,7 @@ import { toast, Toaster } from "sonner";
 import InheritanceScreen from "@/pages/InheritanceScreen";
 import ComingOfAgeModal from "@/components/ComingOfAgeModal";
 import EmberAmbiance from "@/components/EmberAmbiance";
+import GameIcon from "@/components/ui/GameIcon";
 import HarvestModal from "@/components/HarvestModal";
 import LifeEventModal from "@/components/LifeEventModal";
 import StoryModal from "@/components/StoryModal";
@@ -25,24 +26,24 @@ const PRIMARY_NAV = [
 ];
 
 const SECONDARY_NAV = [
-  { to: "/oyun/harita",          label: "Şehir",        icon: Castle,         testid: "nav-map"         },
-  { to: "/oyun/meslek",          label: "Meslek",       icon: Briefcase,      testid: "nav-profession"  },
-  { to: "/oyun/factionlar",      label: "Örgütler",     icon: Shield,         testid: "nav-factions"    },
-  { to: "/oyun/tarih",           label: "Tarih",        icon: Scroll,         testid: "nav-history"     },
-  { to: "/oyun/firsatlar",       label: "Fırsatlar",    icon: Zap,            testid: "nav-opportunities" },
-  { to: "/oyun/dunya-haberleri", label: "Haberler",     icon: Newspaper,      testid: "nav-world-news"  },
-  { to: "/oyun/mektep",          label: "Mektep",       icon: GraduationCap,  testid: "nav-school"      },
-  { to: "/oyun/savas",           label: "Savaş",        icon: Sword,          testid: "nav-battle"      },
-  { to: "/oyun/npcler",          label: "Yakınlar",     icon: Users,          testid: "nav-npcs"        },
-  { to: "/oyun/suc",             label: "Gölge",        icon: Sword,          testid: "nav-crime"       },
-  { to: "/oyun/ticaret",         label: "Pazar",        icon: ArrowUpDown,    testid: "nav-trade"       },
-  { to: "/oyun/mulkler",         label: "Mülkler",      icon: Home,           testid: "nav-properties"  },
-  { to: "/oyun/hanedanlar",      label: "Rakipler",     icon: Swords,         testid: "nav-dynasties"   },
-  { to: "/oyun/hikayeler",       label: "Hikâyeler",    icon: BookOpen,       testid: "nav-stories"     },
-  { to: "/oyun/hanedan",         label: "Hanedan",      icon: Crown,          testid: "nav-legacy"      },
-  { to: "/oyun/ayarlar",         label: "Ayarlar",      icon: Settings,       testid: "nav-settings"    },
-  { to: "/oyun/nesil",           label: "Nesil",        icon: GitBranch,      testid: "nav-generation"  },
-  { to: "/oyun/kasaba",          label: "Kasaba",       icon: Coffee,         testid: "nav-townfeed"    },
+  { to: "/oyun/harita",          label: "Şehir",        icon: Castle,         gi: "castle",         testid: "nav-map"         },
+  { to: "/oyun/meslek",          label: "Meslek",       icon: Briefcase,      gi: "anvil",          testid: "nav-profession"  },
+  { to: "/oyun/factionlar",      label: "Örgütler",     icon: Shield,         gi: "banner",         testid: "nav-factions"    },
+  { to: "/oyun/tarih",           label: "Tarih",        icon: Scroll,         gi: "scroll-open",    testid: "nav-history"     },
+  { to: "/oyun/firsatlar",       label: "Fırsatlar",    icon: Zap,            gi: "compass",        testid: "nav-opportunities" },
+  { to: "/oyun/dunya-haberleri", label: "Haberler",     icon: Newspaper,      gi: "speaker",        testid: "nav-world-news"  },
+  { to: "/oyun/mektep",          label: "Mektep",       icon: GraduationCap,  gi: "book",           testid: "nav-school"      },
+  { to: "/oyun/savas",           label: "Savaş",        icon: Sword,          gi: "crossed-swords", testid: "nav-battle"      },
+  { to: "/oyun/npcler",          label: "Yakınlar",     icon: Users,          gi: "family",         testid: "nav-npcs"        },
+  { to: "/oyun/suc",             label: "Gölge",        icon: Sword,          gi: "hood",           testid: "nav-crime"       },
+  { to: "/oyun/ticaret",         label: "Pazar",        icon: ArrowUpDown,    gi: "coins",          testid: "nav-trade"       },
+  { to: "/oyun/mulkler",         label: "Mülkler",      icon: Home,           gi: "house",          testid: "nav-properties"  },
+  { to: "/oyun/hanedanlar",      label: "Rakipler",     icon: Swords,         gi: "crown",          testid: "nav-dynasties"   },
+  { to: "/oyun/hikayeler",       label: "Hikâyeler",    icon: BookOpen,       gi: "book",           testid: "nav-stories"     },
+  { to: "/oyun/hanedan",         label: "Hanedan",      icon: Crown,          gi: "crown",          testid: "nav-legacy"      },
+  { to: "/oyun/ayarlar",         label: "Ayarlar",      icon: Settings,       gi: "cog",            testid: "nav-settings"    },
+  { to: "/oyun/nesil",           label: "Nesil",        icon: GitBranch,      gi: "hourglass",      testid: "nav-generation"  },
+  { to: "/oyun/kasaba",          label: "Kasaba",       icon: Coffee,         gi: "beer",           testid: "nav-townfeed"    },
 ];
 
 // ── Mobile nav item ──────────────────────────────────────────────────────────
@@ -199,7 +200,9 @@ function MoreMenu({ items, state, onClose }) {
                   background: isActive ? 'rgba(201,168,76,0.12)' : 'var(--color-card)',
                   border: isActive ? '1px solid rgba(201,168,76,0.4)' : '1px solid var(--color-border)',
                 }}>
-                  <n.icon size={16} color={isActive ? 'var(--color-gold)' : 'var(--color-parchment-muted)'} strokeWidth={1.5} />
+                  {n.gi
+                    ? <GameIcon name={n.gi} size="18px" color={isActive ? 'var(--color-gold)' : 'var(--color-parchment-muted)'} />
+                    : <n.icon size={16} color={isActive ? 'var(--color-gold)' : 'var(--color-parchment-muted)'} strokeWidth={1.5} />}
                   <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.5rem', letterSpacing: '0.09em',
                                  textTransform: 'uppercase', color: isActive ? 'var(--color-gold)' : 'var(--color-parchment-muted)' }}>
                     {n.label}
