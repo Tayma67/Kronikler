@@ -307,7 +307,7 @@ function ChatModal({ npc, state, onClose }) {
             💬 Ona Sor <span className="text-stone-600 normal-case tracking-normal">· tanı, öğren — istediğin kadar</span>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
-            {topics.filter((t) => t.id !== "veda").slice(0, 6).map((t) => (
+            {topics.filter((t) => t.id !== "veda").slice(0, 8).map((t) => (
               <button
                 key={t.id}
                 onClick={() => speak(t.id, t.label)}

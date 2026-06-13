@@ -810,6 +810,7 @@ def _child_npc_speech(npc, topic, rng, age):
             "iş": ["Ben daha çalışmıyorum ki, küçüğüm.", "Oyun oynamayı seviyorum!", "Babam çalışıyor, ben bakıyorum."],
             "aile": ["Annemle babam var benim.", "Annem en iyisi!", "Kardeşimle oynuyoruz."],
             "dünya": ["Büyükler hep bir şey konuşuyor, anlamıyorum.", "Dışarısı kocamaaan!"],
+            "hakkimda": ["Sen iyisin galiba!", "Bilmem, yeni gördüm seni.", "Annem yabancılarla konuşma dedi ama..."],
             "hedef": ["Büyüyünce şövalye olucam!", "Çoook şeker yiyeceğim!", "Bilmem ki..."],
             "üzgün": ["Düştüm, dizim acıdı.", "Yok bir şeyim.", "Annemi istiyorum."],
             "veda": ["Bay bay!", "Güle güle!", "Yine gel oyna!"],
@@ -821,6 +822,7 @@ def _child_npc_speech(npc, topic, rng, age):
         "iş": ["Babama yardım ediyorum bazen.", "Daha işe başlamadım, küçüğüm.", "Ufak tefek işler yapıyorum."],
         "aile": ["Ailem köyde, kalabalığız.", "Annemle babamı çok severim.", "Evde herkes bir telaşta hep."],
         "dünya": ["Büyükler bir şeyler konuşuyor ama pek anlamıyorum.", "Dünyayı daha öğreniyorum işte."],
+        "hakkimda": ["İyi birine benziyorsun.", "Bilmiyorum, seni daha yeni tanıdım.", "Fena değilsin sanırım."],
         "hedef": ["Büyüyünce önemli biri olacağım!", "Babam gibi olmak istiyorum.", "Daha düşünmedim doğrusu."],
         "üzgün": ["Yok bir şeyim, geçer.", "Biraz canım sıkkın.", "İyiyim sayılır."],
         "veda": ["Görüşürüz!", "Hadi, bay bay!", "Güle güle, yine gel."],
@@ -1291,6 +1293,46 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
         if ctx.get("in_debt") and npc["goal"] in ("zengin_olmak", "borc_odemek"):
             parts.append("Ama borç gölge gibi arkamda, bunu da halletmem lazım.")
 
+    elif topic == "hakkimda":
+        # NPC'nin oyuncuya bakışı — ilişki kademesine göre dürüst cevap
+        if band == "düşman":
+            parts.append(_pick(rng, [
+                "Açık konuşayım: senden hiç hazzetmiyorum.",
+                "Sana zerre güvenim yok. Yolumdan çekil yeter.",
+                "Seni gördüğüme sevindiğimi söyleyemem.",
+            ]))
+        elif band == "rakip":
+            parts.append(_pick(rng, [
+                "Sana temkinli yaklaşıyorum, kusura bakma.",
+                "Henüz ısınamadım sana; mesafemizi koruyalım.",
+                "Niyetini tam çözemedim, o yüzden ölçülüyüm.",
+            ]))
+        elif band == "nötr":
+            parts.append(_pick(rng, [
+                "Seni daha yeni tanıyorum, fikrim oturmadı.",
+                "Fena birine benzemiyorsun ama göreceğiz.",
+                "Şimdilik ne iyi ne kötü — bir yabancısın.",
+            ]))
+        elif band == "arkadaş":
+            parts.append(_pick(rng, [
+                "Seni sevdim sayılır, dürüst birine benziyorsun.",
+                "Yüzün bana güven veriyor, fena değilsin.",
+                "Seninle konuşmak hoşuma gidiyor açıkçası.",
+            ]))
+        else:  # dost
+            parts.append(_pick(rng, [
+                "Sana gönülden güvenirim, bunu az insana söylerim.",
+                "Senin gibisi nadir bulunur, kıymetini bil.",
+                "Dostumsun sayılır — sırtımı sana dönerim.",
+            ]))
+        if ctx.get("player_feared") and band in ("nötr", "rakip", "arkadaş") and rng.random() < 0.5:
+            parts.append(_pick(rng, [
+                "Doğrusu senden biraz da çekiniyorum.",
+                "Adın korkuyla anılıyor; fark etmemek elde değil.",
+            ]))
+        elif ctx.get("player_honorable") and rng.random() < 0.4:
+            parts.append("Onurlu duruşun belli, bu hoşuma gidiyor.")
+
     elif topic == "veda":
         if band in ("düşman", "rakip"):
             parts.append(_pick(rng, [
@@ -1379,6 +1421,7 @@ DIALOG_TOPICS = [
     ("iş", "İşinden bahset"),
     ("aile", "Aileni sor"),
     ("dünya", "Dünyada ne oluyor?"),
+    ("hakkimda", "Beni nasıl buluyorsun?"),
     ("üzgün", "Neden üzgünsün?"),
     ("hedef", "Hedefin ne?"),
     ("veda", "Hoşçakal"),
