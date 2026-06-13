@@ -65,11 +65,28 @@ export const ITEMS: Record<string, Item> = {
   kalkan:       { id: "kalkan",       name: "Kalkan",       icon: "🛡", buy: 70,  sell: 28,  kind: "zirh", defense: 6 },
 };
 
-// Pazar malları — lokasyona göre küçük fiyat dalgalanması.
+// Her yerleşimin bir geçim uzmanlığı vardır; o gruptaki mallar yerel üretimle ucuzlar.
+const SPECIALTIES: { name: string; goods: string[] }[] = [
+  { name: "Tahıl ambarı", goods: ["bugday", "un", "ekmek"] },
+  { name: "Balıkçı iskelesi", goods: ["balik", "corba"] },
+  { name: "Demirci ocağı", goods: ["demir", "bicak", "kilic", "celik_kilic", "savas_balta", "kalkan"] },
+  { name: "Avcı yatağı", goods: ["et", "deri", "deri_zirh", "yay"] },
+  { name: "Bağ & arı", goods: ["bal", "sarap"] },
+  { name: "Şifacı yurdu", goods: ["sifa", "iksir"] },
+  { name: "Dokuma tezgâhı", goods: ["yun"] },
+];
+export function localSpecialty(locationSeed: number): { name: string; goods: string[] } {
+  return SPECIALTIES[locationSeed % SPECIALTIES.length];
+}
+// Pazar malları — yerel uzmanlık (ucuz) + kıtlık (pahalı) + küçük dalgalanma.
 export function marketGoods(locationSeed: number): Item[] {
   const r = mkRng(locationSeed);
+  const spec = localSpecialty(locationSeed);
+  const scarce = SPECIALTIES[(locationSeed + 3) % SPECIALTIES.length]; // burada üretilmeyen, pahalı grup
   return Object.values(ITEMS).map((it) => {
-    const m = 0.85 + r() * 0.4;
+    let m = 0.9 + r() * 0.25;
+    if (spec.goods.includes(it.id)) m *= 0.72;        // yerel bolluk
+    else if (scarce.goods.includes(it.id)) m *= 1.28; // yerel kıtlık
     return { ...it, buy: Math.max(1, Math.round(it.buy * m)), sell: Math.max(1, Math.round(it.sell * m)) };
   });
 }

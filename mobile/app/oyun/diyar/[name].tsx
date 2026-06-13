@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
 import { travelBy, placeKind, TRAVEL_ROUTES } from "../../../lib/game";
-import { cityInfo, marketGoods, locSeed } from "../../../lib/world";
+import { cityInfo, marketGoods, locSeed, localSpecialty } from "../../../lib/world";
 import { C, F } from "../../../lib/theme";
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -36,6 +36,7 @@ export default function DiyarDetay() {
         <Stat label="Vali" value={info.governor} />
         <Stat label="Güvenlik" value={`${info.security}/100`} />
         <Stat label="Refah" value={`${info.prosperity}/100`} />
+        <Stat label="Geçim" value={localSpecialty(locSeed(name)).name} />
       </View>
 
       <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>PAZARDAN</Text>
