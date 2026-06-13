@@ -337,3 +337,53 @@ export function leaveFaction(prev: GameState): GameState {
   push(s, "örgüt_ayrılma", `${f.name} saflarından ayrıldın.`, "kişisel");
   return s;
 }
+
+// ── Sosyal mevki: itibar · şeref · korku · şöhret ──
+// Mevki kademeleri (değere göre unvan).
+export interface SocialAxis { key: "reputation" | "honor" | "fear" | "fame"; label: string; icon: string; tiers: string[]; desc: string; }
+export const SOCIAL_AXES: SocialAxis[] = [
+  { key: "reputation", label: "İtibar", icon: "⚜", desc: "Halkın gözündeki saygınlığın.", tiers: ["Lekeli", "Sıradan", "Hatırı Sayılır", "Saygın", "Diyarın İncisi"] },
+  { key: "honor", label: "Şeref", icon: "🕊", desc: "Sözünün ve adaletinin ağırlığı.", tiers: ["Onursuz", "Sıradan", "Mert", "Şerefli", "Erdemin Timsali"] },
+  { key: "fear", label: "Korku", icon: "🌒", desc: "Adının uyandırdığı çekince.", tiers: ["Zararsız", "Bilinen", "Çekinilen", "Korkulan", "Diyarın Kâbusu"] },
+  { key: "fame", label: "Şöhret", icon: "🔥", desc: "Adının ne kadar uzağa ulaştığı.", tiers: ["Meçhul", "Tanınan", "Ünlü", "Meşhur", "Destanlaşan"] },
+];
+export function socialTier(axis: SocialAxis, value: number): string {
+  const v = Math.max(0, value);
+  if (v >= 80) return axis.tiers[4];
+  if (v >= 55) return axis.tiers[3];
+  if (v >= 30) return axis.tiers[2];
+  if (v >= 10) return axis.tiers[1];
+  return axis.tiers[0];
+}
+
+// Ziyafet ver: akçe harcayıp şöhret + itibar kazan.
+export function hostFeast(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13) return s;
+  const cost = 40;
+  if (p.money < cost) { push(s, "sosyal", "Ziyafet verecek akçen yok."); return s; }
+  p.money -= cost; p.fame = Math.min(100, p.fame + 8); p.reputation = Math.min(100, p.reputation + 5);
+  push(s, "sosyal", "Köye bir ziyafet verdin; adın dilden dile dolaştı.", "kişisel", true);
+  return s;
+}
+
+// Sadaka dağıt: akçe harcayıp şeref + itibar kazan.
+export function giveAlms(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13) return s;
+  const cost = 15;
+  if (p.money < cost) { push(s, "sosyal", "Sadaka verecek akçen yok."); return s; }
+  p.money -= cost; p.honor = Math.min(100, p.honor + 7); p.reputation = Math.min(100, p.reputation + 3);
+  push(s, "sosyal", "Yoksullara sadaka dağıttın; vicdanın hafifledi, şerefin yükseldi.");
+  return s;
+}
+
+// Gözdağı ver: korku kazan, itibarı biraz zedeler.
+export function intimidate(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13) return s;
+  const ok = Math.random() < 0.5 + p.stats.strength * 0.04;
+  if (ok) { p.fear = Math.min(100, p.fear + 8); p.reputation = Math.max(-100, p.reputation - 3); push(s, "sosyal", "Birine gözdağı verdin; adın çekinilen biri oldu."); }
+  else { p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); push(s, "sosyal", "Gözdağın ters tepti; itibarın zarar gördü."); }
+  return s;
+}
