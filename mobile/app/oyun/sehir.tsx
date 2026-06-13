@@ -20,6 +20,15 @@ export default function Sehir() {
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 8 }}>Küllerin diyarındaki yerleşimler. Gitmek dokun.</Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <Pressable onPress={() => router.push("/oyun/haberler")} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 10, padding: 14, marginBottom: 12 }}>
+          <Text style={{ fontSize: 20 }}>📜</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>Diyardan Haberler</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>Diyarın diline düşenler ve dedikodular</Text>
+          </View>
+          <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>›</Text>
+        </Pressable>
+
         {LOCATIONS.map((loc) => {
           const cur = loc === here;
           return (
