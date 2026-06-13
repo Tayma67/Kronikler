@@ -27,6 +27,7 @@ const EMOJI_GI = {
   "⚖": "scales", "⚖️": "scales", "📖": "book", "📚": "book", "📯": "speaker", "🗺️": "map", "🗺": "map",
   "🏠": "house", "🏚": "house", "🏚️": "house", "🜂": "flame", "👥": "family",
   "🌍": "map", "🌎": "map", "⚱": "tombstone", "🪦": "tombstone", "💰": "coins", "⚜": "crown",
+  "🛡": "shield", "🛡️": "shield", "✨": "star", "🌿": "herbs", "🎶": "lyre", "🐫": "camel",
 };
 
 export const TONES = {
@@ -120,7 +121,11 @@ export function Stat({ icon, label, value, max, tone = "gold", suffix = "" }) {
   const pct = max ? Math.max(0, Math.min(100, (value / max) * 100)) : null;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", padding: "0.3rem 0" }}>
-      {icon && <span style={{ fontSize: "0.85rem", width: "1.2rem", textAlign: "center", flexShrink: 0 }}>{icon}</span>}
+      {icon && (EMOJI_GI[icon]
+        ? <span style={{ width: "1.2rem", display: "inline-flex", justifyContent: "center", flexShrink: 0 }}>
+            <GameIcon name={EMOJI_GI[icon]} size="0.95rem" color={t.text} />
+          </span>
+        : <span style={{ fontSize: "0.85rem", width: "1.2rem", textAlign: "center", flexShrink: 0 }}>{icon}</span>)}
       <span className="font-display" style={{
         fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase",
         color: "var(--color-parchment-muted)", width: "5.5rem", flexShrink: 0,
