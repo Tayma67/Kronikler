@@ -10,6 +10,7 @@ export interface Player {
   stats: Stats; stat_points: number; dead: boolean; location_name: string;
   married: boolean; spouse_name: string | null; children: string[];
   inventory: Record<string, number>; properties: string[]; generation: number;
+  faction: string | null; faction_standing: Record<string, number>;
 }
 export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: number; income: number }> = {
   tarla:    { name: "Tarla",    icon: "🌾", cost: 80,  income: 6 },
@@ -17,6 +18,23 @@ export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: 
   dukkan:   { name: "Dükkân",   icon: "🏪", cost: 300, income: 22 },
   degirmen: { name: "Değirmen", icon: "🏭", cost: 600, income: 48 },
 };
+// ── Örgütler / Loncalar — 1247 Anadolu'sunun güç odakları ──
+export interface Faction {
+  id: string; name: string; icon: string; blurb: string;
+  stat: keyof Stats;            // örgüte uygun temel özellik
+  joinRep: number;              // katılmak için gereken örgüt itibarı (görevle kazanılır)
+  perk: string;                 // üyelik avantajı açıklaması
+  task: { label: string; reward: number; standing: number; desc: string };
+}
+export const FACTIONS: Faction[] = [
+  { id: "tuccar", name: "Tüccarlar Loncası", icon: "⚖️", blurb: "İpek yolunun akçesi onların avucunda döner.", stat: "charisma", joinRep: 30, perk: "Pazarda alış fiyatları senin için biraz düşer.", task: { label: "Kervan hesabı tut", reward: 28, standing: 10, desc: "Loncanın defterlerini denkleştir." } },
+  { id: "demirci", name: "Demirciler Loncası", icon: "⚒", blurb: "Köz ve örs; her kılıcın ve sabanın atası.", stat: "strength", joinRep: 30, perk: "İşten kazancın artar (zanaat eli).", task: { label: "Ocakta körük çek", reward: 24, standing: 10, desc: "Usta için ağır bir sipariş bitir." } },
+  { id: "asker", name: "Asker Ocağı", icon: "🛡", blurb: "Sınır boylarının kalkanı; sancağın gölgesi.", stat: "strength", joinRep: 40, perk: "Suç ve tehlikede sağlık kaybın azalır.", task: { label: "Devriyeye çık", reward: 32, standing: 12, desc: "Gece nöbetinde yolları kolla." } },
+  { id: "sifaci", name: "Şifacılar Meclisi", icon: "🌿", blurb: "Ot, dua ve sabır; canın sessiz bekçileri.", stat: "intelligence", joinRep: 30, perk: "Her ay az da olsa sağlık tazelenir.", task: { label: "Hastalara bak", reward: 18, standing: 10, desc: "Köyün dermansızlarına şifa dağıt." } },
+  { id: "golge", name: "Gölge Kardeşliği", icon: "🌒", blurb: "Adı anılmaz, yüzü görülmez; ama her kapıda bir kulağı vardır.", stat: "charisma", joinRep: 25, perk: "Gölge işlerinde yakalanma riskin azalır.", task: { label: "Haber taşı", reward: 22, standing: 12, desc: "Kardeşlik için sessizce bir sır ulaştır." } },
+];
+export function factionById(id: string | null): Faction | undefined { return FACTIONS.find((f) => f.id === id); }
+
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
@@ -48,6 +66,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       stat_points: 0, dead: false, location_name: rnd(LOCATIONS),
       married: false, spouse_name: null, children: [], inventory: { ekmek: 2 },
       properties: [], generation: 1,
+      faction: null, faction_standing: {},
     },
     history: [],
   };
@@ -91,6 +110,7 @@ export function advance(prev: GameState, n = 1): GameState {
     s.player.hunger = Math.max(0, s.player.hunger - drop);
     if (s.player.hunger < 20) s.player.health = Math.max(0, s.player.health - 6);
     else if (s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
+    if (s.player.faction === "sifaci" && s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
     if (s.player.health <= 0) { die(s, `${s.player.name} açlık ve hastalığa yenik düştü.`); break; }
     // Mülk pasif geliri
     const inc = s.player.properties.reduce((a, t) => a + (PROPERTY_TYPES[t]?.income || 0), 0);
@@ -106,7 +126,8 @@ export function work(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.profession === "işsiz") return s;
   const stat = p.stats[PROF_STAT[p.profession] || "stamina"];
-  const earn = 4 + stat * 2 + Math.floor(Math.random() * 6);
+  let earn = 4 + stat * 2 + Math.floor(Math.random() * 6);
+  if (p.faction === "demirci") earn = Math.round(earn * 1.2);
   p.money += earn; p.hunger = Math.max(0, p.hunger - 6);
   push(s, "çalışma", `${cap(p.profession)} olarak çalıştın, ${earn} akçe kazandın.`);
   return s;
@@ -135,9 +156,10 @@ export function useItem(prev: GameState, id: string): GameState {
 export function buyItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
-  if (p.money < g.buy) return s;
-  p.money -= g.buy; p.inventory[id] = (p.inventory[id] || 0) + 1;
-  push(s, "ticaret", `${g.name} aldın (${g.buy} akçe).`);
+  const price = p.faction === "tuccar" ? Math.max(1, Math.round(g.buy * 0.85)) : g.buy;
+  if (p.money < price) return s;
+  p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
+  push(s, "ticaret", `${g.name} aldın (${price} akçe).`);
   return s;
 }
 export function sellItem(prev: GameState, id: string): GameState {
@@ -208,14 +230,16 @@ export function doCrime(prev: GameState, kind: "yankesicilik" | "soygun"): GameS
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
   const base = kind === "soygun" ? 0.45 : 0.7;            // başarı şansı
-  const success = Math.random() < base + p.stats.charisma * 0.01;
+  const golgeBonus = p.faction === "golge" ? 0.12 : 0;     // Gölge Kardeşliği avantajı
+  const success = Math.random() < base + p.stats.charisma * 0.01 + golgeBonus;
   if (success) {
     const loot = kind === "soygun" ? 25 + Math.floor(Math.random() * 40) : 6 + Math.floor(Math.random() * 16);
     p.money += loot; p.fear = Math.min(100, p.fear + (kind === "soygun" ? 5 : 2));
     push(s, "suç", `${kind === "soygun" ? "Bir soygun" : "Bir yankesicilik"} işini başardın (+${loot} akçe).`);
   } else {
     const fine = Math.min(p.money, kind === "soygun" ? 30 : 10);
-    p.money -= fine; p.reputation = Math.max(-100, p.reputation - 8); p.health = Math.max(0, p.health - (kind === "soygun" ? 10 : 3));
+    const hurt = (kind === "soygun" ? 10 : 3) * (p.faction === "asker" ? 0.5 : 1);
+    p.money -= fine; p.reputation = Math.max(-100, p.reputation - 8); p.health = Math.max(0, p.health - hurt);
     push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.`, "kişisel");
   }
   return s;
@@ -273,8 +297,43 @@ export function continueAsHeir(prev: GameState): GameState {
       stats: { strength: 1, intelligence: 1, charisma: 1, stamina: 2 }, stat_points: gen,
       dead: false, location_name: p.location_name, married: false, spouse_name: null, children: [],
       inventory: { ekmek: 2 }, properties: props, generation: gen,
+      faction: null, faction_standing: {},
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, atasının mirasını devraldı (${inheritMoney} akçe, ${props.length} mülk).`, scope: "kişisel", landmark: true }],
   };
   return ns;
+}
+
+// ── Örgüt eylemleri ──
+// Örgüt için bir görev üstlen: akçe + örgüt itibarı kazandırır, biraz tokluk götürür.
+export function doFactionTask(prev: GameState, id: string): GameState {
+  const s = clone(prev); const p = s.player; const f = factionById(id);
+  if (!f || p.dead || p.age < 13) return s;
+  const statBonus = p.stats[f.stat] * 2;
+  const reward = f.task.reward + statBonus + Math.floor(Math.random() * 8);
+  p.money += reward; p.hunger = Math.max(0, p.hunger - 6);
+  p.faction_standing[id] = (p.faction_standing[id] || 0) + f.task.standing;
+  p.reputation = Math.min(100, p.reputation + 2);
+  push(s, "örgüt_görev", `${f.name} için "${f.task.label}" görevini gördün (+${reward} akçe, itibar arttı).`);
+  return s;
+}
+
+// Bir örgüte katıl: yeterli örgüt itibarı (görevle kazanılır) gerekir. Tek örgüt üyeliği.
+export function joinFaction(prev: GameState, id: string): GameState {
+  const s = clone(prev); const p = s.player; const f = factionById(id);
+  if (!f || p.dead || p.age < 13) return s;
+  if (p.faction === id) return s;
+  if ((p.faction_standing[id] || 0) < f.joinRep) return s;
+  p.faction = id; p.reputation = Math.min(100, p.reputation + 6);
+  push(s, "örgüt_katılım", `${f.name} saflarına katıldın. ${f.perk}`, "kişisel", true);
+  return s;
+}
+
+// Örgütten ayrıl.
+export function leaveFaction(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player; const f = factionById(p.faction);
+  if (!f) return s;
+  p.faction = null; p.reputation = Math.max(-100, p.reputation - 4);
+  push(s, "örgüt_ayrılma", `${f.name} saflarından ayrıldın.`, "kişisel");
+  return s;
 }

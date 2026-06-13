@@ -26,6 +26,7 @@ export default function Menu() {
         { to: "/oyun/firsatlar", icon: "🧭", label: "Fırsatlar" },
         { to: "/oyun/mektep", icon: "🎓", label: "Mektep" },
         { to: "/oyun/suc", icon: "🌒", label: "Gölge İşleri" },
+        { to: "/oyun/orgutler", icon: "⚜", label: "Örgütler / Loncalar" },
         { to: "/oyun/mulkler", icon: "🏰", label: "Mülkler" },
         { to: "/oyun/tarih", icon: "📜", label: "Kronik" },
         { to: "/oyun/roman", icon: "📖", label: "Hayatın Romanı" },

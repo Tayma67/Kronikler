@@ -5,6 +5,18 @@ import { GameState, newGame, advance, eat, work } from "./game";
 
 const KEY = "kronikler_save_v1";
 
+// Eski kayıtları yeni alanlarla uyumlulaştır (geriye dönük güvenli yükleme).
+function migrate(s: GameState): GameState {
+  const p: any = s.player || {};
+  if (p.faction === undefined) p.faction = null;
+  if (!p.faction_standing) p.faction_standing = {};
+  if (!p.inventory) p.inventory = {};
+  if (!p.properties) p.properties = [];
+  if (p.generation === undefined) p.generation = 1;
+  if (!s.relationships) s.relationships = {};
+  return s;
+}
+
 interface Ctx {
   state: GameState | null;
   loading: boolean;
@@ -24,7 +36,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      try { const raw = await AsyncStorage.getItem(KEY); if (raw) setState(JSON.parse(raw)); } catch {}
+      try { const raw = await AsyncStorage.getItem(KEY); if (raw) setState(migrate(JSON.parse(raw))); } catch {}
       setLoading(false);
     })();
   }, []);
