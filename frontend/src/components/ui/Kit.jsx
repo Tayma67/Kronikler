@@ -13,6 +13,17 @@
  *   <Coin>        — para gösterimi (her yerde aynı)
  */
 import React from "react";
+import GameIcon from "./GameIcon";
+
+// Sayfa başlığı emojilerini tutarlı game-icons'a çevirir (yoksa emoji kalır).
+const HEADER_EMOJI_GI = {
+  "⚔️": "crossed-swords", "⚔": "crossed-swords", "📜": "scroll-open", "🌒": "hood",
+  "🏰": "castle", "👶": "baby", "🎒": "backpack", "👑": "crown", "💍": "ring",
+  "🏘": "family", "🏘️": "family", "🔥": "flame", "🫂": "family", "👂": "speaker",
+  "🎓": "graduate-cap", "🏫": "graduate-cap", "🕯": "cog", "🕯️": "cog", "🏅": "medal",
+  "⚖": "scales", "⚖️": "scales", "📖": "book", "📯": "speaker", "🗺️": "map", "🗺": "map",
+  "🏠": "house", "🜂": "flame", "👥": "family",
+};
 
 export const TONES = {
   gold:  { text: "#C9A84C", border: "rgba(201,168,76,0.45)",  bg: "rgba(201,168,76,0.08)" },
@@ -43,7 +54,11 @@ export function PageHeader({ kicker, title, sub, icon, right }) {
             alignItems: "center", gap: "0.6rem",
             textShadow: "0 2px 12px rgba(0,0,0,0.6), 0 0 24px rgba(201,168,76,0.12)",
           }}>
-            {icon && <span style={{ fontSize: "1.25rem", filter: "drop-shadow(0 0 8px rgba(201,168,76,0.4))" }}>{icon}</span>}
+            {icon && (HEADER_EMOJI_GI[icon]
+              ? <span style={{ filter: "drop-shadow(0 0 8px rgba(201,168,76,0.4))", display: "inline-flex" }}>
+                  <GameIcon name={HEADER_EMOJI_GI[icon]} size="1.4rem" color="var(--color-gold)" />
+                </span>
+              : <span style={{ fontSize: "1.25rem", filter: "drop-shadow(0 0 8px rgba(201,168,76,0.4))" }}>{icon}</span>)}
             <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
           </h1>
           {sub && (
