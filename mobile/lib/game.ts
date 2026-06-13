@@ -182,3 +182,56 @@ export function allocateStat(prev: GameState, key: keyof Stats): GameState {
   p.stat_points -= 1; p.stats[key] += 1;
   return s;
 }
+
+// ── Mektep: çocuk/genç ders çalışır, zekâ/puan kazanır ──
+export function study(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead) return s;
+  p.hunger = Math.max(0, p.hunger - 5);
+  if (chance(0.5)) { p.stat_points += 1; push(s, "cocukluk", "Mektepte çalıştın, bir özellik puanı kazandın."); }
+  else push(s, "cocukluk", "Mektepte vakit geçirdin.");
+  return s;
+}
+
+// ── Suç/Gölge: risk/ödül ──
+export function doCrime(prev: GameState, kind: "yankesicilik" | "soygun"): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13) return s;
+  const base = kind === "soygun" ? 0.45 : 0.7;            // başarı şansı
+  const success = Math.random() < base + p.stats.charisma * 0.01;
+  if (success) {
+    const loot = kind === "soygun" ? 25 + Math.floor(Math.random() * 40) : 6 + Math.floor(Math.random() * 16);
+    p.money += loot; p.fear = Math.min(100, p.fear + (kind === "soygun" ? 5 : 2));
+    push(s, "suç", `${kind === "soygun" ? "Bir soygun" : "Bir yankesicilik"} işini başardın (+${loot} akçe).`);
+  } else {
+    const fine = Math.min(p.money, kind === "soygun" ? 30 : 10);
+    p.money -= fine; p.reputation = Math.max(-100, p.reputation - 8); p.health = Math.max(0, p.health - (kind === "soygun" ? 10 : 3));
+    push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.`, "kişisel");
+  }
+  return s;
+}
+
+// ── Fırsat: kabul edilince stat'a göre çözülür ──
+export interface Opportunity { id: string; title: string; desc: string; reward: number; risk: number; stat: keyof Stats; }
+export function resolveOpportunity(prev: GameState, opp: Opportunity): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead) return s;
+  const success = Math.random() > opp.risk - p.stats[opp.stat] * 0.03;
+  p.hunger = Math.max(0, p.hunger - 5);
+  if (success) { p.money += opp.reward; p.reputation = Math.min(100, p.reputation + 4); push(s, "görev_tamamlandı", `"${opp.title}" görevini başardın (+${opp.reward} akçe).`, "kişisel", true); }
+  else { p.reputation = Math.max(-100, p.reputation - 3); push(s, "görev_başarısız", `"${opp.title}" görevinde başarısız oldun.`); }
+  return s;
+}
+
+// Tura göre deterministik fırsat listesi.
+export function opportunitiesFor(s: GameState): Opportunity[] {
+  const pool: Omit<Opportunity, "id">[] = [
+    { title: "Pazarda Düzen", desc: "Voyvoda kavgayı yatıştırmanı istiyor.", reward: 30, risk: 0.4, stat: "charisma" },
+    { title: "Kervan Muhafızlığı", desc: "Tehlikeli yolda kervana eşlik et.", reward: 60, risk: 0.6, stat: "strength" },
+    { title: "Şifalı Ot Topla", desc: "Şifacı için dağdan ot getir.", reward: 20, risk: 0.25, stat: "stamina" },
+    { title: "Hesap Tut", desc: "Tüccarın defterini düzelt.", reward: 25, risk: 0.3, stat: "intelligence" },
+  ];
+  const seed = (s.turn * 2654435761) >>> 0;
+  return pool.filter((_, i) => ((seed >> i) & 1) === 1 || i === seed % pool.length)
+    .map((o, i) => ({ ...o, id: `opp_${s.turn}_${i}` }));
+}
