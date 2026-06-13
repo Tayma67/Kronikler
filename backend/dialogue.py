@@ -853,7 +853,7 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
             is_mother = npc.get("gender") == "kadın"
             if topic == "selam":
                 mom_lines = [
-                    f"Yavrum {player['name']}, gel buraya.",
+                    f"Yavrum {player['name'].split()[0]}, gel buraya.",
                     "Geldin demek, sofrada ekmek var.",
                     "Sıcak çorba pişiriyordum, koş gel.",
                     "Yine bir tarafın çamur olmuş, gel temizleyeyim.",
@@ -861,7 +861,7 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
                     "Seni gördüm, içim ferahladı.",
                 ]
                 dad_lines = [
-                    f"{player['name']}, durma boş, bir iş tutmaya bak.",
+                    f"{player['name'].split()[0]}, durma boş, bir iş tutmaya bak.",
                     "Gel buraya, sana bir şey göstereyim.",
                     "Hadi yardım eder misin? Kollarım yoruldu.",
                     "Aklında ne var, anlat bakayım.",
@@ -885,14 +885,14 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
                 parts = [_pick(rng, mom_iş if is_mother else dad_iş)]
             elif topic == "aile":
                 mom_aile = [
-                    f"Ailem sensin, {player['name']}. Başka ne lazım.",
+                    f"Ailem sensin, {player['name'].split()[0]}. Başka ne lazım.",
                     "Seni seviyorum, bu yeter.",
                     "Ailenin kıymetini bil, büyüyünce anlarsın.",
                 ]
                 dad_aile = [
                     "Ailemiz küçük ama güçlü.",
                     "Aileyi korumak her şeyin önünde gelir.",
-                    f"Sen varsın ya, {player['name']}, yeter.",
+                    f"Sen varsın ya, {player['name'].split()[0]}, yeter.",
                 ]
                 parts = [_pick(rng, mom_aile if is_mother else dad_aile)]
             elif topic == "dünya":
@@ -1023,7 +1023,7 @@ def generate_response(npc, relationship_score, topic, player, recent_world_event
     # ── Tekrar tespiti ──────────────────────────────────────────────────
     interactions = npc.get("interactions", {})
     repeat_count = interactions.get(topic, 0)
-    pname = player["name"]
+    pname = (player.get("name") or "").split()[0] or player.get("name") or "dostum"
 
     # ── TOPIC HANDLERlar ────────────────────────────────────────────────
 
