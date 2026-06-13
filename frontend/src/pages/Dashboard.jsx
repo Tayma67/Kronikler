@@ -137,6 +137,33 @@ const EVENT_MAP = {
 };
 const DEFAULT_EVENT = { type: 'OLAY', typeColor: '#C9A84C', icon: Star, iconColor: '#C9A84C', personal: false };
 
+// Olay tipi → game-icons.net ikonu (ASCII; CC BY 3.0). Eşi olmayan tip lucide'a düşer.
+const EVENT_GI = {
+  çalışma:'coins', ticaret:'coins', cocuk_yatirim:'coins', mülk_hasat:'coins',
+  kariyer_terfi:'crown', tahta_çıkış:'crown', şehir_kuruluşu:'castle',
+  meslek_değişimi:'book', meslek_edinme:'book', cocuk_meslek:'book', hikâye:'book', hikâye_teklifi:'book',
+  yolculuk:'walk',
+  savaş_zaferi:'crossed-swords', komutan_savaşı:'crossed-swords', savaş:'crossed-swords',
+  casus_belli:'crossed-swords', savaş_hareketi:'crossed-swords',
+  savaş_ilanı:'banner', işgal:'banner', raid:'banner', haydut_baskını:'banner',
+  savaş_kaybı:'shield', savaş_kaçış:'shield', kuşanma:'shield', savunma_mudahale:'shield',
+  ko_mudahale_zorunluluk:'shield', paralı_asker_kiralama:'shield', yardim_cagrisi:'shield', koalisyon_kuruldu:'shield',
+  evlilik:'ring', doğum:'baby',
+  suç:'hood', suç_yakalandı:'hood', gizli_cemiyet_ifsa:'hood', suikast:'hood', sabotaj:'hood',
+  manipülasyon:'hood', istihbarat_satis:'hood',
+  hapis:'prisoner', ceza:'prisoner', yakalandı:'prisoner',
+  görev_tamamlandı:'scroll-open', görev_başarısız:'scroll-open',
+  başarım:'trophy', rank_bonusu:'trophy',
+  mülk_alım:'house', mülk_satış:'house', mülk_yağma:'house', mülk_soygun:'house', mülk_durgun:'house',
+  ölüm:'tombstone', death:'tombstone',
+  kriz_veba:'skull',
+  festival:'party', şenlik:'party', vaaz:'party',
+  isyan:'fist', iyileşme:'healing', kriz_kuraklik:'sun', kriz_yangin:'flame',
+  kıtlık:'bucket', kıtlık_etkisi:'bucket', nesil_devri:'hourglass',
+  aile_krizi:'family', aile_destek:'family', aile_görevi_açıldı:'family',
+  life_event:'star', kullanım:'potion',
+};
+
 // Hayatın dönüm noktaları — günlükte altın bir vurgu ile öne çıkar.
 // Rutin satırların arasında, bir ömrün zirveleri göze çarpsın.
 const LANDMARK_TYPES = new Set([
@@ -170,6 +197,7 @@ function mapChronicleEvent(ev, currentTurn) {
   return {
     id:        ev.day + '_' + ev.type,
     icon:      cfg.icon,
+    gi:        EVENT_GI[ev.type] || null,
     iconColor: cfg.iconColor,
     type:      cfg.type,
     typeColor: cfg.typeColor,
@@ -220,7 +248,9 @@ function EventCard({ event, isLast }) {
             position: 'absolute', inset: 3, borderRadius: '50%',
             background: `radial-gradient(circle, ${event.iconColor}12 0%, transparent 70%)`,
           }} />
-          <IconComp size={12} color={isLandmark ? '#F0D88A' : event.iconColor} strokeWidth={1.8} />
+          {event.gi
+            ? <GameIcon name={event.gi} size="13px" color={isLandmark ? '#F0D88A' : event.iconColor} />
+            : <IconComp size={12} color={isLandmark ? '#F0D88A' : event.iconColor} strokeWidth={1.8} />}
         </div>
       </div>
       <div className="flex-1 card-shadow" style={{
