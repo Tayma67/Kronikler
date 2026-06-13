@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { GameProvider } from "@/lib/GameContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import "@/App.css";
 
 import NewGame from "@/pages/NewGame";
@@ -37,6 +38,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <GameProvider>
+        <ErrorBoundary>
         <Routes>
           <Route path="/" element={<Navigate to="/yeni-oyun" replace />} />
           <Route path="/yeni-oyun" element={<NewGame />} />
@@ -75,6 +77,7 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/oyun" replace />} />
         </Routes>
+        </ErrorBoundary>
       </GameProvider>
     </BrowserRouter>
   );
