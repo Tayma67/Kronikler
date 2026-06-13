@@ -305,7 +305,7 @@ function ChatModal({ npc, state, onClose }) {
         <div className="border-t border-stone-800 pt-3 space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[9px] font-heading tracking-[0.2em] text-amber-600/80 uppercase">
-              🃏 Konu Kartların
+              🃏 Konu Kartların <span className="text-stone-600 normal-case tracking-normal">· bu ay, derin etki</span>
             </span>
             {hand.warning && playedCards.length === 0 && (
               <span className="text-[9px] text-red-400/70 italic">{hand.warning}</span>
@@ -369,21 +369,28 @@ function ChatModal({ npc, state, onClose }) {
         </div>
       )}
 
-      {/* Hızlı konular (basit selamlaşma) */}
-      <div className="flex flex-wrap gap-1.5 pt-2">
-        {topics.slice(0, 4).map((t) => (
-          <button
-            key={t.id}
-            onClick={() => speak(t.id, t.label)}
-            disabled={busy || !npc.alive}
-            className={`btn-ghost-ash px-2.5 py-1 text-[10px] disabled:opacity-40 ${
-              t.id === lastTopic ? "border-amber-900/50 text-amber-500/80" : ""
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {/* Serbest sohbet — kartların yanı sıra sınırsız laflama */}
+      {topics.length > 0 && (
+        <div className="pt-2.5 mt-1 border-t border-stone-800/60">
+          <div className="text-[8px] font-heading tracking-[0.16em] uppercase text-stone-600 mb-1.5">
+            💬 Serbest Sohbet <span className="text-stone-700 normal-case tracking-normal">· sınırsız, küçük etki</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {topics.slice(0, 4).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => speak(t.id, t.label)}
+                disabled={busy || !npc.alive}
+                className={`btn-ghost-ash px-2.5 py-1 text-[10px] disabled:opacity-40 ${
+                  t.id === lastTopic ? "border-amber-900/50 text-amber-500/80" : ""
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </ModalShell>
   );
 }
