@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
+import LifeNovel from "@/components/LifeNovel";
+import HayatKarti from "@/components/HayatKarti";
 
 /**
  * S3 Makyaj — Hayat Romanı şeridi.
@@ -181,9 +183,62 @@ export default function SagaStrip({ saga }) {
   );
 }
 
+/** Romanı/kartı açan iki büyük giriş — sekmenin başında. */
+function RomanActions({ onNovel, onCard, loading }) {
+  const Btn = ({ icon, title, sub, onClick, accent }) => (
+    <button onClick={onClick} disabled={loading}
+      style={{
+        flex: 1, display: "flex", alignItems: "center", gap: "0.55rem",
+        padding: "0.6rem 0.7rem", textAlign: "left", minWidth: 0,
+        background: `linear-gradient(160deg, ${accent}1c 0%, rgba(8,5,2,0.5) 70%)`,
+        border: `1px solid ${accent}55`, borderRadius: "10px",
+        cursor: loading ? "default" : "pointer",
+        boxShadow: `0 2px 14px rgba(0,0,0,0.4), inset 0 1px 0 ${accent}1a`,
+      }}>
+      <span style={{ fontSize: "1.25rem", lineHeight: 1, filter: `drop-shadow(0 0 8px ${accent}55)` }}>{icon}</span>
+      <span style={{ minWidth: 0 }}>
+        <span className="font-display" style={{
+          display: "block", fontSize: "0.62rem", fontWeight: 700,
+          letterSpacing: "0.12em", color: accent,
+        }}>{title}</span>
+        <span className="font-serif" style={{
+          display: "block", fontSize: "0.58rem", fontStyle: "italic",
+          color: "var(--color-parchment-muted)", whiteSpace: "nowrap",
+          overflow: "hidden", textOverflow: "ellipsis",
+        }}>{sub}</span>
+      </span>
+    </button>
+  );
+  return (
+    <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.7rem" }}>
+      <Btn icon="📖" title="ROMANI OKU" sub="hayatını sayfa sayfa"
+        accent="#C9A84C" onClick={onNovel} />
+      <Btn icon="🪪" title="HAYAT KARTI" sub="özetini paylaş"
+        accent="#A78BDA" onClick={onCard} />
+    </div>
+  );
+}
+
 /** Günlük panelindeki ROMAN sekmesi — perdeler, nemesis, tohum fısıltısı. */
-export function SagaTab({ saga }) {
+export function SagaTab({ saga, state }) {
   const navigate = useNavigate();
+  const [showNovel, setShowNovel] = useState(false);
+  const [showCard, setShowCard]   = useState(false);
+  const [novelFull, setNovelFull] = useState(null);
+  const [loading, setLoading]     = useState(false);
+
+  const openNovel = async () => {
+    if (!novelFull) {
+      setLoading(true);
+      try {
+        const r = await api.get("/game/chronicle/full");
+        setNovelFull(r?.data || {});
+      } catch { setNovelFull({}); }
+      finally { setLoading(false); }
+    }
+    setShowNovel(true);
+  };
+
   const y = saga?.yonetmen;
   if (!y) {
     return (
@@ -196,8 +251,11 @@ export function SagaTab({ saga }) {
     );
   }
   const nemesis = (y.nemesisler || []).filter((n) => n.alive);
+  const player = state?.player || {};
   return (
     <div style={{ padding: "0.2rem 0.1rem" }}>
+      <RomanActions onNovel={openNovel} onCard={() => setShowCard(true)} loading={loading} />
+
       {/* Perdeler — romanın içindekiler sayfası */}
       {[...(y.perdeler || [])].reverse().map((p, i) => (
         <div key={p.no} style={{
@@ -248,6 +306,25 @@ export function SagaTab({ saga }) {
         }}>
           🌰 Geçmişte ektiklerinden {y.bekleyen_tohum} tohum toprağın altında bekliyor…
         </div>
+      )}
+
+      {showNovel && (
+        <LifeNovel
+          name={player.name}
+          baseAge={player.base_age ?? 7}
+          chapters={y.perdeler || []}
+          yearStories={novelFull?.year_stories || []}
+          history={state?.history || []}
+          alive={!player.dead}
+          onClose={() => setShowNovel(false)}
+        />
+      )}
+      {showCard && (
+        <HayatKarti
+          player={player}
+          calendar={state?.calendar || {}}
+          onClose={() => setShowCard(false)}
+        />
       )}
     </div>
   );

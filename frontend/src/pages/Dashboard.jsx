@@ -806,7 +806,7 @@ export default function Dashboard() {
             boxShadow: 'inset 0 0 50px rgba(201,168,76,0.05), inset 0 2px 0 rgba(201,168,76,0.07), inset 0 -2px 0 rgba(201,168,76,0.04)',
           }}>
             {activeTab === 'roman' ? (
-              <SagaTab saga={saga} />
+              <SagaTab saga={saga} state={state} />
             ) : currentTabEvents.length > 0 ? (
               currentTabEvents.map((ev, i) => (
                 <EventCard
