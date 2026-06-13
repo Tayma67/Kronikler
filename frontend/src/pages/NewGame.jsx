@@ -99,10 +99,14 @@ export default function NewGame() {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, overflow: "hidden", background: "#0a0703" }}>
+    <div style={{ position: "fixed", inset: 0, overflow: "hidden", background: "#0a0703",
+      display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {/* Görsel kendi en/boy oranına kilitli: her ekranda tam görünür,
+          tıklanabilir bölgeler (yüzde) görselle birebir hizalı kalır. */}
       <div style={{
-        position: "relative", height: "100%", width: "100%",
-        maxWidth: "480px", margin: "0 auto",
+        position: "relative",
+        width: "min(100vw, calc(100dvh * 853 / 1844))",
+        aspectRatio: "853 / 1844",
         backgroundImage: `url(${BG_IMAGE})`,
         backgroundSize: "cover", backgroundPosition: "center",
       }}>
