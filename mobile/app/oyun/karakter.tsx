@@ -1,7 +1,8 @@
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, factionById } from "../../lib/game";
+import { useItem, allocateStat, Stats, factionById, pendingPerkCount } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 import { Portre } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
@@ -42,6 +43,7 @@ function StatRow({ label, value, k, canAdd, onAdd }: { label: string; value: num
 
 export default function Karakter() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { state, apply } = useGame();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
@@ -67,6 +69,16 @@ export default function Karakter() {
         <Row k="Tokluk" v={Math.round(p.hunger)} />
         <Row k="Akçe" v={`${p.money} ⚜`} />
       </View>
+
+      <Pressable onPress={() => router.push("/oyun/beceriler")}>
+        <Head t={pendingPerkCount(p) > 0 ? `Beceriler · ${pendingPerkCount(p)} hüner seçilebilir` : "Beceriler"} />
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: pendingPerkCount(p) > 0 ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 10, paddingHorizontal: 14 }}>
+          <Row k="Savaş" v={p.skills.combat} />
+          <Row k="Ticaret" v={p.skills.trade} />
+          <Row k="Zanaat" v={p.skills.crafting} />
+          <Row k="Sosyal" v={p.skills.social} />
+        </View>
+      </Pressable>
 
       <Head t="Mevki & Bağlılık" />
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>

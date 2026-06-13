@@ -3,6 +3,7 @@ import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC } from "./world";
 
 export interface Stats { strength: number; intelligence: number; charisma: number; stamina: number; }
+export interface Skills { combat: number; trade: number; crafting: number; social: number; }
 export interface Player {
   name: string; surname: string; gender: "erkek" | "kadın"; base_age: number; age: number;
   money: number; profession: string; health: number; hunger: number;
@@ -11,6 +12,7 @@ export interface Player {
   married: boolean; spouse_name: string | null; children: string[];
   inventory: Record<string, number>; properties: string[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
+  skills: Skills; skill_xp: Skills; perks: string[];
 }
 export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: number; income: number }> = {
   tarla:    { name: "Tarla",    icon: "🌾", cost: 80,  income: 6 },
@@ -34,6 +36,8 @@ export const FACTIONS: Faction[] = [
   { id: "golge", name: "Gölge Kardeşliği", icon: "🌒", blurb: "Adı anılmaz, yüzü görülmez; ama her kapıda bir kulağı vardır.", stat: "charisma", joinRep: 25, perk: "Gölge işlerinde yakalanma riskin azalır.", task: { label: "Haber taşı", reward: 22, standing: 12, desc: "Kardeşlik için sessizce bir sır ulaştır." } },
 ];
 export function factionById(id: string | null): Faction | undefined { return FACTIONS.find((f) => f.id === id); }
+// Loncaya katılım eşiği (karizmatik hüneri %20 indirir). UI ile çekirdek tutarlı olsun diye.
+export function joinThreshold(p: Player, f: Faction): number { return p.perks.includes("karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep; }
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; }
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; }
@@ -69,6 +73,8 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       married: false, spouse_name: null, children: [], inventory: { ekmek: 2 },
       properties: [], generation: 1,
       faction: null, faction_standing: {},
+      skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
+      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [],
     },
     history: [],
   };
@@ -117,8 +123,12 @@ export function advance(prev: GameState, n = 1): GameState {
     else if (s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
     if (s.player.faction === "sifaci" && s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
     if (s.player.health <= 0 && !child) { die(s, `${s.player.name} açlık ve hastalığa yenik düştü.`); break; }
-    // Mülk pasif geliri
-    const inc = s.player.properties.reduce((a, t) => a + (PROPERTY_TYPES[t]?.income || 0), 0);
+    // Mülk pasif geliri (zanaat/ticaret hünerleriyle artar)
+    let inc = s.player.properties.reduce((a, t) => a + (PROPERTY_TYPES[t]?.income || 0), 0);
+    let pmult = 1;
+    if (hasPerk(s.player, "tuccar_prensi")) pmult += 0.3;
+    if (hasPerk(s.player, "tamirci")) pmult += 0.15;
+    inc = Math.round(inc * pmult);
     if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", `Mülklerinden ${inc} akçe gelir geldi.`); }
     push(s, s.player.age < 13 ? "cocukluk" : "gunluk", monthlyFlavor(s, cal));
     rollLifeEvents(s, cal);
@@ -131,9 +141,15 @@ export function work(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.profession === "işsiz") return s;
   const stat = p.stats[PROF_STAT[p.profession] || "stamina"];
-  let earn = 4 + stat * 2 + Math.floor(Math.random() * 6);
-  if (p.faction === "demirci") earn = Math.round(earn * 1.2);
+  let mult = 1;
+  if (p.faction === "demirci") mult += 0.2;
+  if (hasPerk(p, "tefeci")) mult += 0.2;
+  if (hasPerk(p, "becerikli")) mult += 0.15;
+  if (hasPerk(p, "usta_eli")) mult += 0.2;
+  if (hasPerk(p, "basyapit")) mult += 0.25;
+  const earn = Math.round((4 + stat * 2 + Math.floor(Math.random() * 6)) * mult);
   p.money += earn; p.hunger = Math.max(0, p.hunger - 6);
+  gainSkill(s, "crafting", 8);
   push(s, "çalışma", `${cap(p.profession)} olarak çalıştın, ${earn} akçe kazandın.`);
   return s;
 }
@@ -141,10 +157,11 @@ export function work(prev: GameState): GameState {
 export function eat(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   // önce envanterdeki yiyecek, yoksa 2 akçeye sokak yemeği
+  const bonus = hasPerk(p, "tutumlu") ? 10 : 0;
   const foodId = Object.keys(p.inventory).find((id) => p.inventory[id] > 0 && ITEMS[id]?.feed);
-  if (foodId) { const it = ITEMS[foodId]; p.inventory[foodId] -= 1; if (p.inventory[foodId] <= 0) delete p.inventory[foodId]; p.hunger = Math.min(100, p.hunger + (it.feed || 20)); push(s, "gunluk", `${it.name} yedin.`); return s; }
+  if (foodId) { const it = ITEMS[foodId]; p.inventory[foodId] -= 1; if (p.inventory[foodId] <= 0) delete p.inventory[foodId]; p.hunger = Math.min(100, p.hunger + (it.feed || 20) + bonus); push(s, "gunluk", `${it.name} yedin.`); return s; }
   if (p.money < 2) { push(s, "gunluk", "Yemek alacak akçen yok."); return s; }
-  p.money -= 2; p.hunger = Math.min(100, p.hunger + 25); push(s, "gunluk", "Sokaktan karnını doyurdun (2 akçe).");
+  p.money -= 2; p.hunger = Math.min(100, p.hunger + 25 + bonus); push(s, "gunluk", "Sokaktan karnını doyurdun (2 akçe).");
   return s;
 }
 
@@ -161,9 +178,12 @@ export function useItem(prev: GameState, id: string): GameState {
 export function buyItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
-  const price = p.faction === "tuccar" ? Math.max(1, Math.round(g.buy * 0.85)) : g.buy;
+  let disc = p.faction === "tuccar" ? 0.85 : 1;
+  if (hasPerk(p, "pazarlikci")) disc -= 0.10;
+  const price = Math.max(1, Math.round(g.buy * disc));
   if (p.money < price) return s;
   p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
+  gainSkill(s, "trade", 5);
   push(s, "ticaret", `${g.name} aldın (${price} akçe).`);
   return s;
 }
@@ -172,15 +192,19 @@ export function sellItem(prev: GameState, id: string): GameState {
   if (!(p.inventory[id] > 0)) return s;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
-  p.money += g.sell; push(s, "ticaret", `${g.name} sattın (+${g.sell} akçe).`);
+  let sell = g.sell;
+  if (hasPerk(p, "dilbaz")) sell = Math.round(sell * 1.25);
+  p.money += sell; gainSkill(s, "trade", 5); push(s, "ticaret", `${g.name} sattın (+${sell} akçe).`);
   return s;
 }
 
 // İlişki: sohbet et / hediye ver.
 export function talkTo(prev: GameState, npc: NPC): GameState {
-  const s = clone(prev);
-  const gain = 3 + Math.floor(s.player.stats.charisma);
+  const s = clone(prev); const p = s.player;
+  let gain = 3 + Math.floor(p.stats.charisma);
+  if (hasPerk(p, "dil_dokme")) gain = Math.round(gain * 1.5);
   s.relationships[npc.id] = Math.min(100, (s.relationships[npc.id] || 0) + gain);
+  gainSkill(s, "social", 6);
   push(s, "sohbet", `${npc.name} ile sohbet ettin. Aranız ısındı.`);
   return s;
 }
@@ -201,7 +225,8 @@ export function canCourt(p: Player, npc: NPC, rel: number): boolean {
 export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; const rel = s.relationships[npc.id] || 0;
   if (!canCourt(p, npc, rel)) return s;
-  const ok = Math.random() < Math.min(0.95, 0.25 + (rel - 50) * 0.012 + p.stats.charisma * 0.03);
+  const karizmaBonus = hasPerk(p, "karizmatik") ? 0.2 : 0;
+  const ok = Math.random() < Math.min(0.97, 0.25 + (rel - 50) * 0.012 + p.stats.charisma * 0.03 + karizmaBonus);
   if (ok) {
     p.married = true; p.spouse_name = npc.name; p.reputation = Math.min(100, p.reputation + 5);
     push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true);
@@ -244,7 +269,8 @@ export function study(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead) return s;
   p.hunger = Math.max(0, p.hunger - 5);
-  if (chance(0.5)) { p.stat_points += 1; push(s, "cocukluk", "Mektepte çalıştın, bir özellik puanı kazandın."); }
+  gainSkill(s, "social", 3);
+  if (hasPerk(p, "mucit") || chance(0.5)) { p.stat_points += 1; push(s, "cocukluk", "Mektepte çalıştın, bir özellik puanı kazandın."); }
   else push(s, "cocukluk", "Mektepte vakit geçirdin.");
   return s;
 }
@@ -256,6 +282,7 @@ export function doCrime(prev: GameState, kind: "yankesicilik" | "soygun"): GameS
   const base = kind === "soygun" ? 0.45 : 0.7;            // başarı şansı
   const golgeBonus = p.faction === "golge" ? 0.12 : 0;     // Gölge Kardeşliği avantajı
   const success = Math.random() < base + p.stats.charisma * 0.01 + golgeBonus;
+  gainSkill(s, "social", 4);
   if (success) {
     const loot = kind === "soygun" ? 25 + Math.floor(Math.random() * 40) : 6 + Math.floor(Math.random() * 16);
     p.money += loot; p.fear = Math.min(100, p.fear + (kind === "soygun" ? 5 : 2));
@@ -276,7 +303,13 @@ export function resolveOpportunity(prev: GameState, opp: Opportunity): GameState
   if (p.dead) return s;
   const success = Math.random() > opp.risk - p.stats[opp.stat] * 0.03;
   p.hunger = Math.max(0, p.hunger - 5);
-  if (success) { p.money += opp.reward; p.reputation = Math.min(100, p.reputation + 4); push(s, "görev_tamamlandı", `"${opp.title}" görevini başardın (+${opp.reward} akçe).`, "kişisel", true); }
+  if (success) {
+    let reward = opp.reward;
+    if (hasPerk(p, "keskin_goz")) reward = Math.round(reward * 1.3);
+    p.money += reward; p.reputation = Math.min(100, p.reputation + 4);
+    gainSkill(s, opp.stat === "strength" ? "combat" : opp.stat === "charisma" ? "social" : "trade", 7);
+    push(s, "görev_tamamlandı", `"${opp.title}" görevini başardın (+${reward} akçe).`, "kişisel", true);
+  }
   else { p.reputation = Math.max(-100, p.reputation - 3); push(s, "görev_başarısız", `"${opp.title}" görevinde başarısız oldun.`); }
   return s;
 }
@@ -339,6 +372,8 @@ export function continueAsHeir(prev: GameState): GameState {
       dead: false, location_name: p.location_name, married: false, spouse_name: null, children: [],
       inventory: { ekmek: 2 }, properties: props, generation: gen,
       faction: null, faction_standing: {},
+      skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
+      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [],
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, atasının mirasını devraldı (${inheritMoney} akçe, ${props.length} mülk).`, scope: "kişisel", landmark: true }],
   };
@@ -351,10 +386,14 @@ export function doFactionTask(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const f = factionById(id);
   if (!f || p.dead || p.age < 13) return s;
   const statBonus = p.stats[f.stat] * 2;
-  const reward = f.task.reward + statBonus + Math.floor(Math.random() * 8);
+  let reward = f.task.reward + statBonus + Math.floor(Math.random() * 8);
+  if (id === "tuccar" && hasPerk(p, "guvenli_kervan")) reward = Math.round(reward * 1.5);
   p.money += reward; p.hunger = Math.max(0, p.hunger - 6);
-  p.faction_standing[id] = (p.faction_standing[id] || 0) + f.task.standing;
+  let standing = f.task.standing;
+  if (hasPerk(p, "lider")) standing = Math.round(standing * 1.5);
+  p.faction_standing[id] = (p.faction_standing[id] || 0) + standing;
   p.reputation = Math.min(100, p.reputation + 2);
+  gainSkill(s, f.stat === "strength" ? "combat" : f.stat === "charisma" ? "social" : "trade", 6);
   push(s, "örgüt_görev", `${f.name} için "${f.task.label}" görevini gördün (+${reward} akçe, itibar arttı).`);
   return s;
 }
@@ -364,7 +403,8 @@ export function joinFaction(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const f = factionById(id);
   if (!f || p.dead || p.age < 13) return s;
   if (p.faction === id) return s;
-  if ((p.faction_standing[id] || 0) < f.joinRep) return s;
+  const need = hasPerk(p, "karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep;
+  if ((p.faction_standing[id] || 0) < need) return s;
   p.faction = id; p.reputation = Math.min(100, p.reputation + 6);
   push(s, "örgüt_katılım", `${f.name} saflarına katıldın. ${f.perk}`, "kişisel", true);
   return s;
@@ -403,7 +443,11 @@ export function hostFeast(prev: GameState): GameState {
   if (p.dead || p.age < 13) return s;
   const cost = 40;
   if (p.money < cost) { push(s, "sosyal", "Ziyafet verecek akçen yok."); return s; }
-  p.money -= cost; p.fame = Math.min(100, p.fame + 8); p.reputation = Math.min(100, p.reputation + 5);
+  let fame = 8, rep = 5;
+  if (hasPerk(p, "sohret_avcisi")) fame += 5;
+  if (hasPerk(p, "diplomat")) { fame = Math.round(fame * 1.5); rep = Math.round(rep * 1.5); }
+  p.money -= cost; p.fame = Math.min(100, p.fame + fame); p.reputation = Math.min(100, p.reputation + rep);
+  gainSkill(s, "social", 5);
   push(s, "sosyal", "Köye bir ziyafet verdin; adın dilden dile dolaştı.", "kişisel", true);
   return s;
 }
@@ -414,7 +458,11 @@ export function giveAlms(prev: GameState): GameState {
   if (p.dead || p.age < 13) return s;
   const cost = 15;
   if (p.money < cost) { push(s, "sosyal", "Sadaka verecek akçen yok."); return s; }
-  p.money -= cost; p.honor = Math.min(100, p.honor + 7); p.reputation = Math.min(100, p.reputation + 3);
+  let honor = 7, rep = 3;
+  if (hasPerk(p, "hosgoru")) honor += 5;
+  if (hasPerk(p, "diplomat")) { honor = Math.round(honor * 1.5); rep = Math.round(rep * 1.5); }
+  p.money -= cost; p.honor = Math.min(100, p.honor + honor); p.reputation = Math.min(100, p.reputation + rep);
+  gainSkill(s, "social", 5);
   push(s, "sosyal", "Yoksullara sadaka dağıttın; vicdanın hafifledi, şerefin yükseldi.");
   return s;
 }
@@ -423,8 +471,8 @@ export function giveAlms(prev: GameState): GameState {
 export function intimidate(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
-  const ok = Math.random() < 0.5 + p.stats.strength * 0.04;
-  if (ok) { p.fear = Math.min(100, p.fear + 8); p.reputation = Math.max(-100, p.reputation - 3); push(s, "sosyal", "Birine gözdağı verdin; adın çekinilen biri oldu."); }
+  const ok = hasPerk(p, "kan_donduran") || Math.random() < 0.5 + p.stats.strength * 0.04;
+  if (ok) { let fear = hasPerk(p, "kan_donduran") ? 12 : 8; if (hasPerk(p, "diplomat")) fear = Math.round(fear * 1.5); p.fear = Math.min(100, p.fear + fear); p.reputation = Math.max(-100, p.reputation - 3); push(s, "sosyal", "Birine gözdağı verdin; adın çekinilen biri oldu."); }
   else { p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); push(s, "sosyal", "Gözdağın ters tepti; itibarın zarar gördü."); }
   return s;
 }
@@ -439,9 +487,11 @@ export const ENCOUNTERS: Encounter[] = [
 ];
 // Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
 export function combatPower(p: Player): number {
-  let pw = p.stats.strength * 2 + p.stats.stamina;
+  let pw = p.stats.strength * 2 + p.stats.stamina + p.skills.combat;
   if ((p.inventory["bicak"] || 0) > 0) pw += 4;
   if (p.faction === "asker") pw += 3;
+  if (hasPerk(p, "cevik")) pw += 3;
+  if (hasPerk(p, "nisanci")) pw += 5;
   return pw;
 }
 export function fightEncounter(prev: GameState, id: string): GameState {
@@ -449,13 +499,20 @@ export function fightEncounter(prev: GameState, id: string): GameState {
   if (!e || p.dead || p.age < 13) return s;
   const pw = combatPower(p);
   const win = Math.random() < Math.max(0.1, Math.min(0.9, 0.5 + (pw - e.power) * 0.05));
+  gainSkill(s, "combat", win ? 12 : 6);
   if (win) {
-    p.money += e.reward; p.fame = Math.min(100, p.fame + e.fame); p.honor = Math.min(100, p.honor + e.honor);
+    let reward = e.reward;
+    if (hasPerk(p, "savas_ustasi")) reward = Math.round(reward * 1.5);
+    p.money += reward; p.fame = Math.min(100, p.fame + e.fame); p.honor = Math.min(100, p.honor + e.honor);
     p.fear = Math.min(100, p.fear + Math.round(e.fame / 2));
-    p.health = Math.max(1, p.health - Math.round(e.danger * 0.3));
-    push(s, "savaş_zafer", `${e.title}: Zafer senin! (+${e.reward} akçe, şöhretin arttı.)`, "kişisel", true);
+    let dmg = Math.round(e.danger * 0.3);
+    if (hasPerk(p, "kalkanli")) dmg = Math.round(dmg * 0.75);
+    const floor = hasPerk(p, "yilmaz") ? 5 : 1;
+    p.health = Math.max(floor, p.health - dmg);
+    push(s, "savaş_zafer", `${e.title}: Zafer senin! (+${reward} akçe, şöhretin arttı.)`, "kişisel", true);
   } else {
-    const hurt = e.danger + Math.floor(Math.random() * 10);
+    let hurt = e.danger + Math.floor(Math.random() * 10);
+    if (hasPerk(p, "kalkanli")) hurt = Math.round(hurt * 0.75);
     p.health = Math.max(0, p.health - hurt);
     push(s, "savaş_yenilgi", `${e.title}: Yara aldın, geri çekildin (−${hurt} sağlık).`, "kişisel");
     if (p.health <= 0) die(s, `${p.name}, ${e.title.toLowerCase()} sırasında can verdi.`);
@@ -509,5 +566,90 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string):
   if (delta.addItem) p.inventory[delta.addItem] = (p.inventory[delta.addItem] || 0) + 1;
   push(s, "olay", resultText, "kişisel");
   if (p.health <= 0) die(s, `${p.name} bu olaydan sağ çıkamadı.`);
+  return s;
+}
+
+// ── Beceri Ağacı — 4 dal (savaş/ticaret/zanaat/sosyal), her dalda 3/6/9'da perk seçimi ──
+export type SkillKey = keyof Skills;
+export const SKILL_META: { key: SkillKey; name: string; icon: string; blurb: string }[] = [
+  { key: "combat",   name: "Savaş",   icon: "crossed-swords", blurb: "Kılıç, kalkan ve cesaret." },
+  { key: "trade",    name: "Ticaret", icon: "scales",         blurb: "Pazarın ve kervanın dili." },
+  { key: "crafting", name: "Zanaat",  icon: "anvil",          blurb: "El emeği, göz nuru." },
+  { key: "social",   name: "Sosyal",  icon: "lyre",           blurb: "Söz, saygı ve nüfuz." },
+];
+export interface Perk { id: string; tree: SkillKey; tier: number; name: string; desc: string; }
+// Her dal için 3 kademe (3/6/9), her kademede 2 seçenek.
+export const PERKS: Perk[] = [
+  // SAVAŞ
+  { id: "cevik",      tree: "combat", tier: 3, name: "Çevik",         desc: "Savaş gücün +3." },
+  { id: "kalkanli",   tree: "combat", tier: 3, name: "Kalkanlı",      desc: "Çatışmada aldığın hasar %25 azalır." },
+  { id: "nisanci",    tree: "combat", tier: 6, name: "Nişancı",       desc: "Savaş gücün +5." },
+  { id: "kan_donduran",tree:"combat", tier: 6, name: "Kan Donduran",  desc: "Gözdağı her zaman tutar, korku kazancın artar." },
+  { id: "savas_ustasi",tree:"combat", tier: 9, name: "Savaş Ustası",  desc: "Çatışma ödülleri %50 artar." },
+  { id: "yilmaz",     tree: "combat", tier: 9, name: "Yılmaz",        desc: "Zafer kazandığında sağlığın 5'in altına düşmez." },
+  // TİCARET
+  { id: "pazarlikci", tree: "trade",  tier: 3, name: "Pazarlıkçı",    desc: "Alışta %10 indirim." },
+  { id: "dilbaz",     tree: "trade",  tier: 3, name: "Dilbaz Tâcir",  desc: "Satışta %25 fazla akçe." },
+  { id: "keskin_goz", tree: "trade",  tier: 6, name: "Keskin Göz",    desc: "Fırsat ödülleri %30 artar." },
+  { id: "guvenli_kervan",tree:"trade",tier: 6, name: "Güvenli Kervan",desc: "Tüccar lonca görevleri %50 fazla kazandırır." },
+  { id: "tuccar_prensi",tree:"trade", tier: 9, name: "Tüccar Prensi", desc: "Mülk gelirin %30 artar." },
+  { id: "tefeci",     tree: "trade",  tier: 9, name: "Tefeci",        desc: "Çalışma kazancın %20 artar." },
+  // ZANAAT
+  { id: "becerikli",  tree: "crafting",tier:3, name: "Becerikli",     desc: "Çalışma kazancın %15 artar." },
+  { id: "tutumlu",    tree: "crafting",tier:3, name: "Tutumlu",       desc: "Yemek 10 fazla tokluk verir." },
+  { id: "usta_eli",   tree: "crafting",tier:6, name: "Usta Eli",      desc: "Çalışma kazancın ek %20 artar." },
+  { id: "tamirci",    tree: "crafting",tier:6, name: "Tamirci",       desc: "Mülk gelirin %15 artar." },
+  { id: "basyapit",   tree: "crafting",tier:9, name: "Başyapıt",      desc: "Çalışma kazancın ek %25 artar." },
+  { id: "mucit",      tree: "crafting",tier:9, name: "Mucit",         desc: "Mektepte her çalışma puan kazandırır." },
+  // SOSYAL
+  { id: "dil_dokme",  tree: "social", tier: 3, name: "Dil Dökme",     desc: "Sohbette ilişki kazancın %50 artar." },
+  { id: "hosgoru",    tree: "social", tier: 3, name: "Hoşgörü",       desc: "Sadaka şeref kazancını artırır." },
+  { id: "karizmatik", tree: "social", tier: 6, name: "Karizmatik",    desc: "Evlilik teklifin ve loncaya katılımın kolaylaşır." },
+  { id: "sohret_avcisi",tree:"social",tier: 6, name: "Şöhret Avcısı", desc: "Ziyafet şöhret kazancını artırır." },
+  { id: "diplomat",   tree: "social", tier: 9, name: "Diplomat",      desc: "Tüm itibar eylemleri %50 daha etkili." },
+  { id: "lider",      tree: "social", tier: 9, name: "Lider",         desc: "Lonca görev itibarın %50 artar." },
+];
+export function perkById(id: string): Perk | undefined { return PERKS.find((p) => p.id === id); }
+export function hasPerk(p: Player, id: string): boolean { return p.perks.includes(id); }
+
+// Beceri seviyesi: her 100 xp = 1 seviye (maks 10).
+export function skillLevel(xp: number): number { return Math.max(0, Math.min(10, Math.floor(xp / 100))); }
+const SKILL_TIERS = [3, 6, 9];
+// Bir dalda hak edilmiş ama henüz seçilmemiş perk kademesi var mı?
+export function pendingPerkTier(p: Player, tree: SkillKey): number | null {
+  const lvl = p.skills[tree];
+  for (const t of SKILL_TIERS) {
+    if (lvl >= t) {
+      const chosen = p.perks.some((id) => { const pk = perkById(id); return pk && pk.tree === tree && pk.tier === t; });
+      if (!chosen) return t;
+    }
+  }
+  return null;
+}
+export function pendingPerkCount(p: Player): number {
+  return SKILL_META.reduce((n, m) => n + (pendingPerkTier(p, m.key) !== null ? 1 : 0), 0);
+}
+// XP ekle; seviye atlarsa günlüğe işle (saf — clone edilmiş state üstünde çağrılır).
+function gainSkill(s: GameState, key: SkillKey, xp: number) {
+  const p = s.player;
+  const before = p.skills[key];
+  p.skill_xp[key] += xp;
+  const after = skillLevel(p.skill_xp[key]);
+  if (after > before) {
+    p.skills[key] = after;
+    const m = SKILL_META.find((x) => x.key === key)!;
+    push(s, "beceri", `${m.name} becerin ${after}. seviyeye yükseldi.${SKILL_TIERS.includes(after) ? " Yeni bir hüner seçebilirsin!" : ""}`);
+  } else {
+    p.skills[key] = after;
+  }
+}
+// Bir perk seç (kademe hak edilmişse).
+export function choosePerk(prev: GameState, id: string): GameState {
+  const s = clone(prev); const p = s.player; const pk = perkById(id);
+  if (!pk || hasPerk(p, id)) return s;
+  if (p.skills[pk.tree] < pk.tier) return s;
+  if (pendingPerkTier(p, pk.tree) !== pk.tier) return s; // bu kademe zaten doldurulmuş
+  p.perks.push(id);
+  push(s, "hüner", `Yeni hüner: ${pk.name} — ${pk.desc}`, "kişisel", true);
   return s;
 }

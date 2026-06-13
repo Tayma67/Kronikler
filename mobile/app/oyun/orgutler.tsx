@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction } from "../../lib/game";
+import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 
 const STAT_TR: Record<string, string> = { strength: "Güç", intelligence: "Zekâ", charisma: "Karizma", stamina: "Dayanıklılık" };
@@ -48,7 +48,8 @@ export default function Orgutler() {
         {FACTIONS.map((f) => {
           const standing = p.faction_standing[f.id] || 0;
           const isMember = p.faction === f.id;
-          const canJoin = !isMember && standing >= f.joinRep;
+          const need = joinThreshold(p, f);
+          const canJoin = !isMember && standing >= need;
           const canAct = p.age >= 13 && !p.dead;
           return (
             <View key={f.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: isMember ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 10, padding: 14, marginBottom: 10 }}>
@@ -62,10 +63,10 @@ export default function Orgutler() {
               <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 6, lineHeight: 18 }}>{f.blurb}</Text>
 
               <View style={{ marginTop: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.parchmentMuted, letterSpacing: 1 }}>İTİBAR {standing}/{f.joinRep}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.parchmentMuted, letterSpacing: 1 }}>İTİBAR {standing}/{need}</Text>
                 {isMember && <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 1 }}>ÜYE ✓</Text>}
               </View>
-              <Bar value={standing} max={f.joinRep} />
+              <Bar value={standing} max={need} />
 
               <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
                 <Pressable disabled={!canAct} onPress={() => apply((s) => doFactionTask(s, f.id))} style={{ flex: 1, paddingVertical: 10, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, alignItems: "center" }}>
