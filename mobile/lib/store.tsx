@@ -1,7 +1,7 @@
 // Oyun durumu deposu — React context + AsyncStorage (offline kalıcı kayıt).
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GameState, newGame, advance, eat } from "./game";
+import { GameState, newGame, advance, eat, work } from "./game";
 
 const KEY = "kronikler_save_v1";
 
@@ -11,6 +11,7 @@ interface Ctx {
   startGame: (first: string, surname: string, gender: "erkek" | "kadın") => Promise<void>;
   doAdvance: (n?: number) => Promise<void>;
   doEat: () => Promise<void>;
+  doWork: () => Promise<void>;
   resetGame: () => Promise<void>;
 }
 
@@ -47,12 +48,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setState((cur) => { if (!cur) return cur; const next = eat(cur); AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {}); return next; });
   }, []);
 
+  const doWork = useCallback(async () => {
+    setState((cur) => { if (!cur) return cur; const next = work(cur); AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {}); return next; });
+  }, []);
+
   const resetGame = useCallback(async () => {
     await AsyncStorage.removeItem(KEY); setState(null);
   }, []);
 
   return (
-    <GameContext.Provider value={{ state, loading, startGame, doAdvance, doEat, resetGame }}>
+    <GameContext.Provider value={{ state, loading, startGame, doAdvance, doEat, doWork, resetGame }}>
       {children}
     </GameContext.Provider>
   );

@@ -20,7 +20,7 @@ function StatBar({ icon, value, max, color }: { icon: string; value: number; max
 
 export default function Dashboard() {
   const insets = useSafeAreaInsets();
-  const { state, doAdvance, doEat } = useGame();
+  const { state, doAdvance, doEat, doWork } = useGame();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const cal = currentCalendar(state.turn);
@@ -66,9 +66,14 @@ export default function Dashboard() {
 
       {/* Aksiyonlar */}
       <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border }}>
-        <Pressable onPress={() => doEat()} disabled={p.dead} style={{ paddingVertical: 14, paddingHorizontal: 18, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+        <Pressable onPress={() => doEat()} disabled={p.dead} style={{ paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
           <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>🍞 YE</Text>
         </Pressable>
+        {p.age >= 13 && p.profession !== "işsiz" && !p.dead && (
+          <Pressable onPress={() => doWork()} style={{ paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+            <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>⚒ ÇALIŞ</Text>
+          </Pressable>
+        )}
         <Pressable onPress={() => doAdvance(1)} disabled={p.dead} style={{ flex: 1, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
           <Text style={{ fontFamily: F.display, fontSize: 14, color: "#1a1206", letterSpacing: 2 }}>⏳ AYI İLERLE</Text>
         </Pressable>
