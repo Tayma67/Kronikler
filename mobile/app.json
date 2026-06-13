@@ -28,6 +28,13 @@
       "expo-font"
     ],
     "scheme": "kronikler",
-    "backgroundColor": "#0a0703"
+    "backgroundColor": "#0a0703",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "be71635a-55c3-41eb-8830-c17f2ed88ccf"
+      }
+    },
+    "owner": "berkaycnklc"
   }
 }
