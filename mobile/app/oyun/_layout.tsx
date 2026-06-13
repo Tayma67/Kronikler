@@ -21,6 +21,8 @@ export default function OyunLayout() {
       <Tabs.Screen name="menu" options={{ title: "Menü", tabBarIcon: ({ focused }) => <TabIcon label="📜" focused={focused} /> }} />
       {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}
       <Tabs.Screen name="pazar" options={{ href: null }} />
+      <Tabs.Screen name="sehir" options={{ href: null }} />
+      <Tabs.Screen name="roman" options={{ href: null }} />
       <Tabs.Screen name="npc/[id]" options={{ href: null }} />
     </Tabs>
   );

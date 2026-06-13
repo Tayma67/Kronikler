@@ -17,7 +17,7 @@ export interface GameState {
   relationships: Record<string, number>; world: { ready: boolean };
 }
 
-const LOCATIONS = ["Üzümlü", "Akpınar", "Demirhan", "Yenişehir", "Karaağaç"];
+export const LOCATIONS = ["Üzümlü", "Akpınar", "Demirhan", "Yenişehir", "Karaağaç"];
 const PROFS = ["çiftçi","demirci","tüccar","balıkçı","avcı","marangoz","çoban","fırıncı","asker","müzisyen"];
 const PROF_STAT: Record<string, keyof Stats> = { çiftçi:"stamina", demirci:"strength", tüccar:"charisma", balıkçı:"stamina", avcı:"strength", marangoz:"intelligence", çoban:"stamina", fırıncı:"intelligence", asker:"strength", müzisyen:"charisma" };
 const SPOUSE_K = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif","Nur","Reyhan"];
@@ -153,5 +153,14 @@ export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   p.inventory[itemId] -= 1; if (p.inventory[itemId] <= 0) delete p.inventory[itemId];
   s.relationships[npc.id] = Math.min(100, (s.relationships[npc.id] || 0) + 12);
   push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`);
+  return s;
+}
+
+// Seyahat: başka bir yerleşime git (pazar/atmosfer değişir, biraz tokluk gider).
+export function travelTo(prev: GameState, dest: string): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || dest === p.location_name) return s;
+  p.location_name = dest; p.hunger = Math.max(0, p.hunger - 5);
+  push(s, "yolculuk", `${dest} yerleşimine gittin.`);
   return s;
 }
