@@ -104,7 +104,8 @@ function AdvanceNavButton({ advancing, onAdvance }) {
     <button onClick={() => onAdvance(1)} disabled={advancing} data-testid="nav-advance"
       style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
                justifyContent: 'center', gap: 3, paddingTop: 4,
-               background: 'none', border: 'none', cursor: advancing ? 'wait' : 'pointer' }}>
+               background: 'none', border: 'none', cursor: advancing ? 'wait' : 'pointer',
+               position: 'relative', zIndex: 2 }}>
       <div className={advancing ? '' : 'animate-pulse-gold'} style={{
         width: 50, height: 50, borderRadius: 14, marginTop: -16,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
