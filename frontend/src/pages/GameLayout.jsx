@@ -10,6 +10,7 @@ import {
 import { toast, Toaster } from "sonner";
 import InheritanceScreen from "@/pages/InheritanceScreen";
 import ComingOfAgeModal from "@/components/ComingOfAgeModal";
+import EmberAmbiance from "@/components/EmberAmbiance";
 import { api } from "@/lib/api";
 
 // ── Nav definitions ──────────────────────────────────────────────────────────
@@ -265,6 +266,7 @@ export default function GameLayout() {
   return (
     <div style={{ height: '100vh', background: 'var(--color-bg)', display: 'flex', overflow: 'hidden' }}>
       <Toaster theme="dark" position="top-center" />
+      <EmberAmbiance />
 
       {/* ── Desktop Sidebar ──────────────────────────────────────────────── */}
       <aside className="hidden lg:flex" style={{
