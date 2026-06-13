@@ -167,7 +167,7 @@ export default function Settings() {
       </Panel>
 
       {/* ── İstatistikler ── */}
-      {stats && (
+      {stats?.records && (
         <>
           <div style={{ height: "0.75rem" }} />
           <Panel title="İstatistikler" icon="📊" tone="gold">
@@ -201,7 +201,7 @@ export default function Settings() {
       )}
 
       {/* ── Başarımlar ── */}
-      {achievements && (
+      {achievements?.achievements && (
         <>
           <div style={{ height: "0.75rem" }} />
           <Panel title="Başarımlar" icon="🏆" tone="gold"

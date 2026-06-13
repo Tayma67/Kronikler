@@ -69,7 +69,8 @@ export default function SagaStrip({ saga }) {
   const y = saga?.yonetmen;
   if (!y) return null;
 
-  const perde = (y.perdeler || [])[y.perdeler.length - 1];
+  const perdeler = y.perdeler || [];
+  const perde = perdeler[perdeler.length - 1];
   const yay = YAY_CFG[y.aktif_yay] || YAY_CFG.kurulus;
   const gerilim = Math.max(0, Math.min(100, y.gerilim || 0));
   const nemesis = (y.nemesisler || []).filter((n) => n.alive);

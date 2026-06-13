@@ -20,7 +20,8 @@ export default function WeekPlanCard() {
   }, []);
   useEffect(() => { refresh(); }, [refresh]);
 
-  if (!data) return null;
+  // Eksik/kısmi yanıtta kart sessizce gizlenir (ana ekran çökmesin)
+  if (!data?.mevcut_plan || !data?.secenekler) return null;
 
   const { mevcut_plan: plan, secenekler } = data;
 
