@@ -2,7 +2,8 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { factionById } from "../../lib/game";
+import { factionById, playerHousePower, houseAttitude, attitudeLabel } from "../../lib/game";
+import { generateDynasties } from "../../lib/world";
 import { C, F } from "../../lib/theme";
 
 export default function Hanedan() {
@@ -59,6 +60,27 @@ export default function Hanedan() {
             ))}
           </>
         )}
+
+        {/* Diyarın hanedanları — güç sıralaması ve tavır */}
+        {(() => {
+          const mine = { id: "mine", name: (p.surname ? `${p.surname} Hanedanı` : `${p.name} Hanedanı`), power: playerHousePower(p), mine: true, attitude: 0 };
+          const rivals = generateDynasties(state.seed).map((h) => ({ id: h.id, name: h.name, power: h.power, mine: false, attitude: houseAttitude(p, h) }));
+          const all = [...rivals, mine].sort((a, b) => b.power - a.power);
+          return (
+            <>
+              <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 18, marginBottom: 8 }}>Diyarın Hanedanları</Text>
+              {all.map((h, i) => (
+                <View key={h.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: h.mine ? "rgba(201,168,76,0.1)" : C.card, borderWidth: 1, borderColor: h.mine ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 9, padding: 11, marginBottom: 7 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim, width: 24 }}>{i + 1}.</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 13, color: h.mine ? C.gold : C.parchment }}>{h.name}{h.mine ? " (sen)" : ""}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>Güç {h.power}{!h.mine ? ` · ${attitudeLabel(h.attitude)}` : ""}</Text>
+                  </View>
+                </View>
+              ))}
+            </>
+          );
+        })()}
       </ScrollView>
     </View>
   );

@@ -836,3 +836,20 @@ export function advanceArc(prev: GameState, choiceIdx: number): GameState {
   if (s.player.health <= 0) die(s, `${s.player.name} hikâyesinin ortasında can verdi.`);
   return s;
 }
+
+// ── Rakip hanedanlar: oyuncunun gücü ve hanedanlara tavrı ──
+export function playerHousePower(p: Player): number {
+  return Math.round(p.fame + p.generation * 10 + p.properties.length * 6 + p.reputation / 2 + p.skills.combat);
+}
+// Bir hanedanın oyuncuya tavrı (-100..100): nam/itibar artırır, gurur+korku düşürür.
+export function houseAttitude(p: Player, house: { pride: number; trait: string }): number {
+  let a = (p.reputation + p.honor / 2) - house.pride / 2 - p.fear / 3;
+  if (house.trait === "kindar") a -= p.fear / 4;
+  if (house.trait === "cömert") a += (p.nam?.comert || 0) / 4;
+  if (house.trait === "sadık") a += p.honor / 4;
+  if (house.trait === "ihtiraslı") a -= p.fame / 6;
+  return Math.max(-100, Math.min(100, Math.round(a)));
+}
+export function attitudeLabel(a: number): string {
+  if (a >= 40) return "Dost"; if (a >= 10) return "Dostane"; if (a > -10) return "Tarafsız"; if (a > -40) return "Soğuk"; return "Hasım";
+}

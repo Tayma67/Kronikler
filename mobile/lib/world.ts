@@ -54,3 +54,19 @@ export function marketGoods(locationSeed: number): Item[] {
 export function locSeed(name: string): number {
   let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h;
 }
+
+// Rakip hanedanlar — diyarın güç odakları (deterministik).
+export interface RivalHouse { id: string; name: string; power: number; pride: number; trait: string; }
+const HOUSE_NAMES = ["Karaoğulları","Akhanlılar","Demiroğulları","Şahinoğulları","Bozkurtlar","Yıldızoğulları","Çelikhanlar","Aslanoğulları","Toprakoğulları","Gümüşhanlılar","Kayıoğulları","Doğanoğulları"];
+const HOUSE_TRAITS = ["gururlu","ihtiraslı","temkinli","cömert","kindar","sadık"];
+export function generateDynasties(seed: number, n = 10): RivalHouse[] {
+  const r = mkRng((seed ^ 0x9e3779b9) >>> 0);
+  const names = [...HOUSE_NAMES];
+  const out: RivalHouse[] = [];
+  for (let i = 0; i < n && names.length; i++) {
+    const idx = Math.floor(r() * names.length);
+    const name = names.splice(idx, 1)[0];
+    out.push({ id: "house_" + i, name, power: 40 + Math.floor(r() * 56), pride: 20 + Math.floor(r() * 60), trait: pick(HOUSE_TRAITS, r) });
+  }
+  return out;
+}
