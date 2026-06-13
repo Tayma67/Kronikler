@@ -131,6 +131,13 @@ const EVENT_MAP = {
 };
 const DEFAULT_EVENT = { type: 'OLAY', typeColor: '#C9A84C', icon: Star, iconColor: '#C9A84C', personal: false };
 
+// Hayatın dönüm noktaları — günlükte altın bir vurgu ile öne çıkar.
+// Rutin satırların arasında, bir ömrün zirveleri göze çarpsın.
+const LANDMARK_TYPES = new Set([
+  'evlilik', 'doğum', 'kariyer_terfi', 'tahta_çıkış', 'savaş_zaferi',
+  'başarım', 'şehir_kuruluşu', 'nesil_devri', 'komutan_savaşı',
+]);
+
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 function fameLabel(fame) {
   if (fame >= 80) return 'EFSANEVİ';
@@ -166,6 +173,7 @@ function mapChronicleEvent(ev, currentTurn) {
     timeDot:   cfg.typeColor,
     badge:     null,
     urgent:    false,
+    landmark:  LANDMARK_TYPES.has(ev.type),
   };
 }
 
@@ -174,6 +182,7 @@ function mapChronicleEvent(ev, currentTurn) {
 function EventCard({ event, isLast }) {
   const IconComp = event.icon;
   const isUrgent = event.urgent;
+  const isLandmark = event.landmark;
   return (
     <div className="relative flex gap-0" style={{ paddingBottom: isLast ? 0 : '0.5rem' }}>
       {!isLast && (
@@ -187,12 +196,16 @@ function EventCard({ event, isLast }) {
       <div style={{ width: '2.85rem', flexShrink: 0, paddingTop: '0.7rem', zIndex: 1 }}>
         <div style={{
           width: '2.1rem', height: '2.1rem', borderRadius: '50%',
-          background: isUrgent
+          background: isLandmark
+            ? `radial-gradient(circle at 40% 30%, rgba(224,188,90,0.30) 0%, rgba(46,32,10,0.95) 72%)`
+            : isUrgent
             ? `radial-gradient(circle at 40% 30%, rgba(224,90,48,0.18) 0%, var(--color-card) 70%)`
             : `radial-gradient(circle at 40% 30%, rgba(201,168,76,0.10) 0%, var(--color-card) 70%)`,
-          border: `1.5px solid ${isUrgent ? event.iconColor + '70' : 'rgba(184,148,64,0.35)'}`,
+          border: `1.5px solid ${isLandmark ? 'rgba(224,188,90,0.8)' : isUrgent ? event.iconColor + '70' : 'rgba(184,148,64,0.35)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: isUrgent
+          boxShadow: isLandmark
+            ? `0 0 18px rgba(224,188,90,0.5), inset 0 1px 0 rgba(255,255,255,0.10)`
+            : isUrgent
             ? `0 0 14px ${event.iconColor}35, inset 0 1px 0 rgba(255,255,255,0.05)`
             : `0 0 10px rgba(184,148,64,0.18), inset 0 1px 0 rgba(255,255,255,0.04)`,
           position: 'relative',
@@ -201,24 +214,29 @@ function EventCard({ event, isLast }) {
             position: 'absolute', inset: 3, borderRadius: '50%',
             background: `radial-gradient(circle, ${event.iconColor}12 0%, transparent 70%)`,
           }} />
-          <IconComp size={12} color={event.iconColor} strokeWidth={1.8} />
+          <IconComp size={12} color={isLandmark ? '#F0D88A' : event.iconColor} strokeWidth={1.8} />
         </div>
       </div>
       <div className="flex-1 card-shadow" style={{
-        background: isUrgent
+        background: isLandmark
+          ? `linear-gradient(160deg, rgba(224,188,90,0.16) 0%, rgba(46,32,10,0.55) 45%, var(--color-card) 100%)`
+          : isUrgent
           ? `linear-gradient(160deg, rgba(224,90,48,0.06) 0%, var(--color-card) 40%)`
           : 'var(--color-card)',
-        border: `1px solid ${isUrgent ? event.iconColor + '30' : 'var(--color-border)'}`,
-        borderLeft: `2.5px solid ${event.iconColor}55`,
+        border: `1px solid ${isLandmark ? 'rgba(224,188,90,0.45)' : isUrgent ? event.iconColor + '30' : 'var(--color-border)'}`,
+        borderLeft: `2.5px solid ${isLandmark ? 'rgba(224,188,90,0.9)' : event.iconColor + '55'}`,
         borderRadius: '8px',
         padding: '0.75rem 0.9rem',
         marginBottom: '0.1rem',
         position: 'relative',
         overflow: 'hidden',
+        boxShadow: isLandmark ? '0 0 18px rgba(224,188,90,0.12)' : undefined,
       }}>
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-          background: `linear-gradient(to right, ${event.iconColor}22, ${event.iconColor}44 40%, transparent)`,
+          background: isLandmark
+            ? `linear-gradient(to right, rgba(224,188,90,0.55), rgba(224,188,90,0.85) 40%, transparent)`
+            : `linear-gradient(to right, ${event.iconColor}22, ${event.iconColor}44 40%, transparent)`,
         }} />
         <div className="flex items-center justify-between" style={{ marginBottom: '0.4rem' }}>
           <div className="flex items-center gap-1.5">
@@ -227,9 +245,15 @@ function EventCard({ event, isLast }) {
               background: event.typeColor, boxShadow: `0 0 5px ${event.typeColor}`, flexShrink: 0,
             }} />
             <span className="font-display uppercase"
-              style={{ fontSize: '0.55rem', color: event.typeColor, letterSpacing: '0.16em', fontWeight: 700 }}>
+              style={{ fontSize: '0.55rem', color: isLandmark ? '#E6C46A' : event.typeColor, letterSpacing: '0.16em', fontWeight: 700 }}>
               {event.type}
             </span>
+            {isLandmark && (
+              <span title="Dönüm noktası" style={{
+                fontSize: '0.6rem', color: '#E6C46A', lineHeight: 1,
+                filter: 'drop-shadow(0 0 5px rgba(224,188,90,0.6))',
+              }}>⚜</span>
+            )}
           </div>
           <div className="flex items-center gap-1.5">
             <span style={{
