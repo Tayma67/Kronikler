@@ -473,6 +473,25 @@ export function allocateStat(prev: GameState, key: keyof Stats): GameState {
   return s;
 }
 
+// ── Mektep: 4 ders, her biri farklı yön geliştirir ──
+export interface Subject { id: string; name: string; icon: string; desc: string; }
+export const SUBJECTS: Subject[] = [
+  { id: "din",      name: "Din", icon: "prayer-beads", desc: "Dindarlık ve gönül huzuru." },
+  { id: "matematik",name: "Matematik", icon: "scales", desc: "Zekâ ve ticaret aklı." },
+  { id: "edebiyat", name: "Edebiyat", icon: "book", desc: "Karizma ve hitabet." },
+  { id: "beden",    name: "Beden", icon: "fist", desc: "Güç ve savaş kabiliyeti." },
+];
+export function studySubject(prev: GameState, id: string): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead) return s;
+  p.hunger = Math.max(0, p.hunger - 5);
+  const lucky = hasPerk(p, "mucit") || chance(0.5);
+  if (id === "din") { bumpNam(p, "dindar", 4); if (lucky) { p.honor = Math.min(100, p.honor + 2); push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu."); } else push(s, "mektep", "Mektepte dua ve hikmet dinledin."); }
+  else if (id === "matematik") { gainSkill(s, "trade", 5); if (lucky) { p.stat_points += 1; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın."); } else push(s, "mektep", "Rakamlarla boğuştun."); }
+  else if (id === "edebiyat") { gainSkill(s, "social", 5); if (lucky) { p.stat_points += 1; push(s, "mektep", "Edebiyat çalıştın; bir özellik puanı kazandın."); } else push(s, "mektep", "Beyitler ezberledin."); }
+  else { gainSkill(s, "combat", 5); if (lucky) { p.stat_points += 1; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın."); } else push(s, "mektep", "Ter döktün, güçlendin."); }
+  return s;
+}
 // ── Mektep: çocuk/genç ders çalışır, zekâ/puan kazanır ──
 export function study(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;

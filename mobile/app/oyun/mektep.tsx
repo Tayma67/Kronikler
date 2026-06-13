@@ -1,8 +1,9 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { study } from "../../lib/game";
+import { SUBJECTS, studySubject } from "../../lib/game";
+import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 
 export default function Mektep() {
@@ -17,14 +18,21 @@ export default function Mektep() {
         <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>Mektep</Text>
         <View style={{ width: 40 }} />
       </View>
-      <View style={{ padding: 20 }}>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentDim, marginBottom: 16, lineHeight: 20 }}>
-          {p.age < 18 ? "Mektepte çalışmak özellik puanı kazandırır. Çocukluk öğrenme zamanıdır." : "Mektep yılların geride kaldı ama yine de bir şeyler okuyabilirsin."}
-        </Text>
-        <Pressable onPress={() => apply(study)} disabled={p.dead} style={{ paddingVertical: 16, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)", alignItems: "center" }}>
-          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 1 }}>📖 DERS ÇALIŞ</Text>
-        </Pressable>
-      </View>
+      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentDim, paddingHorizontal: 16, marginBottom: 12, lineHeight: 20 }}>
+        {p.age < 18 ? "Bir ders seç ve çalış. Çocukluk, öğrenmenin en bereketli çağıdır." : "Mektep yılları geçti ama ilim her yaşta makbuldür."}
+      </Text>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        {SUBJECTS.map((sub) => (
+          <Pressable key={sub.id} onPress={() => apply((s) => studySubject(s, sub.id))} disabled={p.dead} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 9 }}>
+            <GameIcon name={sub.icon} size={20} color={C.gold} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{sub.name}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{sub.desc}</Text>
+            </View>
+            <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>ÇALIŞ ›</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
     </View>
   );
 }
