@@ -18,6 +18,7 @@ function migrate(s: GameState): GameState {
   if (!p.perks) p.perks = [];
   if (!s.relationships) s.relationships = {};
   if (!s.dynasty) s.dynasty = [];
+  if (!s.npc_state) s.npc_state = {};
   return s;
 }
 

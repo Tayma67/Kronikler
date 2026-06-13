@@ -1,6 +1,7 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC } from "./world";
+import { converse, ConvResult } from "./dialogue";
 
 export interface Stats { strength: number; intelligence: number; charisma: number; stamina: number; }
 export interface Skills { combat: number; trade: number; crafting: number; social: number; }
@@ -41,10 +42,18 @@ export function joinThreshold(p: Player, f: Faction): number { return p.perks.in
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; }
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; }
+export interface NpcState { mood: number; memories: string[]; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
   relationships: Record<string, number>; world: { ready: boolean };
   dynasty: DynastyRecord[];
+  npc_state: Record<string, NpcState>;
+}
+// NPC ruh hali/hafıza kaydını getir veya başlat (saf değil — clone'lanmış state'te çağrılır).
+export function npcStateOf(s: GameState, id: string): NpcState {
+  if (!s.npc_state) s.npc_state = {};
+  if (!s.npc_state[id]) s.npc_state[id] = { mood: 0, memories: [] };
+  return s.npc_state[id];
 }
 
 export const LOCATIONS = ["Üzümlü", "Akpınar", "Demirhan", "Yenişehir", "Karaağaç"];
@@ -63,7 +72,7 @@ export function npcsOf(s: GameState): NPC[] { return generateNPCs(s.seed); }
 export function newGame(first: string, surname: string, gender: "erkek" | "kadın"): GameState {
   return {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true },
-    relationships: {}, dynasty: [],
+    relationships: {}, dynasty: [], npc_state: {},
     player: {
       name: surname ? `${first} ${surname}` : first, surname, gender, base_age: 7, age: 7,
       money: 12, profession: "işsiz", health: 100, hunger: 100,
@@ -198,21 +207,36 @@ export function sellItem(prev: GameState, id: string): GameState {
   return s;
 }
 
-// İlişki: sohbet et / hediye ver.
-export function talkTo(prev: GameState, npc: NPC): GameState {
+// İlişki: niyetli sohbet (bağlamlı), hediye ver.
+export function talkWith(prev: GameState, npc: NPC, intent: string): { state: GameState; line: string } {
   const s = clone(prev); const p = s.player;
-  let gain = 3 + Math.floor(p.stats.charisma);
-  if (hasPerk(p, "dil_dokme")) gain = Math.round(gain * 1.5);
-  s.relationships[npc.id] = Math.min(100, (s.relationships[npc.id] || 0) + gain);
-  gainSkill(s, "social", 6);
-  push(s, "sohbet", `${npc.name} ile sohbet ettin. Aranız ısındı.`);
-  return s;
+  const ns = npcStateOf(s, npc.id);
+  const rel = s.relationships[npc.id] || 0;
+  const r: ConvResult = converse(npc, ns.mood, rel, p.stats.charisma, intent);
+  let relDelta = r.relDelta;
+  if (relDelta > 0 && hasPerk(p, "dil_dokme")) relDelta = Math.round(relDelta * 1.5);
+  s.relationships[npc.id] = Math.max(-100, Math.min(100, rel + relDelta));
+  ns.mood = Math.max(-100, Math.min(100, ns.mood + r.moodDelta));
+  ns.memories.push(r.memory);
+  if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
+  gainSkill(s, "social", 5);
+  push(s, "sohbet", `${npc.name}: ${r.line}`);
+  return { state: s, line: r.line };
+}
+// Eski API ile uyumluluk (basit sohbet = hoşbeş).
+export function talkTo(prev: GameState, npc: NPC): GameState {
+  return talkWith(prev, npc, "hosbes").state;
 }
 export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!(p.inventory[itemId] > 0)) return s;
   p.inventory[itemId] -= 1; if (p.inventory[itemId] <= 0) delete p.inventory[itemId];
-  s.relationships[npc.id] = Math.min(100, (s.relationships[npc.id] || 0) + 12);
+  const ns = npcStateOf(s, npc.id);
+  const generous = npc.trait === "cömert" ? 4 : 0;
+  s.relationships[npc.id] = Math.min(100, (s.relationships[npc.id] || 0) + 12 + generous);
+  ns.mood = Math.max(-100, Math.min(100, ns.mood + 14));
+  ns.memories.push(`${ITEMS[itemId]?.name || "Bir hediye"} hediye ettin.`);
+  if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`);
   return s;
 }
@@ -363,7 +387,7 @@ export function continueAsHeir(prev: GameState): GameState {
   };
   const dynasty = [...(prev.dynasty || []), ancestor];
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty,
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {},
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
       base_age: 7, age: 7, money: inheritMoney, profession: "işsiz", health: 100, hunger: 100,

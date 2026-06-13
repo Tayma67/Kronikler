@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { npcsOf, talkTo, giftTo, proposeMarriage, canCourt } from "../../../lib/game";
+import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, npcStateOf } from "../../../lib/game";
+import { INTENTS, moodLabel } from "../../../lib/dialogue";
 import { ITEMS } from "../../../lib/world";
 import { Portre } from "../../../lib/ui";
+import { GameIcon } from "../../../lib/icons";
 import { C, F } from "../../../lib/theme";
 
 export default function NpcDetail() {
@@ -12,34 +15,57 @@ export default function NpcDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, apply } = useGame();
+  const [line, setLine] = useState<string>("");
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const npc = npcsOf(state).find((n) => n.id === id);
   if (!npc) return <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top + 40 }}><Text style={{ color: C.parchmentMuted, textAlign: "center" }}>Kişi bulunamadı.</Text></View>;
   const v = state.relationships[npc.id] || 0;
+  const ns = state.npc_state?.[npc.id] || { mood: 0, memories: [] };
   const giftables = Object.keys(state.player.inventory).filter((k) => state.player.inventory[k] > 0);
   const courtable = canCourt(state.player, npc, v);
   const couldMarry = !state.player.dead && !state.player.married && state.player.age >= 18 && npc.age >= 18 && npc.gender !== state.player.gender;
 
+  const speak = (intent: string) => {
+    let said = "";
+    apply((s) => { const r = talkWith(s, npc, intent); said = r.line; return r.state; });
+    setLine(said);
+  };
+
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
       <Pressable onPress={() => router.back()} style={{ marginBottom: 12 }}>
         <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>‹ Geri</Text>
       </Pressable>
-      <View style={{ alignItems: "center", marginBottom: 16 }}>
+      <View style={{ alignItems: "center", marginBottom: 14 }}>
         <Portre age={npc.age} gender={npc.gender} size={76} />
         <Text style={{ fontFamily: F.display, fontSize: 18, color: C.parchment, marginTop: 10 }}>{npc.name}</Text>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.gold }}>{npc.profession} · {npc.age} yaş</Text>
-        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentDim, marginTop: 6 }}>İlişki: {v}/100</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.gold }}>{npc.profession} · {npc.age} yaş · {npc.trait}</Text>
+        <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 4, textAlign: "center" }}>{npc.quirk[0].toUpperCase() + npc.quirk.slice(1)}.</Text>
+        <View style={{ flexDirection: "row", gap: 16, marginTop: 8 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim }}>İlişki {v}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim }}>Ruh hali: {moodLabel(ns.mood)}</Text>
+        </View>
       </View>
 
-      <Pressable onPress={() => apply((s) => talkTo(s, npc))} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.borderHi, borderRadius: 10, padding: 14, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Text style={{ fontSize: 18 }}>💬</Text>
-        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.5 }}>Sohbet Et</Text>
-      </Pressable>
+      {line ? (
+        <View style={{ backgroundColor: C.card, borderLeftColor: C.gold, borderLeftWidth: 2.5, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 12 }}>
+          <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: 20 }}>{line}</Text>
+        </View>
+      ) : null}
+
+      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>SOHBET</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+        {INTENTS.map((it) => (
+          <Pressable key={it.id} onPress={() => speak(it.id)} style={{ flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 11, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, minWidth: "47%", flexGrow: 1 }}>
+            <GameIcon name={it.icon} size={15} color={C.gold} />
+            <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment }}>{it.label}</Text>
+          </Pressable>
+        ))}
+      </View>
 
       {couldMarry && (
-        <Pressable onPress={() => courtable && apply((s) => proposeMarriage(s, npc))} disabled={!courtable} style={{ backgroundColor: courtable ? "rgba(201,168,76,0.12)" : C.card, borderWidth: 1, borderColor: courtable ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 10, padding: 14, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <Text style={{ fontSize: 18 }}>💍</Text>
+        <Pressable onPress={() => courtable && apply((s) => proposeMarriage(s, npc))} disabled={!courtable} style={{ backgroundColor: courtable ? "rgba(201,168,76,0.12)" : C.card, borderWidth: 1, borderColor: courtable ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 10, padding: 14, marginBottom: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <GameIcon name="evlilik" size={18} color={courtable ? C.gold : C.parchmentMuted} />
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.display, fontSize: 13, color: courtable ? C.gold : C.parchmentMuted, letterSpacing: 0.5 }}>Dünür Gönder</Text>
             {!courtable && <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>Daha yakın olmalısınız (ilişki 50+).</Text>}
@@ -47,7 +73,18 @@ export default function NpcDetail() {
         </Pressable>
       )}
 
-      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 6, marginBottom: 6 }}>HEDİYE VER</Text>
+      {ns.memories.length > 0 && (
+        <>
+          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 6 }}>HATIRLADIKLARI</Text>
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 12, marginBottom: 12 }}>
+            {[...ns.memories].reverse().map((m, i) => (
+              <Text key={i} style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 3 }}>• {m}</Text>
+            ))}
+          </View>
+        </>
+      )}
+
+      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 6 }}>HEDİYE VER</Text>
       {giftables.length === 0 ? (
         <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>Verecek bir şeyin yok. Pazardan al.</Text>
       ) : giftables.map((k) => (

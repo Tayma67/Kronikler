@@ -1,5 +1,8 @@
 // Dünya modeli — NPC'ler, eşyalar, pazar. Offline, deterministik üretim.
-export interface NPC { id: string; name: string; age: number; gender: "erkek" | "kadın"; profession: string; }
+export interface NPC { id: string; name: string; age: number; gender: "erkek" | "kadın"; profession: string; trait: string; quirk: string; }
+// Kişilik özellikleri (deterministik atanır).
+export const TRAITS = ["neşeli","ciddi","kibirli","cömert","dertli","yalnız","kurnaz","mert","dindar","hırslı","utangaç","sıcakkanlı"];
+const QUIRKS = ["sürekli hava durumundan dert yanar","eski günleri anlatmayı sever","herkese lakap takar","az konuşur çok dinler","yüksek sesle güler","pazarlığa bayılır","komşularını çekiştirir","bir türküyü mırıldanır"];
 export interface Item { id: string; name: string; icon: string; buy: number; sell: number; kind: "yiyecek" | "esya" | "silah"; heal?: number; feed?: number; }
 
 const AD_E = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim","Osman","Yusuf","Murat","Kerem","Emre","Cihan","Barış","Tolga","Mert"];
@@ -24,6 +27,7 @@ export function generateNPCs(seed: number, n = 14): NPC[] {
     out.push({
       id: "npc_" + i, name: `${ad} ${pick(SOYAD, r)}`,
       age: 14 + Math.floor(r() * 55), gender, profession: pick(NPC_PROFS, r),
+      trait: pick(TRAITS, r), quirk: pick(QUIRKS, r),
     });
   }
   return out;
