@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   Coins, ChevronRight, Scroll, Shield,
@@ -363,6 +364,7 @@ export default function Dashboard() {
   }, []);
   const [activeTab, setActiveTab]     = useState('gunluk');
   const [advancing, setAdvancing]     = useState(false);
+  const navigate = useNavigate();
   const saga = useSaga(state);
   // Hook'lar erken return'den ÖNCE ve KOŞULSUZ çağrılmalı (rules-of-hooks).
   // useHeroGorsel'i state-güvenli değerlerle burada çağırıyoruz; state
@@ -773,7 +775,7 @@ export default function Dashboard() {
                   Yaşananların izleri...
                 </p>
               </div>
-              <button style={{
+              <button onClick={() => navigate('/oyun/tarih')} style={{
                 display: 'flex', alignItems: 'center', gap: '0.25rem',
                 paddingTop: '0.12rem', background: 'none', border: 'none', cursor: 'pointer',
                 fontFamily: 'Cinzel, serif', fontSize: '0.53rem',
