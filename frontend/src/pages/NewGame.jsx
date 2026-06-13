@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useGame } from "@/lib/GameContext";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import OriginCinematic from "@/components/OriginCinematic";
 
 // Sinematik ilk-izlenim: sırtı dönük çocuk, küllerin diyarına bakıyor.
 const BG_IMAGE = "/images/hero/cocuk_sonbahar.jpg";
@@ -16,6 +17,7 @@ export default function NewGame() {
   // Backend uyanmıyorsa 12 sn sonra formu yine de göster
   const [loadingTimedOut, setLoadingTimedOut] = useState(false);
   const [slowBackend, setSlowBackend]         = useState(false);
+  const [origin, setOrigin]                   = useState(null);  // doğuş sahnesi
 
   useEffect(() => {
     fetchState();
@@ -25,8 +27,9 @@ export default function NewGame() {
   }, [fetchState]);
 
   useEffect(() => {
-    if (state && state.world) navigate("/oyun");
-  }, [state, navigate]);
+    // Doğuş sahnesi gösterilirken otomatik geçişi durdur (sahne kapanınca geçer)
+    if (state && state.world && !origin && !busy) navigate("/oyun");
+  }, [state, navigate, origin, busy]);
 
   const start = async (e) => {
     if (e) e.preventDefault();
@@ -44,7 +47,7 @@ export default function NewGame() {
     setBusy(true);
     try {
       await newGame(first, surname, gender);
-      navigate("/oyun");
+      setOrigin({ name: first, gender });   // direkt geçme — önce doğuş sahnesi
     } catch (err) {
       setError(err?.response?.data?.detail || "Oyun başlatılamadı. Lütfen tekrar dene.");
     } finally {
@@ -115,6 +118,14 @@ export default function NewGame() {
   return (
     <div style={{ position: "fixed", inset: 0, overflow: "hidden", background: "var(--color-bg)" }}>
       <Overlays />
+
+      {origin && (
+        <OriginCinematic
+          name={origin.name}
+          gender={origin.gender}
+          onClose={() => { setOrigin(null); navigate("/oyun"); }}
+        />
+      )}
 
       <div style={{
         position: "relative", zIndex: 2, height: "100%",
