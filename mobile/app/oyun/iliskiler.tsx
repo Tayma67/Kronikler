@@ -30,6 +30,17 @@ export default function Iliskiler() {
         <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>Diyarda tanıdığın canlar.</Text>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        {(state.player.married || state.player.children.length > 0) && (
+          <View style={{ backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 10, padding: 13, marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginBottom: 6 }}>Ocağın</Text>
+            {state.player.married && (
+              <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>💍 Eşin: <Text style={{ color: C.gold }}>{state.player.spouse_name}</Text></Text>
+            )}
+            {state.player.children.length > 0 && (
+              <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, marginTop: 4 }}>👶 Çocuklar: {state.player.children.join(", ")}</Text>
+            )}
+          </View>
+        )}
         {sorted.map((n) => {
           const v = rel[n.id] || 0; const lab = relLabel(v);
           return (
