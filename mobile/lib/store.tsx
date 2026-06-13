@@ -14,6 +14,7 @@ function migrate(s: GameState): GameState {
   if (!p.properties) p.properties = [];
   if (p.generation === undefined) p.generation = 1;
   if (!s.relationships) s.relationships = {};
+  if (!s.dynasty) s.dynasty = [];
   return s;
 }
 

@@ -36,9 +36,11 @@ export const FACTIONS: Faction[] = [
 export function factionById(id: string | null): Faction | undefined { return FACTIONS.find((f) => f.id === id); }
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; }
+export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
   relationships: Record<string, number>; world: { ready: boolean };
+  dynasty: DynastyRecord[];
 }
 
 export const LOCATIONS = ["Üzümlü", "Akpınar", "Demirhan", "Yenişehir", "Karaağaç"];
@@ -57,7 +59,7 @@ export function npcsOf(s: GameState): NPC[] { return generateNPCs(s.seed); }
 export function newGame(first: string, surname: string, gender: "erkek" | "kadın"): GameState {
   return {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true },
-    relationships: {},
+    relationships: {}, dynasty: [],
     player: {
       name: surname ? `${first} ${surname}` : first, surname, gender, base_age: 7, age: 7,
       money: 12, profession: "işsiz", health: 100, hunger: 100,
@@ -279,6 +281,16 @@ export function buyProperty(prev: GameState, type: string): GameState {
   return s;
 }
 
+// Atayı bir cümlede özetle (hanedan defteri için).
+function dynastyNote(p: Player): string {
+  if (p.fame >= 60) return "Adı destanlara karıştı.";
+  if (p.reputation >= 50) return "Diyarda saygın bir isimdi.";
+  if (p.properties.length >= 3) return "Geride büyük bir mülk bıraktı.";
+  if (p.fear >= 50) return "Korkulan bir isimdi.";
+  if (p.children.length >= 3) return "Kalabalık bir soy bıraktı.";
+  return "Sade bir hayat sürdü.";
+}
+
 // Nesil mirası: ölünce çocukla devam et (varsa). Mülk + akçenin yarısı miras kalır.
 export function continueAsHeir(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
@@ -288,8 +300,15 @@ export function continueAsHeir(prev: GameState): GameState {
   const props = [...p.properties];
   const gen = p.generation + 1;
   const surname = p.surname;
+  // Ölen atayı hanedan defterine işle.
+  const ancestor: DynastyRecord = {
+    generation: p.generation, name: p.name, profession: p.profession === "işsiz" ? "—" : p.profession,
+    diedAge: p.age, fame: Math.round(p.fame), reputation: Math.round(p.reputation), faction: p.faction,
+    note: dynastyNote(p),
+  };
+  const dynasty = [...(prev.dynasty || []), ancestor];
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {},
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty,
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
       base_age: 7, age: 7, money: inheritMoney, profession: "işsiz", health: 100, hunger: 100,

@@ -31,6 +31,7 @@ export default function Menu() {
         { to: "/oyun/orgutler", icon: "⚜", label: "Örgütler / Loncalar" },
         { to: "/oyun/sosyal", icon: "🕊", label: "Mevki & İtibar" },
         { to: "/oyun/mulkler", icon: "🏰", label: "Mülkler" },
+        { to: "/oyun/hanedan", icon: "🏛", label: "Hanedan" },
         { to: "/oyun/tarih", icon: "📜", label: "Kronik" },
         { to: "/oyun/roman", icon: "📖", label: "Hayatın Romanı" },
         { to: "/oyun/ayarlar", icon: "⚙️", label: "Ayarlar" },
