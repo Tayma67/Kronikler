@@ -108,12 +108,15 @@ export function advance(prev: GameState, n = 1): GameState {
     if (s.player.dead) break;
     s.turn += 1; const cal = currentCalendar(s.turn);
     s.player.age = playerAge(s.player.base_age, s.turn);
-    const drop = Math.round(8 * (cal.season === "Kış" ? 1.3 : 1.0));
+    const child = s.player.age < 13;
+    // Çocuğu ailesi besler: açlık daha yavaş düşer ve dipte aile karnını doyurur.
+    const drop = Math.round((child ? 4 : 8) * (cal.season === "Kış" ? 1.3 : 1.0));
     s.player.hunger = Math.max(0, s.player.hunger - drop);
-    if (s.player.hunger < 20) s.player.health = Math.max(0, s.player.health - 6);
+    if (child && s.player.hunger < 30) s.player.hunger = Math.min(100, s.player.hunger + 20); // anne-baba sofrası
+    if (s.player.hunger < 20 && !child) s.player.health = Math.max(0, s.player.health - 6);
     else if (s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
     if (s.player.faction === "sifaci" && s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
-    if (s.player.health <= 0) { die(s, `${s.player.name} açlık ve hastalığa yenik düştü.`); break; }
+    if (s.player.health <= 0 && !child) { die(s, `${s.player.name} açlık ve hastalığa yenik düştü.`); break; }
     // Mülk pasif geliri
     const inc = s.player.properties.reduce((a, t) => a + (PROPERTY_TYPES[t]?.income || 0), 0);
     if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", `Mülklerinden ${inc} akçe gelir geldi.`); }
