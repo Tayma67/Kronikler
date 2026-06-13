@@ -16,6 +16,7 @@ function migrate(s: GameState): GameState {
   if (!p.skills) p.skills = { combat: 0, trade: 0, crafting: 0, social: 0 };
   if (!p.skill_xp) p.skill_xp = { combat: 0, trade: 0, crafting: 0, social: 0 };
   if (!p.perks) p.perks = [];
+  if (!p.injuries) p.injuries = [];
   if (!s.relationships) s.relationships = {};
   if (!s.dynasty) s.dynasty = [];
   if (!s.npc_state) s.npc_state = {};

@@ -5,6 +5,7 @@ import { converse, ConvResult } from "./dialogue";
 
 export interface Stats { strength: number; intelligence: number; charisma: number; stamina: number; }
 export interface Skills { combat: number; trade: number; crafting: number; social: number; }
+export interface Injury { label: string; stat: keyof Stats; delta: number; weeks_left: number; permanent: boolean; }
 export interface Player {
   name: string; surname: string; gender: "erkek" | "kadın"; base_age: number; age: number;
   money: number; profession: string; health: number; hunger: number;
@@ -14,6 +15,12 @@ export interface Player {
   inventory: Record<string, number>; properties: string[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
+  injuries: Injury[];
+}
+// Yaralanmalar bir özelliği geçici/kalıcı düşürür. Etkili (effective) değer.
+export function effStat(p: Player, key: keyof Stats): number {
+  const pen = (p.injuries || []).filter((i) => i.stat === key).reduce((a, i) => a + i.delta, 0);
+  return Math.max(0, p.stats[key] - pen);
 }
 export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: number; income: number }> = {
   tarla:    { name: "Tarla",    icon: "🌾", cost: 80,  income: 6 },
@@ -83,7 +90,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       properties: [], generation: 1,
       faction: null, faction_standing: {},
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
-      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [],
+      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [],
     },
     history: [],
   };
@@ -132,6 +139,13 @@ export function advance(prev: GameState, n = 1): GameState {
     else if (s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
     if (s.player.faction === "sifaci" && s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
     if (s.player.health <= 0 && !child) { die(s, `${s.player.name} açlık ve hastalığa yenik düştü.`); break; }
+    // Yaralar zamanla iyileşir (kalıcı olanlar kalır)
+    if (s.player.injuries?.length) {
+      for (const inj of s.player.injuries) if (!inj.permanent) inj.weeks_left -= 1;
+      const healed = s.player.injuries.filter((inj) => !inj.permanent && inj.weeks_left <= 0);
+      if (healed.length && i === n - 1) push(s, "iyilesme", `Yaraların iyileşti: ${healed.map((h) => h.label).join(", ")}.`);
+      s.player.injuries = s.player.injuries.filter((inj) => inj.permanent || inj.weeks_left > 0);
+    }
     // Mülk pasif geliri (zanaat/ticaret hünerleriyle artar)
     let inc = s.player.properties.reduce((a, t) => a + (PROPERTY_TYPES[t]?.income || 0), 0);
     let pmult = 1;
@@ -149,7 +163,7 @@ export function advance(prev: GameState, n = 1): GameState {
 export function work(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.profession === "işsiz") return s;
-  const stat = p.stats[PROF_STAT[p.profession] || "stamina"];
+  const stat = effStat(p, PROF_STAT[p.profession] || "stamina");
   let mult = 1;
   if (p.faction === "demirci") mult += 0.2;
   if (hasPerk(p, "tefeci")) mult += 0.2;
@@ -397,7 +411,7 @@ export function continueAsHeir(prev: GameState): GameState {
       inventory: { ekmek: 2 }, properties: props, generation: gen,
       faction: null, faction_standing: {},
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
-      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [],
+      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [],
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, atasının mirasını devraldı (${inheritMoney} akçe, ${props.length} mülk).`, scope: "kişisel", landmark: true }],
   };
@@ -511,7 +525,7 @@ export const ENCOUNTERS: Encounter[] = [
 ];
 // Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
 export function combatPower(p: Player): number {
-  let pw = p.stats.strength * 2 + p.stats.stamina + p.skills.combat;
+  let pw = effStat(p, "strength") * 2 + effStat(p, "stamina") + p.skills.combat;
   if ((p.inventory["bicak"] || 0) > 0) pw += 4;
   if (p.faction === "asker") pw += 3;
   if (hasPerk(p, "cevik")) pw += 3;
@@ -540,6 +554,45 @@ export function fightEncounter(prev: GameState, id: string): GameState {
     p.health = Math.max(0, p.health - hurt);
     push(s, "savaş_yenilgi", `${e.title}: Yara aldın, geri çekildin (−${hurt} sağlık).`, "kişisel");
     if (p.health <= 0) die(s, `${p.name}, ${e.title.toLowerCase()} sırasında can verdi.`);
+  }
+  return s;
+}
+
+// Olası yaralanma havuzu (taktik savaş sonucu).
+const INJURY_POOL: { label: string; stat: keyof Stats; delta: number; weeks: number; perm: number }[] = [
+  { label: "Çürük kaburga",  stat: "stamina",  delta: 1, weeks: 4, perm: 0 },
+  { label: "Kılıç yarası",   stat: "strength", delta: 1, weeks: 6, perm: 0.12 },
+  { label: "Burkulan bilek", stat: "strength", delta: 1, weeks: 3, perm: 0 },
+  { label: "Yüz yarası",     stat: "charisma", delta: 1, weeks: 8, perm: 0.2 },
+];
+function maybeInjure(s: GameState, heavy: boolean) {
+  const p = s.player;
+  if (!Math.random || Math.random() > (heavy ? 0.5 : 0.18)) return;
+  const t = INJURY_POOL[Math.floor(Math.random() * INJURY_POOL.length)];
+  const permanent = Math.random() < t.perm;
+  p.injuries.push({ label: t.label, stat: t.stat, delta: t.delta, weeks_left: t.weeks, permanent });
+  push(s, "yaralanma", `${t.label} aldın${permanent ? " — kalıcı iz bıraktı" : ""}.`);
+}
+
+// Tur-tabanlı savaşın sonucunu uygula (savas ekranı çağırır).
+export function applyBattleOutcome(prev: GameState, id: string, won: boolean, finalHp: number): GameState {
+  const s = clone(prev); const p = s.player; const e = ENCOUNTERS.find((x) => x.id === id);
+  if (!e) return s;
+  gainSkill(s, "combat", won ? 14 : 7);
+  if (won) {
+    let reward = e.reward;
+    if (hasPerk(p, "savas_ustasi")) reward = Math.round(reward * 1.5);
+    p.money += reward; p.fame = Math.min(100, p.fame + e.fame); p.honor = Math.min(100, p.honor + e.honor);
+    p.fear = Math.min(100, p.fear + Math.round(e.fame / 2));
+    const floor = hasPerk(p, "yilmaz") ? 5 : 1;
+    p.health = Math.max(floor, Math.round(finalHp));
+    maybeInjure(s, false);
+    push(s, "savaş_zafer", `${e.title}: Zafer senin! (+${reward} akçe, şöhretin arttı.)`, "kişisel", true);
+  } else {
+    p.health = Math.max(0, Math.round(finalHp));
+    if (p.health <= 0) { die(s, `${p.name}, ${e.title.toLowerCase()} sırasında can verdi.`); return s; }
+    maybeInjure(s, true);
+    push(s, "savaş_yenilgi", `${e.title}: Yenildin, yaralarını sardın.`, "kişisel");
   }
   return s;
 }

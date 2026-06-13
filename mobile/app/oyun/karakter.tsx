@@ -90,6 +90,17 @@ export default function Karakter() {
         <Row k="Nesil" v={`${p.generation}. nesil`} />
       </View>
 
+      {p.injuries && p.injuries.length > 0 && (
+        <>
+          <Head t="Yaralar" />
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(168,52,52,0.35)", borderRadius: 10, paddingHorizontal: 14 }}>
+            {p.injuries.map((inj, i) => (
+              <Row key={i} k={inj.label} v={inj.permanent ? "kalıcı" : `${inj.weeks_left} ay`} />
+            ))}
+          </View>
+        </>
+      )}
+
       <Head t="Aile" />
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
         <Row k="Eş" v={p.spouse_name || "—"} />
