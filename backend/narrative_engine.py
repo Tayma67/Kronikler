@@ -406,81 +406,122 @@ _NO_MAJOR_EVENTS = [
 ]
 
 
+# Oyuncunun KENDİ hayatına ait olay tipleri (dünya simülasyon gürültüsü değil)
+_PERSONAL_TYPES = {
+    "çalışma", "ticaret", "kariyer_terfi", "meslek_değişimi", "meslek_edinme", "yolculuk",
+    "savaş_zaferi", "savaş_kaybı", "savaş_kaçış", "komutan_savaşı", "evlilik", "doğum",
+    "suç", "suç_yakalandı", "yakalandı", "hapis", "ceza", "görev_tamamlandı", "görev_başarısız",
+    "cocuk_meslek", "cocuk_yatirim", "kullanım", "kuşanma", "life_event", "mülk_alım",
+    "mülk_satış", "mülk_hasat", "hikâye", "hikâye_teklifi", "başarım", "aile_krizi",
+    "aile_destek", "aile_görevi_açıldı", "iyileşme", "rank_bonusu", "şehir_kuruluşu", "nesil_devri",
+}
+
+# Sıradan bir insanı da vuran makro krizler → romanda "seni nasıl etkilediği" ile anlatılır.
+_MACRO_IMPACT = {
+    "kıtlık":        ["O yıl diyarı kıtlık vurdu; senin de soframa az ekmek düştü, çok gece karnın aç yattı."],
+    "kıtlık_etkisi": ["Kıtlığın gölgesi senin kapına da düştü — kazan çoğu gün yarı boş kaynadı."],
+    "kriz_veba":     ["Veba köyleri kırıp geçti; her kapı gibi seninki de korkuyla kapandı, sevdiklerini kaybetme dehşetiyle yaşadın."],
+    "kriz_kuraklik": ["Kuraklık toprağı çatlattı; kuyular çekildi, senin de tarlan susuzluktan sarardı."],
+    "kriz_yangin":   ["Yangın mahalleyi yalayıp geçti; alevlerin isi senin damına da sindi, günlerce duman koktu."],
+    "isyan":         ["Halk ayaklandı; karışıklık senin sokağına da taştı, kapını sürgüleyip bekledin."],
+    "haydut_baskını":["Haydutlar yolları kesti; pazara gidemedin, gece her ses seni ürküttü."],
+    "raid":          ["Akıncılar diyarı bastı; senin köyün de korkuyla nöbet tuttu."],
+    "savaş":         ["Savaş çığlığı diyarı sardı; gölgesi senin eşiğine kadar uzandı, geleceğin belirsizleşti."],
+    "savaş_ilanı":   ["Bir savaş ilan edildi; uzaktaki tehlike senin de uykunu kaçırdı."],
+    "işgal":         ["Diyar işgale uğradı; yabancı bayraklar senin ufkunu da gölgeledi."],
+}
+
+
 def generate_year_story(year_events: list, player: dict) -> str:
     """
-    Bir oyun yılına ait eventlerden anlatılı özet paragraf üretir.
-    Kronik sayfasında 'Bu Yılın Hikayesi' olarak gösterilir.
-
-    Args:
-        year_events: O yıla ait event objeleri listesi
-        player: Oyuncu dict'i (name, age, profession, location_name)
-
-    Returns:
-        2-4 cümlelik Türkçe paragraf (str)
+    Bir oyun yılına ait eventlerden anlatılı, OYUNCU-MERKEZLİ özet paragraf üretir.
+    Yalnız oyuncunun kendi hayatı + onu gerçekten etkileyen makro krizler anlatılır;
+    fraksiyon/lonca gibi oyuncuyla ilgisiz dünya gürültüsü romana girmez.
     """
     name       = player.get("name", "Kahraman")
+    pname      = (name or "").split(" ")[0]
     age        = player.get("age", "?")
     profession = player.get("profession", "")
     location   = player.get("location_name", "")
 
-    if not year_events:
+    def _txt(e):
+        return f"{e.get('text','')} {e.get('narrative','')}"
+
+    def _is_personal(e):
+        sc = e.get("scope")
+        if sc == "kişisel":
+            return True
+        if sc in ("makro", "arkaplan"):
+            # Yine de oyuncunun adı geçiyorsa onu ilgilendirir
+            return len(pname) > 2 and pname in _txt(e)
+        if e.get("type") in _PERSONAL_TYPES:
+            return True
+        return len(pname) > 2 and pname in _txt(e)
+
+    personal = [e for e in year_events if _is_personal(e)]
+    # Oyuncuyu vuran makro krizler (kişisel olmayan ama hayatını etkileyen)
+    macro = []
+    seen_macro = set()
+    for e in year_events:
+        t = e.get("type")
+        if t in _MACRO_IMPACT and t not in seen_macro and not _is_personal(e):
+            macro.append(t); seen_macro.add(t)
+
+    # Hiçbir kişisel olay ve hiçbir etkili makro yoksa: sessiz yıl
+    if not personal and not macro:
         opener = _pick(_YEAR_OPENERS, name=name, age=age)
-        closer = _pick(_NO_MAJOR_EVENTS)
-        return f"{opener} {closer}"
+        return f"{opener} {_pick(_NO_MAJOR_EVENTS)}"
 
-    # Yılın öne çıkan eventlerini kategorize et
-    deaths     = [e for e in year_events if e.get("type") == "ölüm"]
-    births     = [e for e in year_events if e.get("type") == "doğum"]
-    marriages  = [e for e in year_events if e.get("type") == "evlilik"]
-    wars       = [e for e in year_events if e.get("type") == "savaş_ilanı"]
-    victories  = [e for e in year_events if e.get("type") == "savaş_zaferi"]
-    promotions = [e for e in year_events if e.get("type") in ("kariyer_terfi", "meslek_değişimi", "meslek_edinme")]
-    quests     = [e for e in year_events if e.get("type") == "görev_tamamlandı"]
-    crimes     = [e for e in year_events if e.get("type") in ("suç", "hapis", "yakalandı")]
+    def has(*types):
+        return [e for e in personal if e.get("type") in types]
 
-    parts = []
+    deaths     = has("ölüm", "death")
+    births     = has("doğum")
+    marriages  = has("evlilik")
+    victories  = has("savaş_zaferi", "komutan_savaşı")
+    promotions = has("kariyer_terfi", "meslek_değişimi", "meslek_edinme")
+    quests     = has("görev_tamamlandı")
+    crimes     = has("suç", "suç_yakalandı", "yakalandı", "hapis", "ceza")
+    achieves   = has("başarım")
+    props      = has("mülk_alım")
+    cityf      = has("şehir_kuruluşu")
 
-    # Açılış
-    opener = _pick(_YEAR_OPENERS, name=name, age=age)
-    parts.append(opener)
+    parts = [_pick(_YEAR_OPENERS, name=name, age=age)]
 
-    # Meslek bilgisi varsa
     if profession and profession not in ("işsiz", "çocuk", ""):
         parts.append(f"{profession.capitalize()} olarak hayatını sürdürdün{f', {location}' if location else ''}.")
 
-    # En ağır olay: ölüm
+    # Oyuncunun kendi yaşamından — en ağırdan en hafife
     if deaths:
-        # Narrative alanı varsa kullan, yoksa flat text
-        death_ev = deaths[0]
-        narr = death_ev.get("narrative") or death_ev.get("text", "")
+        narr = deaths[0].get("narrative") or deaths[0].get("text", "")
         if narr:
-            # İlk cümleyi al (çok uzun olmasın)
-            first_sentence = narr.split(".")[0] + "."
-            parts.append(f"Yılın en ağır anı buydu: {first_sentence}")
-        elif len(deaths) > 1:
-            parts.append(f"Bu yıl {len(deaths)} kayıp oldu.")
-
-    # Olumlu olaylar
-    if births:
-        parts.append(f"Ama bu yıl yeni hayatlar da başladı — {len(births)} doğum.")
+            parts.append(f"Yılın en ağır anı buydu: {narr.split('.')[0]}.")
     if marriages:
-        parts.append(f"{len(marriages)} düğün sevinci yaşandı.")
+        parts.append("Bu yıl evlendin — yeni bir ocak kuruldu, yalnızlığın bitti.")
+    if births:
+        parts.append("Bir evladın dünyaya geldi; kucağın doldu, ardından bakacak biri oldu.")
+    if cityf:
+        parts.append("Senin elinle bir yerleşim kuruldu — adın toprağa kazındı.")
     if victories:
-        parts.append("Savaş meydanında ayakta kaldın.")
+        parts.append("Savaş meydanında ayakta kaldın; çeliğin ününe ün kattı.")
     if promotions:
-        parts.append(f"Meslekte bir adım daha atıldı.")
+        parts.append("Mesleğinde bir basamak daha çıktın; emeğin karşılık buldu.")
+    if achieves:
+        parts.append("Adın bir başarımla anıldı; insanlar seni konuşur oldu.")
+    if props:
+        parts.append("Adına bir mülk yazıldı; kökün biraz daha derinleşti.")
     if quests:
-        parts.append(f"{'Verilen' if len(quests) == 1 else f'{len(quests)}'} söz tutuldu.")
-    if wars:
-        parts.append(f"Savaş bulutları {len(wars)} kez gökyüzünü kapladı.")
+        parts.append("Verdiğin sözü tuttun; itibarın arttı.")
     if crimes and not victories:
-        parts.append("Yasanın gölgesinde de gezildi bu yıl.")
+        parts.append("Yasanın gölgesinde işler çevirdin; kazancın vardı ama huzurun eksildi.")
 
-    # Hiç özel şey yoksa
+    # Oyuncuyu etkileyen makro krizler — neden/nasıl dokunduğuyla (en çok 2)
+    for t in macro[:2]:
+        parts.append(random.choice(_MACRO_IMPACT[t]))
+
+    # Çok kısa kaldıysa nazik bir dolgu
     if len(parts) <= 2:
         parts.append(random.choice(_NO_MAJOR_EVENTS))
 
-    # Kapanış
     parts.append(_pick(_YEAR_CLOSERS))
-
     return " ".join(parts)
