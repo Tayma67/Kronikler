@@ -17,8 +17,24 @@ export interface Player {
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
   injuries: Injury[]; career_xp: number;
-  nam: Nam;
+  nam: Nam; child_invests: Record<string, string[]>;
 }
+// Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
+export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
+export const INVESTMENTS: Investment[] = [
+  { id: "egitim", label: "Eğitim",        icon: "graduate-cap",   cost: 50, desc: "Vâris olursa +2 zekâ, +1 özellik puanı." },
+  { id: "savas",  label: "Savaş Eğitimi", icon: "crossed-swords", cost: 50, desc: "Vâris olursa +2 güç, savaş becerisi." },
+  { id: "zanaat", label: "Zanaat",        icon: "anvil",          cost: 40, desc: "Vâris olursa zanaat becerisi + akçe." },
+  { id: "sosyal", label: "Sosyal Terbiye",icon: "lyre",           cost: 40, desc: "Vâris olursa +2 karizma, sosyal beceri." },
+  { id: "saglik", label: "Sağlık Bakımı", icon: "healing",        cost: 30, desc: "Vâris olursa dinç başlar (+itibar)." },
+];
+// Vasiyet stilleri — miras oranı ve yeni nesle etki.
+export interface WillStyle { id: string; label: string; desc: string; frac: number; repBonus: number; }
+export const WILL_STYLES: WillStyle[] = [
+  { id: "esit",  label: "Eşit Pay",   desc: "Mirasın yarısı vârise; huzurlu geçiş.", frac: 0.5, repBonus: 0 },
+  { id: "tek",   label: "Tek Vâris",  desc: "Servetin çoğu vârise; ama dedikodu artar.", frac: 0.75, repBonus: -4 },
+  { id: "hayir", label: "Hayır İşleri",desc: "Servetin bir kısmı yoksullara; yeni nesle saygınlık.", frac: 0.4, repBonus: 14 },
+];
 // Nam profili — 5 boyut (söylentilerle halkın gözündeki kişiliğin).
 export interface Nam { comert: number; zalim: number; capkin: number; dindar: number; mert: number; }
 export const NAM_META: { key: keyof Nam; label: string; icon: string }[] = [
@@ -143,7 +159,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       faction: null, faction_standing: {},
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
       skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [], career_xp: 0,
-      nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 },
+      nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {},
     },
     history: [],
   };
@@ -447,36 +463,63 @@ function dynastyNote(p: Player): string {
   return "Sade bir hayat sürdü.";
 }
 
-// Nesil mirası: ölünce çocukla devam et (varsa). Mülk + akçenin yarısı miras kalır.
-export function continueAsHeir(prev: GameState): GameState {
+// Çocuğa yatırım yap (hayattayken).
+export function investInChild(prev: GameState, childName: string, investId: string): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !p.children.includes(childName)) return s;
+  const inv = INVESTMENTS.find((x) => x.id === investId); if (!inv) return s;
+  if (!p.child_invests) p.child_invests = {};
+  const list = p.child_invests[childName] || [];
+  if (list.includes(investId) || p.money < inv.cost) return s;
+  p.money -= inv.cost; p.child_invests[childName] = [...list, investId];
+  push(s, "nesil_yatirim", `${childName} için ${inv.label.toLowerCase()} yatırımı yaptın.`);
+  return s;
+}
+
+// Nesil mirası: ölünce vâris (varsayılan ilk çocuk) ile devam et. Vasiyet stili miras oranını belirler.
+export function continueAsHeir(prev: GameState, willId = "esit", heirName?: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!p.dead || p.children.length === 0) return s;
-  const heir = p.children[0];
-  const inheritMoney = Math.floor(p.money / 2) + 20;
+  const heir = heirName && p.children.includes(heirName) ? heirName : p.children[0];
+  const will = WILL_STYLES.find((w) => w.id === willId) || WILL_STYLES[0];
+  const inheritMoney = Math.floor(p.money * will.frac) + 20;
   const props = [...p.properties];
   const gen = p.generation + 1;
   const surname = p.surname;
-  // Ölen atayı hanedan defterine işle.
+  // Vârise yapılan yatırımların başlangıç avantajları
+  const invests = (p.child_invests && p.child_invests[heir]) || [];
+  const stats = { strength: 1, intelligence: 1, charisma: 1, stamina: 2 };
+  const skills = { combat: 0, trade: 0, crafting: 0, social: 0 };
+  let startPoints = gen; let startMoney = inheritMoney; let startHealth = 100; let startRep = Math.floor(p.reputation / 2) + will.repBonus;
+  const investNotes: string[] = [];
+  for (const inv of invests) {
+    if (inv === "egitim") { stats.intelligence += 2; startPoints += 1; investNotes.push("eğitimli"); }
+    if (inv === "savas") { stats.strength += 2; skills.combat = 2; investNotes.push("savaş görmüş"); }
+    if (inv === "zanaat") { skills.crafting = 2; startMoney += 30; investNotes.push("zanaat öğrenmiş"); }
+    if (inv === "sosyal") { stats.charisma += 2; skills.social = 2; investNotes.push("terbiyeli"); }
+    if (inv === "saglik") { startHealth = 100; startRep += 6; investNotes.push("dinç"); }
+  }
   const ancestor: DynastyRecord = {
     generation: p.generation, name: p.name, profession: p.profession === "işsiz" ? "—" : p.profession,
     diedAge: p.age, fame: Math.round(p.fame), reputation: Math.round(p.reputation), faction: p.faction,
     note: dynastyNote(p),
   };
   const dynasty = [...(prev.dynasty || []), ancestor];
+  const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
   const ns: GameState = {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {}, story: { active: null, completed: [], tension: 0 },
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
-      base_age: 7, age: 7, money: inheritMoney, profession: "işsiz", health: 100, hunger: 100,
-      reputation: Math.floor(p.reputation / 2), honor: 0, fear: 0, fame: Math.floor(p.fame / 3),
-      stats: { strength: 1, intelligence: 1, charisma: 1, stamina: 2 }, stat_points: gen,
+      base_age: 7, age: 7, money: startMoney, profession: "işsiz", health: startHealth, hunger: 100,
+      reputation: Math.max(-100, Math.min(100, startRep)), honor: 0, fear: 0, fame: Math.floor(p.fame / 3),
+      stats, stat_points: startPoints,
       dead: false, location_name: p.location_name, married: false, spouse_name: null, children: [],
       inventory: { ekmek: 2 }, properties: props, generation: gen,
       faction: null, faction_standing: {},
-      skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
-      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 },
+      skills, skill_xp: { combat: skills.combat * 100, trade: 0, crafting: skills.crafting * 100, social: skills.social * 100 },
+      perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {},
     },
-    history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, atasının mirasını devraldı (${inheritMoney} akçe, ${props.length} mülk).`, scope: "kişisel", landmark: true }],
+    history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, ${will.label.toLowerCase()} vasiyetiyle mirası devraldı (${inheritMoney} akçe, ${props.length} mülk).${noteStr}`, scope: "kişisel", landmark: true }],
   };
   return ns;
 }

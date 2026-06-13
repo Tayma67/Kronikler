@@ -25,6 +25,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     { to: "/oyun/sehir", icon: "sehir", label: "Şehir / Diyar" },
     { to: "/oyun/haberler", icon: "haberler", label: "Diyardan Haberler" },
     { to: "/oyun/hanedan", icon: "hanedan", label: "Hanedan" },
+    { to: "/oyun/nesil", icon: "dogum", label: "Nesil & Vâris" },
   ]},
   { title: "Kayıt & Anı", items: [
     { to: "/oyun/hikayeler", icon: "roman", label: "Hikâyelerim" },

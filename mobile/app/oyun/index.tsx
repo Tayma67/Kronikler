@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { continueAsHeir, applyDilemma, careerTitle, GameEvent } from "../../lib/game";
+import { applyDilemma, careerTitle, GameEvent } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
@@ -121,8 +121,8 @@ export default function Dashboard() {
       {p.dead ? (
         <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border, gap: 10 }}>
           {p.children.length > 0 && (
-            <Pressable onPress={() => apply(continueAsHeir)} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206", letterSpacing: 1 }}>🕊 NESLİ DEVAM ETTİR ({p.children[0]})</Text>
+            <Pressable onPress={() => router.push("/oyun/nesil")} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206", letterSpacing: 1 }}>🕊 NESLİ DEVAM ETTİR ({p.children.length} vâris)</Text>
             </Pressable>
           )}
           <View style={{ flexDirection: "row", gap: 10 }}>

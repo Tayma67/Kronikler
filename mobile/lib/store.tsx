@@ -19,6 +19,7 @@ function migrate(s: GameState): GameState {
   if (!p.injuries) p.injuries = [];
   if (p.career_xp === undefined) p.career_xp = 0;
   if (!p.nam) p.nam = { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 };
+  if (!p.child_invests) p.child_invests = {};
   if (!s.relationships) s.relationships = {};
   if (!s.dynasty) s.dynasty = [];
   if (!s.npc_state) s.npc_state = {};
