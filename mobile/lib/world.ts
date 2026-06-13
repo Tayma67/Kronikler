@@ -76,6 +76,23 @@ export function locSeed(name: string): number {
   let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h;
 }
 
+// Şehir detayı — deterministik (vali, güvenlik, refah, nüfus).
+export interface CityInfo { governor: string; security: number; prosperity: number; population: number; blurb: string; }
+const GOV_TITLES = ["Subaşı", "Voyvoda", "Dizdar", "Kethüda", "Bey"];
+export function cityInfo(name: string, kind: string): CityInfo {
+  const r = mkRng(locSeed(name) ^ 0x5bd1e995);
+  const gov = `${pick(GOV_TITLES, r)} ${pick(AD_E, r)} ${pick(SOYAD, r)}`;
+  const base = kind === "şehir" ? 4000 : kind === "kale" ? 300 : 200;
+  const population = base + Math.floor(r() * (kind === "şehir" ? 8000 : kind === "kale" ? 400 : 500));
+  const security = (kind === "kale" ? 55 : 30) + Math.floor(r() * 40);
+  const prosperity = (kind === "şehir" ? 45 : 25) + Math.floor(r() * 45);
+  const blurbs = [
+    "Çarşısı erken kurulur, geç dağılır.", "Sur dibinde bir çeşme, gün boyu işler.",
+    "Kervanların uğrak yeri.", "Geceleri bekçi sesleri duyulur.", "Pazarında her dilden tüccar var.",
+  ];
+  return { governor: gov, security, prosperity, population, blurb: pick(blurbs, r) };
+}
+
 // Rakip hanedanlar — diyarın güç odakları (deterministik).
 export interface RivalHouse { id: string; name: string; power: number; pride: number; trait: string; }
 const HOUSE_NAMES = ["Karaoğulları","Akhanlılar","Demiroğulları","Şahinoğulları","Bozkurtlar","Yıldızoğulları","Çelikhanlar","Aslanoğulları","Toprakoğulları","Gümüşhanlılar","Kayıoğulları","Doğanoğulları"];

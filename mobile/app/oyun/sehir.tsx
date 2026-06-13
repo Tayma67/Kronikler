@@ -2,13 +2,13 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { travelTo, LOCATIONS, placeKind } from "../../lib/game";
+import { LOCATIONS, placeKind } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 
 export default function Sehir() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { state, apply } = useGame();
+  const { state } = useGame();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const here = state.player.location_name;
   return (
@@ -32,13 +32,13 @@ export default function Sehir() {
         {LOCATIONS.map((loc) => {
           const cur = loc === here;
           return (
-            <Pressable key={loc} onPress={() => apply((s) => travelTo(s, loc))} disabled={cur} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: cur ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 10, padding: 14, marginBottom: 8 }}>
+            <Pressable key={loc} onPress={() => router.push(`/oyun/diyar/${encodeURIComponent(loc)}`)} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: cur ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 10, padding: 14, marginBottom: 8 }}>
               <Text style={{ fontSize: 20 }}>{placeKind(loc) === "şehir" ? "🏙" : placeKind(loc) === "kale" ? "🏰" : "🏡"}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.display, fontSize: 14, color: cur ? C.gold : C.parchment }}>{loc}</Text>
                 <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{cur ? "Şu an buradasın" : placeKind(loc)}</Text>
               </View>
-              {!cur && <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>GİT ›</Text>}
+              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{cur ? "" : "›"}</Text>
             </Pressable>
           );
         })}
