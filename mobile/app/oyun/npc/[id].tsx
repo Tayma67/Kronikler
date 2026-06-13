@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
 import { npcsOf, talkTo, giftTo } from "../../../lib/game";
 import { ITEMS } from "../../../lib/world";
+import { Portre } from "../../../lib/ui";
 import { C, F } from "../../../lib/theme";
 
 export default function NpcDetail() {
@@ -23,9 +24,7 @@ export default function NpcDetail() {
         <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>‹ Geri</Text>
       </Pressable>
       <View style={{ alignItems: "center", marginBottom: 16 }}>
-        <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: "#2a1c0c", borderWidth: 2, borderColor: C.gold, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontSize: 34 }}>{npc.gender === "kadın" ? "👩" : "🧔"}</Text>
-        </View>
+        <Portre age={npc.age} gender={npc.gender} size={76} />
         <Text style={{ fontFamily: F.display, fontSize: 18, color: C.parchment, marginTop: 10 }}>{npc.name}</Text>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.gold }}>{npc.profession} · {npc.age} yaş</Text>
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchmentDim, marginTop: 6 }}>İlişki: {v}/100</Text>

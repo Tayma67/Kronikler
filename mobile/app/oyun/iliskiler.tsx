@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { npcsOf } from "../../lib/game";
+import { Portre } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
 
 function relLabel(v: number) {
@@ -33,9 +34,7 @@ export default function Iliskiler() {
           const v = rel[n.id] || 0; const lab = relLabel(v);
           return (
             <Pressable key={n.id} onPress={() => router.push(`/oyun/npc/${n.id}`)} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 12, marginBottom: 8 }}>
-              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: "#2a1c0c", borderWidth: 1.5, borderColor: C.borderHi, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 18 }}>{n.gender === "kadın" ? "👩" : "🧔"}</Text>
-              </View>
+              <Portre age={n.age} gender={n.gender} size={38} ring={false} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{n.name}</Text>
                 <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{n.profession} · {n.age} yaş</Text>

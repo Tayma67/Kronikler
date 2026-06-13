@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGame } from "../../lib/store";
 import { useItem, allocateStat, Stats } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
+import { Portre } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
 
 function Head({ t }: { t: string }) {
@@ -42,8 +43,13 @@ export default function Karakter() {
   const inv = Object.keys(p.inventory).filter((k) => p.inventory[k] > 0);
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 80 }}>
-      <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1 }}>{p.name}</Text>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 4 }}>{p.gender === "kadın" ? "Kadın" : "Erkek"} · {p.age} yaş · {p.location_name}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 4 }}>
+        <Portre age={p.age} gender={p.gender} size={64} />
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 20, color: C.parchment, letterSpacing: 1 }}>{p.name}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold }}>{p.gender === "kadın" ? "Kadın" : "Erkek"} · {p.age} yaş · {p.location_name}</Text>
+        </View>
+      </View>
 
       <Head t={p.stat_points > 0 ? `Özellikler · ${p.stat_points} puan` : "Özellikler"} />
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
