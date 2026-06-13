@@ -33,18 +33,23 @@ export default function Dashboard() {
   const [dilemma, setDilemma] = useState<Dilemma | null>(null);
   const seenLen = useRef<number>(state?.history.length ?? 0);
 
-  // Ayı ilerlet; ardından ara sıra (%28) bir ikilem çıkar.
-  const onAdvance = () => {
-    playAdvance();
-    doAdvance(1);
-    setTimeout(() => {
-      if (state && !state.player.dead && Math.random() < 0.28) {
+  const lastRolledTurn = useRef<number>(state?.turn ?? 0);
+  const onAdvance = () => { playAdvance(); doAdvance(1); };
+  const onChoose = (c: Choice) => { apply((s) => applyDilemma(s, c.delta, c.result)); setDilemma(null); };
+
+  // Tur değişiminde taze state üzerinden ara sıra (%28) ikilem çıkar (ölüyse çıkmaz).
+  useEffect(() => {
+    if (!state) return;
+    if (state.turn > lastRolledTurn.current) {
+      lastRolledTurn.current = state.turn;
+      if (!state.player.dead && !dilemma && Math.random() < 0.28) {
         const d = pickDilemma(state);
         if (d) setDilemma(d);
       }
-    }, 60);
-  };
-  const onChoose = (c: Choice) => { apply((s) => applyDilemma(s, c.delta, c.result)); setDilemma(null); };
+    } else if (state.turn < lastRolledTurn.current) {
+      lastRolledTurn.current = state.turn; // yeni nesil / sıfırlama
+    }
+  }, [state?.turn]);
 
   // Yeni eklenen landmark olayını perdede göster (ölüm hariç — ölüm ekranı ayrı).
   useEffect(() => {
