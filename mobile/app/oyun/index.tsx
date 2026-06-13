@@ -8,6 +8,7 @@ import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
 import { MilestoneModal } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
+import { playTap, playAdvance } from "../../lib/sound";
 import { C, F } from "../../lib/theme";
 
 function StatBar({ icon, value, max, color }: { icon: string; value: number; max: number; color: string }) {
@@ -105,17 +106,17 @@ export default function Dashboard() {
         </View>
       ) : (
         <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border }}>
-          <Pressable onPress={() => doEat()} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+          <Pressable onPress={() => { playTap(); doEat(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
             <GameIcon name="ye" size={14} color={C.parchmentDim} />
             <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>YE</Text>
           </Pressable>
           {p.age >= 13 && p.profession !== "işsiz" && (
-            <Pressable onPress={() => doWork()} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+            <Pressable onPress={() => { playTap(); doWork(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
               <GameIcon name="calis" size={14} color={C.parchmentDim} />
               <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>ÇALIŞ</Text>
             </Pressable>
           )}
-          <Pressable onPress={() => doAdvance(1)} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
+          <Pressable onPress={() => { playAdvance(); doAdvance(1); }} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
             <GameIcon name="ilerle" size={16} color="#1a1206" />
             <Text style={{ fontFamily: F.display, fontSize: 14, color: "#1a1206", letterSpacing: 2 }}>AYI İLERLE</Text>
           </Pressable>

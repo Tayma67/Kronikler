@@ -4,13 +4,16 @@ import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { View, ActivityIndicator } from "react-native";
+import { useEffect } from "react";
 import { GameProvider } from "../lib/store";
+import { loadSoundSetting } from "../lib/sound";
 import { C } from "../lib/theme";
 
 export default function RootLayout() {
   const [loaded] = useFonts({
     Cinzel_400Regular, Cinzel_700Bold, CrimsonText_400Regular, CrimsonText_400Regular_Italic,
   });
+  useEffect(() => { loadSoundSetting(); }, []);
   if (!loaded) {
     return <View style={{ flex: 1, backgroundColor: C.bg, alignItems: "center", justifyContent: "center" }}>
       <ActivityIndicator color={C.gold} />
