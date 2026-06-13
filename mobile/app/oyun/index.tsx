@@ -82,9 +82,14 @@ export default function Dashboard() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <MilestoneModal visible={!!milestone} type={milestone?.type || ""} text={milestone?.text || ""} onClose={() => setMilestone(null)} />
-      <DilemmaModal dilemma={dilemma} onChoose={onChoose} />
-      <AchievementToast name={ach?.name || null} icon={ach?.icon || "medal"} onClose={() => setAch(null)} />
+      {/* Tek seferde tek perde — öncelik: dönüm noktası > ikilem > başarım */}
+      {milestone ? (
+        <MilestoneModal visible={true} type={milestone.type} text={milestone.text} onClose={() => setMilestone(null)} />
+      ) : dilemma ? (
+        <DilemmaModal dilemma={dilemma} onChoose={onChoose} />
+      ) : ach ? (
+        <AchievementToast name={ach.name} icon={ach.icon} onClose={() => setAch(null)} />
+      ) : null}
       {/* Hero — mevsim görseli + koyu örtü */}
       <ImageBackground source={heroImage(p.age, cal.season)} resizeMode="cover" style={{ paddingTop: insets.top }}>
         <View style={{ backgroundColor: "rgba(8,5,2,0.55)", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
