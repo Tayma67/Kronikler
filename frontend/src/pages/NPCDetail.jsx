@@ -237,9 +237,10 @@ function ChatModal({ npc, state, onClose }) {
 
   return (
     <ModalShell onClose={onClose} title={`${npc.name} ile Sohbet`} tall>
-      {/* rel mini bar + S2 davranış kademesi */}
-      <div className="mb-1 flex items-center gap-2">
-        <div className="flex-1"><RelBar value={hand?.effective_rel ?? rel} /></div>
+      {/* Kiminle konuştuğunu GÖR: portre + ilişki + kademe */}
+      <div className="mb-2 flex items-center gap-2.5">
+        <Portre age={npc.age} gender={npc.gender} id={npc.id} emoji="👤" size="2.6rem" ring />
+        <div className="flex-1 min-w-0"><RelBar value={hand?.effective_rel ?? rel} /></div>
         {hand?.tier && (
           <span className={`shrink-0 text-[9px] px-1.5 py-0.5 border rounded-sm font-heading tracking-wider ${tierCls}`}
                 title={hand.tier.desc}>
