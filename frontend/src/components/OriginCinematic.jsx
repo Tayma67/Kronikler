@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { playSfx } from "@/lib/audio";
 
 /**
  * OriginCinematic — "Doğuş Sahnesi"
@@ -14,8 +15,9 @@ const BG = "/images/hero/cocuk_sonbahar.jpg";
 export default function OriginCinematic({ name, gender, onClose }) {
   const [step, setStep] = useState(0); // 0: karanlık/setting · 1: doğuş · 2: hazır
   useEffect(() => {
-    const t1 = setTimeout(() => setStep(1), 1400);
-    const t2 = setTimeout(() => setStep(2), 3600);
+    // Diyar belirince usul bir bildirim közü, isim açılınca yükselen akor.
+    const t1 = setTimeout(() => { setStep(1); try { playSfx("notify"); } catch (_) {} }, 1400);
+    const t2 = setTimeout(() => { setStep(2); try { playSfx("success"); } catch (_) {} }, 3600);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
   const cocuk = gender === "kadın" ? "bir kız çocuğu" : "bir oğlan çocuğu";

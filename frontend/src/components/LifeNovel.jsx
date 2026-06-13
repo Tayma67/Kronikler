@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { playSfx } from "@/lib/audio";
 
 /**
  * LifeNovel — "Hayatın Romanı"
@@ -35,6 +36,7 @@ const MILESTONES = {
 export default function LifeNovel({ name, baseAge = 7, chapters = [], yearStories = [], history = [], alive = true, onClose }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
+    try { playSfx("page"); } catch (_) {}   // kitap açılışı: sayfa hışırtısı
     const t = setTimeout(() => setVisible(true), 60);
     return () => clearTimeout(t);
   }, []);
