@@ -157,7 +157,7 @@ _DEATH: dict[str, list[str]] = {
         "{location}'da {name} ({age}) hayatını kaybetti. "
         "Tanımıyordun — ama birisinin sevdiği biriydi.",
 
-        "{name} ({age}), {location}'da dünyaya gözlerini yumdu. "
+        "{name} ({age}), {location}'da hayata gözlerini yumdu. "
         "Şehrin tarihi bir satır daha uzadı.",
     ],
 }
@@ -392,6 +392,13 @@ _YEAR_OPENERS = [
     "Yıl döndü; {name} artık {age} yaşında.",
 ]
 
+_YEAR_OPENERS_QUIET = [
+    "{age} yaşındaydın. Sakin bir yıldı.",
+    "Yıl döndü; {name} artık {age} yaşında.",
+    "{name} için {age}. yaş sessizce geçti.",
+    "{age}. yaşın geldi geçti, telaşsız.",
+]
+
 _YEAR_CLOSERS = [
     "Yıl bitti. Bir şeyler değişti — içinde ve dışında.",
     "Bu yıl geride kaldı. Bir kısmı ağırdı, bir kısmı güzeldi.",
@@ -469,7 +476,7 @@ def generate_year_story(year_events: list, player: dict) -> str:
 
     # Hiçbir kişisel olay ve hiçbir etkili makro yoksa: sessiz yıl
     if not personal and not macro:
-        opener = _pick(_YEAR_OPENERS, name=name, age=age)
+        opener = _pick(_YEAR_OPENERS_QUIET, name=name, age=age)
         return f"{opener} {_pick(_NO_MAJOR_EVENTS)}"
 
     def has(*types):
