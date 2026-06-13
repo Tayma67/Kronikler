@@ -18,6 +18,7 @@ export interface Player {
   skills: Skills; skill_xp: Skills; perks: string[];
   injuries: Injury[]; career_xp: number;
   nam: Nam; child_invests: Record<string, string[]>;
+  equipped: { silah: string | null; zirh: string | null };
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -159,7 +160,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       faction: null, faction_standing: {},
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
       skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [], career_xp: 0,
-      nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {},
+      nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
     },
     history: [],
   };
@@ -517,7 +518,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       inventory: { ekmek: 2 }, properties: props, generation: gen,
       faction: null, faction_standing: {},
       skills, skill_xp: { combat: skills.combat * 100, trade: 0, crafting: skills.crafting * 100, social: skills.social * 100 },
-      perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {},
+      perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, ${will.label.toLowerCase()} vasiyetiyle mirası devraldı (${inheritMoney} akçe, ${props.length} mülk).${noteStr}`, scope: "kişisel", landmark: true }],
   };
@@ -633,11 +634,35 @@ export const ENCOUNTERS: Encounter[] = [
 // Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
 export function combatPower(p: Player): number {
   let pw = effStat(p, "strength") * 2 + effStat(p, "stamina") + p.skills.combat;
-  if ((p.inventory["bicak"] || 0) > 0) pw += 4;
+  const wid = p.equipped?.silah; const w = wid ? ITEMS[wid] : null;
+  pw += w?.power || ((p.inventory["bicak"] || 0) > 0 ? 4 : 0); // kuşanılı silah, yoksa elindeki bıçak
   if (p.faction === "asker") pw += 3;
   if (hasPerk(p, "cevik")) pw += 3;
   if (hasPerk(p, "nisanci")) pw += 5;
   return pw;
+}
+// Kuşanılı zırhın savunması (savaşta alınan hasarı azaltır).
+export function armorDefense(p: Player): number {
+  const aid = p.equipped?.zirh; return aid ? (ITEMS[aid]?.defense || 0) : 0;
+}
+// Eşya kuşan (silah/zırh) — envanterden çıkarıp slota koyar, eskisini geri verir.
+export function equipItem(prev: GameState, id: string): GameState {
+  const s = clone(prev); const p = s.player; const it = ITEMS[id];
+  if (!it || !(p.inventory[id] > 0) || (it.kind !== "silah" && it.kind !== "zirh")) return s;
+  const slot: "silah" | "zirh" = it.kind === "silah" ? "silah" : "zirh";
+  p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
+  const old = p.equipped[slot];
+  if (old) p.inventory[old] = (p.inventory[old] || 0) + 1;
+  p.equipped[slot] = id;
+  push(s, "kusanma", `${it.name} kuşandın.`);
+  return s;
+}
+export function unequipItem(prev: GameState, slot: "silah" | "zirh"): GameState {
+  const s = clone(prev); const p = s.player; const old = p.equipped[slot];
+  if (!old) return s;
+  p.inventory[old] = (p.inventory[old] || 0) + 1; p.equipped[slot] = null;
+  push(s, "kusanma", `${ITEMS[old]?.name || "Teçhizat"} çıkardın.`);
+  return s;
 }
 export function fightEncounter(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const e = ENCOUNTERS.find((x) => x.id === id);

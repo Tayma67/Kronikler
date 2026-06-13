@@ -3,7 +3,7 @@ export interface NPC { id: string; name: string; age: number; gender: "erkek" | 
 // Kişilik özellikleri (deterministik atanır).
 export const TRAITS = ["neşeli","ciddi","kibirli","cömert","dertli","yalnız","kurnaz","mert","dindar","hırslı","utangaç","sıcakkanlı"];
 const QUIRKS = ["sürekli hava durumundan dert yanar","eski günleri anlatmayı sever","herkese lakap takar","az konuşur çok dinler","yüksek sesle güler","pazarlığa bayılır","komşularını çekiştirir","bir türküyü mırıldanır"];
-export interface Item { id: string; name: string; icon: string; buy: number; sell: number; kind: "yiyecek" | "esya" | "silah"; heal?: number; feed?: number; }
+export interface Item { id: string; name: string; icon: string; buy: number; sell: number; kind: "yiyecek" | "esya" | "silah" | "zirh"; heal?: number; feed?: number; power?: number; defense?: number; }
 
 const AD_E = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim","Osman","Yusuf","Murat","Kerem","Emre","Cihan","Barış","Tolga","Mert"];
 const AD_K = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif","Nur","Reyhan","Cansu","Derya","Sevda","Pınar","Gül","Nazlı","Hande"];
@@ -34,12 +34,33 @@ export function generateNPCs(seed: number, n = 30): NPC[] {
 }
 
 export const ITEMS: Record<string, Item> = {
-  ekmek:   { id: "ekmek",   name: "Ekmek",     icon: "🍞", buy: 3,  sell: 1,  kind: "yiyecek", feed: 25 },
-  peynir:  { id: "peynir",  name: "Peynir",    icon: "🧀", buy: 5,  sell: 2,  kind: "yiyecek", feed: 30 },
-  et:      { id: "et",      name: "Et",        icon: "🍖", buy: 9,  sell: 4,  kind: "yiyecek", feed: 45 },
-  bugday:  { id: "bugday",  name: "Buğday",    icon: "🌾", buy: 2,  sell: 1,  kind: "esya" },
-  sifa:    { id: "sifa",    name: "Şifalı Ot", icon: "🌿", buy: 12, sell: 5,  kind: "yiyecek", heal: 30 },
-  bicak:   { id: "bicak",   name: "Bıçak",     icon: "🗡", buy: 20, sell: 8,  kind: "silah" },
+  // Yiyecek
+  ekmek:   { id: "ekmek",   name: "Ekmek",      icon: "🍞", buy: 3,  sell: 1,  kind: "yiyecek", feed: 25 },
+  peynir:  { id: "peynir",  name: "Peynir",     icon: "🧀", buy: 5,  sell: 2,  kind: "yiyecek", feed: 30 },
+  et:      { id: "et",      name: "Et",         icon: "🍖", buy: 9,  sell: 4,  kind: "yiyecek", feed: 45 },
+  balik:   { id: "balik",   name: "Balık",      icon: "🐟", buy: 6,  sell: 2,  kind: "yiyecek", feed: 35 },
+  corba:   { id: "corba",   name: "Çorba",      icon: "🍲", buy: 4,  sell: 1,  kind: "yiyecek", feed: 28 },
+  bal:     { id: "bal",     name: "Bal",        icon: "🍯", buy: 8,  sell: 3,  kind: "yiyecek", feed: 20, heal: 8 },
+  sarap:   { id: "sarap",   name: "Şarap",      icon: "🍷", buy: 10, sell: 4,  kind: "yiyecek", feed: 12 },
+  sifa:    { id: "sifa",    name: "Şifalı Ot",  icon: "🌿", buy: 12, sell: 5,  kind: "yiyecek", heal: 30 },
+  iksir:   { id: "iksir",   name: "Şifa İksiri",icon: "🧪", buy: 25, sell: 10, kind: "yiyecek", heal: 60 },
+  // Hammadde / eşya
+  bugday:  { id: "bugday",  name: "Buğday",     icon: "🌾", buy: 2,  sell: 1,  kind: "esya" },
+  un:      { id: "un",      name: "Un",         icon: "🌾", buy: 4,  sell: 2,  kind: "esya" },
+  yun:     { id: "yun",     name: "Yün",        icon: "🧶", buy: 5,  sell: 2,  kind: "esya" },
+  demir:   { id: "demir",   name: "Demir",      icon: "⛏",  buy: 14, sell: 6,  kind: "esya" },
+  kereste: { id: "kereste", name: "Kereste",    icon: "🪵", buy: 7,  sell: 3,  kind: "esya" },
+  deri:    { id: "deri",    name: "Deri",       icon: "🟫", buy: 9,  sell: 4,  kind: "esya" },
+  // Silahlar (power)
+  bicak:        { id: "bicak",        name: "Bıçak",        icon: "🗡", buy: 20,  sell: 8,   kind: "silah", power: 4 },
+  kilic:        { id: "kilic",        name: "Kılıç",        icon: "⚔", buy: 60,  sell: 24,  kind: "silah", power: 8 },
+  celik_kilic:  { id: "celik_kilic",  name: "Çelik Kılıç",  icon: "⚔", buy: 140, sell: 56,  kind: "silah", power: 13 },
+  savas_balta:  { id: "savas_balta",  name: "Savaş Baltası",icon: "🪓", buy: 110, sell: 44,  kind: "silah", power: 11 },
+  yay:          { id: "yay",          name: "Av Yayı",      icon: "🏹", buy: 50,  sell: 20,  kind: "silah", power: 7 },
+  // Zırh (defense)
+  deri_zirh:    { id: "deri_zirh",    name: "Deri Zırh",    icon: "🦺", buy: 45,  sell: 18,  kind: "zirh", defense: 4 },
+  zincir_zirh:  { id: "zincir_zirh",  name: "Zincir Zırh",  icon: "🛡", buy: 120, sell: 48,  kind: "zirh", defense: 9 },
+  kalkan:       { id: "kalkan",       name: "Kalkan",       icon: "🛡", buy: 70,  sell: 28,  kind: "zirh", defense: 6 },
 };
 
 // Pazar malları — lokasyona göre küçük fiyat dalgalanması.

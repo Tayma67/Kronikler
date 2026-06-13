@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, factionById, pendingPerkCount } from "../../lib/game";
+import { useItem, allocateStat, Stats, factionById, pendingPerkCount, equipItem, unequipItem } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 import { Portre } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
@@ -107,15 +107,38 @@ export default function Karakter() {
         <Row k="Çocuklar" v={p.children.length ? p.children.join(", ") : "—"} />
       </View>
 
+      <Head t="Teçhizat" />
+      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border }}>
+          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted }}>SİLAH</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.silah ? `${ITEMS[p.equipped.silah]?.name} (+${ITEMS[p.equipped.silah]?.power})` : "—"}</Text>
+            {p.equipped?.silah && <Pressable onPress={() => apply((s) => unequipItem(s, "silah"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>ÇIKAR</Text></Pressable>}
+          </View>
+        </View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted }}>ZIRH</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.zirh ? `${ITEMS[p.equipped.zirh]?.name} (+${ITEMS[p.equipped.zirh]?.defense})` : "—"}</Text>
+            {p.equipped?.zirh && <Pressable onPress={() => apply((s) => unequipItem(s, "zirh"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>ÇIKAR</Text></Pressable>}
+          </View>
+        </View>
+      </View>
+
       <Head t="Heybe" />
       {inv.length === 0 ? (
         <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>Heyben boş. Pazardan bir şeyler al.</Text>
       ) : inv.map((k) => {
-        const it = ITEMS[k]; const usable = it && (it.feed || it.heal);
+        const it = ITEMS[k]; const usable = it && (it.feed || it.heal); const equipable = it && (it.kind === "silah" || it.kind === "zirh");
         return (
           <View key={k} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7 }}>
             <Text style={{ fontSize: 16 }}>{it?.icon || "📦"}</Text>
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{it?.name || k} ×{p.inventory[k]}</Text>
+            {equipable && (
+              <Pressable onPress={() => apply((s) => equipItem(s, k))} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>KUŞAN</Text>
+              </Pressable>
+            )}
             {usable && (
               <Pressable onPress={() => apply((s) => useItem(s, k))} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>KULLAN</Text>

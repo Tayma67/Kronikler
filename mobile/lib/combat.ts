@@ -1,5 +1,5 @@
 // Tur-tabanlı taktik savaş motoru (saf). Sonuç savas ekranında GameState'e uygulanır.
-import { Player, Encounter, combatPower } from "./game";
+import { Player, Encounter, combatPower, armorDefense } from "./game";
 
 export type Move = "hamle" | "savustur" | "ozel";
 export const MOVES: { id: Move; label: string; icon: string; hint: string }[] = [
@@ -55,6 +55,7 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move): BattleState 
   } else {
     let dmg = em === "ozel" ? Math.round(baseE * 1.4) : baseE;
     if (mv === "savustur") dmg = Math.round(dmg * 0.5); // savuşturma kısmi korur
+    dmg = Math.max(1, dmg - armorDefense(p)); // zırh hasarı azaltır
     bs.playerHp -= dmg; txt += `Açık verdin, ${dmg} hasar aldın.`;
   }
   bs.log.push(txt);
