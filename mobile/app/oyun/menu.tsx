@@ -24,6 +24,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
   ]},
   { title: "Diyar & Soy", items: [
     { to: "/oyun/sehir", icon: "sehir", label: "Şehir / Diyar" },
+    { to: "/oyun/harita", icon: "firsatlar", label: "Diyar Haritası" },
     { to: "/oyun/haberler", icon: "haberler", label: "Diyardan Haberler" },
     { to: "/oyun/hanedan", icon: "hanedan", label: "Hanedan" },
     { to: "/oyun/nesil", icon: "dogum", label: "Nesil & Vâris" },
