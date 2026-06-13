@@ -312,7 +312,7 @@ export default function GameLayout() {
   const pulseNews          = (state.world_events  || []).some(e => e.active);
 
   return (
-    <div style={{ height: '100vh', background: 'var(--color-bg)', display: 'flex', overflow: 'hidden' }}>
+    <div style={{ height: '100dvh', background: 'var(--color-bg)', display: 'flex', overflow: 'hidden' }}>
       <Toaster theme="dark" position="top-center" />
       <EmberAmbiance />
 

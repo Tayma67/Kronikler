@@ -48,6 +48,9 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
+  /* App-shell: belge kendisi kaymaz (website hissi yok); iç içerik kendi
+     alanında kayar. Mobilde adres çubuğu kaynaklı sayfa kaymasını önler. */
+  overflow: hidden;
 }
 
 body {
