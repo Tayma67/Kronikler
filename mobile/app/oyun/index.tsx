@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { continueAsHeir, applyDilemma, GameEvent } from "../../lib/game";
+import { continueAsHeir, applyDilemma, careerTitle, GameEvent } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
@@ -77,7 +77,7 @@ export default function Dashboard() {
         <View style={{ backgroundColor: "rgba(8,5,2,0.55)", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
           <Text style={{ fontFamily: F.display, fontSize: 20, color: C.parchment, letterSpacing: 1, textAlign: "center", textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 8 }}>{p.name}</Text>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.gold, textAlign: "center", marginTop: 2 }}>
-            {p.profession === "işsiz" ? "İşsiz" : p.profession} · {p.age} yaş
+            {p.profession === "işsiz" ? "İşsiz" : careerTitle(p.profession, p.career_xp)} · {p.age} yaş
           </Text>
           <Text style={{ fontFamily: F.display, fontSize: 9, color: C.parchmentDim, letterSpacing: 1, textAlign: "center", marginTop: 4 }}>
             {cal.season.toUpperCase()} · {cal.month_name.toUpperCase()} {cal.year}

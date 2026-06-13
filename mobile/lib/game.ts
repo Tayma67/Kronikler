@@ -16,7 +16,7 @@ export interface Player {
   inventory: Record<string, number>; properties: string[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
-  injuries: Injury[];
+  injuries: Injury[]; career_xp: number;
 }
 // Yaralanmalar bir özelliği geçici/kalıcı düşürür. Etkili (effective) değer.
 export function effStat(p: Player, key: keyof Stats): number {
@@ -66,9 +66,47 @@ export function npcStateOf(s: GameState, id: string): NpcState {
   return s.npc_state[id];
 }
 
-export const LOCATIONS = ["Üzümlü", "Akpınar", "Demirhan", "Yenişehir", "Karaağaç"];
-const PROFS = ["çiftçi","demirci","tüccar","balıkçı","avcı","marangoz","çoban","fırıncı","asker","müzisyen"];
-const PROF_STAT: Record<string, keyof Stats> = { çiftçi:"stamina", demirci:"strength", tüccar:"charisma", balıkçı:"stamina", avcı:"strength", marangoz:"intelligence", çoban:"stamina", fırıncı:"intelligence", asker:"strength", müzisyen:"charisma" };
+// Yerleşimler — şehir/köy/kale. Seyahat ve atmosfer.
+export interface Place { name: string; kind: "şehir" | "köy" | "kale"; }
+export const PLACES: Place[] = [
+  { name: "Üzümlü", kind: "köy" }, { name: "Akpınar", kind: "köy" }, { name: "Demirhan", kind: "kale" },
+  { name: "Yenişehir", kind: "şehir" }, { name: "Karaağaç", kind: "köy" }, { name: "Söğütlü", kind: "köy" },
+  { name: "Bozkır", kind: "kale" }, { name: "Gümüşhisar", kind: "şehir" }, { name: "Çakıllı", kind: "köy" },
+  { name: "Kavaklı", kind: "köy" }, { name: "Sarıkaya", kind: "kale" }, { name: "Akşehir", kind: "şehir" },
+];
+export const LOCATIONS = PLACES.map((p) => p.name);
+export function placeKind(name: string): string { return PLACES.find((p) => p.name === name)?.kind || "köy"; }
+
+// Meslekler — kariyer merdivenli (15 meslek). Unvanlar deneyimle yükselir.
+export interface Profession { id: string; name: string; stat: keyof Stats; base: number; tiers: string[]; }
+export const PROFESSIONS: Profession[] = [
+  { id: "çiftçi",    name: "Çiftçi",    stat: "stamina",      base: 4, tiers: ["Irgat", "Çiftçi", "Toprak Sahibi"] },
+  { id: "demirci",   name: "Demirci",   stat: "strength",     base: 5, tiers: ["Demirci Çırağı", "Demirci", "Usta Demirci"] },
+  { id: "tüccar",    name: "Tüccar",    stat: "charisma",     base: 5, tiers: ["Seyyar Satıcı", "Tüccar", "Tüccar Başı"] },
+  { id: "balıkçı",   name: "Balıkçı",   stat: "stamina",      base: 4, tiers: ["Ağcı", "Balıkçı", "Reis"] },
+  { id: "avcı",      name: "Avcı",      stat: "strength",     base: 4, tiers: ["İzci", "Avcı", "Usta Avcı"] },
+  { id: "marangoz",  name: "Marangoz",  stat: "intelligence", base: 5, tiers: ["Çırak", "Marangoz", "Usta Marangoz"] },
+  { id: "çoban",     name: "Çoban",     stat: "stamina",      base: 3, tiers: ["Sürü Yamağı", "Çoban", "Sürü Sahibi"] },
+  { id: "fırıncı",   name: "Fırıncı",   stat: "intelligence", base: 4, tiers: ["Hamurkâr", "Fırıncı", "Ekmekçi Başı"] },
+  { id: "asker",     name: "Asker",     stat: "strength",     base: 5, tiers: ["Acemi", "Asker", "Onbaşı", "Sipahi"] },
+  { id: "müzisyen",  name: "Müzisyen",  stat: "charisma",     base: 4, tiers: ["Çırak Ozan", "Müzisyen", "Saz Üstadı"] },
+  { id: "şifacı",    name: "Şifacı",    stat: "intelligence", base: 5, tiers: ["Otacı", "Şifacı", "Hekim"] },
+  { id: "katip",     name: "Kâtip",     stat: "intelligence", base: 5, tiers: ["Çömez", "Kâtip", "Divan Kâtibi"] },
+  { id: "kuyumcu",   name: "Kuyumcu",   stat: "intelligence", base: 6, tiers: ["Çırak", "Kuyumcu", "Usta Kuyumcu"] },
+  { id: "dokumacı",  name: "Dokumacı",  stat: "intelligence", base: 4, tiers: ["Çırak", "Dokumacı", "Usta Dokumacı"] },
+  { id: "hancı",     name: "Hancı",     stat: "charisma",     base: 5, tiers: ["Hizmetkâr", "Hancı", "Han Sahibi"] },
+];
+export function professionById(id: string): Profession | undefined { return PROFESSIONS.find((p) => p.id === id); }
+// Unvan kademesi: kariyer deneyimine göre (her 30 ay bir kademe).
+export function careerTier(prof: Profession, careerXp: number): number {
+  return Math.min(prof.tiers.length - 1, Math.floor(careerXp / 30));
+}
+export function careerTitle(profId: string, careerXp: number): string {
+  const pr = professionById(profId); if (!pr) return profId;
+  return pr.tiers[careerTier(pr, careerXp)];
+}
+const PROFS = PROFESSIONS.map((p) => p.id);
+const PROF_STAT: Record<string, keyof Stats> = Object.fromEntries(PROFESSIONS.map((p) => [p.id, p.stat])) as Record<string, keyof Stats>;
 const SPOUSE_K = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif","Nur","Reyhan"];
 const SPOUSE_E = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim","Osman","Yusuf"];
 const CHILD = ["Ali","Veli","Can","Ece","Mert","Naz","Kerem","Defne","Arda","Mira"];
@@ -93,7 +131,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       properties: [], generation: 1,
       faction: null, faction_standing: {},
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
-      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [],
+      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [], career_xp: 0,
     },
     history: [],
   };
@@ -163,9 +201,11 @@ export function advance(prev: GameState, n = 1): GameState {
   return s;
 }
 
+const TITLE_MULT = [1, 1.6, 2.4, 3.2];
 export function work(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.profession === "işsiz") return s;
+  const pr = professionById(p.profession);
   const stat = effStat(p, PROF_STAT[p.profession] || "stamina");
   let mult = 1;
   if (p.faction === "demirci") mult += 0.2;
@@ -173,10 +213,16 @@ export function work(prev: GameState): GameState {
   if (hasPerk(p, "becerikli")) mult += 0.15;
   if (hasPerk(p, "usta_eli")) mult += 0.2;
   if (hasPerk(p, "basyapit")) mult += 0.25;
-  const earn = Math.round((4 + stat * 2 + Math.floor(Math.random() * 6)) * mult);
+  const tierBefore = pr ? careerTier(pr, p.career_xp) : 0;
+  const titleMult = TITLE_MULT[tierBefore] || 1;
+  const base = pr ? pr.base : 4;
+  const earn = Math.round((base + stat * 2 + Math.floor(Math.random() * 6)) * mult * titleMult);
   p.money += earn; p.hunger = Math.max(0, p.hunger - 6);
+  p.career_xp += 1;
   gainSkill(s, "crafting", 8);
-  push(s, "çalışma", `${cap(p.profession)} olarak çalıştın, ${earn} akçe kazandın.`);
+  push(s, "çalışma", `${careerTitle(p.profession, p.career_xp - 1)} olarak çalıştın, ${earn} akçe kazandın.`);
+  // Terfi?
+  if (pr) { const after = careerTier(pr, p.career_xp); if (after > tierBefore) push(s, "terfi", `Yükseldin: artık ${pr.tiers[after]}!`, "kişisel", true); }
   return s;
 }
 
@@ -292,8 +338,8 @@ export const ALL_PROFS = PROFS;
 export function changeProfession(prev: GameState, prof: string): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || prof === p.profession || !PROFS.includes(prof)) return s;
-  p.profession = prof;
-  push(s, "meslek_değişimi", `${cap(prof)} mesleğine geçtin.`, "kişisel", true);
+  p.profession = prof; p.career_xp = 0;
+  push(s, "meslek_değişimi", `${professionById(prof)?.name || cap(prof)} mesleğine geçtin — yeniden en alttan.`, "kişisel", true);
   return s;
 }
 
@@ -414,7 +460,7 @@ export function continueAsHeir(prev: GameState): GameState {
       inventory: { ekmek: 2 }, properties: props, generation: gen,
       faction: null, faction_standing: {},
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
-      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [],
+      skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [], career_xp: 0,
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, atasının mirasını devraldı (${inheritMoney} akçe, ${props.length} mülk).`, scope: "kişisel", landmark: true }],
   };
