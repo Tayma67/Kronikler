@@ -419,13 +419,15 @@ export default function Dashboard() {
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <div style={{
-      height: '100%', overflow: 'hidden', background: 'var(--color-bg)',
+      height: '100%', overflowY: 'auto', overflowX: 'hidden',
+      WebkitOverflowScrolling: 'touch',
+      background: 'var(--color-bg)',
       display: 'flex', flexDirection: 'column',
       maxWidth: '480px', margin: '0 auto', position: 'relative',
     }}>
 
-      {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <div className="hero-section" style={{ flexShrink: 0 }}>
+      {/* ── HERO (sayfa kayınca tepede sabit) ─────────────────────────────── */}
+      <div className="hero-section" style={{ flexShrink: 0, position: 'sticky', top: 0, zIndex: 5 }}>
         {/* Çocuklukta gerçek görsel; yetişkinlikte mevsim sahnesi
             (çocuk fotoğrafı 40 yaşındaki karakterde aldatmaca olur) */}
         {playerAge < 13 ? (
@@ -594,7 +596,7 @@ export default function Dashboard() {
       {/* ── SCROLLABLE CONTENT ─────────────────────────────────────────────── */}
       {/* Not: alt boşluk panelin kendi marginBottom'ı ile veriliyor; burada
           ekstra paddingBottom panelle çakışıp günlüğü küçültüyordu (kaldırıldı) */}
-      <div style={{ flex: 1, overflow: 'hidden', paddingBottom: 0, background: 'var(--color-bg)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: 'var(--color-bg)', display: 'flex', flexDirection: 'column' }}>
 
         {/* S3 Makyaj: Hayat Romanı şeridi — perde, gerilim, kapındaki elçiler.
             GDD v8 aşamalı keşif: çocuklukta gizli — 13'te dünya açılınca belirir.
@@ -607,8 +609,8 @@ export default function Dashboard() {
 
         <div style={{
           margin: '0.7rem 0.75rem 0',
-          // Alt nav barın üzerinde bitir (Ayı İlerle artık nav barda):
-          // panel içi scroll çalışır, içerik nav'ın altında kaybolmaz
+          // Sayfa kaydıkça hero sabit; günlük doğal yükseklikte akar.
+          // Son içerik nav barın altında kaybolmasın diye alt boşluk:
           marginBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
           background: 'var(--color-card)',
           border: '1px solid var(--color-border-hi)',
@@ -616,8 +618,6 @@ export default function Dashboard() {
           boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
           overflow: 'hidden',
           position: 'relative',
-          flex: 1,
-          minHeight: 0,
           display: 'flex',
           flexDirection: 'column',
         }}>
@@ -732,13 +732,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Event list */}
+          {/* Event list — doğal yükseklik; sayfa kaydıkça hero sabit kalır */}
           <div style={{
             padding: '0.85rem 0.85rem 1rem',
-            flex: 1,
-            overflowY: 'auto',
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(201,168,76,0.22) transparent',
             background: 'linear-gradient(180deg, #271D0C 0%, #231808 50%, #1F1507 100%)',
             boxShadow: 'inset 0 0 50px rgba(201,168,76,0.05), inset 0 2px 0 rgba(201,168,76,0.07), inset 0 -2px 0 rgba(201,168,76,0.04)',
           }}>
