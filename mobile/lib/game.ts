@@ -190,6 +190,25 @@ export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   return s;
 }
 
+// Dünür gönderebilir misin? (Bekâr, 18+, karşı cinsten yetişkin, yakınlık yeterli.)
+export function canCourt(p: Player, npc: NPC, rel: number): boolean {
+  return !p.dead && !p.married && p.age >= 18 && npc.age >= 18 && npc.gender !== p.gender && rel >= 50;
+}
+// Evlenme teklifi: yakınlık + karizmaya göre kabul/ret.
+export function proposeMarriage(prev: GameState, npc: NPC): GameState {
+  const s = clone(prev); const p = s.player; const rel = s.relationships[npc.id] || 0;
+  if (!canCourt(p, npc, rel)) return s;
+  const ok = Math.random() < Math.min(0.95, 0.25 + (rel - 50) * 0.012 + p.stats.charisma * 0.03);
+  if (ok) {
+    p.married = true; p.spouse_name = npc.name; p.reputation = Math.min(100, p.reputation + 5);
+    push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true);
+  } else {
+    s.relationships[npc.id] = Math.max(0, rel - 8);
+    push(s, "sohbet", `${npc.name} teklifini şimdilik geri çevirdi. Vakit ister.`);
+  }
+  return s;
+}
+
 // Seyahat: başka bir yerleşime git (pazar/atmosfer değişir, biraz tokluk gider).
 export function travelTo(prev: GameState, dest: string): GameState {
   const s = clone(prev); const p = s.player;
