@@ -1,10 +1,12 @@
 import { View, Text, ScrollView, Pressable, ImageBackground } from "react-native";
+import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { continueAsHeir } from "../../lib/game";
+import { continueAsHeir, GameEvent } from "../../lib/game";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
+import { MilestoneModal } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
 
 function StatBar({ icon, value, max, color }: { icon: string; value: number; max: number; color: string }) {
@@ -24,6 +26,21 @@ export default function Dashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, doAdvance, doEat, doWork, resetGame, apply } = useGame();
+  const [milestone, setMilestone] = useState<GameEvent | null>(null);
+  const seenLen = useRef<number>(state?.history.length ?? 0);
+
+  // Yeni eklenen landmark olayını perdede göster (ölüm hariç — ölüm ekranı ayrı).
+  useEffect(() => {
+    if (!state) return;
+    const h = state.history;
+    if (h.length > seenLen.current) {
+      const fresh = h.slice(seenLen.current);
+      const land = [...fresh].reverse().find((e) => e.landmark && e.type !== "ölüm" && e.type !== "nesil_devri");
+      if (land) setMilestone(land);
+    }
+    seenLen.current = h.length;
+  }, [state?.history.length]);
+
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const cal = currentCalendar(state.turn);
@@ -31,6 +48,7 @@ export default function Dashboard() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <MilestoneModal visible={!!milestone} type={milestone?.type || ""} text={milestone?.text || ""} onClose={() => setMilestone(null)} />
       {/* Hero — mevsim görseli + koyu örtü */}
       <ImageBackground source={heroImage(p.age, cal.season)} resizeMode="cover" style={{ paddingTop: insets.top }}>
         <View style={{ backgroundColor: "rgba(8,5,2,0.55)", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
