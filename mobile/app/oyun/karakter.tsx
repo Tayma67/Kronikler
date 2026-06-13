@@ -1,7 +1,13 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGame } from "../../lib/store";
+import { useItem } from "../../lib/game";
+import { ITEMS } from "../../lib/world";
 import { C, F } from "../../lib/theme";
+
+function Head({ t }: { t: string }) {
+  return <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 18, marginBottom: 8 }}>{t}</Text>;
+}
 
 function Row({ k, v }: { k: string; v: string | number }) {
   return (
@@ -14,13 +20,16 @@ function Row({ k, v }: { k: string; v: string | number }) {
 
 export default function Karakter() {
   const insets = useSafeAreaInsets();
-  const { state } = useGame();
+  const { state, apply } = useGame();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
+  const inv = Object.keys(p.inventory).filter((k) => p.inventory[k] > 0);
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 16 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 80 }}>
       <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1 }}>{p.name}</Text>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 16 }}>{p.gender === "kadın" ? "Kadın" : "Erkek"} · {p.age} yaş · {p.location_name}</Text>
+      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 4 }}>{p.gender === "kadın" ? "Kadın" : "Erkek"} · {p.age} yaş · {p.location_name}</Text>
+
+      <Head t="Özellikler" />
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
         <Row k="Güç" v={p.stats.strength} />
         <Row k="Zekâ" v={p.stats.intelligence} />
@@ -29,8 +38,32 @@ export default function Karakter() {
         <Row k="Meslek" v={p.profession === "işsiz" ? "İşsiz" : p.profession} />
         <Row k="Sağlık" v={Math.round(p.health)} />
         <Row k="Tokluk" v={Math.round(p.hunger)} />
-        <Row k="Akçe" v={p.money} />
+        <Row k="Akçe" v={`${p.money} ⚜`} />
       </View>
+
+      <Head t="Aile" />
+      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
+        <Row k="Eş" v={p.spouse_name || "—"} />
+        <Row k="Çocuklar" v={p.children.length ? p.children.join(", ") : "—"} />
+      </View>
+
+      <Head t="Heybe" />
+      {inv.length === 0 ? (
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>Heyben boş. Pazardan bir şeyler al.</Text>
+      ) : inv.map((k) => {
+        const it = ITEMS[k]; const usable = it && (it.feed || it.heal);
+        return (
+          <View key={k} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7 }}>
+            <Text style={{ fontSize: 16 }}>{it?.icon || "📦"}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{it?.name || k} ×{p.inventory[k]}</Text>
+            {usable && (
+              <Pressable onPress={() => apply((s) => useItem(s, k))} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>KULLAN</Text>
+              </Pressable>
+            )}
+          </View>
+        );
+      })}
     </ScrollView>
   );
 }

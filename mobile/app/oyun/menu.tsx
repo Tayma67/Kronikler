@@ -17,7 +17,14 @@ export default function Menu() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, padding: 20, paddingTop: insets.top + 16 }}>
       <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginBottom: 4 }}>Menü</Text>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, marginBottom: 24 }}>Kül & Köz · çevrimdışı sürüm</Text>
+      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, marginBottom: 20 }}>Kül & Köz · çevrimdışı sürüm</Text>
+
+      <Pressable onPress={() => router.push("/oyun/pazar")} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.border, backgroundColor: C.card, marginBottom: 10 }}>
+        <Text style={{ fontSize: 18 }}>⚖️</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>Pazar</Text>
+      </Pressable>
+
+      <View style={{ height: 16 }} />
       <Pressable onPress={confirmReset} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
         <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood }}>YENİ HAYAT BAŞLAT</Text>
       </Pressable>

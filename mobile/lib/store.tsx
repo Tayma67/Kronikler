@@ -9,9 +9,10 @@ interface Ctx {
   state: GameState | null;
   loading: boolean;
   startGame: (first: string, surname: string, gender: "erkek" | "kadın") => Promise<void>;
-  doAdvance: (n?: number) => Promise<void>;
-  doEat: () => Promise<void>;
-  doWork: () => Promise<void>;
+  apply: (fn: (s: GameState) => GameState) => void;
+  doAdvance: (n?: number) => void;
+  doEat: () => void;
+  doWork: () => void;
   resetGame: () => Promise<void>;
 }
 
@@ -23,41 +24,34 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      try {
-        const raw = await AsyncStorage.getItem(KEY);
-        if (raw) setState(JSON.parse(raw));
-      } catch {}
+      try { const raw = await AsyncStorage.getItem(KEY); if (raw) setState(JSON.parse(raw)); } catch {}
       setLoading(false);
     })();
   }, []);
 
-  const persist = useCallback(async (s: GameState) => {
+  // Tek geçiş noktası: state'i dönüştür + kalıcılaştır.
+  const apply = useCallback((fn: (s: GameState) => GameState) => {
+    setState((cur) => {
+      if (!cur) return cur;
+      const next = fn(cur);
+      AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, []);
+
+  const startGame = useCallback(async (first: string, surname: string, gender: "erkek" | "kadın") => {
+    const s = newGame(first, surname, gender);
     setState(s);
     try { await AsyncStorage.setItem(KEY, JSON.stringify(s)); } catch {}
   }, []);
 
-  const startGame = useCallback(async (first: string, surname: string, gender: "erkek" | "kadın") => {
-    await persist(newGame(first, surname, gender));
-  }, [persist]);
-
-  const doAdvance = useCallback(async (n = 1) => {
-    setState((cur) => { if (!cur) return cur; const next = advance(cur, n); AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {}); return next; });
-  }, []);
-
-  const doEat = useCallback(async () => {
-    setState((cur) => { if (!cur) return cur; const next = eat(cur); AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {}); return next; });
-  }, []);
-
-  const doWork = useCallback(async () => {
-    setState((cur) => { if (!cur) return cur; const next = work(cur); AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {}); return next; });
-  }, []);
-
-  const resetGame = useCallback(async () => {
-    await AsyncStorage.removeItem(KEY); setState(null);
-  }, []);
+  const doAdvance = useCallback((n = 1) => apply((s) => advance(s, n)), [apply]);
+  const doEat = useCallback(() => apply(eat), [apply]);
+  const doWork = useCallback(() => apply(work), [apply]);
+  const resetGame = useCallback(async () => { await AsyncStorage.removeItem(KEY); setState(null); }, []);
 
   return (
-    <GameContext.Provider value={{ state, loading, startGame, doAdvance, doEat, doWork, resetGame }}>
+    <GameContext.Provider value={{ state, loading, startGame, apply, doAdvance, doEat, doWork, resetGame }}>
       {children}
     </GameContext.Provider>
   );

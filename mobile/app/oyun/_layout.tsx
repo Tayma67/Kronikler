@@ -17,7 +17,11 @@ export default function OyunLayout() {
     }}>
       <Tabs.Screen name="index" options={{ title: "Ana Sayfa", tabBarIcon: ({ focused }) => <TabIcon label="🔥" focused={focused} /> }} />
       <Tabs.Screen name="karakter" options={{ title: "Karakter", tabBarIcon: ({ focused }) => <TabIcon label="🛡" focused={focused} /> }} />
+      <Tabs.Screen name="iliskiler" options={{ title: "İlişkiler", tabBarIcon: ({ focused }) => <TabIcon label="🫂" focused={focused} /> }} />
       <Tabs.Screen name="menu" options={{ title: "Menü", tabBarIcon: ({ focused }) => <TabIcon label="📜" focused={focused} /> }} />
+      {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}
+      <Tabs.Screen name="pazar" options={{ href: null }} />
+      <Tabs.Screen name="npc/[id]" options={{ href: null }} />
     </Tabs>
   );
 }
