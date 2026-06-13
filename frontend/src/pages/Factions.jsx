@@ -18,22 +18,23 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useActionRedirect } from "@/hooks/useActionRedirect";
 import StoryEventFeed from "@/components/StoryEventFeed";
+import GameIcon from "@/components/ui/GameIcon";
 import { playSfx } from "@/lib/audio";
 import { Loader2 } from "lucide-react";
 import { PageHeader, Panel, Pill, GoldRule, EmptyState, Coin, ConfirmModal } from "@/components/ui/Kit";
 
 // ─── Faction Tip Konfigürasyonu ───────────────────────────────────────────────
 const FACTION_TYPES = {
-  krallık_ordusu:    { label: "Sultanın Ordusu",      color: "#7FA7C9", icon: "🛡️" },
-  tuccar_loncasi:    { label: "Tüccar Loncası",        color: "#C9A84C", icon: "⚖️" },
-  zanaatkar_loncasi: { label: "Zanaatkar Loncası",     color: "#B08FD9", icon: "🔨" },
-  paralı_asker:      { label: "Paralı Asker Loncası",  color: "#C84040", icon: "⚔️" },
-  ilim_cemiyeti:     { label: "İlim Cemiyeti",         color: "#4A9A5A", icon: "📜" },
-  sifaci_birligi:    { label: "Şifacı Birliği",        color: "#6FBF7F", icon: "🌿" },
-  dini_tarikat:      { label: "Dini Tarikat",          color: "#7B4FAF", icon: "🕌" },
-  oyuncu_kumpanya:   { label: "Seyyah Kumpanya",       color: "#D98FB0", icon: "🎶" },
-  eskiya_cetesi:     { label: "Eşkıya Çetesi",         color: "#E05A30", icon: "🏴" },
-  gizli_cemiyet:     { label: "Gizli Cemiyet",         color: "#4FA8A0", icon: "🗝️" },
+  krallık_ordusu:    { label: "Sultanın Ordusu",      color: "#7FA7C9", icon: "🛡️", gi: "shield" },
+  tuccar_loncasi:    { label: "Tüccar Loncası",        color: "#C9A84C", icon: "⚖️", gi: "scales" },
+  zanaatkar_loncasi: { label: "Zanaatkar Loncası",     color: "#B08FD9", icon: "🔨", gi: "anvil" },
+  paralı_asker:      { label: "Paralı Asker Loncası",  color: "#C84040", icon: "⚔️", gi: "crossed-swords" },
+  ilim_cemiyeti:     { label: "İlim Cemiyeti",         color: "#4A9A5A", icon: "📜", gi: "book" },
+  sifaci_birligi:    { label: "Şifacı Birliği",        color: "#6FBF7F", icon: "🌿", gi: "herbs" },
+  dini_tarikat:      { label: "Dini Tarikat",          color: "#7B4FAF", icon: "🕌", gi: "prayer-beads" },
+  oyuncu_kumpanya:   { label: "Seyyah Kumpanya",       color: "#D98FB0", icon: "🎶", gi: "lyre" },
+  eskiya_cetesi:     { label: "Eşkıya Çetesi",         color: "#E05A30", icon: "🏴", gi: "banner" },
+  gizli_cemiyet:     { label: "Gizli Cemiyet",         color: "#4FA8A0", icon: "🗝️", gi: "hood" },
 };
 
 // ─── R8: Fraksiyon Yüzeyi — aylık sahne + rütbe imtiyaz kartı + olay feed'i ──
@@ -483,8 +484,8 @@ function WarOutcomeModal({ result, onClose }) {
           border: `1px solid ${cfg.color}66`, background: `${cfg.color}10`,
           boxShadow: `0 0 18px ${cfg.color}1A`,
         }}>
-          <span style={{ fontSize: "1.6rem", flexShrink: 0, filter: `drop-shadow(0 0 12px ${cfg.color}66)` }}>
-            {cfg.icon}
+          <span style={{ flexShrink: 0, filter: `drop-shadow(0 0 12px ${cfg.color}66)` }}>
+            <GameIcon name={cfg.gi} size="1.5rem" color={cfg.color} />
           </span>
           <div>
             <div className="font-display" style={{
@@ -907,8 +908,8 @@ function FactionCard({
       {/* Başlık */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
-          <span style={{ fontSize: "1.15rem", flexShrink: 0, filter: `drop-shadow(0 0 8px ${cfg.color}55)` }}>
-            {cfg.icon}
+          <span style={{ flexShrink: 0, filter: `drop-shadow(0 0 8px ${cfg.color}55)` }}>
+            <GameIcon name={cfg.gi} size="1.15rem" color={cfg.color} />
           </span>
           <div style={{ minWidth: 0 }}>
             <div className="label-tiny">{cfg.label}</div>
@@ -1357,7 +1358,7 @@ function DormantFactionCard({ faction }) {
       display: "flex", flexDirection: "column", gap: "0.4rem",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-        <span style={{ fontSize: "1rem", filter: "grayscale(0.8)", opacity: 0.6 }}>{cfg.icon}</span>
+        <span style={{ opacity: 0.55 }}><GameIcon name={cfg.gi} size="1rem" color="var(--color-parchment-muted)" /></span>
         <div>
           <div className="label-tiny">{cfg.label}</div>
           <h3 className="font-display" style={{
@@ -1561,7 +1562,7 @@ function CreateFactionModal({ locations, onClose, onCreate, busy }) {
                     color: type === k ? cfg.color : "var(--color-parchment-muted)",
                     boxShadow: type === k ? `0 0 10px ${cfg.color}22` : "none",
                   }}>
-                  <span style={{ flexShrink: 0 }}>{cfg.icon}</span>{cfg.label}
+                  <span style={{ flexShrink: 0, display: "inline-flex" }}><GameIcon name={cfg.gi} size="0.85rem" color={cfg.color} /></span>{cfg.label}
                 </button>
               ))}
             </div>
@@ -1668,11 +1669,11 @@ function TabBar({ active, onChange, warCount }) {
 
 // ─── Faction Tipi Grupları (kategori başlıkları) ──────────────────────────────
 const FACTION_TYPE_GROUPS = [
-  { key: "lonca",   label: "Esnaf Loncaları",    icon: "⚖️", types: ["tuccar_loncasi", "zanaatkar_loncasi", "sifaci_birligi"] },
-  { key: "askeri",  label: "Silahlı Örgütler",   icon: "⚔️", types: ["krallık_ordusu", "paralı_asker"] },
-  { key: "dini",    label: "Dini Tarikatlar",     icon: "🕌", types: ["dini_tarikat"] },
-  { key: "yeralti", label: "Yeraltı Örgütleri",  icon: "🗝️", types: ["gizli_cemiyet", "eskiya_cetesi"] },
-  { key: "ilim",    label: "İlim ve Kültür",      icon: "📜", types: ["ilim_cemiyeti", "oyuncu_kumpanya"] },
+  { key: "lonca",   label: "Esnaf Loncaları",    icon: "⚖️", gi: "scales",         types: ["tuccar_loncasi", "zanaatkar_loncasi", "sifaci_birligi"] },
+  { key: "askeri",  label: "Silahlı Örgütler",   icon: "⚔️", gi: "crossed-swords", types: ["krallık_ordusu", "paralı_asker"] },
+  { key: "dini",    label: "Dini Tarikatlar",     icon: "🕌", gi: "prayer-beads",   types: ["dini_tarikat"] },
+  { key: "yeralti", label: "Yeraltı Örgütleri",  icon: "🗝️", gi: "hood",           types: ["gizli_cemiyet", "eskiya_cetesi"] },
+  { key: "ilim",    label: "İlim ve Kültür",      icon: "📜", gi: "book",           types: ["ilim_cemiyeti", "oyuncu_kumpanya"] },
 ];
 
 function FactionGroupSection({
@@ -1708,7 +1709,7 @@ function FactionGroupSection({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
-          <span style={{ fontSize: "0.9rem", filter: "drop-shadow(0 0 6px rgba(201,168,76,0.25))" }}>{group.icon}</span>
+          <span style={{ filter: "drop-shadow(0 0 6px rgba(201,168,76,0.25))" }}><GameIcon name={group.gi} size="1rem" color="var(--color-gold)" /></span>
           <span className="font-display" style={{
             fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.08em",
             color: open ? "var(--color-gold)" : "var(--color-parchment)",
@@ -2115,7 +2116,7 @@ export default function Factions() {
               border: `1px solid ${cfg.color}55`,
               boxShadow: `0 0 16px ${cfg.color}14, 0 4px 16px rgba(0,0,0,0.45)`,
             }}>
-              <span style={{ fontSize: "1.2rem", flexShrink: 0, filter: `drop-shadow(0 0 8px ${cfg.color}55)` }}>{cfg.icon}</span>
+              <span style={{ flexShrink: 0, filter: `drop-shadow(0 0 8px ${cfg.color}55)` }}><GameIcon name={cfg.gi} size="1.2rem" color={cfg.color} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="label-tiny" style={{ marginBottom: "0.1rem" }}>Bağlı Olduğun Ocak</div>
                 <div className="font-display" style={{
