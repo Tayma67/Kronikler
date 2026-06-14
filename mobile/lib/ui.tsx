@@ -1,5 +1,5 @@
 import { View, Image, Modal, Text, Pressable, ViewStyle, StyleProp } from "react-native";
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring } from "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, ZoomIn, FadeInUp, FadeInDown } from "react-native-reanimated";
 import { portreImage } from "./assets";
 import { GameIcon } from "./icons";
 import { useI18n } from "./i18n";
@@ -61,7 +61,7 @@ export function MilestoneModal({ visible, type, text, onClose }: { visible: bool
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.88)", alignItems: "center", justifyContent: "center", padding: 28 }}>
-        <View style={{ width: "100%", maxWidth: 360, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 14, padding: 24, alignItems: "center" }}>
+        <Animated.View entering={ZoomIn.springify().damping(15).stiffness(180)} style={{ width: "100%", maxWidth: 360, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 14, padding: 24, alignItems: "center" }}>
           <Text style={{ fontSize: 34 }}>{meta.icon}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 }}>
             <View style={{ height: 1, width: 24, backgroundColor: C.goldDim }} />
@@ -72,7 +72,7 @@ export function MilestoneModal({ visible, type, text, onClose }: { visible: bool
           <Pressable onPress={onClose} style={{ marginTop: 22, paddingVertical: 11, paddingHorizontal: 28, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, color: "#1a1206", letterSpacing: 1.5 }}>DEVAM</Text>
           </Pressable>
-        </View>
+        </Animated.View>
       </Pressable>
     </Modal>
   );
@@ -83,7 +83,7 @@ export function AchievementToast({ name, icon, onClose }: { name: string | null;
   return (
     <Modal visible={!!name} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, justifyContent: "flex-start", paddingTop: 90, alignItems: "center" }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.6)", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 18, maxWidth: 340 }}>
+        <Animated.View entering={FadeInDown.springify().damping(16)} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.6)", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 18, maxWidth: 340 }}>
           <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(201,168,76,0.14)", borderWidth: 1, borderColor: "rgba(201,168,76,0.5)" }}>
             <GameIcon name={icon} size={20} color={C.gold} />
           </View>
@@ -91,7 +91,7 @@ export function AchievementToast({ name, icon, onClose }: { name: string | null;
             <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim }}>BAŞARIM AÇILDI</Text>
             <Text style={{ fontFamily: F.display, fontSize: 14, color: C.gold, marginTop: 2 }}>{name}</Text>
           </View>
-        </View>
+        </Animated.View>
       </Pressable>
     </Modal>
   );
@@ -103,7 +103,7 @@ export function DilemmaModal({ dilemma, onChoose }: { dilemma: Dilemma | null; o
     <Modal visible={!!dilemma} transparent animationType="fade" onRequestClose={() => {}}>
       <View style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.9)", alignItems: "center", justifyContent: "center", padding: 26 }}>
         {dilemma && (
-          <View style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 14, padding: 22 }}>
+          <Animated.View entering={FadeInUp.springify().damping(16)} style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 14, padding: 22 }}>
             <View style={{ alignItems: "center", marginBottom: 6 }}>
               <GameIcon name={dilemma.icon} size={30} color={C.gold} />
             </View>
@@ -114,7 +114,7 @@ export function DilemmaModal({ dilemma, onChoose }: { dilemma: Dilemma | null; o
                 <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment, letterSpacing: 0.5, textAlign: "center" }}>{c.label}</Text>
               </Pressable>
             ))}
-          </View>
+          </Animated.View>
         )}
       </View>
     </Modal>
