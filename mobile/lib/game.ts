@@ -1,6 +1,6 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
-import { ITEMS, marketGoods, locSeed, generateNPCs, NPC } from "./world";
+import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties } from "./world";
 import { Lang } from "./locale-data";
 import { converse, ConvResult } from "./dialogue";
 import { arcById, ArcChoice } from "./arcs";
@@ -20,6 +20,7 @@ export interface Player {
   injuries: Injury[]; career_xp: number;
   nam: Nam; child_invests: Record<string, string[]>;
   equipped: { silah: string | null; zirh: string | null };
+  crowned?: boolean; will_pref?: string;
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -90,7 +91,10 @@ export interface GameState {
   wars: FactionWar[];
   caravan: { invested: number; returnTurn: number; dest: string } | null;
   econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
+  settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
 }
+// Hanedanın kurduğu yerleşim — mezra olarak başlar, yıllarca gelişir, vergi getirir.
+export interface Settlement { name: string; founded: number; dev: number; }
 // Piyasa çarpanına göre fiyat.
 export function marketPrice(base: number, econ: number): number { return Math.max(1, Math.round(base * (econ || 1))); }
 export function econLabel(econ: number): string {
@@ -184,7 +188,9 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
       skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [], career_xp: 0,
       nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
+      crowned: false, will_pref: "esit",
     },
+    settlements: [],
     history: [],
   };
 }
@@ -253,7 +259,13 @@ export function advance(prev: GameState, n = 1): GameState {
     if (hasPerk(s.player, "tuccar_prensi")) pmult += 0.3;
     if (hasPerk(s.player, "tamirci")) pmult += 0.15;
     inc = Math.round(inc * pmult);
-    if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", `Mülklerinden ${inc} akçe gelir geldi.`); }
+    // Kurulan yerleşimler yavaşça gelişir ve vergi getirir
+    if (s.settlements?.length) {
+      for (const st of s.settlements) if (st.dev < 100) st.dev = Math.min(100, st.dev + 1);
+      inc += settlementIncome(s);
+    }
+    if (s.player.crowned) inc += 15; // hükümdar hazinesi
+    if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", `Mülk ve yerleşimlerinden ${inc} akçe gelir geldi.`); }
     // Aylık geçim gideri (yaş + servetle hafifçe artar) — para birikimini dengeler
     if (s.player.age >= 13 && s.player.money > 0) {
       const upkeep = Math.min(s.player.money, 2 + Math.floor(s.player.age / 12) + Math.floor(s.player.money / 600));
@@ -761,6 +773,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
   const ns: GameState = {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null, econ: 1,
+    settlements: prev.settlements || [], // dynastinin kurduğu yerleşimler vârise kalır
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
       base_age: 7, age: 7, money: startMoney, profession: "işsiz", health: startHealth, hunger: 100,
@@ -771,6 +784,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       faction: null, faction_standing: {},
       skills, skill_xp: { combat: skills.combat * 100, trade: 0, crafting: skills.crafting * 100, social: skills.social * 100 },
       perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
+      crowned: p.crowned || false, will_pref: "esit", // taht irsîdir
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, ${will.label.toLowerCase()} vasiyetiyle mirası devraldı (${inheritMoney} akçe, ${props.length} mülk).${noteStr}`, scope: "kişisel", landmark: true }],
   };
@@ -1288,6 +1302,96 @@ export function publicPerception(s: GameState): { recog: number; key: string } {
   if (e > 25) return { recog, key: e > 55 ? "beloved" : "esteemed" };
   if (e < -15) return { recog, key: "disliked" };
   return { recog, key: "neutral" };
+}
+
+// ── Hanedan: mühür kademesi, hanedan gücü, taht ve yerleşim ──
+// Hanedanın toplam gücü (kişisel güç + irsî birikim + tahta + yerleşimler).
+export function dynastyPower(s: GameState): number {
+  const p = s.player;
+  return playerHousePower(p) + (s.settlements?.length || 0) * 8 + (p.crowned ? 40 : 0);
+}
+// Mühür kademesi (0..4) — gerçekçi: köklü bir hane nesillerce inşa edilir.
+export function houseSeal(power: number): { tier: number; key: string } {
+  if (power >= 200) return { tier: 4, key: "pillar" };
+  if (power >= 140) return { tier: 3, key: "great" };
+  if (power >= 90) return { tier: 2, key: "respected" };
+  if (power >= 50) return { tier: 1, key: "known" };
+  return { tier: 0, key: "ordinary" };
+}
+
+// ── TAHT YOLU (gerçekçi, çekişmeli) ──
+export interface ThroneReq { key: string; cur: number; need: number; ok: boolean; }
+export const THRONE_COST = 5000;
+// Meşruiyet + güç tabanı şartları. Bir teşkilat desteği de gerekir (ayrı kontrol edilir).
+export function throneRequirements(s: GameState): ThroneReq[] {
+  const p = s.player;
+  return [
+    { key: "age",   cur: p.age,                   need: 35 },
+    { key: "power", cur: dynastyPower(s),          need: 140 },
+    { key: "rep",   cur: Math.round(p.reputation), need: 70 },
+    { key: "fame",  cur: Math.round(p.fame),       need: 60 },
+    { key: "gold",  cur: p.money,                  need: THRONE_COST },
+  ].map((r) => ({ ...r, ok: r.cur >= r.need }));
+}
+export function throneBacking(p: Player): boolean { return !!p.faction; }
+export function canClaimThrone(s: GameState): boolean {
+  return !s.player.crowned && !s.player.dead && throneBacking(s.player) && throneRequirements(s).every((r) => r.ok);
+}
+// İddianın başarı şansı: hane gücü en güçlü rakibe karşı, şöhret, savaş ve lonca desteğiyle ölçülür.
+export function throneOdds(s: GameState): number {
+  const p = s.player;
+  const rivals = generateDynasties(s.seed);
+  const topRival = Math.max(100, ...rivals.map((h) => h.power));
+  const odds = 0.45 + (dynastyPower(s) - topRival) / 220 + p.fame / 400 + p.skills.combat / 40 + (esteem(s) / 400);
+  return Math.max(0.12, Math.min(0.9, odds));
+}
+// Tahta iddia — sefer parası her hâlükârda harcanır; başarısızlık ağır bedel.
+export function claimThrone(prev: GameState): { state: GameState; success: boolean } {
+  const s = clone(prev); const p = s.player;
+  if (!canClaimThrone(s)) return { state: s, success: false };
+  const odds = throneOdds(s);
+  p.money -= THRONE_COST;
+  const success = Math.random() < odds;
+  if (success) {
+    p.crowned = true;
+    p.fame = Math.min(100, p.fame + 25); p.reputation = Math.min(100, p.reputation + 15);
+    bumpNam(p, "mert", 6);
+    push(s, "taht", `Tahta çıktın! Bundan böyle ${p.surname || p.name} Hanedanı diyara hükmediyor.`, "kişisel", true, { k: "ev.throne.win" });
+  } else {
+    p.reputation = Math.max(-100, p.reputation - 30); p.fame = Math.max(0, p.fame - 15);
+    p.fear = Math.min(100, p.fear + 10); p.health = Math.max(1, p.health - 25);
+    push(s, "taht_basarisiz", "Taht iddian bastırıldı — hain ilan edildin, itibarın yerle bir oldu.", "kişisel", true, { k: "ev.throne.lose" });
+  }
+  return { state: s, success };
+}
+
+// ── YERLEŞİM KUR (gerçekçi: mevki + sermaye; mezradan gelişir) ──
+export const SETTLE_COST = 1500;
+export const SETTLE_MAX = 3;
+export function canFoundSettlement(s: GameState): { ok: boolean; reason: string } {
+  const p = s.player;
+  if (p.dead) return { ok: false, reason: "dead" };
+  if ((s.settlements?.length || 0) >= SETTLE_MAX) return { ok: false, reason: "max" };
+  if (dynastyPower(s) < 80) return { ok: false, reason: "power" };
+  if (p.properties.length < 1) return { ok: false, reason: "prop" };
+  if (p.money < SETTLE_COST) return { ok: false, reason: "gold" };
+  return { ok: true, reason: "" };
+}
+export function foundSettlement(prev: GameState, name: string): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!canFoundSettlement(s).ok || !name.trim()) return s;
+  p.money -= SETTLE_COST;
+  if (!s.settlements) s.settlements = [];
+  s.settlements.push({ name: name.trim().slice(0, 24), founded: s.turn, dev: 8 });
+  p.fame = Math.min(100, p.fame + 5); p.reputation = Math.min(100, p.reputation + 4);
+  push(s, "yerlesim", `${name.trim()} adıyla yeni bir mezra kurdun — zamanla gelişip vergi getirecek.`, "kişisel", true, { k: "ev.settle.found", p: [name.trim()] });
+  return s;
+}
+// Bir yerleşimin yıllık vergi geliri (gelişmişliğe + halk desteğine göre).
+export function settlementIncome(s: GameState): number {
+  if (!s.settlements?.length) return 0;
+  const repMult = 1 + Math.max(0, s.player.reputation) / 300;
+  return Math.round(s.settlements.reduce((a, st) => a + st.dev * 0.25, 0) * repMult);
 }
 
 // ── Zanaat / üretim zincirleri — hammaddeyi mamule çevir ──

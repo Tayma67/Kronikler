@@ -22,6 +22,9 @@ function migrate(s: GameState): GameState {
   if (!p.child_invests) p.child_invests = {};
   if (!p.equipped) p.equipped = { silah: null, zirh: null };
   if (!p.home_name) p.home_name = p.location_name;
+  if (p.crowned === undefined) p.crowned = false;
+  if (!p.will_pref) p.will_pref = "esit";
+  if (!(s as any).settlements) (s as any).settlements = [];
   if (!s.relationships) s.relationships = {};
   if (!s.dynasty) s.dynasty = [];
   if (!s.npc_state) s.npc_state = {};
