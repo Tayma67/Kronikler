@@ -16,6 +16,8 @@ import { playTap, playAdvance } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
 
+const SEASON_KEY: Record<string, string> = { "Kış": "kis", "İlkbahar": "ilkbahar", "Yaz": "yaz", "Sonbahar": "sonbahar" };
+
 function StatBar({ icon, value, max, color }: { icon: string; value: number; max: number; color: string }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
@@ -103,14 +105,14 @@ export default function Dashboard() {
             {p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, p.career_xp, lang)} · {p.age} {t("misc.age")}
           </Text>
           <Text style={{ fontFamily: F.display, fontSize: 9, color: C.parchmentDim, letterSpacing: 1, textAlign: "center", marginTop: 4 }}>
-            {cal.season.toUpperCase()} · {cal.month_name.toUpperCase()} {cal.year}
+            {t("cal.season." + SEASON_KEY[cal.season]).toUpperCase()} · {t("cal.month." + cal.month_no).toUpperCase()} {cal.year}
           </Text>
           <View style={{ marginTop: 12, paddingHorizontal: 20 }}>
             <StatBar icon="saglik" value={p.health} max={100} color={C.blood} />
             <StatBar icon="tokluk" value={p.hunger} max={100} color={C.sage} />
             <StatBar icon="akce" value={p.money} max={200} color={C.gold} />
           </View>
-          {p.dead && <Text style={{ color: C.blood, textAlign: "center", marginTop: 8, fontFamily: F.serifItalic }}>Hayatını tamamladı.</Text>}
+          {p.dead && <Text style={{ color: C.blood, textAlign: "center", marginTop: 8, fontFamily: F.serifItalic }}>{t("dyn.died")}</Text>}
         </View>
       </ImageBackground>
 
@@ -118,7 +120,7 @@ export default function Dashboard() {
       {!p.dead && state.story?.active && (
         <Pressable onPress={() => router.push("/oyun/hikayeler")} style={{ marginHorizontal: 16, marginTop: 10, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", flexDirection: "row", alignItems: "center", gap: 8 }}>
           <GameIcon name="roman" size={16} color={C.gold} />
-          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>Bir hikâyenin ortasındasın — devam etmek için dokun.</Text>
+          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{t("dash.storyCta")}</Text>
           <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>›</Text>
         </Pressable>
       )}
@@ -145,15 +147,15 @@ export default function Dashboard() {
         <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border, gap: 10 }}>
           {p.children.length > 0 && (
             <Pressable onPress={() => router.push("/oyun/nesil")} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206", letterSpacing: 1 }}>🕊 NESLİ DEVAM ETTİR ({p.children.length} vâris)</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206", letterSpacing: 1 }}>🕊 {t("dash.continueHeir")} ({p.children.length} {t("dash.heirs")})</Text>
             </Pressable>
           )}
           <View style={{ flexDirection: "row", gap: 10 }}>
             <Pressable onPress={() => router.push("/oyun/roman")} style={{ flex: 1, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>📖 HAYATINI OKU</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>📖 {t("dash.readLife")}</Text>
             </Pressable>
             <Pressable onPress={async () => { await resetGame(); router.replace("/yeni-oyun"); }} style={{ flex: 1, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>🌱 YENİ HAYAT</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>🌱 {t("dash.newLife")}</Text>
             </Pressable>
           </View>
         </View>

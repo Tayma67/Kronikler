@@ -27,11 +27,11 @@ export default function YeniOyun() {
     setBusy(true);
     try {
       await startGame(first, surname, gender);
-      const cocuk = gender === "kadın" ? "bir kız çocuğu" : "bir oğlan çocuğu";
+      const cocuk = gender === "kadın" ? t("ng.childGirl") : t("ng.childBoy");
       setCinematic([
-        "1247. Anadolu — küllerin ve közün diyarı. Sınır boylarında beylikler yükselir, kervanlar tozlu yollarda yürür, her ocakta bir hikâye pişer.",
-        `Karlı bir kış gecesi, küçük bir köy evinde ${cocuk} olarak gözlerini dünyaya açtın. Sana ${first} adını verdiler.`,
-        "Önünde koca bir ömür var: ekmeğini kazanacak, seveceksin, savaşacak, belki bir hanedan kuracaksın. Küllerin altındaki köz, senin hikâyenle alevlenecek.",
+        t("ng.cine1"),
+        t("ng.cine2").replace("%c", cocuk).replace("%n", first),
+        t("ng.cine3"),
       ]);
       setBeat(0);
     } finally { setBusy(false); }
