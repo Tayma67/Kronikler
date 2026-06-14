@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
@@ -9,10 +10,11 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 
 export default function OyunLayout() {
   const { t } = useI18n();
+  const insets = useSafeAreaInsets();
   return (
     <Tabs screenOptions={{
       headerShown: false,
-      tabBarStyle: { backgroundColor: "rgba(13,10,6,0.98)", borderTopColor: C.borderHi, height: 64, paddingBottom: 8, paddingTop: 6 },
+      tabBarStyle: { backgroundColor: "rgba(13,10,6,0.98)", borderTopColor: C.borderHi, height: 60 + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 6 },
       tabBarActiveTintColor: C.gold,
       tabBarInactiveTintColor: C.parchmentMuted,
       tabBarLabelStyle: { fontFamily: F.display, fontSize: 9, letterSpacing: 0.5 },
