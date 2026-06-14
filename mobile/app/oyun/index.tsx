@@ -1,5 +1,6 @@
 import { View, Text, ScrollView, Pressable, ImageBackground, StyleSheet, Dimensions } from "react-native";
 import { Ambiance, LoadingScreen, KenBurns, ParticleBurst } from "../../lib/fx";
+import { Firelight } from "../../lib/skia";
 import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, Easing } from "react-native-reanimated";
 import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -205,6 +206,7 @@ export default function Dashboard() {
       {/* ── HERO (yaşayan sahne: Ken Burns + ambiyans) ── */}
       <KenBurns source={heroImage(p.age, cal.season)} style={{ paddingTop: insets.top }}>
         <View style={{ backgroundColor: "rgba(8,5,2,0.5)", paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
+          <Firelight width={Dimensions.get("window").width} height={200} />
           <Ambiance season={cal.season} width={Dimensions.get("window").width} height={180} />
           <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
             {/* Sol: avatar + mini istatistikler */}
