@@ -5,6 +5,7 @@ import { useGame } from "../../lib/store";
 import { SUBJECTS, studySubject } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
+import { BackLabel } from "../../lib/ui";
 
 export default function Mektep() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -14,7 +15,7 @@ export default function Mektep() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
-        <Pressable onPress={() => router.back()}><Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>‹ Geri</Text></Pressable>
+        <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>Mektep</Text>
         <View style={{ width: 40 }} />
       </View>

@@ -6,6 +6,7 @@ import { PLACES } from "../../lib/game";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
+import { BackLabel } from "../../lib/ui";
 
 // Diyar üzerinde el ile yerleştirilmiş konumlar (yüzde).
 const POS: Record<string, { x: number; y: number }> = {
@@ -26,7 +27,7 @@ export default function Harita() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
-        <Pressable onPress={() => router.back()}><Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>‹ Geri</Text></Pressable>
+        <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>Diyar Haritası</Text>
         <View style={{ width: 36 }} />
       </View>

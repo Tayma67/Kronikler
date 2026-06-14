@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { WEEKS_PER_YEAR } from "../../lib/calendar";
 import { C, F } from "../../lib/theme";
+import { BackLabel } from "../../lib/ui";
 
 const BANDS = [
   { name: "Çocukluk", lo: 7, hi: 12 },
@@ -32,7 +33,7 @@ export default function Roman() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 60 }}>
-      <Pressable onPress={() => router.back()} style={{ marginBottom: 10 }}><Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>‹ Geri</Text></Pressable>
+      <Pressable onPress={() => router.back()} style={{ marginBottom: 10 }}><BackLabel /></Pressable>
       <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 4, color: C.goldDim, textAlign: "center" }}>HAYATIN ROMANI</Text>
       <Text style={{ fontFamily: F.display, fontSize: 24, color: C.gold, textAlign: "center", marginTop: 8 }}>{state.player.name}</Text>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", marginBottom: 4 }}>— bir ömrün hikâyesi, küllerin diyarında —</Text>

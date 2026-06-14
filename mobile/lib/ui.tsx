@@ -1,8 +1,15 @@
 import { View, Image, Modal, Text, Pressable } from "react-native";
 import { portreImage } from "./assets";
 import { GameIcon } from "./icons";
+import { useI18n } from "./i18n";
 import type { Dilemma, Choice } from "./events";
 import { C, F } from "./theme";
+
+// Lokalize geri-butonu etiketi (tüm ekranlarda ortak).
+export function BackLabel() {
+  const { t } = useI18n();
+  return <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>{t("common.back")}</Text>;
+}
 
 export function Portre({ age, gender, size = 44, ring = true }: { age: number; gender: "erkek" | "kadın"; size?: number; ring?: boolean }) {
   return (

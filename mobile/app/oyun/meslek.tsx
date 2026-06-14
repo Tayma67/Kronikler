@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { changeProfession, PROFESSIONS, professionById, careerTier, careerTitle } from "../../lib/game";
 import { C, F } from "../../lib/theme";
+import { BackLabel } from "../../lib/ui";
 
 const STAT_TR: Record<string, string> = { strength: "Güç", intelligence: "Zekâ", charisma: "Karizma", stamina: "Dayanıklılık" };
 
@@ -15,7 +16,7 @@ export default function Meslek() {
   const p = state.player;
   if (p.age < 13) {
     return <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top + 16, padding: 20 }}>
-      <Pressable onPress={() => router.back()}><Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>‹ Geri</Text></Pressable>
+      <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, marginTop: 30, textAlign: "center" }}>Meslek edinmek için reşit olmalısın (13 yaş).</Text>
     </View>;
   }
@@ -23,7 +24,7 @@ export default function Meslek() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
-        <Pressable onPress={() => router.back()}><Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>‹ Geri</Text></Pressable>
+        <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>Meslek</Text>
         <View style={{ width: 40 }} />
       </View>

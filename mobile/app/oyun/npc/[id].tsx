@@ -7,7 +7,7 @@ import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, npcStateOf } from 
 import { useI18n } from "../../../lib/i18n";
 import { INTENTS, moodLabel } from "../../../lib/dialogue";
 import { ITEMS } from "../../../lib/world";
-import { Portre } from "../../../lib/ui";
+import { Portre, BackLabel } from "../../../lib/ui";
 import { GameIcon } from "../../../lib/icons";
 import { C, F } from "../../../lib/theme";
 
@@ -36,7 +36,7 @@ export default function NpcDetail() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
       <Pressable onPress={() => router.back()} style={{ marginBottom: 12 }}>
-        <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>‹ Geri</Text>
+        <BackLabel />
       </Pressable>
       <View style={{ alignItems: "center", marginBottom: 14 }}>
         <Portre age={npc.age} gender={npc.gender} size={76} />

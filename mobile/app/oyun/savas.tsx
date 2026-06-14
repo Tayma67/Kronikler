@@ -7,6 +7,7 @@ import { ENCOUNTERS, combatPower, applyBattleOutcome, nemesisEncounter, applyNem
 import { startBattle, stepBattle, MOVES, BattleState, Move } from "../../lib/combat";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
+import { BackLabel } from "../../lib/ui";
 
 function HpBar({ label, hp, max, color }: { label: string; hp: number; max: number; color: string }) {
   const pct = Math.max(0, Math.min(100, (hp / max) * 100));
@@ -87,7 +88,7 @@ export default function Savas() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
-        <Pressable onPress={() => router.back()}><Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>‹ Geri</Text></Pressable>
+        <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>Çatışma</Text>
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.blood }}>⚔ {pw}</Text>
       </View>
