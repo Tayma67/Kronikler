@@ -184,3 +184,40 @@ export function ProgressBar({ value, max, color, h = 5 }: { value: number; max: 
     </View>
   );
 }
+
+// ── Vercel Kit bileşenleri (PageHeader / Panel / Pill) ──
+export function PageHeader({ kicker, icon, title, sub }: { kicker?: string; icon?: string; title: string; sub?: string }) {
+  return (
+    <View style={{ alignItems: "center", marginBottom: 14 }}>
+      {kicker ? <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textTransform: "uppercase" }}>{kicker}</Text> : null}
+      <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginTop: 4, textAlign: "center" }}>{icon ? icon + " " : ""}{title}</Text>
+      {sub ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, marginTop: 4, textAlign: "center" }}>{sub}</Text> : null}
+      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, alignSelf: "stretch" }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
+        <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], marginHorizontal: 8 }} />
+        <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
+      </View>
+    </View>
+  );
+}
+export function Pill({ text, tone = C.gold }: { text: string; tone?: string }) {
+  return (
+    <View style={{ paddingVertical: 2, paddingHorizontal: 8, borderRadius: 10, borderWidth: 1, borderColor: tone + "66", backgroundColor: tone + "1A" }}>
+      <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: tone }}>{text}</Text>
+    </View>
+  );
+}
+export function Panel({ title, icon, tone = C.gold, right, children, noPad }: { title?: string; icon?: string; tone?: string; right?: React.ReactNode; children: React.ReactNode; noPad?: boolean }) {
+  return (
+    <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: tone + "33", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
+      {title ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: tone + "12" }}>
+          {icon ? <Text style={{ fontSize: 15 }}>{icon}</Text> : null}
+          <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: tone, textTransform: "uppercase" }}>{title}</Text>
+          {right}
+        </View>
+      ) : null}
+      <View style={noPad ? undefined : { padding: 12 }}>{children}</View>
+    </View>
+  );
+}
