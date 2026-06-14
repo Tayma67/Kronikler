@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -8,19 +9,18 @@ import { startBattle, stepBattle, MOVES, BattleState, Move } from "../../lib/com
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel, PageHeader } from "../../lib/ui";
+import { hap } from "../../lib/haptics";
+import { FloatingNumber } from "../../lib/fx";
+import { BackLabel, PageHeader, ProgressBar } from "../../lib/ui";
 
 function HpBar({ label, hp, max, color }: { label: string; hp: number; max: number; color: string }) {
-  const pct = Math.max(0, Math.min(100, (hp / max) * 100));
   return (
     <View style={{ marginBottom: 8 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 3 }}>
         <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, letterSpacing: 0.5 }}>{label}</Text>
         <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchmentMuted }}>{Math.round(hp)}/{max}</Text>
       </View>
-      <View style={{ height: 7, backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 4 }}>
-        <View style={{ width: `${pct}%`, height: 7, backgroundColor: color, borderRadius: 4 }} />
-      </View>
+      <ProgressBar value={hp} max={max} color={color} h={7} />
     </View>
   );
 }
@@ -32,15 +32,33 @@ export default function Savas() {
   const [bs, setBs] = useState<BattleState | null>(null);
   const [encId, setEncId] = useState<string>("");
   const [applied, setApplied] = useState(false);
+  const [floats, setFloats] = useState<{ id: number; value: string; color: string; left: number; top: number }[]>([]);
+  const fid = useRef(0);
+  const shake = useSharedValue(0);
+  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const pw = combatPower(p);
   const canFight = p.age >= 13 && !p.dead;
 
   const nemEnc = nemesisEncounter(state);
-  const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); setBs(startBattle(p, { ...e, title: t("enc." + e.id + ".t") })); setApplied(false); };
-  const beginNemesis = () => { if (!nemEnc) return; setEncId("nemesis"); setBs(startBattle(p, nemEnc)); setApplied(false); };
-  const play = (mv: Move) => { if (!bs || bs.over) return; setBs(stepBattle(bs, p, mv)); };
+  const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); setBs(startBattle(p, { ...e, title: t("enc." + e.id + ".t") })); setApplied(false); setFloats([]); };
+  const beginNemesis = () => { if (!nemEnc) return; setEncId("nemesis"); setBs(startBattle(p, nemEnc)); setApplied(false); setFloats([]); };
+  const play = (mv: Move) => {
+    if (!bs || bs.over) return;
+    const next = stepBattle(bs, p, mv);
+    const dE = Math.round(bs.enemyHp - next.enemyHp);
+    const dY = Math.round(bs.playerHp - next.playerHp);
+    const adds: { id: number; value: string; color: string; left: number; top: number }[] = [];
+    if (dE > 0) adds.push({ id: fid.current++, value: `-${dE}`, color: C.ember, left: 235, top: 44 });
+    if (dY > 0) adds.push({ id: fid.current++, value: `-${dY}`, color: C.blood, left: 30, top: 2 });
+    if (adds.length) {
+      setFloats((f) => [...f.slice(-3), ...adds]);
+      hap(dY > 0 ? "advance" : "tap");
+      shake.value = withSequence(withTiming(-7, { duration: 45 }), withTiming(7, { duration: 45 }), withTiming(-4, { duration: 40 }), withTiming(0, { duration: 40 }));
+    }
+    setBs(next);
+  };
   const finish = () => {
     if (bs && !applied) {
       if (encId === "nemesis") apply((s) => applyNemesisOutcome(s, bs.won, bs.playerHp));
@@ -57,10 +75,11 @@ export default function Savas() {
         <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1, textAlign: "center" }}>{bs.enemyName}</Text>
         </View>
-        <View style={{ paddingHorizontal: 20 }}>
+        <Animated.View style={[{ paddingHorizontal: 20, position: "relative" }, shakeStyle]}>
           <HpBar label={t("cb.you")} hp={bs.playerHp} max={bs.playerMax} color={C.sage} />
           <HpBar label={t("cb.enemy")} hp={bs.enemyHp} max={bs.enemyMax} color={C.blood} />
-        </View>
+          {floats.map((f) => <FloatingNumber key={f.id} value={f.value} color={f.color} left={f.left} top={f.top} />)}
+        </Animated.View>
         <ScrollView style={{ flex: 1, marginTop: 8 }} contentContainerStyle={{ paddingHorizontal: 16 }}>
           {[...bs.log].reverse().map((l, i) => (
             <Text key={i} style={{ fontFamily: F.serif, fontSize: 13, color: i === 0 ? C.parchment : C.parchmentMuted, lineHeight: 20, marginBottom: 5 }}>{l}</Text>

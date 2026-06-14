@@ -1,6 +1,6 @@
 import { View, Image, Modal, Text, Pressable, TextInput, ViewStyle, StyleProp, TextStyle } from "react-native";
 import { useEffect } from "react";
-import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, useDerivedValue, withTiming, withSpring, ZoomIn, FadeInUp, FadeInDown } from "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, useDerivedValue, withTiming, withSpring, withRepeat, withSequence, ZoomIn, FadeInUp, FadeInDown } from "react-native-reanimated";
 import { portreImage } from "./assets";
 import { GameIcon } from "./icons";
 import { useI18n } from "./i18n";
@@ -74,20 +74,51 @@ const MILESTONE_LABEL: Record<string, { tag: string; icon: string }> = {
   nesil_devri: { tag: "Yeni Nesil", icon: "🏛" },
 };
 
+const MS_ACCENT: Record<string, string> = {
+  doğum: C.ink, dogum: C.ink, evlilik: C.rose, kariyer_terfi: C.gold, başarım: C.gold,
+  tahta_çıkış: C.gold, şehir_kuruluşu: C.gold, savaş_zaferi: C.ember, komutan_savaşı: C.ember,
+  ölüm: C.parchmentMuted, nesil_devri: C.ink,
+};
+
+// Yayılan parlama halkası (kutlama hissi).
+function Burst({ color }: { color: string }) {
+  const s = useSharedValue(0.4); const o = useSharedValue(0);
+  useEffect(() => {
+    s.value = withRepeat(withTiming(2.0, { duration: 1500, easing: EASE.decel }), 2, false);
+    o.value = withRepeat(withSequence(withTiming(0.55, { duration: 140 }), withTiming(0, { duration: 1360 })), 2, false);
+  }, []);
+  const st = useAnimatedStyle(() => ({ transform: [{ scale: s.value }], opacity: o.value }));
+  return <Animated.View pointerEvents="none" style={[{ position: "absolute", width: 80, height: 80, borderRadius: 40, borderWidth: 2, borderColor: color }, st]} />;
+}
+
+// İkonun nazikçe nabız atması.
+function IconPulse({ icon }: { icon: string }) {
+  const s = useSharedValue(0.4);
+  useEffect(() => { s.value = withSequence(withSpring(1.15, { damping: 6, stiffness: 140 }), withSpring(1, { damping: 10 })); }, []);
+  const st = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+  return <Animated.Text style={[{ fontSize: 38 }, st]}>{icon}</Animated.Text>;
+}
+
 export function MilestoneModal({ visible, type, text, onClose }: { visible: boolean; type: string; text: string; onClose: () => void }) {
   const meta = MILESTONE_LABEL[type] || { tag: "Dönüm Noktası", icon: "✦" };
+  const accent = MS_ACCENT[type] || C.gold;
+  const celebratory = type !== "ölüm";
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.88)", alignItems: "center", justifyContent: "center", padding: 28 }}>
-        <Animated.View entering={ZoomIn.springify().damping(15).stiffness(180)} style={{ width: "100%", maxWidth: 360, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 14, padding: 24, alignItems: "center" }}>
-          <Text style={{ fontSize: 34 }}>{meta.icon}</Text>
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.9)", alignItems: "center", justifyContent: "center", padding: 28 }}>
+        <Animated.View entering={ZoomIn.springify().damping(15).stiffness(180)} style={{ width: "100%", maxWidth: 360, backgroundColor: C.card, borderWidth: 1, borderColor: accent + "88", borderRadius: 14, padding: 24, alignItems: "center", overflow: "hidden" }}>
+          <View style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, backgroundColor: accent }} />
+          <View style={{ width: 80, height: 80, alignItems: "center", justifyContent: "center", marginTop: 6 }}>
+            {celebratory && <Burst color={accent} />}
+            <IconPulse icon={meta.icon} />
+          </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 }}>
-            <View style={{ height: 1, width: 24, backgroundColor: C.goldDim }} />
-            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 3, color: C.gold, textTransform: "uppercase" }}>{meta.tag}</Text>
-            <View style={{ height: 1, width: 24, backgroundColor: C.goldDim }} />
+            <View style={{ height: 1, width: 24, backgroundColor: accent + "88" }} />
+            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 3, color: accent, textTransform: "uppercase" }}>{meta.tag}</Text>
+            <View style={{ height: 1, width: 24, backgroundColor: accent + "88" }} />
           </View>
           <Text style={{ fontFamily: F.serif, fontSize: 16, color: C.parchment, textAlign: "center", lineHeight: 24, marginTop: 14 }}>{text}</Text>
-          <Pressable onPress={onClose} style={{ marginTop: 22, paddingVertical: 11, paddingHorizontal: 28, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
+          <Pressable onPress={onClose} style={{ marginTop: 22, paddingVertical: 11, paddingHorizontal: 28, borderRadius: 9, borderWidth: 1.5, borderColor: accent + "99", backgroundColor: accent }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, color: "#1a1206", letterSpacing: 1.5 }}>DEVAM</Text>
           </Pressable>
         </Animated.View>

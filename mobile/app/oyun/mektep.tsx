@@ -6,6 +6,7 @@ import { SUBJECTS, studySubject } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
+import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, Panel } from "../../lib/ui";
 
 export default function Mektep() {
@@ -23,7 +24,7 @@ export default function Mektep() {
         <PageHeader kicker={t("scr.mektep")} icon="🎓" title={t("scr.mektep")} sub={p.age < 18 ? t("mek.young") : t("mek.old")} />
         <Panel title={t("scr.mektep")} icon="📖" noPad>
           {SUBJECTS.map((sub, i) => (
-            <Pressable key={sub.id} onPress={() => apply((s) => studySubject(s, sub.id))} disabled={p.dead} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 13, borderBottomWidth: i === SUBJECTS.length - 1 ? 0 : 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+            <Pressable key={sub.id} onPress={() => { hap('tap'); apply((s) => studySubject(s, sub.id)); }} disabled={p.dead} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 13, borderBottomWidth: i === SUBJECTS.length - 1 ? 0 : 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
               <View style={{ width: 38, height: 38, borderRadius: 9, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
                 <GameIcon name={sub.icon} size={19} color={C.gold} />
               </View>

@@ -6,6 +6,7 @@ import { buyItem, sellItem, launchCaravan, bargainBuy, marketPrice, econKey } fr
 import { marketGoods, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
+import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
 import { BackLabel } from "../../lib/ui";
 
@@ -69,7 +70,7 @@ export default function Pazar() {
               <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginBottom: 9 }}>{t("paz.caravanHint")}</Text>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {CARAVAN_AMOUNTS.map((amt) => (
-                  <Pressable key={amt} disabled={p.money < amt} onPress={() => apply((s) => launchCaravan(s, amt))} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: p.money < amt ? C.border : "rgba(224,90,48,0.5)", backgroundColor: p.money < amt ? C.bg : "rgba(224,90,48,0.12)" }}>
+                  <Pressable key={amt} disabled={p.money < amt} onPress={() => { hap('advance'); apply((s) => launchCaravan(s, amt)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: p.money < amt ? C.border : "rgba(224,90,48,0.5)", backgroundColor: p.money < amt ? C.bg : "rgba(224,90,48,0.12)" }}>
                     <Text style={{ fontFamily: F.display, fontSize: 12, color: p.money < amt ? C.parchmentMuted : C.ember }}>{amt}⚜</Text>
                   </Pressable>
                 ))}
@@ -95,13 +96,13 @@ export default function Pazar() {
                   <Coin v={g.buy} />
                 </View>
                 <View style={{ flexDirection: "row", gap: 7, marginTop: 8 }}>
-                  <Pressable onPress={() => apply((s) => buyItem(s, g.id))} disabled={p.money < g.buy} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < g.buy ? C.bg : "rgba(201,168,76,0.12)" }}>
+                  <Pressable onPress={() => { hap('tap'); apply((s) => buyItem(s, g.id)); }} disabled={p.money < g.buy} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < g.buy ? C.bg : "rgba(201,168,76,0.12)" }}>
                     <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < g.buy ? C.parchmentMuted : C.gold }}>{t("misc.buy")} {g.buy}⚜</Text>
                   </Pressable>
-                  <Pressable onPress={() => apply((s) => bargainBuy(s, g.id))} disabled={p.money < g.buy} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: C.bg }}>
+                  <Pressable onPress={() => { hap('tap'); apply((s) => bargainBuy(s, g.id)); }} disabled={p.money < g.buy} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: C.bg }}>
                     <Text style={{ fontFamily: F.display, fontSize: 10.5, color: p.money < g.buy ? C.parchmentMuted : C.goldDim }}>{t("misc.bargain")}</Text>
                   </Pressable>
-                  <Pressable onPress={() => apply((s) => sellItem(s, g.id))} disabled={have <= 0} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+                  <Pressable onPress={() => { hap('tap'); apply((s) => sellItem(s, g.id)); }} disabled={have <= 0} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
                     <Text style={{ fontFamily: F.display, fontSize: 11, color: have <= 0 ? C.parchmentMuted : C.parchmentDim }}>{t("misc.sell")} {g.sell}⚜</Text>
                   </Pressable>
                 </View>

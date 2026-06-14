@@ -29,7 +29,7 @@ export default function RootLayout() {
           <StatusBar style="light" />
           {/* Android sistem gezinme çubuğunu gizle (tam ekran / immersive); yukarı kaydırınca geçici görünür */}
           <NavigationBar hidden />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }} />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: "slide_from_right" }} />
         </GameProvider>
       </LanguageProvider>
     </SafeAreaProvider>

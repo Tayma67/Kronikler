@@ -1,0 +1,64 @@
+// Atmosfer efektleri — UI thread'de döngüsel partiküller (köz, kar, yaprak).
+import { useEffect, useMemo } from "react";
+import { View, Text } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withDelay, withTiming, withSequence, Easing } from "react-native-reanimated";
+import { F } from "./theme";
+
+// Havaya uçup sönen hasar/değer sayısı (savaş, kazanç vb.).
+export function FloatingNumber({ value, color, left, top }: { value: string; color: string; left: number; top: number }) {
+  const ty = useSharedValue(0); const op = useSharedValue(1); const sc = useSharedValue(0.6);
+  useEffect(() => {
+    ty.value = withTiming(-52, { duration: 900, easing: Easing.out(Easing.quad) });
+    op.value = withSequence(withTiming(1, { duration: 120 }), withTiming(0, { duration: 780 }));
+    sc.value = withSequence(withTiming(1.15, { duration: 160 }), withTiming(1, { duration: 740 }));
+  }, []);
+  const st = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }, { scale: sc.value }], opacity: op.value }));
+  return (
+    <Animated.Text pointerEvents="none" style={[{ position: "absolute", left, top, fontFamily: F.display, fontSize: 22, color, textShadowColor: "rgba(0,0,0,0.8)", textShadowRadius: 6 }, st]}>{value}</Animated.Text>
+  );
+}
+
+function rnd(a: number, b: number) { return a + Math.random() * (b - a); }
+
+// Yukarı süzülen köz (ocak/şömine hissi).
+function Ember({ x, size, dur, delay, color, rise }: { x: number; size: number; dur: number; delay: number; color: string; rise: number }) {
+  const ty = useSharedValue(0); const op = useSharedValue(0); const tx = useSharedValue(0);
+  useEffect(() => {
+    ty.value = withDelay(delay, withRepeat(withTiming(-rise, { duration: dur, easing: Easing.out(Easing.quad) }), -1, false));
+    tx.value = withDelay(delay, withRepeat(withSequence(withTiming(rnd(-6, 6), { duration: dur / 2 }), withTiming(rnd(-6, 6), { duration: dur / 2 })), -1, true));
+    op.value = withDelay(delay, withRepeat(withSequence(withTiming(0.85, { duration: dur * 0.25 }), withTiming(0, { duration: dur * 0.75 })), -1, false));
+  }, []);
+  const st = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }, { translateX: tx.value }], opacity: op.value }));
+  return <Animated.View pointerEvents="none" style={[{ position: "absolute", bottom: 0, left: x, width: size, height: size, borderRadius: size / 2, backgroundColor: color, shadowColor: color, shadowOpacity: 0.8, shadowRadius: 4 }, st]} />;
+}
+
+// Aşağı düşen tanecik (kar / yaprak).
+function Flake({ x, size, dur, delay, color, fall, sway, radius }: { x: number; size: number; dur: number; delay: number; color: string; fall: number; sway: number; radius: number }) {
+  const ty = useSharedValue(-10); const tx = useSharedValue(0); const op = useSharedValue(0);
+  useEffect(() => {
+    ty.value = withDelay(delay, withRepeat(withTiming(fall, { duration: dur, easing: Easing.linear }), -1, false));
+    tx.value = withDelay(delay, withRepeat(withSequence(withTiming(sway, { duration: dur / 2, easing: Easing.inOut(Easing.sin) }), withTiming(-sway, { duration: dur / 2, easing: Easing.inOut(Easing.sin) })), -1, true));
+    op.value = withDelay(delay, withRepeat(withSequence(withTiming(0.7, { duration: dur * 0.2 }), withTiming(0.7, { duration: dur * 0.6 }), withTiming(0, { duration: dur * 0.2 })), -1, false));
+  }, []);
+  const st = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }, { translateX: tx.value }], opacity: op.value }));
+  return <Animated.View pointerEvents="none" style={[{ position: "absolute", top: 0, left: x, width: size, height: size, borderRadius: radius, backgroundColor: color }, st]} />;
+}
+
+// Hero ambiyansı — daima birkaç köz; mevsime göre kar/yaprak.
+export function Ambiance({ season, width = 360, height = 150 }: { season?: string; width?: number; height?: number }) {
+  const embers = useMemo(() => Array.from({ length: 7 }, () => ({ x: rnd(8, width - 8), size: rnd(2, 4), dur: rnd(2600, 4200), delay: rnd(0, 3000), rise: rnd(height * 0.6, height), color: Math.random() < 0.5 ? "#E0922E" : "#C9A84C" })), [width, height]);
+  const isWinter = season === "Kış"; const isAutumn = season === "Sonbahar";
+  const flakes = useMemo(() => {
+    if (!isWinter && !isAutumn) return [];
+    return Array.from({ length: isWinter ? 14 : 9 }, () => ({
+      x: rnd(0, width), size: isWinter ? rnd(2, 4) : rnd(4, 7), dur: rnd(4000, 7000), delay: rnd(0, 5000),
+      fall: height + 10, sway: rnd(8, 20), radius: isWinter ? 3 : 1.5, color: isWinter ? "rgba(230,235,245,0.9)" : "#B5742A",
+    }));
+  }, [isWinter, isAutumn, width, height]);
+  return (
+    <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, height, overflow: "hidden" }}>
+      {embers.map((e, i) => <Ember key={"e" + i} {...e} />)}
+      {flakes.map((f, i) => <Flake key={"f" + i} {...f} />)}
+    </View>
+  );
+}

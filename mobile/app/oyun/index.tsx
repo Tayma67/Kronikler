@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, Pressable, ImageBackground, StyleSheet } from "react-native";
+import { View, Text, ScrollView, Pressable, ImageBackground, StyleSheet, Dimensions } from "react-native";
+import { Ambiance } from "../../lib/fx";
 import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, Easing } from "react-native-reanimated";
 import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -204,6 +205,7 @@ export default function Dashboard() {
       {/* ── HERO ── */}
       <ImageBackground source={heroImage(p.age, cal.season)} resizeMode="cover" style={{ paddingTop: insets.top }}>
         <View style={{ backgroundColor: "rgba(8,5,2,0.58)", paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
+          <Ambiance season={cal.season} width={Dimensions.get("window").width} height={180} />
           <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
             {/* Sol: avatar + mini istatistikler */}
             <View style={{ alignItems: "center", gap: 6, width: 92 }}>

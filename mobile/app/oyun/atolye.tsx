@@ -6,6 +6,7 @@ import { RECIPES, canCraft, craft } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
+import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, Panel, Pill } from "../../lib/ui";
 
 export default function Atolye() {
@@ -37,7 +38,7 @@ export default function Atolye() {
                     </View>
                     <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("it." + r.out)}{r.outQty > 1 ? ` ×${r.outQty}` : ""}</Text>
                   </View>
-                  <Pressable disabled={!able} onPress={() => apply((s) => craft(s, r.id))} style={{ paddingVertical: 7, paddingHorizontal: 14, borderRadius: 7, borderWidth: 1, borderColor: able ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: able ? "rgba(201,168,76,0.12)" : C.bg }}>
+                  <Pressable disabled={!able} onPress={() => { hap('tap'); apply((s) => craft(s, r.id)); }} style={{ paddingVertical: 7, paddingHorizontal: 14, borderRadius: 7, borderWidth: 1, borderColor: able ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: able ? "rgba(201,168,76,0.12)" : C.bg }}>
                     <Text style={{ fontFamily: F.display, fontSize: 11, color: able ? C.gold : C.parchmentMuted, letterSpacing: 1 }}>{locked ? `${t("wsp.skillAbbr")} ${r.minSkill}` : t("misc.craft")}</Text>
                   </Pressable>
                 </View>
