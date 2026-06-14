@@ -34,7 +34,7 @@ export default function Hikayeler() {
           <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 12, padding: 16, marginBottom: 14 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <GameIcon name={active.icon} size={20} color={C.gold} />
-              <Text style={{ fontFamily: F.display, fontSize: 15, color: C.gold, letterSpacing: 0.5 }}>{active.title}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 15, color: C.gold, letterSpacing: 0.5 }}>{t("arc." + active.id + ".t")}</Text>
             </View>
             <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: 22, marginBottom: 14 }}>{stage.text}</Text>
             {stage.choices.map((c, i) => (
@@ -57,9 +57,9 @@ export default function Hikayeler() {
               <View key={a.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 9 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <GameIcon name={a.icon} size={18} color={C.gold} />
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{a.title}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("arc." + a.id + ".t")}</Text>
                 </View>
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5 }}>{a.blurb}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5 }}>{t("arc." + a.id + ".b")}</Text>
                 <Pressable onPress={() => apply((s) => beginArc(s, a.id))} style={{ alignSelf: "flex-start", marginTop: 10, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)" }}>
                   <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold, letterSpacing: 1 }}>{t("hik.begin")}</Text>
                 </Pressable>
@@ -77,7 +77,7 @@ export default function Hikayeler() {
               return (
                 <View key={id} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border }}>
                   <GameIcon name={a.icon} size={15} color={C.goldDim} />
-                  <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted }}>{a.title}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted }}>{t("arc." + a.id + ".t")}</Text>
                   <Text style={{ marginLeft: "auto", color: C.gold }}>✓</Text>
                 </View>
               );

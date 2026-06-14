@@ -25,7 +25,7 @@ export default function Gorevler() {
     if (p.stat_points > 0) tasks.push({ icon: "shield", title: t("gv.statpts.t").replace("%n", String(p.stat_points)), sub: t("gv.statpts.s"), to: "/oyun/karakter", urgent: true });
     if (pendingPerkCount(p) > 0) tasks.push({ icon: "medal", title: `${pendingPerkCount(p)} ${t("char.perksAvail")}`, sub: t("gv.perks.s"), to: "/oyun/beceriler", urgent: true });
     const arc = arcById(state.story.active?.id || null);
-    if (arc) tasks.push({ icon: arc.icon, title: `${t("gv.story.pre")}${arc.title}`, sub: t("gv.story.s"), to: "/oyun/hikayeler", urgent: true });
+    if (arc) tasks.push({ icon: arc.icon, title: `${t("gv.story.pre")}${t("arc." + arc.id + ".t")}`, sub: t("gv.story.s"), to: "/oyun/hikayeler", urgent: true });
     const war = playerWar(state);
     if (war) tasks.push({ icon: "crossed-swords", title: t("gv.war.t"), sub: t("gv.war.s"), to: "/oyun/orgutler" });
     if (nemesisEncounter(state)) tasks.push({ icon: "skull", title: t("gv.nemesis.t"), sub: t("gv.nemesis.s"), to: "/oyun/savas", urgent: true });
