@@ -29,6 +29,8 @@ export default function Savas() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
   const { t } = useI18n();
+  // i18n anahtarı yoksa encounter'ın kendi (TR) verisini kullan.
+  const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
   const [bs, setBs] = useState<BattleState | null>(null);
   const [encId, setEncId] = useState<string>("");
   const [applied, setApplied] = useState(false);
@@ -43,7 +45,7 @@ export default function Savas() {
   const canFight = p.age >= 13 && !p.dead;
 
   const nemEnc = nemesisEncounter(state);
-  const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); setBs(startBattle(p, { ...e, title: t("enc." + e.id + ".t") })); setApplied(false); setFloats([]); };
+  const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); setBs(startBattle(p, { ...e, title: gt("enc." + e.id + ".t", e.title) })); setApplied(false); setFloats([]); };
   const beginNemesis = () => { if (!nemEnc) return; setEncId("nemesis"); setBs(startBattle(p, nemEnc)); setApplied(false); setFloats([]); };
   const play = (mv: Move) => {
     if (!bs || bs.over) return;
@@ -138,10 +140,10 @@ export default function Savas() {
           return (
             <View key={e.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 10 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t("enc." + e.id + ".t")}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{gt("enc." + e.id + ".t", e.title)}</Text>
                 <Text style={{ fontFamily: F.display, fontSize: 11, color: tooStrong ? C.blood : C.goldDim }}>{t("cb.enemyPower")} {e.power}</Text>
               </View>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5, lineHeight: 18 }}>{t("enc." + e.id + ".d")}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5, lineHeight: 18 }}>{gt("enc." + e.id + ".d", e.desc)}</Text>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
                 <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.goldDim }}>{t("cb.reward")} +{e.reward}⚜ · {t("cb.fame")} +{e.fame}</Text>
                 <Pressable disabled={!canFight} onPress={() => begin(e.id)} style={{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: "rgba(168,52,52,0.55)", backgroundColor: canFight ? "rgba(168,52,52,0.14)" : C.card }}>

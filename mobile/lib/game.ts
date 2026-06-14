@@ -254,7 +254,9 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.age >= 60 && fate("60")) push(s, "kader", `Altmışını devirdin. Saçlar ağardı, geçmişin gölgesi uzadı. Ömrün akşamında ${whoAmI()} olarak anılıyorsun — geriye ne bırakacaksın?`, "kişisel", true);
   if (p.age < 13 && chance(0.25)) { p.stat_points += 1; push(s, "cocukluk", "Yeni bir şeyler öğrendin (özellik puanı kazandın).", "kişisel", false, { k: "ev.cocukluk" }); }
   if (p.dead) return;
-  if (!p.married && p.age >= 18 && p.age < 55 && chance(0.06 + p.fame / 1000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.reputation += 5; push(s, "evlilik", `${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true); }
+  // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
+  const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50);
+  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.reputation += 5; push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true); }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true); }
   // ── Yaşam-evresi anıları: her döneme doku katan küçük anlar (ara sıra; bazıları aileyi isimle anar) ──
   if (!p.dead && chance(0.14)) {
@@ -1050,8 +1052,13 @@ export function intimidate(prev: GameState): GameState {
 export interface Encounter { id: string; title: string; desc: string; power: number; reward: number; fame: number; honor: number; danger: number; }
 export const ENCOUNTERS: Encounter[] = [
   { id: "haydut",  title: "Yol Haydutları",   desc: "Pusudaki haydutlar kervanına göz dikti.", power: 6,  reward: 35,  fame: 4,  honor: 3,  danger: 14 },
+  { id: "ayi",     title: "Dağda Ayı",        desc: "Patikada azgın bir ayıyla burun buruna geldin.", power: 8,  reward: 30,  fame: 5,  honor: 4,  danger: 20 },
   { id: "duello",  title: "Meydan Okuma",     desc: "Bir yiğit seni teke tek dövüşe çağırdı.", power: 9,  reward: 25,  fame: 7,  honor: 6,  danger: 18 },
+  { id: "turnuva", title: "Cirit Turnuvası",  desc: "Meydanda cirit oynanıyor; gözler üstünde.", power: 10, reward: 45,  fame: 11, honor: 7,  danger: 12 },
+  { id: "korsan",  title: "Nehir Korsanları", desc: "Geçidi tutan korsanlar haraç istiyor.",     power: 12, reward: 60,  fame: 9,  honor: 6,  danger: 24 },
   { id: "sinir",   title: "Sınır Çatışması",  desc: "Sancak beyinin emrinde sınırı koru.",      power: 13, reward: 70,  fame: 12, honor: 10, danger: 26 },
+  { id: "reis",    title: "Eşkıya Reisi",     desc: "Diyarı kasıp kavuran eşkıya reisini avla.", power: 15, reward: 95,  fame: 15, honor: 11, danger: 30 },
+  { id: "akin",    title: "Akın",             desc: "Akıncılarla düşman topraklarına bir akın.", power: 16, reward: 110, fame: 17, honor: 12, danger: 33 },
   { id: "kusatma", title: "Kale Kuşatması",   desc: "Surların önünde kanlı bir kuşatma.",        power: 18, reward: 130, fame: 20, honor: 14, danger: 38 },
 ];
 // Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
