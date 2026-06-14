@@ -29,11 +29,11 @@ export default function Atolye() {
         {RECIPES.map((r) => {
           const able = canCraft(p, r);
           const locked = p.skills.crafting < r.minSkill;
-          const inputs = Object.entries(r.inputs).map(([id, q]) => `${ITEMS[id]?.name || id} ×${q} (${p.inventory[id] || 0})`).join(" + ");
+          const inputs = Object.entries(r.inputs).map(([id, q]) => `${t("it."+id)} ×${q} (${p.inventory[id] || 0})`).join(" + ");
           return (
             <View key={r.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 13, marginBottom: 8 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{ITEMS[r.out]?.icon} {ITEMS[r.out]?.name}{r.outQty > 1 ? ` ×${r.outQty}` : ""}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{ITEMS[r.out]?.icon} {t("it."+r.out)}{r.outQty > 1 ? ` ×${r.outQty}` : ""}</Text>
                 <Pressable disabled={!able} onPress={() => apply((s) => craft(s, r.id))} style={{ paddingVertical: 7, paddingHorizontal: 14, borderRadius: 7, borderWidth: 1, borderColor: able ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: able ? "rgba(201,168,76,0.12)" : C.bg }}>
                   <Text style={{ fontFamily: F.display, fontSize: 11, color: able ? C.gold : C.parchmentMuted, letterSpacing: 1 }}>{locked ? `SV ${r.minSkill}` : "ÜRET"}</Text>
                 </Pressable>

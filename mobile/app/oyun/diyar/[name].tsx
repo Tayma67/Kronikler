@@ -22,7 +22,7 @@ export default function DiyarDetay() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { name } = useLocalSearchParams<{ name: string }>();
   const { state, apply } = useGame();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   if (!state || !name) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const kind = placeKind(name);
   const info = cityInfo(name, kind);
@@ -47,7 +47,7 @@ export default function DiyarDetay() {
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14, marginBottom: 16 }}>
         {goods.map((g) => (
           <View key={g.id} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
-            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{g.icon} {g.name}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{g.icon} {t("it."+g.id)}</Text>
             <Text style={{ fontFamily: F.display, fontSize: 12, color: C.goldDim }}>al {g.buy} · sat {g.sell}</Text>
           </View>
         ))}

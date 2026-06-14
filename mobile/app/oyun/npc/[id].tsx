@@ -16,7 +16,7 @@ export default function NpcDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, apply } = useGame();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [line, setLine] = useState<string>("");
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const npc = npcsOf(state, lang).find((n) => n.id === id);
@@ -93,7 +93,7 @@ export default function NpcDetail() {
       ) : giftables.map((k) => (
         <Pressable key={k} onPress={() => apply((s) => giftTo(s, npc, k))} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7 }}>
           <Text style={{ fontSize: 16 }}>{ITEMS[k]?.icon || "📦"}</Text>
-          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{ITEMS[k]?.name || k}</Text>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{t("it."+k)}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchmentMuted }}>×{state.player.inventory[k]}</Text>
         </Pressable>
       ))}

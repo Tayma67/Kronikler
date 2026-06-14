@@ -15,7 +15,7 @@ export default function Pazar() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, apply } = useGame();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const econ = state.econ || 1;
@@ -59,7 +59,7 @@ export default function Pazar() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                 <Text style={{ fontSize: 20 }}>{g.icon}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{g.name}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("it." + g.id)}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>Elinde: {have}</Text>
                 </View>
                 <Pressable onPress={() => apply((s) => buyItem(s, g.id))} disabled={p.money < g.buy} style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < g.buy ? C.card : "rgba(201,168,76,0.12)", marginRight: 5 }}>

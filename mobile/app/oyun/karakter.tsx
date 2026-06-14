@@ -47,7 +47,7 @@ export default function Karakter() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, apply } = useGame();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const inv = Object.keys(p.inventory).filter((k) => p.inventory[k] > 0);
@@ -115,14 +115,14 @@ export default function Karakter() {
         <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border }}>
           <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted }}>SİLAH</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.silah ? `${ITEMS[p.equipped.silah]?.name} (+${ITEMS[p.equipped.silah]?.power})` : "—"}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.silah ? `${t("it."+p.equipped.silah)} (+${ITEMS[p.equipped.silah]?.power})` : "—"}</Text>
             {p.equipped?.silah && <Pressable onPress={() => apply((s) => unequipItem(s, "silah"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>ÇIKAR</Text></Pressable>}
           </View>
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10 }}>
           <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted }}>ZIRH</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.zirh ? `${ITEMS[p.equipped.zirh]?.name} (+${ITEMS[p.equipped.zirh]?.defense})` : "—"}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.zirh ? `${t("it."+p.equipped.zirh)} (+${ITEMS[p.equipped.zirh]?.defense})` : "—"}</Text>
             {p.equipped?.zirh && <Pressable onPress={() => apply((s) => unequipItem(s, "zirh"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>ÇIKAR</Text></Pressable>}
           </View>
         </View>
@@ -136,7 +136,7 @@ export default function Karakter() {
         return (
           <View key={k} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7 }}>
             <Text style={{ fontSize: 16 }}>{it?.icon || "📦"}</Text>
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{it?.name || k} ×{p.inventory[k]}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{t("it."+k)} ×{p.inventory[k]}</Text>
             {equipable && (
               <Pressable onPress={() => apply((s) => equipItem(s, k))} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>KUŞAN</Text>
