@@ -1,74 +1,78 @@
+import { useState } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
-import Svg, { Polygon } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
-import { Portre } from "../../lib/ui";
+import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
-import { placeName, professionNameL } from "../../lib/locale-data";
+import { placeName, professionNameL, careerTitleL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 
-// Altın çizgi + elmas ayraç (Vercel motifi).
-function GoldDivider({ mt = 16, mb = 12 }: { mt?: number; mb?: number }) {
+const GB = "rgba(201,168,76,0.22)"; // gold border
+const GBG = "rgba(201,168,76,0.07)"; // gold bg
+
+function Card({ children }: { children: React.ReactNode }) {
+  return <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: GB, borderRadius: 12, padding: 14, marginBottom: 10 }}>{children}</View>;
+}
+function SectionHead({ title, right }: { title: string; right?: React.ReactNode }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", marginTop: mt, marginBottom: mb }}>
-      <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
-      <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], marginHorizontal: 8 }} />
-      <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+      <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.gold, textTransform: "uppercase" }}>{title}</Text>
+      {right}
     </View>
   );
 }
 
-function SectionHead({ t }: { t: string }) {
-  return <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2.5, color: C.gold, textTransform: "uppercase", textAlign: "center", marginBottom: 12 }}>{t}</Text>;
-}
-
-// Elmas stat rozeti.
-function DiamondBadge({ value, size = 46 }: { value: number; size?: number }) {
-  const half = size / 2, pad = size * 0.09, pad2 = size * 0.2;
+// Yatay istatistik (sağlık/enerji/altın/taç) — ikon + değer + bar.
+function StatTop({ emoji, value, max, color, showBar = true, flex = 1 }: { emoji: string; value: number; max?: number; color: string; showBar?: boolean; flex?: number }) {
   return (
-    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-      <Svg width={size} height={size} style={{ position: "absolute" }}>
-        <Polygon points={`${half},${pad} ${size - pad},${half} ${half},${size - pad} ${pad},${half}`} fill={C.cardHi} stroke={C.gold} strokeWidth={1.5} />
-        <Polygon points={`${half},${pad2} ${size - pad2},${half} ${half},${size - pad2} ${pad2},${half}`} fill="none" stroke="rgba(201,168,76,0.28)" strokeWidth={0.7} />
-      </Svg>
-      <Text style={{ fontFamily: F.display, fontSize: size * 0.36, color: C.goldBright }}>{value}</Text>
-    </View>
-  );
-}
-
-function Bar({ value, max, color }: { value: number; max: number; color: string }) {
-  const pct = Math.min(100, Math.max(0, (value / max) * 100));
-  return (
-    <View style={{ height: 5, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 3, overflow: "hidden" }}>
-      <View style={{ width: `${pct}%`, height: 5, backgroundColor: color, borderRadius: 3 }} />
-    </View>
-  );
-}
-
-function VitalBar({ icon, label, value, max, color, suffix }: { icon: string; label: string; value: number; max: number; color: string; suffix?: string }) {
-  return (
-    <View style={{ marginBottom: 10 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-          <GameIcon name={icon} size={13} color={color} />
-          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{label}</Text>
-        </View>
-        <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment }}>{value}{suffix || ""}</Text>
+    <View style={{ flex }}>
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 3, marginBottom: 3 }}>
+        <Text style={{ fontSize: 12 }}>{emoji}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 14, color }}>{value}</Text>
+        {max ? <Text style={{ fontSize: 9, color: C.parchmentMuted }}>/ {max}</Text> : null}
       </View>
-      <Bar value={value} max={max} color={color} />
+      {showBar && max ? <ProgressBar value={value} max={max} color={color} h={4} /> : <View style={{ height: 4 }} />}
     </View>
   );
 }
 
-function Row({ k, v }: { k: string; v: string | number }) {
+// Temel özellik kartı — emoji, ad, değer, bar.
+function StatCard({ emoji, name, value, color, canAdd, onAdd }: { emoji: string; name: string; value: number; color: string; canAdd: boolean; onAdd: () => void }) {
   return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border }}>
-      <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{k}</Text>
-      <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{v}</Text>
+    <View style={{ flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 9, paddingVertical: 10, paddingHorizontal: 6, alignItems: "center", gap: 4 }}>
+      <Text style={{ fontSize: 16 }}>{emoji}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 7.5, letterSpacing: 0.5, color: C.parchmentMuted }} numberOfLines={1}>{name}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 18, color: C.goldBright }}>{value}</Text>
+      <View style={{ width: "100%" }}><ProgressBar value={value} max={20} color={color} h={3} /></View>
+      {canAdd && (
+        <Pressable onPress={onAdd} style={{ marginTop: 2, width: 22, height: 22, borderRadius: 5, borderWidth: 1, borderColor: C.gold, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ color: C.gold, fontSize: 14, lineHeight: 16 }}>+</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+// Toplumsal statü kartı — ikon, değer, etiket.
+function SocialCard({ icon, name, value, color }: { icon: string; name: string; value: number; color: string }) {
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 9, paddingVertical: 11, paddingHorizontal: 4, alignItems: "center", gap: 3 }}>
+      <Text style={{ fontSize: 14 }}>{icon}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 7, letterSpacing: 0.5, color: C.parchmentMuted }} numberOfLines={1}>{name}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 16, color }}>{value}</Text>
+    </View>
+  );
+}
+
+function Badge({ icon, text }: { icon: string; text: string }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 2, backgroundColor: GBG, borderWidth: 1, borderColor: GB, borderRadius: 4, paddingVertical: 2, paddingHorizontal: 5 }}>
+      <Text style={{ fontSize: 9 }}>{icon}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 0.5, color: C.gold }}>{text}</Text>
     </View>
   );
 }
@@ -80,148 +84,219 @@ export default function Karakter() {
   const router = useRouter();
   const { state, apply } = useGame();
   const { lang, t } = useI18n();
+  const [tab, setTab] = useState<"ozellikler" | "dunya" | "seruven">("ozellikler");
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const inv = Object.keys(p.inventory).filter((k) => p.inventory[k] > 0);
   const canAdd = p.stat_points > 0;
-  const STAT_KEYS: { k: keyof Stats; label: string }[] = [
-    { k: "strength", label: t("st.strength") }, { k: "intelligence", label: t("st.intelligence") },
-    { k: "charisma", label: t("st.charisma") }, { k: "stamina", label: t("st.stamina") },
-  ];
+  const add = (k: keyof Stats) => apply((s) => allocateStat(s, k));
+  const curPr = professionById(p.profession);
+  const hasCareer = p.profession !== "işsiz" && !!curPr;
+  const careerLevel = Math.floor(p.career_xp / 30) + 1;
+  const xpInLevel = p.career_xp % 30;
+  const crownLevel = Math.floor((p.fame || 0) / 20);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 18, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 80 }}>
-      {/* ── Hero başlık ── */}
-      <View style={{ alignItems: "center" }}>
-        <View style={{ borderWidth: 2, borderColor: C.gold, borderRadius: 44, padding: 2, shadowColor: C.gold, shadowOpacity: 0.4, shadowRadius: 12 }}>
-          <Portre age={p.age} gender={p.gender} size={76} ring={false} />
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      {/* Header */}
+      <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 18, backgroundColor: C.bg }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+          <View style={{ width: 40 }} />
+          <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 4, color: C.gold }}>{t("scr.karakter").toUpperCase()}</Text>
+          <Pressable onPress={() => router.push("/oyun/ayarlar")} style={{ width: 40, alignItems: "flex-end" }}><GameIcon name="ayarlar" size={18} color={C.gold} /></Pressable>
         </View>
-        <Text style={{ fontFamily: F.display, fontSize: 21, color: C.parchment, letterSpacing: 1.5, marginTop: 10, textAlign: "center" }}>{p.name}</Text>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginTop: 2, textAlign: "center" }}>
-          {p.profession === "işsiz" ? t("misc.jobless") : professionNameL(p.profession, lang)}
-        </Text>
-        <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted, marginTop: 4, textTransform: "uppercase" }}>
-          {p.gender === "kadın" ? t("misc.female") : t("misc.male")} · {p.age} {t("misc.age")} · {placeName(p.location_name, lang)}
-        </Text>
+        <GoldDivider mt={6} mb={0} />
       </View>
 
-      <GoldDivider mt={18} />
-
-      {/* ── Hayati değerler ── */}
-      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14 }}>
-        <VitalBar icon="saglik" label={t("char.health")} value={Math.round(p.health)} max={100} color={C.blood} />
-        <VitalBar icon="tokluk" label={t("char.hunger")} value={Math.round(p.hunger)} max={100} color={C.sage} />
-        <VitalBar icon="akce" label={t("char.money")} value={Math.round(p.money)} max={500} color={C.gold} suffix=" ⚜" />
-      </View>
-
-      {/* ── Özellikler (elmas rozetler) ── */}
-      <GoldDivider />
-      <SectionHead t={canAdd ? `${t("char.attrs")} · ${p.stat_points} ${t("char.points")}` : t("char.attrs")} />
-      <View style={{ flexDirection: "row", justifyContent: "space-around", backgroundColor: C.card, borderWidth: 1, borderColor: canAdd ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 10, paddingVertical: 16 }}>
-        {STAT_KEYS.map(({ k, label }) => (
-          <View key={k} style={{ alignItems: "center", gap: 7 }}>
-            <DiamondBadge value={p.stats[k]} />
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <GameIcon name={STAT_ICON[k]} size={11} color={C.goldDim} />
-              <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: C.parchmentMuted, textTransform: "uppercase" }}>{label}</Text>
+      <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: insets.bottom + 90 }}>
+        {/* ── Karakter kartı ── */}
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: GB, borderRadius: 12, padding: 14, marginBottom: 10 }}>
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            {/* Portre dikdörtgen + arma */}
+            <View style={{ width: 96, height: 120 }}>
+              <View style={{ width: 96, height: 120, borderRadius: 8, borderWidth: 2, borderColor: C.gold, overflow: "hidden", backgroundColor: "#1A1208", alignItems: "center", justifyContent: "center" }}>
+                <Portre age={p.age} gender={p.gender} size={120} ring={false} />
+              </View>
+              <View style={{ position: "absolute", top: -3, left: -3, width: 30, height: 30, borderRadius: 4, borderWidth: 1.5, borderColor: C.gold, backgroundColor: "#6B0000", alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontSize: 15 }}>🦁</Text>
+              </View>
             </View>
-            {canAdd && (
-              <Pressable onPress={() => apply((s) => allocateStat(s, k))} style={{ width: 24, height: 24, borderRadius: 6, borderWidth: 1, borderColor: "rgba(201,168,76,0.6)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ color: C.gold, fontSize: 15, lineHeight: 17 }}>+</Text>
-              </Pressable>
-            )}
-          </View>
-        ))}
-      </View>
 
-      {/* ── Beceriler ── */}
-      <GoldDivider />
-      <Pressable onPress={() => router.push("/oyun/beceriler")}>
-        <SectionHead t={pendingPerkCount(p) > 0 ? `${t("char.skills")} · ${pendingPerkCount(p)} ${t("char.perksAvail")}` : t("char.skills")} />
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: pendingPerkCount(p) > 0 ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 10, paddingHorizontal: 14 }}>
-          <Row k={t("skill.combat")} v={p.skills.combat} />
-          <Row k={t("skill.trade")} v={p.skills.trade} />
-          <Row k={t("skill.crafting")} v={p.skills.crafting} />
-          <Row k={t("skill.social")} v={p.skills.social} />
+            {/* Bilgi */}
+            <View style={{ flex: 1, gap: 5 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 7.5, letterSpacing: 2, color: C.parchmentMuted }}>{t("scr.karakter").toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 19, color: C.goldBright, letterSpacing: 0.5 }}>{p.name}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                <GameIcon name="ilerle" size={11} color={C.gold} />
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim }}>{hasCareer ? careerTitleL(p.profession, p.career_xp, lang) : t("misc.jobless")}</Text>
+              </View>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 3, marginTop: 1 }}>
+                <Badge icon="🛡" text={`${p.age} ${t("misc.age").toUpperCase()}`} />
+                <Badge icon={p.gender === "kadın" ? "♀" : "♂"} text={(p.gender === "kadın" ? t("misc.female") : t("misc.male")).toUpperCase()} />
+                <Badge icon="📍" text={placeName(p.location_name, lang).toUpperCase()} />
+                <Badge icon="⭐" text={`${p.generation}. ${t("misc.generation").toUpperCase()}`} />
+              </View>
+            </View>
+          </View>
+
+          {/* Yatay stat barı */}
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+            <StatTop emoji="❤️" value={Math.round(p.health)} max={100} color={C.blood} />
+            <StatTop emoji="🍎" value={Math.round(p.hunger)} max={100} color={C.sage} />
+            <StatTop emoji="⚜️" value={Math.round(p.money)} color={C.gold} showBar={false} flex={0.9} />
+            <StatTop emoji="👑" value={crownLevel} color={C.ink} showBar={false} flex={0.65} />
+          </View>
+
+          {/* Kariyer XP */}
+          {hasCareer && (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 }}>
+              <View style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, borderColor: C.gold, backgroundColor: "#2A1808", alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{careerLevel}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1.5, color: C.parchmentMuted }}>KARİYER XP</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold }}>{xpInLevel} / 30</Text>
+                </View>
+                <ProgressBar value={xpInLevel} max={30} color={C.gold} h={5} />
+              </View>
+            </View>
+          )}
         </View>
-      </Pressable>
 
-      {/* ── Toplumsal statü ── */}
-      <GoldDivider />
-      <SectionHead t={t("char.status")} />
-      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
-        <Row k={t("char.guild")} v={p.faction ? t("fac." + p.faction + ".n") : "—"} />
-        <Row k={t("soc.reputation.l")} v={Math.round(p.reputation)} />
-        <Row k={t("soc.honor.l")} v={Math.round(p.honor)} />
-        <Row k={t("soc.fame.l")} v={Math.round(p.fame)} />
-        <Row k={t("soc.fear.l")} v={Math.round(p.fear)} />
-        <Row k={t("char.gen")} v={`${p.generation}. ${t("misc.generation")}`} />
-      </View>
-
-      {p.injuries && p.injuries.length > 0 && (
-        <>
-          <GoldDivider />
-          <SectionHead t={t("char.injuries")} />
-          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(168,52,52,0.35)", borderRadius: 10, paddingHorizontal: 14 }}>
-            {p.injuries.map((inj, i) => (
-              <Row key={i} k={inj.label} v={inj.permanent ? t("char.permanent") : `${inj.weeks_left} ${t("char.mo")}`} />
-            ))}
-          </View>
-        </>
-      )}
-
-      {/* ── Aile ── */}
-      <GoldDivider />
-      <SectionHead t={t("char.family")} />
-      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
-        <Row k={t("char.spouse")} v={p.spouse_name || "—"} />
-        <Row k={t("char.children")} v={p.children.length ? p.children.join(", ") : "—"} />
-      </View>
-
-      {/* ── Donanım ── */}
-      <GoldDivider />
-      <SectionHead t={t("char.gear")} />
-      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border }}>
-          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.weapon")}</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.silah ? `${t("it." + p.equipped.silah)} (+${ITEMS[p.equipped.silah]?.power})` : "—"}</Text>
-            {p.equipped?.silah && <Pressable onPress={() => apply((s) => unequipItem(s, "silah"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>{t("misc.remove")}</Text></Pressable>}
-          </View>
-        </View>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.armor")}</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.zirh ? `${t("it." + p.equipped.zirh)} (+${ITEMS[p.equipped.zirh]?.defense})` : "—"}</Text>
-            {p.equipped?.zirh && <Pressable onPress={() => apply((s) => unequipItem(s, "zirh"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>{t("misc.remove")}</Text></Pressable>}
-          </View>
-        </View>
-      </View>
-
-      {/* ── Çanta ── */}
-      <GoldDivider />
-      <SectionHead t={t("char.bag")} />
-      {inv.length === 0 ? (
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, textAlign: "center" }}>{t("char.bagEmpty")}</Text>
-      ) : inv.map((k) => {
-        const it = ITEMS[k]; const usable = it && (it.feed || it.heal); const equipable = it && (it.kind === "silah" || it.kind === "zirh");
-        return (
-          <View key={k} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7 }}>
-            <Text style={{ fontSize: 16 }}>{it?.icon || "📦"}</Text>
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{t("it." + k)} ×{p.inventory[k]}</Text>
-            {equipable && (
-              <Pressable onPress={() => apply((s) => equipItem(s, k))} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{t("misc.equip")}</Text>
+        {/* ── Sekme navigasyonu ── */}
+        <View style={{ flexDirection: "row", backgroundColor: C.card, borderWidth: 1, borderColor: GB, borderRadius: 10, overflow: "hidden", marginBottom: 10 }}>
+          {([["ozellikler", "👤", t("char.tabAttrs")], ["dunya", "👥", t("char.tabWorld")], ["seruven", "🎒", t("char.tabAdventure")]] as const).map(([k, e, lbl]) => {
+            const active = tab === k;
+            return (
+              <Pressable key={k} onPress={() => setTab(k as any)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, paddingVertical: 11, backgroundColor: active ? GBG : "transparent", borderBottomWidth: 2, borderBottomColor: active ? C.gold : "transparent" }}>
+                <Text style={{ fontSize: 11 }}>{e}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.8, color: active ? C.gold : C.parchmentMuted }}>{lbl}</Text>
               </Pressable>
+            );
+          })}
+        </View>
+
+        {/* ── ÖZELLİKLER ── */}
+        {tab === "ozellikler" && (
+          <>
+            <Card>
+              <SectionHead title={t("char.attrs")} right={canAdd ? <Text style={{ fontFamily: F.display, fontSize: 9, color: C.gold, letterSpacing: 1 }}>{p.stat_points} {t("char.points").toUpperCase()}</Text> : undefined} />
+              <View style={{ flexDirection: "row", gap: 7 }}>
+                <StatCard emoji="💪" name={t("st.strength").toUpperCase()} value={p.stats.strength} color={C.ember} canAdd={canAdd} onAdd={() => add("strength")} />
+                <StatCard emoji="📚" name={t("st.intelligence").toUpperCase()} value={p.stats.intelligence} color={C.azure} canAdd={canAdd} onAdd={() => add("intelligence")} />
+                <StatCard emoji="🎭" name={t("st.charisma").toUpperCase()} value={p.stats.charisma} color={C.ember} canAdd={canAdd} onAdd={() => add("charisma")} />
+                <StatCard emoji="🛡️" name={t("st.stamina").toUpperCase()} value={p.stats.stamina} color={C.sage} canAdd={canAdd} onAdd={() => add("stamina")} />
+              </View>
+            </Card>
+
+            <Card>
+              <SectionHead title={t("char.status")} />
+              <View style={{ flexDirection: "row", gap: 7 }}>
+                <SocialCard icon="🛡" name={t("soc.reputation.l").toUpperCase()} value={Math.round(p.reputation)} color={C.sage} />
+                <SocialCard icon="⚜️" name={t("soc.honor.l").toUpperCase()} value={Math.round(p.honor)} color={C.azure} />
+                <SocialCard icon="⛑️" name={t("soc.fear.l").toUpperCase()} value={Math.round(p.fear)} color={C.blood} />
+                <SocialCard icon="👑" name={t("soc.fame.l").toUpperCase()} value={Math.round(p.fame)} color={C.ink} />
+              </View>
+            </Card>
+
+            <Pressable onPress={() => router.push("/oyun/beceriler")}>
+              <Card>
+                <SectionHead title={t("char.skills")} right={<Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.gold }}>{pendingPerkCount(p) > 0 ? `${pendingPerkCount(p)} ${t("char.perksAvail")} ›` : "›"}</Text>} />
+                {([["combat", "guc"], ["trade", "akce"], ["crafting", "meslek"], ["social", "karizma"]] as const).map(([sk, ic]) => (
+                  <View key={sk} style={{ flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 7 }}>
+                    <GameIcon name={ic} size={13} color={C.goldDim} />
+                    <Text style={{ width: 96, fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("skill." + sk)}</Text>
+                    <View style={{ flex: 1 }}><ProgressBar value={p.skills[sk]} max={10} color={C.gold} h={4} /></View>
+                    <Text style={{ width: 22, textAlign: "right", fontFamily: F.display, fontSize: 11, color: C.parchment }}>{p.skills[sk]}</Text>
+                  </View>
+                ))}
+              </Card>
+            </Pressable>
+          </>
+        )}
+
+        {/* ── DÜNYA ── */}
+        {tab === "dunya" && (
+          <>
+            <Card>
+              <SectionHead title={t("char.guild")} />
+              <Text style={{ fontFamily: F.serif, fontSize: 14, color: p.faction ? C.gold : C.parchmentMuted }}>{p.faction ? t("fac." + p.faction + ".n") : "—"}</Text>
+            </Card>
+            <Card>
+              <SectionHead title={t("char.family")} />
+              <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.spouse")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.spouse_name || "—"}</Text>
+              </View>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.children")}</Text>
+                <Text style={{ flex: 1, textAlign: "right", fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{p.children.length ? p.children.join(", ") : "—"}</Text>
+              </View>
+            </Card>
+            {p.injuries && p.injuries.length > 0 && (
+              <Card>
+                <SectionHead title={t("char.injuries")} />
+                {p.injuries.map((inj, i) => (
+                  <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 }}>
+                    <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.blood }}>{inj.label}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted }}>{inj.permanent ? t("char.permanent") : `${inj.weeks_left} ${t("char.mo")}`}</Text>
+                  </View>
+                ))}
+              </Card>
             )}
-            {usable && (
-              <Pressable onPress={() => apply((s) => useItem(s, k))} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{t("misc.use")}</Text>
-              </Pressable>
-            )}
-          </View>
-        );
-      })}
-    </ScrollView>
+          </>
+        )}
+
+        {/* ── SERÜVEN (donanım + çanta) ── */}
+        {tab === "seruven" && (
+          <>
+            <Card>
+              <SectionHead title={t("char.gear")} />
+              <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.weapon")}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.silah ? `${t("it." + p.equipped.silah)} (+${ITEMS[p.equipped.silah]?.power})` : "—"}</Text>
+                  {p.equipped?.silah && <Pressable onPress={() => apply((s) => unequipItem(s, "silah"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>{t("misc.remove")}</Text></Pressable>}
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.armor")}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.zirh ? `${t("it." + p.equipped.zirh)} (+${ITEMS[p.equipped.zirh]?.defense})` : "—"}</Text>
+                  {p.equipped?.zirh && <Pressable onPress={() => apply((s) => unequipItem(s, "zirh"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>{t("misc.remove")}</Text></Pressable>}
+                </View>
+              </View>
+            </Card>
+            <Card>
+              <SectionHead title={t("char.bag")} />
+              {inv.length === 0 ? (
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>{t("char.bagEmpty")}</Text>
+              ) : inv.map((k) => {
+                const it = ITEMS[k]; const usable = it && (it.feed || it.heal); const equipable = it && (it.kind === "silah" || it.kind === "zirh");
+                return (
+                  <View key={k} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
+                    <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: GBG, borderWidth: 1, borderColor: GB, alignItems: "center", justifyContent: "center" }}>
+                      <Text style={{ fontSize: 17 }}>{it?.icon || "📦"}</Text>
+                    </View>
+                    <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{t("it." + k)} ×{p.inventory[k]}</Text>
+                    {equipable && (
+                      <Pressable onPress={() => apply((s) => equipItem(s, k))} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: GBG }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{t("misc.equip")}</Text>
+                      </Pressable>
+                    )}
+                    {usable && (
+                      <Pressable onPress={() => apply((s) => useItem(s, k))} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: GBG }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{t("misc.use")}</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                );
+              })}
+            </Card>
+          </>
+        )}
+      </ScrollView>
+    </View>
   );
 }
