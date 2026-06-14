@@ -5,7 +5,7 @@ import { useGame } from "../../lib/store";
 import { buyProperty, PROPERTY_TYPES } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel, GoldDivider } from "../../lib/ui";
+import { BackLabel, PageHeader, Panel, Pill } from "../../lib/ui";
 
 export default function Mulkler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -13,32 +13,35 @@ export default function Mulkler() {
   const { t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
-  const income = p.properties.reduce((a, t) => a + (PROPERTY_TYPES[t]?.income || 0), 0);
-  const counts: Record<string, number> = {}; p.properties.forEach((t) => counts[t] = (counts[t] || 0) + 1);
+  const income = p.properties.reduce((a, ty) => a + (PROPERTY_TYPES[ty]?.income || 0), 0);
+  const counts: Record<string, number> = {}; p.properties.forEach((ty) => counts[ty] = (counts[ty] || 0) + 1);
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.mulkler")}</Text>
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money} ⚜</Text>
       </View>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 8 }}>
-        Aylık gelir: {income} ⚜ · Adına yazılı her tapu, çocuklarına kalır.
-      </Text>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <GoldDivider mt={4} mb={10} />
-        {Object.entries(PROPERTY_TYPES).map(([id, t]) => (
-          <View key={id} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 8 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 9, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 20 }}>{t.icon}</Text></View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t.name} {counts[id] ? `×${counts[id]}` : ""}</Text>
-              <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>Gelir: {t.income} ⚜/ay</Text>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
+        <PageHeader kicker={t("scr.mulkler")} icon="🏯" title={t("scr.mulkler")} sub={`${t("mulk.income")}: ${income} ⚜ · ${t("mulk.hint")}`} />
+        <Panel title={t("scr.mulkler")} icon="🏠" noPad>
+          {Object.entries(PROPERTY_TYPES).map(([id, ty], i, arr) => (
+            <View key={id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: i === arr.length - 1 ? 0 : 1, borderBottomColor: C.border }}>
+              <View style={{ width: 40, height: 40, borderRadius: 9, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontSize: 20 }}>{ty.icon}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{ty.name}</Text>
+                  {counts[id] ? <Pill text={`×${counts[id]}`} /> : null}
+                </View>
+                <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{ty.income} {t("mulk.perMonth")}</Text>
+              </View>
+              <Pressable onPress={() => apply((s) => buyProperty(s, id))} disabled={p.money < ty.cost} style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < ty.cost ? C.bg : "rgba(201,168,76,0.12)" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < ty.cost ? C.parchmentMuted : C.gold }}>{t("misc.buy")} {ty.cost}⚜</Text>
+              </Pressable>
             </View>
-            <Pressable onPress={() => apply((s) => buyProperty(s, id))} disabled={p.money < t.cost} style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < t.cost ? C.card : "rgba(201,168,76,0.12)" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < t.cost ? C.parchmentMuted : C.gold }}>AL {t.cost}⚜</Text>
-            </Pressable>
-          </View>
-        ))}
+          ))}
+        </Panel>
       </ScrollView>
     </View>
   );

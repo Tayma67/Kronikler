@@ -2,11 +2,11 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { SKILL_META, PERKS, perkById, hasPerk, pendingPerkTier, skillLevel, choosePerk, SkillKey } from "../../lib/game";
+import { SKILL_META, PERKS, hasPerk, pendingPerkTier, choosePerk, SkillKey } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel, GoldDivider } from "../../lib/ui";
+import { BackLabel, PageHeader, ProgressBar } from "../../lib/ui";
 
 function Tree({ tree, icon }: { tree: SkillKey; icon: string }) {
   const { state, apply } = useGame();
@@ -19,17 +19,17 @@ function Tree({ tree, icon }: { tree: SkillKey; icon: string }) {
   const tiers = [3, 6, 9];
 
   return (
-    <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: pending ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 12, padding: 14, marginBottom: 12 }}>
+    <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: pending ? "rgba(201,168,76,0.5)" : "rgba(201,168,76,0.22)", borderRadius: 12, padding: 14, marginBottom: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <GameIcon name={icon} size={22} color={C.gold} />
+        <View style={{ width: 40, height: 40, borderRadius: 9, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
+          <GameIcon name={icon} size={20} color={C.gold} />
+        </View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t("skill." + tree)} · {t("bec.lv")} {lvl}</Text>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("skill." + tree + ".b")}</Text>
         </View>
       </View>
-      <View style={{ height: 4, backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 2, marginTop: 10 }}>
-        <View style={{ width: `${lvl >= 10 ? 100 : inLevel}%`, height: 4, backgroundColor: C.gold, borderRadius: 2 }} />
-      </View>
+      <View style={{ marginTop: 10 }}><ProgressBar value={lvl >= 10 ? 100 : inLevel} max={100} color={C.gold} h={4} /></View>
 
       {tiers.map((tn) => {
         const tierPerks = PERKS.filter((pk) => pk.tree === tree && pk.tier === tn);
@@ -38,7 +38,7 @@ function Tree({ tree, icon }: { tree: SkillKey; icon: string }) {
         const choosable = unlocked && !chosen && pending === tn;
         return (
           <View key={tn} style={{ marginTop: 12, opacity: unlocked ? 1 : 0.5 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, marginBottom: 6 }}>{t("bec.tierPerk").replace("%t", String(tn))} {chosen ? t("bec.chosen") : unlocked ? t("bec.choose") : t("bec.locked")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, marginBottom: 6 }}>{t("bec.tierPerk").replace("%t", String(tn))} · {chosen ? t("bec.chosen") : unlocked ? t("bec.choose") : t("bec.locked")}</Text>
             {tierPerks.map((pk) => {
               const isChosen = chosen?.id === pk.id;
               return (
@@ -64,19 +64,13 @@ export default function Beceriler() {
   const { state } = useGame();
   const { t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
-
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
+      <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.beceriler")}</Text>
-        <View style={{ width: 36 }} />
       </View>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 8 }}>
-        {t("bec.hint")}
-      </Text>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <GoldDivider mt={4} mb={10} />
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
+        <PageHeader kicker={t("scr.beceriler")} icon="🌿" title={t("scr.beceriler")} sub={t("bec.hint")} />
         {SKILL_META.map((m) => <Tree key={m.key} tree={m.key} icon={m.icon} />)}
       </ScrollView>
     </View>
