@@ -8,7 +8,7 @@ import { applyDilemma, careerTitle, achievementsOf, GameEvent } from "../../lib/
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
-import { MilestoneModal, DilemmaModal, AchievementToast, PressableScale } from "../../lib/ui";
+import { MilestoneModal, DilemmaModal, AchievementToast, PressableScale, AnimatedNumber } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
 import { playTap, playAdvance } from "../../lib/sound";
@@ -23,7 +23,7 @@ function StatBar({ icon, value, max, color }: { icon: string; value: number; max
       <View style={{ flex: 1, height: 4, backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 2 }}>
         <View style={{ width: `${pct}%`, height: 4, backgroundColor: color, borderRadius: 2 }} />
       </View>
-      <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, width: 34, textAlign: "right" }}>{Math.round(value)}</Text>
+      <AnimatedNumber value={value} style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, width: 38, textAlign: "right" }} />
     </View>
   );
 }

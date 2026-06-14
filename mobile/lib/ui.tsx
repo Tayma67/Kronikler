@@ -1,5 +1,6 @@
-import { View, Image, Modal, Text, Pressable, ViewStyle, StyleProp } from "react-native";
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, ZoomIn, FadeInUp, FadeInDown } from "react-native-reanimated";
+import { View, Image, Modal, Text, Pressable, TextInput, ViewStyle, StyleProp, TextStyle } from "react-native";
+import { useEffect } from "react";
+import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, useDerivedValue, withTiming, withSpring, ZoomIn, FadeInUp, FadeInDown } from "react-native-reanimated";
 import { portreImage } from "./assets";
 import { GameIcon } from "./icons";
 import { useI18n } from "./i18n";
@@ -7,6 +8,23 @@ import { hap, Hap } from "./haptics";
 import { DUR, EASE } from "./motion";
 import type { Dilemma, Choice } from "./events";
 import { C, F } from "./theme";
+
+// Değişince yumuşakça sayan (count-up/down) sayı — UI thread'de, re-render yok.
+const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
+export function AnimatedNumber({ value, style }: { value: number; style?: StyleProp<TextStyle> }) {
+  const sv = useSharedValue(value);
+  useEffect(() => { sv.value = withTiming(value, { duration: 450, easing: EASE.decel }); }, [value]);
+  const rounded = useDerivedValue(() => String(Math.round(sv.value)));
+  const props = useAnimatedProps(() => ({ text: rounded.value, defaultValue: String(Math.round(value)) } as any));
+  return (
+    <AnimatedTextInput
+      editable={false}
+      underlineColorAndroid="transparent"
+      animatedProps={props}
+      style={[{ padding: 0, margin: 0 }, style]}
+    />
+  );
+}
 
 // Lokalize geri-butonu etiketi (tüm ekranlarda ortak).
 export function BackLabel() {

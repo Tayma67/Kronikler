@@ -244,6 +244,20 @@ export function advance(prev: GameState, n = 1): GameState {
     tickCaravan(s);
     tickEconomy(s, i === n - 1);
     if (s.story) s.story.tension = Math.min(100, s.story.tension + 1); // gerilim zamanla birikir
+    // İlk aylarda yeni oyuncuya garantili olumlu an (tempo: önce kazandır)
+    if (s.turn <= 3 && !s.player.dead && i === n - 1) {
+      const g = 6 + Math.floor(Math.random() * 8); s.player.money += g;
+      push(s, "gunluk", rnd(["Komşun sıcak bir çorba ikram etti.", "Pazarda biri eline birkaç akçe sıkıştırdı.", "Anlatılan bir masal yüreğini ısıttı."]) + ` (+${g} akçe)`);
+    }
+    // Cliffhanger: ayın sonunda ara sıra bir sonraki ayı tease et
+    if (!s.player.dead && i === n - 1 && s.player.age >= 13 && chance(0.3)) {
+      push(s, "fisilti", rnd([
+        "Çarşıda bir fısıltı: önümüzdeki ay bir şeyler olacak gibi…",
+        "Yolcular tuhaf haberler getiriyor; ay dönmeden öğrenirsin.",
+        "İçine bir his düştü — bu ay bitmeden kapın çalınabilir.",
+        "Ufukta toz bulutu; haberi yakında gelir.",
+      ]));
+    }
   }
   if (s.history.length > 250) s.history = s.history.slice(-250);
   return s;
