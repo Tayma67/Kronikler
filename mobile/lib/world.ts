@@ -1,5 +1,6 @@
 // Dünya modeli — NPC'ler, eşyalar, pazar. Offline, deterministik üretim.
 import { NAME_POOLS, Lang } from "./locale-data";
+import { tFor } from "./i18n";
 export interface NPC { id: string; name: string; age: number; gender: "erkek" | "kadın"; profession: string; trait: string; quirk: string; goal: string; }
 // Kişilik özellikleri (deterministik atanır).
 export const TRAITS = ["neşeli","ciddi","kibirli","cömert","dertli","yalnız","kurnaz","mert","dindar","hırslı","utangaç","sıcakkanlı"];
@@ -80,6 +81,10 @@ const SPECIALTIES: { name: string; goods: string[] }[] = [
 export function localSpecialty(locationSeed: number): { name: string; goods: string[] } {
   return SPECIALTIES[locationSeed % SPECIALTIES.length];
 }
+// Geçim uzmanlığının yerelleştirilmiş adı (gösterim için).
+export function localSpecialtyName(locationSeed: number, lang: Lang = "tr"): string {
+  return tFor(lang, `spec.${locationSeed % SPECIALTIES.length}`);
+}
 // Pazar malları — yerel uzmanlık (ucuz) + kıtlık (pahalı) + küçük dalgalanma.
 export function marketGoods(locationSeed: number): Item[] {
   const r = mkRng(locationSeed);
@@ -99,19 +104,20 @@ export function locSeed(name: string): number {
 
 // Şehir detayı — deterministik (vali, güvenlik, refah, nüfus).
 export interface CityInfo { governor: string; security: number; prosperity: number; population: number; blurb: string; }
-const GOV_TITLES = ["Subaşı", "Voyvoda", "Dizdar", "Kethüda", "Bey"];
-export function cityInfo(name: string, kind: string): CityInfo {
+const GOV_KEYS = ["gov.subasi", "gov.voyvoda", "gov.dizdar", "gov.kethuda", "gov.bey"];
+export function cityInfo(name: string, kind: string, lang: Lang = "tr"): CityInfo {
   const r = mkRng(locSeed(name) ^ 0x5bd1e995);
-  const gov = `${pick(GOV_TITLES, r)} ${pick(AD_E, r)} ${pick(SOYAD, r)}`;
+  // RNG sırası korunur: unvan, ad, soyad, ... , tasvir.
+  const ti = Math.floor(r() * GOV_KEYS.length);
+  const ad = AD_E[Math.floor(r() * AD_E.length)];
+  const soyad = SOYAD[Math.floor(r() * SOYAD.length)];
+  const gov = `${tFor(lang, GOV_KEYS[ti])} ${ad} ${soyad}`;
   const base = kind === "şehir" ? 4000 : kind === "kale" ? 300 : 200;
   const population = base + Math.floor(r() * (kind === "şehir" ? 8000 : kind === "kale" ? 400 : 500));
   const security = (kind === "kale" ? 55 : 30) + Math.floor(r() * 40);
   const prosperity = (kind === "şehir" ? 45 : 25) + Math.floor(r() * 45);
-  const blurbs = [
-    "Çarşısı erken kurulur, geç dağılır.", "Sur dibinde bir çeşme, gün boyu işler.",
-    "Kervanların uğrak yeri.", "Geceleri bekçi sesleri duyulur.", "Pazarında her dilden tüccar var.",
-  ];
-  return { governor: gov, security, prosperity, population, blurb: pick(blurbs, r) };
+  const bi = Math.floor(r() * 5);
+  return { governor: gov, security, prosperity, population, blurb: tFor(lang, `cityblurb.${bi}`) };
 }
 
 // Rakip hanedanlar — diyarın güç odakları (deterministik).

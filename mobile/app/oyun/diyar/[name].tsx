@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
 import { travelBy, placeKind, TRAVEL_ROUTES } from "../../../lib/game";
-import { cityInfo, marketGoods, locSeed, localSpecialty } from "../../../lib/world";
+import { cityInfo, marketGoods, locSeed, localSpecialtyName } from "../../../lib/world";
 import { useI18n } from "../../../lib/i18n";
 import { placeName } from "../../../lib/locale-data";
 import { C, F } from "../../../lib/theme";
@@ -27,7 +27,7 @@ export default function DiyarDetay() {
   const { lang, t } = useI18n();
   if (!state || !name) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const kind = placeKind(name);
-  const info = cityInfo(name, kind);
+  const info = cityInfo(name, kind, lang);
   const here = state.player.location_name === name;
   const goods = marketGoods(locSeed(name)).slice(0, 4);
 
@@ -42,7 +42,7 @@ export default function DiyarDetay() {
         <Stat label={t("diyar.governor")} value={info.governor} />
         <Stat label={t("diyar.security")} value={`${info.security}/100`} />
         <Stat label={t("diyar.prosperity")} value={`${info.prosperity}/100`} />
-        <Stat label={t("diyar.livelihood")} value={localSpecialty(locSeed(name)).name} />
+        <Stat label={t("diyar.livelihood")} value={localSpecialtyName(locSeed(name), lang)} />
       </View>
 
       <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("diyar.fromMarket")}</Text>
