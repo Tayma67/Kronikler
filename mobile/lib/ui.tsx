@@ -1,7 +1,10 @@
-import { View, Image, Modal, Text, Pressable } from "react-native";
+import { View, Image, Modal, Text, Pressable, ViewStyle, StyleProp } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring } from "react-native-reanimated";
 import { portreImage } from "./assets";
 import { GameIcon } from "./icons";
 import { useI18n } from "./i18n";
+import { hap, Hap } from "./haptics";
+import { DUR, EASE } from "./motion";
 import type { Dilemma, Choice } from "./events";
 import { C, F } from "./theme";
 
@@ -9,6 +12,26 @@ import { C, F } from "./theme";
 export function BackLabel() {
   const { t } = useI18n();
   return <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>{t("common.back")}</Text>;
+}
+
+// Basınca hafifçe küçülen, yaylanarak dönen buton — ortak "his" bileşeni.
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+export function PressableScale({ children, onPress, style, disabled, haptic }: {
+  children: React.ReactNode; onPress?: () => void; style?: StyleProp<ViewStyle>; disabled?: boolean; haptic?: Hap;
+}) {
+  const s = useSharedValue(1);
+  const anim = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+  return (
+    <AnimatedPressable
+      disabled={disabled}
+      onPressIn={() => { s.value = withTiming(0.96, { duration: DUR.fast, easing: EASE.standard }); }}
+      onPressOut={() => { s.value = withSpring(1, { damping: 14, stiffness: 220 }); }}
+      onPress={() => { if (disabled) return; if (haptic) hap(haptic); onPress?.(); }}
+      style={[style, anim]}
+    >
+      {children}
+    </AnimatedPressable>
+  );
 }
 
 export function Portre({ age, gender, size = 44, ring = true }: { age: number; gender: "erkek" | "kadın"; size?: number; ring?: boolean }) {

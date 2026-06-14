@@ -8,13 +8,14 @@ import { useEffect } from "react";
 import { GameProvider } from "../lib/store";
 import { LanguageProvider } from "../lib/i18n";
 import { loadSoundSetting } from "../lib/sound";
+import { loadHapticsSetting } from "../lib/haptics";
 import { C } from "../lib/theme";
 
 export default function RootLayout() {
   const [loaded] = useFonts({
     Cinzel_400Regular, Cinzel_700Bold, CrimsonText_400Regular, CrimsonText_400Regular_Italic,
   });
-  useEffect(() => { loadSoundSetting(); }, []);
+  useEffect(() => { loadSoundSetting(); loadHapticsSetting(); }, []);
   if (!loaded) {
     return <View style={{ flex: 1, backgroundColor: C.bg, alignItems: "center", justifyContent: "center" }}>
       <ActivityIndicator color={C.gold} />

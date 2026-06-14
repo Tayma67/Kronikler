@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, Pressable, ImageBackground } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -11,6 +12,7 @@ import { MilestoneModal, DilemmaModal, AchievementToast } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
 import { playTap, playAdvance } from "../../lib/sound";
+import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
 
 function StatBar({ icon, value, max, color }: { icon: string; value: number; max: number; color: string }) {
@@ -43,13 +45,13 @@ export default function Dashboard() {
     const done = achievementsOf(state).filter((x) => x.done);
     if (seenAch.current === null) { seenAch.current = new Set(done.map((x) => x.a.id)); return; }
     for (const x of done) {
-      if (!seenAch.current.has(x.a.id)) { seenAch.current.add(x.a.id); setAch({ name: x.a.name, icon: x.a.icon }); }
+      if (!seenAch.current.has(x.a.id)) { seenAch.current.add(x.a.id); setAch({ name: x.a.name, icon: x.a.icon }); hap("success"); }
     }
   }, [state]);
 
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
-  const onAdvance = () => { playAdvance(); doAdvance(1); };
-  const onChoose = (c: Choice) => { apply((s) => applyDilemma(s, c.delta, c.result)); setDilemma(null); };
+  const onAdvance = () => { hap("advance"); playAdvance(); doAdvance(1); };
+  const onChoose = (c: Choice) => { hap("selection"); apply((s) => applyDilemma(s, c.delta, c.result)); setDilemma(null); };
 
   // Tur değişiminde taze state üzerinden ara sıra (%28) ikilem çıkar (ölüyse çıkmaz).
   useEffect(() => {
@@ -123,17 +125,17 @@ export default function Dashboard() {
       {/* Günlük */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 }}>
         <View style={{ width: 3, height: 18, backgroundColor: C.gold, borderRadius: 2 }} />
-        <Text style={{ fontFamily: F.display, fontSize: 14, color: C.gold, letterSpacing: 1.5 }}>HAYAT GÜNLÜĞÜ</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 14, color: C.gold, letterSpacing: 1.5 }}>{t("dash.journal")}</Text>
       </View>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}>
         {events.length === 0 ? (
           <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, textAlign: "center", marginTop: 30 }}>
-            Günlüğün henüz boş. Ayı ilerlet, hikayen başlasın.
+            {t("dash.empty")}
           </Text>
         ) : events.map((e, i) => (
-          <View key={i} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.gold, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
+          <Animated.View key={i} entering={FadeInDown.duration(220).delay(Math.min(i, 8) * 35)} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.gold, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
             <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: 20 }}>{e.text}</Text>
-          </View>
+          </Animated.View>
         ))}
       </ScrollView>
 
@@ -156,12 +158,12 @@ export default function Dashboard() {
         </View>
       ) : (
         <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border }}>
-          <Pressable onPress={() => { playTap(); doEat(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+          <Pressable onPress={() => { hap("tap"); playTap(); doEat(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
             <GameIcon name="ye" size={14} color={C.parchmentDim} />
             <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>{t("act.eat")}</Text>
           </Pressable>
           {p.age >= 13 && p.profession !== "işsiz" && (
-            <Pressable onPress={() => { playTap(); doWork(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+            <Pressable onPress={() => { hap("tap"); playTap(); doWork(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
               <GameIcon name="calis" size={14} color={C.parchmentDim} />
               <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>{t("act.work")}</Text>
             </Pressable>
