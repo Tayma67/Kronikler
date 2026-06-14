@@ -7,7 +7,7 @@ import { ITEMS } from "../../lib/world";
 import { Portre } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
-import { placeName } from "../../lib/locale-data";
+import { placeName, professionNameL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 
 function Head({ t }: { t: string }) {
@@ -57,7 +57,7 @@ export default function Karakter() {
         <Portre age={p.age} gender={p.gender} size={64} />
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: F.display, fontSize: 20, color: C.parchment, letterSpacing: 1 }}>{p.name}</Text>
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold }}>{p.gender === "kadın" ? "Kadın" : "Erkek"} · {p.age} yaş · {placeName(p.location_name, lang)}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold }}>{p.gender === "kadın" ? t("misc.female") : t("misc.male")} · {p.age} {t("misc.age")} · {placeName(p.location_name, lang)}</Text>
         </View>
       </View>
 
@@ -67,7 +67,7 @@ export default function Karakter() {
         <StatRow label="Zekâ" value={p.stats.intelligence} k="intelligence" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
         <StatRow label="Karizma" value={p.stats.charisma} k="charisma" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
         <StatRow label="Dayanıklılık" value={p.stats.stamina} k="stamina" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
-        <Row k="Meslek" v={p.profession === "işsiz" ? "İşsiz" : p.profession} />
+        <Row k="Meslek" v={p.profession === "işsiz" ? t("misc.jobless") : professionNameL(p.profession, lang)} />
         <Row k="Sağlık" v={Math.round(p.health)} />
         <Row k="Tokluk" v={Math.round(p.hunger)} />
         <Row k="Akçe" v={`${p.money} ⚜`} />

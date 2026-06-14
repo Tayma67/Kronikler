@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { applyDilemma, careerTitle, achievementsOf, GameEvent } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
+import { careerTitleL } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, AchievementToast, PressableScale, AnimatedNumber } from "../../lib/ui";
@@ -32,7 +33,7 @@ export default function Dashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, doAdvance, doEat, doWork, resetGame, apply } = useGame();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
   const [dilemma, setDilemma] = useState<Dilemma | null>(null);
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
@@ -99,7 +100,7 @@ export default function Dashboard() {
         <View style={{ backgroundColor: "rgba(8,5,2,0.55)", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
           <Text style={{ fontFamily: F.display, fontSize: 20, color: C.parchment, letterSpacing: 1, textAlign: "center", textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 8 }}>{p.name}</Text>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.gold, textAlign: "center", marginTop: 2 }}>
-            {p.profession === "işsiz" ? "İşsiz" : careerTitle(p.profession, p.career_xp)} · {p.age} yaş
+            {p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, p.career_xp, lang)} · {p.age} {t("misc.age")}
           </Text>
           <Text style={{ fontFamily: F.display, fontSize: 9, color: C.parchmentDim, letterSpacing: 1, textAlign: "center", marginTop: 4 }}>
             {cal.season.toUpperCase()} · {cal.month_name.toUpperCase()} {cal.year}

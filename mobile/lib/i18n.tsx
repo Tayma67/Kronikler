@@ -129,6 +129,15 @@ const IT: Record<Lang, Dict> = {
   ru: { "it.ekmek":"Хлеб","it.peynir":"Сыр","it.et":"Мясо","it.balik":"Рыба","it.corba":"Похлёбка","it.bal":"Мёд","it.sarap":"Вино","it.sifa":"Целебная трава","it.iksir":"Зелье лечения","it.bugday":"Пшеница","it.un":"Мука","it.yun":"Шерсть","it.demir":"Железо","it.kereste":"Древесина","it.deri":"Кожа","it.bicak":"Нож","it.kilic":"Меч","it.celik_kilic":"Стальной меч","it.savas_balta":"Боевой топор","it.yay":"Охотничий лук","it.deri_zirh":"Кожаный доспех","it.zincir_zirh":"Кольчуга","it.kalkan":"Щит" },
 };
 // Çatışma karşılaşmaları (başlık + açıklama).
+const MISC: Record<Lang, Dict> = {
+  tr: { "misc.age":"yaş","misc.jobless":"İşsiz","misc.male":"Erkek","misc.female":"Kadın","misc.generation":"nesil","misc.have":"Elinde","misc.buy":"AL","misc.sell":"SAT","misc.bargain":"PAZARLIK","misc.craft":"ÜRET","misc.join":"KATIL","misc.member":"ÜYE","misc.use":"KULLAN","misc.equip":"KUŞAN","misc.remove":"ÇIKAR" },
+  en: { "misc.age":"yrs","misc.jobless":"Jobless","misc.male":"Man","misc.female":"Woman","misc.generation":"gen.","misc.have":"Have","misc.buy":"BUY","misc.sell":"SELL","misc.bargain":"HAGGLE","misc.craft":"CRAFT","misc.join":"JOIN","misc.member":"MEMBER","misc.use":"USE","misc.equip":"EQUIP","misc.remove":"REMOVE" },
+  es: { "misc.age":"años","misc.jobless":"Sin oficio","misc.male":"Hombre","misc.female":"Mujer","misc.generation":"gen.","misc.have":"Tienes","misc.buy":"COMPRAR","misc.sell":"VENDER","misc.bargain":"REGATEAR","misc.craft":"CREAR","misc.join":"UNIRSE","misc.member":"MIEMBRO","misc.use":"USAR","misc.equip":"EQUIPAR","misc.remove":"QUITAR" },
+  pt: { "misc.age":"anos","misc.jobless":"Sem ofício","misc.male":"Homem","misc.female":"Mulher","misc.generation":"ger.","misc.have":"Tens","misc.buy":"COMPRAR","misc.sell":"VENDER","misc.bargain":"REGATEAR","misc.craft":"CRIAR","misc.join":"ENTRAR","misc.member":"MEMBRO","misc.use":"USAR","misc.equip":"EQUIPAR","misc.remove":"REMOVER" },
+  ar: { "misc.age":"سنة","misc.jobless":"بلا مهنة","misc.male":"رجل","misc.female":"امرأة","misc.generation":"جيل","misc.have":"لديك","misc.buy":"شراء","misc.sell":"بيع","misc.bargain":"مساومة","misc.craft":"صنع","misc.join":"انضمام","misc.member":"عضو","misc.use":"استخدم","misc.equip":"تجهيز","misc.remove":"إزالة" },
+  ru: { "misc.age":"лет","misc.jobless":"Без дела","misc.male":"Мужчина","misc.female":"Женщина","misc.generation":"пок.","misc.have":"В наличии","misc.buy":"КУПИТЬ","misc.sell":"ПРОДАТЬ","misc.bargain":"ТОРГ","misc.craft":"СОЗДАТЬ","misc.join":"ВСТУПИТЬ","misc.member":"ЧЛЕН","misc.use":"ИСПОЛЬЗ.","misc.equip":"НАДЕТЬ","misc.remove":"СНЯТЬ" },
+};
+// Çatışma karşılaşmaları (başlık + açıklama).
 const ENC: Record<Lang, Dict> = {
   tr: { "enc.haydut.t":"Yol Haydutları","enc.haydut.d":"Pusudaki haydutlar kervanına göz dikti.","enc.duello.t":"Meydan Okuma","enc.duello.d":"Bir yiğit seni teke tek dövüşe çağırdı.","enc.sinir.t":"Sınır Çatışması","enc.sinir.d":"Sancak beyinin emrinde sınırı koru.","enc.kusatma.t":"Kale Kuşatması","enc.kusatma.d":"Surların önünde kanlı bir kuşatma." },
   en: { "enc.haydut.t":"Road Bandits","enc.haydut.d":"Bandits in ambush eye your caravan.","enc.duello.t":"The Challenge","enc.duello.d":"A warrior calls you to single combat.","enc.sinir.t":"Border Skirmish","enc.sinir.d":"Hold the frontier for the sanjak-bey.","enc.kusatma.t":"Castle Siege","enc.kusatma.d":"A bloody siege before the walls." },
@@ -146,8 +155,8 @@ const SCR: Record<Lang, Dict> = {
   ru: { "scr.meslek":"Профессия","scr.pazar":"Рынок","scr.atolye":"Мастерская","scr.mulkler":"Владения","scr.firsatlar":"Возможности","scr.gorevler":"Задачи","scr.mektep":"Школа","scr.beceriler":"Древо навыков","scr.orgutler":"Гильдии и ордена","scr.sosyal":"Статус и слава","scr.savas":"Бой","scr.suc":"Тёмные дела","scr.sehir":"Город / Край","scr.harita":"Карта края","scr.haberler":"Вести","scr.hanedan":"Династия","scr.nesil":"Наследники","scr.hikayeler":"Мои истории","scr.basarimlar":"Достижения","scr.tarih":"Хроника","scr.roman":"Роман жизни","scr.ayarlar":"Настройки" },
 };
 const DICTS: Record<Lang, Dict> = {
-  tr: { ...TR, ...SCR.tr, ...CB.tr, ...ENC.tr, ...IT.tr }, en: { ...EN, ...SCR.en, ...CB.en, ...ENC.en, ...IT.en }, es: { ...ES, ...SCR.es, ...CB.es, ...ENC.es, ...IT.es },
-  pt: { ...PT, ...SCR.pt, ...CB.pt, ...ENC.pt, ...IT.pt }, ar: { ...AR, ...SCR.ar, ...CB.ar, ...ENC.ar, ...IT.ar }, ru: { ...RU, ...SCR.ru, ...CB.ru, ...ENC.ru, ...IT.ru },
+  tr: { ...TR, ...SCR.tr, ...CB.tr, ...ENC.tr, ...IT.tr, ...MISC.tr }, en: { ...EN, ...SCR.en, ...CB.en, ...ENC.en, ...IT.en, ...MISC.en }, es: { ...ES, ...SCR.es, ...CB.es, ...ENC.es, ...IT.es, ...MISC.es },
+  pt: { ...PT, ...SCR.pt, ...CB.pt, ...ENC.pt, ...IT.pt, ...MISC.pt }, ar: { ...AR, ...SCR.ar, ...CB.ar, ...ENC.ar, ...IT.ar, ...MISC.ar }, ru: { ...RU, ...SCR.ru, ...CB.ru, ...ENC.ru, ...IT.ru, ...MISC.ru },
 };
 
 interface Ctx { lang: Lang; rtl: boolean; setLang: (l: Lang) => void; t: (key: string) => string; }

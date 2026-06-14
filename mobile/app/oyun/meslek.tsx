@@ -2,7 +2,8 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { changeProfession, PROFESSIONS, professionById, careerTier, careerTitle } from "../../lib/game";
+import { changeProfession, PROFESSIONS, professionById, careerTier } from "../../lib/game";
+import { professionNameL, careerTitleL, PROF_L10N } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { BackLabel } from "../../lib/ui";
@@ -13,7 +14,7 @@ export default function Meslek() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, apply } = useGame();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   if (p.age < 13) {
@@ -33,12 +34,12 @@ export default function Meslek() {
 
       {curPr && (
         <View style={{ marginHorizontal: 16, marginBottom: 10, padding: 13, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(201,168,76,0.08)" }}>
-          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{careerTitle(p.profession, p.career_xp)} · {curPr.name}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{careerTitleL(p.profession, p.career_xp, lang)} · {professionNameL(p.profession, lang)}</Text>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>
             Kariyer basamağı {careerTier(curPr, p.career_xp) + 1}/{curPr.tiers.length} · çalıştıkça yükselirsin
           </Text>
           <View style={{ flexDirection: "row", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-            {curPr.tiers.map((t, i) => (
+            {((PROF_L10N[lang]||PROF_L10N.tr)[p.profession]?.tiers||curPr.tiers).map((t, i) => (
               <Text key={i} style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: i <= careerTier(curPr, p.career_xp) ? C.gold : C.parchmentMuted, borderWidth: 1, borderColor: i <= careerTier(curPr, p.career_xp) ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 5, paddingHorizontal: 6, paddingVertical: 3 }}>{t.toUpperCase()}</Text>
             ))}
           </View>
@@ -54,7 +55,7 @@ export default function Meslek() {
           return (
             <Pressable key={pr.id} onPress={() => apply((s) => changeProfession(s, pr.id))} disabled={cur} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: cur ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 10, padding: 14, marginBottom: 8 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 14, color: cur ? C.gold : C.parchment }}>{pr.name}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 14, color: cur ? C.gold : C.parchment }}>{professionNameL(pr.id, lang)}</Text>
                 <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{STAT_TR[pr.stat]} · {pr.tiers.length} kademe</Text>
               </View>
               {cur ? <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.gold }}>mevcut</Text> : <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>GEÇ ›</Text>}
