@@ -61,76 +61,76 @@ export default function Karakter() {
         </View>
       </View>
 
-      <Head t={p.stat_points > 0 ? `Özellikler · ${p.stat_points} puan` : "Özellikler"} />
+      <Head t={p.stat_points > 0 ? `${t("char.attrs")} · ${p.stat_points} ${t("char.points")}` : t("char.attrs")} />
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
-        <StatRow label="Güç" value={p.stats.strength} k="strength" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
-        <StatRow label="Zekâ" value={p.stats.intelligence} k="intelligence" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
-        <StatRow label="Karizma" value={p.stats.charisma} k="charisma" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
-        <StatRow label="Dayanıklılık" value={p.stats.stamina} k="stamina" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
-        <Row k="Meslek" v={p.profession === "işsiz" ? t("misc.jobless") : professionNameL(p.profession, lang)} />
-        <Row k="Sağlık" v={Math.round(p.health)} />
-        <Row k="Tokluk" v={Math.round(p.hunger)} />
-        <Row k="Akçe" v={`${p.money} ⚜`} />
+        <StatRow label={t("st.strength")} value={p.stats.strength} k="strength" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
+        <StatRow label={t("st.intelligence")} value={p.stats.intelligence} k="intelligence" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
+        <StatRow label={t("st.charisma")} value={p.stats.charisma} k="charisma" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
+        <StatRow label={t("st.stamina")} value={p.stats.stamina} k="stamina" canAdd={p.stat_points > 0} onAdd={(k) => apply((s) => allocateStat(s, k))} />
+        <Row k={t("char.profession")} v={p.profession === "işsiz" ? t("misc.jobless") : professionNameL(p.profession, lang)} />
+        <Row k={t("char.health")} v={Math.round(p.health)} />
+        <Row k={t("char.hunger")} v={Math.round(p.hunger)} />
+        <Row k={t("char.money")} v={`${p.money} ⚜`} />
       </View>
 
       <Pressable onPress={() => router.push("/oyun/beceriler")}>
-        <Head t={pendingPerkCount(p) > 0 ? `Beceriler · ${pendingPerkCount(p)} hüner seçilebilir` : "Beceriler"} />
+        <Head t={pendingPerkCount(p) > 0 ? `${t("char.skills")} · ${pendingPerkCount(p)} ${t("char.perksAvail")}` : t("char.skills")} />
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: pendingPerkCount(p) > 0 ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 10, paddingHorizontal: 14 }}>
-          <Row k="Savaş" v={p.skills.combat} />
-          <Row k="Ticaret" v={p.skills.trade} />
-          <Row k="Zanaat" v={p.skills.crafting} />
-          <Row k="Sosyal" v={p.skills.social} />
+          <Row k={t("skill.combat")} v={p.skills.combat} />
+          <Row k={t("skill.trade")} v={p.skills.trade} />
+          <Row k={t("skill.crafting")} v={p.skills.crafting} />
+          <Row k={t("skill.social")} v={p.skills.social} />
         </View>
       </Pressable>
 
-      <Head t="Mevki & Bağlılık" />
+      <Head t={t("char.status")} />
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
-        <Row k="Lonca" v={p.faction ? t("fac."+p.faction+".n") : "—"} />
-        <Row k="İtibar" v={Math.round(p.reputation)} />
-        <Row k="Şeref" v={Math.round(p.honor)} />
-        <Row k="Şöhret" v={Math.round(p.fame)} />
-        <Row k="Korku" v={Math.round(p.fear)} />
-        <Row k="Nesil" v={`${p.generation}. nesil`} />
+        <Row k={t("char.guild")} v={p.faction ? t("fac."+p.faction+".n") : "—"} />
+        <Row k={t("soc.reputation.l")} v={Math.round(p.reputation)} />
+        <Row k={t("soc.honor.l")} v={Math.round(p.honor)} />
+        <Row k={t("soc.fame.l")} v={Math.round(p.fame)} />
+        <Row k={t("soc.fear.l")} v={Math.round(p.fear)} />
+        <Row k={t("char.gen")} v={`${p.generation}. ${t("misc.generation")}`} />
       </View>
 
       {p.injuries && p.injuries.length > 0 && (
         <>
-          <Head t="Yaralar" />
+          <Head t={t("char.injuries")} />
           <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(168,52,52,0.35)", borderRadius: 10, paddingHorizontal: 14 }}>
             {p.injuries.map((inj, i) => (
-              <Row key={i} k={inj.label} v={inj.permanent ? "kalıcı" : `${inj.weeks_left} ay`} />
+              <Row key={i} k={inj.label} v={inj.permanent ? t("char.permanent") : `${inj.weeks_left} ${t("char.mo")}`} />
             ))}
           </View>
         </>
       )}
 
-      <Head t="Aile" />
+      <Head t={t("char.family")} />
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
-        <Row k="Eş" v={p.spouse_name || "—"} />
-        <Row k="Çocuklar" v={p.children.length ? p.children.join(", ") : "—"} />
+        <Row k={t("char.spouse")} v={p.spouse_name || "—"} />
+        <Row k={t("char.children")} v={p.children.length ? p.children.join(", ") : "—"} />
       </View>
 
-      <Head t="Teçhizat" />
+      <Head t={t("char.gear")} />
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border }}>
-          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted }}>SİLAH</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.weapon")}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.silah ? `${t("it."+p.equipped.silah)} (+${ITEMS[p.equipped.silah]?.power})` : "—"}</Text>
-            {p.equipped?.silah && <Pressable onPress={() => apply((s) => unequipItem(s, "silah"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>ÇIKAR</Text></Pressable>}
+            {p.equipped?.silah && <Pressable onPress={() => apply((s) => unequipItem(s, "silah"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>{t("misc.remove")}</Text></Pressable>}
           </View>
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted }}>ZIRH</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.armor")}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.zirh ? `${t("it."+p.equipped.zirh)} (+${ITEMS[p.equipped.zirh]?.defense})` : "—"}</Text>
-            {p.equipped?.zirh && <Pressable onPress={() => apply((s) => unequipItem(s, "zirh"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>ÇIKAR</Text></Pressable>}
+            {p.equipped?.zirh && <Pressable onPress={() => apply((s) => unequipItem(s, "zirh"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>{t("misc.remove")}</Text></Pressable>}
           </View>
         </View>
       </View>
 
-      <Head t="Heybe" />
+      <Head t={t("char.bag")} />
       {inv.length === 0 ? (
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>Heyben boş. Pazardan bir şeyler al.</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>{t("char.bagEmpty")}</Text>
       ) : inv.map((k) => {
         const it = ITEMS[k]; const usable = it && (it.feed || it.heal); const equipable = it && (it.kind === "silah" || it.kind === "zirh");
         return (
@@ -139,12 +139,12 @@ export default function Karakter() {
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{t("it."+k)} ×{p.inventory[k]}</Text>
             {equipable && (
               <Pressable onPress={() => apply((s) => equipItem(s, k))} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>KUŞAN</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{t("misc.equip")}</Text>
               </Pressable>
             )}
             {usable && (
               <Pressable onPress={() => apply((s) => useItem(s, k))} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>KULLAN</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{t("misc.use")}</Text>
               </Pressable>
             )}
           </View>
