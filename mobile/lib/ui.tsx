@@ -175,12 +175,15 @@ export function ScreenTitle({ title, subtitle }: { title: string; subtitle?: str
   );
 }
 
-// İlerleme çubuğu.
+// İlerleme çubuğu — değer değişince akıcı dolar (UI thread).
 export function ProgressBar({ value, max, color, h = 5 }: { value: number; max: number; color: string; h?: number }) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100));
+  const w = useSharedValue(pct);
+  useEffect(() => { w.value = withTiming(pct, { duration: 600, easing: EASE.decel }); }, [pct]);
+  const style = useAnimatedStyle(() => ({ width: `${w.value}%` }));
   return (
     <View style={{ height: h, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: h, overflow: "hidden" }}>
-      <View style={{ width: `${pct}%`, height: h, backgroundColor: color, borderRadius: h }} />
+      <Animated.View style={[{ height: h, backgroundColor: color, borderRadius: h }, style]} />
     </View>
   );
 }
@@ -188,7 +191,7 @@ export function ProgressBar({ value, max, color, h = 5 }: { value: number; max: 
 // ── Vercel Kit bileşenleri (PageHeader / Panel / Pill) ──
 export function PageHeader({ kicker, icon, title, sub }: { kicker?: string; icon?: string; title: string; sub?: string }) {
   return (
-    <View style={{ alignItems: "center", marginBottom: 14 }}>
+    <Animated.View entering={FadeInDown.duration(320).easing(EASE.decel)} style={{ alignItems: "center", marginBottom: 14 }}>
       {kicker ? <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textTransform: "uppercase" }}>{kicker}</Text> : null}
       <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginTop: 4, textAlign: "center" }}>{icon ? icon + " " : ""}{title}</Text>
       {sub ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, marginTop: 4, textAlign: "center" }}>{sub}</Text> : null}
@@ -197,7 +200,7 @@ export function PageHeader({ kicker, icon, title, sub }: { kicker?: string; icon
         <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], marginHorizontal: 8 }} />
         <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
       </View>
-    </View>
+    </Animated.View>
   );
 }
 export function Pill({ text, tone = C.gold }: { text: string; tone?: string }) {
@@ -207,9 +210,9 @@ export function Pill({ text, tone = C.gold }: { text: string; tone?: string }) {
     </View>
   );
 }
-export function Panel({ title, icon, tone = C.gold, right, children, noPad }: { title?: string; icon?: string; tone?: string; right?: React.ReactNode; children: React.ReactNode; noPad?: boolean }) {
+export function Panel({ title, icon, tone = C.gold, right, children, noPad, delay = 0 }: { title?: string; icon?: string; tone?: string; right?: React.ReactNode; children: React.ReactNode; noPad?: boolean; delay?: number }) {
   return (
-    <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: tone + "33", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
+    <Animated.View entering={FadeInDown.duration(300).delay(delay).easing(EASE.decel)} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: tone + "33", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
       {title ? (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: tone + "12" }}>
           {icon ? <Text style={{ fontSize: 15 }}>{icon}</Text> : null}
@@ -218,6 +221,6 @@ export function Panel({ title, icon, tone = C.gold, right, children, noPad }: { 
         </View>
       ) : null}
       <View style={noPad ? undefined : { padding: 12 }}>{children}</View>
-    </View>
+    </Animated.View>
   );
 }

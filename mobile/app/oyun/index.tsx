@@ -1,5 +1,5 @@
-import { View, Text, ScrollView, Pressable, ImageBackground } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import { View, Text, ScrollView, Pressable, ImageBackground, StyleSheet } from "react-native";
+import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, Easing } from "react-native-reanimated";
 import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -88,8 +88,20 @@ export default function Dashboard() {
     }
   }, [state]);
 
+  // "Ayı İlerle" düğmesi nabzı + ay ilerleyince altın parıltı.
+  const pulse = useSharedValue(1);
+  const flash = useSharedValue(0);
+  useEffect(() => {
+    pulse.value = withRepeat(withSequence(
+      withTiming(1.025, { duration: 950, easing: Easing.inOut(Easing.quad) }),
+      withTiming(1, { duration: 950, easing: Easing.inOut(Easing.quad) }),
+    ), -1, false);
+  }, []);
+  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
+  const flashStyle = useAnimatedStyle(() => ({ opacity: flash.value }));
+
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
-  const onAdvance = () => { hap("advance"); playAdvance(); doAdvance(1); };
+  const onAdvance = () => { hap("advance"); playAdvance(); flash.value = withSequence(withTiming(0.32, { duration: 90 }), withTiming(0, { duration: 420 })); doAdvance(1); };
   const onChoose = (c: Choice, i: number) => { hap("selection"); const res = dilemma ? t("dil." + dilemma.id + ".r" + i) : c.result; apply((s) => applyDilemma(s, c.delta, res)); setDilemma(null); };
 
   useEffect(() => {
@@ -179,6 +191,8 @@ export default function Dashboard() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
+      {/* Ay ilerleyince altın parıltı */}
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: C.gold, zIndex: 50 }, flashStyle]} />
       {milestone ? (
         <MilestoneModal visible={true} type={milestone.type} text={milestone.text} onClose={() => setMilestone(null)} />
       ) : dilemma ? (
@@ -292,6 +306,7 @@ export default function Dashboard() {
 
         {/* Olay listesi */}
         <ScrollView style={{ flex: 1, backgroundColor: "#221808" }} contentContainerStyle={{ padding: 12 }}>
+          <Animated.View key={tab} entering={FadeIn.duration(220)}>
           {events.length === 0 ? (
             <View style={{ alignItems: "center", paddingVertical: 28 }}>
               <Text style={{ fontSize: 24, opacity: 0.4, marginBottom: 8 }}>{tab === "gunluk" ? "📜" : "🌍"}</Text>
@@ -304,6 +319,7 @@ export default function Dashboard() {
               <EventCard e={e} last={i === events.length - 1} />
             </Animated.View>
           ))}
+          </Animated.View>
         </ScrollView>
       </View>
 
@@ -336,10 +352,12 @@ export default function Dashboard() {
               <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>{t("act.work")}</Text>
             </PressableScale>
           )}
-          <PressableScale onPress={onAdvance} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
-            <GameIcon name="ilerle" size={16} color="#1a1206" />
-            <Text style={{ fontFamily: F.display, fontSize: 14, color: "#1a1206", letterSpacing: 2 }}>{t("act.advance")}</Text>
-          </PressableScale>
+          <Animated.View style={[{ flex: 1 }, pulseStyle]}>
+            <PressableScale onPress={onAdvance} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
+              <GameIcon name="ilerle" size={16} color="#1a1206" />
+              <Text style={{ fontFamily: F.display, fontSize: 14, color: "#1a1206", letterSpacing: 2 }}>{t("act.advance")}</Text>
+            </PressableScale>
+          </Animated.View>
         </View>
       )}
     </View>

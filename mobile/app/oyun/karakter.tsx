@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -177,6 +178,7 @@ export default function Karakter() {
           })}
         </View>
 
+        <Animated.View key={tab} entering={FadeIn.duration(200)}>
         {/* ── ÖZELLİKLER ── */}
         {tab === "ozellikler" && (
           <>
@@ -296,6 +298,7 @@ export default function Karakter() {
             </Card>
           </>
         )}
+        </Animated.View>
       </ScrollView>
     </View>
   );
