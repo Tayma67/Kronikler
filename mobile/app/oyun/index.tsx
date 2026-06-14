@@ -8,7 +8,7 @@ import { applyDilemma, careerTitle, achievementsOf, GameEvent } from "../../lib/
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
-import { MilestoneModal, DilemmaModal, AchievementToast } from "../../lib/ui";
+import { MilestoneModal, DilemmaModal, AchievementToast, PressableScale } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
 import { playTap, playAdvance } from "../../lib/sound";
@@ -158,20 +158,20 @@ export default function Dashboard() {
         </View>
       ) : (
         <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.border }}>
-          <Pressable onPress={() => { hap("tap"); playTap(); doEat(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+          <PressableScale onPress={() => { hap("tap"); playTap(); doEat(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
             <GameIcon name="ye" size={14} color={C.parchmentDim} />
             <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>{t("act.eat")}</Text>
-          </Pressable>
+          </PressableScale>
           {p.age >= 13 && p.profession !== "işsiz" && (
-            <Pressable onPress={() => { hap("tap"); playTap(); doWork(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+            <PressableScale onPress={() => { hap("tap"); playTap(); doWork(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
               <GameIcon name="calis" size={14} color={C.parchmentDim} />
               <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>{t("act.work")}</Text>
-            </Pressable>
+            </PressableScale>
           )}
-          <Pressable onPress={onAdvance} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
+          <PressableScale onPress={onAdvance} style={{ flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
             <GameIcon name="ilerle" size={16} color="#1a1206" />
             <Text style={{ fontFamily: F.display, fontSize: 14, color: "#1a1206", letterSpacing: 2 }}>{t("act.advance")}</Text>
-          </Pressable>
+          </PressableScale>
         </View>
       )}
     </View>
