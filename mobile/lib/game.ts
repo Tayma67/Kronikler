@@ -466,11 +466,11 @@ export function sellItem(prev: GameState, id: string): GameState {
 }
 
 // İlişki: niyetli sohbet (bağlamlı), hediye ver.
-export function talkWith(prev: GameState, npc: NPC, intent: string): { state: GameState; line: string } {
+export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string = "tr"): { state: GameState; line: string } {
   const s = clone(prev); const p = s.player;
   const ns = npcStateOf(s, npc.id);
   const rel = s.relationships[npc.id] || 0;
-  const r: ConvResult = converse(npc, ns.mood, rel, p.stats.charisma, intent);
+  const r: ConvResult = converse(npc, ns.mood, rel, p.stats.charisma, intent, lang as any);
   let relDelta = r.relDelta;
   if (relDelta > 0 && hasPerk(p, "dil_dokme")) relDelta = Math.round(relDelta * 1.5);
   s.relationships[npc.id] = Math.max(-100, Math.min(100, rel + relDelta));

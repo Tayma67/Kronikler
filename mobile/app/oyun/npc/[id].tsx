@@ -30,7 +30,7 @@ export default function NpcDetail() {
 
   const speak = (intent: string) => {
     let said = "";
-    apply((s) => { const r = talkWith(s, npc, intent); said = r.line; return r.state; });
+    apply((s) => { const r = talkWith(s, npc, intent, lang); said = r.line; return r.state; });
     setLine(said);
   };
 
