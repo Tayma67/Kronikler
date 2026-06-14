@@ -6,12 +6,12 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome } from "../../lib/game";
+import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome, eulogy } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
-import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, PressableScale, Portre } from "../../lib/ui";
+import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { playTap } from "../../lib/sound";
@@ -82,6 +82,17 @@ export default function Dashboard() {
   const [shoot, setShoot] = useState(0);
   const prevMoney = useRef<number>(state?.player.money ?? 0);
   const seenLen = useRef<number>(state?.history.length ?? 0);
+  const [showEulogy, setShowEulogy] = useState(false);
+  const wasDead = useRef<boolean>(state?.player.dead ?? false);
+
+  // Ölüm anı → sinematik mersiye (yalnızca yeni ölümde).
+  useEffect(() => {
+    if (!state) return;
+    const d = state.player.dead;
+    if (d && !wasDead.current) setShowEulogy(true);
+    if (!d) setShowEulogy(false);
+    wasDead.current = d;
+  }, [state?.player.dead]);
 
   // Akçe arttığında altın sikke yağmuru.
   useEffect(() => {
@@ -206,6 +217,19 @@ export default function Dashboard() {
       ) : ach ? (
         <AchievementToast name={ach.name} icon={ach.icon} onClose={() => setAch(null)} />
       ) : null}
+
+      {/* Mersiye — hayatın duygusal kapanışı */}
+      {p.dead && (() => {
+        const eul = eulogy(state);
+        const diedYear = cal.year;
+        const profLine = p.profession !== "işsiz" ? applyParams(t("eul.lived"), [careerTitleL(p.profession, p.career_xp, lang)]) : "";
+        return (
+          <EulogyModal visible={showEulogy} name={p.name} epithet={eul.epithet} bornYear={diedYear - p.age} diedYear={diedYear} age={p.age}
+            professionLine={profLine} lines={eul.lines} close={eul.close} hasHeir={p.children.length > 0}
+            onChronicle={() => { setShowEulogy(false); router.push("/oyun/roman"); }}
+            onContinue={() => { setShowEulogy(false); if (p.children.length > 0) router.push("/oyun/nesil"); else { resetGame(); router.replace("/yeni-oyun"); } }} />
+        );
+      })()}
 
       {/* ── HERO (yaşayan sahne: Ken Burns + ambiyans) ── */}
       <KenBurns source={heroImage(p.age, cal.season)} style={{ paddingTop: insets.top }}>

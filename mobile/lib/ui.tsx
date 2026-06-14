@@ -1,6 +1,6 @@
 import { View, Image, Modal, Text, Pressable, TextInput, ViewStyle, StyleProp, TextStyle } from "react-native";
 import { useEffect } from "react";
-import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, useDerivedValue, withTiming, withSpring, withRepeat, withSequence, ZoomIn, FadeInUp, FadeInDown } from "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, useDerivedValue, withTiming, withSpring, withRepeat, withSequence, ZoomIn, FadeIn, FadeInUp, FadeInDown } from "react-native-reanimated";
 import { portreImage } from "./assets";
 import { GameIcon } from "./icons";
 import { useI18n } from "./i18n";
@@ -188,6 +188,42 @@ export function DilemmaModal({ dilemma, onChoose }: { dilemma: Dilemma | null; o
             ))}
           </Animated.View>
         )}
+      </View>
+    </Modal>
+  );
+}
+
+// Sinematik mersiye / vefat ekranı — bir hayatın duygusal kapanışı.
+export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, professionLine, lines, close, hasHeir, onChronicle, onContinue }: {
+  visible: boolean; name: string; epithet: string; bornYear: number; diedYear: number; age: number;
+  professionLine: string; lines: string[]; close: string; hasHeir: boolean; onChronicle: () => void; onContinue: () => void;
+}) {
+  const { t } = useI18n();
+  const body = [professionLine, ...lines].filter(Boolean);
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={() => {}}>
+      <View style={{ flex: 1, backgroundColor: "rgba(4,3,2,0.975)", alignItems: "center", justifyContent: "center", paddingHorizontal: 28, paddingVertical: 40 }}>
+        <Animated.View entering={FadeIn.duration(700)} style={{ alignItems: "center", width: "100%", maxWidth: 400 }}>
+          <Animated.Text entering={FadeInDown.duration(600).delay(150)} style={{ fontSize: 30 }}>🕊</Animated.Text>
+          <Animated.Text entering={FadeInDown.duration(600).delay(300)} style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 5, color: C.goldDim, marginTop: 12 }}>{t("eul.eyebrow")}</Animated.Text>
+          {!!epithet && <Animated.Text entering={FadeInDown.duration(600).delay(450)} style={{ fontFamily: F.serifItalic, fontSize: 14, color: C.gold, marginTop: 10 }}>“{epithet}”</Animated.Text>}
+          <Animated.Text entering={FadeInDown.duration(700).delay(600)} style={{ fontFamily: F.display, fontSize: 26, letterSpacing: 1, color: C.parchment, textAlign: "center", marginTop: 4 }}>{name}</Animated.Text>
+          <Animated.Text entering={FadeInDown.duration(600).delay(800)} style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1.5, color: C.parchmentMuted, marginTop: 8 }}>{bornYear} – {diedYear} · {age} {t("eul.years")}</Animated.Text>
+
+          <Animated.Text entering={FadeIn.duration(800).delay(1000)} style={{ color: C.gold, marginVertical: 16 }}>❧ ⚜ ❧</Animated.Text>
+
+          <Animated.Text entering={FadeIn.duration(900).delay(1150)} style={{ fontFamily: F.serif, fontSize: 14.5, color: C.parchmentDim, textAlign: "center", lineHeight: 23 }}>{body.join(" ")}</Animated.Text>
+          <Animated.Text entering={FadeIn.duration(900).delay(1500)} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.gold, textAlign: "center", lineHeight: 23, marginTop: 14 }}>{close}</Animated.Text>
+
+          <Animated.View entering={FadeInUp.duration(700).delay(1900)} style={{ flexDirection: "row", gap: 10, marginTop: 28, alignSelf: "stretch" }}>
+            <Pressable onPress={onChronicle} style={{ flex: 1, paddingVertical: 13, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchment }}>{t("eul.chronicle")}</Text>
+            </Pressable>
+            <Pressable onPress={onContinue} style={{ flex: 1.3, paddingVertical: 13, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: "#1a1206" }}>{hasHeir ? t("eul.continue") : t("eul.newLife")}</Text>
+            </Pressable>
+          </Animated.View>
+        </Animated.View>
       </View>
     </Modal>
   );
