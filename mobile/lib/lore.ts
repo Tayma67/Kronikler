@@ -1,7 +1,7 @@
 // Yaşayan diyar — turdan ve tohumdan deterministik üretilen haber & dedikodu.
 // Tamamen çevrimdışı; her ay aynı tur için aynı sonucu verir.
 import { mkRng, generateNPCs } from "./world";
-import { Lang, placeName } from "./locale-data";
+import { Lang, placeName, goalL } from "./locale-data";
 import { tFor } from "./i18n";
 
 export interface NewsItem { id: string; kind: "haber" | "dedikodu"; title: string; body: string; }
@@ -46,7 +46,7 @@ export function rumors(turn: number, seed: number, lang: Lang = "tr"): NewsItem[
   for (let i = 0; i < n; i++) {
     const npc = npcs[Math.floor(r() * npcs.length)];
     // Bazen NPC'nin hayat hedefine dair, bazen yerelleşmiş genel dedikodu.
-    const body = r() < 0.45 ? `${npc.name} ${npc.goal}.` : tFor(lang, `gossip.${Math.floor(r() * 7)}`).replace("%n", npc.name);
+    const body = r() < 0.45 ? `${npc.name} ${goalL(npc.goal, lang)}.` : tFor(lang, `gossip.${Math.floor(r() * 7)}`).replace("%n", npc.name);
     out.push({ id: `rumor_${turn}_${i}`, kind: "dedikodu", title: npc.name, body });
   }
   return out;

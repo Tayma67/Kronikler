@@ -132,3 +132,39 @@ export function careerTitleL(id: string, careerXp: number, lang: Lang): string {
   const tier = Math.min(p.tiers.length - 1, Math.floor(careerXp / 30));
   return p.tiers[tier];
 }
+
+// ── NPC kişilik metinleri (world.ts'teki TRAITS/QUIRKS/GOALS ile birebir sıralı) ──
+// Oyun mantığı kanonik TR değeri kullanır; bunlar yalnız GÖSTERİM içindir.
+const TRAITS_TR = ["neşeli","ciddi","kibirli","cömert","dertli","yalnız","kurnaz","mert","dindar","hırslı","utangaç","sıcakkanlı"];
+const QUIRKS_TR = ["sürekli hava durumundan dert yanar","eski günleri anlatmayı sever","herkese lakap takar","az konuşur çok dinler","yüksek sesle güler","pazarlığa bayılır","komşularını çekiştirir","bir türküyü mırıldanır"];
+const GOALS_TR = ["bir dükkân açmanın hayalini kuruyor","kızını/oğlunu evermek istiyor","borçlarından kurtulmaya çalışıyor","hacca gitmeyi diliyor","toprak satın almak için biriktiriyor","ustabaşı olmak istiyor","küs olduğu kardeşiyle barışmak istiyor","bir ev yaptırmanın derdinde","kervan ticaretine atılmak istiyor","adını duyurmak istiyor"];
+const TRAITS_L: Record<Lang, string[]> = {
+  tr: TRAITS_TR,
+  en: ["cheerful","serious","arrogant","generous","troubled","lonely","cunning","valiant","pious","ambitious","shy","warm-hearted"],
+  es: ["alegre","serio","arrogante","generoso","atribulado","solitario","astuto","valiente","devoto","ambicioso","tímido","afable"],
+  pt: ["alegre","sério","arrogante","generoso","atribulado","solitário","astuto","valente","devoto","ambicioso","tímido","afável"],
+  ar: ["مرح","جادّ","متكبّر","كريم","مهموم","وحيد","ماكر","شجاع","تقيّ","طموح","خجول","ودود"],
+  ru: ["весёлый","серьёзный","надменный","щедрый","удручённый","одинокий","хитрый","доблестный","набожный","честолюбивый","застенчивый","душевный"],
+};
+const QUIRKS_L: Record<Lang, string[]> = {
+  tr: QUIRKS_TR,
+  en: ["always complains about the weather","loves telling of the old days","gives everyone nicknames","speaks little, listens much","laughs out loud","loves to haggle","gossips about the neighbors","hums a folk tune"],
+  es: ["siempre se queja del clima","le encanta hablar de los viejos tiempos","les pone apodos a todos","habla poco y escucha mucho","ríe a carcajadas","le encanta regatear","critica a sus vecinos","tararea una tonada"],
+  pt: ["queixa-se sempre do tempo","adora falar dos velhos tempos","dá alcunhas a toda a gente","fala pouco e ouve muito","ri alto","adora regatear","fala mal dos vizinhos","cantarola uma toada"],
+  ar: ["يشكو الطقس دائمًا","يحبّ الحديث عن الأيّام الخوالي","يطلق الألقاب على الجميع","يقلّ كلامه ويكثر إصغاؤه","يضحك بصوت عالٍ","يعشق المساومة","يغتاب جيرانه","يدندن أغنية شعبيّة"],
+  ru: ["вечно жалуется на погоду","любит рассказывать о былом","всем раздаёт прозвища","мало говорит, много слушает","громко смеётся","обожает торговаться","судачит о соседях","напевает народную песню"],
+};
+const GOALS_L: Record<Lang, string[]> = {
+  tr: GOALS_TR,
+  en: ["dreams of opening a shop","wants to marry off a child","is trying to clear debts","wishes to go on pilgrimage","is saving to buy land","wants to become a foreman","wants to reconcile with an estranged sibling","is set on building a house","wants to take up caravan trade","wants to make a name"],
+  es: ["sueña con abrir una tienda","quiere casar a un hijo","intenta saldar sus deudas","desea peregrinar","ahorra para comprar tierra","quiere ser capataz","quiere reconciliarse con un hermano distanciado","se empeña en construir una casa","quiere lanzarse al comercio de caravanas","quiere hacerse un nombre"],
+  pt: ["sonha em abrir uma loja","quer casar um filho","tenta saldar as dívidas","deseja peregrinar","poupa para comprar terra","quer tornar-se capataz","quer reconciliar-se com um irmão afastado","está empenhado em construir uma casa","quer lançar-se no comércio de caravanas","quer fazer um nome"],
+  ar: ["يحلم بفتح دكّان","يريد تزويج ابنه/ابنته","يحاول سداد ديونه","يتمنّى الحجّ","يدّخر لشراء أرض","يريد أن يصير رئيس عمّال","يريد الصلح مع أخٍ مقاطع","عازم على بناء بيت","يريد خوض تجارة القوافل","يريد أن يُشتهَر"],
+  ru: ["мечтает открыть лавку","хочет женить/выдать замуж дитя","пытается расплатиться с долгами","желает совершить паломничество","копит на покупку земли","хочет стать старшим мастером","хочет помириться с отдалившимся родичем","намерен построить дом","хочет заняться караванной торговлей","хочет прославить своё имя"],
+};
+function personaL(arrTR: string[], arrL: Record<Lang, string[]>, v: string, lang: Lang): string {
+  const i = arrTR.indexOf(v); if (i < 0) return v; return (arrL[lang] || arrL.tr)[i] || v;
+}
+export function traitL(v: string, lang: Lang): string { return personaL(TRAITS_TR, TRAITS_L, v, lang); }
+export function quirkL(v: string, lang: Lang): string { return personaL(QUIRKS_TR, QUIRKS_L, v, lang); }
+export function goalL(v: string, lang: Lang): string { return personaL(GOALS_TR, GOALS_L, v, lang); }

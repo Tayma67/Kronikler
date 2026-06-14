@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { npcsOf } from "../../lib/game";
 import { useI18n } from "../../lib/i18n";
+import { professionNameL } from "../../lib/locale-data";
 import { Portre } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
 
@@ -50,7 +51,7 @@ export default function Iliskiler() {
               <Portre age={n.age} gender={n.gender} size={38} ring={false} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{n.name}</Text>
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{n.profession} · {n.age} {t("misc.age")}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{professionNameL(n.profession, lang)} · {n.age} {t("misc.age")}</Text>
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 12, color: lab.c }}>{v}</Text>

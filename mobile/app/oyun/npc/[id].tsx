@@ -6,6 +6,7 @@ import { useGame } from "../../../lib/store";
 import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, npcStateOf } from "../../../lib/game";
 import { useI18n } from "../../../lib/i18n";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
+import { professionNameL, traitL, quirkL, goalL } from "../../../lib/locale-data";
 import { ITEMS } from "../../../lib/world";
 import { Portre, BackLabel } from "../../../lib/ui";
 import { GameIcon } from "../../../lib/icons";
@@ -41,9 +42,9 @@ export default function NpcDetail() {
       <View style={{ alignItems: "center", marginBottom: 14 }}>
         <Portre age={npc.age} gender={npc.gender} size={76} />
         <Text style={{ fontFamily: F.display, fontSize: 18, color: C.parchment, marginTop: 10 }}>{npc.name}</Text>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.gold }}>{npc.profession} · {npc.age} {t("misc.age")} · {npc.trait}</Text>
-        <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 4, textAlign: "center" }}>{npc.quirk[0].toUpperCase() + npc.quirk.slice(1)}.</Text>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.goldDim, marginTop: 4, textAlign: "center" }}>{t("npc.dream")} {npc.goal}.</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.gold }}>{professionNameL(npc.profession, lang)} · {npc.age} {t("misc.age")} · {traitL(npc.trait, lang)}</Text>
+        <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 4, textAlign: "center" }}>{(() => { const q = quirkL(npc.quirk, lang); return q[0].toUpperCase() + q.slice(1); })()}.</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.goldDim, marginTop: 4, textAlign: "center" }}>{t("npc.dream")} {goalL(npc.goal, lang)}.</Text>
         <View style={{ flexDirection: "row", gap: 16, marginTop: 8 }}>
           <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim }}>{t("npc.rel")} {v}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim }}>{t("npc.mood")} {t("dlg.mood." + moodKey(ns.mood))}</Text>
