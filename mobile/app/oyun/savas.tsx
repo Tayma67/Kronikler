@@ -8,7 +8,7 @@ import { startBattle, stepBattle, MOVES, BattleState, Move } from "../../lib/com
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel, GoldDivider } from "../../lib/ui";
+import { BackLabel, PageHeader } from "../../lib/ui";
 
 function HpBar({ label, hp, max, color }: { label: string; hp: number; max: number; color: string }) {
   const pct = Math.max(0, Math.min(100, (hp / max) * 100));
@@ -91,14 +91,14 @@ export default function Savas() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.savas")}</Text>
+        <View style={{ width: 40 }} />
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.blood }}>⚔ {pw}</Text>
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 10 }}>
         {t("cb.subtitle")} {(p.inventory["bicak"] || 0) > 0 ? t("cb.knifeYes") : t("cb.knifeNo")}
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <GoldDivider mt={4} mb={10} />
+        <PageHeader kicker={t("scr.savas")} icon="⚔️" title={t("scr.savas")} />
         {nemEnc && (
           <View style={{ backgroundColor: "rgba(120,20,20,0.15)", borderWidth: 1, borderColor: "rgba(200,60,60,0.6)", borderRadius: 10, padding: 14, marginBottom: 12 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>

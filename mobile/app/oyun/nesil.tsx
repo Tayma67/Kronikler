@@ -7,7 +7,7 @@ import { INVESTMENTS, WILL_STYLES, investInChild, continueAsHeir } from "../../l
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel, GoldDivider } from "../../lib/ui";
+import { BackLabel, PageHeader } from "../../lib/ui";
 
 export default function Nesil() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -23,12 +23,12 @@ export default function Nesil() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.nesil")}</Text>
+        <View style={{ width: 40 }} />
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money} ⚜</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <GoldDivider mt={4} mb={10} />
+        <PageHeader kicker={t("scr.nesil")} icon="👶" title={t("scr.nesil")} />
         {p.children.length === 0 ? (
           <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", marginTop: 30 }}>
             {t("nes.noChildren")}

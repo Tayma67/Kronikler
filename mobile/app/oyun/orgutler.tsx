@@ -5,7 +5,7 @@ import { useGame } from "../../lib/store";
 import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel, GoldDivider } from "../../lib/ui";
+import { BackLabel, PageHeader } from "../../lib/ui";
 
 
 function Bar({ value, max }: { value: number; max: number }) {
@@ -31,7 +31,7 @@ export default function Orgutler() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.orgutler")}</Text>
+        <View style={{ width: 40 }} />
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money} ⚜</Text>
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 8 }}>
@@ -63,7 +63,7 @@ export default function Orgutler() {
         </View>
       )}
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <GoldDivider mt={4} mb={10} />
+        <PageHeader kicker={t("scr.orgutler")} icon="🏛" title={t("scr.orgutler")} />
         {FACTIONS.map((f) => {
           const standing = p.faction_standing[f.id] || 0;
           const isMember = p.faction === f.id;

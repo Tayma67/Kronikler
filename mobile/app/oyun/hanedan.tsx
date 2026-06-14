@@ -7,7 +7,7 @@ import { generateDynasties } from "../../lib/world";
 import { professionNameL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel, GoldDivider } from "../../lib/ui";
+import { BackLabel, PageHeader } from "../../lib/ui";
 
 function attKey(a: number) { return a >= 40 ? "dost" : a >= 10 ? "dostane" : a > -10 ? "tarafsiz" : a > -40 ? "soguk" : "hasim"; }
 
@@ -24,7 +24,7 @@ export default function Hanedan() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.hanedan")}</Text>
+        <View style={{ width: 40 }} />
         <View style={{ width: 36 }} />
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 8 }}>
@@ -32,7 +32,7 @@ export default function Hanedan() {
       </Text>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <GoldDivider mt={4} mb={10} />
+        <PageHeader kicker={t("scr.hanedan")} icon="🛡" title={t("scr.hanedan")} />
         {/* Şimdiki nesil */}
         <View style={{ backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 10, padding: 14, marginBottom: 10 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
