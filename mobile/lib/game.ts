@@ -475,9 +475,6 @@ export function talkWith(prev: GameState, npc: NPC, intent: string): { state: Ga
   return { state: s, line: r.line };
 }
 // Eski API ile uyumluluk (basit sohbet = hoşbeş).
-export function talkTo(prev: GameState, npc: NPC): GameState {
-  return talkWith(prev, npc, "hosbes").state;
-}
 export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!(p.inventory[itemId] > 0)) return s;
@@ -590,16 +587,6 @@ export function studySubject(prev: GameState, id: string): GameState {
   else if (id === "matematik") { gainSkill(s, "trade", 5); if (lucky) { p.stat_points += 1; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın."); } else push(s, "mektep", "Rakamlarla boğuştun."); }
   else if (id === "edebiyat") { gainSkill(s, "social", 5); if (lucky) { p.stat_points += 1; push(s, "mektep", "Edebiyat çalıştın; bir özellik puanı kazandın."); } else push(s, "mektep", "Beyitler ezberledin."); }
   else { gainSkill(s, "combat", 5); if (lucky) { p.stat_points += 1; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın."); } else push(s, "mektep", "Ter döktün, güçlendin."); }
-  return s;
-}
-// ── Mektep: çocuk/genç ders çalışır, zekâ/puan kazanır ──
-export function study(prev: GameState): GameState {
-  const s = clone(prev); const p = s.player;
-  if (p.dead) return s;
-  p.hunger = Math.max(0, p.hunger - 5);
-  gainSkill(s, "social", 3);
-  if (hasPerk(p, "mucit") || chance(0.5)) { p.stat_points += 1; push(s, "cocukluk", "Mektepte çalıştın, bir özellik puanı kazandın."); }
-  else push(s, "cocukluk", "Mektepte vakit geçirdin.");
   return s;
 }
 
