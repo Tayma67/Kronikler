@@ -76,7 +76,7 @@ export default function NpcDetail() {
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 12, padding: 14, marginBottom: 10 }}>
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
           <View style={{ borderWidth: 2, borderColor: band.tone, borderRadius: 28, padding: 1 }}>
-            <Portre age={npc.age} gender={npc.gender} size={48} ring={false} />
+            <Portre age={npc.age} gender={npc.gender} size={48} ring={false} seed={npc.id} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 17, color: C.parchment, letterSpacing: 0.5 }}>{npc.name}</Text>

@@ -12,6 +12,13 @@ import { C, F } from "../../lib/theme";
 import { BackLabel } from "../../lib/ui";
 
 const CARAVAN_AMOUNTS = [50, 120, 300];
+// Pazar tezgâhları — mallar türüne göre dükkânlara ayrılır (pazar hissi).
+const STALLS = [
+  { kind: "yiyecek", icon: "🍲", key: "paz.stall.food", tone: C.sage },
+  { kind: "esya", icon: "🪵", key: "paz.stall.goods", tone: C.gold },
+  { kind: "silah", icon: "⚔️", key: "paz.stall.arms", tone: C.ember },
+  { kind: "zirh", icon: "🛡", key: "paz.stall.armor", tone: C.azure },
+] as const;
 
 // Vercel "Panel" — başlık (ikon + ad + ton) + gövde.
 function Panel({ title, icon, tone, children }: { title: string; icon: string; tone: string; children: React.ReactNode }) {
@@ -110,37 +117,43 @@ export default function Pazar() {
           )}
         </Panel>
 
-        {/* Pazar paneli */}
-        <Panel title={`${placeName(p.location_name, lang)} ${t("paz.marketSuffix")}`} icon="🛒" tone={C.gold}>
-          {goods.map((g, gi) => {
-            const have = p.inventory[g.id] || 0;
-            return (
-              <View key={g.id} style={{ paddingVertical: 9, borderBottomWidth: gi === goods.length - 1 ? 0 : 1, borderBottomColor: C.border }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                  <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ fontSize: 18 }}>{g.icon}</Text>
+        {/* ── Pazar: tezgâh tezgâh ayrılmış dükkânlar ── */}
+        {STALLS.map((stall) => {
+          const items = goods.filter((g) => (g.kind || "esya") === stall.kind);
+          if (items.length === 0) return null;
+          return (
+            <Panel key={stall.kind} title={t(stall.key)} icon={stall.icon} tone={stall.tone}>
+              {items.map((g, gi) => {
+                const have = p.inventory[g.id] || 0;
+                return (
+                  <View key={g.id} style={{ paddingVertical: 9, borderBottomWidth: gi === items.length - 1 ? 0 : 1, borderBottomColor: C.border }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: stall.tone + "14", borderWidth: 1, borderColor: stall.tone + "33", alignItems: "center", justifyContent: "center" }}>
+                        <Text style={{ fontSize: 18 }}>{g.icon}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment }}>{t("it." + g.id)}</Text>
+                        <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("paz.have")} {have}</Text>
+                      </View>
+                      <Coin v={g.buy} />
+                    </View>
+                    <View style={{ flexDirection: "row", gap: 7, marginTop: 8 }}>
+                      <Pressable onPress={() => { hap('tap'); apply((s) => buyItem(s, g.id)); }} disabled={p.money < g.buy} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < g.buy ? C.bg : "rgba(201,168,76,0.12)" }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < g.buy ? C.parchmentMuted : C.gold }}>{t("misc.buy")} {g.buy}⚜</Text>
+                      </Pressable>
+                      <Pressable onPress={() => openBarg(g)} disabled={p.money < g.buy} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: C.bg }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 10.5, color: p.money < g.buy ? C.parchmentMuted : C.goldDim }}>{t("misc.bargain")}</Text>
+                      </Pressable>
+                      <Pressable onPress={() => { hap('tap'); apply((s) => sellItem(s, g.id)); }} disabled={have <= 0} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 11, color: have <= 0 ? C.parchmentMuted : C.parchmentDim }}>{t("misc.sell")} {g.sell}⚜</Text>
+                      </Pressable>
+                    </View>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment }}>{t("it." + g.id)}</Text>
-                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("paz.have")} {have}</Text>
-                  </View>
-                  <Coin v={g.buy} />
-                </View>
-                <View style={{ flexDirection: "row", gap: 7, marginTop: 8 }}>
-                  <Pressable onPress={() => { hap('tap'); apply((s) => buyItem(s, g.id)); }} disabled={p.money < g.buy} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < g.buy ? C.bg : "rgba(201,168,76,0.12)" }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < g.buy ? C.parchmentMuted : C.gold }}>{t("misc.buy")} {g.buy}⚜</Text>
-                  </Pressable>
-                  <Pressable onPress={() => openBarg(g)} disabled={p.money < g.buy} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: C.bg }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: p.money < g.buy ? C.parchmentMuted : C.goldDim }}>{t("misc.bargain")}</Text>
-                  </Pressable>
-                  <Pressable onPress={() => { hap('tap'); apply((s) => sellItem(s, g.id)); }} disabled={have <= 0} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 11, color: have <= 0 ? C.parchmentMuted : C.parchmentDim }}>{t("misc.sell")} {g.sell}⚜</Text>
-                  </Pressable>
-                </View>
-              </View>
-            );
-          })}
-        </Panel>
+                );
+              })}
+            </Panel>
+          );
+        })}
       </ScrollView>
 
       {/* ── PAZARLIK MÜZAKERE MODALI ── */}

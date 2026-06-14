@@ -93,7 +93,7 @@ export default function Iliskiler() {
                 <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, textAlign: "center", opacity: 0.75 }}>{applyParams(t("rel.bandNone"), [t("relb." + b.id + ".m")])}</Text>
               ) : list.map(({ n, v }) => (
                 <Pressable key={n.id} onPress={() => router.push(`/oyun/npc/${n.id}`)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}>
-                  <Portre age={n.age} gender={n.gender} size={37} ring={false} />
+                  <Portre age={n.age} gender={n.gender} size={37} ring={false} seed={n.id} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{n.name}</Text>
                     <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(n.profession, lang)} · {n.age}</Text>
