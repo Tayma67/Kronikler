@@ -7,6 +7,7 @@ import { ENCOUNTERS, combatPower, applyBattleOutcome, nemesisEncounter, applyNem
 import { startBattle, stepBattle, MOVES, BattleState, Move } from "../../lib/combat";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
+import { useI18n } from "../../lib/i18n";
 import { BackLabel } from "../../lib/ui";
 
 function HpBar({ label, hp, max, color }: { label: string; hp: number; max: number; color: string }) {
@@ -27,6 +28,7 @@ function HpBar({ label, hp, max, color }: { label: string; hp: number; max: numb
 export default function Savas() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
+  const { t } = useI18n();
   const [bs, setBs] = useState<BattleState | null>(null);
   const [encId, setEncId] = useState<string>("");
   const [applied, setApplied] = useState(false);
@@ -89,7 +91,7 @@ export default function Savas() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>Çatışma</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.savas")}</Text>
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.blood }}>⚔ {pw}</Text>
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 10 }}>

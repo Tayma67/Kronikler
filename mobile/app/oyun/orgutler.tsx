@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar } from "../../lib/game";
 import { C, F } from "../../lib/theme";
+import { useI18n } from "../../lib/i18n";
 import { BackLabel } from "../../lib/ui";
 
 const STAT_TR: Record<string, string> = { strength: "Güç", intelligence: "Zekâ", charisma: "Karizma", stamina: "Dayanıklılık" };
@@ -20,6 +21,7 @@ function Bar({ value, max }: { value: number; max: number }) {
 export default function Orgutler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
+  const { t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const current = factionById(p.faction);
@@ -30,7 +32,7 @@ export default function Orgutler() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>Örgütler</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.orgutler")}</Text>
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money} ⚜</Text>
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 8 }}>

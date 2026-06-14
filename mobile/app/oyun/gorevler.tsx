@@ -6,11 +6,13 @@ import { opportunitiesFor, playerWar, pendingPerkCount, nemesisEncounter } from 
 import { arcById } from "../../lib/arcs";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
+import { useI18n } from "../../lib/i18n";
 import { BackLabel } from "../../lib/ui";
 
 export default function Gorevler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state } = useGame();
+  const { t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
 
@@ -38,7 +40,7 @@ export default function Gorevler() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>Açık İşler</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.gorevler")}</Text>
         <View style={{ width: 36 }} />
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 8 }}>

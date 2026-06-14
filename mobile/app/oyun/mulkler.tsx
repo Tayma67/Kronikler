@@ -4,11 +4,13 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { buyProperty, PROPERTY_TYPES } from "../../lib/game";
 import { C, F } from "../../lib/theme";
+import { useI18n } from "../../lib/i18n";
 import { BackLabel } from "../../lib/ui";
 
 export default function Mulkler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
+  const { t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const income = p.properties.reduce((a, t) => a + (PROPERTY_TYPES[t]?.income || 0), 0);
@@ -17,7 +19,7 @@ export default function Mulkler() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>Mülkler</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.mulkler")}</Text>
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money} ⚜</Text>
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 8 }}>

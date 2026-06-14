@@ -20,7 +20,7 @@ const KIND_ICON: Record<string, string> = { "şehir": "🏙", "kale": "🏰", "k
 export default function Harita() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state } = useGame();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const here = state.player.location_name;
 
@@ -28,7 +28,7 @@ export default function Harita() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>Diyar Haritası</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.harita")}</Text>
         <View style={{ width: 36 }} />
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 6 }}>

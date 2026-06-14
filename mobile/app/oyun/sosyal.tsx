@@ -5,6 +5,7 @@ import { useGame } from "../../lib/store";
 import { SOCIAL_AXES, socialTier, hostFeast, giveAlms, intimidate, factionById, NAM_META } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
+import { useI18n } from "../../lib/i18n";
 import { BackLabel } from "../../lib/ui";
 
 function Axis({ icon, label, value, tier, desc }: { icon: string; label: string; value: number; tier: string; desc: string }) {
@@ -26,6 +27,7 @@ function Axis({ icon, label, value, tier, desc }: { icon: string; label: string;
 export default function Sosyal() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
+  const { t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const f = factionById(p.faction);
@@ -41,7 +43,7 @@ export default function Sosyal() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>Mevki & İtibar</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.sosyal")}</Text>
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money} ⚜</Text>
       </View>
 
