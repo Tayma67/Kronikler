@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, ScrollView, Pressable, TextInput } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,6 +29,7 @@ export default function Hanedan() {
   const { lang, t } = useI18n();
   const [settleName, setSettleName] = useState("");
   const [throneMsg, setThroneMsg] = useState<null | { ok: boolean; tick: number }>(null);
+  const baseRivals = useMemo(() => (state ? generateDynasties(state.seed) : []), [state?.seed]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const past = state.dynasty || [];
@@ -189,7 +190,7 @@ export default function Hanedan() {
         {/* ── DİYARIN HANEDANLARI ── */}
         {(() => {
           const mine = { id: "mine", name: houseName, power, mine: true, attitude: 0 };
-          const rivals = generateDynasties(state.seed).map((h) => ({ id: h.id, name: h.name, power: h.power, mine: false, attitude: houseAttitude(p, h) }));
+          const rivals = baseRivals.map((h) => ({ id: h.id, name: h.name, power: h.power, mine: false, attitude: houseAttitude(p, h) }));
           const all = [...rivals, mine].sort((a, b) => b.power - a.power);
           return (
             <>

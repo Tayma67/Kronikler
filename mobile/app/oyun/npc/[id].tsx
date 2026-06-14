@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -51,8 +51,9 @@ export default function NpcDetail() {
   const { lang, t } = useI18n();
   const [line, setLine] = useState<string>("");
   const [giftOpen, setGiftOpen] = useState(false);
+  const allNpcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
-  const npc = npcsOf(state, lang).find((n) => n.id === id);
+  const npc = allNpcs.find((n) => n.id === id);
   if (!npc) return <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top + 40 }}><Text style={{ color: C.parchmentMuted, textAlign: "center" }}>{t("npc.notFound")}</Text></View>;
   const v = state.relationships[npc.id] || 0;
   const band = bandOf(v);

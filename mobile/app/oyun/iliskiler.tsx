@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -53,8 +54,8 @@ export default function Iliskiler() {
   const router = useRouter();
   const { state } = useGame();
   const { lang, t } = useI18n();
+  const npcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
-  const npcs = npcsOf(state, lang);
   const rel = state.relationships;
   const all = npcs.map((n) => ({ n, v: rel[n.id] || 0 }));
   const grouped = BANDS.map((b) => ({
