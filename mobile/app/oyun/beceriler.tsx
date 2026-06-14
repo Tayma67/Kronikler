@@ -8,8 +8,9 @@ import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { BackLabel } from "../../lib/ui";
 
-function Tree({ tree, name, icon, blurb }: { tree: SkillKey; name: string; icon: string; blurb: string }) {
+function Tree({ tree, icon }: { tree: SkillKey; icon: string }) {
   const { state, apply } = useGame();
+  const { t } = useI18n();
   const p = state!.player;
   const lvl = p.skills[tree];
   const xp = p.skill_xp[tree];
@@ -22,22 +23,22 @@ function Tree({ tree, name, icon, blurb }: { tree: SkillKey; name: string; icon:
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <GameIcon name={icon} size={22} color={C.gold} />
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{name} · Sv {lvl}</Text>
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{blurb}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t("skill." + tree)} · {t("bec.lv")} {lvl}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("skill." + tree + ".b")}</Text>
         </View>
       </View>
       <View style={{ height: 4, backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 2, marginTop: 10 }}>
         <View style={{ width: `${lvl >= 10 ? 100 : inLevel}%`, height: 4, backgroundColor: C.gold, borderRadius: 2 }} />
       </View>
 
-      {tiers.map((t) => {
-        const tierPerks = PERKS.filter((pk) => pk.tree === tree && pk.tier === t);
+      {tiers.map((tn) => {
+        const tierPerks = PERKS.filter((pk) => pk.tree === tree && pk.tier === tn);
         const chosen = tierPerks.find((pk) => hasPerk(p, pk.id));
-        const unlocked = lvl >= t;
-        const choosable = unlocked && !chosen && pending === t;
+        const unlocked = lvl >= tn;
+        const choosable = unlocked && !chosen && pending === tn;
         return (
-          <View key={t} style={{ marginTop: 12, opacity: unlocked ? 1 : 0.5 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, marginBottom: 6 }}>SEVİYE {t} HÜNERİ {chosen ? "· seçildi" : unlocked ? "· seç" : "· kilitli"}</Text>
+          <View key={tn} style={{ marginTop: 12, opacity: unlocked ? 1 : 0.5 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, marginBottom: 6 }}>{t("bec.tierPerk").replace("%t", String(tn))} {chosen ? t("bec.chosen") : unlocked ? t("bec.choose") : t("bec.locked")}</Text>
             {tierPerks.map((pk) => {
               const isChosen = chosen?.id === pk.id;
               return (
@@ -47,7 +48,7 @@ function Tree({ tree, name, icon, blurb }: { tree: SkillKey; name: string; icon:
                     <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 1 }}>{pk.desc}</Text>
                   </View>
                   {isChosen && <GameIcon name="medal" size={14} color={C.gold} />}
-                  {choosable && !isChosen && <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 1 }}>SEÇ</Text>}
+                  {choosable && !isChosen && <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 1 }}>{t("bec.pick")}</Text>}
                 </Pressable>
               );
             })}
@@ -72,10 +73,10 @@ export default function Beceriler() {
         <View style={{ width: 36 }} />
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 8 }}>
-        Eyleme geçtikçe beceriler gelişir; 3, 6 ve 9. seviyelerde birer hüner seçersin.
+        {t("bec.hint")}
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        {SKILL_META.map((m) => <Tree key={m.key} tree={m.key} name={m.name} icon={m.icon} blurb={m.blurb} />)}
+        {SKILL_META.map((m) => <Tree key={m.key} tree={m.key} icon={m.icon} />)}
       </ScrollView>
     </View>
   );

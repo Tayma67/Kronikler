@@ -9,6 +9,8 @@ import { placeName } from "../../../lib/locale-data";
 import { C, F } from "../../../lib/theme";
 import { BackLabel } from "../../../lib/ui";
 
+const KIND_KEY: Record<string, string> = { "şehir": "sehir", "kale": "kale", "köy": "koy" };
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border }}>
@@ -33,40 +35,40 @@ export default function DiyarDetay() {
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
       <Pressable onPress={() => router.back()} style={{ marginBottom: 12 }}><BackLabel /></Pressable>
       <Text style={{ fontFamily: F.display, fontSize: 24, color: C.parchment, letterSpacing: 1 }}>{placeName(name, lang)}</Text>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 4 }}>{kind} · {info.population.toLocaleString("tr")} nüfus</Text>
+      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 4 }}>{t("kind." + KIND_KEY[kind])} · {info.population.toLocaleString("tr")} {t("diyar.pop")}</Text>
       <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted, lineHeight: 20, marginBottom: 14 }}>{info.blurb}</Text>
 
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14, marginBottom: 16 }}>
-        <Stat label="Vali" value={info.governor} />
-        <Stat label="Güvenlik" value={`${info.security}/100`} />
-        <Stat label="Refah" value={`${info.prosperity}/100`} />
-        <Stat label="Geçim" value={localSpecialty(locSeed(name)).name} />
+        <Stat label={t("diyar.governor")} value={info.governor} />
+        <Stat label={t("diyar.security")} value={`${info.security}/100`} />
+        <Stat label={t("diyar.prosperity")} value={`${info.prosperity}/100`} />
+        <Stat label={t("diyar.livelihood")} value={localSpecialty(locSeed(name)).name} />
       </View>
 
-      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>PAZARDAN</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("diyar.fromMarket")}</Text>
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14, marginBottom: 16 }}>
         {goods.map((g) => (
           <View key={g.id} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
             <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{g.icon} {t("it."+g.id)}</Text>
-            <Text style={{ fontFamily: F.display, fontSize: 12, color: C.goldDim }}>al {g.buy} · sat {g.sell}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 12, color: C.goldDim }}>{t("diyar.buyAbbr")} {g.buy} · {t("diyar.sellAbbr")} {g.sell}</Text>
           </View>
         ))}
       </View>
 
       {here ? (
         <View style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", alignItems: "center", backgroundColor: "rgba(201,168,76,0.08)" }}>
-          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>ŞU AN BURADASIN</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>{t("diyar.hereNow")}</Text>
         </View>
       ) : (
         <>
-          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>YOLA ÇIK</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("diyar.setOut")}</Text>
           {TRAVEL_ROUTES.map((r) => (
             <Pressable key={r.id} onPress={() => { apply((s) => travelBy(s, name, r.id)); router.back(); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: C.card, marginBottom: 8 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{r.label}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{r.desc}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("route." + r.id + ".l")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("route." + r.id + ".d")}</Text>
               </View>
-              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>GİT ›</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{t("diyar.go")}</Text>
             </Pressable>
           ))}
         </>

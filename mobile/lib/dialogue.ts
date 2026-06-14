@@ -53,3 +53,7 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
 export function moodLabel(m: number): string {
   return { "küs": "Küskün", "soğuk": "Soğuk", "nötr": "Kayıtsız", "sıcak": "Sıcak", "neşeli": "Neşeli" }[moodTier(m)];
 }
+// Yerelleştirme için ruh hali anahtarı (i18n: dlg.mood.<key>).
+export function moodKey(m: number): string {
+  return { "küs": "kus", "soğuk": "soguk", "nötr": "notr", "sıcak": "sicak", "neşeli": "neseli" }[moodTier(m)];
+}

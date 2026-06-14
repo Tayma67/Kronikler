@@ -45,14 +45,14 @@ export default function Hikayeler() {
           </View>
         ) : (
           <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginVertical: 10 }}>
-            Şu an açık bir hikâyen yok. Hayatın seni yeni maceralara çağırıyor.
+            {t("hik.none")}
           </Text>
         )}
 
         {/* Açılabilecek yaylar */}
         {!active && avail.length > 0 && (
           <>
-            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginBottom: 8 }}>Seni Bekleyenler</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginBottom: 8 }}>{t("hik.awaiting")}</Text>
             {avail.map((a) => (
               <View key={a.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 9 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -61,7 +61,7 @@ export default function Hikayeler() {
                 </View>
                 <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5 }}>{a.blurb}</Text>
                 <Pressable onPress={() => apply((s) => beginArc(s, a.id))} style={{ alignSelf: "flex-start", marginTop: 10, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold, letterSpacing: 1 }}>BAŞLA</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold, letterSpacing: 1 }}>{t("hik.begin")}</Text>
                 </Pressable>
               </View>
             ))}
@@ -71,7 +71,7 @@ export default function Hikayeler() {
         {/* Tamamlananlar */}
         {st.completed.length > 0 && (
           <>
-            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 14, marginBottom: 8 }}>Tamamlanan Hikâyeler</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 14, marginBottom: 8 }}>{t("hik.completed")}</Text>
             {st.completed.map((id) => {
               const a = arcById(id); if (!a) return null;
               return (

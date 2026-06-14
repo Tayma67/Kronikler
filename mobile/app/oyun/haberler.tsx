@@ -25,11 +25,11 @@ export default function Haberler() {
         <View style={{ width: 36 }} />
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 6 }}>
-        {cal.month_name} {cal.year} · diyarın diline düşenler
+        {t("cal.month." + cal.month_no)} {cal.year} · {t("hab.dropped")}
       </Text>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 10, marginBottom: 8 }}>📜 Diyar Haberleri</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 10, marginBottom: 8 }}>📜 {t("hab.news")}</Text>
         {news.map((n) => (
           <View key={n.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.gold, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5 }}>{n.title}</Text>
@@ -37,14 +37,14 @@ export default function Haberler() {
           </View>
         ))}
 
-        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 14, marginBottom: 8 }}>🗣 Dedikodular</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 14, marginBottom: 8 }}>🗣 {t("hab.gossip")}</Text>
         {gossip.map((g) => (
           <View key={g.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 8 }}>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment, lineHeight: 19 }}>“{g.body}”</Text>
           </View>
         ))}
         <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, textAlign: "center", marginTop: 14 }}>
-          Ay ilerledikçe diyarın hâli değişir.
+          {t("hab.footer")}
         </Text>
       </ScrollView>
     </View>

@@ -26,10 +26,10 @@ export default function Suc() {
         <View style={{ width: 40 }} />
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 12 }}>Yasanın gölgesinde kazanç var ama yakalanırsan bedeli ağır.</Text>
-        {state.player.age < 13 ? <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted }}>Bunun için büyümen gerek.</Text> : <>
-          <Crime kind="yankesicilik" title="Yankesicilik" desc="Kalabalıkta bir kese aşır. Düşük risk, küçük kazanç." />
-          <Crime kind="soygun" title="Soygun" desc="Bir dükkânı bas. Yüksek risk, büyük kazanç." />
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 12 }}>{t("suc.hint")}</Text>
+        {state.player.age < 13 ? <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted }}>{t("suc.tooYoung")}</Text> : <>
+          <Crime kind="yankesicilik" title={t("crime.yankesicilik.l")} desc={t("crime.yankesicilik.d")} />
+          <Crime kind="soygun" title={t("crime.soygun.l")} desc={t("crime.soygun.d")} />
         </>}
       </ScrollView>
     </View>

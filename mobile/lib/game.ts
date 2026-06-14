@@ -100,6 +100,13 @@ export function econLabel(econ: number): string {
   if (econ <= 0.94) return "Ucuzluk";
   return "Piyasa dengeli";
 }
+export function econKey(econ: number): string {
+  if (econ >= 1.18) return "scarcity";
+  if (econ >= 1.06) return "pricey";
+  if (econ <= 0.85) return "abundance";
+  if (econ <= 0.94) return "cheap";
+  return "balanced";
+}
 // Ocak savaşı — iki lonca arasında, birkaç ay süren çatışma.
 export interface FactionWar { a: string; b: string; turnsLeft: number; aScore: number; bScore: number; }
 // NPC ruh hali/hafıza kaydını getir veya başlat (saf değil — clone'lanmış state'te çağrılır).

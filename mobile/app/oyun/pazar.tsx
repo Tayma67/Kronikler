@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, sellItem, launchCaravan, bargainBuy, marketPrice, econLabel } from "../../lib/game";
+import { buyItem, sellItem, launchCaravan, bargainBuy, marketPrice, econKey } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -29,19 +29,19 @@ export default function Pazar() {
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money} ⚜</Text>
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: econ >= 1.06 ? C.blood : econ <= 0.94 ? C.sage : C.parchmentMuted, paddingHorizontal: 16, marginBottom: 6 }}>
-        ⚖ {econLabel(econ)}
+        ⚖ {t("econ." + econKey(econ))}
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
         {/* Kervan seferi */}
         <View style={{ backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5 }}>🐪 Kervan Seferi</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5 }}>🐪 {t("paz.caravanTitle")}</Text>
           {state.caravan ? (
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5 }}>
-              {state.caravan.dest} yolunda bir kervanın var ({state.caravan.invested}⚜). Dönüşü yakında.
+              {t("paz.caravanActive").replace("%d", placeName(state.caravan.dest, lang)).replace("%c", String(state.caravan.invested))}
             </Text>
           ) : (
             <>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 4, marginBottom: 8 }}>Akçe yatır; birkaç ay sonra kârla döner — ya da baskına uğrar. Ticaret becerin riski azaltır.</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 4, marginBottom: 8 }}>{t("paz.caravanHint")}</Text>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {CARAVAN_AMOUNTS.map((amt) => (
                   <Pressable key={amt} disabled={p.money < amt} onPress={() => apply((s) => launchCaravan(s, amt))} style={{ flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 7, borderWidth: 1, borderColor: p.money < amt ? C.border : "rgba(201,168,76,0.5)", backgroundColor: p.money < amt ? C.bg : "rgba(201,168,76,0.12)" }}>
@@ -60,16 +60,16 @@ export default function Pazar() {
                 <Text style={{ fontSize: 20 }}>{g.icon}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("it." + g.id)}</Text>
-                  <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>Elinde: {have}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("paz.have")} {have}</Text>
                 </View>
                 <Pressable onPress={() => apply((s) => buyItem(s, g.id))} disabled={p.money < g.buy} style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < g.buy ? C.card : "rgba(201,168,76,0.12)", marginRight: 5 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < g.buy ? C.parchmentMuted : C.gold }}>AL {g.buy}⚜</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < g.buy ? C.parchmentMuted : C.gold }}>{t("misc.buy")} {g.buy}⚜</Text>
                 </Pressable>
                 <Pressable onPress={() => apply((s) => bargainBuy(s, g.id))} disabled={p.money < g.buy} style={{ paddingVertical: 8, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", backgroundColor: C.bg, marginRight: 5 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 10, color: p.money < g.buy ? C.parchmentMuted : C.goldDim }}>PAZARLIK</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 10, color: p.money < g.buy ? C.parchmentMuted : C.goldDim }}>{t("misc.bargain")}</Text>
                 </Pressable>
                 <Pressable onPress={() => apply((s) => sellItem(s, g.id))} disabled={have <= 0} style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 11, color: have <= 0 ? C.parchmentMuted : C.parchmentDim }}>SAT {g.sell}⚜</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: have <= 0 ? C.parchmentMuted : C.parchmentDim }}>{t("misc.sell")} {g.sell}⚜</Text>
                 </Pressable>
               </View>
             </View>
