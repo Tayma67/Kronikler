@@ -54,7 +54,7 @@ export default function Dashboard() {
 
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
   const onAdvance = () => { hap("advance"); playAdvance(); doAdvance(1); };
-  const onChoose = (c: Choice) => { hap("selection"); apply((s) => applyDilemma(s, c.delta, c.result)); setDilemma(null); };
+  const onChoose = (c: Choice, i: number) => { hap("selection"); const res = dilemma ? t("dil." + dilemma.id + ".r" + i) : c.result; apply((s) => applyDilemma(s, c.delta, res)); setDilemma(null); };
 
   // Tur değişiminde taze state üzerinden ara sıra (%28) ikilem çıkar (ölüyse çıkmaz).
   useEffect(() => {
