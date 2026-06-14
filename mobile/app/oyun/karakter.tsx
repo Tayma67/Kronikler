@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
@@ -104,7 +104,7 @@ export default function Karakter() {
       <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 18, backgroundColor: C.bg }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
           <View style={{ width: 40 }} />
-          <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 4, color: C.gold }}>{t("scr.karakter").toUpperCase()}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 4, color: C.gold }}>{t("tab.character").toUpperCase()}</Text>
           <Pressable onPress={() => router.push("/oyun/ayarlar")} style={{ width: 40, alignItems: "flex-end" }}><GameIcon name="ayarlar" size={18} color={C.gold} /></Pressable>
         </View>
         <GoldDivider mt={6} mb={0} />
@@ -126,7 +126,7 @@ export default function Karakter() {
 
             {/* Bilgi */}
             <View style={{ flex: 1, gap: 5 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 7.5, letterSpacing: 2, color: C.parchmentMuted }}>{t("scr.karakter").toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 7.5, letterSpacing: 2, color: C.parchmentMuted }}>{t("dyn.houseOf").replace("%s", (p.surname || p.name)).toUpperCase()}</Text>
               <Text style={{ fontFamily: F.display, fontSize: 19, color: C.goldBright, letterSpacing: 0.5 }}>{p.name}</Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
                 <GameIcon name="ilerle" size={11} color={C.gold} />
@@ -239,18 +239,32 @@ export default function Karakter() {
           <>
             <Card>
               <SectionHead title={t("char.guild")} />
-              <Text style={{ fontFamily: F.serif, fontSize: 14, color: p.faction ? C.gold : C.parchmentMuted }}>{p.faction ? t("fac." + p.faction + ".n") : "—"}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 14, color: p.faction ? C.gold : C.parchmentMuted }}>{p.faction ? t("fac." + p.faction + ".n") : t("char.none")}</Text>
             </Card>
             <Card>
               <SectionHead title={t("char.family")} />
+              {/* Ebeveynler */}
               <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
-                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.spouse")}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.spouse_name || "—"}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>👵 {t("char.mother")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.mother || t("char.none")}</Text>
               </View>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>👴 {t("char.father")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.father || t("char.none")}</Text>
+              </View>
+              {/* Eş */}
+              <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>💍 {t("char.spouse")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 14, color: p.spouse_name ? C.parchment : C.parchmentMuted }}>{p.spouse_name || t("char.none")}</Text>
+              </View>
+              {/* Çocuklar */}
               <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.children")}</Text>
-                <Text style={{ flex: 1, textAlign: "right", fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{p.children.length ? p.children.join(", ") : "—"}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>👶 {t("char.children")}</Text>
+                <Text style={{ flex: 1, textAlign: "right", fontFamily: F.serif, fontSize: 13, color: p.children.length ? C.parchment : C.parchmentMuted }}>{p.children.length ? p.children.join(", ") : t("char.none")}</Text>
               </View>
+              <Pressable onPress={() => { hap("tap"); router.push("/oyun/hanedan"); }} style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.border }}>
+                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: C.gold }}>{t("scr.hanedan")} ›</Text>
+              </Pressable>
             </Card>
             {p.injuries && p.injuries.length > 0 && (
               <Card>
@@ -270,7 +284,7 @@ export default function Karakter() {
         {tab === "seruven" && (
           <>
             <Card>
-              <SectionHead title={t("char.gear")} />
+              <SectionHead title={t("char.gear")} right={<View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="crossed-swords" size={12} color={C.ember} /><Text style={{ fontFamily: F.display, fontSize: 11, color: C.ember }}>{t("char.combatReady")}: {combatPower(p)}</Text></View>} />
               <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
                 <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.weapon")}</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>

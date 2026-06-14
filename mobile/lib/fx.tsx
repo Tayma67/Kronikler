@@ -114,9 +114,9 @@ function Flake({ x, size, dur, delay, color, fall, sway, radius }: { x: number; 
 }
 
 // Hero ambiyansı — daima birkaç köz; mevsime göre kar/yaprak.
-export function Ambiance({ season, width = 360, height = 150 }: { season?: string; width?: number; height?: number }) {
-  const embers = useMemo(() => Array.from({ length: 7 }, () => ({ x: rnd(8, width - 8), size: rnd(2, 4), dur: rnd(2600, 4200), delay: rnd(0, 3000), rise: rnd(height * 0.6, height), color: Math.random() < 0.5 ? "#E0922E" : "#C9A84C" })), [width, height]);
-  const isWinter = season === "Kış"; const isAutumn = season === "Sonbahar";
+export function Ambiance({ season, width = 360, height = 150, embers: showEmbers = true, flakes: showFlakes = true, count = 7 }: { season?: string; width?: number; height?: number; embers?: boolean; flakes?: boolean; count?: number }) {
+  const embers = useMemo(() => (showEmbers ? Array.from({ length: count }, () => ({ x: rnd(8, width - 8), size: rnd(2, 4), dur: rnd(2600, 4200), delay: rnd(0, 3000), rise: rnd(height * 0.6, height), color: Math.random() < 0.5 ? "#E0922E" : "#C9A84C" })) : []), [width, height, showEmbers, count]);
+  const isWinter = showFlakes && season === "Kış"; const isAutumn = showFlakes && season === "Sonbahar";
   const flakes = useMemo(() => {
     if (!isWinter && !isAutumn) return [];
     return Array.from({ length: isWinter ? 14 : 9 }, () => ({

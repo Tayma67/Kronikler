@@ -234,7 +234,7 @@ export default function Dashboard() {
       {/* ── HERO (yaşayan sahne: Ken Burns + ambiyans) ── */}
       <KenBurns source={heroImage(p.age, cal.season)} style={{ paddingTop: insets.top }}>
         <View style={{ backgroundColor: "rgba(8,5,2,0.5)", paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
-          <Ambiance season={cal.season} width={Dimensions.get("window").width} height={180} />
+          <Ambiance season={cal.season} width={Dimensions.get("window").width} height={180} embers={false} />
           <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
             {/* Sol: avatar + mini istatistikler */}
             <View style={{ alignItems: "center", gap: 6, width: 92 }}>

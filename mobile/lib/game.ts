@@ -14,6 +14,7 @@ export interface Player {
   reputation: number; honor: number; fear: number; fame: number;
   stats: Stats; stat_points: number; dead: boolean; location_name: string; home_name: string;
   married: boolean; spouse_name: string | null; children: string[];
+  mother?: string; father?: string;
   inventory: Record<string, number>; properties: string[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
@@ -191,7 +192,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       reputation: 0, honor: 0, fear: 0, fame: 0,
       stats: { strength: 1, intelligence: 1, charisma: 1, stamina: 2 },
       stat_points: 0, dead: false, location_name: birthplace, home_name: birthplace,
-      married: false, spouse_name: null, children: [], inventory: { ekmek: 2 },
+      married: false, spouse_name: null, children: [], mother: rnd(SPOUSE_K), father: rnd(SPOUSE_E), inventory: { ekmek: 2 },
       properties: [], generation: 1,
       faction: null, faction_standing: {},
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
@@ -949,6 +950,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       reputation: Math.max(-100, Math.min(100, startRep)), honor: 0, fear: 0, fame: Math.floor(p.fame / 3),
       stats, stat_points: startPoints,
       dead: false, location_name: p.location_name, home_name: p.home_name || p.location_name, married: false, spouse_name: null, children: [],
+      mother: p.gender === "erkek" ? (p.spouse_name || rnd(SPOUSE_K)) : p.name, father: p.gender === "erkek" ? p.name : (p.spouse_name || rnd(SPOUSE_E)),
       inventory: { ekmek: 2 }, properties: props, generation: gen,
       faction: null, faction_standing: {},
       skills, skill_xp: { combat: skills.combat * 100, trade: 0, crafting: skills.crafting * 100, social: skills.social * 100 },

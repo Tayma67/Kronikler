@@ -8,6 +8,7 @@ import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
 import { useGame } from "../../lib/store";
 import { StatDeltaOverlay } from "../../lib/feel";
+import { Ambiance } from "../../lib/fx";
 import { hap } from "../../lib/haptics";
 import { playAdvance } from "../../lib/sound";
 
@@ -29,19 +30,44 @@ function AdvanceFab({ bottom }: { bottom: number }) {
   if (!state || state.player.dead) return null;
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: bottom + 16, alignItems: "center" }}>
-      <Animated.View style={style}>
-        <Pressable
-          onPress={() => { hap("advance"); playAdvance(); doAdvance(1); }}
-          style={{
-            width: 60, height: 60, borderRadius: 30, backgroundColor: C.gold,
-            alignItems: "center", justifyContent: "center",
-            borderWidth: 3, borderColor: "rgba(13,10,6,0.98)",
-            shadowColor: "#000", shadowOpacity: 0.45, shadowRadius: 7, shadowOffset: { width: 0, height: 3 }, elevation: 9,
-          }}
-        >
-          <GameIcon name="ilerle" size={26} color="#1a1206" />
-        </Pressable>
-      </Animated.View>
+      <View style={{ width: 100, height: 92, alignItems: "center", justifyContent: "flex-end" }}>
+        {/* Hero'dan taşınan altın toz — düğmeden yükselir */}
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}>
+          <Ambiance width={100} height={92} flakes={false} count={6} />
+        </View>
+        <Animated.View style={style}>
+          <Pressable
+            onPress={() => { hap("advance"); playAdvance(); doAdvance(1); }}
+            style={{
+              width: 60, height: 60, borderRadius: 30, backgroundColor: C.gold,
+              alignItems: "center", justifyContent: "center",
+              borderWidth: 3, borderColor: "rgba(13,10,6,0.98)",
+              shadowColor: "#000", shadowOpacity: 0.45, shadowRadius: 7, shadowOffset: { width: 0, height: 3 }, elevation: 9,
+            }}
+          >
+            <GameIcon name="ilerle" size={26} color="#1a1206" />
+          </Pressable>
+        </Animated.View>
+      </View>
+    </View>
+  );
+}
+
+// Navbar üst kenarına oymalı altın çerçeve (Osmanlı/parşömen motifi).
+function NavOrnament({ bottom }: { bottom: number }) {
+  const Diamond = ({ s = 6 }: { s?: number }) => (
+    <View style={{ width: s, height: s, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], opacity: 0.7 }} />
+  );
+  return (
+    <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: bottom - 7, height: 14, justifyContent: "center" }}>
+      {/* çift altın hat */}
+      <View style={{ position: "absolute", left: 10, right: 10, bottom: 4, height: 1.5, backgroundColor: C.gold, opacity: 0.5 }} />
+      <View style={{ position: "absolute", left: 24, right: 24, bottom: 7, height: 1, backgroundColor: C.goldDim, opacity: 0.3 }} />
+      {/* yan elmas motifleri (orta FAB için boşluk) */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 26 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><Diamond s={5} /><Diamond /></View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><Diamond /><Diamond s={5} /></View>
+      </View>
     </View>
   );
 }
@@ -53,7 +79,7 @@ export default function OyunLayout() {
     <View style={{ flex: 1 }}>
       <Tabs screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: "rgba(13,10,6,0.98)", borderTopColor: C.borderHi, height: 60 + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 6 },
+        tabBarStyle: { backgroundColor: "rgba(9,6,3,0.99)", borderTopWidth: 1.5, borderTopColor: "rgba(201,168,76,0.4)", height: 60 + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 10, shadowColor: "#000", shadowOpacity: 0.5, shadowRadius: 8, shadowOffset: { width: 0, height: -3 }, elevation: 14 },
         tabBarActiveTintColor: C.gold,
         tabBarInactiveTintColor: C.parchmentMuted,
         tabBarLabelStyle: { fontFamily: F.display, fontSize: 9, letterSpacing: 0.5 },
@@ -88,6 +114,7 @@ export default function OyunLayout() {
         <Tabs.Screen name="roman" options={{ href: null }} />
         <Tabs.Screen name="npc/[id]" options={{ href: null }} />
       </Tabs>
+      <NavOrnament bottom={60 + insets.bottom} />
       <AdvanceFab bottom={insets.bottom} />
       <StatDeltaOverlay />
     </View>

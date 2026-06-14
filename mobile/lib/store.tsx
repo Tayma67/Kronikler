@@ -22,6 +22,8 @@ function migrate(s: GameState): GameState {
   if (!p.child_invests) p.child_invests = {};
   if (!p.equipped) p.equipped = { silah: null, zirh: null };
   if (!p.home_name) p.home_name = p.location_name;
+  if (!p.mother) p.mother = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif"][Math.floor(Math.random()*6)];
+  if (!p.father) p.father = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim"][Math.floor(Math.random()*6)];
   if (p.crowned === undefined) p.crowned = false;
   if (!p.will_pref) p.will_pref = "esit";
   if (!p.fates) p.fates = [];
