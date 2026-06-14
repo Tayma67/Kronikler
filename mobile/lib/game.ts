@@ -871,7 +871,8 @@ export function hostFeast(prev: GameState): GameState {
   if (hasPerk(p, "diplomat")) { fame = Math.round(fame * 1.5); rep = Math.round(rep * 1.5); }
   p.money -= cost; p.fame = Math.min(100, p.fame + fame); p.reputation = Math.min(100, p.reputation + rep);
   gainSkill(s, "social", 5); bumpNam(p, "comert", 8);
-  push(s, "sosyal", "Köye bir ziyafet verdin; adın dilden dile dolaştı.", "kişisel", true);
+  const why = recognition(s) > 0.5 ? " Tanınan biri olduğundan ziyafetin çok konuşuldu." : "";
+  push(s, "sosyal", `Köye bir ziyafet verdin; adın dilden dile dolaştı.${why}`, "kişisel", true);
   return s;
 }
 
@@ -895,9 +896,9 @@ export function giveAlms(prev: GameState): GameState {
 export function intimidate(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
-  const ok = hasPerk(p, "kan_donduran") || Math.random() < 0.5 + p.stats.strength * 0.04;
-  if (ok) { let fear = hasPerk(p, "kan_donduran") ? 12 : 8; if (hasPerk(p, "diplomat")) fear = Math.round(fear * 1.5); p.fear = Math.min(100, p.fear + fear); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 7); push(s, "sosyal", "Birine gözdağı verdin; adın çekinilen biri oldu."); }
-  else { p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); push(s, "sosyal", "Gözdağın ters tepti; itibarın zarar gördü."); }
+  const ok = hasPerk(p, "kan_donduran") || Math.random() < 0.5 + p.stats.strength * 0.04 + dread(s) / 300;
+  if (ok) { let fear = hasPerk(p, "kan_donduran") ? 12 : 8; if (hasPerk(p, "diplomat")) fear = Math.round(fear * 1.5); p.fear = Math.min(100, p.fear + fear); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 7); const why = dread(s) > 30 ? " Zaten korkulan adın, bir bakışın yetti." : ""; push(s, "sosyal", `Birine gözdağı verdin; adın çekinilen biri oldu.${why}`); }
+  else { p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); const why = esteem(s) > 25 ? " Sevilen biri olduğundan kimse seni ciddiye almadı." : ""; push(s, "sosyal", `Gözdağın ters tepti; itibarın zarar gördü.${why}`); }
   return s;
 }
 

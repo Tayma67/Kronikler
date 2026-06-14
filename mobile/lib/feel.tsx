@@ -21,9 +21,20 @@ export function StatDeltaOverlay() {
   const { t } = useI18n();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [tierUp, setTierUp] = useState<null | { tier: number; tick: number }>(null);
+  const [crown, setCrown] = useState<null | { tick: number }>(null);
   const prev = useRef<Record<string, number> | null>(null);
   const gen = useRef<number>(-1);
   const fameTier = useRef<number>(-1);
+  const wasCrowned = useRef<boolean | null>(null);
+
+  // Tahta çıkış — en büyük an.
+  useEffect(() => {
+    if (!state) return;
+    const c = !!state.player.crowned;
+    if (wasCrowned.current === null) { wasCrowned.current = c; return; }
+    if (c && !wasCrowned.current) { setCrown({ tick: Date.now() }); hap("success"); setTimeout(() => setCrown(null), 3200); }
+    wasCrowned.current = c;
+  }, [state?.player.crowned]);
 
   // Şöhret kademe atlayınca büyük kutlama anı.
   useEffect(() => {
@@ -89,9 +100,16 @@ export function StatDeltaOverlay() {
     setTimeout(() => setToasts((cur) => cur.filter((tt) => !ids.includes(tt.id))), 1750);
   }, [state?.player]);
 
-  if (toasts.length === 0 && !tierUp) return null;
+  if (toasts.length === 0 && !tierUp && !crown) return null;
   return (
     <View pointerEvents="none" style={{ position: "absolute", top: insets.top + 8, left: 0, right: 0, alignItems: "center", zIndex: 999 }}>
+      {crown && (
+        <Animated.View key={"crown" + crown.tick} entering={ZoomIn.springify().damping(13)} exiting={FadeOut.duration(450)}
+          style={{ alignItems: "center", backgroundColor: "rgba(13,10,6,0.97)", borderWidth: 2, borderColor: C.gold, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 26, marginBottom: 10, shadowColor: C.gold, shadowOpacity: 0.7, shadowRadius: 18, shadowOffset: { width: 0, height: 0 }, elevation: 12 }}>
+          <Text style={{ fontSize: 38 }}>👑</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 18, letterSpacing: 1.5, color: C.gold, marginTop: 6 }}>{t("feel.throne")}</Text>
+        </Animated.View>
+      )}
       {tierUp && (
         <Animated.View key={"tier" + tierUp.tick} entering={ZoomIn.springify().damping(14)} exiting={FadeOut.duration(400)}
           style={{ alignItems: "center", backgroundColor: "rgba(13,10,6,0.96)", borderWidth: 1.5, borderColor: C.gold, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 22, marginBottom: 10, shadowColor: C.gold, shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 10 }}>
