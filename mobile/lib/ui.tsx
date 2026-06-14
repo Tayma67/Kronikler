@@ -7,6 +7,7 @@ import { useI18n } from "./i18n";
 import { hap, Hap } from "./haptics";
 import { DUR, EASE } from "./motion";
 import type { Dilemma, Choice } from "./events";
+import type { Opportunity } from "./game";
 import { ParticleBurst } from "./fx";
 import { GlowPulse } from "./skia";
 import { C, F } from "./theme";
@@ -185,6 +186,47 @@ export function DilemmaModal({ dilemma, onChoose }: { dilemma: Dilemma | null; o
                 <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment, letterSpacing: 0.5, textAlign: "center" }}>{t("dil." + dilemma.id + ".c" + i)}</Text>
               </Pressable>
             ))}
+          </Animated.View>
+        )}
+      </View>
+    </Modal>
+  );
+}
+
+// Anlık fırsat pop-up'ı (eski Fırsatlar sayfasının yerine).
+export function OpportunityModal({ opp, onTake, onPass }: { opp: Opportunity | null; onTake: () => void; onPass: () => void }) {
+  const { t } = useI18n();
+  const rk = opp ? (opp.risk >= 0.55 ? { k: "high", c: C.blood } : opp.risk >= 0.35 ? { k: "mid", c: C.ember } : { k: "low", c: C.sage }) : { k: "low", c: C.sage };
+  return (
+    <Modal visible={!!opp} transparent animationType="fade" onRequestClose={onPass}>
+      <View style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.9)", alignItems: "center", justifyContent: "center", padding: 26 }}>
+        {opp && (
+          <Animated.View entering={FadeInUp.springify().damping(16)} style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 14, padding: 22 }}>
+            <View style={{ alignItems: "center", marginBottom: 4 }}><Text style={{ fontSize: 28 }}>🎲</Text></View>
+            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, textAlign: "center", marginTop: 4 }}>{t("frs.popTitle").toUpperCase()}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 17, color: C.gold, textAlign: "center", letterSpacing: 0.5, marginTop: 4 }}>{opp.title}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: "center", lineHeight: 21, marginTop: 10, marginBottom: 14 }}>{opp.desc}</Text>
+
+            <View style={{ flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+              <View style={{ backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingVertical: 4, paddingHorizontal: 11 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold }}>{t("frs.reward")} {opp.reward} ⚜</Text>
+              </View>
+              <View style={{ backgroundColor: rk.c + "1A", borderWidth: 1, borderColor: rk.c + "66", borderRadius: 20, paddingVertical: 4, paddingHorizontal: 11 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 10, color: rk.c }}>{t("frs.risk." + rk.k)} {t("frs.riskLabel")}</Text>
+              </View>
+              <View style={{ backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingVertical: 4, paddingHorizontal: 11 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.parchmentMuted }}>{t("frs.needStat")}: {t("st." + opp.stat)}</Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <Pressable onPress={onPass} style={{ flex: 1, paddingVertical: 13, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, alignItems: "center" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentMuted, letterSpacing: 1 }}>{t("frs.pass")}</Text>
+              </Pressable>
+              <Pressable onPress={onTake} style={{ flex: 2, paddingVertical: 13, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold, alignItems: "center" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 12, color: "#1a1206", letterSpacing: 1 }}>{t("frs.take")}</Text>
+              </Pressable>
+            </View>
           </Animated.View>
         )}
       </View>

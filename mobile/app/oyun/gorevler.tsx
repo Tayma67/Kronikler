@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { opportunitiesFor, playerWar, pendingPerkCount, nemesisEncounter } from "../../lib/game";
+import { playerWar, pendingPerkCount, nemesisEncounter } from "../../lib/game";
 import { arcById } from "../../lib/arcs";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -29,8 +29,6 @@ export default function Gorevler() {
     if (war) tasks.push({ icon: "crossed-swords", title: t("gv.war.t"), sub: t("gv.war.s"), to: "/oyun/orgutler" });
     if (nemesisEncounter(state)) tasks.push({ icon: "skull", title: t("gv.nemesis.t"), sub: t("gv.nemesis.s"), to: "/oyun/savas", urgent: true });
     if (state.caravan) tasks.push({ icon: "scales", title: t("gv.caravan.t"), sub: t("gv.caravan.s").replace("%s", state.caravan.dest), to: "/oyun/pazar" });
-    const opps = opportunitiesFor(state);
-    if (opps.length) tasks.push({ icon: "compass", title: t("gv.opps.t").replace("%n", String(opps.length)), sub: opps.map((o) => o.title).join(", "), to: "/oyun/firsatlar" });
     if (!p.faction && p.age >= 13) tasks.push({ icon: "crown", title: t("gv.guild.t"), sub: t("gv.guild.s"), to: "/oyun/orgutler" });
     if (!p.married && p.age >= 18) tasks.push({ icon: "ring", title: t("gv.marry.t"), sub: t("gv.marry.s"), to: "/oyun/iliskiler" });
   }

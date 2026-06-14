@@ -6,12 +6,12 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { applyDilemma, careerTitle, achievementsOf, GameEvent } from "../../lib/game";
+import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
-import { MilestoneModal, DilemmaModal, AchievementToast, PressableScale, Portre } from "../../lib/ui";
+import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, PressableScale, Portre } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { playTap } from "../../lib/sound";
@@ -76,6 +76,7 @@ export default function Dashboard() {
   const { t, lang } = useI18n();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
   const [dilemma, setDilemma] = useState<Dilemma | null>(null);
+  const [opp, setOpp] = useState<Opportunity | null>(null);
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
   const [tab, setTab] = useState<"gunluk" | "dunya">("gunluk");
   const [shoot, setShoot] = useState(0);
@@ -102,14 +103,16 @@ export default function Dashboard() {
 
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
   const onChoose = (c: Choice, i: number) => { hap("selection"); const res = dilemma ? t("dil." + dilemma.id + ".r" + i) : c.result; apply((s) => applyDilemma(s, c.delta, res)); setDilemma(null); };
+  const onTakeOpp = () => { if (!opp) return; hap("advance"); apply((s) => resolveOpportunity(s, opp)); setOpp(null); };
 
   useEffect(() => {
     if (!state) return;
     if (state.turn > lastRolledTurn.current) {
       lastRolledTurn.current = state.turn;
-      if (!state.player.dead && !dilemma && Math.random() < 0.28) {
-        const d = pickDilemma(state);
-        if (d) setDilemma(d);
+      if (!state.player.dead && !dilemma && !opp) {
+        const roll = Math.random();
+        if (roll < 0.28) { const d = pickDilemma(state); if (d) setDilemma(d); }
+        else if (roll < 0.50) { const list = opportunitiesFor(state); if (list.length) setOpp(list[Math.floor(Math.random() * list.length)]); }
       }
     } else if (state.turn < lastRolledTurn.current) {
       lastRolledTurn.current = state.turn;
@@ -198,6 +201,8 @@ export default function Dashboard() {
         <MilestoneModal visible={true} type={milestone.type} text={milestone.text} onClose={() => setMilestone(null)} />
       ) : dilemma ? (
         <DilemmaModal dilemma={dilemma} onChoose={onChoose} />
+      ) : opp ? (
+        <OpportunityModal opp={opp} onTake={onTakeOpp} onPass={() => { hap("tap"); setOpp(null); }} />
       ) : ach ? (
         <AchievementToast name={ach.name} icon={ach.icon} onClose={() => setAch(null)} />
       ) : null}
