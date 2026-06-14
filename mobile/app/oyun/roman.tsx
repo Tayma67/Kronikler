@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { WEEKS_PER_YEAR } from "../../lib/calendar";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { professionNameL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { BackLabel } from "../../lib/ui";
@@ -52,7 +52,7 @@ export default function Roman() {
           {c.events.map((e, i) => (
             <View key={i} style={{ flexDirection: "row", gap: 8, marginBottom: e.landmark ? 10 : 6 }}>
               {e.landmark && <Text style={{ color: C.gold }}>⚜</Text>}
-              <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, lineHeight: 23, color: e.landmark ? C.parchment : C.parchmentDim, fontStyle: e.landmark ? "normal" : "italic" }}>{e.text}</Text>
+              <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, lineHeight: 23, color: e.landmark ? C.parchment : C.parchmentDim, fontStyle: e.landmark ? "normal" : "italic" }}>{e.k ? applyParams(t(e.k), e.p) : e.text}</Text>
             </View>
           ))}
         </View>

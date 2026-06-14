@@ -77,7 +77,7 @@ export function factionById(id: string | null): Faction | undefined { return FAC
 // Loncaya katılım eşiği (karizmatik hüneri %20 indirir). UI ile çekirdek tutarlı olsun diye.
 export function joinThreshold(p: Player, f: Faction): number { return p.perks.includes("karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep; }
 
-export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; }
+export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: (string | number)[]; }
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; }
 export interface NpcState { mood: number; memories: string[]; }
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; }
@@ -188,8 +188,9 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
   };
 }
 
-function push(s: GameState, type: string, text: string, scope: "kişisel" | "makro" = "kişisel", landmark = false) {
-  s.history.push({ day: s.turn, type, text, scope, landmark });
+// loc: dilden bağımsız çeviri anahtarı + parametreler (sayı/id). Gösterimde çözülür; yoksa text (TR) yedeği.
+function push(s: GameState, type: string, text: string, scope: "kişisel" | "makro" = "kişisel", landmark = false, loc?: { k: string; p?: (string | number)[] }) {
+  s.history.push({ day: s.turn, type, text, scope, landmark, k: loc?.k, p: loc?.p });
 }
 function clone(s: GameState): GameState { return JSON.parse(JSON.stringify(s)); }
 function die(s: GameState, text: string) { s.player.dead = true; push(s, "ölüm", text, "kişisel", true); }
@@ -207,7 +208,7 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): string {
 function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const p = s.player;
   if (p.age === 13 && p.profession === "işsiz") { p.profession = rnd(PROFS); p.stat_points += 3; push(s, "meslek_edinme", `Reşit oldun. ${cap(p.profession)} olarak hayata atıldın — dünya sana açıldı.`, "kişisel", true); }
-  if (p.age < 13 && chance(0.25)) { p.stat_points += 1; push(s, "cocukluk", "Yeni bir şeyler öğrendin (özellik puanı kazandın)."); }
+  if (p.age < 13 && chance(0.25)) { p.stat_points += 1; push(s, "cocukluk", "Yeni bir şeyler öğrendin (özellik puanı kazandın).", "kişisel", false, { k: "ev.cocukluk" }); }
   if (p.dead) return;
   if (!p.married && p.age >= 18 && p.age < 55 && chance(0.06 + p.fame / 1000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.reputation += 5; push(s, "evlilik", `${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true); }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true); }
@@ -1087,7 +1088,8 @@ function gainSkill(s: GameState, key: SkillKey, xp: number) {
   if (after > before) {
     p.skills[key] = after;
     const m = SKILL_META.find((x) => x.key === key)!;
-    push(s, "beceri", `${m.name} becerin ${after}. seviyeye yükseldi.${SKILL_TIERS.includes(after) ? " Yeni bir hüner seçebilirsin!" : ""}`);
+    const perk = SKILL_TIERS.includes(after);
+    push(s, "beceri", `${m.name} becerin ${after}. seviyeye yükseldi.${perk ? " Yeni bir hüner seçebilirsin!" : ""}`, "kişisel", false, { k: `ev.su.${key}${perk ? ".perk" : ""}`, p: [after] });
   } else {
     p.skills[key] = after;
   }

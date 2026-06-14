@@ -11,7 +11,7 @@ import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, AchievementToast, PressableScale, AnimatedNumber } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { playTap, playAdvance } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
@@ -137,7 +137,7 @@ export default function Dashboard() {
           </Text>
         ) : events.map((e, i) => (
           <Animated.View key={i} entering={FadeInDown.duration(220).delay(Math.min(i, 8) * 35)} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.gold, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
-            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: 20 }}>{e.text}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: 20 }}>{e.k ? applyParams(t(e.k), e.p) : e.text}</Text>
           </Animated.View>
         ))}
       </ScrollView>
