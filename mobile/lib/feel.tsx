@@ -6,6 +6,7 @@ import { useGame } from "./store";
 import { socialTierIndex } from "./game";
 import { useI18n } from "./i18n";
 import { hap } from "./haptics";
+import { playFanfare, playTap } from "./sound";
 import { C, F } from "./theme";
 
 // Hangi alanları izliyoruz + nasıl gösteriliyor. "feel" katmanı: kimlik/itibar değişimleri anında patlar.
@@ -22,19 +23,30 @@ export function StatDeltaOverlay() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [tierUp, setTierUp] = useState<null | { tier: number; tick: number }>(null);
   const [crown, setCrown] = useState<null | { tick: number }>(null);
+  const [settle, setSettle] = useState<null | { name: string; tick: number }>(null);
   const prev = useRef<Record<string, number> | null>(null);
   const gen = useRef<number>(-1);
   const fameTier = useRef<number>(-1);
   const wasCrowned = useRef<boolean | null>(null);
+  const settleCount = useRef<number>(-1);
 
   // Tahta çıkış — en büyük an.
   useEffect(() => {
     if (!state) return;
     const c = !!state.player.crowned;
     if (wasCrowned.current === null) { wasCrowned.current = c; return; }
-    if (c && !wasCrowned.current) { setCrown({ tick: Date.now() }); hap("success"); setTimeout(() => setCrown(null), 3200); }
+    if (c && !wasCrowned.current) { setCrown({ tick: Date.now() }); hap("success"); playFanfare(); setTimeout(() => setCrown(null), 3200); }
     wasCrowned.current = c;
   }, [state?.player.crowned]);
+
+  // Yeni yerleşim kuruldu.
+  useEffect(() => {
+    if (!state) return;
+    const list = state.settlements || [];
+    if (settleCount.current < 0 || gen.current !== state.player.generation) { settleCount.current = list.length; return; }
+    if (list.length > settleCount.current) { setSettle({ name: list[list.length - 1]?.name || "", tick: Date.now() }); hap("success"); playTap(); setTimeout(() => setSettle(null), 2600); }
+    settleCount.current = list.length;
+  }, [state?.settlements?.length]);
 
   // Şöhret kademe atlayınca büyük kutlama anı.
   useEffect(() => {
@@ -43,7 +55,7 @@ export function StatDeltaOverlay() {
     if (fameTier.current < 0 || gen.current !== state.player.generation) { fameTier.current = ti; return; }
     if (ti > fameTier.current) {
       setTierUp({ tier: ti, tick: Date.now() });
-      hap("success");
+      hap("success"); playFanfare();
       setTimeout(() => setTierUp(null), 2600);
     }
     fameTier.current = ti;
@@ -100,9 +112,17 @@ export function StatDeltaOverlay() {
     setTimeout(() => setToasts((cur) => cur.filter((tt) => !ids.includes(tt.id))), 1750);
   }, [state?.player]);
 
-  if (toasts.length === 0 && !tierUp && !crown) return null;
+  if (toasts.length === 0 && !tierUp && !crown && !settle) return null;
   return (
     <View pointerEvents="none" style={{ position: "absolute", top: insets.top + 8, left: 0, right: 0, alignItems: "center", zIndex: 999 }}>
+      {settle && (
+        <Animated.View key={"settle" + settle.tick} entering={ZoomIn.springify().damping(15)} exiting={FadeOut.duration(380)}
+          style={{ alignItems: "center", backgroundColor: "rgba(13,10,6,0.96)", borderWidth: 1.5, borderColor: C.sage, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 22, marginBottom: 10, shadowColor: C.sage, shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 10 }}>
+          <Text style={{ fontSize: 24 }}>🏘</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2.5, color: C.goldDim, marginTop: 4 }}>{t("feel.settle").toUpperCase()}</Text>
+          {!!settle.name && <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 1, color: C.sage, marginTop: 2 }}>{settle.name}</Text>}
+        </Animated.View>
+      )}
       {crown && (
         <Animated.View key={"crown" + crown.tick} entering={ZoomIn.springify().damping(13)} exiting={FadeOut.duration(450)}
           style={{ alignItems: "center", backgroundColor: "rgba(13,10,6,0.97)", borderWidth: 2, borderColor: C.gold, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 26, marginBottom: 10, shadowColor: C.gold, shadowOpacity: 0.7, shadowRadius: 18, shadowOffset: { width: 0, height: 0 }, elevation: 12 }}>

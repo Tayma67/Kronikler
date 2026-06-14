@@ -29,3 +29,5 @@ function fire(p: AudioPlayer | null) {
 }
 export function playTap() { if (!enabled) return; ensure(); fire(tap); }
 export function playAdvance() { if (!enabled) return; ensure(); fire(advance); }
+// Büyük anlar (taht, şöhret kademesi) için çift vuruşlu kutlama sesi.
+export function playFanfare() { if (!enabled) return; ensure(); fire(advance); setTimeout(() => fire(advance), 130); }

@@ -1,4 +1,6 @@
+import { useState, useEffect, useRef } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -7,6 +9,7 @@ import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
+import { playTap } from "../../lib/sound";
 import { BackLabel, PageHeader } from "../../lib/ui";
 
 function Section({ title, sub }: { title: string; sub: string }) {
@@ -38,6 +41,21 @@ export default function Sosyal() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
   const { t } = useI18n();
+  const [res, setRes] = useState<null | { text: string; tick: number }>(null);
+  const seen = useRef<number>(state?.history.length ?? 0);
+
+  // Sosyal eylem sonucunu anlık şerit olarak yansıt.
+  useEffect(() => {
+    if (!state) return;
+    const h = state.history;
+    if (h.length > seen.current) {
+      const fresh = h.slice(seen.current);
+      const ev = [...fresh].reverse().find((e) => e.type === "sosyal");
+      if (ev) setRes({ text: ev.text, tick: Date.now() });
+    }
+    seen.current = h.length;
+  }, [state?.history.length]);
+
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const f = factionById(p.faction);
@@ -62,6 +80,12 @@ export default function Sosyal() {
         <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 4 }}>
           {t("soc.intro")} {f ? `${f.name} ${t("soc.memberSuffix")}` : t("soc.noGuild")}
         </Text>
+
+        {res && (
+          <Animated.View key={res.tick} entering={FadeInDown.duration(240)} style={{ backgroundColor: "rgba(201,168,76,0.10)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderLeftWidth: 3, borderLeftColor: C.gold, borderRadius: 10, padding: 12, marginTop: 8 }}>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment, lineHeight: 19 }}>{res.text}</Text>
+          </Animated.View>
+        )}
 
         <Section title={t("soc.mevki.h")} sub={t("soc.mevki.sub")} />
         {SOCIAL_AXES.map((a) => {
@@ -88,7 +112,7 @@ export default function Sosyal() {
 
         <Section title={t("soc.act.h")} sub="" />
         {actions.map((act) => (
-          <Pressable key={act.key} disabled={!act.enabled} onPress={() => { hap("tap"); apply(act.fn); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: act.enabled ? "rgba(201,168,76,0.08)" : C.card, borderWidth: 1, borderColor: act.enabled ? "rgba(201,168,76,0.4)" : C.border, borderRadius: 9, padding: 13, marginBottom: 8 }}>
+          <Pressable key={act.key} disabled={!act.enabled} onPress={() => { hap("tap"); playTap(); apply(act.fn); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: act.enabled ? "rgba(201,168,76,0.08)" : C.card, borderWidth: 1, borderColor: act.enabled ? "rgba(201,168,76,0.4)" : C.border, borderRadius: 9, padding: 13, marginBottom: 8 }}>
             <View>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: act.enabled ? C.parchment : C.parchmentMuted, letterSpacing: 0.5 }}>{t("soc." + act.key + ".l")}</Text>
               <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim, marginTop: 2 }}>{t("soc." + act.key + ".n")}</Text>
