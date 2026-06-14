@@ -113,7 +113,7 @@ export default function Dashboard() {
   }, [state]);
 
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
-  const onChoose = (c: Choice, i: number) => { hap("selection"); const res = dilemma ? t("dil." + dilemma.id + ".r" + i) : c.result; apply((s) => applyDilemma(s, c.delta, res)); setDilemma(null); };
+  const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; if (dilemma) { const k = "dil." + dilemma.id + ".r" + i; const v = t(k); res = v === k ? c.result : v; } apply((s) => applyDilemma(s, c.delta, res)); setDilemma(null); };
   const onTakeOpp = () => { if (!opp) return; hap("advance"); apply((s) => resolveOpportunity(s, opp)); setOpp(null); };
 
   useEffect(() => {

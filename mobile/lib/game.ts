@@ -21,6 +21,7 @@ export interface Player {
   nam: Nam; child_invests: Record<string, string[]>;
   equipped: { silah: string | null; zirh: string | null };
   crowned?: boolean; will_pref?: string;
+  fates?: string[]; // tetiklenen kader anları (yaş dönümleri)
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -188,11 +189,24 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
       skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [], career_xp: 0,
       nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
-      crowned: false, will_pref: "esit",
+      crowned: false, will_pref: "esit", fates: [],
     },
     settlements: [],
     history: [],
   };
+}
+
+// Doğuştan mizaç — açılışta seçilir; kimlik eksenini ta başından tohumlar.
+export const TEMPERAMENTS = ["yigit", "kurnaz", "merhametli", "hirsli"] as const;
+export function applyTemperament(prev: GameState, id: string): GameState {
+  const s = clone(prev); const p = s.player;
+  if (id === "yigit") { p.stats.strength += 1; p.skill_xp.combat += 60; bumpNam(p, "mert", 10); }
+  else if (id === "kurnaz") { p.stats.charisma += 1; p.skill_xp.social += 60; bumpNam(p, "capkin", 6); }
+  else if (id === "merhametli") { p.honor = clampStat(p.honor + 8); bumpNam(p, "comert", 12); }
+  else if (id === "hirsli") { p.stats.intelligence += 1; p.reputation = Math.min(100, p.reputation + 5); }
+  p.skills.combat = skillLevel(p.skill_xp.combat);
+  p.skills.social = skillLevel(p.skill_xp.social);
+  return s;
 }
 
 // loc: dilden bağımsız çeviri anahtarı + parametreler (sayı/id). Gösterimde çözülür; yoksa text (TR) yedeği.
@@ -215,6 +229,22 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): string {
 function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const p = s.player;
   if (p.age === 13 && p.profession === "işsiz") { p.profession = rnd(PROFS); p.stat_points += 3; push(s, "meslek_edinme", `Reşit oldun. ${cap(p.profession)} olarak hayata atıldın — dünya sana açıldı.`, "kişisel", true); }
+  // ── Kader anları: hayatın belirli dönümlerinde kimliğe ayna tutan sahneler ──
+  if (!p.fates) p.fates = [];
+  const fate = (id: string) => { if (!p.fates!.includes(id)) { p.fates!.push(id); return true; } return false; };
+  const whoAmI = (): string => {
+    const nm = p.nam || ({} as Nam);
+    if (p.crowned) return "bir hükümdar";
+    if (p.fear >= 50 || (nm.zalim || 0) >= 50) return "korkulan biri";
+    if (p.honor >= 50 || (nm.mert || 0) >= 50) return "şerefli biri";
+    if ((nm.comert || 0) >= 50) return "eli açık biri";
+    if ((nm.dindar || 0) >= 50) return "dindar biri";
+    if (p.fame >= 50) return "tanınan biri";
+    if (p.reputation >= 40) return "saygın biri";
+    return "sıradan biri";
+  };
+  if (p.age >= 40 && fate("40")) push(s, "kader", `Kırkına vardın. Aynaya baktığında ${whoAmI()} görüyorsun. Ömrün yarılandı; bundan sonrası bir miras meselesi.`, "kişisel", true);
+  if (p.age >= 60 && fate("60")) push(s, "kader", `Altmışını devirdin. Saçlar ağardı, geçmişin gölgesi uzadı. Ömrün akşamında ${whoAmI()} olarak anılıyorsun — geriye ne bırakacaksın?`, "kişisel", true);
   if (p.age < 13 && chance(0.25)) { p.stat_points += 1; push(s, "cocukluk", "Yeni bir şeyler öğrendin (özellik puanı kazandın).", "kişisel", false, { k: "ev.cocukluk" }); }
   if (p.dead) return;
   if (!p.married && p.age >= 18 && p.age < 55 && chance(0.06 + p.fame / 1000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.reputation += 5; push(s, "evlilik", `${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true); }
@@ -836,7 +866,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       faction: null, faction_standing: {},
       skills, skill_xp: { combat: skills.combat * 100, trade: 0, crafting: skills.crafting * 100, social: skills.social * 100 },
       perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
-      crowned: p.crowned || false, will_pref: "esit", // taht irsîdir
+      crowned: p.crowned || false, will_pref: "esit", fates: [], // taht irsîdir; kader anları yeni baştan
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, ${will.label.toLowerCase()} vasiyetiyle mirası devraldı (${inheritMoney} akçe, ${props.length} mülk).${noteStr}`, scope: "kişisel", landmark: true }],
   };
@@ -1115,6 +1145,7 @@ export interface Delta {
   money?: number; health?: number; hunger?: number;
   reputation?: number; honor?: number; fear?: number; fame?: number;
   stat_points?: number; addItem?: string;
+  nam?: { [k in keyof Nam]?: number };
 }
 const clampStat = (x: number) => Math.max(0, Math.min(100, x));
 export function applyDilemma(prev: GameState, delta: Delta, resultText: string): GameState {
@@ -1128,6 +1159,7 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string):
   if (delta.fame) p.fame = clampStat(p.fame + delta.fame);
   if (delta.stat_points) p.stat_points += delta.stat_points;
   if (delta.addItem) p.inventory[delta.addItem] = (p.inventory[delta.addItem] || 0) + 1;
+  if (delta.nam) for (const k of Object.keys(delta.nam) as (keyof Nam)[]) bumpNam(p, k, delta.nam[k]!);
   push(s, "olay", resultText, "kişisel");
   if (p.health <= 0) die(s, `${p.name} bu olaydan sağ çıkamadı.`);
   return s;

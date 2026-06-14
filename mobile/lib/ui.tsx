@@ -171,6 +171,8 @@ export function AchievementToast({ name, icon, onClose }: { name: string | null;
 // İkilem perdesi — anlatısal seçim. onChoose(choice) çağrılır.
 export function DilemmaModal({ dilemma, onChoose }: { dilemma: Dilemma | null; onChoose: (c: Choice, i: number) => void }) {
   const { t } = useI18n();
+  // i18n anahtarı varsa onu, yoksa ikilemin kendi (TR) metnini kullan.
+  const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
   return (
     <Modal visible={!!dilemma} transparent animationType="fade" onRequestClose={() => {}}>
       <View style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.9)", alignItems: "center", justifyContent: "center", padding: 26 }}>
@@ -179,11 +181,11 @@ export function DilemmaModal({ dilemma, onChoose }: { dilemma: Dilemma | null; o
             <View style={{ alignItems: "center", marginBottom: 6 }}>
               <GameIcon name={dilemma.icon} size={30} color={C.gold} />
             </View>
-            <Text style={{ fontFamily: F.display, fontSize: 16, color: C.gold, textAlign: "center", letterSpacing: 0.5, marginTop: 6 }}>{t("dil." + dilemma.id + ".t")}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: "center", lineHeight: 21, marginTop: 10, marginBottom: 16 }}>{t("dil." + dilemma.id + ".x")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 16, color: C.gold, textAlign: "center", letterSpacing: 0.5, marginTop: 6 }}>{gt("dil." + dilemma.id + ".t", dilemma.title)}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: "center", lineHeight: 21, marginTop: 10, marginBottom: 16 }}>{gt("dil." + dilemma.id + ".x", dilemma.text)}</Text>
             {dilemma.choices.map((c, i) => (
               <Pressable key={i} onPress={() => onChoose(c, i)} style={{ paddingVertical: 12, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", marginBottom: 9 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment, letterSpacing: 0.5, textAlign: "center" }}>{t("dil." + dilemma.id + ".c" + i)}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment, letterSpacing: 0.5, textAlign: "center" }}>{gt("dil." + dilemma.id + ".c" + i, c.label)}</Text>
               </Pressable>
             ))}
           </Animated.View>

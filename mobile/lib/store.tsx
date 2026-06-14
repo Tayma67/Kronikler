@@ -24,6 +24,7 @@ function migrate(s: GameState): GameState {
   if (!p.home_name) p.home_name = p.location_name;
   if (p.crowned === undefined) p.crowned = false;
   if (!p.will_pref) p.will_pref = "esit";
+  if (!p.fates) p.fates = [];
   if (!(s as any).settlements) (s as any).settlements = [];
   if (!s.relationships) s.relationships = {};
   if (!s.dynasty) s.dynasty = [];
