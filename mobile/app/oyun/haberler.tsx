@@ -14,7 +14,7 @@ export default function Haberler() {
   const { lang, t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const cal = currentCalendar(state.turn);
-  const news = worldNews(state.turn, state.seed);
+  const news = worldNews(state.turn, state.seed, lang);
   const gossip = rumors(state.turn, state.seed, lang);
 
   return (
