@@ -7,6 +7,7 @@ import { INVESTMENTS, WILL_STYLES, investInChild, continueAsHeir } from "../../l
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
+import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader } from "../../lib/ui";
 
 export default function Nesil() {
@@ -54,7 +55,7 @@ export default function Nesil() {
                 <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>{t("will." + w.id + ".d")}</Text>
               </Pressable>
             ))}
-            <Pressable onPress={() => { apply((s) => continueAsHeir(s, will, chosenHeir)); router.replace("/oyun"); }} style={{ marginTop: 12, paddingVertical: 15, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
+            <Pressable onPress={() => { hap("success"); apply((s) => continueAsHeir(s, will, chosenHeir)); router.replace("/oyun"); }} style={{ marginTop: 12, paddingVertical: 15, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206", letterSpacing: 1.5 }}>{t("dash.continueHeir")}</Text>
             </Pressable>
           </>
@@ -72,7 +73,7 @@ export default function Nesil() {
                     const done = invs.includes(inv.id);
                     const afford = p.money >= inv.cost;
                     return (
-                      <Pressable key={inv.id} disabled={done || !afford} onPress={() => apply((s) => investInChild(s, c, inv.id))} style={{ flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border, opacity: done ? 0.6 : afford ? 1 : 0.5 }}>
+                      <Pressable key={inv.id} disabled={done || !afford} onPress={() => { hap("tap"); apply((s) => investInChild(s, c, inv.id)); }} style={{ flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border, opacity: done ? 0.6 : afford ? 1 : 0.5 }}>
                         <GameIcon name={inv.icon} size={15} color={done ? C.gold : C.goldDim} />
                         <View style={{ flex: 1 }}>
                           <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment }}>{t("inv." + inv.id + ".l")}</Text>

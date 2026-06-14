@@ -9,6 +9,7 @@ import { ITEMS } from "../../lib/world";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
+import { hap } from "../../lib/haptics";
 import { placeName, professionNameL, careerTitleL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 
@@ -90,7 +91,7 @@ export default function Karakter() {
   const p = state.player;
   const inv = Object.keys(p.inventory).filter((k) => p.inventory[k] > 0);
   const canAdd = p.stat_points > 0;
-  const add = (k: keyof Stats) => apply((s) => allocateStat(s, k));
+  const add = (k: keyof Stats) => { hap("tap"); apply((s) => allocateStat(s, k)); };
   const curPr = professionById(p.profession);
   const hasCareer = p.profession !== "işsiz" && !!curPr;
   const careerLevel = Math.floor(p.career_xp / 30) + 1;
@@ -283,12 +284,12 @@ export default function Karakter() {
                     </View>
                     <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{t("it." + k)} ×{p.inventory[k]}</Text>
                     {equipable && (
-                      <Pressable onPress={() => apply((s) => equipItem(s, k))} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: GBG }}>
+                      <Pressable onPress={() => { hap("tap"); apply((s) => equipItem(s, k)); }} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: GBG }}>
                         <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{t("misc.equip")}</Text>
                       </Pressable>
                     )}
                     {usable && (
-                      <Pressable onPress={() => apply((s) => useItem(s, k))} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: GBG }}>
+                      <Pressable onPress={() => { hap("tap"); apply((s) => useItem(s, k)); }} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: GBG }}>
                         <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{t("misc.use")}</Text>
                       </Pressable>
                     )}

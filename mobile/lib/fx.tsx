@@ -2,7 +2,32 @@
 import { useEffect, useMemo } from "react";
 import { View, Text } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withDelay, withTiming, withSequence, Easing } from "react-native-reanimated";
-import { F } from "./theme";
+import { C, F } from "./theme";
+
+// Nabız atan sarmalayıcı (opaklık).
+export function Pulse({ children, min = 0.35, max = 1, dur = 850 }: { children: React.ReactNode; min?: number; max?: number; dur?: number }) {
+  const o = useSharedValue(min);
+  useEffect(() => { o.value = withRepeat(withSequence(withTiming(max, { duration: dur }), withTiming(min, { duration: dur })), -1, false); }, []);
+  const st = useAnimatedStyle(() => ({ opacity: o.value }));
+  return <Animated.View style={st}>{children}</Animated.View>;
+}
+
+// İskelet blok (yükleme yer tutucusu) — hafif nabızlı.
+export function SkeletonBlock({ w = "100%", h = 14, r = 7, mb = 8 }: { w?: number | string; h?: number; r?: number; mb?: number }) {
+  return <Pulse min={0.25} max={0.5} dur={750}><View style={{ width: w as any, height: h, borderRadius: r, backgroundColor: "rgba(201,168,76,0.18)", marginBottom: mb }} /></Pulse>;
+}
+
+// Temalı yükleme ekranı — nabız atan arma.
+export function LoadingScreen() {
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg, alignItems: "center", justifyContent: "center" }}>
+      <Pulse min={0.4} max={1} dur={900}>
+        <Text style={{ fontSize: 30, color: C.gold, textAlign: "center" }}>⚜</Text>
+      </Pulse>
+      <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 5, color: C.goldDim, marginTop: 14 }}>KRONİKLER</Text>
+    </View>
+  );
+}
 
 // Havaya uçup sönen hasar/değer sayısı (savaş, kazanç vb.).
 export function FloatingNumber({ value, color, left, top }: { value: string; color: string; left: number; top: number }) {

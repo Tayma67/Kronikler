@@ -6,6 +6,7 @@ import { SOCIAL_AXES, socialTierIndex, hostFeast, giveAlms, intimidate, factionB
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
+import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader } from "../../lib/ui";
 
 function Section({ title, sub }: { title: string; sub: string }) {
@@ -87,7 +88,7 @@ export default function Sosyal() {
 
         <Section title={t("soc.act.h")} sub="" />
         {actions.map((act) => (
-          <Pressable key={act.key} disabled={!act.enabled} onPress={() => apply(act.fn)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: act.enabled ? "rgba(201,168,76,0.08)" : C.card, borderWidth: 1, borderColor: act.enabled ? "rgba(201,168,76,0.4)" : C.border, borderRadius: 9, padding: 13, marginBottom: 8 }}>
+          <Pressable key={act.key} disabled={!act.enabled} onPress={() => { hap("tap"); apply(act.fn); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: act.enabled ? "rgba(201,168,76,0.08)" : C.card, borderWidth: 1, borderColor: act.enabled ? "rgba(201,168,76,0.4)" : C.border, borderRadius: 9, padding: 13, marginBottom: 8 }}>
             <View>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: act.enabled ? C.parchment : C.parchmentMuted, letterSpacing: 0.5 }}>{t("soc." + act.key + ".l")}</Text>
               <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim, marginTop: 2 }}>{t("soc." + act.key + ".n")}</Text>

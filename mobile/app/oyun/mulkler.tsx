@@ -5,6 +5,7 @@ import { useGame } from "../../lib/store";
 import { buyProperty, PROPERTY_TYPES } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
+import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, Panel, Pill } from "../../lib/ui";
 
 export default function Mulkler() {
@@ -36,7 +37,7 @@ export default function Mulkler() {
                 </View>
                 <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{ty.income} {t("mulk.perMonth")}</Text>
               </View>
-              <Pressable onPress={() => apply((s) => buyProperty(s, id))} disabled={p.money < ty.cost} style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < ty.cost ? C.bg : "rgba(201,168,76,0.12)" }}>
+              <Pressable onPress={() => { hap("tap"); apply((s) => buyProperty(s, id)); }} disabled={p.money < ty.cost} style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < ty.cost ? C.bg : "rgba(201,168,76,0.12)" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < ty.cost ? C.parchmentMuted : C.gold }}>{t("misc.buy")} {ty.cost}⚜</Text>
               </Pressable>
             </View>

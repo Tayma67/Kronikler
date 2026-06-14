@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, Pressable, ImageBackground, StyleSheet, Dimensions } from "react-native";
-import { Ambiance } from "../../lib/fx";
+import { Ambiance, LoadingScreen } from "../../lib/fx";
 import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, Easing } from "react-native-reanimated";
 import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -129,7 +129,7 @@ export default function Dashboard() {
     seenLen.current = h.length;
   }, [state?.history.length]);
 
-  if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
+  if (!state) return <LoadingScreen />;
   const p = state.player;
   const cal = currentCalendar(state.turn);
   const turn = state.turn;

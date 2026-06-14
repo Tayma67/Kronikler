@@ -6,6 +6,7 @@ import { SKILL_META, PERKS, hasPerk, pendingPerkTier, choosePerk, SkillKey } fro
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
+import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, ProgressBar } from "../../lib/ui";
 
 function Tree({ tree, icon }: { tree: SkillKey; icon: string }) {
@@ -42,7 +43,7 @@ function Tree({ tree, icon }: { tree: SkillKey; icon: string }) {
             {tierPerks.map((pk) => {
               const isChosen = chosen?.id === pk.id;
               return (
-                <Pressable key={pk.id} disabled={!choosable} onPress={() => apply((st) => choosePerk(st, pk.id))} style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 10, borderRadius: 8, borderWidth: 1, marginBottom: 6, borderColor: isChosen ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: isChosen ? "rgba(201,168,76,0.12)" : C.bg }}>
+                <Pressable key={pk.id} disabled={!choosable} onPress={() => { hap("success"); apply((st) => choosePerk(st, pk.id)); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 10, borderRadius: 8, borderWidth: 1, marginBottom: 6, borderColor: isChosen ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: isChosen ? "rgba(201,168,76,0.12)" : C.bg }}>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontFamily: F.display, fontSize: 12, color: isChosen ? C.gold : C.parchment }}>{t("perk." + pk.id + ".l")}</Text>
                     <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 1 }}>{t("perk." + pk.id + ".d")}</Text>

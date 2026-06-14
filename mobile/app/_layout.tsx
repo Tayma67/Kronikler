@@ -8,6 +8,7 @@ import { View, ActivityIndicator } from "react-native";
 import { useEffect } from "react";
 import { GameProvider } from "../lib/store";
 import { LanguageProvider } from "../lib/i18n";
+import { LoadingScreen } from "../lib/fx";
 import { loadSoundSetting } from "../lib/sound";
 import { loadHapticsSetting } from "../lib/haptics";
 import { C } from "../lib/theme";
@@ -18,9 +19,7 @@ export default function RootLayout() {
   });
   useEffect(() => { loadSoundSetting(); loadHapticsSetting(); }, []);
   if (!loaded) {
-    return <View style={{ flex: 1, backgroundColor: C.bg, alignItems: "center", justifyContent: "center" }}>
-      <ActivityIndicator color={C.gold} />
-    </View>;
+    return <LoadingScreen />;
   }
   return (
     <SafeAreaProvider>

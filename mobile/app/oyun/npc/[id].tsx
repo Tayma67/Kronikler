@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
 import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt } from "../../../lib/game";
 import { useI18n } from "../../../lib/i18n";
+import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
 import { professionNameL, traitL, quirkL, goalL } from "../../../lib/locale-data";
 import { ITEMS } from "../../../lib/world";
@@ -111,7 +112,7 @@ export default function NpcDetail() {
           <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 2.5, color: C.parchmentMuted }}>{t("npc.interaction")}</Text>
         </View>
         {INTENTS.map((it) => (
-          <Pressable key={it.id} onPress={() => speak(it.id)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+          <Pressable key={it.id} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
             <GameIcon name={it.icon} size={17} color={C.gold} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("dlg.intent." + it.id)}</Text>
             <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
@@ -125,7 +126,7 @@ export default function NpcDetail() {
         </Pressable>
         {/* Evlenme teklifi */}
         {couldMarry && (
-          <Pressable onPress={() => courtable && apply((s) => proposeMarriage(s, npc))} disabled={!courtable} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: courtable ? "rgba(201,168,76,0.08)" : "transparent" }}>
+          <Pressable onPress={() => { if (courtable) { hap("success"); apply((s) => proposeMarriage(s, npc)); } }} disabled={!courtable} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: courtable ? "rgba(201,168,76,0.08)" : "transparent" }}>
             <GameIcon name="evlilik" size={17} color={courtable ? C.gold : C.parchmentMuted} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.serif, fontSize: 14, color: courtable ? C.gold : C.parchmentMuted }}>{t("npc.propose")}</Text>
@@ -141,7 +142,7 @@ export default function NpcDetail() {
           {giftables.length === 0 ? (
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, textAlign: "center", paddingVertical: 8 }}>{t("npc.noGift")}</Text>
           ) : giftables.map((k) => (
-            <Pressable key={k} onPress={() => { apply((s) => giftTo(s, npc, k)); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7 }}>
+            <Pressable key={k} onPress={() => { hap("tap"); apply((s) => giftTo(s, npc, k)); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7 }}>
               <View style={{ width: 32, height: 32, borderRadius: 7, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
                 <Text style={{ fontSize: 16 }}>{ITEMS[k]?.icon || "📦"}</Text>
               </View>

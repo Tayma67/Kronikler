@@ -8,6 +8,7 @@ import { LANGS } from "../lib/locale-data";
 import { isSoundEnabled, setSoundEnabled, playTap } from "../lib/sound";
 import { isHapticsEnabled, setHapticsEnabled, hap } from "../lib/haptics";
 import { GameIcon } from "../lib/icons";
+import { LoadingScreen } from "../lib/fx";
 import { C, F } from "../lib/theme";
 
 export default function MainMenu() {
@@ -25,9 +26,7 @@ export default function MainMenu() {
   const activeLang = LANGS.find((l) => l.code === lang) || LANGS[0];
 
   if (loading) {
-    return <View style={{ flex: 1, backgroundColor: C.bg, alignItems: "center", justifyContent: "center" }}>
-      <ActivityIndicator color={C.gold} />
-    </View>;
+    return <LoadingScreen />;
   }
 
   const hasSave = !!state;
