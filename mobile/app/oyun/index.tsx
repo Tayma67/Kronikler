@@ -48,7 +48,7 @@ export default function Dashboard() {
     const done = achievementsOf(state).filter((x) => x.done);
     if (seenAch.current === null) { seenAch.current = new Set(done.map((x) => x.a.id)); return; }
     for (const x of done) {
-      if (!seenAch.current.has(x.a.id)) { seenAch.current.add(x.a.id); setAch({ name: x.a.name, icon: x.a.icon }); hap("success"); }
+      if (!seenAch.current.has(x.a.id)) { seenAch.current.add(x.a.id); setAch({ name: t("ach." + x.a.id + ".l"), icon: x.a.icon }); hap("success"); }
     }
   }, [state]);
 

@@ -24,7 +24,7 @@ export default function Basarimlar() {
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{done}/{list.length}</Text>
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 8 }}>
-        Bir ömrün ve soyun nişaneleri.
+        {t("ach.subtitle")}
       </Text>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
@@ -34,8 +34,8 @@ export default function Basarimlar() {
               <GameIcon name={a.icon} size={18} color={done ? C.gold : C.parchmentMuted} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: done ? C.parchment : C.parchmentMuted, letterSpacing: 0.5 }}>{a.name}</Text>
-              <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>{a.desc}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: done ? C.parchment : C.parchmentMuted, letterSpacing: 0.5 }}>{t("ach." + a.id + ".l")}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>{t("ach." + a.id + ".d")}</Text>
             </View>
             {done && <GameIcon name="medal" size={16} color={C.gold} />}
           </View>
