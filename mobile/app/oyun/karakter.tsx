@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
@@ -201,6 +201,21 @@ export default function Karakter() {
                 <SocialCard icon="⛑️" name={t("soc.fear.l").toUpperCase()} value={Math.round(p.fear)} color={C.blood} />
                 <SocialCard icon="👑" name={t("soc.fame.l").toUpperCase()} value={Math.round(p.fame)} color={C.ink} />
               </View>
+              {/* Bulunduğun yerde halkın algısı (tanınma ile kapılı) */}
+              {(() => {
+                const pp = publicPerception(state);
+                return (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 11, paddingTop: 11, borderTopWidth: 1, borderTopColor: C.border }}>
+                    <Text style={{ fontSize: 14 }}>{atHome(p) ? "🏠" : "🧭"}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment }}>{t("percept." + pp.key)}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: C.parchmentMuted, marginTop: 2 }}>
+                        {(atHome(p) ? t("soc.home") : t("soc.away"))} · {t("soc.recog")}: %{Math.round(pp.recog * 100)}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })()}
             </Card>
 
             <Pressable onPress={() => router.push("/oyun/beceriler")}>

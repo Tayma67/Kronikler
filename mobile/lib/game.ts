@@ -12,7 +12,7 @@ export interface Player {
   name: string; surname: string; gender: "erkek" | "kadın"; base_age: number; age: number;
   money: number; profession: string; health: number; hunger: number;
   reputation: number; honor: number; fear: number; fame: number;
-  stats: Stats; stat_points: number; dead: boolean; location_name: string;
+  stats: Stats; stat_points: number; dead: boolean; location_name: string; home_name: string;
   married: boolean; spouse_name: string | null; children: string[];
   inventory: Record<string, number>; properties: string[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
@@ -168,6 +168,7 @@ const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
 export function npcsOf(s: GameState, lang: Lang = "tr"): NPC[] { return generateNPCs(s.seed, 30, lang); }
 
 export function newGame(first: string, surname: string, gender: "erkek" | "kadın"): GameState {
+  const birthplace = rnd(LOCATIONS);
   return {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true },
     relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null, econ: 1,
@@ -176,7 +177,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       money: 12, profession: "işsiz", health: 100, hunger: 100,
       reputation: 0, honor: 0, fear: 0, fame: 0,
       stats: { strength: 1, intelligence: 1, charisma: 1, stamina: 2 },
-      stat_points: 0, dead: false, location_name: rnd(LOCATIONS),
+      stat_points: 0, dead: false, location_name: birthplace, home_name: birthplace,
       married: false, spouse_name: null, children: [], inventory: { ekmek: 2 },
       properties: [], generation: 1,
       faction: null, faction_standing: {},
@@ -446,7 +447,7 @@ export function bargainBuy(prev: GameState, id: string): GameState {
   let disc = p.faction === "tuccar" ? 0.85 : 1;
   if (hasPerk(p, "pazarlikci")) disc -= 0.10;
   const base = Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc));
-  const ok = Math.random() < 0.4 + effStat(p, "charisma") * 0.04 + p.skills.trade * 0.03;
+  const ok = Math.random() < 0.4 + effStat(p, "charisma") * 0.04 + p.skills.trade * 0.03 + bargainBonus(s);
   const price = ok ? Math.max(1, Math.round(base * 0.8)) : base;
   if (p.money < price) return s;
   p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
@@ -466,7 +467,7 @@ export function bargainBase(s: GameState, id: string): number {
 // Pazarlık başarı olasılığı (karizma + ticaret becerisi).
 export function bargainChance(s: GameState): number {
   const p = s.player;
-  return Math.max(0.15, Math.min(0.9, 0.42 + effStat(p, "charisma") * 0.035 + p.skills.trade * 0.025));
+  return Math.max(0.15, Math.min(0.95, 0.42 + effStat(p, "charisma") * 0.035 + p.skills.trade * 0.025 + bargainBonus(s)));
 }
 // Müzakere sonunda anlaşılan fiyattan alım.
 export function negotiatedBuy(prev: GameState, id: string, price: number): GameState {
@@ -496,7 +497,12 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   const rel = s.relationships[npc.id] || 0;
   const r: ConvResult = converse(npc, ns.mood, rel, p.stats.charisma, intent, lang as any);
   let relDelta = r.relDelta;
-  if (relDelta > 0 && hasPerk(p, "dil_dokme")) relDelta = Math.round(relDelta * 1.5);
+  if (relDelta > 0) {
+    relDelta *= talkWarmthMod(s);                                  // sıcak/korkulan tanınmanın etkisi
+    if (intent === "iltifat") relDelta *= 1 + allureBonus(s);      // çapkınlık iltifatı güçlendirir
+    if (hasPerk(p, "dil_dokme")) relDelta *= 1.5;
+    relDelta = Math.round(relDelta);
+  }
   s.relationships[npc.id] = Math.max(-100, Math.min(100, rel + relDelta));
   ns.mood = Math.max(-100, Math.min(100, ns.mood + r.moodDelta));
   ns.memories.push(r.memory);
@@ -529,7 +535,7 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; const rel = s.relationships[npc.id] || 0;
   if (!canCourt(p, npc, rel)) return s;
   const karizmaBonus = hasPerk(p, "karizmatik") ? 0.2 : 0;
-  const ok = Math.random() < Math.min(0.97, 0.25 + (rel - 50) * 0.012 + p.stats.charisma * 0.03 + karizmaBonus);
+  const ok = Math.random() < Math.min(0.97, 0.25 + (rel - 50) * 0.012 + p.stats.charisma * 0.03 + karizmaBonus + courtBonus(s));
   if (ok) {
     p.married = true; p.spouse_name = npc.name; p.reputation = Math.min(100, p.reputation + 5);
     bumpNam(p, "capkin", 5);
@@ -644,7 +650,7 @@ export function doCrime(prev: GameState, kind: "yankesicilik" | "soygun"): GameS
   if (p.dead || p.age < 13) return s;
   const base = kind === "soygun" ? 0.45 : 0.7;            // başarı şansı
   const golgeBonus = p.faction === "golge" ? 0.12 : 0;     // Gölge Kardeşliği avantajı
-  const success = Math.random() < base + p.stats.charisma * 0.01 + golgeBonus;
+  const success = Math.random() < base + p.stats.charisma * 0.01 + golgeBonus + crimeSuccessMod(s);
   gainSkill(s, "social", 4);
   if (success) {
     const loot = kind === "soygun" ? 25 + Math.floor(Math.random() * 40) : 6 + Math.floor(Math.random() * 16);
@@ -654,7 +660,7 @@ export function doCrime(prev: GameState, kind: "yankesicilik" | "soygun"): GameS
   } else {
     const fine = Math.min(p.money, kind === "soygun" ? 30 : 10);
     const hurt = (kind === "soygun" ? 10 : 3) * (p.faction === "asker" ? 0.5 : 1);
-    p.money -= fine; p.reputation = Math.max(-100, p.reputation - 8); p.health = Math.max(0, p.health - hurt);
+    p.money -= fine; p.reputation = Math.max(-100, p.reputation - 8 - crimeCaughtPenalty(s)); p.health = Math.max(0, p.health - hurt);
     push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.`, "kişisel");
   }
   return s;
@@ -760,7 +766,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       base_age: 7, age: 7, money: startMoney, profession: "işsiz", health: startHealth, hunger: 100,
       reputation: Math.max(-100, Math.min(100, startRep)), honor: 0, fear: 0, fame: Math.floor(p.fame / 3),
       stats, stat_points: startPoints,
-      dead: false, location_name: p.location_name, married: false, spouse_name: null, children: [],
+      dead: false, location_name: p.location_name, home_name: p.home_name || p.location_name, married: false, spouse_name: null, children: [],
       inventory: { ekmek: 2 }, properties: props, generation: gen,
       faction: null, faction_standing: {},
       skills, skill_xp: { combat: skills.combat * 100, trade: 0, crafting: skills.crafting * 100, social: skills.social * 100 },
@@ -780,8 +786,9 @@ export function doFactionTask(prev: GameState, id: string): GameState {
   let reward = f.task.reward + statBonus + Math.floor(Math.random() * 8);
   if (id === "tuccar" && hasPerk(p, "guvenli_kervan")) reward = Math.round(reward * 1.5);
   p.money += reward; p.hunger = Math.max(0, p.hunger - 6);
-  let standing = f.task.standing;
-  if (hasPerk(p, "lider")) standing = Math.round(standing * 1.5);
+  let standing = f.task.standing * factionStandingMod(s, id);
+  if (hasPerk(p, "lider")) standing = standing * 1.5;
+  standing = Math.round(standing);
   p.faction_standing[id] = (p.faction_standing[id] || 0) + standing;
   p.reputation = Math.min(100, p.reputation + 2);
   gainSkill(s, f.stat === "strength" ? "combat" : f.stat === "charisma" ? "social" : "trade", 6);
@@ -1197,10 +1204,90 @@ export function houseAttitude(p: Player, house: { pride: number; trait: string }
   if (house.trait === "cömert") a += (p.nam?.comert || 0) / 4;
   if (house.trait === "sadık") a += p.honor / 4;
   if (house.trait === "ihtiraslı") a -= p.fame / 6;
+  // Mertlik her hanede saygı görür; zalimlik her yerde iter; çapkın namı köklü/sadık haneleri ürkütür.
+  a += (p.nam?.mert || 0) / 6;
+  a -= (p.nam?.zalim || 0) / 6;
+  if (house.trait === "sadık") a -= (p.nam?.capkin || 0) / 5;
   return Math.max(-100, Math.min(100, Math.round(a)));
 }
 export function attitudeLabel(a: number): string {
   if (a >= 40) return "Dost"; if (a >= 10) return "Dostane"; if (a > -10) return "Tarafsız"; if (a > -40) return "Soğuk"; return "Hasım";
+}
+
+// ── İtibar & Tanınma: gerçekçi sosyal mantık ──
+// fame (şöhret) = adının ne kadar/ne uzağa ulaştığı. şeref/korku/nam = nasıl tanındığın.
+// Temel ilke: bir yabancı, karakterine ancak adını DUYDUĞU ölçüde tepki verir.
+export function atHome(p: Player): boolean { return !!p.home_name && p.location_name === p.home_name; }
+
+// 0..1 — bulunduğun yerde sıradan birinin seni tanıma / adına göre davranma derecesi.
+// Memleketinde herkes seni biraz tanır (yerel taban); uzakta yalnızca şöhretin taşır.
+export function recognition(s: GameState): number {
+  const p = s.player;
+  const reach = Math.max(0, Math.min(100, p.fame)) / 100;
+  const localFloor = atHome(p) ? 0.45 : 0;
+  return Math.max(0, Math.min(1, reach + localFloor));
+}
+
+// İmzalı "ne kadar olumlu tanınıyorsun" — tanınma ile kapılı.
+export function esteem(s: GameState): number {
+  const p = s.player; const n = p.nam || ({} as Nam);
+  const ch = p.reputation + p.honor * 0.8 + (n.comert || 0) * 0.5 + (n.mert || 0) * 0.5 + (n.dindar || 0) * 0.3 - (n.zalim || 0) * 0.7 - p.fear * 0.4;
+  return Math.round(ch * recognition(s));
+}
+// "Ne kadar korkulan/çekinilen" (0..+) — tanınma ile kapılı; cömertlik/mertlik korkuyu yumuşatır.
+export function dread(s: GameState): number {
+  const p = s.player; const n = p.nam || ({} as Nam);
+  const menace = p.fear + (n.zalim || 0) * 0.6 - (n.comert || 0) * 0.3 - (n.mert || 0) * 0.2;
+  return Math.max(0, Math.round(menace * recognition(s)));
+}
+
+// Pazarlık şansına ek: tanınan (sevilen ya da korkulan) kişinin sözü geçer; meçhul birinin pazarlık gücü zayıftır.
+export function bargainBonus(s: GameState): number {
+  const e = esteem(s) / 100, d = dread(s) / 100;
+  return Math.max(-0.12, Math.min(0.18, e * 0.12 + d * 0.12 - (1 - recognition(s)) * 0.04));
+}
+// Suç başarısına ek: korku/zalim (tanınmışsa) kurbanı dondurur (+); mertlik/şeref sinsiliği zorlaştırır (−).
+export function crimeSuccessMod(s: GameState): number {
+  const p = s.player; const n = p.nam || ({} as Nam);
+  return dread(s) / 100 * 0.18 - ((n.mert || 0) + p.honor * 0.5) / 100 * 0.10;
+}
+// Yakalanınca EK itibar cezası: tanınan, şerefli ya da dindar birinin kaybedecek adı çoktur.
+export function crimeCaughtPenalty(s: GameState): number {
+  const p = s.player; const n = p.nam || ({} as Nam);
+  return Math.round(((p.honor + (n.mert || 0) + (n.dindar || 0)) / 100) * 8 * recognition(s));
+}
+// Sohbette olumlu ilişki kazancı çarpanı (~0.7..1.3): sıcak tanınana herkes açılır; korkulan/zalimden çekinilir.
+export function talkWarmthMod(s: GameState): number {
+  const e = esteem(s) / 100, d = dread(s) / 100;
+  return Math.max(0.7, Math.min(1.3, 1 + e * 0.3 - d * 0.3));
+}
+// Çapkınlık: flört/iltifatla ilişki kurmada çekicilik (0..+). Kişisel olduğu için tanınmaya az bağlı.
+export function allureBonus(s: GameState): number {
+  return Math.min(0.2, (s.player.nam?.capkin || 0) / 100 * 0.2);
+}
+// Evlilik teklifi şansına ek: mert/şeref/dindar (tanınmışsa) güven verir; çapkın namı saygın aileyi ürkütür; korku düşürür.
+export function courtBonus(s: GameState): number {
+  const p = s.player; const n = p.nam || ({} as Nam);
+  const trust = ((n.mert || 0) + p.honor * 0.6 + (n.dindar || 0) * 0.4) / 100;
+  const scandal = (n.capkin || 0) / 100, menace = dread(s) / 100;
+  return Math.max(-0.25, Math.min(0.25, recognition(s) * trust * 0.2 - scandal * 0.12 - menace * 0.15));
+}
+// Lonca itibar kazancı çarpanı: onurlu loncalar mert/şerefe değer verir; Gölge Kardeşliği zalim/korkuya.
+export function factionStandingMod(s: GameState, faction: string): number {
+  const p = s.player; const n = p.nam || ({} as Nam);
+  const honorable = (p.honor + (n.mert || 0)) / 100, shadow = (p.fear + (n.zalim || 0)) / 100;
+  if (faction === "golge") return Math.max(0.7, Math.min(1.4, 1 + shadow * 0.4 - honorable * 0.2));
+  return Math.max(0.7, Math.min(1.4, 1 + honorable * 0.3 - shadow * 0.2));
+}
+// Karakter ekranı için: bulunduğun yerde halkın algısı.
+export function publicPerception(s: GameState): { recog: number; key: string } {
+  const recog = recognition(s);
+  if (recog < 0.12) return { recog, key: "unknown" };
+  const e = esteem(s), d = dread(s);
+  if (d > 25 && d >= e) return { recog, key: d > 55 ? "feared" : "wary" };
+  if (e > 25) return { recog, key: e > 55 ? "beloved" : "esteemed" };
+  if (e < -15) return { recog, key: "disliked" };
+  return { recog, key: "neutral" };
 }
 
 // ── Zanaat / üretim zincirleri — hammaddeyi mamule çevir ──

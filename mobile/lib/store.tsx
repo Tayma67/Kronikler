@@ -21,6 +21,7 @@ function migrate(s: GameState): GameState {
   if (!p.nam) p.nam = { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 };
   if (!p.child_invests) p.child_invests = {};
   if (!p.equipped) p.equipped = { silah: null, zirh: null };
+  if (!p.home_name) p.home_name = p.location_name;
   if (!s.relationships) s.relationships = {};
   if (!s.dynasty) s.dynasty = [];
   if (!s.npc_state) s.npc_state = {};
