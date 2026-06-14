@@ -464,8 +464,13 @@ export function bargainBuy(prev: GameState, id: string): GameState {
   if (p.money < price) return s;
   p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
   gainSkill(s, "trade", ok ? 8 : 4);
-  if (ok) push(s, "ticaret", `Pazarlık tuttu! ${g.name} ucuza aldın (${price} akçe).`);
-  else push(s, "ticaret", `Pazarlık tutmadı; ${g.name} tam fiyata aldın (${price} akçe).`);
+  if (ok) {
+    const why = dread(s) > 25 ? " Esnaf senden çekindi." : esteem(s) > 25 ? " İtibarın işine yaradı." : "";
+    push(s, "ticaret", `Pazarlık tuttu! ${g.name} ucuza aldın (${price} akçe).${why}`);
+  } else {
+    const why = recognition(s) < 0.2 ? " Burada kimse seni tanımıyor, sözün geçmedi." : "";
+    push(s, "ticaret", `Pazarlık tutmadı; ${g.name} tam fiyata aldın (${price} akçe).${why}`);
+  }
   return s;
 }
 // Pazarlık taban fiyatı (lonca/perk indirimi dâhil) — müzakere ekranı için.
@@ -668,12 +673,15 @@ export function doCrime(prev: GameState, kind: "yankesicilik" | "soygun"): GameS
     const loot = kind === "soygun" ? 25 + Math.floor(Math.random() * 40) : 6 + Math.floor(Math.random() * 16);
     p.money += loot; p.fear = Math.min(100, p.fear + (kind === "soygun" ? 5 : 2));
     bumpNam(p, "zalim", kind === "soygun" ? 5 : 2);
-    push(s, "suç", `${kind === "soygun" ? "Bir soygun" : "Bir yankesicilik"} işini başardın (+${loot} akçe).`);
+    const why = dread(s) > 30 ? " Korkulan adın kurbanını dondurdu." : "";
+    push(s, "suç", `${kind === "soygun" ? "Bir soygun" : "Bir yankesicilik"} işini başardın (+${loot} akçe).${why}`);
   } else {
     const fine = Math.min(p.money, kind === "soygun" ? 30 : 10);
     const hurt = (kind === "soygun" ? 10 : 3) * (p.faction === "asker" ? 0.5 : 1);
-    p.money -= fine; p.reputation = Math.max(-100, p.reputation - 8 - crimeCaughtPenalty(s)); p.health = Math.max(0, p.health - hurt);
-    push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.`, "kişisel");
+    const extra = crimeCaughtPenalty(s);
+    p.money -= fine; p.reputation = Math.max(-100, p.reputation - 8 - extra); p.health = Math.max(0, p.health - hurt);
+    const why = extra >= 4 ? " Senin gibi tanınmış birinden beklenmezdi; ceza ağır oldu." : "";
+    push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.${why}`, "kişisel");
   }
   return s;
 }
