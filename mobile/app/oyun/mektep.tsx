@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { SUBJECTS, studySubject } from "../../lib/game";
+import { SUBJECTS, studySubject, studiedThisTurn, lessonsToExam } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -28,11 +28,14 @@ export default function Mektep() {
   const [last, setLast] = useState<null | { key: string; chips: { label: string; col: string }[]; tick: number }>(null);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
+  const done = studiedThisTurn(state);          // bu ay ders işlendi mi
+  const toExam = lessonsToExam(p);              // sınava kaç ders
 
   const onStudy = (id: string) => {
-    if (p.dead) return;
+    if (p.dead || done) return;
     hap("success"); playTap();
     const res = studySubject(state, id);
+    if (res.blocked) return;
     apply(() => res.state);
     setLast({ key: res.key, chips: res.chips, tick: Date.now() });
   };
@@ -57,6 +60,14 @@ export default function Mektep() {
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 100 }}>
         <PageHeader kicker={t("scr.mektep")} icon="🎓" title={t("scr.mektep")} sub={p.age < 18 ? t("mek.young") : t("mek.old")} />
+
+        {/* Sınav ilerlemesi / bu ay ders durumu */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: done ? "rgba(127,166,106,0.10)" : "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: done ? "rgba(127,166,106,0.4)" : C.border, borderRadius: 10, padding: 11, marginBottom: 12 }}>
+          <Text style={{ fontSize: 14 }}>{done ? "✓" : toExam === 1 ? "📜" : "📖"}</Text>
+          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: done ? C.sage : toExam === 1 ? C.gold : C.parchment }}>
+            {done ? t("mek.doneMonth") : (toExam === 1 ? t("mek.examNow") : applyParams(t("mek.exam"), [toExam]))}
+          </Text>
+        </View>
 
         {/* Dağıtılmamış özellik puanı uyarısı */}
         {p.stat_points > 0 && (
@@ -119,8 +130,8 @@ export default function Mektep() {
                     <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("mek.chancePoint")}</Text>
                     <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentDim, marginTop: 1 }}>🍎 {t("mek.cost")}</Text>
                   </View>
-                  <Pressable onPress={() => onStudy(sub.id)} disabled={p.dead} style={({ pressed }) => ({ alignSelf: "stretch", justifyContent: "center", paddingHorizontal: 18, backgroundColor: pressed ? m.tone + "33" : m.tone + "1A", borderLeftWidth: 1, borderLeftColor: m.tone + "44" })}>
-                    <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: m.tone }}>{t("mek.study")}</Text>
+                  <Pressable onPress={() => onStudy(sub.id)} disabled={p.dead || done} style={({ pressed }) => ({ alignSelf: "stretch", justifyContent: "center", paddingHorizontal: 18, backgroundColor: done ? C.bg : pressed ? m.tone + "33" : m.tone + "1A", borderLeftWidth: 1, borderLeftColor: done ? C.border : m.tone + "44", opacity: done ? 0.5 : 1 })}>
+                    <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: done ? C.parchmentMuted : m.tone }}>{t("mek.study")}</Text>
                   </Pressable>
                 </View>
               </View>

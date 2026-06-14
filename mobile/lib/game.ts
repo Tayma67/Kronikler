@@ -24,6 +24,7 @@ export interface Player {
   crowned?: boolean; will_pref?: string;
   fates?: string[]; // tetiklenen kader anları (yaş dönümleri)
   claimed?: string[]; // ödülü alınan başarımlar
+  last_study_turn?: number; lesson_count?: number; // mektep: ayda 1 ders + sınav sayacı
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -750,11 +751,19 @@ export const SUBJECTS: Subject[] = [
   { id: "edebiyat", name: "Edebiyat", icon: "book", desc: "Karizma ve hitabet." },
   { id: "beden",    name: "Beden", icon: "fist", desc: "Güç ve savaş kabiliyeti." },
 ];
-export interface StudyResult { state: GameState; key: string; chips: { label: string; col: string }[]; }
-// Bir ders çalış — yeni durumu ve ekranda gösterilecek anlık geri bildirimi döndürür.
+export interface StudyResult { state: GameState; key: string; chips: { label: string; col: string }[]; blocked?: boolean; }
+// Bir derste bu ay çalışıldı mı? (Vercel: haftada 1 ders → mobilde ayda 1 ders.)
+export function studiedThisTurn(s: GameState): boolean { return s.player.last_study_turn === s.turn; }
+// Sınava kaç ders kaldı (4 derste bir sınav).
+export function lessonsToExam(p: Player): number { return 4 - ((p.lesson_count || 0) % 4); }
+const EXAM_STAT: Record<string, keyof Stats> = { din: "intelligence", matematik: "intelligence", edebiyat: "charisma", beden: "strength" };
+// Bir ders çalış — ayda 1 ders sınırı + 4 derste bir sınav (school.py portu).
 export function studySubject(prev: GameState, id: string): StudyResult {
   const s = clone(prev); const p = s.player;
   if (p.dead) return { state: s, key: "", chips: [] };
+  if (p.last_study_turn === s.turn) return { state: s, key: "", chips: [], blocked: true }; // bu ay ders işlendi
+  p.last_study_turn = s.turn;
+  p.lesson_count = (p.lesson_count || 0) + 1;
   p.hunger = Math.max(0, p.hunger - 5);
   const lucky = hasPerk(p, "mucit") || chance(0.5);
   const chips: { label: string; col: string }[] = [];
@@ -775,6 +784,12 @@ export function studySubject(prev: GameState, id: string): StudyResult {
     gainSkill(s, "combat", 5); chips.push({ label: "Savaş +5", col: "#C9A84C" });
     if (lucky) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); key = "ev.study.beden.l"; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
     else { key = "ev.study.beden.p"; push(s, "mektep", "Ter döktün, güçlendin.", "kişisel", false, { k: key }); }
+  }
+  // ── Sınav: her 4 derste bir (ilgili statla test) ──
+  if (p.lesson_count % 4 === 0) {
+    const passed = Math.random() < Math.min(0.9, 0.35 + effStat(p, EXAM_STAT[id] || "intelligence") * 0.12);
+    if (passed) { p.stat_points += 1; chips.push({ label: "📜 Sınav geçildi · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Sınava girdin ve geçtin — bir özellik puanı kazandın.", "kişisel", true); }
+    else { chips.push({ label: "📜 Sınavda zorlandın", col: "#C0556B" }); push(s, "mektep", "Sınava girdin ama zorlandın; daha çok çalışmalısın.", "kişisel", false); }
   }
   return { state: s, key, chips };
 }
