@@ -12,6 +12,10 @@ function migrate(s: GameState): GameState {
   if (!p.faction_standing) p.faction_standing = {};
   if (!p.inventory) p.inventory = {};
   if (!p.properties) p.properties = [];
+  // Eski kayıt: properties string[] idi → {type, loc, cond} nesnesine çevir.
+  if (p.properties.length && typeof p.properties[0] === "string") {
+    p.properties = p.properties.map((t: any) => ({ type: t, loc: p.location_name, cond: 100 }));
+  }
   if (p.generation === undefined) p.generation = 1;
   if (!p.skills) p.skills = { combat: 0, trade: 0, crafting: 0, social: 0 };
   if (!p.skill_xp) p.skill_xp = { combat: 0, trade: 0, crafting: 0, social: 0 };

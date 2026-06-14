@@ -1,6 +1,6 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
-import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties } from "./world";
+import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo } from "./world";
 import { Lang } from "./locale-data";
 import { converse, ConvResult } from "./dialogue";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
@@ -15,7 +15,7 @@ export interface Player {
   stats: Stats; stat_points: number; dead: boolean; location_name: string; home_name: string;
   married: boolean; spouse_name: string | null; children: string[];
   mother?: string; father?: string;
-  inventory: Record<string, number>; properties: string[]; generation: number;
+  inventory: Record<string, number>; properties: Property[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
   injuries: Injury[]; career_xp: number;
@@ -57,6 +57,8 @@ export function effStat(p: Player, key: keyof Stats): number {
   const pen = (p.injuries || []).filter((i) => i.stat === key).reduce((a, i) => a + i.delta, 0);
   return Math.max(0, p.stats[key] - pen);
 }
+// Mülk: konuma bağlı (loc) + kondisyon (cond 0..100). Gelir şehrin refahı + kondisyonla ölçeklenir.
+export interface Property { type: string; loc: string; cond: number; }
 export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: number; income: number }> = {
   tarla:    { name: "Tarla",    icon: "🌾", cost: 80,  income: 6 },
   ev:       { name: "Ev",       icon: "🏠", cost: 150, income: 10 },
@@ -361,11 +363,23 @@ export function advance(prev: GameState, n = 1): GameState {
       if (healed.length && i === n - 1) push(s, "iyilesme", `Yaraların iyileşti: ${healed.map((h) => h.label).join(", ")}.`);
       s.player.injuries = s.player.injuries.filter((inj) => inj.permanent || inj.weeks_left > 0);
     }
-    // Mülk pasif geliri (zanaat/ticaret hünerleriyle artar)
-    let inc = s.player.properties.reduce((a, t) => a + (PROPERTY_TYPES[t]?.income || 0), 0);
+    // Mülk pasif geliri — KONUMA (şehir refahı) + KONDİSYONA göre; düşük güvenlikte yağma + aşınma
     let pmult = 1;
     if (hasPerk(s.player, "tuccar_prensi")) pmult += 0.3;
     if (hasPerk(s.player, "tamirci")) pmult += 0.15;
+    let inc = 0;
+    const cityCache: Record<string, { prosperity: number; security: number }> = {};
+    const cityOf = (loc: string) => cityCache[loc] || (cityCache[loc] = cityInfo(loc, placeKind(loc)));
+    for (const pr of s.player.properties) {
+      const base = PROPERTY_TYPES[pr.type]?.income || 0;
+      const ci = cityOf(pr.loc || s.player.location_name);
+      inc += base * (0.75 + ci.prosperity / 200) * (pr.cond / 100);
+      if (pr.cond > 40 && chance(0.2)) pr.cond -= 1;                                   // zamanla aşınma
+      if (ci.security < 30 && chance(0.02)) {                                          // düşük güvenlikte yağma
+        pr.cond = Math.max(20, pr.cond - 15);
+        if (i === n - 1) push(s, "mülk_yagma", `${PROPERTY_TYPES[pr.type]?.name || "Mülkün"} (${pr.loc}) yağmaya uğradı; onarım gerek.`);
+      }
+    }
     inc = Math.round(inc * pmult);
     // Kurulan yerleşimler yavaşça gelişir ve vergi getirir
     if (s.settlements?.length) {
@@ -854,8 +868,18 @@ export function opportunitiesFor(s: GameState): Opportunity[] {
 export function buyProperty(prev: GameState, type: string): GameState {
   const s = clone(prev); const p = s.player; const t = PROPERTY_TYPES[type];
   if (!t || p.dead || p.money < t.cost) return s;
-  p.money -= t.cost; p.properties.push(type);
-  push(s, "mülk_alım", `${t.name} satın aldın. Adına bir tapu daha.`, "kişisel", true);
+  p.money -= t.cost; p.properties.push({ type, loc: p.location_name, cond: 100 });
+  push(s, "mülk_alım", `${p.location_name}'de ${t.name} satın aldın. Adına bir tapu daha.`, "kişisel", true);
+  return s;
+}
+// Onarım bedeli (eksik kondisyonla orantılı).
+export function repairCost(pr: Property): number { return Math.max(1, Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * 0.3 * (100 - pr.cond) / 100)); }
+export function repairProperty(prev: GameState, index: number): GameState {
+  const s = clone(prev); const p = s.player; const pr = p.properties[index];
+  if (!pr || pr.cond >= 100) return s;
+  const cost = repairCost(pr); if (p.money < cost) return s;
+  p.money -= cost; pr.cond = 100;
+  push(s, "mülk", `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) onarıldı (−${cost} akçe).`);
   return s;
 }
 
