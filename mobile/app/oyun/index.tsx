@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity } from "../../lib/game";
+import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
@@ -266,6 +266,19 @@ export default function Dashboard() {
           {p.dead && <Text style={{ color: C.blood, textAlign: "center", marginTop: 8, fontFamily: F.serifItalic }}>{t("dyn.died")}</Text>}
         </View>
       </KenBurns>
+
+      {/* Halk seni nasıl görüyor — kimlik her an görünür */}
+      {!p.dead && (() => {
+        const pp = publicPerception(state);
+        const home = atHome(p);
+        return (
+          <Pressable onPress={() => router.push("/oyun/karakter")} style={{ marginHorizontal: 12, marginTop: 8, paddingVertical: 7, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: home ? "rgba(127,166,106,0.3)" : "rgba(111,160,192,0.3)", backgroundColor: "rgba(8,5,2,0.4)", flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Text style={{ fontSize: 13 }}>{home ? "🏠" : "🧭"}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim }} numberOfLines={1}>{t("percept." + pp.key)}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 9, color: home ? C.sage : "#6FA0C0" }}>%{Math.round(pp.recog * 100)}</Text>
+          </Pressable>
+        );
+      })()}
 
       {/* Aktif hikâye çağrısı */}
       {!p.dead && state.story?.active && (

@@ -7,6 +7,7 @@ import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
 import { useGame } from "../../lib/store";
+import { StatDeltaOverlay } from "../../lib/feel";
 import { hap } from "../../lib/haptics";
 import { playAdvance } from "../../lib/sound";
 
@@ -88,6 +89,7 @@ export default function OyunLayout() {
         <Tabs.Screen name="npc/[id]" options={{ href: null }} />
       </Tabs>
       <AdvanceFab bottom={insets.bottom} />
+      <StatDeltaOverlay />
     </View>
   );
 }
