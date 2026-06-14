@@ -1278,6 +1278,7 @@ export function advanceArc(prev: GameState, choiceIdx: number, loc?: { result?: 
     if (d.fame) p.fame = Math.max(0, Math.min(100, p.fame + d.fame));
     if (d.stat_points) p.stat_points += d.stat_points;
     if (d.addItem) p.inventory[d.addItem] = (p.inventory[d.addItem] || 0) + 1;
+    if (d.nam) for (const k of Object.keys(d.nam) as (keyof Nam)[]) bumpNam(p, k, d.nam[k]!);
   }
   push(s, "hikaye", loc?.result || c.result, "kişisel");
   if (c.next === "end") {
