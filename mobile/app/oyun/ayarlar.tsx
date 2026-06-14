@@ -29,13 +29,18 @@ export default function Ayarlar() {
         <View style={{ width: 40 }} />
       </View>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 }}>
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted }}>{t("settings.generation")}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 18 }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
+          <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], marginHorizontal: 8 }} />
+          <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
+        </View>
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 18 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("settings.generation")}</Text>
           <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, marginTop: 4 }}>{state?.player.generation || 1}.</Text>
         </View>
 
         {/* Dil */}
-        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, marginBottom: 8 }}>{t("menu.language")}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.gold, marginBottom: 8, textTransform: "uppercase" }}>{t("menu.language")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
           {LANGS.map((l) => {
             const active = l.code === lang;

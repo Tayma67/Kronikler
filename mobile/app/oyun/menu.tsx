@@ -7,38 +7,39 @@ import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 
 const SEC_KEY: Record<string, string> = { "Geçim": "sec.livelihood", "Güç & Mevki": "sec.power", "Diyar & Soy": "sec.realm", "Kayıt & Anı": "sec.records" };
+const SEC_ICON: Record<string, string> = { "Geçim": "meslek", "Güç & Mevki": "orgutler", "Diyar & Soy": "sehir", "Kayıt & Anı": "tarih" };
 
-type Item = { to: string; icon: string; label: string };
+type Item = { to: string; icon: string };
 const SECTIONS: { title: string; items: Item[] }[] = [
   { title: "Geçim", items: [
-    { to: "/oyun/meslek", icon: "meslek", label: "Meslek" },
-    { to: "/oyun/pazar", icon: "pazar", label: "Pazar" },
-    { to: "/oyun/atolye", icon: "meslek", label: "Atölye" },
-    { to: "/oyun/mulkler", icon: "mulkler", label: "Mülkler" },
-    { to: "/oyun/firsatlar", icon: "firsatlar", label: "Fırsatlar" },
-    { to: "/oyun/gorevler", icon: "scroll-open", label: "Açık İşler" },
-    { to: "/oyun/mektep", icon: "mektep", label: "Mektep" },
-    { to: "/oyun/beceriler", icon: "karakter", label: "Beceri Ağacı" },
+    { to: "/oyun/meslek", icon: "meslek" },
+    { to: "/oyun/pazar", icon: "pazar" },
+    { to: "/oyun/atolye", icon: "meslek" },
+    { to: "/oyun/mulkler", icon: "mulkler" },
+    { to: "/oyun/firsatlar", icon: "firsatlar" },
+    { to: "/oyun/gorevler", icon: "scroll-open" },
+    { to: "/oyun/mektep", icon: "mektep" },
+    { to: "/oyun/beceriler", icon: "karakter" },
   ]},
   { title: "Güç & Mevki", items: [
-    { to: "/oyun/orgutler", icon: "orgutler", label: "Örgütler / Loncalar" },
-    { to: "/oyun/sosyal", icon: "sosyal", label: "Mevki & İtibar" },
-    { to: "/oyun/savas", icon: "savas", label: "Çatışma" },
-    { to: "/oyun/suc", icon: "suc", label: "Gölge İşleri" },
+    { to: "/oyun/orgutler", icon: "orgutler" },
+    { to: "/oyun/sosyal", icon: "sosyal" },
+    { to: "/oyun/savas", icon: "savas" },
+    { to: "/oyun/suc", icon: "suc" },
   ]},
   { title: "Diyar & Soy", items: [
-    { to: "/oyun/sehir", icon: "sehir", label: "Şehir / Diyar" },
-    { to: "/oyun/harita", icon: "map", label: "Diyar Haritası" },
-    { to: "/oyun/haberler", icon: "haberler", label: "Diyardan Haberler" },
-    { to: "/oyun/hanedan", icon: "hanedan", label: "Hanedan" },
-    { to: "/oyun/nesil", icon: "dogum", label: "Nesil & Vâris" },
+    { to: "/oyun/sehir", icon: "sehir" },
+    { to: "/oyun/harita", icon: "map" },
+    { to: "/oyun/haberler", icon: "haberler" },
+    { to: "/oyun/hanedan", icon: "hanedan" },
+    { to: "/oyun/nesil", icon: "dogum" },
   ]},
   { title: "Kayıt & Anı", items: [
-    { to: "/oyun/hikayeler", icon: "roman", label: "Hikâyelerim" },
-    { to: "/oyun/basarimlar", icon: "zafer", label: "Başarımlar" },
-    { to: "/oyun/tarih", icon: "tarih", label: "Kronik" },
-    { to: "/oyun/roman", icon: "roman", label: "Hayatın Romanı" },
-    { to: "/oyun/ayarlar", icon: "ayarlar", label: "Ayarlar" },
+    { to: "/oyun/hikayeler", icon: "roman" },
+    { to: "/oyun/basarimlar", icon: "zafer" },
+    { to: "/oyun/tarih", icon: "tarih" },
+    { to: "/oyun/roman", icon: "roman" },
+    { to: "/oyun/ayarlar", icon: "ayarlar" },
   ]},
 ];
 
@@ -54,23 +55,49 @@ export default function Menu() {
     ]);
   };
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 90 }}>
-      <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginBottom: 4 }}>{t("menu.title")}</Text>
-      <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, marginBottom: 14 }}>{t("app.subtitle")}</Text>
+    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 18, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 90 }}>
+      {/* Başlık */}
+      <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1.5, textAlign: "center" }}>{t("menu.title")}</Text>
+      <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{t("app.subtitle")}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 14, marginBottom: 4 }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
+        <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], marginHorizontal: 8 }} />
+        <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
+      </View>
 
       {SECTIONS.map((sec) => (
-        <View key={sec.title} style={{ marginBottom: 6 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 12, marginBottom: 8 }}>{t(SEC_KEY[sec.title] || "")}</Text>
-          {sec.items.map((m) => (
-            <Pressable key={m.to} onPress={() => router.push(m.to as any)} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.border, backgroundColor: C.card, marginBottom: 8 }}>
-              <View style={{ width: 24, alignItems: "center" }}><GameIcon name={m.icon} size={20} /></View>
-              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{t("scr." + (m.to.split("/").pop() || ""))}</Text>
-            </Pressable>
-          ))}
+        <View key={sec.title} style={{ marginTop: 14 }}>
+          {/* Bölüm başlığı: ikon + etiket + altın çizgi */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 9, paddingHorizontal: 2 }}>
+            <GameIcon name={SEC_ICON[sec.title]} size={14} color={C.gold} />
+            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.gold, textTransform: "uppercase" }}>{t(SEC_KEY[sec.title] || "")}</Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: C.border }} />
+          </View>
+          {/* Gruplu panel */}
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 11, overflow: "hidden" }}>
+            {sec.items.map((m, i) => {
+              const key = m.to.split("/").pop() || "";
+              return (
+                <Pressable key={m.to} onPress={() => router.push(m.to as any)}
+                  style={({ pressed }) => ({
+                    flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12,
+                    borderBottomWidth: i === sec.items.length - 1 ? 0 : 1, borderBottomColor: C.border,
+                    backgroundColor: pressed ? C.cardHi : "transparent",
+                  })}>
+                  {/* İkon kutusu */}
+                  <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
+                    <GameIcon name={m.icon} size={18} color={C.gold} />
+                  </View>
+                  <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 0.8, color: C.parchment }}>{t("scr." + key)}</Text>
+                  <Text style={{ color: C.goldDim, fontSize: 16, fontFamily: F.display }}>›</Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       ))}
 
-      <View style={{ height: 12 }} />
+      <View style={{ height: 18 }} />
       <Pressable onPress={confirmReset} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
         <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood }}>{t("settings.newLife")}</Text>
       </Pressable>
