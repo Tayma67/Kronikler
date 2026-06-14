@@ -20,21 +20,29 @@ Kanonik Türkçe anahtar/oyun-mantığı korunur; yalnızca **gösterim** yerell
   ikilemler (DIL, 15 — başlık/metin/seçim/sonuç, seçim anında yerelleşir)
 - **Hikâye yayları:** yalnız **başlık + tanıtım** (ARC, 8) — listeler/başlık/görev
 
-## KALAN (hâlâ Türkçe — sıradaki turlar)
-1. **Hikâye yayı aşama metinleri** (arcs.ts): her arc'ın stage.text + choice.label +
-   choice.result. ~8 arc × ~2-3 aşama × ~2 seçim. Plan: `arc.<id>.<stageId>.x/.c<i>/.r<i>`
-   anahtarları; `hikayeler.tsx` stage.text/choice'ları t() ile çözer; sonuç için
-   `advanceArc`'a opsiyonel yerel-sonuç parametresi (dilemma deseniyle aynı).
-2. **Dünya anlatısı (lore.ts):** worldNews başlık/gövde (rumors zaten lang alıyor),
-   şehir tasvirleri (world.ts cityInfo blurb/governor), localSpecialty adları,
-   NPC trait/quirk/goal (world.ts üretilen kişilik metinleri).
-3. **Diyalog prozası (dialogue.ts converse):** NPC sohbet cümleleri — kişilik/ruh
-   hali/ilişkiye göre dallanan üretken metin (en zoru; trait'lere bağlı).
-4. **Saklanan günlük/kronik satırları:** game.ts içindeki ~76 `push(s, tip, "Türkçe metin")`
-   çağrısı sonucu `history`'ye **düz metin** olarak yazılıyor; sonradan dil değişse de
-   eski kayıt o dilde kalır. Tam yerelleşme için ya (a) lang'i oyun mantığına geçirmek
-   ya da (b) push'u key+param olarak saklayıp gösterimde çevirmek gerekir — **mimari
-   karar + büyük refaktör**; cihazda test edilemediği için riskli. Kullanıcıya danışılmalı.
+## TAMAM (ek — sonraki turlarda eklendi)
+- **Hikâye yayları:** 8 yayın TÜM aşama metinleri + seçimleri + sonuçları (ARCP); `advanceArc`
+  opsiyonel yerel sonuç/bitiş etiketi alır.
+- **İkilemler:** 15 ikilemin tamamı seçim anında yerel (DIL).
+- **Dünya haberleri + dedikodular** (NEWS): worldNews(lang), yer adı placeName, bey unvanı; gossip.*
+- **NPC kişilikleri** (locale-data traitL/quirkL/goalL): huy/tuhaflık/hedef + meslek.
+- **Diyalog (converse)** (DLG2): NPC sohbet cümleleri — talkWith(lang).
+- **Şehir detayı** (CITY): vali unvanı, tasvir, geçim uzmanlığı — cityInfo(lang).
+- **Günlük altyapısı (key+param)**: `GameEvent.k/.p`, `push(...loc)`, `applyParams`; pano/kronik/roman
+  `e.k ? applyParams(t(e.k), e.p) : e.text` ile gösterir. **Geriye dönük uyumlu** — eski kayıt/çevirisiz
+  satır TR text yedeğine düşer; save migration YOK.
+- **Günlük satırları (EV bloğu)**: beceri seviye atlama (ev.su.*), çocukluk (ev.cocukluk), mektep
+  dersleri (ev.study.*) — 6 dilde.
+
+## KALAN (sıradaki turlar)
+1. **Kalan günlük/kronik satırları** (game.ts ~70 push): EV deseniyle çevrilecek.
+   - Param'sız / sayısal olanlar kolay: `push(..., {k, p:[sayı]})`.
+   - **İsim/ünvan/eşya** içerenler (work→careerTitleL, eat→item, ölüm/doğum→isim):
+     param dilden-bağımsız id/sayı saklanmalı, **gösterimde** çözülmeli (örn. work: p=[professionId,
+     careerXpThen, earn] → ekranda careerTitleL ile). Bunun için pano/kronik/roman resolver'ına
+     anahtar-bazlı özel çözüm (item/title) eklenebilir; veya o param'lar için "it:"/"prof:" ön-eki
+     konvansiyonu. Karışık-dil olmaması için TOPLU bitirmek tercih edilir.
+2. Şehir/rakip hanedan adları (world.ts HOUSE_NAMES), AD/SOYAD havuzları — özel ad; çevrilmez.
 
 ## Yapı notları
 - Yeni blok ekle → `lib/i18n.tsx`'te const tanımla → `DICTS`'in 6 diline `...BLOK.xx` ekle.
