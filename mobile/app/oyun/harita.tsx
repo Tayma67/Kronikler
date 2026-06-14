@@ -32,7 +32,7 @@ export default function Harita() {
         <View style={{ width: 36 }} />
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 6 }}>
-        Bir yerleşime dokun; künyesini gör, oraya git.
+        {t("map.hint")}
       </Text>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}>
         <View style={{ marginHorizontal: 14, marginTop: 6, aspectRatio: 0.82, borderRadius: 14, borderWidth: 1, borderColor: C.borderHi, backgroundColor: "#15100a", overflow: "hidden" }}>
