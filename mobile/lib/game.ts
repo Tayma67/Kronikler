@@ -771,13 +771,16 @@ export const SOCIAL_AXES: SocialAxis[] = [
   { key: "fear", label: "Korku", icon: "🌒", desc: "Adının uyandırdığı çekince.", tiers: ["Zararsız", "Bilinen", "Çekinilen", "Korkulan", "Diyarın Kâbusu"] },
   { key: "fame", label: "Şöhret", icon: "🔥", desc: "Adının ne kadar uzağa ulaştığı.", tiers: ["Meçhul", "Tanınan", "Ünlü", "Meşhur", "Destanlaşan"] },
 ];
-export function socialTier(axis: SocialAxis, value: number): string {
+export function socialTierIndex(value: number): number {
   const v = Math.max(0, value);
-  if (v >= 80) return axis.tiers[4];
-  if (v >= 55) return axis.tiers[3];
-  if (v >= 30) return axis.tiers[2];
-  if (v >= 10) return axis.tiers[1];
-  return axis.tiers[0];
+  if (v >= 80) return 4;
+  if (v >= 55) return 3;
+  if (v >= 30) return 2;
+  if (v >= 10) return 1;
+  return 0;
+}
+export function socialTier(axis: SocialAxis, value: number): string {
+  return axis.tiers[socialTierIndex(value)];
 }
 
 // Ziyafet ver: akçe harcayıp şöhret + itibar kazan.
@@ -860,31 +863,6 @@ export function unequipItem(prev: GameState, slot: "silah" | "zirh"): GameState 
   if (!old) return s;
   p.inventory[old] = (p.inventory[old] || 0) + 1; p.equipped[slot] = null;
   push(s, "kusanma", `${ITEMS[old]?.name || "Teçhizat"} çıkardın.`);
-  return s;
-}
-export function fightEncounter(prev: GameState, id: string): GameState {
-  const s = clone(prev); const p = s.player; const e = ENCOUNTERS.find((x) => x.id === id);
-  if (!e || p.dead || p.age < 13) return s;
-  const pw = combatPower(p);
-  const win = Math.random() < Math.max(0.1, Math.min(0.9, 0.5 + (pw - e.power) * 0.05));
-  gainSkill(s, "combat", win ? 12 : 6);
-  if (win) {
-    let reward = e.reward;
-    if (hasPerk(p, "savas_ustasi")) reward = Math.round(reward * 1.5);
-    p.money += reward; p.fame = Math.min(100, p.fame + e.fame); p.honor = Math.min(100, p.honor + e.honor);
-    p.fear = Math.min(100, p.fear + Math.round(e.fame / 2));
-    let dmg = Math.round(e.danger * 0.3);
-    if (hasPerk(p, "kalkanli")) dmg = Math.round(dmg * 0.75);
-    const floor = hasPerk(p, "yilmaz") ? 5 : 1;
-    p.health = Math.max(floor, p.health - dmg);
-    push(s, "savaş_zafer", `${e.title}: Zafer senin! (+${reward} akçe, şöhretin arttı.)`, "kişisel", true);
-  } else {
-    let hurt = e.danger + Math.floor(Math.random() * 10);
-    if (hasPerk(p, "kalkanli")) hurt = Math.round(hurt * 0.75);
-    p.health = Math.max(0, p.health - hurt);
-    push(s, "savaş_yenilgi", `${e.title}: Yara aldın, geri çekildin (−${hurt} sağlık).`, "kişisel");
-    if (p.health <= 0) die(s, `${p.name}, ${e.title.toLowerCase()} sırasında can verdi.`);
-  }
   return s;
 }
 

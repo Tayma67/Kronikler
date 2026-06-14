@@ -16,7 +16,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     { to: "/oyun/atolye", icon: "meslek", label: "Atölye" },
     { to: "/oyun/mulkler", icon: "mulkler", label: "Mülkler" },
     { to: "/oyun/firsatlar", icon: "firsatlar", label: "Fırsatlar" },
-    { to: "/oyun/gorevler", icon: "compass", label: "Açık İşler" },
+    { to: "/oyun/gorevler", icon: "scroll-open", label: "Açık İşler" },
     { to: "/oyun/mektep", icon: "mektep", label: "Mektep" },
     { to: "/oyun/beceriler", icon: "karakter", label: "Beceri Ağacı" },
   ]},
@@ -28,7 +28,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
   ]},
   { title: "Diyar & Soy", items: [
     { to: "/oyun/sehir", icon: "sehir", label: "Şehir / Diyar" },
-    { to: "/oyun/harita", icon: "firsatlar", label: "Diyar Haritası" },
+    { to: "/oyun/harita", icon: "map", label: "Diyar Haritası" },
     { to: "/oyun/haberler", icon: "haberler", label: "Diyardan Haberler" },
     { to: "/oyun/hanedan", icon: "hanedan", label: "Hanedan" },
     { to: "/oyun/nesil", icon: "dogum", label: "Nesil & Vâris" },
