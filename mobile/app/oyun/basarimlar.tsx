@@ -33,7 +33,12 @@ export default function Basarimlar() {
               <Text style={{ fontFamily: F.display, fontSize: 13, color: done ? C.parchment : C.parchmentMuted, letterSpacing: 0.5 }}>{t("ach." + a.id + ".l")}</Text>
               <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>{t("ach." + a.id + ".d")}</Text>
             </View>
-            {done && <GameIcon name="medal" size={16} color={C.gold} />}
+            <View style={{ alignItems: "flex-end", gap: 3 }}>
+              <View style={{ backgroundColor: done ? "rgba(201,168,76,0.16)" : "rgba(255,255,255,0.05)", borderRadius: 10, paddingVertical: 2, paddingHorizontal: 7 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 9, color: done ? C.gold : C.parchmentMuted }}>+1 ✦</Text>
+              </View>
+              {done && <GameIcon name="medal" size={15} color={C.gold} />}
+            </View>
           </View>
         ))}
       </ScrollView>
