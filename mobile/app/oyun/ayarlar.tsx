@@ -39,6 +39,16 @@ export default function Ayarlar() {
           <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, marginTop: 4 }}>{state?.player.generation || 1}.</Text>
         </View>
 
+        {/* Nasıl Oynanır / SSS */}
+        <Pressable onPress={() => { hap("tap"); router.push("/oyun/sss"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 10, padding: 14, marginBottom: 16 }}>
+          <Text style={{ fontSize: 20 }}>📜</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.sss")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.sssDesc")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
+        </Pressable>
+
         {/* Dil */}
         <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.gold, marginBottom: 8, textTransform: "uppercase" }}>{t("menu.language")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>

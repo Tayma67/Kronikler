@@ -63,6 +63,7 @@ export default function OyunLayout() {
         <Tabs.Screen name="menu" options={{ title: t("tab.menu"), tabBarIcon: ({ focused }) => <TabIcon name="menu" focused={focused} /> }} />
         {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}
         <Tabs.Screen name="pazar" options={{ href: null }} />
+        <Tabs.Screen name="sss" options={{ href: null }} />
         <Tabs.Screen name="sehir" options={{ href: null }} />
         <Tabs.Screen name="meslek" options={{ href: null }} />
         <Tabs.Screen name="suc" options={{ href: null }} />
