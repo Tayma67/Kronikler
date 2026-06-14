@@ -256,8 +256,61 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.dead) return;
   if (!p.married && p.age >= 18 && p.age < 55 && chance(0.06 + p.fame / 1000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.reputation += 5; push(s, "evlilik", `${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true); }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true); }
+  // ── Yaşam-evresi anıları: her döneme doku katan küçük anlar (ara sıra; bazıları aileyi isimle anar) ──
+  if (!p.dead && chance(0.14)) {
+    const child = p.children.length ? rnd(p.children) : null;
+    const mem: { text: string; fn?: () => void }[] = [];
+    if (p.age < 13) {
+      mem.push(
+        { text: "Annen bir masal anlattı; kahramanı sendin." },
+        { text: "Bir sokak köpeğiyle dost oldun, peşinden ayrılmadı." },
+        { text: "Bir büyüğün elini izleyip zanaatı merak ettin.", fn: () => { p.skill_xp.crafting += 8; p.skills.crafting = skillLevel(p.skill_xp.crafting); } },
+      );
+    } else if (p.age < 25) {
+      mem.push(
+        { text: "İlk kez birine gönül kaptırdın; dilin tutuldu.", fn: () => bumpNam(p, "capkin", 2) },
+        { text: "Bir ihtiyardan iki çift söz dinledin, aklına kazıdın.", fn: () => { p.skill_xp.social += 8; p.skills.social = skillLevel(p.skill_xp.social); } },
+        { text: "Geç saatlere dek bir dostunla dertleştin." },
+      );
+    } else if (p.age < 46) {
+      mem.push(
+        { text: "Aynada ilk ak telini gördün; zaman akıp gidiyor." },
+        { text: p.married && p.spouse_name ? `${p.spouse_name} ile sessiz bir akşam geçirdin; 'iyi ki varsın' dedin.` : "Yalnız bir akşam, geçmişini düşündün." },
+        { text: child ? `${child} masum bir soru sordu; cevabını ararken sen de düşündün.` : "Bir komşuyla eski günleri yâd ettin." },
+      );
+    } else {
+      mem.push(
+        { text: "Dizlerin sızlıyor ama hatıraların zengin." },
+        { text: child ? `${child}'a gençlik hikâyelerini anlattın; gözleri parladı.` : "Gençlere akıl verdin; dinlediler mi, bilinmez.", fn: () => bumpNam(p, "dindar", 1) },
+        { text: "Bir mezar taşı okudun; kendi faniliğini düşündün." },
+      );
+    }
+    const m = rnd(mem); m.fn?.();
+    push(s, p.age < 13 ? "cocukluk" : "gunluk", m.text);
+  }
   if (chance(0.05)) { const g = 5 + Math.floor(Math.random() * 20); p.money += g; push(s, "gunluk", `Yolda ${g} akçe buldun.`); }
   if (chance(0.04)) { p.health = Math.max(0, p.health - 12); push(s, "hastalik", "Hastalandın, birkaç gün yatakta kaldın."); }
+  // ── Nemesis dünyada yaşıyor: musallat olur; yoksa derin bir husumet amansız hasma dönüşebilir ──
+  if (!p.dead && p.age >= 14 && s.story) {
+    if (s.story.nemesis && chance(0.10)) {
+      const n = s.story.nemesis;
+      const txt = rnd([
+        () => { p.reputation = Math.max(-100, p.reputation - 4); return `${n.name} arkandan kuyunu kazıyor; itibarın sarsıldı.`; },
+        () => { const loss = Math.min(p.money, 8); p.money -= loss; return `${n.name}'ın adamları malına dokundu (−${loss} akçe).`; },
+        () => { p.health = Math.max(1, p.health - 5); return `${n.name} pusu kurdu; sıyrıklarla kurtuldun.`; },
+        () => `${n.name} bir tehdit daha yolladı; hesap görülmeyi bekliyor.`,
+      ])();
+      s.story.tension = Math.min(100, s.story.tension + 3);
+      push(s, "nemesis", txt, "kişisel");
+    } else if (!s.story.nemesis && chance(0.03)) {
+      const rivals = Object.entries(s.relationships || {}).filter(([, v]) => (v as number) <= -55);
+      if (rivals.length) {
+        const rid = rnd(rivals)[0];
+        const npc = npcsOf(s).find((x) => x.id === rid);
+        if (npc) { s.story.nemesis = { name: npc.name, power: 14 + Math.floor(Math.random() * 10) }; push(s, "nemesis", `${npc.name} ile husumetiniz kan davasına döndü; artık amansız bir hasımsın.`, "kişisel", true); }
+      }
+    }
+  }
   // Yaşlanma + ölümlülük — geniş dağılım: bazıları genç hastalık/kazaya, sağlıklılar 70-80'e
   if (p.age >= 50) p.health = Math.max(0, p.health - Math.floor((p.age - 48) / 5));
   const accident = (p.age >= 25 ? 0.0008 : 0) + (p.health < 25 ? 0.012 : 0);
