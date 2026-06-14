@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { npcsOf } from "../../lib/game";
 import { useI18n, applyParams } from "../../lib/i18n";
-import { professionNameL } from "../../lib/locale-data";
+import { professionNameL, placeName } from "../../lib/locale-data";
 import { Portre } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
 
@@ -54,7 +54,7 @@ export default function Iliskiler() {
   const router = useRouter();
   const { state } = useGame();
   const { lang, t } = useI18n();
-  const npcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang]);
+  const npcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang, state?.player.location_name]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const rel = state.relationships;
   const all = npcs.map((n) => ({ n, v: rel[n.id] || 0 }));
@@ -71,6 +71,7 @@ export default function Iliskiler() {
         <View style={{ alignItems: "center", marginBottom: 14 }}>
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textTransform: "uppercase" }}>{t("rel.kicker")}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginTop: 4, textAlign: "center" }}>🫂 {t("rel.headTitle")}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: C.gold, marginTop: 3 }}>📍 {placeName(state.player.location_name, lang)}</Text>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, marginTop: 4, textAlign: "center" }}>{applyParams(t("rel.subSome"), [total])}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, alignSelf: "stretch" }}>
             <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />

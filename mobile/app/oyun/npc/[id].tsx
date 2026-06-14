@@ -51,7 +51,7 @@ export default function NpcDetail() {
   const { lang, t } = useI18n();
   const [line, setLine] = useState<string>("");
   const [giftOpen, setGiftOpen] = useState(false);
-  const allNpcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang]);
+  const allNpcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang, state?.player.location_name]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const npc = allNpcs.find((n) => n.id === id);
   if (!npc) return <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top + 40 }}><Text style={{ color: C.parchmentMuted, textAlign: "center" }}>{t("npc.notFound")}</Text></View>;

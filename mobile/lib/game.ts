@@ -192,7 +192,8 @@ const rnd = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 const chance = (p: number) => Math.random() < p;
 const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
 
-export function npcsOf(s: GameState, lang: Lang = "tr"): NPC[] { return generateNPCs(s.seed, 30, lang); }
+// NPC'ler KONUMA bağlı: her şehrin kendi insanları (konum tohumlu + konum-önekli kimlik).
+export function npcsOf(s: GameState, lang: Lang = "tr"): NPC[] { return generateNPCs(locSeed(s.player.location_name), 12, lang, s.player.location_name); }
 
 export function newGame(first: string, surname: string, gender: "erkek" | "kadın"): GameState {
   const birthplace = rnd(LOCATIONS);
