@@ -8,18 +8,18 @@ import { Portre } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
 
 function relLabel(v: number) {
-  if (v >= 70) return { t: "Can dostu", c: C.sage };
-  if (v >= 40) return { t: "Dost", c: C.sage };
-  if (v >= 15) return { t: "Arkadaş", c: C.gold };
-  if (v > 0) return { t: "Tanıdık", c: C.parchmentMuted };
-  return { t: "Yabancı", c: C.parchmentMuted };
+  if (v >= 70) return { k: "canDostu", c: C.sage };
+  if (v >= 40) return { k: "dost", c: C.sage };
+  if (v >= 15) return { k: "arkadas", c: C.gold };
+  if (v > 0) return { k: "tanidik", c: C.parchmentMuted };
+  return { k: "yabanci", c: C.parchmentMuted };
 }
 
 export default function Iliskiler() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state } = useGame();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const npcs = npcsOf(state, lang);
   const rel = state.relationships;
@@ -28,18 +28,18 @@ export default function Iliskiler() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
-        <Text style={{ fontFamily: F.display, fontSize: 18, color: C.parchment, letterSpacing: 1 }}>Bağlar & Tanıdıklar</Text>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>Diyarda tanıdığın canlar.</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 18, color: C.parchment, letterSpacing: 1 }}>{t("rel.title")}</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>{t("rel.subtitle")}</Text>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
         {(state.player.married || state.player.children.length > 0) && (
           <View style={{ backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 10, padding: 13, marginBottom: 12 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginBottom: 6 }}>Ocağın</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginBottom: 6 }}>{t("rel.hearth")}</Text>
             {state.player.married && (
-              <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>💍 Eşin: <Text style={{ color: C.gold }}>{state.player.spouse_name}</Text></Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>💍 {t("rel.spouse")}: <Text style={{ color: C.gold }}>{state.player.spouse_name}</Text></Text>
             )}
             {state.player.children.length > 0 && (
-              <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, marginTop: 4 }}>👶 Çocuklar: {state.player.children.join(", ")}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, marginTop: 4 }}>👶 {t("rel.children")}: {state.player.children.join(", ")}</Text>
             )}
           </View>
         )}
@@ -50,11 +50,11 @@ export default function Iliskiler() {
               <Portre age={n.age} gender={n.gender} size={38} ring={false} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{n.name}</Text>
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{n.profession} · {n.age} yaş</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{n.profession} · {n.age} {t("misc.age")}</Text>
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 12, color: lab.c }}>{v}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 9, color: lab.c }}>{lab.t}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 9, color: lab.c }}>{t("rel.t." + lab.k)}</Text>
               </View>
             </Pressable>
           );
