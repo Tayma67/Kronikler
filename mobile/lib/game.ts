@@ -3,7 +3,7 @@ import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties } from "./world";
 import { Lang } from "./locale-data";
 import { converse, ConvResult } from "./dialogue";
-import { arcById, ArcChoice } from "./arcs";
+import { arcById, ArcChoice, availableArcs } from "./arcs";
 
 export interface Stats { strength: number; intelligence: number; charisma: number; stamina: number; }
 export interface Skills { combat: number; trade: number; crafting: number; social: number; }
@@ -162,6 +162,13 @@ export function careerTitle(profId: string, careerXp: number): string {
 }
 const PROFS = PROFESSIONS.map((p) => p.id);
 const PROF_STAT: Record<string, keyof Stats> = Object.fromEntries(PROFESSIONS.map((p) => [p.id, p.stat])) as Record<string, keyof Stats>;
+// Mesleğin geliştirdiği beceri — çalışmak, mesleğin kimliğini pekiştirir (varsayılan zanaat).
+const PROF_SKILL: Record<string, "combat" | "trade" | "crafting" | "social"> = {
+  tüccar: "trade", hancı: "trade", kuyumcu: "trade", katip: "trade",
+  asker: "combat", avcı: "combat",
+  müzisyen: "social",
+  // çiftçi, demirci, balıkçı, marangoz, çoban, fırıncı, şifacı, dokumacı → crafting (varsayılan)
+};
 const SPOUSE_K = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif","Nur","Reyhan"];
 const SPOUSE_E = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim","Osman","Yusuf"];
 const CHILD = ["Ali","Veli","Can","Ece","Mert","Naz","Kerem","Defne","Arda","Mira"];
@@ -307,6 +314,16 @@ export function advance(prev: GameState, n = 1): GameState {
     tickCaravan(s);
     tickEconomy(s, i === n - 1);
     if (s.story) s.story.tension = Math.min(100, s.story.tension + 1); // gerilim zamanla birikir
+    // Proaktif hikâye: dünya ara sıra kendiliğinden bir yay açar (gerilim arttıkça daha olası).
+    if (s.story && !s.story.active && i === n - 1 && !s.player.dead && s.player.age >= 14) {
+      const avail = availableArcs(s.player, s.story.completed, s.story.tension, null);
+      if (avail.length && chance(0.09 + s.story.tension / 500)) {
+        const a = rnd(avail);
+        s.story.active = { id: a.id, stage: a.start };
+        s.story.tension = Math.max(0, s.story.tension - 4);
+        push(s, "hikaye_basladi", `Bir hikâye kapını çaldı: "${a.title}". (Hikâyelerim'den sürdür.)`, "kişisel", true);
+      }
+    }
     // İlk aylarda yeni oyuncuya garantili olumlu an (tempo: önce kazandır)
     if (s.turn <= 3 && !s.player.dead && i === n - 1) {
       const g = 6 + Math.floor(Math.random() * 8); s.player.money += g;
@@ -442,7 +459,7 @@ export function work(prev: GameState): GameState {
   const earn = Math.round((base + stat * 2 + Math.floor(Math.random() * 6)) * mult * titleMult);
   p.money += earn; p.hunger = Math.max(0, p.hunger - 6);
   p.career_xp += 1;
-  gainSkill(s, "crafting", 8);
+  gainSkill(s, PROF_SKILL[p.profession] || "crafting", 8);
   push(s, "çalışma", `${careerTitle(p.profession, p.career_xp - 1)} olarak çalıştın, ${earn} akçe kazandın.`);
   // Terfi?
   if (pr) { const after = careerTier(pr, p.career_xp); if (after > tierBefore) push(s, "terfi", `Yükseldin: artık ${pr.tiers[after]}!`, "kişisel", true); }
