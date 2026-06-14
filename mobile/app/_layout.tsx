@@ -3,6 +3,7 @@ import { CrimsonText_400Regular, CrimsonText_400Regular_Italic } from "@expo-goo
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { NavigationBar } from "expo-navigation-bar";
 import { View, ActivityIndicator } from "react-native";
 import { useEffect } from "react";
 import { GameProvider } from "../lib/store";
@@ -26,6 +27,8 @@ export default function RootLayout() {
       <LanguageProvider>
         <GameProvider>
           <StatusBar style="light" />
+          {/* Android sistem gezinme çubuğunu gizle (tam ekran / immersive); yukarı kaydırınca geçici görünür */}
+          <NavigationBar hidden />
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }} />
         </GameProvider>
       </LanguageProvider>

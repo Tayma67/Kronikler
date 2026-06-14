@@ -28,6 +28,7 @@
       "expo-font",
       ["expo-audio", { "microphonePermission": false }],
       ["expo-splash-screen", { "backgroundColor": "#0D0A06", "image": "./assets/splash-icon.png", "imageWidth": 200 }],
+      ["expo-navigation-bar", { "hidden": true }],
       "./plugins/withoutRecordAudio"
     ],
     "scheme": "kronikler",
