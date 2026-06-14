@@ -10,7 +10,7 @@ import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
-import { FloatingNumber } from "../../lib/fx";
+import { FloatingNumber, Slash } from "../../lib/fx";
 import { BackLabel, PageHeader, ProgressBar } from "../../lib/ui";
 
 function HpBar({ label, hp, max, color }: { label: string; hp: number; max: number; color: string }) {
@@ -33,6 +33,7 @@ export default function Savas() {
   const [encId, setEncId] = useState<string>("");
   const [applied, setApplied] = useState(false);
   const [floats, setFloats] = useState<{ id: number; value: string; color: string; left: number; top: number }[]>([]);
+  const [slashKey, setSlashKey] = useState(0);
   const fid = useRef(0);
   const shake = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
@@ -52,6 +53,7 @@ export default function Savas() {
     const adds: { id: number; value: string; color: string; left: number; top: number }[] = [];
     if (dE > 0) adds.push({ id: fid.current++, value: `-${dE}`, color: C.ember, left: 235, top: 44 });
     if (dY > 0) adds.push({ id: fid.current++, value: `-${dY}`, color: C.blood, left: 30, top: 2 });
+    if (dE > 0) setSlashKey((k) => k + 1);
     if (adds.length) {
       setFloats((f) => [...f.slice(-3), ...adds]);
       hap(dY > 0 ? "advance" : "tap");
@@ -72,6 +74,7 @@ export default function Savas() {
   if (bs) {
     return (
       <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+        {slashKey > 0 && <Slash key={slashKey} />}
         <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1, textAlign: "center" }}>{bs.enemyName}</Text>
         </View>

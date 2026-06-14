@@ -7,6 +7,7 @@ import { useI18n } from "./i18n";
 import { hap, Hap } from "./haptics";
 import { DUR, EASE } from "./motion";
 import type { Dilemma, Choice } from "./events";
+import { ParticleBurst } from "./fx";
 import { C, F } from "./theme";
 
 // Değişince yumuşakça sayan (count-up/down) sayı — UI thread'de, re-render yok.
@@ -52,10 +53,22 @@ export function PressableScale({ children, onPress, style, disabled, haptic }: {
   );
 }
 
+const AnimatedImage = Animated.createAnimatedComponent(Image);
 export function Portre({ age, gender, size = 44, ring = true }: { age: number; gender: "erkek" | "kadın"; size?: number; ring?: boolean }) {
+  // Büyük portreler hafifçe "nefes alır" (canlı his); küçük liste portreleri sabit (perf).
+  const breathe = size >= 56;
+  const sc = useSharedValue(1);
+  useEffect(() => {
+    if (!breathe) return;
+    sc.value = withRepeat(withSequence(
+      withTiming(1.04, { duration: 2200, easing: EASE.standard }),
+      withTiming(1, { duration: 2200, easing: EASE.standard }),
+    ), -1, false);
+  }, [breathe]);
+  const st = useAnimatedStyle(() => ({ transform: [{ scale: breathe ? sc.value : 1 }] }));
   return (
     <View style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden", borderWidth: ring ? 2 : 1, borderColor: ring ? C.gold : C.borderHi, backgroundColor: "#2a1c0c" }}>
-      <Image source={portreImage(age, gender)} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+      <AnimatedImage source={portreImage(age, gender)} style={[{ width: "100%", height: "100%" }, st]} resizeMode="cover" />
     </View>
   );
 }
@@ -78,6 +91,11 @@ const MS_ACCENT: Record<string, string> = {
   doğum: C.ink, dogum: C.ink, evlilik: C.rose, kariyer_terfi: C.gold, başarım: C.gold,
   tahta_çıkış: C.gold, şehir_kuruluşu: C.gold, savaş_zaferi: C.ember, komutan_savaşı: C.ember,
   ölüm: C.parchmentMuted, nesil_devri: C.ink,
+};
+const MS_BURST: Record<string, string[]> = {
+  evlilik: ["💍", "🌹", "✨"], doğum: ["✨", "🤍", "🌟"], dogum: ["✨", "🤍", "🌟"],
+  kariyer_terfi: ["👑", "✨", "⚜"], tahta_çıkış: ["👑", "✨", "⚜"], şehir_kuruluşu: ["🏰", "✨", "⚜"],
+  başarım: ["🏆", "✨", "⚜"], savaş_zaferi: ["⚔", "✨", "🛡"], komutan_savaşı: ["⚔", "✨"], nesil_devri: ["🕊", "✨", "⚜"],
 };
 
 // Yayılan parlama halkası (kutlama hissi).
@@ -108,6 +126,7 @@ export function MilestoneModal({ visible, type, text, onClose }: { visible: bool
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.9)", alignItems: "center", justifyContent: "center", padding: 28 }}>
         <Animated.View entering={ZoomIn.springify().damping(15).stiffness(180)} style={{ width: "100%", maxWidth: 360, backgroundColor: C.card, borderWidth: 1, borderColor: accent + "88", borderRadius: 14, padding: 24, alignItems: "center", overflow: "hidden" }}>
           <View style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, backgroundColor: accent }} />
+          {celebratory && <ParticleBurst emojis={MS_BURST[type] || ["✨", "⚜"]} count={18} top={40} />}
           <View style={{ width: 80, height: 80, alignItems: "center", justifyContent: "center", marginTop: 6 }}>
             {celebratory && <Burst color={accent} />}
             <IconPulse icon={meta.icon} />

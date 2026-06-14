@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, Pressable, ImageBackground, StyleSheet, Dimensions } from "react-native";
-import { Ambiance, LoadingScreen } from "../../lib/fx";
+import { Ambiance, LoadingScreen, KenBurns, ParticleBurst } from "../../lib/fx";
 import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, Easing } from "react-native-reanimated";
 import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -202,9 +202,9 @@ export default function Dashboard() {
         <AchievementToast name={ach.name} icon={ach.icon} onClose={() => setAch(null)} />
       ) : null}
 
-      {/* ── HERO ── */}
-      <ImageBackground source={heroImage(p.age, cal.season)} resizeMode="cover" style={{ paddingTop: insets.top }}>
-        <View style={{ backgroundColor: "rgba(8,5,2,0.58)", paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
+      {/* ── HERO (yaşayan sahne: Ken Burns + ambiyans) ── */}
+      <KenBurns source={heroImage(p.age, cal.season)} style={{ paddingTop: insets.top }}>
+        <View style={{ backgroundColor: "rgba(8,5,2,0.5)", paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
           <Ambiance season={cal.season} width={Dimensions.get("window").width} height={180} />
           <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
             {/* Sol: avatar + mini istatistikler */}
@@ -260,7 +260,7 @@ export default function Dashboard() {
           </View>
           {p.dead && <Text style={{ color: C.blood, textAlign: "center", marginTop: 8, fontFamily: F.serifItalic }}>{t("dyn.died")}</Text>}
         </View>
-      </ImageBackground>
+      </KenBurns>
 
       {/* Aktif hikâye çağrısı */}
       {!p.dead && state.story?.active && (

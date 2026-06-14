@@ -1,8 +1,52 @@
 // Atmosfer efektleri — UI thread'de döngüsel partiküller (köz, kar, yaprak).
 import { useEffect, useMemo } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Image, StyleSheet, ImageSourcePropType } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withDelay, withTiming, withSequence, Easing } from "react-native-reanimated";
 import { C, F } from "./theme";
+
+const AnimImage = Animated.createAnimatedComponent(Image);
+
+// Yaşayan hero — arka görsel yavaşça zoom + pan (Ken Burns). İçerik üstte akar.
+export function KenBurns({ source, children, style }: { source: ImageSourcePropType; children?: React.ReactNode; style?: any }) {
+  const sc = useSharedValue(1); const tx = useSharedValue(0); const ty = useSharedValue(0);
+  useEffect(() => {
+    sc.value = withRepeat(withTiming(1.12, { duration: 15000, easing: Easing.inOut(Easing.sin) }), -1, true);
+    tx.value = withRepeat(withTiming(-16, { duration: 19000, easing: Easing.inOut(Easing.sin) }), -1, true);
+    ty.value = withRepeat(withTiming(-10, { duration: 17000, easing: Easing.inOut(Easing.sin) }), -1, true);
+  }, []);
+  const st = useAnimatedStyle(() => ({ transform: [{ scale: sc.value }, { translateX: tx.value }, { translateY: ty.value }] }));
+  return (
+    <View style={[{ overflow: "hidden" }, style]}>
+      <AnimImage source={source} style={[StyleSheet.absoluteFill, { width: "100%", height: "100%" }, st]} resizeMode="cover" />
+      {children}
+    </View>
+  );
+}
+
+// Tek partikül — merkezden dışa savrulup söner.
+function Particle({ emoji, dx, dy, rot, dur, size }: { emoji: string; dx: number; dy: number; rot: number; dur: number; size: number }) {
+  const p = useSharedValue(0);
+  useEffect(() => { p.value = withTiming(1, { duration: dur, easing: Easing.out(Easing.quad) }); }, []);
+  const st = useAnimatedStyle(() => ({ opacity: 1 - p.value, transform: [{ translateX: dx * p.value }, { translateY: dy * p.value }, { rotate: `${rot * p.value}deg` }, { scale: 0.6 + p.value * 0.6 }] }));
+  return <Animated.Text pointerEvents="none" style={[{ position: "absolute", fontSize: size }, st]}>{emoji}</Animated.Text>;
+}
+
+// Partikül patlaması — kutlama/para/yaprak. mount'ta bir kez oynar.
+export function ParticleBurst({ emojis, count = 16, top = "40%", up = true }: { emojis: string[]; count?: number; top?: number | string; up?: boolean }) {
+  const parts = useMemo(() => Array.from({ length: count }, () => {
+    const ang = rnd(0, Math.PI * 2); const dist = rnd(70, 180);
+    return { emoji: emojis[Math.floor(Math.random() * emojis.length)], dx: Math.cos(ang) * dist, dy: Math.sin(ang) * dist - (up ? rnd(40, 110) : 0), rot: rnd(-220, 220), dur: rnd(800, 1500), size: rnd(14, 24) };
+  }), []);
+  return <View pointerEvents="none" style={{ position: "absolute", left: "50%", top: top as any }}>{parts.map((p, i) => <Particle key={i} {...p} />)}</View>;
+}
+
+// Kılıç savurma — beyaz çizgi ekrandan geçer (savaş darbesi).
+export function Slash({ color = "rgba(255,255,255,0.9)" }: { color?: string }) {
+  const p = useSharedValue(0);
+  useEffect(() => { p.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.quad) }); }, []);
+  const st = useAnimatedStyle(() => ({ opacity: p.value < 0.25 ? p.value / 0.25 : (1 - p.value) / 0.75, transform: [{ translateX: -160 + p.value * 320 }, { rotate: "-22deg" }] }));
+  return <Animated.View pointerEvents="none" style={[{ position: "absolute", left: 0, right: 0, top: "42%", height: 3, backgroundColor: color, shadowColor: "#fff", shadowOpacity: 0.9, shadowRadius: 8 }, st]} />;
+}
 
 // Nabız atan sarmalayıcı (opaklık).
 export function Pulse({ children, min = 0.35, max = 1, dur = 850 }: { children: React.ReactNode; min?: number; max?: number; dur?: number }) {
