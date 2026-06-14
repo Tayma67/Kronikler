@@ -85,7 +85,7 @@ export default function Karakter() {
 
       <Head t="Mevki & Bağlılık" />
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14 }}>
-        <Row k="Lonca" v={factionById(p.faction)?.name || "Bağımsız"} />
+        <Row k="Lonca" v={p.faction ? t("fac."+p.faction+".n") : "—"} />
         <Row k="İtibar" v={Math.round(p.reputation)} />
         <Row k="Şeref" v={Math.round(p.honor)} />
         <Row k="Şöhret" v={Math.round(p.fame)} />

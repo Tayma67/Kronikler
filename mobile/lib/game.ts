@@ -206,7 +206,14 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true); }
   if (chance(0.05)) { const g = 5 + Math.floor(Math.random() * 20); p.money += g; push(s, "gunluk", `Yolda ${g} akçe buldun.`); }
   if (chance(0.04)) { p.health = Math.max(0, p.health - 12); push(s, "hastalik", "Hastalandın, birkaç gün yatakta kaldın."); }
-  if (p.age >= 55) { p.health = Math.max(0, p.health - Math.floor((p.age - 50) / 4)); const risk = (p.age - 55) * 0.012 + (p.health < 30 ? 0.05 : 0); if (chance(risk)) die(s, `${p.name}, ${p.age} yaşında huzur içinde göçtü.`); }
+  // Yaşlanma + ölümlülük — geniş dağılım: bazıları genç hastalık/kazaya, sağlıklılar 70-80'e
+  if (p.age >= 50) p.health = Math.max(0, p.health - Math.floor((p.age - 48) / 5));
+  const accident = (p.age >= 25 ? 0.0008 : 0) + (p.health < 25 ? 0.012 : 0);
+  const aging = p.age >= 58 ? (p.age - 58) * 0.006 + (p.health < 40 ? 0.01 : 0) : 0;
+  if (chance(accident + aging)) {
+    const old = p.age >= 60;
+    die(s, old ? `${p.name}, ${p.age} yaşında huzur içinde göçtü.` : `${p.name}, ${p.age} yaşında ${p.health < 25 ? "amansız bir hastalığa" : "ecel"} yenik düştü.`);
+  }
 }
 
 export function advance(prev: GameState, n = 1): GameState {
@@ -238,6 +245,11 @@ export function advance(prev: GameState, n = 1): GameState {
     if (hasPerk(s.player, "tamirci")) pmult += 0.15;
     inc = Math.round(inc * pmult);
     if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", `Mülklerinden ${inc} akçe gelir geldi.`); }
+    // Aylık geçim gideri (yaş + servetle hafifçe artar) — para birikimini dengeler
+    if (s.player.age >= 13 && s.player.money > 0) {
+      const upkeep = Math.min(s.player.money, 2 + Math.floor(s.player.age / 12) + Math.floor(s.player.money / 600));
+      s.player.money -= upkeep;
+    }
     push(s, s.player.age < 13 ? "cocukluk" : "gunluk", monthlyFlavor(s, cal));
     rollLifeEvents(s, cal);
     tickWars(s, i === n - 1);
@@ -361,7 +373,7 @@ export function supportWar(prev: GameState): GameState {
   return s;
 }
 
-const TITLE_MULT = [1, 1.6, 2.4, 3.2];
+const TITLE_MULT = [1, 1.4, 1.9, 2.4];
 export function work(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.profession === "işsiz") return s;

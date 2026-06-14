@@ -7,7 +7,6 @@ import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { BackLabel } from "../../lib/ui";
 
-const STAT_TR: Record<string, string> = { strength: "Güç", intelligence: "Zekâ", charisma: "Karizma", stamina: "Dayanıklılık" };
 
 function Bar({ value, max }: { value: number; max: number }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
@@ -36,15 +35,15 @@ export default function Orgutler() {
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money} ⚜</Text>
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 8 }}>
-        Loncalara görev gör, itibar kazan; yeterince güvenildiğinde saflarına katıl.
+        {t("org.subtitle")}
       </Text>
 
       {current && (
         <View style={{ marginHorizontal: 16, marginBottom: 6, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(201,168,76,0.08)" }}>
-          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>{current.icon} {current.name} üyesisin</Text>
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, marginTop: 3 }}>{current.perk}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>{current.icon} {t("fac."+current.id+".n")} {t("org.youMember")}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, marginTop: 3 }}>{t("fac."+current.id+".p")}</Text>
           <Pressable onPress={() => apply(leaveFaction)} style={{ alignSelf: "flex-start", marginTop: 8 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 10, color: C.blood, letterSpacing: 1 }}>SAFLARINDAN AYRIL</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 10, color: C.blood, letterSpacing: 1 }}>{t("fac.leave")}</Text>
           </Pressable>
         </View>
       )}
@@ -53,12 +52,12 @@ export default function Orgutler() {
         <View style={{ marginHorizontal: 16, marginBottom: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(168,52,52,0.4)", backgroundColor: "rgba(168,52,52,0.08)" }}>
           {wars.map((w, i) => (
             <Text key={i} style={{ fontFamily: F.serif, fontSize: 12, color: C.parchment, marginBottom: 4 }}>
-              ⚔ {factionById(w.a)?.name} ⚔ {factionById(w.b)?.name} · {w.turnsLeft} ay
+              ⚔ {t("fac."+w.a+".n")} ⚔ {t("fac."+w.b+".n")} · {w.turnsLeft} ay
             </Text>
           ))}
           {myWar && (
             <Pressable onPress={() => apply(supportWar)} style={{ marginTop: 6, alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: "rgba(168,52,52,0.55)", backgroundColor: "rgba(168,52,52,0.16)" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood, letterSpacing: 1 }}>CEPHEYE GİT</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood, letterSpacing: 1 }}>{t("fac.front")}</Text>
             </Pressable>
           )}
         </View>
@@ -75,26 +74,26 @@ export default function Orgutler() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                 <Text style={{ fontSize: 22 }}>{f.icon}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{f.name}</Text>
-                  <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.goldDim }}>Uygun özellik: {STAT_TR[f.stat]}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t("fac."+f.id+".n")}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.goldDim }}>{t("fac.suitStat")}: {t("st."+f.stat)}</Text>
                 </View>
               </View>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 6, lineHeight: 18 }}>{f.blurb}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 6, lineHeight: 18 }}>{t("fac."+f.id+".b")}</Text>
 
               <View style={{ marginTop: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.parchmentMuted, letterSpacing: 1 }}>İTİBAR {standing}/{need}</Text>
-                {isMember && <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 1 }}>ÜYE ✓</Text>}
+                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.parchmentMuted, letterSpacing: 1 }}>{t("fac.repute")} {standing}/{need}</Text>
+                {isMember && <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 1 }}>{t("misc.member")} ✓</Text>}
               </View>
               <Bar value={standing} max={need} />
 
               <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
                 <Pressable disabled={!canAct} onPress={() => apply((s) => doFactionTask(s, f.id))} style={{ flex: 1, paddingVertical: 10, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 11, color: canAct ? C.parchment : C.parchmentMuted }}>{f.task.label.toUpperCase()}</Text>
-                  <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.goldDim, marginTop: 2 }}>+{f.task.reward}⚜ · +{f.task.standing} itibar</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: canAct ? C.parchment : C.parchmentMuted }}>{t("fac."+f.id+".tl").toUpperCase()}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.goldDim, marginTop: 2 }}>+{f.task.reward}⚜ · +{f.task.standing} {t("fac.repute").toLowerCase()}</Text>
                 </Pressable>
                 {!isMember && (
                   <Pressable disabled={!canJoin || !canAct} onPress={() => apply((s) => joinFaction(s, f.id))} style={{ paddingVertical: 10, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: canJoin ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: canJoin ? "rgba(201,168,76,0.12)" : C.bg, alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 11, color: canJoin ? C.gold : C.parchmentMuted, letterSpacing: 1 }}>KATIL</Text>
+                    <Text style={{ fontFamily: F.display, fontSize: 11, color: canJoin ? C.gold : C.parchmentMuted, letterSpacing: 1 }}>{t("misc.join")}</Text>
                   </Pressable>
                 )}
               </View>
