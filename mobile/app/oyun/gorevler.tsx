@@ -7,7 +7,7 @@ import { arcById } from "../../lib/arcs";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 export default function Gorevler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -47,13 +47,14 @@ export default function Gorevler() {
         {t("gv.hint")}
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         {tasks.length === 0 ? (
           <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", marginTop: 30 }}>
             {t("gv.empty")}
           </Text>
         ) : tasks.map((t, i) => (
-          <Pressable key={i} onPress={() => router.push(t.to as any)} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: t.urgent ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 10, padding: 13, marginBottom: 8 }}>
-            <GameIcon name={t.icon} size={19} color={t.urgent ? C.gold : C.goldDim} />
+          <Pressable key={i} onPress={() => router.push(t.to as any)} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: t.urgent ? "rgba(201,168,76,0.5)" : C.border, borderLeftWidth: t.urgent ? 2.5 : 1, borderLeftColor: t.urgent ? C.gold : C.border, borderRadius: 10, padding: 13, marginBottom: 8 }}>
+            <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}><GameIcon name={t.icon} size={18} color={t.urgent ? C.gold : C.goldDim} /></View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t.title}</Text>
               <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }} numberOfLines={1}>{t.sub}</Text>

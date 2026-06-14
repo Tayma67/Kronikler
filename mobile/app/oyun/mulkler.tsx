@@ -5,7 +5,7 @@ import { useGame } from "../../lib/store";
 import { buyProperty, PROPERTY_TYPES } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 export default function Mulkler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -26,9 +26,10 @@ export default function Mulkler() {
         Aylık gelir: {income} ⚜ · Adına yazılı her tapu, çocuklarına kalır.
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         {Object.entries(PROPERTY_TYPES).map(([id, t]) => (
           <View key={id} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 8 }}>
-            <Text style={{ fontSize: 22 }}>{t.icon}</Text>
+            <View style={{ width: 40, height: 40, borderRadius: 9, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 20 }}>{t.icon}</Text></View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t.name} {counts[id] ? `×${counts[id]}` : ""}</Text>
               <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>Gelir: {t.income} ⚜/ay</Text>

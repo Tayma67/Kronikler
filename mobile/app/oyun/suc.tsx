@@ -5,7 +5,7 @@ import { useGame } from "../../lib/store";
 import { doCrime } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 export default function Suc() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -26,6 +26,7 @@ export default function Suc() {
         <View style={{ width: 40 }} />
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 12 }}>{t("suc.hint")}</Text>
         {state.player.age < 13 ? <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted }}>{t("suc.tooYoung")}</Text> : <>
           <Crime kind="yankesicilik" title={t("crime.yankesicilik.l")} desc={t("crime.yankesicilik.d")} />

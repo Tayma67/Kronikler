@@ -6,7 +6,7 @@ import { changeProfession, PROFESSIONS, professionById, careerTier } from "../..
 import { professionNameL, careerTitleL, PROF_L10N } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 export default function Meslek() {
   const insets = useSafeAreaInsets();
@@ -48,6 +48,7 @@ export default function Meslek() {
         {t("mes.switchWarn")}
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         {PROFESSIONS.map((pr) => {
           const cur = pr.id === p.profession;
           return (

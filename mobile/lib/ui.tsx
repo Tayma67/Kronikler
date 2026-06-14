@@ -139,3 +139,48 @@ export function DilemmaModal({ dilemma, onChoose }: { dilemma: Dilemma | null; o
     </Modal>
   );
 }
+
+// ── Ortak tasarım bileşenleri (Vercel hizası) ──
+// Altın çizgi + elmas ayraç.
+export function GoldDivider({ mt = 16, mb = 12 }: { mt?: number; mb?: number }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", marginTop: mt, marginBottom: mb }}>
+      <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
+      <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], marginHorizontal: 8 }} />
+      <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
+    </View>
+  );
+}
+
+// Bölüm başlığı — altın, harf aralıklı, opsiyonel ikon + sağ çizgi.
+export function SectionHead({ title, icon, center }: { title: string; icon?: string; center?: boolean }) {
+  if (center) return <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2.5, color: C.gold, textTransform: "uppercase", textAlign: "center", marginBottom: 12 }}>{title}</Text>;
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 9 }}>
+      {icon ? <GameIcon name={icon} size={14} color={C.gold} /> : null}
+      <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.gold, textTransform: "uppercase" }}>{title}</Text>
+      <View style={{ flex: 1, height: 1, backgroundColor: C.border }} />
+    </View>
+  );
+}
+
+// Ekran başlığı (ortalı): başlık + opsiyonel alt başlık + elmas ayraç.
+export function ScreenTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <View>
+      <Text style={{ fontFamily: F.display, fontSize: 21, color: C.parchment, letterSpacing: 1.5, textAlign: "center" }}>{title}</Text>
+      {subtitle ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{subtitle}</Text> : null}
+      <GoldDivider mt={12} mb={8} />
+    </View>
+  );
+}
+
+// İlerleme çubuğu.
+export function ProgressBar({ value, max, color, h = 5 }: { value: number; max: number; color: string; h?: number }) {
+  const pct = Math.min(100, Math.max(0, (value / max) * 100));
+  return (
+    <View style={{ height: h, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: h, overflow: "hidden" }}>
+      <View style={{ width: `${pct}%`, height: h, backgroundColor: color, borderRadius: h }} />
+    </View>
+  );
+}

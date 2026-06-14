@@ -7,7 +7,7 @@ import { generateDynasties } from "../../lib/world";
 import { professionNameL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 function attKey(a: number) { return a >= 40 ? "dost" : a >= 10 ? "dostane" : a > -10 ? "tarafsiz" : a > -40 ? "soguk" : "hasim"; }
 
@@ -32,6 +32,7 @@ export default function Hanedan() {
       </Text>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         {/* Şimdiki nesil */}
         <View style={{ backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 10, padding: 14, marginBottom: 10 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>

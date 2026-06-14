@@ -7,7 +7,7 @@ import { ARCS, arcById, availableArcs } from "../../lib/arcs";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 export default function Hikayeler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -29,6 +29,7 @@ export default function Hikayeler() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         {/* Aktif yay */}
         {active && stage ? (
           <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 12, padding: 16, marginBottom: 14 }}>

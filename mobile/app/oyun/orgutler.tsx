@@ -5,7 +5,7 @@ import { useGame } from "../../lib/store";
 import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 
 function Bar({ value, max }: { value: number; max: number }) {
@@ -63,6 +63,7 @@ export default function Orgutler() {
         </View>
       )}
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         {FACTIONS.map((f) => {
           const standing = p.faction_standing[f.id] || 0;
           const isMember = p.faction === f.id;
@@ -72,7 +73,7 @@ export default function Orgutler() {
           return (
             <View key={f.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: isMember ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 10, padding: 14, marginBottom: 10 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Text style={{ fontSize: 22 }}>{f.icon}</Text>
+                <View style={{ width: 40, height: 40, borderRadius: 9, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 20 }}>{f.icon}</Text></View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t("fac."+f.id+".n")}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.goldDim }}>{t("fac.suitStat")}: {t("st."+f.stat)}</Text>

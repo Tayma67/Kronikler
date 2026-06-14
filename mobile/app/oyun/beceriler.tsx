@@ -6,7 +6,7 @@ import { SKILL_META, PERKS, perkById, hasPerk, pendingPerkTier, skillLevel, choo
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 function Tree({ tree, icon }: { tree: SkillKey; icon: string }) {
   const { state, apply } = useGame();
@@ -76,6 +76,7 @@ export default function Beceriler() {
         {t("bec.hint")}
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         {SKILL_META.map((m) => <Tree key={m.key} tree={m.key} icon={m.icon} />)}
       </ScrollView>
     </View>

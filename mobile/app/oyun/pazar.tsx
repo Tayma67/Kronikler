@@ -7,7 +7,7 @@ import { marketGoods, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 const CARAVAN_AMOUNTS = [50, 120, 300];
 
@@ -32,6 +32,7 @@ export default function Pazar() {
         ⚖ {t("econ." + econKey(econ))}
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={6} mb={10} />
         {/* Kervan seferi */}
         <View style={{ backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
           <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5 }}>🐪 {t("paz.caravanTitle")}</Text>
@@ -57,7 +58,9 @@ export default function Pazar() {
           return (
             <View key={g.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 12, marginBottom: 8 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Text style={{ fontSize: 20 }}>{g.icon}</Text>
+                <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontSize: 18 }}>{g.icon}</Text>
+                </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("it." + g.id)}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("paz.have")} {have}</Text>

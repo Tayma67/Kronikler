@@ -6,7 +6,7 @@ import { SOCIAL_AXES, socialTierIndex, hostFeast, giveAlms, intimidate, factionB
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 function Section({ title, sub }: { title: string; sub: string }) {
   return (
@@ -57,6 +57,7 @@ export default function Sosyal() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 4 }}>
           {t("soc.intro")} {f ? `${f.name} ${t("soc.memberSuffix")}` : t("soc.noGuild")}
         </Text>

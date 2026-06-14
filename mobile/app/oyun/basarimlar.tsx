@@ -6,7 +6,7 @@ import { achievementsOf } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 export default function Basarimlar() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -28,6 +28,7 @@ export default function Basarimlar() {
       </Text>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         {list.map(({ a, done }) => (
           <View key={a.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: done ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 10, padding: 13, marginBottom: 8, opacity: done ? 1 : 0.55 }}>
             <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: done ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: done ? "rgba(201,168,76,0.4)" : C.border }}>

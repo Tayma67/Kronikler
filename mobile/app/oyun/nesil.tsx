@@ -7,7 +7,7 @@ import { INVESTMENTS, WILL_STYLES, investInChild, continueAsHeir } from "../../l
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 export default function Nesil() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -28,6 +28,7 @@ export default function Nesil() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         {p.children.length === 0 ? (
           <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", marginTop: 30 }}>
             {t("nes.noChildren")}

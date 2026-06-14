@@ -6,7 +6,7 @@ import { RECIPES, canCraft, craft } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 export default function Atolye() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -26,6 +26,7 @@ export default function Atolye() {
         {t("wsp.hint")}
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         {RECIPES.map((r) => {
           const able = canCraft(p, r);
           const locked = p.skills.crafting < r.minSkill;

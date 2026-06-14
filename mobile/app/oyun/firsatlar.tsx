@@ -5,7 +5,7 @@ import { useGame } from "../../lib/store";
 import { opportunitiesFor, resolveOpportunity } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, GoldDivider } from "../../lib/ui";
 
 const RISK = (r: number) => r >= 0.55 ? { k: "high", c: C.blood } : r >= 0.35 ? { k: "mid", c: C.ember } : { k: "low", c: C.sage };
 
@@ -23,6 +23,7 @@ export default function Firsatlar() {
         <View style={{ width: 40 }} />
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
+        <GoldDivider mt={4} mb={10} />
         {opps.length === 0 ? <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, textAlign: "center", marginTop: 24 }}>{t("frs.empty")}</Text>
         : opps.map((o) => { const rk = RISK(o.risk); return (
           <View key={o.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 10 }}>
