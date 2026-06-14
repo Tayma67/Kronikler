@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, Pressable, ImageBackground, StyleSheet, Dimensions } from "react-native";
 import { Ambiance, LoadingScreen, KenBurns, ParticleBurst } from "../../lib/fx";
-import { Firelight } from "../../lib/skia";
+import { Firelight, CoinShower } from "../../lib/skia";
 import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, Easing } from "react-native-reanimated";
 import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -78,7 +78,17 @@ export default function Dashboard() {
   const [dilemma, setDilemma] = useState<Dilemma | null>(null);
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
   const [tab, setTab] = useState<"gunluk" | "dunya">("gunluk");
+  const [shoot, setShoot] = useState(0);
+  const prevMoney = useRef<number>(state?.player.money ?? 0);
   const seenLen = useRef<number>(state?.history.length ?? 0);
+
+  // Akçe arttığında altın sikke yağmuru.
+  useEffect(() => {
+    if (!state) return;
+    const m = state.player.money;
+    if (m > prevMoney.current + 0) setShoot((k) => k + 1);
+    prevMoney.current = m;
+  }, [state?.player.money]);
   const seenAch = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -195,6 +205,10 @@ export default function Dashboard() {
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       {/* Ay ilerleyince altın parıltı */}
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: C.gold, zIndex: 50 }, flashStyle]} />
+      {/* Akçe kazanınca sikke yağmuru */}
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: 60 }]}>
+        <CoinShower shoot={shoot} width={Dimensions.get("window").width} height={Dimensions.get("window").height} />
+      </View>
       {milestone ? (
         <MilestoneModal visible={true} type={milestone.type} text={milestone.text} onClose={() => setMilestone(null)} />
       ) : dilemma ? (

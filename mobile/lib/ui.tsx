@@ -8,6 +8,7 @@ import { hap, Hap } from "./haptics";
 import { DUR, EASE } from "./motion";
 import type { Dilemma, Choice } from "./events";
 import { ParticleBurst } from "./fx";
+import { GlowPulse } from "./skia";
 import { C, F } from "./theme";
 
 // Değişince yumuşakça sayan (count-up/down) sayı — UI thread'de, re-render yok.
@@ -128,6 +129,7 @@ export function MilestoneModal({ visible, type, text, onClose }: { visible: bool
           <View style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, backgroundColor: accent }} />
           {celebratory && <ParticleBurst emojis={MS_BURST[type] || ["✨", "⚜"]} count={18} top={40} />}
           <View style={{ width: 80, height: 80, alignItems: "center", justifyContent: "center", marginTop: 6 }}>
+            {celebratory && <GlowPulse size={80} color={accent} />}
             {celebratory && <Burst color={accent} />}
             <IconPulse icon={meta.icon} />
           </View>
