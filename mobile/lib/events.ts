@@ -198,6 +198,160 @@ export const DILEMMAS: Dilemma[] = [
       { label: "Ününe yaraşır davran", delta: { fear: 6, reputation: -3, nam: { zalim: 3 } }, result: "Korkuttun; ününe ün kattın ama yalnızlığın derinleşti." },
     ],
   },
+
+  // ── ÇOCUKLUK (yaşam evresi: 7–12) ──
+  {
+    id: "cocuk_oyun", icon: "family", title: "Mahalle Oyunu",
+    text: "Çocuklar meydanda topaç çeviriyor, seni de çağırıyorlar.",
+    when: (p) => p.age < 13,
+    choices: [
+      { label: "Oyuna katıl", delta: { honor: 1 }, result: "Doyasıya oynadın; akşama dek gülüşün eksilmedi." },
+      { label: "Kenarda izle", delta: {}, result: "Uzaktan izlemekle yetindin; içinde bir buruğluk kaldı." },
+    ],
+  },
+  {
+    id: "cocuk_kabadayi", icon: "fist", title: "Mahallenin Kabadayısı",
+    text: "İri bir çocuk küçükleri sıkıştırıyor, sıra sana geldi.",
+    when: (p) => p.age >= 8 && p.age < 13,
+    choices: [
+      { label: "Karşı dur", delta: { health: -3, fear: 3, fame: 2 }, result: "Korkmadan dikildin; burnun kanadı ama kimse seni hafife alamadı." },
+      { label: "Büyüklere söyle", delta: { honor: 2 }, result: "Akıllıca davrandın; kabadayı azar işitti." },
+    ],
+  },
+  {
+    id: "cocuk_kitap", icon: "book", title: "Tozlu Bir Kitap",
+    text: "Mahalle imamı, okumaya hevesli görünen sana eski bir kitap uzatıyor.",
+    when: (p) => p.age >= 9 && p.age < 13,
+    choices: [
+      { label: "Hevesle oku", delta: { stat_points: 1, nam: { dindar: 3 } }, result: "Harfleri söktün; yeni bir dünya aralandı (özellik puanı)." },
+      { label: "İlgilenme", delta: {}, result: "Kitabı geri verdin; oyun aklındaydı." },
+    ],
+  },
+
+  // ── EVLİLİK & OCAK (married) ──
+  {
+    id: "es_dargin", icon: "ring", title: "Eşinle Dargınlık",
+    text: "Küçük bir mesele büyüdü; eşinle aranıza soğukluk girdi.",
+    when: (p) => p.married,
+    choices: [
+      { label: "Gönlünü al", delta: { money: -5, honor: 4, reputation: 2 }, result: "Bir tatlı söz, bir küçük armağan — buzlar çözüldü." },
+      { label: "İnat et", delta: { honor: -3 }, result: "Sustun, küstün; ocağın bir süre sessiz kaldı." },
+    ],
+  },
+  {
+    id: "es_hastalik", icon: "healing", title: "Eşin Hasta",
+    text: "Eşin ateşler içinde yatıyor; hekim pahalı ama umut orada.",
+    when: (p) => p.married && p.money >= 20,
+    choices: [
+      { label: "Hekim çağır (−20)", delta: { money: -20, honor: 6, reputation: 3 }, result: "Hekim eşini ayağa kaldırdı; minnet gözlerinden okundu." },
+      { label: "Şifalı ota güven", delta: { honor: -2 }, result: "Otlarla idare ettin; eşin zar zor toparlandı." },
+    ],
+  },
+
+  // ── EVLAT (children > 0) ──
+  {
+    id: "evlat_dert", icon: "baby", title: "Evladının Derdi",
+    text: "Evladın bir hata yaptı ve sana çekinerek geldi.",
+    when: (p) => p.children.length > 0,
+    choices: [
+      { label: "Şefkatle yol göster", delta: { honor: 5, nam: { comert: 3 } }, result: "Azarlamadan anlattın; evladının gözünde büyüdün." },
+      { label: "Sert ceza ver", delta: { fear: 4, honor: -2 }, result: "Korkuyla terbiye ettin; itaat etti ama mesafe açıldı." },
+    ],
+  },
+  {
+    id: "evlat_dugun", icon: "ring", title: "Evladına Talip",
+    text: "Evladına bir talip çıktı; köklü ama soğuk bir aile.",
+    when: (p) => p.children.length > 0 && p.age >= 35,
+    choices: [
+      { label: "Gönlüne bak, sor", delta: { honor: 4, reputation: 2 }, result: "Evladının rızasını gözettin; ocağın huzuru korundu." },
+      { label: "Çıkar için onayla", delta: { money: 50, reputation: -3, nam: { comert: -2 } }, result: "Servet geldi ama evladının bakışı bir başka oldu." },
+    ],
+  },
+
+  // ── YAŞLILIK (yaşam evresi: 58+) ──
+  {
+    id: "yasli_torun", icon: "family", title: "Ocak Başında Hikâye",
+    text: "Soğuk bir gece; gençler etrafına toplanmış, bir hikâye bekliyor.",
+    when: (p) => p.age >= 58,
+    choices: [
+      { label: "Ömründen anlat", delta: { fame: 3, honor: 3 }, result: "Yaşadıklarını anlattın; sözlerin gençlerin hafızasına kazındı." },
+      { label: "Yorgunum, başka zaman", delta: {}, result: "Gözlerin ağırdı; ocağın başında dalıp gittin." },
+    ],
+  },
+  {
+    id: "yasli_vakif", icon: "prayer-beads", title: "Geriye Kalan",
+    text: "Ömrünün akşamında, ardında ne bırakacağını düşünüyorsun. Bir hayrat kurabilirsin.",
+    when: (p) => p.age >= 58 && p.money >= 60,
+    choices: [
+      { label: "Çeşme/hayrat yaptır (−60)", delta: { money: -60, fame: 12, honor: 12, nam: { comert: 6 } }, result: "Adına bir hayrat yaptırdın; su aktıkça adın anılacak." },
+      { label: "Serveti vârise sakla", delta: {}, result: "Birikimini olduğu gibi bıraktın; karar vârisin olsun dedin." },
+    ],
+  },
+  {
+    id: "yasli_hekim", icon: "healing", title: "Hekimin Öğüdü",
+    text: "Hekim, yaşına dikkat etmeni, dinlenmeni söylüyor. Ama işler bekliyor.",
+    when: (p) => p.age >= 58,
+    choices: [
+      { label: "Dinlen, kendine bak", delta: { health: 10 }, result: "Bir süre dinlendin; bedenin biraz toparlandı." },
+      { label: "Çalışmaya devam", delta: { money: 15, health: -6 }, result: "Yaşına aldırmadın; kese doldu ama bedenin yoruldu." },
+    ],
+  },
+
+  // ── GENEL HAYAT & FELAKET ──
+  {
+    id: "carsi_yangin", icon: "fist", title: "Çarşıda Yangın",
+    text: "Bir dükkândan çıkan alev çarşıyı sarıyor; içeride mahsur kalanlar var.",
+    when: (p) => p.age >= 14,
+    choices: [
+      { label: "Söndürmeye koş", delta: { health: -10, honor: 10, reputation: 8, fame: 5 }, result: "Aleve aldırmadan daldın; yandın ama kahraman diye anıldın." },
+      { label: "Kaç, canını kurtar", delta: { honor: -3 }, result: "Geri çekildin; alevler arkanda yükseldi." },
+    ],
+  },
+  {
+    id: "sel_baskini", icon: "herbs", title: "Sel Bastı",
+    text: "Dere taştı, evler su altında; komşular el bekliyor.",
+    when: (p) => p.age >= 14,
+    choices: [
+      { label: "Kurtarmaya yardım et", delta: { health: -6, reputation: 6, honor: 6, nam: { comert: 4 } }, result: "Sırılsıklam oldun ama nice canı suya kaptırmadın." },
+      { label: "Kendi evine bak", delta: {}, result: "Önce kendi eşiğini korudun; kimse bir şey demedi ama..." },
+    ],
+  },
+  {
+    id: "hac_daveti", icon: "prayer-beads", title: "Hac Yolu", identity: true,
+    text: "Bir kafile yola çıkıyor; dindarlığın bilindiği için seni de çağırıyorlar.",
+    when: (p) => p.age >= 25 && (p.nam?.dindar || 0) >= 25 && p.money >= 40,
+    choices: [
+      { label: "Yola çık (−40)", delta: { money: -40, honor: 12, fame: 8, nam: { dindar: 8 } }, result: "Zorlu bir yolculuktan döndün; gönlün huzurla, adın 'Hacı' diye doldu." },
+      { label: "Bu sene olmaz", delta: {}, result: "Niyetini sakladın; belki seneye, dedin." },
+    ],
+  },
+  {
+    id: "kervan_ortak", icon: "scales", title: "Kervana Ortaklık", identity: true,
+    text: "Bir kervanbaşı, ticaret aklına güvenip seni ortaklığa çağırıyor — büyük kâr, büyük risk.",
+    when: (p) => p.age >= 18 && p.money >= 60 && (p.skills?.trade || 0) >= 2,
+    choices: [
+      { label: "Ortak ol (−60)", delta: { money: 90, fame: 5, reputation: 4 }, result: "Kervan kârla döndü; payın katlanarak geldi." },
+      { label: "Riske girme", delta: {}, result: "Temkinli davrandın; fırsat geçti ama kesen yerinde." },
+    ],
+  },
+  {
+    id: "haydut_teklif", icon: "skull", title: "Eşkıya Çağrısı", identity: true,
+    text: "Dağdaki eşkıyalar, korkusuzluğunu duymuş; çeteye katılmanı istiyorlar.",
+    when: (p) => p.age >= 16 && (p.fear >= 25 || (p.nam?.zalim || 0) >= 25) && p.reputation < 30,
+    choices: [
+      { label: "Bir vurgun yap", delta: { money: 45, fear: 8, reputation: -8, nam: { zalim: 6 } }, result: "Bir kervanı bastınız; kese doldu, adın dağlara korku saldı." },
+      { label: "Reddet, namusunu koru", delta: { honor: 5 }, result: "Dağ yolunu reddettin; ekmek helal olsun dedin." },
+    ],
+  },
+  {
+    id: "yetim_cirak", icon: "anvil", title: "Kimsesiz Çırak",
+    text: "Aç bir yetim, kapında çıraklık ve bir tas çorba diliyor.",
+    when: (p) => p.age >= 22 && p.profession !== "işsiz",
+    choices: [
+      { label: "Yanına al, öğret", delta: { honor: 8, reputation: 5, nam: { comert: 5 } }, result: "Çırağına sanatını öğrettin; hem ona hem adına hayır oldu." },
+      { label: "Geri çevir", delta: { honor: -3 }, result: "Kapını açmadın; çocuk başını önüne eğip gitti." },
+    ],
+  },
 ];
 
 // Tura göre bir ikilem seç (deterministik değil; çağıran olasılıkla tetikler).

@@ -13,6 +13,8 @@ export default function Hikayeler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
   const { t } = useI18n();
+  // i18n anahtarı varsa onu, yoksa arc'ın kendi (TR) verisini kullan.
+  const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const st = state.story;
@@ -29,11 +31,11 @@ export default function Hikayeler() {
         <PageHeader kicker={t("scr.hikayeler")} icon="📖" title={t("scr.hikayeler")} />
 
         {active && stage ? (
-          <Panel title={t("arc." + active.id + ".t")} icon="✦" tone={C.gold}>
-            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: 22, marginBottom: 14 }}>{t("arc." + active.id + "." + st.active!.stage + ".x")}</Text>
+          <Panel title={gt("arc." + active.id + ".t", active.title)} icon="✦" tone={C.gold}>
+            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: 22, marginBottom: 14 }}>{gt("arc." + active.id + "." + st.active!.stage + ".x", stage.text)}</Text>
             {stage.choices.map((c, i) => (
-              <Pressable key={i} onPress={() => apply((s) => advanceArc(s, i, { result: t("arc." + active.id + "." + st.active!.stage + ".r" + i), endLabel: t("hik.ended").replace("%s", t("arc." + active.id + ".t")) }))} style={{ paddingVertical: 12, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", marginBottom: 9 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment, letterSpacing: 0.5, textAlign: "center" }}>{t("arc." + active.id + "." + st.active!.stage + ".c" + i)}</Text>
+              <Pressable key={i} onPress={() => apply((s) => advanceArc(s, i, { result: gt("arc." + active.id + "." + st.active!.stage + ".r" + i, c.result), endLabel: t("hik.ended").replace("%s", gt("arc." + active.id + ".t", active.title)) }))} style={{ paddingVertical: 12, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", marginBottom: 9 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment, letterSpacing: 0.5, textAlign: "center" }}>{gt("arc." + active.id + "." + st.active!.stage + ".c" + i, c.label)}</Text>
               </Pressable>
             ))}
           </Panel>
@@ -45,8 +47,8 @@ export default function Hikayeler() {
           <>
             <SectionHead title={t("hik.awaiting")} />
             {avail.map((a) => (
-              <Panel key={a.id} title={t("arc." + a.id + ".t")} icon="✦">
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 10 }}>{t("arc." + a.id + ".b")}</Text>
+              <Panel key={a.id} title={gt("arc." + a.id + ".t", a.title)} icon="✦">
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 10 }}>{gt("arc." + a.id + ".b", a.blurb)}</Text>
                 <Pressable onPress={() => apply((s) => beginArc(s, a.id))} style={{ alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)" }}>
                   <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold, letterSpacing: 1 }}>{t("hik.begin")}</Text>
                 </Pressable>
@@ -62,7 +64,7 @@ export default function Hikayeler() {
               return (
                 <View key={id} style={{ flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 12, paddingVertical: 11, borderBottomWidth: i === st.completed.length - 1 ? 0 : 1, borderBottomColor: C.border }}>
                   <GameIcon name={a.icon} size={15} color={C.goldDim} />
-                  <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted }}>{t("arc." + a.id + ".t")}</Text>
+                  <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchmentMuted }}>{gt("arc." + a.id + ".t", a.title)}</Text>
                   <Text style={{ color: C.sage }}>✓</Text>
                 </View>
               );

@@ -151,6 +151,158 @@ ARCS.push(
   },
 );
 
+// ── Kimliğe bağlı yaylar: meslek, lonca, nam, aile, taht ──
+ARCS.push(
+  {
+    id: "cephe_cagri", title: "Cephe Çağrısı", icon: "crossed-swords",
+    blurb: "Sınır boylarından davul sesleri geliyor; kılıcına ihtiyaç var.",
+    when: (p) => p.age >= 17 && (p.profession === "asker" || p.faction === "asker" || (p.skills?.combat || 0) >= 3),
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Bir akıncı beyi, seçme yiğitlerini topluyor. Sınırda zorlu bir sefer var.", choices: [
+        { label: "Sefere katıl", result: "Atına atladın, sancağın altında yürüdün.", delta: { fame: 4 }, next: "s2" },
+        { label: "Bu sefer geri dur", result: "Evinde kaldın; kimi 'akıllı' dedi, kimi 'çekingen'.", delta: { reputation: -3 }, next: "end" },
+      ]},
+      s2: { id: "s2", text: "Çarpışma kızıştı; safların bozulmak üzere. Bir hamle her şeyi değiştirebilir.", choices: [
+        { label: "Öne atıl", result: "Sancağı kaptın, safları topladın; zafer senin adınla anıldı.", delta: { health: -16, fame: 16, fear: 8, nam: { mert: 8 } }, next: "end" },
+        { label: "Düzeni koru, savun", result: "Soğukkanlı kaldın; çok can kurtardın, az kan döktün.", delta: { health: -6, honor: 10, reputation: 8, nam: { mert: 5 } }, next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "kervan_komplo", title: "Kervan Komplosu", icon: "scales",
+    blurb: "Bir kervanın yükünde göründüğünden fazlası var.",
+    when: (p) => p.age >= 18 && (p.profession === "tüccar" || p.faction === "tuccar" || (p.skills?.trade || 0) >= 3),
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Bir tüccar, 'sorulmayacak' bir yükü ucuza devretmek istiyor. Kâr büyük, ama yük şaibeli.", choices: [
+        { label: "Pazarlık et, al", result: "Yükü kapattın; sandıkların altında bir sır taşıyorsun.", delta: { money: -20 }, next: "s2" },
+        { label: "Temiz iş yaparım, reddet", result: "Şaibeli işe bulaşmadın; vicdanın rahat.", delta: { honor: 5 }, next: "end" },
+      ]},
+      s2: { id: "s2", text: "Yolda voyvodanın adamları kervanı durdurdu. Yükü açarlarsa hapı yuttun.", choices: [
+        { label: "Rüşvetle geç (−30)", result: "Birkaç akçe el değiştirdi; kervan yoluna devam etti, kâr cebinde.", delta: { money: 80, fear: 4, nam: { zalim: 3 } }, next: "end" },
+        { label: "İtiraf et, yükü teslim et", result: "Suçu üstlenip yükü teslim ettin; ceza yedin ama dürüstlüğün not edildi.", delta: { money: -25, honor: 8, reputation: 6 }, next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "tekke_sirri", title: "Tekkenin Sırrı", icon: "prayer-beads",
+    blurb: "Dindarlığın bir tekkenin kapısını araladı.",
+    when: (p) => p.age >= 18 && (p.nam?.dindar || 0) >= 30,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Bir şeyh seni halvete çağırdı; gönül erbabı olduğunu söylüyor. Ama tekkede bir huzursuzluk var.", choices: [
+        { label: "Hizmete gir", result: "Tekkenin işlerine omuz verdin; gönlüne dinginlik doldu.", delta: { honor: 6, nam: { dindar: 6 } }, next: "s2" },
+        { label: "Uzaktan saygı duy", result: "Eşikte durdun; niyetini içinde tuttun.", delta: {}, next: "end" },
+      ]},
+      s2: { id: "s2", text: "Şeyhin müridlerinden biri tekke malını çalıyor. Sırrı öğrendin.", choices: [
+        { label: "Şeyhe bildir", result: "Hırsızı ifşa ettin; tekkenin itibarını kurtardın, şeyhin gözdesi oldun.", delta: { honor: 10, fame: 6, reputation: 6 }, next: "end" },
+        { label: "Sus, karışma", result: "Sır sende kaldı; huzurun biraz gölgelendi.", delta: { honor: -3 }, next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "yasak_ask", title: "Dile Düşen Aşk", icon: "ring",
+    blurb: "Bir gönül macerası diyarın diline düştü.",
+    when: (p) => p.age >= 18 && (p.nam?.capkin || 0) >= 30,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Bir bey ailesinden biriyle yasak bir yakınlığın duyuldu. Dedikodu çığ gibi büyüyor.", choices: [
+        { label: "Gururla sahip çık", result: "İnkâr etmedin; kimi 'mert' dedi, kimi 'edepsiz'.", delta: { fame: 6, honor: -3, nam: { capkin: 5 } }, next: "s2" },
+        { label: "Geri çekil, inkâr et", result: "Meseleyi örtbas ettin; fısıltılar yavaşça dindi.", delta: { reputation: -2 }, next: "end" },
+      ]},
+      s2: { id: "s2", text: "Ailenin reisi seni karşısına aldı: ya nikâh ya da diyarı terk.", choices: [
+        { label: "Nikâhı iste", result: "Mertçe talip oldun; gönüller birleşti, dedikodu duaya döndü.", delta: { honor: 8, reputation: 6, fame: 6 }, next: "end" },
+        { label: "Diyarı bir süre terk et", result: "Ortalık yatışana dek uzaklaştın; itibarın yara aldı.", delta: { reputation: -8, fame: 3 }, next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "saray_entrika", title: "Saray Entrikası", icon: "crown",
+    blurb: "Taht bir gün bile rahat bırakmıyor; gölgeler kıpırdanıyor.",
+    when: (p) => !!p.crowned,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Sadık bildiğin bir vezir, arkandan bir hizip topluyor. Casusun haber getirdi.", choices: [
+        { label: "Sertçe bastır", result: "Hizbi dağıttın; korkun sarayı sardı, kimse kıpırdayamıyor.", delta: { fear: 12, reputation: -4, nam: { zalim: 5 } }, next: "s2" },
+        { label: "Sabırla kuşat", result: "Sessizce delillerini topladın; veziri kendi oyununda yakaladın.", delta: { honor: 8, fame: 6 }, next: "s2" },
+      ]},
+      s2: { id: "s2", text: "Vezir huzurunda diz çöktü; halk meydanda kararını bekliyor.", choices: [
+        { label: "Affet, ibret olsun", result: "Bağışladın; adaletin destanlara girdi.", delta: { honor: 12, reputation: 10, fame: 10 }, next: "end" },
+        { label: "Cezalandır", result: "İbret-i âlem ettin; taht sağlam ama gönüller ürperdi.", delta: { fear: 14, fame: 8, nam: { zalim: 6 } }, next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "miras_kavgasi", title: "Miras Kavgası", icon: "family",
+    blurb: "Henüz ölmeden, evlatların payını tartışmaya başladı.",
+    when: (p) => p.age >= 45 && p.children.length >= 2,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "İki evladın, daha sen hayattayken mülkün için çekişiyor. Ocağına huzursuzluk düştü.", choices: [
+        { label: "Adaletle paylaştır", result: "Herkese hakkını verdin; homurdandılar ama düzen korundu.", delta: { honor: 8, reputation: 4 }, next: "end" },
+        { label: "Gözdene yontmak iste", result: "Birini kayırdın; ocağında kalıcı bir çatlak açıldı.", delta: { honor: -6, fear: 3 }, next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "lonca_secimi", title: "Lonca Seçimi", icon: "scales",
+    blurb: "Loncanda kethüdâlık için adın geçiyor.",
+    when: (p) => p.age >= 22 && !!p.faction && p.reputation >= 20,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Loncanın ileri gelenleri yeni bir kethüdâ seçecek; bir rakibin daha var.", choices: [
+        { label: "Hizmetinle ikna et", result: "Geçmiş emeğini hatırlattın; oylar sana döndü.", delta: { reputation: 8, fame: 6, honor: 4 }, next: "end" },
+        { label: "Ziyafetle gönül al (−30)", result: "Cömert bir sofra kurdun; oylar bollukla geldi.", delta: { money: -30, reputation: 6, fame: 5, nam: { comert: 4 } }, next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "kayip_kardes", title: "Kayıp Kardeş", icon: "family",
+    blurb: "Yıllar önce kaybolan bir yakının izi belirdi.",
+    when: (p) => p.age >= 20,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Bir yabancı, çocukken ayrı düştüğün kardeşin olduğunu söylüyor. Gözleri tanıdık ama sözleri şüpheli.", choices: [
+        { label: "Bağrına bas", result: "İnandın, kucakladın; bir akraban daha oldu, gönlün ısındı.", delta: { honor: 5, reputation: 3 }, next: "s2" },
+        { label: "Önce sına", result: "Sorular sordun, geçmişi yokladın; temkinin yerindeydi.", delta: {}, next: "s2" },
+      ]},
+      s2: { id: "s2", text: "Bir süre sonra 'kardeşin' senden borç istedi; niyeti belirsiz.", choices: [
+        { label: "Güven, yardım et (−25)", result: "El uzattın; ya gerçek bir kardeş kazandın ya da bir ders.", delta: { money: -25, honor: 4 }, next: "end" },
+        { label: "Kapını kapat", result: "Şüphen ağır bastı; belki haklıydın, belki bir kardeşi yitirdin.", delta: { honor: -2 }, next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "namus_duello", title: "Bir Namus Meselesi", icon: "crossed-swords",
+    blurb: "Sözün mertlikle anılır; biri onu çiğnedi.",
+    when: (p) => p.age >= 18 && (p.nam?.mert || 0) >= 30,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Bir küstah, meydanda adını lekeledi ve seni er meydanına çağırdı.", choices: [
+        { label: "Düelloyu kabul et", result: "Meydana çıktın; herkesin gözü üstünde.", delta: { fear: 4 }, next: "s2" },
+        { label: "Onurunla görmezden gel", result: "Tenezzül etmedin; kimi bilgece, kimi 'korktu' dedi.", delta: { honor: 3, reputation: -2 }, next: "end" },
+      ]},
+      s2: { id: "s2", text: "Kılıçlar çekildi. Bir an, bir hamle.", choices: [
+        { label: "Alt et ama canını bağışla", result: "Yendin ve affettin; mertliğin dilden dile dolaştı.", delta: { health: -8, honor: 12, fame: 10, nam: { mert: 6 } }, next: "end" },
+        { label: "Acımasızca bitir", result: "Rakibini yere serdin; adın korku saldı, vicdanın sızladı.", delta: { health: -8, fear: 12, fame: 8, nam: { zalim: 5, mert: -2 } }, next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "sifa_supheli", title: "Salgın ve Şüphe", icon: "healing",
+    blurb: "Şifacılığın hem dua hem de töhmet getirir.",
+    when: (p) => p.age >= 18 && (p.profession === "şifacı" || p.faction === "sifaci"),
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Tedavi ettiğin bir hasta öldü; ailesi seni suçluyor, kalabalık galeyanda.", choices: [
+        { label: "Sakince hakikati anlat", result: "Bilginle açıkladın; çoğu ikna oldu, töhmet dağıldı.", delta: { honor: 6, reputation: 5 }, next: "end" },
+        { label: "Suçu kabullen, diyet öde (−30)", result: "Tartışmayı para ile kapattın; huzur döndü ama için buruk.", delta: { money: -30, honor: 2 }, next: "end" },
+      ]},
+    },
+  },
+);
+
 export function arcById(id: string | null): Arc | undefined { return ARCS.find((a) => a.id === id); }
 // Uygun, henüz tamamlanmamış ve aktif olmayan yaylar.
 export function availableArcs(p: Player, completed: string[], tension: number, activeId: string | null): Arc[] {
