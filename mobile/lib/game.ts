@@ -22,6 +22,7 @@ export interface Player {
   equipped: { silah: string | null; zirh: string | null };
   crowned?: boolean; will_pref?: string;
   fates?: string[]; // tetiklenen kader anları (yaş dönümleri)
+  claimed?: string[]; // ödülü alınan başarımlar
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -196,7 +197,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
       skill_xp: { combat: 0, trade: 0, crafting: 0, social: 0 }, perks: [], injuries: [], career_xp: 0,
       nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
-      crowned: false, will_pref: "esit", fates: [],
+      crowned: false, will_pref: "esit", fates: [], claimed: [],
     },
     settlements: [],
     history: [],
@@ -323,6 +324,19 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
 }
 
+// Yeni tamamlanan başarımları ödüllendir (tek seferlik): +1 özellik puanı + şöhret.
+function claimAchievements(s: GameState) {
+  const p = s.player; if (!p.claimed) p.claimed = [];
+  for (const { a, done } of achievementsOf(s)) {
+    if (done && !p.claimed.includes(a.id)) {
+      p.claimed.push(a.id);
+      p.stat_points += 1;
+      p.fame = Math.min(100, p.fame + 2);
+      push(s, "basarim", `Başarım açıldı: ${a.name} (+1 özellik puanı).`, "kişisel", false, { k: "ev.ach", p: [a.name] });
+    }
+  }
+}
+
 export function advance(prev: GameState, n = 1): GameState {
   const s = clone(prev);
   for (let i = 0; i < n; i++) {
@@ -368,6 +382,7 @@ export function advance(prev: GameState, n = 1): GameState {
     tickWars(s, i === n - 1);
     tickCaravan(s);
     tickEconomy(s, i === n - 1);
+    if (i === n - 1) claimAchievements(s); // ay sonunda yeni başarımları ödüllendir
     if (s.story) s.story.tension = Math.min(100, s.story.tension + 1); // gerilim zamanla birikir
     // Proaktif hikâye: dünya ara sıra kendiliğinden bir yay açar (gerilim arttıkça daha olası).
     if (s.story && !s.story.active && i === n - 1 && !s.player.dead && s.player.age >= 14) {
@@ -938,7 +953,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       faction: null, faction_standing: {},
       skills, skill_xp: { combat: skills.combat * 100, trade: 0, crafting: skills.crafting * 100, social: skills.social * 100 },
       perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
-      crowned: p.crowned || false, will_pref: "esit", fates: [], // taht irsîdir; kader anları yeni baştan
+      crowned: p.crowned || false, will_pref: "esit", fates: [], claimed: [], // taht irsîdir; kader anları & başarımlar yeni baştan
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, ${will.label.toLowerCase()} vasiyetiyle mirası devraldı (${inheritMoney} akçe, ${props.length} mülk).${noteStr}`, scope: "kişisel", landmark: true }],
   };

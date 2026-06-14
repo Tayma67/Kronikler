@@ -1,7 +1,7 @@
 // Oyun durumu deposu — React context + AsyncStorage (offline kalıcı kayıt).
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GameState, newGame, advance, eat, work } from "./game";
+import { GameState, newGame, advance, eat, work, achievementsOf } from "./game";
 
 const KEY = "kronikler_save_v1";
 
@@ -25,6 +25,8 @@ function migrate(s: GameState): GameState {
   if (p.crowned === undefined) p.crowned = false;
   if (!p.will_pref) p.will_pref = "esit";
   if (!p.fates) p.fates = [];
+  // Eski kayıt: hâlihazırda tamamlanmış başarımları 'alınmış' say (retroaktif puan seli olmasın).
+  if (!p.claimed) { try { p.claimed = achievementsOf(s).filter((x) => x.done).map((x) => x.a.id); } catch { p.claimed = []; } }
   if (!(s as any).settlements) (s as any).settlements = [];
   if (!s.relationships) s.relationships = {};
   if (!s.dynasty) s.dynasty = [];
