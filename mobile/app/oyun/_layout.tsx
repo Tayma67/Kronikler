@@ -1,12 +1,14 @@
 import { Tabs } from "expo-router";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
+import { useI18n } from "../../lib/i18n";
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   return <GameIcon name={name} size={22} color={focused ? C.gold : C.parchmentMuted} />;
 }
 
 export default function OyunLayout() {
+  const { t } = useI18n();
   return (
     <Tabs screenOptions={{
       headerShown: false,
@@ -15,10 +17,10 @@ export default function OyunLayout() {
       tabBarInactiveTintColor: C.parchmentMuted,
       tabBarLabelStyle: { fontFamily: F.display, fontSize: 9, letterSpacing: 0.5 },
     }}>
-      <Tabs.Screen name="index" options={{ title: "Ana Sayfa", tabBarIcon: ({ focused }) => <TabIcon name="ana" focused={focused} /> }} />
-      <Tabs.Screen name="karakter" options={{ title: "Karakter", tabBarIcon: ({ focused }) => <TabIcon name="karakter" focused={focused} /> }} />
-      <Tabs.Screen name="iliskiler" options={{ title: "İlişkiler", tabBarIcon: ({ focused }) => <TabIcon name="iliskiler" focused={focused} /> }} />
-      <Tabs.Screen name="menu" options={{ title: "Menü", tabBarIcon: ({ focused }) => <TabIcon name="menu" focused={focused} /> }} />
+      <Tabs.Screen name="index" options={{ title: t("tab.home"), tabBarIcon: ({ focused }) => <TabIcon name="ana" focused={focused} /> }} />
+      <Tabs.Screen name="karakter" options={{ title: t("tab.character"), tabBarIcon: ({ focused }) => <TabIcon name="karakter" focused={focused} /> }} />
+      <Tabs.Screen name="iliskiler" options={{ title: t("tab.relations"), tabBarIcon: ({ focused }) => <TabIcon name="iliskiler" focused={focused} /> }} />
+      <Tabs.Screen name="menu" options={{ title: t("tab.menu"), tabBarIcon: ({ focused }) => <TabIcon name="menu" focused={focused} /> }} />
       {/* Gizli (sekmede görünmez ama navigasyonla açılır) */}
       <Tabs.Screen name="pazar" options={{ href: null }} />
       <Tabs.Screen name="sehir" options={{ href: null }} />

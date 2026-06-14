@@ -361,9 +361,18 @@ const S3: Record<Lang, Dict> = {
         "paz.caravanTitle":"Караванное дело","paz.caravanActive":"У тебя караван в пути к %d (%c⚜). Скоро вернётся.","paz.caravanHint":"Вложи монеты; через несколько месяцев вернутся с прибылью — или попадут под налёт. Торговый навык снижает риск.","paz.have":"В наличии:","econ.scarcity":"Нехватка — цены высоки","econ.pricey":"Дорого","econ.abundance":"Изобилие — цены низки","econ.cheap":"Дёшево","econ.balanced":"Рынок уравновешен",
         "hab.dropped":"о чём судачит край","hab.news":"Вести края","hab.gossip":"Слухи","hab.footer":"С ходом месяца положение края меняется." },
 };
+// Alt sekme başlıkları (her zaman görünür).
+const TAB: Record<Lang, Dict> = {
+  tr: { "tab.home":"Ana Sayfa","tab.character":"Karakter","tab.relations":"İlişkiler","tab.menu":"Menü" },
+  en: { "tab.home":"Home","tab.character":"Character","tab.relations":"Relations","tab.menu":"Menu" },
+  es: { "tab.home":"Inicio","tab.character":"Personaje","tab.relations":"Relaciones","tab.menu":"Menú" },
+  pt: { "tab.home":"Início","tab.character":"Personagem","tab.relations":"Relações","tab.menu":"Menu" },
+  ar: { "tab.home":"الرئيسية","tab.character":"الشخصية","tab.relations":"العلاقات","tab.menu":"القائمة" },
+  ru: { "tab.home":"Главная","tab.character":"Персонаж","tab.relations":"Связи","tab.menu":"Меню" },
+};
 const DICTS: Record<Lang, Dict> = {
-  tr: { ...TR, ...SCR.tr, ...CB.tr, ...ENC.tr, ...IT.tr, ...MISC.tr, ...FAC.tr, ...SOC.tr, ...CHAR.tr, ...GV.tr, ...ROM.tr, ...S2.tr, ...NG.tr, ...DASH.tr, ...S3.tr }, en: { ...EN, ...SCR.en, ...CB.en, ...ENC.en, ...IT.en, ...MISC.en, ...FAC.en, ...SOC.en, ...CHAR.en, ...GV.en, ...ROM.en, ...S2.en, ...NG.en, ...DASH.en, ...S3.en }, es: { ...ES, ...SCR.es, ...CB.es, ...ENC.es, ...IT.es, ...MISC.es, ...FAC.es, ...SOC.es, ...CHAR.es, ...GV.es, ...ROM.es, ...S2.es, ...NG.es, ...DASH.es, ...S3.es },
-  pt: { ...PT, ...SCR.pt, ...CB.pt, ...ENC.pt, ...IT.pt, ...MISC.pt, ...FAC.pt, ...SOC.pt, ...CHAR.pt, ...GV.pt, ...ROM.pt, ...S2.pt, ...NG.pt, ...DASH.pt, ...S3.pt }, ar: { ...AR, ...SCR.ar, ...CB.ar, ...ENC.ar, ...IT.ar, ...MISC.ar, ...FAC.ar, ...SOC.ar, ...CHAR.ar, ...GV.ar, ...ROM.ar, ...S2.ar, ...NG.ar, ...DASH.ar, ...S3.ar }, ru: { ...RU, ...SCR.ru, ...CB.ru, ...ENC.ru, ...IT.ru, ...MISC.ru, ...FAC.ru, ...SOC.ru, ...CHAR.ru, ...GV.ru, ...ROM.ru, ...S2.ru, ...NG.ru, ...DASH.ru, ...S3.ru },
+  tr: { ...TR, ...SCR.tr, ...CB.tr, ...ENC.tr, ...IT.tr, ...MISC.tr, ...FAC.tr, ...SOC.tr, ...CHAR.tr, ...GV.tr, ...ROM.tr, ...S2.tr, ...NG.tr, ...DASH.tr, ...S3.tr, ...TAB.tr }, en: { ...EN, ...SCR.en, ...CB.en, ...ENC.en, ...IT.en, ...MISC.en, ...FAC.en, ...SOC.en, ...CHAR.en, ...GV.en, ...ROM.en, ...S2.en, ...NG.en, ...DASH.en, ...S3.en, ...TAB.en }, es: { ...ES, ...SCR.es, ...CB.es, ...ENC.es, ...IT.es, ...MISC.es, ...FAC.es, ...SOC.es, ...CHAR.es, ...GV.es, ...ROM.es, ...S2.es, ...NG.es, ...DASH.es, ...S3.es, ...TAB.es },
+  pt: { ...PT, ...SCR.pt, ...CB.pt, ...ENC.pt, ...IT.pt, ...MISC.pt, ...FAC.pt, ...SOC.pt, ...CHAR.pt, ...GV.pt, ...ROM.pt, ...S2.pt, ...NG.pt, ...DASH.pt, ...S3.pt, ...TAB.pt }, ar: { ...AR, ...SCR.ar, ...CB.ar, ...ENC.ar, ...IT.ar, ...MISC.ar, ...FAC.ar, ...SOC.ar, ...CHAR.ar, ...GV.ar, ...ROM.ar, ...S2.ar, ...NG.ar, ...DASH.ar, ...S3.ar, ...TAB.ar }, ru: { ...RU, ...SCR.ru, ...CB.ru, ...ENC.ru, ...IT.ru, ...MISC.ru, ...FAC.ru, ...SOC.ru, ...CHAR.ru, ...GV.ru, ...ROM.ru, ...S2.ru, ...NG.ru, ...DASH.ru, ...S3.ru, ...TAB.ru },
 };
 
 interface Ctx { lang: Lang; rtl: boolean; setLang: (l: Lang) => void; t: (key: string) => string; }
