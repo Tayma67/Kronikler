@@ -1113,7 +1113,7 @@ export function beginArc(prev: GameState, id: string): GameState {
   return s;
 }
 // Aktif yayda bir seçim yap: etkiyi uygula, sahneyi ilerlet ya da bitir.
-export function advanceArc(prev: GameState, choiceIdx: number): GameState {
+export function advanceArc(prev: GameState, choiceIdx: number, loc?: { result?: string; endLabel?: string }): GameState {
   const s = clone(prev);
   if (!s.story.active) return s;
   const a = arcById(s.story.active.id); if (!a) { s.story.active = null; return s; }
@@ -1131,9 +1131,9 @@ export function advanceArc(prev: GameState, choiceIdx: number): GameState {
     if (d.stat_points) p.stat_points += d.stat_points;
     if (d.addItem) p.inventory[d.addItem] = (p.inventory[d.addItem] || 0) + 1;
   }
-  push(s, "hikaye", c.result, "kişisel");
+  push(s, "hikaye", loc?.result || c.result, "kişisel");
   if (c.next === "end") {
-    push(s, "hikaye_bitti", `"${a.title}" sona erdi.`, "kişisel", true);
+    push(s, "hikaye_bitti", loc?.endLabel || `"${a.title}" sona erdi.`, "kişisel", true);
     s.story.completed.push(a.id);
     s.story.active = null;
     s.story.tension = Math.max(0, s.story.tension - 2);

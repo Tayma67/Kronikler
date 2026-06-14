@@ -36,10 +36,10 @@ export default function Hikayeler() {
               <GameIcon name={active.icon} size={20} color={C.gold} />
               <Text style={{ fontFamily: F.display, fontSize: 15, color: C.gold, letterSpacing: 0.5 }}>{t("arc." + active.id + ".t")}</Text>
             </View>
-            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: 22, marginBottom: 14 }}>{stage.text}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: 22, marginBottom: 14 }}>{t("arc." + active.id + "." + st.active!.stage + ".x")}</Text>
             {stage.choices.map((c, i) => (
-              <Pressable key={i} onPress={() => apply((s) => advanceArc(s, i))} style={{ paddingVertical: 12, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", marginBottom: 9 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment, letterSpacing: 0.5, textAlign: "center" }}>{c.label}</Text>
+              <Pressable key={i} onPress={() => apply((s) => advanceArc(s, i, { result: t("arc." + active.id + "." + st.active!.stage + ".r" + i), endLabel: t("hik.ended").replace("%s", t("arc." + active.id + ".t")) }))} style={{ paddingVertical: 12, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", marginBottom: 9 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment, letterSpacing: 0.5, textAlign: "center" }}>{t("arc." + active.id + "." + st.active!.stage + ".c" + i)}</Text>
               </Pressable>
             ))}
           </View>
