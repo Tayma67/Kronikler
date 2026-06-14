@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, Pressable, ImageBackground, StyleSheet, Dimensions } from "react-native";
 import { Ambiance, LoadingScreen, KenBurns, ParticleBurst } from "../../lib/fx";
-import { Firelight, CoinShower } from "../../lib/skia";
-import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, Easing } from "react-native-reanimated";
+import { CoinShower } from "../../lib/skia";
+import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -14,7 +14,7 @@ import { heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, AchievementToast, PressableScale, Portre } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
-import { playTap, playAdvance } from "../../lib/sound";
+import { playTap } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
 
@@ -72,7 +72,7 @@ function MiniStat({ icon, value, max, color }: { icon: string; value: number; ma
 export default function Dashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { state, doAdvance, doEat, doWork, resetGame, apply } = useGame();
+  const { state, doWork, resetGame, apply } = useGame();
   const { t, lang } = useI18n();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
   const [dilemma, setDilemma] = useState<Dilemma | null>(null);
@@ -100,20 +100,7 @@ export default function Dashboard() {
     }
   }, [state]);
 
-  // "Ayı İlerle" düğmesi nabzı + ay ilerleyince altın parıltı.
-  const pulse = useSharedValue(1);
-  const flash = useSharedValue(0);
-  useEffect(() => {
-    pulse.value = withRepeat(withSequence(
-      withTiming(1.025, { duration: 950, easing: Easing.inOut(Easing.quad) }),
-      withTiming(1, { duration: 950, easing: Easing.inOut(Easing.quad) }),
-    ), -1, false);
-  }, []);
-  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
-  const flashStyle = useAnimatedStyle(() => ({ opacity: flash.value }));
-
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
-  const onAdvance = () => { hap("advance"); playAdvance(); flash.value = withSequence(withTiming(0.32, { duration: 90 }), withTiming(0, { duration: 420 })); doAdvance(1); };
   const onChoose = (c: Choice, i: number) => { hap("selection"); const res = dilemma ? t("dil." + dilemma.id + ".r" + i) : c.result; apply((s) => applyDilemma(s, c.delta, res)); setDilemma(null); };
 
   useEffect(() => {
@@ -203,8 +190,6 @@ export default function Dashboard() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      {/* Ay ilerleyince altın parıltı */}
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: C.gold, zIndex: 50 }, flashStyle]} />
       {/* Akçe kazanınca sikke yağmuru */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: 60 }]}>
         <CoinShower shoot={shoot} width={Dimensions.get("window").width} height={Dimensions.get("window").height} />
@@ -220,7 +205,6 @@ export default function Dashboard() {
       {/* ── HERO (yaşayan sahne: Ken Burns + ambiyans) ── */}
       <KenBurns source={heroImage(p.age, cal.season)} style={{ paddingTop: insets.top }}>
         <View style={{ backgroundColor: "rgba(8,5,2,0.5)", paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
-          <Firelight width={Dimensions.get("window").width} height={200} />
           <Ambiance season={cal.season} width={Dimensions.get("window").width} height={180} />
           <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
             {/* Sol: avatar + mini istatistikler */}
@@ -358,26 +342,14 @@ export default function Dashboard() {
             </Pressable>
           </View>
         </View>
-      ) : (
-        <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 12, paddingBottom: 8 }}>
-          <PressableScale onPress={() => { hap("tap"); playTap(); doEat(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
-            <GameIcon name="ye" size={14} color={C.parchmentDim} />
-            <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>{t("act.eat")}</Text>
+      ) : (p.age >= 13 && p.profession !== "işsiz") ? (
+        <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
+          <PressableScale onPress={() => { hap("tap"); playTap(); doWork(); }} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+            <GameIcon name="calis" size={15} color={C.gold} />
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 1.5 }}>{t("act.work")}</Text>
           </PressableScale>
-          {p.age >= 13 && p.profession !== "işsiz" && (
-            <PressableScale onPress={() => { hap("tap"); playTap(); doWork(); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
-            <GameIcon name="calis" size={14} color={C.parchmentDim} />
-              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentDim, letterSpacing: 1 }}>{t("act.work")}</Text>
-            </PressableScale>
-          )}
-          <Animated.View style={[{ flex: 1 }, pulseStyle]}>
-            <PressableScale onPress={onAdvance} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
-              <GameIcon name="ilerle" size={16} color="#1a1206" />
-              <Text style={{ fontFamily: F.display, fontSize: 14, color: "#1a1206", letterSpacing: 2 }}>{t("act.advance")}</Text>
-            </PressableScale>
-          </Animated.View>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }

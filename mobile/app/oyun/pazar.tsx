@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable, Modal } from "react-native";
+import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, sellItem, launchCaravan, bargainBuy, marketPrice, econKey } from "../../lib/game";
+import { buyItem, sellItem, launchCaravan, negotiatedBuy, bargainBase, bargainChance, marketPrice, econKey } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -33,11 +34,41 @@ export default function Pazar() {
   const router = useRouter();
   const { state, apply } = useGame();
   const { lang, t } = useI18n();
+  const [barg, setBarg] = useState<null | { id: string; icon: string; name: string; base: number; price: number; patience: number; msg: string; done: boolean }>(null);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const econ = state.econ || 1;
   const goods = marketGoods(locSeed(p.location_name)).map((g) => ({ ...g, buy: marketPrice(g.buy, econ), sell: marketPrice(g.sell, econ) }));
   const econColor = econ >= 1.06 ? C.blood : econ <= 0.94 ? C.sage : C.parchmentMuted;
+
+  // ── Pazarlık müzakeresi (anlık alım yok; sabır ibresiyle tur tur) ──
+  const openBarg = (g: { id: string; icon: string }) => {
+    hap("tap");
+    const base = bargainBase(state, g.id);
+    setBarg({ id: g.id, icon: g.icon, name: t("it." + g.id), base, price: base, patience: 100, msg: t("paz.opening"), done: false });
+  };
+  const doHaggle = () => {
+    if (!barg || barg.done) return;
+    const floor = Math.max(1, Math.round(barg.base * 0.6));
+    const ok = Math.random() < bargainChance(state);
+    if (ok && barg.price > floor) {
+      hap("success");
+      const newPrice = Math.max(floor, Math.round(barg.price * 0.9));
+      const patience = Math.max(0, barg.patience - 12);
+      const atFloor = newPrice <= floor;
+      setBarg({ ...barg, price: newPrice, patience, msg: atFloor ? t("paz.floor") : t("paz.softened"), done: atFloor || patience <= 0 });
+    } else {
+      hap("warning");
+      const patience = Math.max(0, barg.patience - 30);
+      setBarg({ ...barg, patience, msg: patience <= 0 ? t("paz.walkedOff") : t("paz.firm"), done: patience <= 0 });
+    }
+  };
+  const confirmBuy = () => {
+    if (!barg) return;
+    hap("advance");
+    apply((s) => negotiatedBuy(s, barg.id, barg.price));
+    setBarg(null);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
@@ -99,7 +130,7 @@ export default function Pazar() {
                   <Pressable onPress={() => { hap('tap'); apply((s) => buyItem(s, g.id)); }} disabled={p.money < g.buy} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < g.buy ? C.bg : "rgba(201,168,76,0.12)" }}>
                     <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < g.buy ? C.parchmentMuted : C.gold }}>{t("misc.buy")} {g.buy}⚜</Text>
                   </Pressable>
-                  <Pressable onPress={() => { hap('tap'); apply((s) => bargainBuy(s, g.id)); }} disabled={p.money < g.buy} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: C.bg }}>
+                  <Pressable onPress={() => openBarg(g)} disabled={p.money < g.buy} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: C.bg }}>
                     <Text style={{ fontFamily: F.display, fontSize: 10.5, color: p.money < g.buy ? C.parchmentMuted : C.goldDim }}>{t("misc.bargain")}</Text>
                   </Pressable>
                   <Pressable onPress={() => { hap('tap'); apply((s) => sellItem(s, g.id)); }} disabled={have <= 0} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
@@ -111,6 +142,59 @@ export default function Pazar() {
           })}
         </Panel>
       </ScrollView>
+
+      {/* ── PAZARLIK MÜZAKERE MODALI ── */}
+      <Modal visible={!!barg} transparent animationType="fade" onRequestClose={() => setBarg(null)}>
+        <View style={{ flex: 1, backgroundColor: "rgba(8,5,2,0.82)", justifyContent: "center", paddingHorizontal: 24 }}>
+          {barg && (() => {
+            const saved = barg.base - barg.price;
+            const pct = Math.max(0, Math.min(100, barg.patience));
+            const patCol = pct > 55 ? C.sage : pct > 25 ? C.gold : C.blood;
+            const canAfford = p.money >= barg.price;
+            return (
+              <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 16, padding: 18 }}>
+                <View style={{ alignItems: "center", marginBottom: 12 }}>
+                  <Text style={{ fontSize: 34 }}>{barg.icon}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, marginTop: 6, letterSpacing: 0.5 }}>{barg.name}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, marginTop: 2 }}>{t("paz.bargainWith").toUpperCase()}</Text>
+                </View>
+
+                {/* Fiyat */}
+                <View style={{ alignItems: "center", marginBottom: 12 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 30, color: canAfford ? C.gold : C.blood }}>{barg.price} ⚜</Text>
+                  {saved > 0 && <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.sage, marginTop: 2 }}>−{saved} ⚜ ({Math.round((saved / barg.base) * 100)}%)</Text>}
+                </View>
+
+                {/* Pazarcının sabrı (ibre) */}
+                <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted, marginBottom: 4 }}>{t("paz.patience").toUpperCase()}</Text>
+                <View style={{ height: 8, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden", marginBottom: 10 }}>
+                  <View style={{ width: `${pct}%`, height: 8, borderRadius: 4, backgroundColor: patCol }} />
+                </View>
+
+                {/* Pazarcının repliği */}
+                <View style={{ minHeight: 38, justifyContent: "center", marginBottom: 12, paddingHorizontal: 4 }}>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, color: C.parchment, textAlign: "center", lineHeight: 19 }}>“{barg.msg}”</Text>
+                </View>
+
+                {/* Aksiyonlar */}
+                {!barg.done && (
+                  <Pressable onPress={doHaggle} style={{ paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center", marginBottom: 8 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>🤝 {t("paz.haggle")}</Text>
+                  </Pressable>
+                )}
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <Pressable onPress={() => { hap("tap"); setBarg(null); }} style={{ flex: 1, paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, alignItems: "center" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted }}>{t("paz.give")}</Text>
+                  </Pressable>
+                  <Pressable onPress={confirmBuy} disabled={!canAfford} style={{ flex: 2, paddingVertical: 12, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: canAfford ? C.gold : C.bg, alignItems: "center" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: canAfford ? "#1a1206" : C.parchmentMuted }}>{t("paz.buyAt")} {barg.price} ⚜</Text>
+                  </Pressable>
+                </View>
+              </View>
+            );
+          })()}
+        </View>
+      </Modal>
     </View>
   );
 }

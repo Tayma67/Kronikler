@@ -455,6 +455,29 @@ export function bargainBuy(prev: GameState, id: string): GameState {
   else push(s, "ticaret", `Pazarlık tutmadı; ${g.name} tam fiyata aldın (${price} akçe).`);
   return s;
 }
+// Pazarlık taban fiyatı (lonca/perk indirimi dâhil) — müzakere ekranı için.
+export function bargainBase(s: GameState, id: string): number {
+  const p = s.player;
+  const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return 0;
+  let disc = p.faction === "tuccar" ? 0.85 : 1;
+  if (hasPerk(p, "pazarlikci")) disc -= 0.10;
+  return Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc));
+}
+// Pazarlık başarı olasılığı (karizma + ticaret becerisi).
+export function bargainChance(s: GameState): number {
+  const p = s.player;
+  return Math.max(0.15, Math.min(0.9, 0.42 + effStat(p, "charisma") * 0.035 + p.skills.trade * 0.025));
+}
+// Müzakere sonunda anlaşılan fiyattan alım.
+export function negotiatedBuy(prev: GameState, id: string, price: number): GameState {
+  const s = clone(prev); const p = s.player;
+  const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
+  if (p.money < price) return s;
+  p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
+  gainSkill(s, "trade", 6);
+  push(s, "ticaret", `Pazarlıkla ${g.name} aldın (${price} akçe).`);
+  return s;
+}
 export function sellItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!(p.inventory[id] > 0)) return s;
