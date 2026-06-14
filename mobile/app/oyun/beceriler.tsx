@@ -44,8 +44,8 @@ function Tree({ tree, icon }: { tree: SkillKey; icon: string }) {
               return (
                 <Pressable key={pk.id} disabled={!choosable} onPress={() => apply((st) => choosePerk(st, pk.id))} style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 10, borderRadius: 8, borderWidth: 1, marginBottom: 6, borderColor: isChosen ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: isChosen ? "rgba(201,168,76,0.12)" : C.bg }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 12, color: isChosen ? C.gold : C.parchment }}>{pk.name}</Text>
-                    <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 1 }}>{pk.desc}</Text>
+                    <Text style={{ fontFamily: F.display, fontSize: 12, color: isChosen ? C.gold : C.parchment }}>{t("perk." + pk.id + ".l")}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 1 }}>{t("perk." + pk.id + ".d")}</Text>
                   </View>
                   {isChosen && <GameIcon name="medal" size={14} color={C.gold} />}
                   {choosable && !isChosen && <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 1 }}>{t("bec.pick")}</Text>}
