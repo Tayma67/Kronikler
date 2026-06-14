@@ -126,15 +126,25 @@ export function npcStateOf(s: GameState, id: string): NpcState {
   return s.npc_state[id];
 }
 
-// Yerleşimler — şehir/köy/kale. Seyahat ve atmosfer.
-export interface Place { name: string; kind: "şehir" | "köy" | "kale"; }
+// Yerleşimler — şehir/köy/kale, beyliklere (region) bağlı. Seyahat ve atmosfer.
+export interface Place { name: string; kind: "şehir" | "köy" | "kale"; region: string; }
 export const PLACES: Place[] = [
-  { name: "Üzümlü", kind: "köy" }, { name: "Akpınar", kind: "köy" }, { name: "Demirhan", kind: "kale" },
-  { name: "Yenişehir", kind: "şehir" }, { name: "Karaağaç", kind: "köy" }, { name: "Söğütlü", kind: "köy" },
-  { name: "Bozkır", kind: "kale" }, { name: "Gümüşhisar", kind: "şehir" }, { name: "Çakıllı", kind: "köy" },
-  { name: "Kavaklı", kind: "köy" }, { name: "Sarıkaya", kind: "kale" }, { name: "Akşehir", kind: "şehir" },
+  { name: "Üzümlü", kind: "köy", region: "demirhan" }, { name: "Akpınar", kind: "köy", region: "demirhan" }, { name: "Demirhan", kind: "kale", region: "demirhan" },
+  { name: "Yenişehir", kind: "şehir", region: "yenisehir" }, { name: "Karaağaç", kind: "köy", region: "yenisehir" }, { name: "Söğütlü", kind: "köy", region: "yenisehir" },
+  { name: "Bozkır", kind: "kale", region: "gumushisar" }, { name: "Gümüşhisar", kind: "şehir", region: "gumushisar" }, { name: "Çakıllı", kind: "köy", region: "gumushisar" },
+  { name: "Kavaklı", kind: "köy", region: "aksehir" }, { name: "Sarıkaya", kind: "kale", region: "aksehir" }, { name: "Akşehir", kind: "şehir", region: "aksehir" },
 ];
 export const LOCATIONS = PLACES.map((p) => p.name);
+// Beylikler — 4 sancak; her birinin merkezi (şehir/kale) ve rengi.
+export const BEYLIKS: { id: string; name: string; tone: string }[] = [
+  { id: "demirhan",   name: "Demirhan Beyliği",   tone: "#E0922E" },
+  { id: "yenisehir",  name: "Yenişehir Sancağı",  tone: "#6FA0C0" },
+  { id: "gumushisar", name: "Gümüşhisar Beyliği", tone: "#9C7BC4" },
+  { id: "aksehir",    name: "Akşehir Sancağı",    tone: "#7FA66A" },
+];
+export function regionOf(name: string): string { return PLACES.find((p) => p.name === name)?.region || "demirhan"; }
+export function beylikOf(name: string): { id: string; name: string; tone: string } { const r = regionOf(name); return BEYLIKS.find((b) => b.id === r) || BEYLIKS[0]; }
+export function sameBeylik(a: string, b: string): boolean { return regionOf(a) === regionOf(b); }
 export function placeKind(name: string): string { return PLACES.find((p) => p.name === name)?.kind || "köy"; }
 
 // Meslekler — kariyer merdivenli (15 meslek). Unvanlar deneyimle yükselir.

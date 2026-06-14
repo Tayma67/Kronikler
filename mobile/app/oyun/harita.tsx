@@ -2,7 +2,7 @@ import { View, Text, Pressable, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { PLACES } from "../../lib/game";
+import { PLACES, BEYLIKS, beylikOf, regionOf } from "../../lib/game";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
@@ -42,15 +42,27 @@ export default function Harita() {
           {PLACES.map((pl) => {
             const pos = POS[pl.name] || { x: 50, y: 50 };
             const cur = pl.name === here;
+            const bey = beylikOf(pl.name);
+            const homeBeylik = regionOf(here) === pl.region; // oyuncunun beyliğindeki yerler vurgulu
             return (
               <Pressable key={pl.name} onPress={() => router.push(`/oyun/diyar/${encodeURIComponent(pl.name)}`)} style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, alignItems: "center", width: 76, marginLeft: -38 }}>
-                <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: cur ? "rgba(201,168,76,0.22)" : "rgba(8,5,2,0.7)", borderWidth: cur ? 2 : 1, borderColor: cur ? C.gold : "rgba(201,168,76,0.3)" }}>
+                <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: cur ? C.gold + "33" : bey.tone + (homeBeylik ? "26" : "14"), borderWidth: cur ? 2.5 : 1.5, borderColor: cur ? C.gold : bey.tone + (homeBeylik ? "" : "88") }}>
                   <Text style={{ fontSize: 16 }}>{KIND_ICON[pl.kind]}</Text>
                 </View>
                 <Text style={{ fontFamily: F.display, fontSize: 9, color: cur ? C.gold : C.parchmentMuted, marginTop: 3, letterSpacing: 0.5 }} numberOfLines={1}>{placeName(pl.name, lang)}</Text>
               </Pressable>
             );
           })}
+        </View>
+
+        {/* Beylik lejantı */}
+        <View style={{ marginHorizontal: 14, marginTop: 12, flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+          {BEYLIKS.map((b) => (
+            <View key={b.id} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+              <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: b.tone, borderWidth: 1, borderColor: b.tone }} />
+              <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.3, color: regionOf(here) === b.id ? C.gold : C.parchmentMuted }}>{b.name}</Text>
+            </View>
+          ))}
         </View>
       </ScrollView>
     </View>
