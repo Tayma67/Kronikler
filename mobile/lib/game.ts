@@ -591,10 +591,10 @@ export function studySubject(prev: GameState, id: string): GameState {
   if (p.dead) return s;
   p.hunger = Math.max(0, p.hunger - 5);
   const lucky = hasPerk(p, "mucit") || chance(0.5);
-  if (id === "din") { bumpNam(p, "dindar", 4); if (lucky) { p.honor = Math.min(100, p.honor + 2); push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu."); } else push(s, "mektep", "Mektepte dua ve hikmet dinledin."); }
-  else if (id === "matematik") { gainSkill(s, "trade", 5); if (lucky) { p.stat_points += 1; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın."); } else push(s, "mektep", "Rakamlarla boğuştun."); }
-  else if (id === "edebiyat") { gainSkill(s, "social", 5); if (lucky) { p.stat_points += 1; push(s, "mektep", "Edebiyat çalıştın; bir özellik puanı kazandın."); } else push(s, "mektep", "Beyitler ezberledin."); }
-  else { gainSkill(s, "combat", 5); if (lucky) { p.stat_points += 1; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın."); } else push(s, "mektep", "Ter döktün, güçlendin."); }
+  if (id === "din") { bumpNam(p, "dindar", 4); if (lucky) { p.honor = Math.min(100, p.honor + 2); push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu.", "kişisel", false, { k: "ev.study.din.l" }); } else push(s, "mektep", "Mektepte dua ve hikmet dinledin.", "kişisel", false, { k: "ev.study.din.p" }); }
+  else if (id === "matematik") { gainSkill(s, "trade", 5); if (lucky) { p.stat_points += 1; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: "ev.study.matematik.l" }); } else push(s, "mektep", "Rakamlarla boğuştun.", "kişisel", false, { k: "ev.study.matematik.p" }); }
+  else if (id === "edebiyat") { gainSkill(s, "social", 5); if (lucky) { p.stat_points += 1; push(s, "mektep", "Edebiyat çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: "ev.study.edebiyat.l" }); } else push(s, "mektep", "Beyitler ezberledin.", "kişisel", false, { k: "ev.study.edebiyat.p" }); }
+  else { gainSkill(s, "combat", 5); if (lucky) { p.stat_points += 1; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: "ev.study.beden.l" }); } else push(s, "mektep", "Ter döktün, güçlendin.", "kişisel", false, { k: "ev.study.beden.p" }); }
   return s;
 }
 
