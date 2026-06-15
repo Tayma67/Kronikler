@@ -13,7 +13,7 @@ import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
-import { useI18n, applyParams } from "../../lib/i18n";
+import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
 import { playTap } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
@@ -180,7 +180,7 @@ export default function Dashboard() {
     const cfg = EVT[e.type] || DEFAULT_EVT;
     const land = !!e.landmark;
     const col = land ? C.goldBright : cfg.col;
-    const txt = e.k ? applyParams(t(e.k), e.p) : e.text;
+    const txt = renderEvt(e.k, e.text, e.p, lang, t);
     return (
       <View style={{ flexDirection: "row", paddingBottom: last ? 0 : 8 }}>
         {/* İkon sütunu + zaman çizgisi */}

@@ -1,4 +1,5 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
+import type { EvtParam } from "./i18n";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx } from "./world";
 import { Lang } from "./locale-data";
@@ -152,7 +153,7 @@ export function factionById(id: string | null): Faction | undefined { return FAC
 // Loncaya katılım eşiği (karizmatik hüneri %20 indirir). UI ile çekirdek tutarlı olsun diye.
 export function joinThreshold(p: Player, f: Faction): number { return p.perks.includes("karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep; }
 
-export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: (string | number)[]; }
+export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; }
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; }
 export interface NpcState { mood: number; memories: string[]; }
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; }
@@ -341,7 +342,7 @@ export function applyTemperament(prev: GameState, id: string): GameState {
 }
 
 // loc: dilden bağımsız çeviri anahtarı + parametreler (sayı/id). Gösterimde çözülür; yoksa text (TR) yedeği.
-function push(s: GameState, type: string, text: string, scope: "kişisel" | "makro" = "kişisel", landmark = false, loc?: { k: string; p?: (string | number)[] }) {
+function push(s: GameState, type: string, text: string, scope: "kişisel" | "makro" = "kişisel", landmark = false, loc?: { k: string; p?: EvtParam[] }) {
   s.history.push({ day: s.turn, type, text, scope, landmark, k: loc?.k, p: loc?.p });
 }
 function clone(s: GameState): GameState { return JSON.parse(JSON.stringify(s)); }

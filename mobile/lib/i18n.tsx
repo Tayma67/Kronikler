@@ -2,7 +2,7 @@
 // Eksik anahtar Türkçe'ye, o da yoksa anahtarın kendisine düşer (oyun hiç bozulmaz).
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Lang, LANGS } from "./locale-data";
+import { Lang, LANGS, placeName, careerTitleL, professionNameL } from "./locale-data";
 
 const KEY = "kronikler_lang_v1";
 
@@ -795,6 +795,28 @@ export function tFor(lang: Lang, key: string): string { return DICTS[lang]?.[key
 // %1, %2 … yer tutucularını parametrelerle doldurur (günlük/kronik kayıtları için).
 export function applyParams(str: string, p?: (string | number)[]): string {
   return p && p.length ? str.replace(/%(\d+)/g, (_, n) => { const v = p[+n - 1]; return v == null ? "" : String(v); }) : str;
+}
+
+// Günlük/olay parametreleri — etiketli isimler render anında dile çözülür:
+//  { i: "demir" } → eşya adı · { pl: "Yenişehir" } → yer adı · { c: ["çiftçi", 5] } → meslek unvanı · { pr: "çiftçi" } → meslek adı
+export type EvtParam = string | number | { i: string } | { pl: string } | { c: [string, number] } | { pr: string };
+function resolveEvtParam(v: EvtParam | undefined, lang: Lang, t: (k: string) => string): string {
+  if (v == null) return "";
+  if (typeof v === "object") {
+    if ("i" in v) return t("it." + v.i);
+    if ("pl" in v) return placeName(v.pl, lang);
+    if ("c" in v) return careerTitleL(v.c[0], v.c[1], lang);
+    if ("pr" in v) return professionNameL(v.pr, lang);
+    return "";
+  }
+  return String(v);
+}
+// Bir olay metnini dile göre çöz: anahtar varsa çeviri + etiketli parametreler; yoksa ham metin.
+export function renderEvt(k: string | undefined, fallback: string, p: EvtParam[] | undefined, lang: Lang, t: (key: string) => string): string {
+  if (!k) return fallback;
+  const tpl = t(k);
+  if (!p || !p.length) return tpl;
+  return tpl.replace(/%(\d+)/g, (_, n) => resolveEvtParam(p[+n - 1], lang, t));
 }
 
 interface Ctx { lang: Lang; rtl: boolean; setLang: (l: Lang) => void; t: (key: string) => string; }
