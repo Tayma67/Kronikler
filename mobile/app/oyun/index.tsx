@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome, eulogy } from "../../lib/game";
+import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome, eulogy, WorkStyle } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
@@ -83,6 +83,7 @@ export default function Dashboard() {
   const prevMoney = useRef<number>(state?.player.money ?? 0);
   const seenLen = useRef<number>(state?.history.length ?? 0);
   const [showEulogy, setShowEulogy] = useState(false);
+  const [workStyle, setWorkStyle] = useState<WorkStyle>("normal");
   const wasDead = useRef<boolean>(state?.player.dead ?? false);
 
   // Ölüm anı → sinematik mersiye (yalnızca yeni ölümde).
@@ -386,7 +387,18 @@ export default function Dashboard() {
         </View>
       ) : (p.age >= 13 && p.profession !== "işsiz") ? (
         <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
-          <PressableScale onPress={() => { hap("tap"); playTap(); doWork(); }} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+          {/* Çalışma stili seçici (Vercel work_rework.py) */}
+          <View style={{ flexDirection: "row", gap: 5, marginBottom: 7 }}>
+            {(["garantici", "normal", "hirsli", "kaytarici"] as const).map((ws) => {
+              const on = workStyle === ws;
+              return (
+                <Pressable key={ws} onPress={() => { hap("tap"); setWorkStyle(ws); }} style={{ flex: 1, alignItems: "center", paddingVertical: 6, borderRadius: 7, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.14)" : "transparent" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.3, color: on ? C.gold : C.parchmentMuted }}>{t("work.style." + ws)}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <PressableScale onPress={() => { hap("tap"); playTap(); doWork(workStyle); }} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
             <GameIcon name="calis" size={15} color={C.gold} />
             <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold, letterSpacing: 1.5 }}>{t("act.work")}</Text>
           </PressableScale>

@@ -539,9 +539,18 @@ export function supportWar(prev: GameState): GameState {
 }
 
 const TITLE_MULT = [1, 1.4, 1.9, 2.4];
-export function work(prev: GameState): GameState {
+// Çalışma stilleri (Vercel work_rework.py portu): risk/ödül dengesi.
+export type WorkStyle = "garantici" | "normal" | "hirsli" | "kaytarici";
+export const WORK_STYLES: { id: WorkStyle; mult: number; fail: number }[] = [
+  { id: "garantici", mult: 0.8, fail: 0.0 },
+  { id: "normal",    mult: 1.0, fail: 0.0 },
+  { id: "hirsli",    mult: 1.4, fail: 0.15 },
+  { id: "kaytarici", mult: 0.4, fail: 0.20 },
+];
+export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.profession === "işsiz") return s;
+  const ws = WORK_STYLES.find((w) => w.id === style) || WORK_STYLES[1];
   const pr = professionById(p.profession);
   const stat = effStat(p, PROF_STAT[p.profession] || "stamina");
   let mult = 1;
@@ -553,12 +562,21 @@ export function work(prev: GameState): GameState {
   const tierBefore = pr ? careerTier(pr, p.career_xp) : 0;
   const titleMult = TITLE_MULT[tierBefore] || 1;
   const base = pr ? pr.base : 4;
-  const earn = Math.round((base + stat * 2 + Math.floor(Math.random() * 6)) * mult * titleMult);
-  p.money += earn; p.hunger = Math.max(0, p.hunger - 6);
+  let earn = Math.round((base + stat * 2 + Math.floor(Math.random() * 6)) * mult * titleMult * ws.mult);
   p.career_xp += 1;
   gainSkill(s, PROF_SKILL[p.profession] || "crafting", 8);
-  push(s, "çalışma", `${careerTitle(p.profession, p.career_xp - 1)} olarak çalıştın, ${earn} akçe kazandın.`);
-  // Terfi?
+  p.hunger = Math.max(0, p.hunger - (style === "kaytarici" ? 3 : 6));
+  // Risk: hırslı bedenini yorar, kaytarıcı yakalanabilir
+  const failed = ws.fail > 0 && Math.random() < ws.fail;
+  if (failed) {
+    earn = Math.round(earn * 0.3);
+    if (style === "hirsli") { const hurt = 4 + Math.floor(Math.random() * 6); p.health = Math.max(0, p.health - hurt); p.money += earn; push(s, "çalışma", `Hırslı çalışırken sakatlandın (−${hurt} sağlık); kazanç düştü (${earn} akçe).`); }
+    else { p.reputation = Math.max(-100, p.reputation - 2); p.money += earn; push(s, "çalışma", `Kaytarırken yakalandın; itibarın sarsıldı, az kazandın (${earn} akçe).`); }
+  } else {
+    p.money += earn;
+    if (style === "kaytarici") p.health = Math.min(100, p.health + 2);
+    push(s, "çalışma", `${careerTitle(p.profession, p.career_xp - 1)} olarak çalıştın, ${earn} akçe kazandın.`);
+  }
   if (pr) { const after = careerTier(pr, p.career_xp); if (after > tierBefore) push(s, "terfi", `Yükseldin: artık ${pr.tiers[after]}!`, "kişisel", true); }
   return s;
 }

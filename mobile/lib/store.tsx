@@ -1,7 +1,7 @@
 // Oyun durumu deposu — React context + AsyncStorage (offline kalıcı kayıt).
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GameState, newGame, advance, eat, work, achievementsOf } from "./game";
+import { GameState, newGame, advance, eat, work, achievementsOf, WorkStyle } from "./game";
 
 const KEY = "kronikler_save_v1";
 
@@ -51,7 +51,7 @@ interface Ctx {
   apply: (fn: (s: GameState) => GameState) => void;
   doAdvance: (n?: number) => void;
   doEat: () => void;
-  doWork: () => void;
+  doWork: (style?: WorkStyle) => void;
   resetGame: () => Promise<void>;
 }
 
@@ -86,7 +86,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const doAdvance = useCallback((n = 1) => apply((s) => advance(s, n)), [apply]);
   const doEat = useCallback(() => apply(eat), [apply]);
-  const doWork = useCallback(() => apply(work), [apply]);
+  const doWork = useCallback((style?: WorkStyle) => apply((s) => work(s, style)), [apply]);
   const resetGame = useCallback(async () => { await AsyncStorage.removeItem(KEY); setState(null); }, []);
 
   return (
