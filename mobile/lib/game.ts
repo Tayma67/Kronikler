@@ -106,7 +106,7 @@ export interface GameState {
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
   wars: FactionWar[];
-  caravan: { invested: number; returnTurn: number; dest: string } | null;
+  caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number } | null;
   econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
   settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
   marketEvent?: { goods: string[]; mult: number; until: number; key: string } | null; // geçici piyasa olayı
@@ -548,32 +548,74 @@ function tickEconomy(s: GameState, announce: boolean) {
   }
 }
 
-// Kervan döndüğünde sonucu çöz (kâr ya da baskın).
+// Kervan saldırı şansı (Vercel caravan._attack_chance portu): taban %12,
+// itibar/savaş/ticaret becerisi/korku ile değişir, %3–40 arası kıstırılır.
+function caravanAttackChance(s: GameState): number {
+  const p = s.player;
+  let c = 0.12;
+  if (p.reputation > 60) c -= 0.04;
+  if (p.reputation > 80) c -= 0.03;
+  if (p.skills.trade >= 4) c -= 0.03;
+  if (p.skills.trade >= 8) c -= 0.03;
+  if (p.fear > 50) c -= 0.03;            // korkulan biri daha az gözü kara saldırı çeker
+  if (s.wars.some((w) => w.turnsLeft > 0)) c += 0.08; // diyar savaştaysa yollar tehlikeli
+  return Math.max(0.03, Math.min(0.4, c));
+}
+// Saldırı kaybı oranı (Vercel caravan._attack_outcome portu): savunma = güç×0.4 + dövüş×0.6.
+function caravanLossPct(s: GameState): number {
+  const p = s.player;
+  const def = p.stats.strength * 0.4 + p.skills.combat * 0.6;
+  if (def >= 12) return 0.10 + Math.random() * 0.20;  // direndin, az kaybettin
+  if (def >= 6) return 0.30 + Math.random() * 0.30;   // yarısı gitti
+  return 0.55 + Math.random() * 0.35;                  // güçsüz kaldın, çoğu gitti
+}
+// Kervanı her ay bir konak ilerlet; yolda saldırı riski, varışta kâr (Vercel process_caravan_tick portu).
 function tickCaravan(s: GameState) {
   const c = s.caravan; if (!c) return;
-  if (s.turn < c.returnTurn) return;
   const p = s.player;
-  const attacked = Math.random() < Math.max(0.05, 0.28 - p.skills.trade * 0.02);
-  if (attacked) {
-    const salvage = Math.round(c.invested * 0.3);
-    p.money += salvage;
-    push(s, "kervan", `${c.dest} kervanın yolda baskına uğradı! Sadece ${salvage} akçe kurtarıldı.`, "kişisel", true);
-  } else {
-    const mult = 1.4 + Math.random() * 0.5 + p.skills.trade * 0.03;
-    const ret = Math.round(c.invested * mult);
-    p.money += ret; gainSkill(s, "trade", 10);
-    push(s, "kervan", `${c.dest} kervanın sağ salim döndü: ${ret} akçe (${c.invested} yatırımdan).`, "kişisel", true);
+  // Eski kayıt göçü: çok-adımlı rota yoksa basit iki-konaklı rota kur.
+  if (!c.route) { c.route = [p.location_name, c.dest]; c.step = 0; c.lost = 0; }
+  const route = c.route; const last = route.length - 1;
+  c.step = Math.min((c.step ?? 0) + 1, last);
+  // Ara konaklarda saldırı kontrolü (varış adımında değil).
+  if (c.step < last) {
+    if (Math.random() < caravanAttackChance(s)) {
+      const lost = Math.round(c.invested * caravanLossPct(s));
+      c.invested -= lost; c.lost = (c.lost ?? 0) + lost;
+      push(s, "kervan", `Kervan ${route[c.step]} yakınında eşkıyaya uğradı! ${lost} akçelik mal yağmalandı.`, "kişisel", true);
+      if (c.invested <= 0) {
+        push(s, "kervan", "Kervan tümüyle yağmalandı; elde bir şey kalmadı.", "kişisel", true);
+        s.caravan = null;
+      }
+    }
+    return; // hâlâ yolda
   }
+  // Varış: hayatta kalan sermaye üzerinden kâr çöz.
+  const mult = 1.35 + Math.random() * 0.4 + p.skills.trade * 0.03;
+  const ret = Math.round(c.invested * mult);
+  p.money += ret; gainSkill(s, "trade", 10);
+  if (ret - c.invested > 200) p.reputation = Math.min(100, p.reputation + 2); // büyük kâr nam getirir
+  const note = (c.lost ?? 0) > 0 ? ` (yolda ${c.lost} akçe yağmaya gitti)` : "";
+  push(s, "kervan", `${c.dest} kervanın vardı ve mallarını sattı: ${ret} akçe${note}.`, "kişisel", true);
   s.caravan = null;
 }
-// Kervan gönder: akçe yatır, birkaç ay sonra kârla (ya da baskınla) döner.
+// Kervan gönder: akçe yatır; çok konaklı bir rota kur, her ay bir konak ilerlesin.
 export function launchCaravan(prev: GameState, amount: number): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || s.caravan || amount <= 0 || p.money < amount) return s;
-  const dest = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
+  const origin = p.location_name;
+  const others = LOCATIONS.filter((l) => l !== origin);
+  if (others.length === 0) return s;
+  const dest = others[Math.floor(Math.random() * others.length)];
+  // 1-2 ara konak (origin ve hedef hariç).
+  const pool = others.filter((l) => l !== dest);
+  const nwp = Math.min(pool.length, 1 + (Math.random() < 0.5 ? 1 : 0));
+  const waypoints: string[] = [];
+  for (let i = 0; i < nwp; i++) waypoints.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  const route = [origin, ...waypoints, dest];
   p.money -= amount;
-  s.caravan = { invested: amount, returnTurn: s.turn + 2 + Math.floor(Math.random() * 2), dest };
-  push(s, "kervan", `${amount} akçelik bir kervan ${dest} yoluna çıktı. Birkaç ay sonra dönecek.`);
+  s.caravan = { invested: amount, dest, route, step: 0, lost: 0 };
+  push(s, "kervan", `${amount} akçelik kervan yola çıktı: ${route.join(" → ")}. ${route.length - 1} konak sürecek.`);
   return s;
 }
 

@@ -109,9 +109,30 @@ export default function Pazar() {
         {/* Kervan paneli */}
         <Panel title={t("paz.caravanTitle")} icon="🐫" tone={C.ember}>
           {state.caravan ? (
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>
-              {t("paz.caravanActive").replace("%d", placeName(state.caravan.dest, lang)).replace("%c", String(state.caravan.invested))}
-            </Text>
+            <>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: state.caravan.route ? 9 : 0 }}>
+                {t("paz.caravanActive").replace("%d", placeName(state.caravan.dest, lang)).replace("%c", String(state.caravan.invested))}
+              </Text>
+              {state.caravan.route && (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 3 }}>
+                  {state.caravan.route.map((stop, i) => {
+                    const cur = i === (state.caravan!.step ?? 0);
+                    const done = i < (state.caravan!.step ?? 0);
+                    return (
+                      <View key={i} style={{ flexDirection: "row", alignItems: "center" }}>
+                        {i > 0 && <Text style={{ color: done ? C.ember : C.border, fontSize: 11, marginHorizontal: 1 }}>→</Text>}
+                        <Text style={{ fontFamily: cur ? F.display : F.serif, fontSize: cur ? 11.5 : 10.5, color: cur ? C.ember : done ? C.parchmentMuted : C.parchmentDim }}>
+                          {cur ? "🐫 " : ""}{placeName(stop, lang)}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+              {!!state.caravan.lost && state.caravan.lost > 0 && (
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.blood, marginTop: 6 }}>⚔ {t("paz.caravanLost").replace("%c", String(state.caravan.lost))}</Text>
+              )}
+            </>
           ) : (
             <>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginBottom: 9 }}>{t("paz.caravanHint")}</Text>
