@@ -346,7 +346,7 @@ function push(s: GameState, type: string, text: string, scope: "kişisel" | "mak
   s.history.push({ day: s.turn, type, text, scope, landmark, k: loc?.k, p: loc?.p });
 }
 function clone(s: GameState): GameState { return JSON.parse(JSON.stringify(s)); }
-function die(s: GameState, text: string) { s.player.dead = true; push(s, "ölüm", text, "kişisel", true); }
+function die(s: GameState, text: string, loc?: { k: string; p?: EvtParam[] }) { s.player.dead = true; push(s, "ölüm", text, "kişisel", true, loc); }
 
 function monthlyFlavor(s: GameState, cal: CalendarInfo): string {
   const child = s.player.age < 13; const pool: string[] = [];
@@ -422,14 +422,14 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (!p.dead && p.age >= 14 && s.story) {
     if (s.story.nemesis && chance(0.10)) {
       const n = s.story.nemesis;
-      const txt = rnd([
-        () => { p.reputation = Math.max(-100, p.reputation - 4); return `${n.name} arkandan kuyunu kazıyor; itibarın sarsıldı.`; },
-        () => { const loss = Math.min(p.money, 8); p.money -= loss; return `${n.name}'ın adamları malına dokundu (−${loss} akçe).`; },
-        () => { p.health = Math.max(1, p.health - 5); return `${n.name} pusu kurdu; sıyrıklarla kurtuldun.`; },
-        () => `${n.name} bir tehdit daha yolladı; hesap görülmeyi bekliyor.`,
-      ])();
+      const nemIdx = Math.floor(Math.random() * 4);
+      let txt: string; let nemP: EvtParam[];
+      if (nemIdx === 0) { p.reputation = Math.max(-100, p.reputation - 4); txt = `${n.name} arkandan kuyunu kazıyor; itibarın sarsıldı.`; nemP = [n.name]; }
+      else if (nemIdx === 1) { const loss = Math.min(p.money, 8); p.money -= loss; txt = `${n.name}'ın adamları malına dokundu (−${loss} akçe).`; nemP = [n.name, loss]; }
+      else if (nemIdx === 2) { p.health = Math.max(1, p.health - 5); txt = `${n.name} pusu kurdu; sıyrıklarla kurtuldun.`; nemP = [n.name]; }
+      else { txt = `${n.name} bir tehdit daha yolladı; hesap görülmeyi bekliyor.`; nemP = [n.name]; }
       s.story.tension = Math.min(100, s.story.tension + 3);
-      push(s, "nemesis", txt, "kişisel");
+      push(s, "nemesis", txt, "kişisel", false, { k: "evj.nem" + nemIdx, p: nemP });
     } else if (!s.story.nemesis && chance(0.03)) {
       const rivals = Object.entries(s.relationships || {}).filter(([, v]) => (v as number) <= -55);
       if (rivals.length) {
@@ -445,7 +445,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const aging = p.age >= 58 ? (p.age - 58) * 0.006 + (p.health < 40 ? 0.01 : 0) : 0;
   if (chance(accident + aging)) {
     const old = p.age >= 60;
-    die(s, old ? `${p.name}, ${p.age} yaşında huzur içinde göçtü.` : `${p.name}, ${p.age} yaşında ${p.health < 25 ? "amansız bir hastalığa" : "ecel"} yenik düştü.`);
+    die(s, old ? `${p.name}, ${p.age} yaşında huzur içinde göçtü.` : `${p.name}, ${p.age} yaşında ${p.health < 25 ? "amansız bir hastalığa" : "ecel"} yenik düştü.`, old ? { k: "evj.dieOld", p: [p.name, p.age] } : (p.health < 25 ? { k: "evj.dieIll", p: [p.name, p.age] } : { k: "evj.dieAge", p: [p.name, p.age] }));
   }
 }
 
@@ -476,12 +476,12 @@ export function advance(prev: GameState, n = 1): GameState {
     if (s.player.hunger < 20 && !child) s.player.health = Math.max(0, s.player.health - 6);
     else if (s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
     if (s.player.faction === "sifaci" && s.player.health < 100) s.player.health = Math.min(100, s.player.health + 2);
-    if (s.player.health <= 0 && !child) { die(s, `${s.player.name} açlık ve hastalığa yenik düştü.`); break; }
+    if (s.player.health <= 0 && !child) { die(s, `${s.player.name} açlık ve hastalığa yenik düştü.`, { k: "evj.dieStarve", p: [s.player.name] }); break; }
     // Yaralar zamanla iyileşir (kalıcı olanlar kalır)
     if (s.player.injuries?.length) {
       for (const inj of s.player.injuries) if (!inj.permanent) inj.weeks_left -= 1;
       const healed = s.player.injuries.filter((inj) => !inj.permanent && inj.weeks_left <= 0);
-      if (healed.length && i === n - 1) push(s, "iyilesme", `Yaraların iyileşti: ${healed.map((h) => h.label).join(", ")}.`);
+      if (healed.length && i === n - 1) push(s, "iyilesme", `Yaraların iyileşti: ${healed.map((h) => h.label).join(", ")}.`, "kişisel", false, { k: "evj.heal", p: [{ wds: healed.map((h) => Math.max(0, INJURY_POOL.findIndex((w) => w.label === h.label))) }] });
       s.player.injuries = s.player.injuries.filter((inj) => inj.permanent || inj.weeks_left > 0);
     }
     // Mülk pasif geliri — KONUMA (şehir refahı) + KONDİSYONA göre; düşük güvenlikte yağma + aşınma
@@ -548,7 +548,7 @@ export function advance(prev: GameState, n = 1): GameState {
         const a = rnd(avail);
         s.story.active = { id: a.id, stage: a.start };
         s.story.tension = Math.max(0, s.story.tension - 4); s.story.lull = 0;
-        push(s, "hikaye_basladi", `Bir hikâye kapını çaldı: "${a.title}". (Hikâyelerim'den sürdür.)`, "kişisel", true);
+        push(s, "hikaye_basladi", `Bir hikâye kapını çaldı: "${a.title}". (Hikâyelerim'den sürdür.)`, "kişisel", true, { k: "evj.arcKnock", p: [a.title] });
       }
     }
     // İlk aylarda yeni oyuncuya garantili olumlu an (tempo: önce kazandır)
@@ -693,10 +693,12 @@ const WORLD_NEWS: string[] = [
   "Yağmurların gecikmesi %b çiftçisini endişelendiriyor.",
 ];
 function worldNews(s: GameState) {
-  const b1 = BEYLIKS[Math.floor(Math.random() * BEYLIKS.length)].name;
-  let b2 = BEYLIKS[Math.floor(Math.random() * BEYLIKS.length)].name; if (b2 === b1) b2 = BEYLIKS[0].name === b1 ? BEYLIKS[1].name : BEYLIKS[0].name;
-  const line = WORLD_NEWS[Math.floor(Math.random() * WORLD_NEWS.length)].replace("%b2", b2).replace("%b", b1);
-  push(s, "dunya", line, "makro");
+  const i1 = Math.floor(Math.random() * BEYLIKS.length);
+  let i2 = Math.floor(Math.random() * BEYLIKS.length); if (i2 === i1) i2 = (i1 + 1) % BEYLIKS.length;
+  const b1 = BEYLIKS[i1], b2 = BEYLIKS[i2];
+  const ni = Math.floor(Math.random() * WORLD_NEWS.length);
+  const line = WORLD_NEWS[ni].replace("%b2", b2.name).replace("%b", b1.name);
+  push(s, "dunya", line, "makro", false, { k: "wnews." + ni, p: [{ bl: b1.id }, { bl: b2.id }] });
 }
 
 // Ekonomi: piyasa zamanla dengeye döner; ara sıra kıtlık/bolluk şoku.
@@ -714,7 +716,7 @@ function tickEconomy(s: GameState, announce: boolean) {
   if (!s.marketEvent && Math.random() < 0.07) {
     const ev = MARKET_EVENTS[Math.floor(Math.random() * MARKET_EVENTS.length)];
     s.marketEvent = { goods: ev.goods, mult: ev.mult, until: s.turn + ev.months, key: ev.key };
-    if (announce) push(s, "piyasa", ev.text, "makro");
+    if (announce) push(s, "piyasa", ev.text, "makro", false, { k: "mev." + ev.key });
   }
 }
 
@@ -813,7 +815,7 @@ export function supportWar(prev: GameState): GameState {
     const hurt = 14 + Math.floor(Math.random() * 12) - armorDefense(p);
     p.health = Math.max(0, p.health - Math.max(4, hurt));
     push(s, "ocak_savasi", `Cephede ağır bir gün; yaralandın.`, "kişisel", false, { k: "evj.frontLose" });
-    if (p.health <= 0) die(s, `${p.name}, ocak savaşında şehit düştü.`);
+    if (p.health <= 0) die(s, `${p.name}, ocak savaşında şehit düştü.`, { k: "evj.dieWar", p: [p.name] });
   }
   return s;
 }
@@ -1116,7 +1118,7 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
     if (test("intelligence", 0.05, 0.4)) { const gain = 10 + Math.floor(Math.random() * 25); p.money += gain; gainSkill(s, "trade", 6); push(s, "yolculuk", `Yolda bir kervana ufak bir ticaret yaptın (+${gain} akçe).`, "kişisel", true, { k: "evj.trCarWin", p: [gain] }); }
     else push(s, "yolculuk", "Yolda bir kervan gördün ama denk bir alışveriş çıkmadı.", "kişisel", false, { k: "evj.trCarLose" });
   }
-  if (p.health <= 0) die(s, `${p.name}, yolda can verdi.`);
+  if (p.health <= 0) die(s, `${p.name}, yolda can verdi.`, { k: "evj.dieRoad", p: [p.name] });
 }
 
 export function travelBy(prev: GameState, dest: string, route: TravelRoute): GameState {
@@ -1134,7 +1136,7 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
       const loss = Math.min(p.money, 5 + Math.floor(Math.random() * 15));
       p.health = Math.max(0, p.health - Math.max(3, hurt)); p.money -= loss;
       push(s, "yolculuk", `Patikada haydut bastı! ${dest}'e zor ulaştın (−sağlık, −${loss} akçe).`, "kişisel", true, { k: "evj.pathAmbush", p: [{ pl: dest }, loss] });
-      if (p.health <= 0) die(s, `${p.name}, patikada haydutlara yenik düştü.`);
+      if (p.health <= 0) die(s, `${p.name}, patikada haydutlara yenik düştü.`, { k: "evj.diePath", p: [p.name] });
     } else {
       push(s, "yolculuk", `Patikadan kestirerek ${dest}'e vardın.`, "kişisel", false, { k: "evj.pathOk", p: [{ pl: dest }] });
     }
@@ -1254,7 +1256,7 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   p.money -= fine; p.reputation = Math.max(-100, p.reputation - 6 - ct.sev * 2 - extra); p.health = Math.max(0, p.health - hurt);
   const why = extra >= 4 ? " Senin gibi tanınmış birinden beklenmezdi; ceza ağır oldu." : "";
   push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.${why}`, "kişisel", true, { k: "evj.crimeCaught", p: [fine, extra >= 4 ? { sfx: "sfx.crimeHard" } : ""] });
-  if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`);
+  if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
   return s;
 }
 
@@ -1654,7 +1656,7 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
     push(s, "savaş_zafer", `${e.title}: Zafer senin! (+${reward} akçe, şöhretin arttı.)`, "kişisel", true, { k: "evj.battleWin", p: [{ enc: e.id }, reward] });
   } else {
     p.health = Math.max(0, Math.round(finalHp));
-    if (p.health <= 0) { die(s, `${p.name}, ${e.title.toLowerCase()} sırasında can verdi.`); return s; }
+    if (p.health <= 0) { die(s, `${p.name}, ${e.title.toLowerCase()} sırasında can verdi.`, { k: "evj.dieEnc", p: [p.name, { enc: e.id }] }); return s; }
     maybeInjure(s, true);
     push(s, "savaş_yenilgi", `${e.title}: Yenildin, yaralarını sardın.`, "kişisel", false, { k: "evj.battleLose", p: [{ enc: e.id }] });
     // Yenilgi bir düşmanlık doğurabilir (nemesis)
@@ -1683,7 +1685,7 @@ export function applyNemesisOutcome(prev: GameState, won: boolean, finalHp: numb
     push(s, "nemesis", `${n.name}'ı alt ettin! Hesap kapandı, adın korkusuz diye anıldı.`, "kişisel", true, { k: "evj.nemWin", p: [n.name] });
   } else {
     p.health = Math.max(0, Math.round(finalHp));
-    if (p.health <= 0) { die(s, `${p.name}, ${n.name} ile hesaplaşmada can verdi.`); return s; }
+    if (p.health <= 0) { die(s, `${p.name}, ${n.name} ile hesaplaşmada can verdi.`, { k: "evj.dieNemesis", p: [p.name, n.name] }); return s; }
     maybeInjure(s, true);
     push(s, "nemesis", `${n.name} yine üstün geldi; intikam bir başka bahara kaldı.`, "kişisel", false, { k: "evj.nemLose", p: [n.name] });
   }
@@ -1810,7 +1812,7 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string):
   if (delta.addItem) p.inventory[delta.addItem] = (p.inventory[delta.addItem] || 0) + 1;
   if (delta.nam) for (const k of Object.keys(delta.nam) as (keyof Nam)[]) bumpNam(p, k, delta.nam[k]!);
   push(s, "olay", resultText, "kişisel");
-  if (p.health <= 0) die(s, `${p.name} bu olaydan sağ çıkamadı.`);
+  if (p.health <= 0) die(s, `${p.name} bu olaydan sağ çıkamadı.`, { k: "evj.dieEvent", p: [p.name] });
   return s;
 }
 
@@ -1939,7 +1941,7 @@ export function advanceArc(prev: GameState, choiceIdx: number, loc?: { result?: 
   } else {
     s.story.active = { id: a.id, stage: c.next };
   }
-  if (s.player.health <= 0) die(s, `${s.player.name} hikâyesinin ortasında can verdi.`);
+  if (s.player.health <= 0) die(s, `${s.player.name} hikâyesinin ortasında can verdi.`, { k: "evj.dieArc", p: [s.player.name] });
   return s;
 }
 
