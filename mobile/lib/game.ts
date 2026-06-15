@@ -1643,6 +1643,19 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "onder",    name: "Diyar Önderi",    desc: "İtibarın 90'ı aşsın.",              icon: "crown",        done: (s) => s.player.reputation >= 90 },
   { id: "kervanci", name: "Kervancı",        desc: "Ticaret becerini 8'e çıkar.",       icon: "scales",       done: (s) => s.player.skills.trade >= 8 },
   { id: "efsane",   name: "Yaşayan Efsane",  desc: "Şöhretin 95'i aşsın.",              icon: "trophy",       done: (s) => s.player.fame >= 95 },
+  // Yeni sistemlere bağlı başarımlar (kervan / işçi / sancak / valilik / aile / soy)
+  { id: "kervan_s", name: "Kervan Sahibi",   desc: "Bir ticaret kervanı yola çıkar.",   icon: "scales",       done: (s) => s.caravan != null },
+  { id: "isveren",  name: "İşveren",         desc: "Bir mülküne işçi al.",              icon: "house",        done: (s) => s.player.properties.some((pr) => (pr.workers || []).length > 0) },
+  { id: "sancakbey",name: "Sancak Beyi",     desc: "Loncan bir sancağa hâkim olsun.",   icon: "banner",       done: (s) => !!s.player.faction && (s.realm || []).some((r) => r.holder === s.player.faction) },
+  { id: "vali_a",   name: "Vali",            desc: "Bir şehre vali ol.",                icon: "crown",        done: (s) => (s.player.governorships?.length || 0) >= 1 },
+  { id: "mezraci",  name: "Mezra Kurucusu",  desc: "Yeni bir yerleşim kur.",            icon: "castle",       done: (s) => (s.settlements?.length || 0) >= 1 },
+  { id: "tacli_a",  name: "Taç Giydin",      desc: "Taht iddiasını kazan.",             icon: "crown",        done: (s) => !!s.player.crowned },
+  { id: "ailereis", name: "Aile Reisi",      desc: "5 aile görevi tamamla.",            icon: "family",       done: (s) => (s.player.fq_claimed?.length || 0) >= 5 },
+  { id: "demiryum", name: "Demir Yumruk",    desc: "Gücünü 10'a çıkar.",                icon: "anvil",        done: (s) => s.player.stats.strength >= 10 },
+  { id: "asilsoy",  name: "Asîl Soy",        desc: "Altıncı nesle ulaş.",               icon: "scroll-open",  done: (s) => s.player.generation >= 6 },
+  { id: "sevgili_a",name: "Halkın Sevgilisi",desc: "İtibar ve şöhretin 70'i aşsın.",    icon: "prayer-beads", done: (s) => s.player.reputation >= 70 && s.player.fame >= 70 },
+  { id: "cenkust",  name: "Cenk Üstadı",     desc: "Savaş becerini 10'a çıkar.",        icon: "crossed-swords", done: (s) => s.player.skills.combat >= 10 },
+  { id: "define",   name: "Define Sahibi",   desc: "10.000 akçeye ulaş.",               icon: "gems",         done: (s) => s.player.money >= 10000 },
 ];
 export function achievementsOf(s: GameState): { a: Achievement; done: boolean }[] {
   return ACHIEVEMENTS.map((a) => ({ a, done: a.done(s) }));
