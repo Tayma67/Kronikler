@@ -71,6 +71,24 @@ export default function Pazar() {
       setBarg({ ...barg, patience, msg: patience <= 0 ? t("paz.walkedOff") : t("paz.firm"), done: patience <= 0 });
     }
   };
+  // Blöf (Vercel "Çarşıda ucuza buldum"): yüksek risk/ödül — tutarsa büyük indirim, tutmazsa satıcı alınır.
+  const doBluff = () => {
+    if (!barg || barg.done) return;
+    const floor = Math.max(1, Math.round(barg.base * 0.6));
+    const ok = Math.random() < bargainChance(state) * 0.7; // pazarlıktan riskli
+    if (ok && barg.price > floor) {
+      hap("success");
+      const newPrice = Math.max(floor, Math.round(barg.price * 0.78)); // pazarlıktan büyük düşüş
+      const patience = Math.max(0, barg.patience - 18);
+      const atFloor = newPrice <= floor;
+      setBarg({ ...barg, price: newPrice, patience, msg: atFloor ? t("paz.floor") : t("paz.bluffWin"), done: atFloor || patience <= 0 });
+    } else {
+      hap("warning");
+      const patience = Math.max(0, barg.patience - 45); // blöf tutmazsa sabır çok düşer
+      const newPrice = Math.min(Math.round(barg.base * 1.1), Math.round(barg.price * 1.05)); // satıcı alınır, fiyat kötüleşir
+      setBarg({ ...barg, price: newPrice, patience, msg: patience <= 0 ? t("paz.walkedOff") : t("paz.bluffFail"), done: patience <= 0 });
+    }
+  };
   const confirmBuy = () => {
     if (!barg) return;
     hap("advance");
@@ -226,9 +244,14 @@ export default function Pazar() {
 
                 {/* Aksiyonlar */}
                 {!barg.done && (
-                  <Pressable onPress={doHaggle} style={{ paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center", marginBottom: 8 }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>🤝 {t("paz.haggle")}</Text>
-                  </Pressable>
+                  <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+                    <Pressable onPress={doHaggle} style={{ flex: 1, paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>🤝 {t("paz.haggle")}</Text>
+                    </Pressable>
+                    <Pressable onPress={doBluff} style={{ flex: 1, paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: "rgba(123,79,175,0.5)", backgroundColor: "rgba(123,79,175,0.12)", alignItems: "center" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.ink }}>🎭 {t("paz.bluff")}</Text>
+                    </Pressable>
+                  </View>
                 )}
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   <Pressable onPress={() => { hap("tap"); setBarg(null); }} style={{ flex: 1, paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, alignItems: "center" }}>
