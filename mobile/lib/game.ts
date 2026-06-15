@@ -4,6 +4,7 @@ import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx } from "./world";
 import { Lang } from "./locale-data";
 import { converse, ConvResult } from "./dialogue";
+import { Memory, addMemory, decayMemories, effectiveRel, behaviorTier } from "./npc-mind";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
 
 export interface Stats { strength: number; intelligence: number; charisma: number; stamina: number; }
@@ -155,7 +156,17 @@ export function joinThreshold(p: Player, f: Faction): number { return p.perks.in
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; }
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; }
-export interface NpcState { mood: number; memories: string[]; }
+export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; }
+// İlişkinin etkin değeri: kalıcı taban + yapısal anıların toplam yükü (Vercel effective_rel).
+export function relWith(s: GameState, id: string): number {
+  return effectiveRel(s.relationships[id] || 0, s.npc_state?.[id]?.anilar);
+}
+// Bir NPC'ye yapısal anı ekle (kişiselleştirilmiş hatırlama + dedikodu + nam kaynağı).
+function remember(s: GameState, id: string, tur: string, opts?: { yuk?: number; taniklar?: string[] }) {
+  const ns = npcStateOf(s, id);
+  if (!ns.anilar) ns.anilar = [];
+  addMemory(ns.anilar, tur, s.turn, opts);
+}
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
@@ -468,6 +479,12 @@ export function advance(prev: GameState, n = 1): GameState {
     if (s.player.dead) break;
     s.turn += 1; const cal = currentCalendar(s.turn);
     s.player.age = playerAge(s.player.base_age, s.turn);
+    // NPC anıları haftalık söner (travmalar kalıcı); anlamsız geçici girdiler budanır (perf + temizlik).
+    if (s.npc_state) for (const id in s.npc_state) {
+      const ns = s.npc_state[id];
+      if (ns.anilar && ns.anilar.length) ns.anilar = decayMemories(ns.anilar);
+      if ((!ns.anilar || !ns.anilar.length) && Math.abs(s.relationships[id] || 0) < 5 && Math.abs(ns.mood) < 5 && (!ns.memories || !ns.memories.length)) delete s.npc_state[id];
+    }
     const child = s.player.age < 13;
     // Çocuğu ailesi besler: açlık daha yavaş düşer ve dipte aile karnını doyurur.
     const drop = Math.round((child ? 4 : 8) * (cal.season === "Kış" ? 1.3 : 1.0));
@@ -974,7 +991,8 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   const s = clone(prev); const p = s.player;
   const ns = npcStateOf(s, npc.id);
   const rel = s.relationships[npc.id] || 0;
-  const r: ConvResult = converse(npc, ns.mood, rel, p.stats.charisma, intent, lang as any);
+  // NPC, sohbette etkin ilişkiye (taban + anılar) göre davranır — hatırladıkları konuşmasına yansır.
+  const r: ConvResult = converse(npc, ns.mood, effectiveRel(rel, ns.anilar), p.stats.charisma, intent, lang as any);
   let relDelta = r.relDelta;
   if (relDelta > 0) {
     relDelta *= talkWarmthMod(s);                                  // sıcak/korkulan tanınmanın etkisi
@@ -986,6 +1004,9 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   ns.mood = Math.max(-100, Math.min(100, ns.mood + r.moodDelta));
   ns.memories.push(r.memory);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
+  // Yapısal anı: sohbet sonucuna göre türlenir (decay'li, ilişkiye etkin).
+  const memTur = relDelta >= 8 ? "icten_sohbet" : relDelta > 0 ? "guzel_sohbet" : relDelta <= -3 ? "alay" : relDelta < 0 ? "rahatsizlik" : "guzel_sohbet";
+  remember(s, npc.id, memTur);
   gainSkill(s, "social", 5);
   push(s, "sohbet", `${npc.name}: ${r.line}`);
   return { state: s, line: r.line };
@@ -1001,6 +1022,7 @@ export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   ns.mood = Math.max(-100, Math.min(100, ns.mood + 14));
   ns.memories.push(`${ITEMS[itemId]?.name || "Bir hediye"} hediye ettin.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
+  remember(s, npc.id, (ITEMS[itemId]?.buy || 0) >= 25 ? "comert_hediye" : "hediye");
   push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`, "kişisel", false, { k: "evj.gift", p: [npc.name, { i: itemId }] });
   return s;
 }
@@ -1023,6 +1045,7 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   gainSkill(s, "social", 6);
   ns.memories.push(`Amacına omuz verdin: ${npc.goal}.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
+  remember(s, npc.id, "yardim"); // kalıcıya yakın +20 anı (Vercel: "sana borçlu")
   push(s, "sohbet", `${npc.name}'in "${npc.goal}" derdine ${GOAL_HELP_COST} akçeyle omuz verdin; sana minnettar kaldı.`, "kişisel", true, { k: "evj.helpGoal", p: [npc.name, { goalk: npc.goal }, GOAL_HELP_COST] });
   return s;
 }
@@ -1042,6 +1065,7 @@ export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
   bumpNam(p, "zalim", 5);
   ns.memories.push(`Amacını istismar edip seni kullandı.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
+  remember(s, npc.id, "somuru"); // skandal anı → ileride dedikoduya dönüşür
   push(s, "sohbet", `${npc.name}'in "${npc.goal}" umudunu istismar edip ${gain} akçe kopardın; sana diş biledi.`, "kişisel", true, { k: "evj.exploitGoal", p: [npc.name, { goalk: npc.goal }, gain] });
   return s;
 }

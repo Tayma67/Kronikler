@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST } from "../../../lib/game";
+import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith } from "../../../lib/game";
 import { useI18n } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
@@ -67,7 +67,7 @@ export default function NpcDetail() {
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const npc = allNpcs.find((n) => n.id === id);
   if (!npc) return <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top + 40 }}><Text style={{ color: C.parchmentMuted, textAlign: "center" }}>{t("npc.notFound")}</Text></View>;
-  const v = state.relationships[npc.id] || 0;
+  const v = relWith(state, npc.id);
   const band = bandOf(v);
   const ns = state.npc_state?.[npc.id] || { mood: 0, memories: [] };
   const giftables = Object.keys(state.player.inventory).filter((k) => state.player.inventory[k] > 0);

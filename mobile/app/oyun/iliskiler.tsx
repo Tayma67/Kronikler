@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { npcsOf } from "../../lib/game";
+import { npcsOf, relWith } from "../../lib/game";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { professionNameL, placeName } from "../../lib/locale-data";
 import { Portre } from "../../lib/ui";
@@ -56,8 +56,7 @@ export default function Iliskiler() {
   const { lang, t } = useI18n();
   const npcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang, state?.player.location_name]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
-  const rel = state.relationships;
-  const all = npcs.map((n) => ({ n, v: rel[n.id] || 0 }));
+  const all = npcs.map((n) => ({ n, v: relWith(state, n.id) }));
   const grouped = BANDS.map((b) => ({
     b,
     list: all.filter(({ v }) => bandOf(v).id === b.id).sort((a, z) => Math.abs(z.v) - Math.abs(a.v)),
