@@ -434,6 +434,7 @@ export function advance(prev: GameState, n = 1): GameState {
     tickWars(s, i === n - 1);
     tickCaravan(s);
     tickEconomy(s, i === n - 1);
+    if (i === n - 1 && !s.player.dead && chance(0.16)) worldNews(s);  // diyarın diline düşenler
     if (i === n - 1) claimAchievements(s); // ay sonunda yeni başarımları ödüllendir
     if (s.story) s.story.tension = Math.min(100, s.story.tension + 1); // gerilim zamanla birikir
     // Proaktif hikâye: dünya ara sıra kendiliğinden bir yay açar (gerilim arttıkça daha olası).
@@ -491,6 +492,31 @@ function tickWars(s: GameState, announce: boolean) {
     if (s.player.faction === winner) { s.player.faction_standing[winner] = (s.player.faction_standing[winner] || 0) + 8; s.player.fame = Math.min(100, s.player.fame + 4); }
   }
   s.wars = s.wars.filter((w) => w.turnsLeft > 0);
+}
+
+// Dünya olayları / söylentiler (Vercel world_events.py + rumors.py portu, anlatısal) — makro akış.
+const WORLD_NEWS: string[] = [
+  "%b'nde voyvoda değişti; halk yeni efendisini tartıyor.",
+  "%b ile %b2 arasında sınır anlaşmazlığı büyüyor.",
+  "Uzak diyarlardan gelen bir kervan ipek ve baharat getirdi; çarşı canlandı.",
+  "%b'nde kuraklık söylentileri dolaşıyor, fiyatlar ürkek.",
+  "Bir derviş diyarı dolaşıp kıyamet vaaz ediyor; kimi inanıyor, kimi gülüyor.",
+  "%b beyi büyük bir av tertip etti; ileri gelenler davetli.",
+  "Sınır boylarında akıncı hareketliliği arttı.",
+  "%b pazarında bir vurguncu yakalanıp teşhir edildi.",
+  "Güneydeki köylerde hastalık söylentileri tedirginlik yaratıyor.",
+  "%b'nde yeni bir han açıldı; yollar daha kalabalık.",
+  "Gökte görülen kuyruklu yıldız kötüye yoruluyor.",
+  "Bir ozan, %b beyini öven kasidesiyle dilden dile dolaşıyor.",
+  "%b'nde ağır vergiler halkı homurdandırıyor.",
+  "İki tüccar loncası %b çarşısında rekabete tutuştu.",
+  "Yağmurların gecikmesi %b çiftçisini endişelendiriyor.",
+];
+function worldNews(s: GameState) {
+  const b1 = BEYLIKS[Math.floor(Math.random() * BEYLIKS.length)].name;
+  let b2 = BEYLIKS[Math.floor(Math.random() * BEYLIKS.length)].name; if (b2 === b1) b2 = BEYLIKS[0].name === b1 ? BEYLIKS[1].name : BEYLIKS[0].name;
+  const line = WORLD_NEWS[Math.floor(Math.random() * WORLD_NEWS.length)].replace("%b2", b2).replace("%b", b1);
+  push(s, "dunya", line, "makro");
 }
 
 // Ekonomi: piyasa zamanla dengeye döner; ara sıra kıtlık/bolluk şoku.
