@@ -630,7 +630,12 @@ export function advance(prev: GameState, n = 1): GameState {
       const base = PROPERTY_TYPES[pr.type]?.income || 0;
       const ci = cityOf(pr.loc || s.player.location_name);
       const condProspLevel = (0.75 + ci.prosperity / 200) * (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5);
-      inc += base * condProspLevel;
+      // Tipe özgü davranış (Vercel property_system per-tip tick ruhu): tarla mevsimlik, dükkân refaha duyarlı.
+      const typeMult = pr.type === "tarla" ? ({ "İlkbahar": 1.0, "Yaz": 1.15, "Sonbahar": 1.7, "Kış": 0.25 }[cal.season] ?? 1)
+        : pr.type === "dukkan" ? (1 + ci.prosperity / 300)
+        : pr.type === "ev" ? 0.7 : 1;
+      inc += base * condProspLevel * typeMult;
+      if (pr.type === "ev" && (pr.level || 1) >= 2 && chance(0.04)) s.player.reputation = Math.min(100, s.player.reputation + 1); // köklü ev → itibar damlası
       // İşçi ekonomisi: çalışan NPC'ler üretimi artırır ama ücret ister.
       const w = propWorkerStats(pr, base, condProspLevel);
       inc += w.gross; wages += w.wage;
