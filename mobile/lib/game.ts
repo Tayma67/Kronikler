@@ -1088,27 +1088,27 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
   const ev = pool[Math.floor(Math.random() * pool.length)];
   if (ev === "han") {
     const cost = Math.min(p.money, 4 + Math.floor(Math.random() * 4));
-    if (cost > 0) { p.money -= cost; p.health = Math.min(100, p.health + 8); p.hunger = Math.min(100, p.hunger + 12); push(s, "yolculuk", `Yol üstü bir handa mola verdin (−${cost} akçe); dinlenip karnını doyurdun.`); }
+    if (cost > 0) { p.money -= cost; p.health = Math.min(100, p.health + 8); p.hunger = Math.min(100, p.hunger + 12); push(s, "yolculuk", `Yol üstü bir handa mola verdin (−${cost} akçe); dinlenip karnını doyurdun.`, "kişisel", false, { k: "evj.trHan", p: [cost] }); }
   } else if (ev === "tuccar") {
     // Gezgin satıcı: ucuza yararlı bir mal.
     const goods = ["sifa", "ekmek", "et", "bal"]; const g = goods[Math.floor(Math.random() * goods.length)];
-    if (test("charisma", 0.06, 0.45)) { p.inventory[g] = (p.inventory[g] || 0) + 1; push(s, "yolculuk", `Gezgin bir satıcıyla karşılaştın; pazarlıkla ucuza bir ${ITEMS[g]?.name || g} kaptın.`, "kişisel", true); }
-    else push(s, "yolculuk", "Gezgin bir satıcı malını fazla pahalı istedi; eli boş yürüdün.");
+    if (test("charisma", 0.06, 0.45)) { p.inventory[g] = (p.inventory[g] || 0) + 1; push(s, "yolculuk", `Gezgin bir satıcıyla karşılaştın; pazarlıkla ucuza bir ${ITEMS[g]?.name || g} kaptın.`, "kişisel", true, { k: "evj.trMerchWin", p: [{ i: g }] }); }
+    else push(s, "yolculuk", "Gezgin bir satıcı malını fazla pahalı istedi; eli boş yürüdün.", "kişisel", false, { k: "evj.trMerchLose" });
   } else if (ev === "yolcu") {
     // Yol arkadaşı (derviş/kaçak/tüccar/asker) — sohbetten beceri/irfan.
-    const kinds = ["derviş", "kaçak tüccar", "yaşlı asker", "seyyah"]; const who = kinds[Math.floor(Math.random() * kinds.length)];
-    if (test("charisma", 0.05, 0.5)) { gainSkill(s, "social", 12); push(s, "yolculuk", `Yolda bir ${who} ile dertleştin; sohbetinden hisse kaptın (sosyal beceri arttı).`, "kişisel", true); }
-    else push(s, "yolculuk", `Yolda bir ${who} ile yürüdün; lafı pek tutmadı.`);
+    const kinds = ["derviş", "kaçak tüccar", "yaşlı asker", "seyyah"]; const whoIdx = Math.floor(Math.random() * kinds.length); const who = kinds[whoIdx];
+    if (test("charisma", 0.05, 0.5)) { gainSkill(s, "social", 12); push(s, "yolculuk", `Yolda bir ${who} ile dertleştin; sohbetinden hisse kaptın (sosyal beceri arttı).`, "kişisel", true, { k: "evj.trCompWin", p: [{ wc: whoIdx }] }); }
+    else push(s, "yolculuk", `Yolda bir ${who} ile yürüdün; lafı pek tutmadı.`, "kişisel", false, { k: "evj.trCompLose", p: [{ wc: whoIdx }] });
   } else if (ev === "firtina") {
-    if (test("stamina", 0.06, 0.45)) push(s, "yolculuk", "Yolda fırtınaya yakalandın ama sağlam bir kayalığa sığınıp atlattın.");
-    else { const hurt = 5 + Math.floor(Math.random() * 8); p.health = Math.max(1, p.health - hurt); p.hunger = Math.max(0, p.hunger - 8); push(s, "yolculuk", `Yolda fırtına seni hırpaladı (−${hurt} sağlık).`, "kişisel", true); }
+    if (test("stamina", 0.06, 0.45)) push(s, "yolculuk", "Yolda fırtınaya yakalandın ama sağlam bir kayalığa sığınıp atlattın.", "kişisel", false, { k: "evj.trStormWin" });
+    else { const hurt = 5 + Math.floor(Math.random() * 8); p.health = Math.max(1, p.health - hurt); p.hunger = Math.max(0, p.hunger - 8); push(s, "yolculuk", `Yolda fırtına seni hırpaladı (−${hurt} sağlık).`, "kişisel", true, { k: "evj.trStormLose", p: [hurt] }); }
   } else if (ev === "gecit") {
-    if (test("strength", 0.06, 0.42)) { gainSkill(s, "combat", 6); push(s, "yolculuk", "Sarp bir geçidi güçle aşıp kestirme yaptın."); }
-    else { const hurt = 4 + Math.floor(Math.random() * 7); p.health = Math.max(1, p.health - hurt); push(s, "yolculuk", `Sarp geçitte ayağın kaydı, biraz hırpalandın (−${hurt} sağlık).`); }
+    if (test("strength", 0.06, 0.42)) { gainSkill(s, "combat", 6); push(s, "yolculuk", "Sarp bir geçidi güçle aşıp kestirme yaptın.", "kişisel", false, { k: "evj.trPassWin" }); }
+    else { const hurt = 4 + Math.floor(Math.random() * 7); p.health = Math.max(1, p.health - hurt); push(s, "yolculuk", `Sarp geçitte ayağın kaydı, biraz hırpalandın (−${hurt} sağlık).`, "kişisel", false, { k: "evj.trPassLose", p: [hurt] }); }
   } else if (ev === "kervanf") {
     // Kervan fırsatı: ticaret testiyle küçük kâr.
-    if (test("intelligence", 0.05, 0.4)) { const gain = 10 + Math.floor(Math.random() * 25); p.money += gain; gainSkill(s, "trade", 6); push(s, "yolculuk", `Yolda bir kervana ufak bir ticaret yaptın (+${gain} akçe).`, "kişisel", true); }
-    else push(s, "yolculuk", "Yolda bir kervan gördün ama denk bir alışveriş çıkmadı.");
+    if (test("intelligence", 0.05, 0.4)) { const gain = 10 + Math.floor(Math.random() * 25); p.money += gain; gainSkill(s, "trade", 6); push(s, "yolculuk", `Yolda bir kervana ufak bir ticaret yaptın (+${gain} akçe).`, "kişisel", true, { k: "evj.trCarWin", p: [gain] }); }
+    else push(s, "yolculuk", "Yolda bir kervan gördün ama denk bir alışveriş çıkmadı.", "kişisel", false, { k: "evj.trCarLose" });
   }
   if (p.health <= 0) die(s, `${p.name}, yolda can verdi.`);
 }
