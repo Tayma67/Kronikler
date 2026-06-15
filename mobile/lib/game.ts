@@ -1,6 +1,6 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
-import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse } from "./world";
+import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx } from "./world";
 import { Lang } from "./locale-data";
 import { converse, ConvResult } from "./dialogue";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
@@ -606,6 +606,8 @@ function tickFactions(s: GameState, announce: boolean) {
 // Rakip hanedanların yaşayan durumu (yoksa tohumdan başlat).
 export function ensureRivals(s: GameState): RivalHouse[] {
   if (!s.rivals) s.rivals = generateDynasties(s.seed);
+  // Eski kayıt göçü: nameIdx yoksa TR addan türet (kültürel yerelleştirme için).
+  for (const h of s.rivals) if (h.nameIdx == null) h.nameIdx = houseNameIdx(h.name);
   return s.rivals;
 }
 // Rakip hanedan tikİ (Vercel dynasties.py portu): güç mizaca göre sürüklenir + ara sıra hamle yaparlar.

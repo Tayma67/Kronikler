@@ -177,18 +177,34 @@ export function cityInfo(name: string, kind: string, lang: Lang = "tr"): CityInf
   return { governor: gov, security, prosperity, population, blurb: tFor(lang, `cityblurb.${bi}`) };
 }
 
-// Rakip hanedanlar — diyarın güç odakları (deterministik).
-export interface RivalHouse { id: string; name: string; power: number; pride: number; trait: string; }
+// Rakip hanedanlar — diyarın güç odakları (deterministik). nameIdx = kültürel havuz indeksi.
+export interface RivalHouse { id: string; name: string; nameIdx: number; power: number; pride: number; trait: string; }
 const HOUSE_NAMES = ["Karaoğulları","Akhanlılar","Demiroğulları","Şahinoğulları","Bozkurtlar","Yıldızoğulları","Çelikhanlar","Aslanoğulları","Toprakoğulları","Gümüşhanlılar","Kayıoğulları","Doğanoğulları"];
+// Hanedan adları seçilen dilin kültürüne göre (index-index TR ile eşleşir).
+const HOUSE_POOLS: Record<Lang, string[]> = {
+  tr: HOUSE_NAMES,
+  en: ["Blackmane","Ironhold","Falconcrest","Greywolf","Starhaven","Steelborn","Lionheart","Earthford","Silverhall","Hawkwind","Oakenshield","Ravenscar"],
+  es: ["Casa Cuervo","Casa Halcón","Casa de Hierro","Casa Lobo","Casa Estrella","Casa Acero","Casa León","Casa Tierra","Casa Plata","Casa Águila","Casa Roble","Casa Toro"],
+  pt: ["Casa Corvo","Casa Falcão","Casa do Ferro","Casa Lobo","Casa Estrela","Casa Aço","Casa Leão","Casa Terra","Casa Prata","Casa Águia","Casa Carvalho","Casa Touro"],
+  ar: ["بنو غُراب","آل الصقر","بنو الحديد","بنو الذئب","آل النجم","بنو الفولاذ","آل الأسد","بنو الأرض","آل الفضّة","بنو النسر","آل البلّوط","بنو الثور"],
+  ru: ["Воронцовы","Соколовы","Железновы","Волковы","Звездины","Стальновы","Львовы","Земцовы","Серебровы","Орловы","Дубовы","Турановы"],
+};
+// Hanedanın seçilen dildeki adı.
+export function houseName(nameIdx: number, lang: Lang = "tr"): string {
+  const pool = HOUSE_POOLS[lang] || HOUSE_NAMES;
+  return pool[nameIdx] ?? HOUSE_NAMES[nameIdx] ?? "";
+}
+// Eski kayıt göçü: TR hanedan adından kültürel indeks.
+export function houseNameIdx(name: string): number { const i = HOUSE_NAMES.indexOf(name); return i < 0 ? 0 : i; }
 const HOUSE_TRAITS = ["gururlu","ihtiraslı","temkinli","cömert","kindar","sadık"];
 export function generateDynasties(seed: number, n = 10): RivalHouse[] {
   const r = mkRng((seed ^ 0x9e3779b9) >>> 0);
-  const names = [...HOUSE_NAMES];
+  const idxPool = HOUSE_NAMES.map((_, i) => i);
   const out: RivalHouse[] = [];
-  for (let i = 0; i < n && names.length; i++) {
-    const idx = Math.floor(r() * names.length);
-    const name = names.splice(idx, 1)[0];
-    out.push({ id: "house_" + i, name, power: 40 + Math.floor(r() * 56), pride: 20 + Math.floor(r() * 60), trait: pick(HOUSE_TRAITS, r) });
+  for (let i = 0; i < n && idxPool.length; i++) {
+    const pickIdx = Math.floor(r() * idxPool.length);
+    const nameIdx = idxPool.splice(pickIdx, 1)[0];
+    out.push({ id: "house_" + i, name: HOUSE_NAMES[nameIdx], nameIdx, power: 40 + Math.floor(r() * 56), pride: 20 + Math.floor(r() * 60), trait: pick(HOUSE_TRAITS, r) });
   }
   return out;
 }

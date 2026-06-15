@@ -10,7 +10,7 @@ import {
   WILL_STYLES, throneRequirements, throneBacking, canClaimThrone, throneOdds, claimThrone, THRONE_COST,
   canFoundSettlement, foundSettlement, settlementIncome, SETTLE_COST, SETTLE_MAX, developSettlement, developSettlementCost,
 } from "../../lib/game";
-import { generateDynasties } from "../../lib/world";
+import { generateDynasties, houseName as rivalHouseName } from "../../lib/world";
 import { professionNameL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -197,7 +197,7 @@ export default function Hanedan() {
         {/* ── DİYARIN HANEDANLARI ── */}
         {(() => {
           const mine = { id: "mine", name: houseName, power, mine: true, attitude: 0 };
-          const rivals = baseRivals.map((h) => ({ id: h.id, name: h.name, power: h.power, mine: false, attitude: houseAttitude(p, h) }));
+          const rivals = baseRivals.map((h) => ({ id: h.id, name: h.nameIdx != null ? rivalHouseName(h.nameIdx, lang) : h.name, power: h.power, mine: false, attitude: houseAttitude(p, h) }));
           const all = [...rivals, mine].sort((a, b) => b.power - a.power);
           return (
             <>
