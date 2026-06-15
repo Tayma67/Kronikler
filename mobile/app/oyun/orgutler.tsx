@@ -2,9 +2,9 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex, BEYLIKS, beylikName, defaultRealm, factionHoldsHere, regionOf } from "../../lib/game";
+import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex, BEYLIKS, beylikName, defaultRealm, factionHoldsHere, regionOf, factionBanLeft } from "../../lib/game";
 import { C, F } from "../../lib/theme";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader } from "../../lib/ui";
 
@@ -109,7 +109,8 @@ export default function Orgutler() {
           const standing = p.faction_standing[f.id] || 0;
           const isMember = p.faction === f.id;
           const need = joinThreshold(p, f);
-          const canJoin = !isMember && standing >= need;
+          const banLeft = factionBanLeft(p, f.id, state.turn);
+          const canJoin = !isMember && standing >= need && banLeft <= 0;
           const canAct = p.age >= 13 && !p.dead;
           return (
             <View key={f.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: isMember ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 10, padding: 14, marginBottom: 10 }}>
@@ -142,7 +143,11 @@ export default function Orgutler() {
                   <Text style={{ fontFamily: F.display, fontSize: 11, color: canAct ? C.parchment : C.parchmentMuted }}>{t("fac."+f.id+".tl").toUpperCase()}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.goldDim, marginTop: 2 }}>+{f.task.reward}⚜ · +{f.task.standing} {t("fac.repute").toLowerCase()}</Text>
                 </Pressable>
-                {!isMember && (
+                {!isMember && banLeft > 0 ? (
+                  <View style={{ paddingVertical: 10, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: C.border, backgroundColor: C.bg, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.blood, letterSpacing: 0.5 }}>{applyParams(t("fac.banLeft"), [banLeft])}</Text>
+                  </View>
+                ) : !isMember && (
                   <Pressable disabled={!canJoin || !canAct} onPress={() => { hap("success"); apply((s) => joinFaction(s, f.id)); }} style={{ paddingVertical: 10, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: canJoin ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: canJoin ? "rgba(201,168,76,0.12)" : C.bg, alignItems: "center", justifyContent: "center" }}>
                     <Text style={{ fontFamily: F.display, fontSize: 11, color: canJoin ? C.gold : C.parchmentMuted, letterSpacing: 1 }}>{t("misc.join")}</Text>
                   </Pressable>

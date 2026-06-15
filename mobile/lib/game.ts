@@ -33,6 +33,8 @@ export interface Player {
   last_study_turn?: number; lesson_count?: number; // mektep: ayda 1 ders + sınav sayacı
   governorships?: string[]; // valisi olunan şehirler
   govLeg?: Record<string, number>; // valilik meşruiyeti (şehir → 0-100); düşerse isyan/azil
+  factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
+  factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -1791,10 +1793,15 @@ export function doFactionTask(prev: GameState, id: string): GameState {
 }
 
 // Bir örgüte katıl: yeterli örgüt itibarı (görevle kazanılır) gerekir. Tek örgüt üyeliği.
+// Bir fraksiyona geri dönüş yasağı sürüyor mu (kaç tur kaldı; 0 = yasak yok).
+export function factionBanLeft(p: Player, id: string, turn: number): number {
+  return Math.max(0, (p.factionBans?.[id] ?? 0) - turn);
+}
 export function joinFaction(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const f = factionById(id);
   if (!f || p.dead || p.age < 13) return s;
   if (p.faction === id) return s;
+  if (factionBanLeft(p, id, s.turn) > 0) { push(s, "örgüt_katılım", `${f.name} seni henüz geri almıyor; saflarını terk edenin sözü ağır.`, "kişisel", false, { k: "evj.facBanned", p: [{ fc: f.id }] }); return s; }
   const need = hasPerk(p, "karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep;
   if ((p.faction_standing[id] || 0) < need) return s;
   p.faction = id; p.reputation = Math.min(100, p.reputation + 6);
@@ -1806,8 +1813,16 @@ export function joinFaction(prev: GameState, id: string): GameState {
 export function leaveFaction(prev: GameState): GameState {
   const s = clone(prev); const p = s.player; const f = factionById(p.faction);
   if (!f) return s;
+  const fid = f.id;
   p.faction = null; p.reputation = Math.max(-100, p.reputation - 4);
-  push(s, "örgüt_ayrılma", `${f.name} saflarından ayrıldın.`, "kişisel", false, { k: "evj.facLeave", p: [{ fc: f.id }] });
+  // Geri dönüş yasağı tırmanır: ilk ayrılış 26 tur, ikinci 52, üçüncü+ kalıcıya yakın (156).
+  if (!p.factionLeaves) p.factionLeaves = {};
+  if (!p.factionBans) p.factionBans = {};
+  p.factionLeaves[fid] = (p.factionLeaves[fid] || 0) + 1;
+  const cd = p.factionLeaves[fid] >= 3 ? 156 : p.factionLeaves[fid] === 2 ? 52 : 26;
+  p.factionBans[fid] = s.turn + cd;
+  p.faction_standing[fid] = Math.round((p.faction_standing[fid] || 0) * 0.5); // itibar yarılanır
+  push(s, "örgüt_ayrılma", `${f.name} saflarından ayrıldın; bir süre geri alınmazsın.`, "kişisel", false, { k: "evj.facLeave", p: [{ fc: f.id }] });
   return s;
 }
 
