@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { placeKind, recognition, publicPerception, atHome } from "../../lib/game";
+import { placeKind, recognition, publicPerception, atHome, regionOf, defaultRealm, factionById, beylikName } from "../../lib/game";
 import { cityInfo, localSpecialtyName, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -85,7 +85,12 @@ export default function Sehir() {
           <InfoRow label={t("diyar.governor")} value={info.governor} />
           <InfoRow label={t("diyar.security")} value={`${info.security}/100`} />
           <InfoRow label={t("diyar.prosperity")} value={`${info.prosperity}/100`} />
-          <InfoRow label={t("diyar.livelihood")} value={localSpecialtyName(locSeed(here), lang)} last />
+          <InfoRow label={t("diyar.livelihood")} value={localSpecialtyName(locSeed(here), lang)} />
+          {(() => {
+            const sn = (state.realm ?? defaultRealm()).find((r) => r.id === regionOf(here));
+            const f = sn ? factionById(sn.holder) : null;
+            return <InfoRow label={t("realm.holder")} value={`${beylikName(regionOf(here))} · ${f ? f.icon + " " + t("fac." + f.id + ".n") : "—"}`} last />;
+          })()}
         </View>
 
         {/* Diyarı gez */}
