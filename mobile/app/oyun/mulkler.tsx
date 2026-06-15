@@ -44,7 +44,7 @@ export default function Mulkler() {
                       <Text style={{ fontSize: 20 }}>{ty.icon}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{ty.name} <Text style={{ fontSize: 10, color: C.goldDim }}>Kademe {pr.level || 1}</Text></Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("pt." + pr.type)} <Text style={{ fontSize: 10, color: C.goldDim }}>{t("mulk.level")} {pr.level || 1}</Text></Text>
                       <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>📍 {placeName(pr.loc, lang)} · {Math.round(ty.income * (1 + ((pr.level || 1) - 1) * 0.5))} {t("mulk.perMonth")}</Text>
                     </View>
                     <View style={{ gap: 5 }}>
@@ -130,7 +130,7 @@ export default function Mulkler() {
                 <Text style={{ fontSize: 20 }}>{ty.icon}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{ty.name}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("pt." + id)}</Text>
                 <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{ty.income} {t("mulk.perMonth")}</Text>
               </View>
               <Pressable onPress={() => { hap("tap"); apply((s) => buyProperty(s, id)); }} disabled={p.money < ty.cost} style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < ty.cost ? C.bg : "rgba(201,168,76,0.12)" }}>

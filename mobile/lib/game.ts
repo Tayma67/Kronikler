@@ -917,27 +917,6 @@ export function buyItem(prev: GameState, id: string): GameState {
   push(s, "ticaret", `${g.name} aldın (${price} akçe).`);
   return s;
 }
-// Pazarlık ederek al — karizma+ticaret başarıyı belirler; başarısızsa satıcı surat asar (tam fiyat).
-export function bargainBuy(prev: GameState, id: string): GameState {
-  const s = clone(prev); const p = s.player;
-  const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
-  let disc = p.faction === "tuccar" ? 0.85 : 1;
-  if (hasPerk(p, "pazarlikci")) disc -= 0.10;
-  const base = Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id)));
-  const ok = Math.random() < 0.4 + effStat(p, "charisma") * 0.04 + p.skills.trade * 0.03 + bargainBonus(s);
-  const price = ok ? Math.max(1, Math.round(base * 0.8)) : base;
-  if (p.money < price) return s;
-  p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
-  gainSkill(s, "trade", ok ? 8 : 4);
-  if (ok) {
-    const why = dread(s) > 25 ? " Esnaf senden çekindi." : esteem(s) > 25 ? " İtibarın işine yaradı." : "";
-    push(s, "ticaret", `Pazarlık tuttu! ${g.name} ucuza aldın (${price} akçe).${why}`);
-  } else {
-    const why = recognition(s) < 0.2 ? " Burada kimse seni tanımıyor, sözün geçmedi." : "";
-    push(s, "ticaret", `Pazarlık tutmadı; ${g.name} tam fiyata aldın (${price} akçe).${why}`);
-  }
-  return s;
-}
 // Pazarlık taban fiyatı (lonca/perk indirimi dâhil) — müzakere ekranı için.
 export function bargainBase(s: GameState, id: string): number {
   const p = s.player;
