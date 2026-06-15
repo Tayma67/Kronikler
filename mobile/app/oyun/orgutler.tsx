@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex, BEYLIKS, beylikName, defaultRealm, factionHoldsHere, regionOf, factionBanLeft } from "../../lib/game";
+import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex, BEYLIKS, beylikName, defaultRealm, factionHoldsHere, regionOf, factionBanLeft, canUseFactionPower, useFactionPower, FAC_POWER_COST } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -47,6 +47,24 @@ export default function Orgutler() {
           {factionHoldsHere(state, p.faction) && (
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.sage, marginTop: 5 }}>🏰 {t("realm.domHere")}</Text>
           )}
+          {/* Örgütün gücünü kullan (Güvenilir rütbe+) */}
+          <View style={{ marginTop: 9, paddingTop: 9, borderTopWidth: 1, borderTopColor: "rgba(201,168,76,0.25)" }}>
+            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.goldDim, marginBottom: 6 }}>{t("fac.power").toUpperCase()}</Text>
+            {canUseFactionPower(p) ? (
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <Pressable onPress={() => { hap("success"); apply((s) => useFactionPower(s, "himaye")); }} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.gold }}>{t("fac.himaye")}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.parchmentMuted }}>−{FAC_POWER_COST} {t("fac.repute").toLowerCase()}</Text>
+                </Pressable>
+                <Pressable onPress={() => { hap("tap"); apply((s) => useFactionPower(s, "kese")); }} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.gold }}>{t("fac.kese")}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.parchmentMuted }}>−{FAC_POWER_COST} {t("fac.repute").toLowerCase()}</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{applyParams(t("fac.powHint"), [FAC_POWER_COST])}</Text>
+            )}
+          </View>
           <Pressable onPress={() => { hap("tap"); apply(leaveFaction); }} style={{ alignSelf: "flex-start", marginTop: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 10, color: C.blood, letterSpacing: 1 }}>{t("fac.leave")}</Text>
           </Pressable>

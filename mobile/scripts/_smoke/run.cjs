@@ -28,6 +28,8 @@ for (let i = 0; i < 300; i++) {
           else if (act < 0.80 && p.children && p.children.length) s = g.setChildEducation(s, p.children[0], R(["ilim","savas","zanaat","ticaret"]));
           else if (act < 0.83 && g.canRunForGovernor(s, p.location_name)) s = g.runForGovernor(s, p.location_name);
           else if (act < 0.86 && p.governorships && p.governorships.length) { s = g.setGovTax(s, p.governorships[0], R([8,15,28])); s = g.investTreasury(s, p.governorships[0], R(["hizmet","asayis"])); }
+          else if (act < 0.89 && !p.faction) s = g.joinFaction(s, R(["tuccar","demirci","asker"]));
+          else if (act < 0.92 && g.canUseFactionPower(p)) s = g.useFactionPower(s, R(["himaye","kese"]));
         } catch (e) { errors++; if (errors <= 5) console.log("AKSİYON HATASI:", e.message); }
         try { if (s.pendingScene && s.pendingScene.kind === "crime") s = g.resolveCrimeScene(s, R(["saklan","rusvet","kac"])); } catch (e) { errors++; if (errors <= 5) console.log("SAHNE HATASI:", e.message); }
       }

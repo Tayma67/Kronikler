@@ -870,6 +870,7 @@ export function advance(prev: GameState, n = 1): GameState {
     if (i === n - 1 && !s.player.dead && chance(0.16)) worldNews(s);  // diyarın diline düşenler
     if (i === n - 1) tipsTick(s); // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
     if (i === n - 1) { locEventTick(s); locEventPersonal(s); } // tipli lokasyon olayları (kuraklık/panayır/veba) + oradaysan hisset
+    if (i === n - 1) factionAITick(s); // fraksiyonlar dünyada görünür eylemler yapar (bağış/sabotaj/nüfuz/suikast)
     if (i === n - 1) claimAchievements(s); // ay sonunda yeni başarımları ödüllendir
     if (i === n - 1) claimFamilyQuests(s); // ay sonunda tamamlanan aile/yaşam görevlerini ödüllendir
     const inBreath = (s.story?.breath || 0) > 0; // doruk sonrası sakin dönem
@@ -1983,6 +1984,52 @@ export function doFactionTask(prev: GameState, id: string): GameState {
   return s;
 }
 
+// ── Fraksiyon AI (Vercel faction_system AI özü) — örgütler dünyada görünür eylemler yapar (haber + gerçek etki) ──
+function factionAITick(s: GameState) {
+  if (Math.random() >= 0.14) return;
+  const f = FACTIONS[Math.floor(Math.random() * FACTIONS.length)];
+  const act = rnd(["bagis", "sabotaj", "nufuz", "suikast", "uye"]);
+  if (act === "bagis") {
+    if (s.player.faction === f.id) { s.player.faction_standing[f.id] = (s.player.faction_standing[f.id] || 0) + 4; const g = 6 + Math.floor(Math.random() * 10); s.player.money += g; push(s, "örgüt", `${f.name} kasasını açtı; üyelerine pay dağıttı (+${g} akçe).`, "makro", false, { k: "fai.bagis.member", p: [{ fc: f.id }, g] }); }
+    else push(s, "örgüt", `${f.name} yoksullara sadaka dağıttı; halkın gözünde itibar kazandı.`, "makro", false, { k: "fai.bagis", p: [{ fc: f.id }] });
+  } else if (act === "sabotaj") {
+    const loc = rnd(LOCATIONS);
+    if (!(s.locEvents || []).some((e) => e.loc === loc)) { if (!s.locEvents) s.locEvents = []; s.locEvents.push({ id: Math.random().toString(36).slice(2, 10), loc, type: "eskiya", hafta: s.turn, until: s.turn + 3 + Math.floor(Math.random() * 3) }); s.locEvents = s.locEvents.slice(-4); }
+    push(s, "örgüt", `${f.name}'in eli olduğu söylenen bir karışıklık ${loc}'i sardı.`, "makro", true, { k: "fai.sabotaj", p: [{ fc: f.id }, { pl: loc }] });
+  } else if (act === "nufuz") {
+    const realm = ensureRealm(s); const sn = realm[Math.floor(Math.random() * realm.length)];
+    sn.tension = Math.min(120, sn.tension + 12);
+    push(s, "örgüt", `${f.name}, ${beylikName(sn.id)} üzerinde nüfuzunu artırıyor.`, "makro", false, { k: "fai.nufuz", p: [{ fc: f.id }, { bl: sn.id }] });
+  } else if (act === "suikast") {
+    const rivals = ensureRivals(s); if (rivals.length) { const rv = rivals[Math.floor(Math.random() * rivals.length)]; rv.power = Math.max(1, Math.round(rv.power * 0.85)); }
+    push(s, "örgüt", `Karanlık bir suikast şehirleri çalkaladı; parmaklar ${f.name}'i gösteriyor.`, "makro", true, { k: "fai.suikast", p: [{ fc: f.id }] });
+  } else { // üye toplama — sadece oyuncu aday durumundaysa anlamlı
+    if (s.player.faction !== f.id && (s.player.faction_standing[f.id] || 0) < f.joinRep)
+      push(s, "örgüt", `${f.name} saflarına yeni yiğitler arıyor; kapısı çalınmayı bekliyor.`, "makro", false, { k: "fai.uye", p: [{ fc: f.id }] });
+  }
+}
+// Oyuncu-güç yüzeyi: örgütün gücünü kullan (Güvenilir rütbe+). İtibar harcar, gerçek fayda verir.
+export const FAC_POWER_COST = 20;
+export function canUseFactionPower(p: Player): boolean {
+  const fid = p.faction; if (!fid) return false;
+  const st = p.faction_standing[fid] || 0;
+  return factionRankIndex(st) >= 1 && st >= FAC_POWER_COST;
+}
+export function useFactionPower(prev: GameState, kind: "himaye" | "kese"): GameState {
+  const s = clone(prev); const p = s.player; const fid = p.faction;
+  if (!fid || !canUseFactionPower(p)) return s;
+  const f = factionById(fid);
+  p.faction_standing[fid] = (p.faction_standing[fid] || 0) - FAC_POWER_COST;
+  if (kind === "himaye") { // örgüt himayesi: korku düşer, itibar artar, bir söylenti bastırılır
+    p.fear = Math.max(0, p.fear - 6); p.reputation = Math.min(100, p.reputation + 3);
+    if (s.player_rumors?.length) s.player_rumors = s.player_rumors.slice(1);
+    push(s, "örgüt", `${f?.name} seni kanadı altına aldı; düşmanların geri çekildi.`, "kişisel", true, { k: "fac.powHimaye", p: [{ fc: fid }] });
+  } else { // örgüt kasası: para desteği
+    const g = 25 + Math.floor(Math.random() * 25); p.money += g;
+    push(s, "örgüt", `${f?.name} kasasından destek aldın (+${g} akçe).`, "kişisel", false, { k: "fac.powKese", p: [{ fc: fid }, g] });
+  }
+  return s;
+}
 // Bir örgüte katıl: yeterli örgüt itibarı (görevle kazanılır) gerekir. Tek örgüt üyeliği.
 // Bir fraksiyona geri dönüş yasağı sürüyor mu (kaç tur kaldı; 0 = yasak yok).
 export function factionBanLeft(p: Player, id: string, turn: number): number {
