@@ -2109,6 +2109,18 @@ export function foundSettlement(prev: GameState, name: string): GameState {
   push(s, "yerlesim", `${name.trim()} adıyla yeni bir mezra kurdun — zamanla gelişip vergi getirecek.`, "kişisel", true, { k: "ev.settle.found", p: [name.trim()] });
   return s;
 }
+// Yerleşim geliştirme bedeli (gelişmişlik arttıkça pahalanır) — geç-oyun servetine üretken musluk.
+export function developSettlementCost(st: Settlement): number { return Math.round(60 + st.dev * 7); }
+// Akçe dökerek yerleşimini hızla geliştir (vergi gelirini artırır).
+export function developSettlement(prev: GameState, index: number): GameState {
+  const s = clone(prev); const p = s.player; const st = s.settlements?.[index];
+  if (!st || st.dev >= 100) return s;
+  const cost = developSettlementCost(st); if (p.money < cost) return s;
+  p.money -= cost; st.dev = Math.min(100, st.dev + 8);
+  if (st.dev >= 100) p.fame = Math.min(100, p.fame + 3);
+  push(s, "yerlesim", `${st.name} için akçe döktün; mezra hızla gelişti (gelişmişlik %${st.dev}).`, "kişisel");
+  return s;
+}
 // Bir yerleşimin yıllık vergi geliri (gelişmişliğe + halk desteğine göre).
 export function settlementIncome(s: GameState): number {
   if (!s.settlements?.length) return 0;

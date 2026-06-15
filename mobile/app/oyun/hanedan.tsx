@@ -8,7 +8,7 @@ import { useGame } from "../../lib/store";
 import {
   playerHousePower, houseAttitude, dynastyPower, houseSeal,
   WILL_STYLES, throneRequirements, throneBacking, canClaimThrone, throneOdds, claimThrone, THRONE_COST,
-  canFoundSettlement, foundSettlement, settlementIncome, SETTLE_COST, SETTLE_MAX,
+  canFoundSettlement, foundSettlement, settlementIncome, SETTLE_COST, SETTLE_MAX, developSettlement, developSettlementCost,
 } from "../../lib/game";
 import { generateDynasties } from "../../lib/world";
 import { professionNameL } from "../../lib/locale-data";
@@ -147,6 +147,11 @@ export default function Hanedan() {
             <View style={{ height: 5, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.08)", marginTop: 7, overflow: "hidden" }}>
               <View style={{ width: `${st.dev}%`, height: 5, backgroundColor: C.sage, borderRadius: 3 }} />
             </View>
+            {st.dev < 100 && (() => { const dc = developSettlementCost(st); return (
+              <Pressable onPress={() => { hap("tap"); apply((s) => developSettlement(s, i)); }} disabled={p.money < dc} style={{ alignSelf: "flex-start", marginTop: 9, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: p.money < dc ? C.border : "rgba(127,166,106,0.5)", backgroundColor: p.money < dc ? C.bg : "rgba(127,166,106,0.12)" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 10, color: p.money < dc ? C.parchmentMuted : C.sage }}>{t("set.develop")} {dc}⚜</Text>
+              </Pressable>
+            ); })()}
           </View>
         ))}
         {settlements.length > 0 && (
