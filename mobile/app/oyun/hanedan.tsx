@@ -30,7 +30,7 @@ export default function Hanedan() {
   const { lang, t } = useI18n();
   const [settleName, setSettleName] = useState("");
   const [throneMsg, setThroneMsg] = useState<null | { ok: boolean; tick: number }>(null);
-  const baseRivals = useMemo(() => (state ? generateDynasties(state.seed) : []), [state?.seed]);
+  const baseRivals = useMemo(() => (state ? (state.rivals ?? generateDynasties(state.seed)) : []), [state?.seed, state?.rivals]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const past = state.dynasty || [];

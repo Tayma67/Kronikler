@@ -1,6 +1,6 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
-import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo } from "./world";
+import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse } from "./world";
 import { Lang } from "./locale-data";
 import { converse, ConvResult } from "./dialogue";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
@@ -161,6 +161,7 @@ export interface GameState {
   story: StoryProgress;
   wars: FactionWar[];
   realm?: SancakHold[]; // 4 sancağın fraksiyon hakimiyeti (emergent şehir-kontrolü)
+  rivals?: RivalHouse[]; // rakip hanedanların yaşayan gücü (zamanla değişir + hamle yapar)
   caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number } | null;
   econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
   settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
@@ -519,6 +520,7 @@ export function advance(prev: GameState, n = 1): GameState {
     push(s, s.player.age < 13 ? "cocukluk" : "gunluk", monthlyFlavor(s, cal));
     rollLifeEvents(s, cal);
     tickFactions(s, i === n - 1);
+    tickDynasties(s, i === n - 1);
     tickWars(s, i === n - 1);
     tickCaravan(s);
     tickEconomy(s, i === n - 1);
@@ -597,6 +599,31 @@ function tickFactions(s: GameState, announce: boolean) {
     } else if (!sn.contender) {
       sn.tension = Math.max(0, sn.tension - 2); // rakip yoksa gerilim yavaşça söner
     }
+  }
+}
+// Rakip hanedanların yaşayan durumu (yoksa tohumdan başlat).
+export function ensureRivals(s: GameState): RivalHouse[] {
+  if (!s.rivals) s.rivals = generateDynasties(s.seed);
+  return s.rivals;
+}
+// Rakip hanedan tikİ (Vercel dynasties.py portu): güç mizaca göre sürüklenir + ara sıra hamle yaparlar.
+function tickDynasties(s: GameState, announce: boolean) {
+  const rivals = ensureRivals(s);
+  for (const h of rivals) {
+    const drift = (h.trait === "ihtiraslı" ? 1 : 0) + Math.floor(Math.random() * 4) - 1;
+    h.power = Math.max(20, Math.min(100, h.power + drift));
+  }
+  if (!announce || rivals.length < 2 || Math.random() >= 0.14) return;
+  const h = rivals[Math.floor(Math.random() * rivals.length)];
+  const other = rivals[(rivals.indexOf(h) + 1 + Math.floor(Math.random() * (rivals.length - 1))) % rivals.length];
+  const roll = Math.random();
+  if (h.trait === "ihtiraslı" || roll < 0.4) {
+    h.power = Math.min(100, h.power + 4);
+    push(s, "hanedan_haber", `${h.name} yeni bir kale ele geçirdi; gücü artıyor.`, "makro", true);
+  } else if (h.trait === "kindar" || roll < 0.7) {
+    push(s, "hanedan_haber", `${h.name} ile ${other.name} arasında husumet alevlendi.`, "makro", true);
+  } else {
+    push(s, "hanedan_haber", `${h.name} ile ${other.name} bir ittifak kurdu; diyarda dengeler değişiyor.`, "makro", true);
   }
 }
 function tickWars(s: GameState, announce: boolean) {
