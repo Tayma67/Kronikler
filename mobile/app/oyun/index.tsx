@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome, eulogy, WorkStyle } from "../../lib/game";
+import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
@@ -313,6 +313,40 @@ export default function Dashboard() {
           <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>›</Text>
         </Pressable>
       )}
+
+      {/* Sıradaki hedef (kanca) — en yakın aile/yaşam görevi */}
+      {!p.dead && (() => {
+        const fq = familyQuestsOf(state).filter((x) => !x.claimed);
+        const goal = fq.find((x) => !x.locked && !x.done) || fq.find((x) => x.done) || fq.find((x) => x.locked);
+        if (!goal) return null;
+        const tone = goal.done ? C.sage : C.gold;
+        const lbl = goal.done ? t("dash.goalReady") : goal.locked ? `${goal.q.minAge}+` : t("dash.goalNow");
+        return (
+          <Pressable onPress={() => { hap("tap"); router.push("/oyun/gorevler"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: tone + "55", backgroundColor: tone + "12", flexDirection: "row", alignItems: "center", gap: 9 }}>
+            <Text style={{ fontSize: 17 }}>{goal.q.icon}</Text>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: tone, textTransform: "uppercase" }}>{t("dash.nextGoal")}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginTop: 1 }}>{goal.q.title} <Text style={{ color: C.parchmentMuted, fontSize: 10.5 }}>· {goal.q.desc}</Text></Text>
+            </View>
+            <Text style={{ fontFamily: F.display, fontSize: 9.5, color: tone, letterSpacing: 0.5 }}>{lbl}</Text>
+          </Pressable>
+        );
+      })()}
+
+      {/* Diyar durumu (bağlam) — loncan savaşı / sancak için savaş */}
+      {!p.dead && (() => {
+        const war = playerWar(state);
+        const prizeWar = (state.wars || []).find((w) => w.prize);
+        if (!war && !prizeWar) return null;
+        const text = war ? t("dash.warMine") : `${beylikName(prizeWar!.prize!)} ${t("dash.warFor")}`;
+        return (
+          <Pressable onPress={() => { hap("tap"); router.push("/oyun/orgutler"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(168,52,52,0.4)", backgroundColor: "rgba(168,52,52,0.08)", flexDirection: "row", alignItems: "center", gap: 9 }}>
+            <Text style={{ fontSize: 15 }}>⚔</Text>
+            <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{text}</Text>
+            <Text style={{ color: C.blood, fontFamily: F.display, fontSize: 12 }}>›</Text>
+          </Pressable>
+        );
+      })()}
 
       {/* ── GÜNLÜK KART PANELİ ── */}
       <View style={{ flex: 1, margin: 12, borderWidth: 1, borderColor: C.borderHi, borderRadius: 10, backgroundColor: C.card, overflow: "hidden" }}>
