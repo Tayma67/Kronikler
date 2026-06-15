@@ -56,3 +56,14 @@ export function portreImage(age: number, gender: "erkek" | "kadın"): any {
   const c = gender === "kadın" ? "k" : "e";
   return PORTRE[`${c}_${band(age)}`];
 }
+
+// Hanedan armaları — soyada göre deterministik seçilir.
+const ARMA: any[] = [
+  require("../assets/arma/kurt.jpg"), require("../assets/arma/tac.jpg"), require("../assets/arma/hancer.jpg"),
+  require("../assets/arma/hilal.jpg"), require("../assets/arma/kilic.jpg"), require("../assets/arma/bugday.jpg"),
+];
+export function armaImage(seed: string | number): any {
+  const str = String(seed || "x"); let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0;
+  return ARMA[h % ARMA.length];
+}

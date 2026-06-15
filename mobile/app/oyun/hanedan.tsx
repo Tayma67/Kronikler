@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { View, Text, ScrollView, Pressable, TextInput } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, Image } from "react-native";
+import { armaImage } from "../../lib/assets";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -60,6 +61,7 @@ export default function Hanedan() {
 
         {/* ── HANEDAN MÜHRÜ ── */}
         <View style={{ backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 14, padding: 18, alignItems: "center", marginBottom: 10 }}>
+          <Image source={armaImage(p.surname || p.name)} style={{ width: 72, height: 72, borderRadius: 10, borderWidth: 1.5, borderColor: C.gold, marginBottom: 8 }} resizeMode="cover" />
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2.5, color: C.goldDim, textTransform: "uppercase" }}>{t("dyn.seal")}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 44, color: C.gold, marginTop: 2 }}>{power}</Text>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 14, color: C.parchment, marginTop: 2 }}>{t("seal." + seal.key)}</Text>

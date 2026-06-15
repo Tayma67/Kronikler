@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable, Image } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
+import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
@@ -119,8 +120,8 @@ export default function Karakter() {
               <View style={{ width: 96, height: 120, borderRadius: 8, borderWidth: 2, borderColor: C.gold, overflow: "hidden", backgroundColor: "#1A1208", alignItems: "center", justifyContent: "center" }}>
                 <Portre age={p.age} gender={p.gender} size={120} ring={false} />
               </View>
-              <View style={{ position: "absolute", top: -3, left: -3, width: 30, height: 30, borderRadius: 4, borderWidth: 1.5, borderColor: C.gold, backgroundColor: "#6B0000", alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 15 }}>🦁</Text>
+              <View style={{ position: "absolute", top: -4, left: -4, width: 34, height: 34, borderRadius: 6, borderWidth: 1.5, borderColor: C.gold, overflow: "hidden", backgroundColor: "#1A1208" }}>
+                <Image source={armaImage(p.surname || p.name)} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
               </View>
             </View>
 
