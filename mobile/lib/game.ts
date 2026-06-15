@@ -106,6 +106,7 @@ export interface GameState {
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
   wars: FactionWar[];
+  realm?: SancakHold[]; // 4 sancağın fraksiyon hakimiyeti (emergent şehir-kontrolü)
   caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number } | null;
   econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
   settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
@@ -152,7 +153,10 @@ export function econKey(econ: number): string {
   return "balanced";
 }
 // Ocak savaşı — iki lonca arasında, birkaç ay süren çatışma.
-export interface FactionWar { a: string; b: string; turnsLeft: number; aScore: number; bScore: number; }
+export interface FactionWar { a: string; b: string; turnsLeft: number; aScore: number; bScore: number; prize?: string; }
+// Sancak hakimiyeti (Vercel faction_system şehir-kontrolü ruhu): her sancağın bir hâkim
+// fraksiyonu, yükselen bir rakibi ve gerilimi vardır; gerilim dorukta savaş patlar.
+export interface SancakHold { id: string; holder: string; contender: string | null; tension: number; }
 // NPC ruh hali/hafıza kaydını getir veya başlat (saf değil — clone'lanmış state'te çağrılır).
 export function npcStateOf(s: GameState, id: string): NpcState {
   if (!s.npc_state) s.npc_state = {};
@@ -178,6 +182,7 @@ export const BEYLIKS: { id: string; name: string; tone: string }[] = [
 ];
 export function regionOf(name: string): string { return PLACES.find((p) => p.name === name)?.region || "demirhan"; }
 export function beylikOf(name: string): { id: string; name: string; tone: string } { const r = regionOf(name); return BEYLIKS.find((b) => b.id === r) || BEYLIKS[0]; }
+export function beylikName(id: string): string { return BEYLIKS.find((b) => b.id === id)?.name || id; }
 export function sameBeylik(a: string, b: string): boolean { return regionOf(a) === regionOf(b); }
 export function placeKind(name: string): string { return PLACES.find((p) => p.name === name)?.kind || "köy"; }
 
@@ -441,6 +446,7 @@ export function advance(prev: GameState, n = 1): GameState {
     }
     push(s, s.player.age < 13 ? "cocukluk" : "gunluk", monthlyFlavor(s, cal));
     rollLifeEvents(s, cal);
+    tickFactions(s, i === n - 1);
     tickWars(s, i === n - 1);
     tickCaravan(s);
     tickEconomy(s, i === n - 1);
@@ -477,10 +483,45 @@ export function advance(prev: GameState, n = 1): GameState {
 }
 
 // Ocak savaşlarını ilerlet: yeni savaş çıkar, sürenleri yürüt, biteni çöz.
+// Sancak hakimiyetinin başlangıç hâli: her sancağa deterministik bir hâkim fraksiyon.
+export function defaultRealm(): SancakHold[] {
+  const ids = FACTIONS.map((f) => f.id);
+  return BEYLIKS.map((b, i) => ({ id: b.id, holder: ids[i % ids.length], contender: null, tension: 0 }));
+}
+// Sancak hakimiyetini başlat (yoksa).
+export function ensureRealm(s: GameState): SancakHold[] {
+  if (!s.realm) s.realm = defaultRealm();
+  return s.realm;
+}
+// Fraksiyon şehir-kontrolü tikİ (Vercel faction_system gain/lose_influence + _should_attack portu):
+// her sancakta gerilim birikir, rakip fraksiyon yükselir, gerilim dorukta ödüllü savaş patlar.
+function tickFactions(s: GameState, announce: boolean) {
+  const realm = ensureRealm(s);
+  const ids = FACTIONS.map((f) => f.id);
+  for (const sn of realm) {
+    // Bu sancak için zaten bir savaş varsa karışma.
+    if (s.wars.some((w) => w.prize === sn.id)) continue;
+    sn.tension = Math.min(120, sn.tension + Math.floor(Math.random() * 5)); // 0-4 sürtüşme
+    // Rakip fraksiyon yoksa ve gerilim arttıysa biri göz diker.
+    if (!sn.contender && sn.tension > 40 && Math.random() < 0.35) {
+      const rivals = ids.filter((id) => id !== sn.holder);
+      sn.contender = rivals[Math.floor(Math.random() * rivals.length)];
+      if (announce) push(s, "ocak_savasi", `${factionById(sn.contender)?.name}, ${beylikName(sn.id)} üzerinde hak iddia ediyor.`, "makro", true);
+    }
+    // Gerilim dorukta + rakip var → savaş patlar.
+    if (sn.tension >= 100 && sn.contender) {
+      s.wars.push({ a: sn.holder, b: sn.contender, turnsLeft: 4 + Math.floor(Math.random() * 4), aScore: 0, bScore: 0, prize: sn.id });
+      sn.tension = 55;
+      if (announce) push(s, "ocak_savasi", `${factionById(sn.holder)?.name} ile ${factionById(sn.contender)?.name}, ${beylikName(sn.id)} için savaşa tutuştu!`, "makro", true);
+    } else if (!sn.contender) {
+      sn.tension = Math.max(0, sn.tension - 2); // rakip yoksa gerilim yavaşça söner
+    }
+  }
+}
 function tickWars(s: GameState, announce: boolean) {
   if (!s.wars) s.wars = [];
-  // Yeni savaş (en fazla 1 aktif, %6 şans)
-  if (s.wars.length === 0 && Math.random() < 0.06) {
+  // Yeni jenerik savaş (ödülsüz arka plan; en fazla bağımsız 1 tane, %6 şans)
+  if (s.wars.filter((w) => !w.prize).length === 0 && Math.random() < 0.06) {
     const ids = FACTIONS.map((f) => f.id);
     const a = ids[Math.floor(Math.random() * ids.length)];
     let b = ids[Math.floor(Math.random() * ids.length)];
@@ -497,7 +538,17 @@ function tickWars(s: GameState, announce: boolean) {
   for (const w of ended) {
     const winner = w.aScore >= w.bScore ? w.a : w.b;
     const wf = factionById(winner);
-    if (announce) push(s, "ocak_savasi", `Savaş sona erdi: ${wf?.name} üstün geldi.`, "makro", true);
+    // Ödüllü savaşsa kazanan sancağı ele geçirir (emergent şehir-kontrolü).
+    if (w.prize) {
+      const sn = (s.realm || []).find((r) => r.id === w.prize);
+      if (sn) {
+        const flipped = sn.holder !== winner;
+        sn.holder = winner; sn.contender = null; sn.tension = 20;
+        if (announce) push(s, "ocak_savasi", flipped ? `${wf?.name}, ${beylikName(w.prize)}'ni ele geçirdi!` : `${wf?.name}, ${beylikName(w.prize)} üzerindeki hakimiyetini korudu.`, "makro", true);
+      }
+    } else if (announce) {
+      push(s, "ocak_savasi", `Savaş sona erdi: ${wf?.name} üstün geldi.`, "makro", true);
+    }
     // Oyuncu kazanan tarafın üyesiyse itibar
     if (s.player.faction === winner) { s.player.faction_standing[winner] = (s.player.faction_standing[winner] || 0) + 8; s.player.fame = Math.min(100, s.player.fame + 4); }
   }

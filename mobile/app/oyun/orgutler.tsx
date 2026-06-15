@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex } from "../../lib/game";
+import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex, BEYLIKS, beylikName, defaultRealm } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -27,6 +27,7 @@ export default function Orgutler() {
   const current = factionById(p.faction);
   const wars = state.wars || [];
   const myWar = playerWar(state);
+  const realm = state.realm ?? defaultRealm();
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
@@ -53,7 +54,7 @@ export default function Orgutler() {
         <View style={{ marginHorizontal: 16, marginBottom: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(168,52,52,0.4)", backgroundColor: "rgba(168,52,52,0.08)" }}>
           {wars.map((w, i) => (
             <Text key={i} style={{ fontFamily: F.serif, fontSize: 12, color: C.parchment, marginBottom: 4 }}>
-              ⚔ {t("fac."+w.a+".n")} ⚔ {t("fac."+w.b+".n")} · {w.turnsLeft} ay
+              ⚔ {t("fac."+w.a+".n")} ⚔ {t("fac."+w.b+".n")}{w.prize ? ` · ${beylikName(w.prize)} ${t("realm.forControl")}` : ""} · {w.turnsLeft} {t("realm.month")}
             </Text>
           ))}
           {myWar && (
@@ -65,6 +66,37 @@ export default function Orgutler() {
       )}
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
         <PageHeader kicker={t("scr.orgutler")} icon="🏛" title={t("scr.orgutler")} />
+
+        {/* ── Sancak hakimiyeti (emergent fraksiyon şehir-kontrolü) ── */}
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 12, marginBottom: 12 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+            <Text style={{ fontSize: 13 }}>🏰</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("realm.title")}</Text>
+          </View>
+          {realm.map((sn) => {
+            const b = BEYLIKS.find((x) => x.id === sn.id);
+            const holder = factionById(sn.holder);
+            const contender = sn.contender ? factionById(sn.contender) : null;
+            return (
+              <View key={sn.id} style={{ paddingVertical: 7, borderTopWidth: 1, borderTopColor: C.border }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: b?.tone || C.gold }} />
+                  <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{beylikName(sn.id)}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{holder?.icon} {holder ? t("fac."+holder.id+".n") : sn.holder}</Text>
+                </View>
+                {contender && (
+                  <View style={{ marginTop: 5, marginLeft: 16 }}>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.ember }}>{contender.icon} {t("fac."+contender.id+".n")} {t("realm.contests")}</Text>
+                    <View style={{ height: 3, backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 2, marginTop: 4 }}>
+                      <View style={{ width: `${Math.min(100, sn.tension)}%`, height: 3, backgroundColor: C.blood, borderRadius: 2 }} />
+                    </View>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
+
         {FACTIONS.map((f) => {
           const standing = p.faction_standing[f.id] || 0;
           const isMember = p.faction === f.id;
