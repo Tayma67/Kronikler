@@ -15,6 +15,19 @@
 
 ---
 
+## İLERLEME — 7 hedef sistem (2026-06-15)
+
+Çalışma kuralı (/loop): "dur" diyene kadar sırayla port + iyileştir; her sistem tsc+smoke(HATA:0)+commit+push.
+- ✅ **Evlat eğitimi haftalık birikimi** (commit 03e4dee)
+- ✅ **Şehir yönetim kolları** (vergi/memnuniyet/hazine) (commit 6f80942)
+- ✅ **Eyleme dönük söylentiler** (piyasa ipucu + istihbarat) (commit 84dc7d9)
+- ⬜ **Kariyer merdiveni + stat-XP** — sıradaki
+- ⬜ **Üretim zincirleri** (işçi→gerçek üretim/arz)
+- ⬜ **Tipli dünya olayları** (lokasyon etkisi — DİKKAT: offline deterministik tasarımla uyumlu kalmalı)
+- ⬜ **Fraksiyon AI + güç yüzeyi** (en büyük; ~30 AI eylemi)
+
+> Devam: bir sonraki oturum `mobile/`de `npm install` (gerekiyorsa) → kalan ⬜ sistemleri sırayla.
+
 ## DAL STRATEJİSİ (kullanıcı kararı)
 
 - **2 dal hedefi:** biri Vercel (web) bölümü, biri APK (mobil) bölümü. Şu an tüm port işi
