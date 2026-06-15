@@ -183,6 +183,17 @@ export const MARKET_EVENTS: { key: string; goods: string[]; mult: number; months
   { key: "savas",    goods: ["demir", "bicak", "kilic", "kalkan"], mult: 1.45, months: 5, text: "Savaş söylentisi: silah ve demir pahalandı." },
   { key: "kervanb",  goods: ["sarap", "bal", "iksir", "sifa"], mult: 1.4, months: 3, text: "Kervan baskını: lüks mallar kıtlaştı." },
   { key: "kuraklik", goods: ["bugday", "et", "balik"], mult: 1.35, months: 5, text: "Kuraklık: yiyecek fiyatları yükseldi." },
+  // ── Vercel market_events.py'den ek olaylar (mevcut mallarla) ──
+  { key: "loncagrev", goods: ["bicak", "kilic", "celik_kilic", "demir"], mult: 1.4, months: 3, text: "Demirciler lonca grevinde: âlet ve silah kıtlaştı." },
+  { key: "panayir",  goods: ["sarap", "bal", "peynir", "et"], mult: 1.3, months: 2, text: "Şehirde panayır: şenlik malları kapışılıyor." },
+  { key: "ipekkerv", goods: ["iksir", "sifa", "sarap"], mult: 0.72, months: 3, text: "Doğudan ipek kervanı geldi: lüks mallar ucuzladı." },
+  { key: "yolkapan", goods: ["bugday", "un", "demir", "kereste", "deri"], mult: 1.25, months: 3, text: "Geçitler kapandı: her şeyin nakli pahalandı." },
+  { key: "bagbozumu",goods: ["sarap", "bal"], mult: 0.7, months: 3, text: "Bağ bozumu: şarap ve bal bollaştı." },
+  { key: "deritalep",goods: ["deri", "deri_zirh", "yay"], mult: 1.35, months: 4, text: "Tabakhaneler deriye talip: deri ürünleri pahalandı." },
+  { key: "koyunveba",goods: ["yun", "et", "peynir"], mult: 1.4, months: 5, text: "Koyun vebası: yün ve et fiyatları yükseldi." },
+  { key: "ormanyang",goods: ["kereste", "kalkan", "yay"], mult: 1.45, months: 5, text: "Orman yangını: kereste ve odun işi pahalandı." },
+  { key: "sogukdalg",goods: ["kereste", "et", "corba"], mult: 1.3, months: 4, text: "Sert kış: yakacak ve sıcak yemek arandı." },
+  { key: "madendam", goods: ["demir", "bicak", "kilic", "zincir_zirh"], mult: 0.7, months: 4, text: "Yeni maden damarı: demir ve demir işi ucuzladı." },
 ];
 // Bir malın anlık fiyat çarpanı: mevsim × aktif piyasa olayı.
 export function goodPriceMult(s: GameState, goodId: string): number {
@@ -1179,6 +1190,15 @@ export function opportunitiesFor(s: GameState): Opportunity[] {
     { title: "Kervan Muhafızlığı", desc: "Tehlikeli yolda kervana eşlik et.", reward: 60, risk: 0.6, stat: "strength" },
     { title: "Şifalı Ot Topla", desc: "Şifacı için dağdan ot getir.", reward: 20, risk: 0.25, stat: "stamina" },
     { title: "Hesap Tut", desc: "Tüccarın defterini düzelt.", reward: 25, risk: 0.3, stat: "intelligence" },
+    // ── Vercel opportunities.py'den ek fırsatlar ──
+    { title: "Kurt Avı", desc: "Köyü basan kurt sürüsünü avla.", reward: 55, risk: 0.55, stat: "strength" },
+    { title: "Alacak Tahsili", desc: "Borçlu bir esnaftan tüccarın alacağını topla.", reward: 35, risk: 0.45, stat: "charisma" },
+    { title: "Haber Götür", desc: "Komşu sancağa acele bir mektup ulaştır.", reward: 28, risk: 0.35, stat: "stamina" },
+    { title: "Köprü Onarımı", desc: "Sel basmış köprünün onarımına el ver.", reward: 32, risk: 0.4, stat: "strength" },
+    { title: "Sınır Devriyesi", desc: "Sancak beyi için sınır yolunu kolla.", reward: 48, risk: 0.5, stat: "strength" },
+    { title: "Düğün Kâhyalığı", desc: "Bir konağın düğün hazırlığını yönet.", reward: 38, risk: 0.3, stat: "charisma" },
+    { title: "Mahkeme Şahitliği", desc: "Kadı huzurunda adil bir ifade ver.", reward: 26, risk: 0.35, stat: "intelligence" },
+    { title: "Maden Keşfi", desc: "Dağ eteğinde damar olduğu söylenen yeri araştır.", reward: 70, risk: 0.65, stat: "intelligence" },
   ];
   const seed = (s.turn * 2654435761) >>> 0;
   return pool.filter((_, i) => ((seed >> i) & 1) === 1 || i === seed % pool.length)
@@ -1982,6 +2002,10 @@ export const RECIPES: Recipe[] = [
   { id: "celik_kilic",out:"celik_kilic",outQty: 1, inputs: { demir: 5, kereste: 1 }, minSkill: 6 },
   { id: "deri_zirh", out: "deri_zirh", outQty: 1, inputs: { deri: 2 },    minSkill: 2 },
   { id: "kalkan",    out: "kalkan",    outQty: 1, inputs: { kereste: 2, demir: 1 }, minSkill: 3 },
+  // ── Vercel production_chains.py'den ek tarifler (mevcut mallarla) ──
+  { id: "yay",         out: "yay",         outQty: 1, inputs: { kereste: 1, deri: 1 }, minSkill: 2 },
+  { id: "savas_balta", out: "savas_balta", outQty: 1, inputs: { demir: 4, kereste: 1 }, minSkill: 5 },
+  { id: "zincir_zirh", out: "zincir_zirh", outQty: 1, inputs: { demir: 4 }, minSkill: 5 },
 ];
 export function canCraft(p: Player, r: Recipe): boolean {
   if (p.skills.crafting < r.minSkill) return false;

@@ -14,6 +14,7 @@ import { BackLabel, PageHeader, Pill } from "../../lib/ui";
 const CAT: Record<string, "food" | "arms" | "heal"> = {
   un: "food", ekmek: "food", corba: "food",
   bicak: "arms", kilic: "arms", celik_kilic: "arms", kalkan: "arms", deri_zirh: "arms",
+  yay: "arms", savas_balta: "arms", zincir_zirh: "arms",
   iksir: "heal",
 };
 const CAT_ORDER: ("food" | "arms" | "heal")[] = ["food", "arms", "heal"];
