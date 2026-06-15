@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { ENCOUNTERS, combatPower, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome } from "../../lib/game";
-import { startBattle, stepBattle, MOVES, BattleState, Move } from "../../lib/combat";
+import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance } from "../../lib/combat";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -32,6 +32,7 @@ export default function Savas() {
   // i18n anahtarı yoksa encounter'ın kendi (TR) verisini kullan.
   const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
   const [bs, setBs] = useState<BattleState | null>(null);
+  const [stance, setStance] = useState<Stance>("dengeli");
   const [encId, setEncId] = useState<string>("");
   const [applied, setApplied] = useState(false);
   const [floats, setFloats] = useState<{ id: number; value: string; color: string; left: number; top: number }[]>([]);
@@ -49,7 +50,7 @@ export default function Savas() {
   const beginNemesis = () => { if (!nemEnc) return; setEncId("nemesis"); setBs(startBattle(p, nemEnc)); setApplied(false); setFloats([]); };
   const play = (mv: Move) => {
     if (!bs || bs.over) return;
-    const next = stepBattle(bs, p, mv);
+    const next = stepBattle(bs, p, mv, stance);
     const dE = Math.round(bs.enemyHp - next.enemyHp);
     const dY = Math.round(bs.playerHp - next.playerHp);
     const adds: { id: number; value: string; color: string; left: number; top: number }[] = [];
@@ -96,14 +97,29 @@ export default function Savas() {
               <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206", letterSpacing: 1.5 }}>{bs.won ? t("cb.claim") : t("cb.retreat")}</Text>
             </Pressable>
           ) : (
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {MOVES.map((m) => (
-                <Pressable key={m.id} onPress={() => play(m.id)} style={{ flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
-                  <GameIcon name={m.icon} size={20} color={C.gold} />
-                  <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, marginTop: 5, letterSpacing: 0.5 }}>{t("cb." + m.id)}</Text>
-                </Pressable>
-              ))}
-            </View>
+            <>
+              {/* Duruş seçimi (Vercel portu): saldırı/savunma dengesi */}
+              <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1.5, color: C.parchmentMuted, marginBottom: 5 }}>{t("cb.stanceLabel")}</Text>
+              <View style={{ flexDirection: "row", gap: 6, marginBottom: 10 }}>
+                {STANCES.map((s) => {
+                  const on = stance === s.id;
+                  return (
+                    <Pressable key={s.id} onPress={() => { hap("tap"); setStance(s.id); }} style={{ flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.7)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.15)" : C.bg }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10, color: on ? C.gold : C.parchmentMuted }}>{t("cb.stance." + s.id)}</Text>
+                      <Text style={{ fontFamily: F.serif, fontSize: 8.5, color: C.parchmentDim, marginTop: 1 }}>⚔{Math.round(s.atk * 100)}% 🛡{Math.round(s.def * 100)}%</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {MOVES.map((m) => (
+                  <Pressable key={m.id} onPress={() => play(m.id)} style={{ flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+                    <GameIcon name={m.icon} size={20} color={C.gold} />
+                    <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment, marginTop: 5, letterSpacing: 0.5 }}>{t("cb." + m.id)}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </>
           )}
         </View>
       </View>

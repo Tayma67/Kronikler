@@ -12,6 +12,15 @@ function beats(a: Move, b: Move): boolean {
   return (a === "hamle" && b === "ozel") || (a === "savustur" && b === "hamle") || (a === "ozel" && b === "savustur");
 }
 
+// Duruşlar (Vercel combat_engine.py portu): saldırı/savunma çarpanı.
+export type Stance = "saldirgan" | "dengeli" | "savunmaci";
+export const STANCES: { id: Stance; label: string; icon: string; atk: number; def: number }[] = [
+  { id: "saldirgan", label: "Saldırgan", icon: "crossed-swords", atk: 1.35, def: 0.70 },
+  { id: "dengeli",   label: "Dengeli",   icon: "fist",           atk: 1.00, def: 1.00 },
+  { id: "savunmaci", label: "Savunmacı", icon: "shield",         atk: 0.70, def: 1.40 },
+];
+const stanceOf = (s: Stance) => STANCES.find((x) => x.id === s) || STANCES[1];
+
 export interface BattleState {
   enemyName: string; enemyPower: number;
   playerHp: number; playerMax: number; enemyHp: number; enemyMax: number;
@@ -36,26 +45,29 @@ function enemyMove(bs: BattleState): Move {
   return r < 0.4 ? "hamle" : r < 0.75 ? "savustur" : "ozel";
 }
 
-export function stepBattle(prev: BattleState, p: Player, mv: Move): BattleState {
+export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stance = "dengeli"): BattleState {
   if (prev.over) return prev;
   const bs: BattleState = { ...prev, log: [...prev.log] };
   const em = enemyMove(bs);
   const pw = combatPower(p);
+  const st = stanceOf(stance);                              // duruş: atk/def çarpanı
   const baseP = 6 + Math.round(pw * 0.6);
   const baseE = 6 + Math.round(bs.enemyPower * 0.9);
   const mvName: Record<Move, string> = { hamle: "Hamle", savustur: "Savuştur", ozel: "Özel" };
+  const dealt = (d: number) => Math.round(d * st.atk);       // duruşun saldırı çarpanı
+  const taken = (d: number) => Math.round(d / st.def);       // savunmacı az, saldırgan çok hasar alır
 
   let txt = `Tur ${bs.round}: Sen ${mvName[mv]}, düşman ${mvName[em]}. `;
   if (mv === em) {
-    const pd = Math.round(baseP * 0.4), ed = Math.round(baseE * 0.4);
+    const pd = dealt(Math.round(baseP * 0.4)), ed = taken(Math.round(baseE * 0.4));
     bs.enemyHp -= pd; bs.playerHp -= ed; txt += `Denk geçti (−${pd}/−${ed}).`;
   } else if (beats(mv, em)) {
-    const dmg = mv === "ozel" ? Math.round(baseP * 1.4) : baseP;
+    const dmg = dealt(mv === "ozel" ? Math.round(baseP * 1.4) : baseP);
     bs.enemyHp -= dmg; txt += `Üstün geldin, düşmana ${dmg} hasar!`;
   } else {
     let dmg = em === "ozel" ? Math.round(baseE * 1.4) : baseE;
     if (mv === "savustur") dmg = Math.round(dmg * 0.5); // savuşturma kısmi korur
-    dmg = Math.max(1, dmg - armorDefense(p)); // zırh hasarı azaltır
+    dmg = Math.max(1, taken(dmg) - armorDefense(p)); // duruş + zırh hasarı azaltır
     bs.playerHp -= dmg; txt += `Açık verdin, ${dmg} hasar aldın.`;
   }
   bs.log.push(txt);
