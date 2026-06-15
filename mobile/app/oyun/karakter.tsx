@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, equippedQualityMult, QUALITY_LABEL } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
@@ -289,14 +289,14 @@ export default function Karakter() {
               <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
                 <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.weapon")}</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                  <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.silah ? `${t("it." + p.equipped.silah)} (+${ITEMS[p.equipped.silah]?.power})` : "—"}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.silah ? `${t("it." + p.equipped.silah)}${p.equipped_q?.silah && p.equipped_q.silah !== "siradan" ? ` ·${QUALITY_LABEL[p.equipped_q.silah]}` : ""} (+${Math.round((ITEMS[p.equipped.silah]?.power || 0) * equippedQualityMult(p, "silah"))})` : "—"}</Text>
                   {p.equipped?.silah && <Pressable onPress={() => apply((s) => unequipItem(s, "silah"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>{t("misc.remove")}</Text></Pressable>}
                 </View>
               </View>
               <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 }}>
                 <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.armor")}</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                  <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.zirh ? `${t("it." + p.equipped.zirh)} (+${ITEMS[p.equipped.zirh]?.defense})` : "—"}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.equipped?.zirh ? `${t("it." + p.equipped.zirh)}${p.equipped_q?.zirh && p.equipped_q.zirh !== "siradan" ? ` ·${QUALITY_LABEL[p.equipped_q.zirh]}` : ""} (+${Math.round((ITEMS[p.equipped.zirh]?.defense || 0) * equippedQualityMult(p, "zirh"))})` : "—"}</Text>
                   {p.equipped?.zirh && <Pressable onPress={() => apply((s) => unequipItem(s, "zirh"))}><Text style={{ color: C.blood, fontFamily: F.display, fontSize: 10 }}>{t("misc.remove")}</Text></Pressable>}
                 </View>
               </View>

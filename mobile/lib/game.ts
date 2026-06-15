@@ -21,6 +21,7 @@ export interface Player {
   injuries: Injury[]; career_xp: number;
   nam: Nam; child_invests: Record<string, string[]>;
   equipped: { silah: string | null; zirh: string | null };
+  equipped_q?: { silah?: QualityTier; zirh?: QualityTier }; // kuşanılı teçhizatın kalite kademesi
   crowned?: boolean; will_pref?: string;
   fates?: string[]; // tetiklenen kader anları (yaş dönümleri)
   claimed?: string[]; // ödülü alınan başarımlar
@@ -1558,7 +1559,7 @@ export const ENCOUNTERS: Encounter[] = [
 export function combatPower(p: Player): number {
   let pw = effStat(p, "strength") * 2 + effStat(p, "stamina") + p.skills.combat;
   const wid = p.equipped?.silah; const w = wid ? ITEMS[wid] : null;
-  pw += w?.power || ((p.inventory["bicak"] || 0) > 0 ? 4 : 0); // kuşanılı silah, yoksa elindeki bıçak
+  pw += Math.round((w?.power || 0) * equippedQualityMult(p, "silah")) || ((p.inventory["bicak"] || 0) > 0 ? 4 : 0); // kalite-ölçekli silah, yoksa elindeki bıçak
   if (p.faction === "asker") pw += 3;
   if (hasPerk(p, "cevik")) pw += 3;
   if (hasPerk(p, "nisanci")) pw += 5;
@@ -1566,24 +1567,33 @@ export function combatPower(p: Player): number {
 }
 // Kuşanılı zırhın savunması (savaşta alınan hasarı azaltır).
 export function armorDefense(p: Player): number {
-  const aid = p.equipped?.zirh; return aid ? (ITEMS[aid]?.defense || 0) : 0;
+  const aid = p.equipped?.zirh; return aid ? Math.round((ITEMS[aid]?.defense || 0) * equippedQualityMult(p, "zirh")) : 0;
 }
 // Eşya kuşan (silah/zırh) — envanterden çıkarıp slota koyar, eskisini geri verir.
 export function equipItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const it = ITEMS[id];
   if (!it || !(p.inventory[id] > 0) || (it.kind !== "silah" && it.kind !== "zirh")) return s;
   const slot: "silah" | "zirh" = it.kind === "silah" ? "silah" : "zirh";
-  p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
+  // Eskisini (kalitesiyle) envantere geri koy.
   const old = p.equipped[slot];
-  if (old) p.inventory[old] = (p.inventory[old] || 0) + 1;
+  if (old) { p.inventory[old] = (p.inventory[old] || 0) + 1; const oq = p.equipped_q?.[slot]; if (oq) addQuality(p, old, oq); }
+  // Yenisini en iyi kademeden kuşan.
+  const tier = QUALITY_GOODS.has(id) ? takeQualityUnit(p, id) : "siradan";
+  p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
   p.equipped[slot] = id;
-  push(s, "kusanma", `${it.name} kuşandın.`);
+  if (!p.equipped_q) p.equipped_q = {};
+  p.equipped_q[slot] = tier;
+  const qNote = tier !== "siradan" ? ` (${QUALITY_LABEL[tier]})` : "";
+  push(s, "kusanma", `${it.name}${qNote} kuşandın.`);
   return s;
 }
 export function unequipItem(prev: GameState, slot: "silah" | "zirh"): GameState {
   const s = clone(prev); const p = s.player; const old = p.equipped[slot];
   if (!old) return s;
-  p.inventory[old] = (p.inventory[old] || 0) + 1; p.equipped[slot] = null;
+  p.inventory[old] = (p.inventory[old] || 0) + 1;
+  const oq = p.equipped_q?.[slot]; if (oq) addQuality(p, old, oq); // kaliteyi envantere geri ver
+  p.equipped[slot] = null;
+  if (p.equipped_q) delete p.equipped_q[slot];
   push(s, "kusanma", `${ITEMS[old]?.name || "Teçhizat"} çıkardın.`);
   return s;
 }
@@ -2144,6 +2154,9 @@ export function canCraft(p: Player, r: Recipe): boolean {
 // ── Eşya kalitesi (Vercel quality.py portu) — dayanıklı/zanaat malları için 4 kademe ──
 export type QualityTier = "kusurlu" | "siradan" | "iyi" | "usta_isi";
 export const QUALITY_MULT: Record<QualityTier, number> = { kusurlu: 0.6, siradan: 1.0, iyi: 1.5, usta_isi: 2.5 };
+// Savaşta kalite etkisi (satıştan daha yumuşak): kuşanılı silah gücü / zırh savunması çarpanı.
+export const QUALITY_COMBAT: Record<QualityTier, number> = { kusurlu: 0.75, siradan: 1.0, iyi: 1.2, usta_isi: 1.4 };
+export function equippedQualityMult(p: Player, slot: "silah" | "zirh"): number { return QUALITY_COMBAT[p.equipped_q?.[slot] || "siradan"]; }
 export const QUALITY_LABEL: Record<QualityTier, string> = { kusurlu: "kusurlu", siradan: "sıradan", iyi: "iyi", usta_isi: "usta işi" };
 const QUALITY_GOODS = new Set(["bicak", "kilic", "celik_kilic", "savas_balta", "yay", "kalkan", "deri_zirh", "zincir_zirh", "iksir"]);
 const Q_ORDER: QualityTier[] = ["usta_isi", "iyi", "siradan", "kusurlu"];
