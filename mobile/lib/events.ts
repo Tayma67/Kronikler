@@ -10,6 +10,79 @@ export interface Dilemma {
 }
 
 export const DILEMMAS: Dilemma[] = [
+  // ── Yaşam olayı genişlemesi (Vercel life_events/life_events_v2 ruhu): zayıf katmanlar ──
+  {
+    id: "cocuk_kavga", icon: "crossed-swords", title: "Mektepte Kavga",
+    text: "Çelimsiz bir sıra arkadaşını iri bir çocuk itip kakıyor; gözleri sana çevrildi.",
+    when: (p) => p.age >= 7 && p.age < 13,
+    choices: [
+      { label: "Zayıfı savun", delta: { health: -5, honor: 8, reputation: 3 }, result: "Önüne dikildin; biraz hırpalandın ama o çocuk seni hiç unutmayacak." },
+      { label: "Karışma", delta: { honor: -3 }, result: "Başını önüne eğip geçtin. İçinde bir burukluk kaldı." },
+    ],
+  },
+  {
+    id: "cocuk_kese", icon: "coins", title: "Çamurda Bir Kese",
+    text: "Çamurun içinde küçük bir kese buldun. Uzaktan bir adam sana bakıyor gibi.",
+    when: (p) => p.age < 13,
+    choices: [
+      { label: "Cebe at", delta: { money: 12, honor: -6, reputation: -2 }, result: "Keseyi sakladın. O bakışları yıllarca hatırlayacaksın belki." },
+      { label: "Sahibini ara", delta: { honor: 8, reputation: 4 }, result: "Keseyi sahibine ulaştırdın; 'dürüst çocuk' diye anıldın." },
+    ],
+  },
+  {
+    id: "cocuk_cirak", icon: "anvil", title: "Ustanın Teklifi",
+    text: "Mahallenin ustası sana çıraklık öneriyor — ama oyun zamanından olacaksın.",
+    when: (p) => p.age >= 9 && p.age < 13,
+    choices: [
+      { label: "Çıraklığı kap", delta: { stat_points: 1, honor: 2 }, result: "Küçük yaşta el emeğine giriştin; akranların oynarken sen öğrendin." },
+      { label: "Çocukluğunu yaşa", delta: { honor: 1 }, result: "Şimdilik oyunu seçtin; çocukluk bir kez yaşanır." },
+    ],
+  },
+  {
+    id: "yetiskin_kumar", icon: "coins", title: "Hanın Arka Odası",
+    text: "Hanın arka odasındaki zar masasına davet edildin. Kazanç da var, rezalet de.",
+    when: (p) => p.age >= 16,
+    choices: [
+      { label: "Masaya otur", delta: { money: 18, fear: 1, nam: { capkin: 2 } }, result: "Zarlar senden yana döndü bu gece; ama masanın sahibi yüzünü belledi." },
+      { label: "Kalkıp git", delta: { honor: 3 }, result: "Kumara bulaşmadın; kesen ince ama vicdanın rahat." },
+    ],
+  },
+  {
+    id: "yetiskin_yangin", icon: "healing", title: "Komşunun Yangını",
+    text: "Komşunun ahırı tutuşmuş; alevler yükseliyor, herkes donakalmış.",
+    when: (p) => p.age >= 14,
+    choices: [
+      { label: "Kova taşı", delta: { health: -8, honor: 10, reputation: 6 }, result: "Ateşe daldın, kova taşıdın; köy o geceyi hâlâ anlatıyor." },
+      { label: "Uzaktan seyret", delta: { honor: -5, reputation: -3 }, result: "Kıpırdamadın. O gece duran biri olarak hatırlanacaksın." },
+    ],
+  },
+  {
+    id: "yasli_hac", icon: "prayer-beads", title: "Hac Kervanı",
+    text: "Bir kervan hac yoluna düşüyor. Katılmak ister misin? Yol uzun ve zahmetli.",
+    when: (p) => p.age >= 45,
+    choices: [
+      { label: "Yola düş", delta: { money: -40, honor: 8, nam: { dindar: 6 } }, result: "Zahmetli yolu göze aldın; döndüğünde adın 'hacı' diye anıldı." },
+      { label: "Şimdilik kalma", delta: {}, result: "Yol bir başka bahara kaldı; niyetin kalbinde duruyor." },
+    ],
+  },
+  {
+    id: "yasli_torun", icon: "scroll-open", title: "Torunun Merakı",
+    text: "Torunun dizine oturmuş geçmişini soruyor: 'Sen gençken nasıldın?'",
+    when: (p) => p.age >= 50,
+    choices: [
+      { label: "Hikâyeni anlat", delta: { honor: 4, reputation: 2 }, result: "Geçmişini anlattın; gözleri parladı, adın bir kuşak daha yaşayacak." },
+      { label: "Geçiştir", delta: {}, result: "'Çok şey yaşadım' deyip geçtin; kimi sır mezara gider." },
+    ],
+  },
+  {
+    id: "yasli_miras", icon: "coins", title: "Mirasın Gölgesi",
+    text: "Evlatların, sen henüz hayattayken mirası konuşmaya başladı. Kulağına geldi.",
+    when: (p) => p.age >= 50 && (p.children?.length || 0) > 0,
+    choices: [
+      { label: "Adilce paylaştır", delta: { honor: 6, reputation: 3 }, result: "Herkese hakkını açıkça söyledin; ocakta huzur kaldı." },
+      { label: "Sırrını koru", delta: { fear: 4, nam: { zalim: 2 } }, result: "Ağzını sıkı tuttun; belirsizlik onları hizada tutuyor." },
+    ],
+  },
   // ── Fraksiyon haftalık sahneleri (Vercel faction_surface ensure_weekly_scene) — yalnız lonca üyesine ──
   {
     id: "frak_gorev", icon: "scroll-open", title: "Loncadan Gizli Bir İş",
