@@ -10,6 +10,34 @@ export interface Dilemma {
 }
 
 export const DILEMMAS: Dilemma[] = [
+  // ── Fraksiyon haftalık sahneleri (Vercel faction_surface ensure_weekly_scene) — yalnız lonca üyesine ──
+  {
+    id: "frak_gorev", icon: "scroll-open", title: "Loncadan Gizli Bir İş",
+    text: "Loncan senden el altından bir iş istiyor: rakip bir tezgâhın defterine göz atıp haber getir.",
+    when: (p) => p.faction != null && p.age >= 13,
+    choices: [
+      { label: "Üstlen", delta: { standing: 12, reputation: -2, money: 14 }, result: "İşi sessizce hallettin; loncada sözün biraz daha geçer oldu." },
+      { label: "Geri çevir", delta: { standing: -4, honor: 3 }, result: "Bu işe bulaşmadın; loncadakiler hafif somurttu ama vicdanın rahat." },
+    ],
+  },
+  {
+    id: "frak_cekisme", icon: "crossed-swords", title: "Lonca İçinde Çekişme",
+    text: "İki kıdemli üye loncanın yönü için çekişiyor; ikisi de senden destek bekliyor.",
+    when: (p) => p.faction != null && p.age >= 13,
+    choices: [
+      { label: "Güçlüden yana ol", delta: { standing: 10, honor: -4 }, result: "Kazanan tarafa yaslandın; mevkin yükseldi ama bazı gözler sana soğudu." },
+      { label: "Tarafsız kal", delta: { reputation: 2 }, result: "İki tarafı da idare ettin; kimseyi küstürmeden sıyrıldın." },
+    ],
+  },
+  {
+    id: "frak_dedikodu", icon: "speaker", title: "Lonca Sırrı",
+    text: "Bir lonca kardeşi sana rakip loncanın zayıf anını fısıldıyor. Bu bilgi koz olabilir.",
+    when: (p) => p.faction != null && p.age >= 13,
+    choices: [
+      { label: "Bilgiyi kullan", delta: { money: 22, standing: 6, honor: -3 }, result: "Sırrı kendi çıkarına çevirdin; kesen şişti, ama ağzın da bağlı kalmalı." },
+      { label: "Sırrı sakla", delta: { honor: 6, standing: 3 }, result: "Lafı kendine sakladın; lonca kardeşin güvenini kazandın." },
+    ],
+  },
   {
     id: "dilenci", icon: "prayer-beads", title: "Yol Kenarında Bir Dilenci",
     text: "Titreyen elini sana uzatan yaşlı bir dilenci, bir lokma ekmek diliyor.",

@@ -2009,7 +2009,7 @@ function claimFamilyQuests(s: GameState) {
 export interface Delta {
   money?: number; health?: number; hunger?: number;
   reputation?: number; honor?: number; fear?: number; fame?: number;
-  stat_points?: number; addItem?: string;
+  stat_points?: number; addItem?: string; standing?: number;
   nam?: { [k in keyof Nam]?: number };
 }
 const clampStat = (x: number) => Math.max(0, Math.min(100, x));
@@ -2025,6 +2025,7 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string):
   if (delta.stat_points) p.stat_points += delta.stat_points;
   if (delta.addItem) p.inventory[delta.addItem] = (p.inventory[delta.addItem] || 0) + 1;
   if (delta.nam) for (const k of Object.keys(delta.nam) as (keyof Nam)[]) bumpNam(p, k, delta.nam[k]!);
+  if (delta.standing && p.faction) p.faction_standing[p.faction] = (p.faction_standing[p.faction] || 0) + delta.standing; // lonca itibarı (fraksiyon sahnesi)
   push(s, "olay", resultText, "kişisel");
   if (p.health <= 0) die(s, `${p.name} bu olaydan sağ çıkamadı.`, { k: "evj.dieEvent", p: [p.name] });
   return s;
