@@ -1000,10 +1000,13 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   if (p.dead || p.age < 13 || p.money < GOAL_HELP_COST) return s;
   p.money -= GOAL_HELP_COST;
   const ns = npcStateOf(s, npc.id);
-  s.relationships[npc.id] = Math.min(100, (s.relationships[npc.id] || 0) + 18);
-  ns.mood = Math.max(-100, Math.min(100, ns.mood + 18));
-  p.reputation = Math.min(100, p.reputation + 3);
-  bumpNam(p, "comert", 4); gainSkill(s, "social", 6);
+  const rel = s.relationships[npc.id] || 0;
+  // Azalan getiri: zaten yakın birine yardım daha az yakınlık/itibar getirir (farm engeli).
+  const fresh = rel < 70;
+  s.relationships[npc.id] = Math.min(100, rel + (fresh ? 18 : 6));
+  ns.mood = Math.max(-100, Math.min(100, ns.mood + (fresh ? 18 : 8)));
+  if (fresh) { p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "comert", 4); }
+  gainSkill(s, "social", 6);
   ns.memories.push(`Amacına omuz verdin: ${npc.goal}.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   push(s, "sohbet", `${npc.name}'in "${npc.goal}" derdine ${GOAL_HELP_COST} akçeyle omuz verdin; sana minnettar kaldı.`, "kişisel", true);
@@ -1012,10 +1015,14 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
 export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
-  const gain = 15 + Math.floor(Math.random() * 20);
+  const rel = s.relationships[npc.id] || 0;
+  // Sana güvenmeyen kanmaz — bu, istismarın tekrar tekrar farm'lanmasını engeller.
+  if (rel <= -25) { push(s, "sohbet", `${npc.name} sana zaten güvenmiyor; oyununa gelmez.`); return s; }
+  // Kazanç güvene bağlı: ne kadar çok güveniyorsa o kadar koparırsın (ve o güveni yakarsın).
+  const gain = Math.round(8 + Math.max(0, rel) * 0.4 + Math.random() * 10);
   p.money += gain;
   const ns = npcStateOf(s, npc.id);
-  s.relationships[npc.id] = Math.max(-100, (s.relationships[npc.id] || 0) - 22);
+  s.relationships[npc.id] = Math.max(-100, rel - 22);
   ns.mood = Math.max(-100, ns.mood - 25);
   p.reputation = Math.max(-100, p.reputation - 4); p.fear = Math.min(100, p.fear + 3);
   bumpNam(p, "zalim", 5);

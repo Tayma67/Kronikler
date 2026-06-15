@@ -179,7 +179,7 @@ export default function NpcDetail() {
             <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>{GOAL_HELP_COST}⚜</Text>
           </Pressable>
         )}
-        {canGoal && (
+        {canGoal && v > -25 && (
           <Pressable onPress={() => { hap("tap"); apply((s) => exploitNpcGoal(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: couldMarry ? 1 : 0, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
             <Text style={{ fontSize: 16 }}>🪤</Text>
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.ember }}>{t("npc.exploitGoal")}</Text>
