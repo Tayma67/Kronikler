@@ -9,7 +9,7 @@ import { useI18n } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
 import { professionNameL, traitL, quirkL, goalL } from "../../../lib/locale-data";
-import { ITEMS } from "../../../lib/world";
+import { ITEMS, npcSocialGraph, TieKind } from "../../../lib/world";
 import { Portre, BackLabel } from "../../../lib/ui";
 import { GameIcon } from "../../../lib/icons";
 import { C, F } from "../../../lib/theme";
@@ -22,6 +22,17 @@ const BANDS = [
   { id: "dusman", min: -100, tone: C.blood },
 ];
 function bandOf(score: number) { return BANDS.find((b) => score >= b.min) || BANDS[BANDS.length - 1]; }
+
+// Bağ türü → ikon + ton (aile altın, dost adaçayı, rakip kan).
+const TIE_META: Record<TieKind, { icon: string; tone: string }> = {
+  es: { icon: "💍", tone: C.gold },
+  ebeveyn: { icon: "🪷", tone: C.gold },
+  evlat: { icon: "🌱", tone: C.gold },
+  kardes: { icon: "🤝", tone: C.gold },
+  dost: { icon: "🍵", tone: C.sage },
+  rakip: { icon: "🗡", tone: C.blood },
+};
+const TIE_ORDER: TieKind[] = ["es", "ebeveyn", "evlat", "kardes", "dost", "rakip"];
 
 function RelBand({ score }: { score: number }) {
   const pct = Math.max(0, Math.min(100, ((score + 100) / 200) * 100));
@@ -52,6 +63,7 @@ export default function NpcDetail() {
   const [line, setLine] = useState<string>("");
   const [giftOpen, setGiftOpen] = useState(false);
   const allNpcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang, state?.player.location_name]);
+  const graph = useMemo(() => (state ? npcSocialGraph(state.player.location_name, allNpcs) : {}), [state?.player.location_name, allNpcs]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const npc = allNpcs.find((n) => n.id === id);
   if (!npc) return <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top + 40 }}><Text style={{ color: C.parchmentMuted, textAlign: "center" }}>{t("npc.notFound")}</Text></View>;
@@ -60,6 +72,10 @@ export default function NpcDetail() {
   const ns = state.npc_state?.[npc.id] || { mood: 0, memories: [] };
   const giftables = Object.keys(state.player.inventory).filter((k) => state.player.inventory[k] > 0);
   const courtable = canCourt(state.player, npc, v);
+  const ties = (graph[npc.id] || [])
+    .map((tt) => ({ ...tt, who: allNpcs.find((n) => n.id === tt.otherId) }))
+    .filter((tt) => tt.who)
+    .sort((a, z) => TIE_ORDER.indexOf(a.kind) - TIE_ORDER.indexOf(z.kind));
   const couldMarry = !state.player.dead && !state.player.married && state.player.age >= 18 && npc.age >= 18 && npc.gender !== state.player.gender;
 
   const speak = (intent: string) => {
@@ -99,6 +115,32 @@ export default function NpcDetail() {
         <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted, marginTop: 6, lineHeight: 17 }}>{(() => { const q = quirkL(npc.quirk, lang); return q[0].toUpperCase() + q.slice(1); })()}.</Text>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.goldDim, marginTop: 2 }}>{t("npc.dream")} {goalL(npc.goal, lang)}.</Text>
       </View>
+
+      {/* ── Çevresi (NPC↔NPC ilişki ağı) ── */}
+      {ties.length > 0 && (
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 12, padding: 12, marginBottom: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+            <Text style={{ fontSize: 13 }}>🕸</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.ties")}</Text>
+          </View>
+          {ties.map((tt) => {
+            const meta = TIE_META[tt.kind];
+            return (
+              <Pressable key={tt.otherId} onPress={() => { hap("tap"); router.push(`/oyun/npc/${tt.otherId}`); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6, opacity: pressed ? 0.6 : 1 })}>
+                <Portre age={tt.who!.age} gender={tt.who!.gender} size={32} ring={false} seed={tt.who!.id} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{tt.who!.name}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(tt.who!.profession, lang)} · {tt.who!.age}</Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: meta.tone + "55", backgroundColor: meta.tone + "14" }}>
+                  <Text style={{ fontSize: 10 }}>{meta.icon}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: meta.tone }}>{t("tie." + tt.kind).toUpperCase()}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
 
       {/* Söylenen söz */}
       {line ? (

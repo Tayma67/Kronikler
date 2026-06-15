@@ -38,6 +38,61 @@ export function generateNPCs(seed: number, n = 30, lang: Lang = "tr", prefix = "
   return out;
 }
 
+// ── NPC↔NPC ilişki grafiği (Vercel npc_profile/npc_mind ruhu, deterministik port) ──
+// NPC'ler lokasyon tohumundan üretildiği için ilişki ağı da tohumdan türetilir:
+// hiçbir şey saklanmaz, kayıt göçü gerekmez, aynı şehirde ağ hep aynıdır.
+export type TieKind = "es" | "ebeveyn" | "evlat" | "kardes" | "dost" | "rakip";
+export interface Tie { otherId: string; kind: TieKind; score: number; }
+const RIVAL_TRAITS = ["kibirli", "hırslı", "kurnaz"];
+export function npcSocialGraph(locationName: string, npcs: NPC[]): Record<string, Tie[]> {
+  const r = mkRng((locSeed(locationName) ^ 0x1a2b3c4d) >>> 0);
+  const adj: Record<string, Tie[]> = {};
+  for (const n of npcs) adj[n.id] = [];
+  const byId = (id: string) => npcs.find((n) => n.id === id);
+  const link = (a: string, b: string, ka: TieKind, kb: TieKind, score: number) => {
+    if (a === b || adj[a].some((t) => t.otherId === b)) return;
+    adj[a].push({ otherId: b, kind: ka, score });
+    adj[b].push({ otherId: a, kind: kb, score });
+  };
+  // 1) Eşler — karşı cins, yakın yaş, kişi başı tek eş.
+  const spouseOf: Record<string, string> = {};
+  const adults = npcs.filter((n) => n.age >= 20);
+  for (const a of adults) {
+    if (spouseOf[a.id] || r() > 0.55) continue;
+    const cand = adults.find((b) => !spouseOf[b.id] && b.id !== a.id && b.gender !== a.gender && Math.abs(b.age - a.age) <= 14);
+    if (cand) { spouseOf[a.id] = cand.id; spouseOf[cand.id] = a.id; link(a.id, cand.id, "es", "es", 75); }
+  }
+  // 2) Çocuklar + kardeşler — bir eş çiftine yeterince genç NPC bağlanır.
+  const pairs = Object.keys(spouseOf).filter((id) => id < spouseOf[id]).map((id) => [id, spouseOf[id]] as [string, string]);
+  for (const c of npcs.filter((n) => n.age < 30)) {
+    if (r() > 0.5) continue;
+    const pair = pairs.find(([x, y]) => !x.includes(c.id) && (byId(x)?.age ?? 0) >= c.age + 17 && (byId(y)?.age ?? 0) >= c.age + 17);
+    if (!pair || pair.includes(c.id)) continue;
+    link(c.id, pair[0], "evlat", "ebeveyn", 65);
+    link(c.id, pair[1], "evlat", "ebeveyn", 65);
+    for (const sib of npcs) {
+      if (sib.id === c.id) continue;
+      const sp = adj[sib.id].filter((t) => t.kind === "ebeveyn").map((t) => t.otherId);
+      if (sp.includes(pair[0]) && sp.includes(pair[1])) link(c.id, sib.id, "kardes", "kardes", 55);
+    }
+  }
+  // 3) Dostluk & rakiplik — kalan çiftler arasında kişilik/meslek eğilimiyle, kişi başı ~4 bağ.
+  for (const a of npcs) {
+    for (const b of npcs) {
+      if (a.id >= b.id || adj[a.id].length >= 4) continue;
+      if (adj[a.id].some((t) => t.otherId === b.id)) continue;
+      const roll = r();
+      const rivalish = RIVAL_TRAITS.includes(a.trait) && RIVAL_TRAITS.includes(b.trait);
+      const friendish = a.profession === b.profession || a.trait === b.trait;
+      if (rivalish && roll < 0.3) link(a.id, b.id, "rakip", "rakip", -(30 + Math.floor(r() * 20)));
+      else if (friendish && roll < 0.35) link(a.id, b.id, "dost", "dost", 25 + Math.floor(r() * 20));
+      else if (roll < 0.08) link(a.id, b.id, "dost", "dost", 25 + Math.floor(r() * 15));
+      else if (roll > 0.96) link(a.id, b.id, "rakip", "rakip", -(25 + Math.floor(r() * 20)));
+    }
+  }
+  return adj;
+}
+
 export const ITEMS: Record<string, Item> = {
   // Yiyecek
   ekmek:   { id: "ekmek",   name: "Ekmek",      icon: "🍞", buy: 3,  sell: 1,  kind: "yiyecek", feed: 25 },
