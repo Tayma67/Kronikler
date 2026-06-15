@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { playerWar, pendingPerkCount, nemesisEncounter } from "../../lib/game";
+import { playerWar, pendingPerkCount, nemesisEncounter, familyQuestsOf } from "../../lib/game";
 import { arcById } from "../../lib/arcs";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -58,6 +58,26 @@ export default function Gorevler() {
             ))}
           </Panel>
         )}
+
+        {/* ── Aile / yaşam görevleri (family_quests portu) ── */}
+        <Panel title={t("fq.panelTitle")} icon="🏡" noPad>
+          {familyQuestsOf(state).map(({ q, done, claimed, locked }, i, arr) => {
+            const tone = claimed ? C.sage : done ? C.gold : locked ? C.parchmentMuted : C.parchmentDim;
+            const status = claimed ? "✓" : done ? "★" : locked ? `${q.minAge}+` : "…";
+            return (
+              <View key={q.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 11, borderBottomWidth: i === arr.length - 1 ? 0 : 1, borderBottomColor: C.border, opacity: locked ? 0.55 : 1 }}>
+                <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: claimed ? "rgba(127,166,106,0.5)" : "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontSize: 16 }}>{q.icon}</Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 12.5, color: claimed ? C.sage : C.parchment }}>{q.title}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>{q.desc}</Text>
+                </View>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: tone, width: 28, textAlign: "right" }}>{status}</Text>
+              </View>
+            );
+          })}
+        </Panel>
       </ScrollView>
     </View>
   );

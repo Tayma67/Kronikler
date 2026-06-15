@@ -24,6 +24,7 @@ export interface Player {
   crowned?: boolean; will_pref?: string;
   fates?: string[]; // tetiklenen kader anları (yaş dönümleri)
   claimed?: string[]; // ödülü alınan başarımlar
+  fq_claimed?: string[]; // tamamlanan aile/yaşam görevleri (family_quests portu)
   last_study_turn?: number; lesson_count?: number; // mektep: ayda 1 ders + sınav sayacı
   governorships?: string[]; // valisi olunan şehirler
 }
@@ -523,6 +524,7 @@ export function advance(prev: GameState, n = 1): GameState {
     tickEconomy(s, i === n - 1);
     if (i === n - 1 && !s.player.dead && chance(0.16)) worldNews(s);  // diyarın diline düşenler
     if (i === n - 1) claimAchievements(s); // ay sonunda yeni başarımları ödüllendir
+    if (i === n - 1) claimFamilyQuests(s); // ay sonunda tamamlanan aile/yaşam görevlerini ödüllendir
     if (s.story) s.story.tension = Math.min(100, s.story.tension + 1); // gerilim zamanla birikir
     // Proaktif hikâye: dünya ara sıra kendiliğinden bir yay açar (gerilim arttıkça daha olası).
     if (s.story && !s.story.active && i === n - 1 && !s.player.dead && s.player.age >= 14) {
@@ -1625,6 +1627,39 @@ export const ACHIEVEMENTS: Achievement[] = [
 ];
 export function achievementsOf(s: GameState): { a: Achievement; done: boolean }[] {
   return ACHIEVEMENTS.map((a) => ({ a, done: a.done(s) }));
+}
+
+// ── Aile/yaşam görevleri (Vercel family_quests.py portu) — yaş-kapılı kilometre taşları ──
+// Çocukluktan yetişkinliğe ailenin beklentileri; oyuncu normal oynayarak tamamlar, ödül kazanır.
+export interface FamilyQuest { id: string; icon: string; title: string; desc: string; minAge: number; reward: { money?: number; fame?: number; rep?: number; statPt?: number }; done: (s: GameState) => boolean; }
+export const FAMILY_QUESTS: FamilyQuest[] = [
+  { id: "ilkders",    icon: "📖", title: "İlk Ders",      desc: "Mektepte ilk dersine otur.",            minAge: 7,  reward: { money: 5, fame: 1 },          done: (s) => (s.player.lesson_count || 0) >= 1 },
+  { id: "ilkdost",    icon: "🤝", title: "İlk Dost",      desc: "Biriyle dostluk kur (ilişki ≥ 30).",    minAge: 10, reward: { money: 8, rep: 2 },           done: (s) => Object.values(s.relationships || {}).some((v) => v >= 30) },
+  { id: "okuryazar",  icon: "✒️", title: "Okuryazar",    desc: "Zekânı 3'e çıkar.",                     minAge: 12, reward: { money: 10, statPt: 1 },        done: (s) => s.player.stats.intelligence >= 3 },
+  { id: "ilkkazanc",  icon: "💰", title: "İlk Kazanç",    desc: "Bir meslekte ilk işini yap.",           minAge: 13, reward: { money: 12, rep: 2 },           done: (s) => s.player.career_xp >= 1 },
+  { id: "pehlivan",   icon: "💪", title: "Pehlivan",      desc: "Gücünü 4'e çıkar.",                     minAge: 15, reward: { money: 10, fame: 2 },          done: (s) => s.player.stats.strength >= 4 },
+  { id: "elemegi",    icon: "🔨", title: "El Emeği",      desc: "Zanaat becerini 3'e çıkar.",            minAge: 16, reward: { money: 15, statPt: 1 },        done: (s) => s.player.skills.crafting >= 3 },
+  { id: "sayginevlat",icon: "🎖", title: "Saygın Evlat",  desc: "İtibarını 30'a çıkar.",                 minAge: 18, reward: { money: 15, rep: 4 },           done: (s) => s.player.reputation >= 30 },
+  { id: "yuvakur",    icon: "💍", title: "Yuva Kur",      desc: "Evlen, bir ocak tüttür.",               minAge: 18, reward: { money: 20, fame: 3 },          done: (s) => s.player.married },
+  { id: "ilktapu",    icon: "🏠", title: "İlk Tapu",      desc: "Adına bir mülk edin.",                  minAge: 18, reward: { money: 0, rep: 3, statPt: 1 },  done: (s) => s.player.properties.length >= 1 },
+  { id: "ocagituttur",icon: "👶", title: "Ocağı Tüttür",  desc: "Soyunu sürdürecek bir evlat sahibi ol.",minAge: 20, reward: { money: 25, fame: 4 },          done: (s) => s.player.children.length >= 1 },
+];
+export function familyQuestsOf(s: GameState): { q: FamilyQuest; done: boolean; claimed: boolean; locked: boolean }[] {
+  const p = s.player; const cl = p.fq_claimed || [];
+  return FAMILY_QUESTS.map((q) => ({ q, done: q.done(s), claimed: cl.includes(q.id), locked: p.age < q.minAge }));
+}
+// Tamamlanan aile görevlerini ödüllendir (advance içinde, ay sonunda çağrılır).
+function claimFamilyQuests(s: GameState) {
+  const p = s.player; if (!p.fq_claimed) p.fq_claimed = [];
+  for (const q of FAMILY_QUESTS) {
+    if (p.age < q.minAge || p.fq_claimed.includes(q.id) || !q.done(s)) continue;
+    p.fq_claimed.push(q.id);
+    if (q.reward.money) p.money += q.reward.money;
+    if (q.reward.fame) p.fame = Math.min(100, p.fame + q.reward.fame);
+    if (q.reward.rep) p.reputation = Math.min(100, p.reputation + q.reward.rep);
+    if (q.reward.statPt) p.stat_points += q.reward.statPt;
+    push(s, "aile_gorevi", `Aile görevi tamamlandı: ${q.title}.`, "kişisel", true);
+  }
 }
 
 // ── İkilem/olay sonucu uygula (tüm durum değişimi çekirdekte) ──
