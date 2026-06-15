@@ -4,7 +4,7 @@ import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx } from "./world";
 import { Lang } from "./locale-data";
 import { converse, ConvResult } from "./dialogue";
-import { Memory, addMemory, decayMemories, effectiveRel, behaviorTier } from "./npc-mind";
+import { Memory, addMemory, decayMemories, effectiveRel, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS } from "./npc-mind";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
 
 export interface Stats { strength: number; intelligence: number; charisma: number; stamina: number; }
@@ -162,10 +162,82 @@ export function relWith(s: GameState, id: string): number {
   return effectiveRel(s.relationships[id] || 0, s.npc_state?.[id]?.anilar);
 }
 // Bir NPC'ye yapısal anı ekle (kişiselleştirilmiş hatırlama + dedikodu + nam kaynağı).
-function remember(s: GameState, id: string, tur: string, opts?: { yuk?: number; taniklar?: string[] }) {
-  const ns = npcStateOf(s, id);
+function remember(s: GameState, npc: { id: string; name: string }, tur: string, opts?: { yuk?: number; taniklar?: string[] }) {
+  const ns = npcStateOf(s, npc.id);
   if (!ns.anilar) ns.anilar = [];
-  addMemory(ns.anilar, tur, s.turn, opts);
+  addMemory(ns.anilar, tur, s.turn, { ...opts, kaynak: npc.name });
+}
+// Skandal bir eyleme yakındaki bir NPC tanık olur → skandal anı (dedikodu kaynağı).
+function witnessScandal(s: GameState, tur: string, chance: number) {
+  if (Math.random() >= chance) return;
+  const npcs = npcsOf(s); if (!npcs.length) return;
+  remember(s, npcs[Math.floor(Math.random() * npcs.length)], tur);
+}
+// Dedikodu turu: işlenmemiş skandal anılar oyuncu söylentisine dönüşür (Vercel gossip_tick).
+function gossipTick(s: GameState) {
+  const turn = s.turn;
+  let rumors = s.player_rumors || [];
+  for (const r of rumors) r.siddet = Math.round((r.siddet - 0.15) * 100) / 100;
+  rumors = rumors.filter((r) => r.siddet > 0).slice(-12);
+  if (s.npc_state) for (const id in s.npc_state) {
+    const anilar = s.npc_state[id].anilar; if (!anilar) continue;
+    for (const m of anilar) {
+      if (m.yayildi || (turn - m.hafta) > 4) { m.yayildi = true; continue; }
+      const skandal = MEMORY_TYPES[m.tur]?.skandal || 0;
+      if (skandal <= 0 || !RUMOR_VARIANTS[m.tur]) { m.yayildi = true; continue; }
+      m.yayildi = true;
+      const tanik = 1 + (m.taniklar?.length || 0);
+      const sans = Math.min(0.9, tanik * skandal * 0.55);     // yoğunluk ~orta varsayılır (offline)
+      if (Math.random() >= sans) continue;
+      const vc = RUMOR_VARIANTS[m.tur];
+      rumors.push({
+        id: Math.random().toString(36).slice(2, 12), hafta: turn, tur: m.tur, vi: Math.floor(Math.random() * vc),
+        nam: MEMORY_TYPES[m.tur]?.nam || null, yon: m.yuk > 0 ? 1 : -1,
+        siddet: Math.min(3, Math.max(1, Math.round(Math.abs(m.yuk) / 12))), kaynak: m.kaynak || "",
+      });
+    }
+  }
+  s.player_rumors = rumors.slice(-12);
+}
+// Söylenti eylemi: yüzleş / yay / sustur (Vercel rumor_action). Döndürür yeni state.
+export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | "yay" | "sustur"): GameState {
+  const s = clone(prev); const p = s.player;
+  const rumors = s.player_rumors || [];
+  const r = rumors.find((x) => x.id === rumorId);
+  if (!r) return s;
+  const social = p.skills?.social || 0;
+  if (eylem === "yuzles") {
+    const sans = Math.max(0.15, Math.min(0.85, 0.40 + social * 0.05 + p.stats.charisma * 0.03 - r.siddet * 0.08));
+    if (Math.random() < sans) {
+      s.player_rumors = rumors.filter((x) => x.id !== rumorId);
+      p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 3);
+      push(s, "söylenti", `"${r.kaynak}" yüzüne karşı sözünü yutmak zorunda kaldı; söylenti söndü.`, "kişisel", false, { k: "rum.confront.win" });
+    } else {
+      r.siddet = Math.min(4, r.siddet + 1);
+      push(s, "söylenti", `Yüzleşme ters tepti — söylenti alevlendi.`, "kişisel", false, { k: "rum.confront.lose" });
+    }
+    return s;
+  }
+  if (eylem === "yay") {
+    if (r.yon <= 0) return s; // kendi aleyhine lafı yaymak akıl kârı değil
+    r.siddet = Math.min(4, r.siddet + 1); p.reputation = Math.min(100, p.reputation + 1);
+    push(s, "söylenti", `Sözü sen de salladın; namın büyüyor.`, "kişisel", false, { k: "rum.spread.win" });
+    return s;
+  }
+  // sustur
+  const cost = 15 * Math.round(r.siddet);
+  if (p.money < cost) return s;
+  p.money -= cost;
+  if (Math.random() < 0.70) {
+    s.player_rumors = rumors.filter((x) => x.id !== rumorId);
+    push(s, "söylenti", `${cost} akçe doğru ellere dağıldı; konuşan diller unutkanlaştı.`, "kişisel", false, { k: "rum.silence.win", p: [cost] });
+  } else {
+    bumpNam(p, "zalim", 3);
+    rumors.push({ id: Math.random().toString(36).slice(2, 12), hafta: s.turn, tur: "dolandiricilik", vi: 0, nam: "zalim", yon: -1, siddet: 2, kaynak: r.kaynak });
+    s.player_rumors = rumors.slice(-12);
+    push(s, "söylenti", `Para el değiştirdi ama biri boşboğazlık etti: "Rüşvet dağıtıyor!" İş büyüdü.`, "kişisel", true, { k: "rum.bribe" });
+  }
+  return s;
 }
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; }
 export interface GameState {
@@ -181,7 +253,10 @@ export interface GameState {
   econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
   settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
   marketEvent?: { goods: string[]; mult: number; until: number; key: string } | null; // geçici piyasa olayı
+  player_rumors?: Rumor[]; // oyuncu hakkında dolaşan söylentiler (npc_mind dedikodu ağı)
 }
+// Oyuncu hakkında söylenti — tanıklı skandal anıdan doğar, zamanla söner.
+export interface Rumor { id: string; hafta: number; tur: string; vi: number; nam: string | null; yon: number; siddet: number; kaynak: string; }
 // Hanedanın kurduğu yerleşim — mezra olarak başlar, yıllarca gelişir, vergi getirir.
 export interface Settlement { name: string; founded: number; dev: number; }
 // Piyasa çarpanına göre fiyat.
@@ -485,6 +560,7 @@ export function advance(prev: GameState, n = 1): GameState {
       if (ns.anilar && ns.anilar.length) ns.anilar = decayMemories(ns.anilar);
       if ((!ns.anilar || !ns.anilar.length) && Math.abs(s.relationships[id] || 0) < 5 && Math.abs(ns.mood) < 5 && (!ns.memories || !ns.memories.length)) delete s.npc_state[id];
     }
+    gossipTick(s); // tanıklı skandallar → oyuncu söylentileri (haftalık)
     const child = s.player.age < 13;
     // Çocuğu ailesi besler: açlık daha yavaş düşer ve dipte aile karnını doyurur.
     const drop = Math.round((child ? 4 : 8) * (cal.season === "Kış" ? 1.3 : 1.0));
@@ -1006,7 +1082,7 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   // Yapısal anı: sohbet sonucuna göre türlenir (decay'li, ilişkiye etkin).
   const memTur = relDelta >= 8 ? "icten_sohbet" : relDelta > 0 ? "guzel_sohbet" : relDelta <= -3 ? "alay" : relDelta < 0 ? "rahatsizlik" : "guzel_sohbet";
-  remember(s, npc.id, memTur);
+  remember(s, npc, memTur);
   gainSkill(s, "social", 5);
   push(s, "sohbet", `${npc.name}: ${r.line}`);
   return { state: s, line: r.line };
@@ -1022,7 +1098,7 @@ export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   ns.mood = Math.max(-100, Math.min(100, ns.mood + 14));
   ns.memories.push(`${ITEMS[itemId]?.name || "Bir hediye"} hediye ettin.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
-  remember(s, npc.id, (ITEMS[itemId]?.buy || 0) >= 25 ? "comert_hediye" : "hediye");
+  remember(s, npc, (ITEMS[itemId]?.buy || 0) >= 25 ? "comert_hediye" : "hediye");
   push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`, "kişisel", false, { k: "evj.gift", p: [npc.name, { i: itemId }] });
   return s;
 }
@@ -1045,7 +1121,7 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   gainSkill(s, "social", 6);
   ns.memories.push(`Amacına omuz verdin: ${npc.goal}.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
-  remember(s, npc.id, "yardim"); // kalıcıya yakın +20 anı (Vercel: "sana borçlu")
+  remember(s, npc, "yardim"); // kalıcıya yakın +20 anı (Vercel: "sana borçlu")
   push(s, "sohbet", `${npc.name}'in "${npc.goal}" derdine ${GOAL_HELP_COST} akçeyle omuz verdin; sana minnettar kaldı.`, "kişisel", true, { k: "evj.helpGoal", p: [npc.name, { goalk: npc.goal }, GOAL_HELP_COST] });
   return s;
 }
@@ -1065,7 +1141,7 @@ export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
   bumpNam(p, "zalim", 5);
   ns.memories.push(`Amacını istismar edip seni kullandı.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
-  remember(s, npc.id, "somuru"); // skandal anı → ileride dedikoduya dönüşür
+  remember(s, npc, "somuru"); // skandal anı → ileride dedikoduya dönüşür
   push(s, "sohbet", `${npc.name}'in "${npc.goal}" umudunu istismar edip ${gain} akçe kopardın; sana diş biledi.`, "kişisel", true, { k: "evj.exploitGoal", p: [npc.name, { goalk: npc.goal }, gain] });
   return s;
 }
@@ -1260,6 +1336,7 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
     const loot = ct.lootMin + Math.floor(Math.random() * (ct.lootMax - ct.lootMin + 1));
     p.money += loot; p.fear = Math.min(100, p.fear + ct.fear);
     bumpNam(p, "zalim", ct.nam);
+    witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.22);
     const why = dread(s) > 30 ? " Korkulan adın kurbanını dondurdu." : "";
     push(s, "suç", `${ct.label} işini başardın (+${loot} akçe).${why}`, "kişisel", false, { k: "evj.crimeWin", p: [{ cr: kind }, loot, dread(s) > 30 ? { sfx: "sfx.crimeDread" } : ""] });
     return s;
@@ -1278,6 +1355,7 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   const hurt = Math.round(ct.hurt * (p.faction === "asker" ? 0.5 : 1));
   const extra = crimeCaughtPenalty(s);
   p.money -= fine; p.reputation = Math.max(-100, p.reputation - 6 - ct.sev * 2 - extra); p.health = Math.max(0, p.health - hurt);
+  witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.7); // yakalanınca tanık çok
   const why = extra >= 4 ? " Senin gibi tanınmış birinden beklenmezdi; ceza ağır oldu." : "";
   push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.${why}`, "kişisel", true, { k: "evj.crimeCaught", p: [fine, extra >= 4 ? { sfx: "sfx.crimeHard" } : ""] });
   if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
@@ -1585,7 +1663,7 @@ export function intimidate(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
   const ok = hasPerk(p, "kan_donduran") || Math.random() < 0.5 + p.stats.strength * 0.04 + dread(s) / 300;
-  if (ok) { let fear = hasPerk(p, "kan_donduran") ? 12 : 8; if (hasPerk(p, "diplomat")) fear = Math.round(fear * 1.5); p.fear = Math.min(100, p.fear + fear); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 7); const why = dread(s) > 30 ? " Zaten korkulan adın, bir bakışın yetti." : ""; push(s, "sosyal", `Birine gözdağı verdin; adın çekinilen biri oldu.${why}`, "kişisel", false, { k: "evj.intimWin", p: [dread(s) > 30 ? { sfx: "sfx.intimWinWhy" } : ""] }); }
+  if (ok) { let fear = hasPerk(p, "kan_donduran") ? 12 : 8; if (hasPerk(p, "diplomat")) fear = Math.round(fear * 1.5); p.fear = Math.min(100, p.fear + fear); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 7); witnessScandal(s, "tehdit", 0.5); const why = dread(s) > 30 ? " Zaten korkulan adın, bir bakışın yetti." : ""; push(s, "sosyal", `Birine gözdağı verdin; adın çekinilen biri oldu.${why}`, "kişisel", false, { k: "evj.intimWin", p: [dread(s) > 30 ? { sfx: "sfx.intimWinWhy" } : ""] }); }
   else { p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); const why = esteem(s) > 25 ? " Sevilen biri olduğundan kimse seni ciddiye almadı." : ""; push(s, "sosyal", `Gözdağın ters tepti; itibarın zarar gördü.${why}`, "kişisel", false, { k: "evj.intimLose", p: [esteem(s) > 25 ? { sfx: "sfx.intimLoseWhy" } : ""] }); }
   return s;
 }

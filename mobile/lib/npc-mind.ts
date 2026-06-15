@@ -9,7 +9,16 @@ export interface Memory {
   travma: boolean;    // travma → asla silinmez, yuk sabit
   taniklar: string[]; // tanık NPC id'leri (dedikodu için)
   yayildi: boolean;   // dedikoduya dönüştü mü
+  kaynak?: string;    // anı sahibinin adı (dedikodu kaynağı, anlık)
 }
+
+// Dedikoduya dönüşebilen anı türleri için söylenti varyant sayısı (rumor.<tur>.<i> anahtarları).
+export const RUMOR_VARIANTS: Record<string, number> = {
+  hakaret: 2, tehdit: 1, saldiri: 2, kacirma: 1, hirsizlik_tanigi: 1, suc_tanigi: 1,
+  dolandiricilik: 1, somuru: 1, iftira: 1, alay: 1, yakinima_zarar: 1, flort_tanigi: 2,
+  reddedilme: 1, comert_hediye: 1, sadaka: 1, yardim: 1, borc_kurtarma: 1,
+  hayat_kurtarma: 1, savunma: 1, ibadet_tanigi: 1, ihanet: 1,
+};
 
 export interface MemSpec { yuk: number; unutma: number; skandal: number; nam: string | null; travma?: boolean; }
 
@@ -55,7 +64,7 @@ export const MEMORY_TYPES: Record<string, MemSpec> = {
 export const NAM_TRAITS = ["comert", "zalim", "capkin", "dindar", "mert"];
 
 // Yapısal anı ekle. Bilinmeyen tür sessizce yok sayılır. 24 tavan; travmalar korunur.
-export function addMemory(anilar: Memory[], tur: string, hafta: number, opts?: { yuk?: number; taniklar?: string[] }): Memory | null {
+export function addMemory(anilar: Memory[], tur: string, hafta: number, opts?: { yuk?: number; taniklar?: string[]; kaynak?: string }): Memory | null {
   const spec = MEMORY_TYPES[tur];
   if (!spec) return null;
   const m: Memory = {
@@ -66,6 +75,7 @@ export function addMemory(anilar: Memory[], tur: string, hafta: number, opts?: {
     travma: !!spec.travma,
     taniklar: opts?.taniklar ? [...opts.taniklar] : [],
     yayildi: false,
+    kaynak: opts?.kaynak,
   };
   anilar.push(m);
   if (anilar.length > 24) {

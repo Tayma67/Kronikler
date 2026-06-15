@@ -4,10 +4,10 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { SOCIAL_AXES, socialTierIndex, hostFeast, giveAlms, intimidate, factionById, NAM_META } from "../../lib/game";
+import { SOCIAL_AXES, socialTierIndex, hostFeast, giveAlms, intimidate, factionById, NAM_META, rumorAction } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { playTap } from "../../lib/sound";
 import { BackLabel, PageHeader } from "../../lib/ui";
@@ -109,6 +109,35 @@ export default function Sosyal() {
             );
           })}
         </View>
+
+        <Section title={t("rum.title")} sub="" />
+        {(() => {
+          const rumors = state.player_rumors || [];
+          if (!rumors.length) return <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 6 }}>{t("rum.none")}</Text>;
+          return [...rumors].reverse().map((r) => {
+            const txt = applyParams(t("rumor." + r.tur + "." + r.vi), [p.name, r.kaynak]);
+            const cost = 15 * Math.round(r.siddet);
+            return (
+              <View key={r.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: r.yon > 0 ? "rgba(124,160,90,0.35)" : "rgba(160,60,60,0.35)", borderLeftWidth: 3, borderLeftColor: r.yon > 0 ? C.sage : C.blood, borderRadius: 10, padding: 12, marginBottom: 8 }}>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentDim, lineHeight: 18 }}>{txt}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1, color: C.goldDim, marginTop: 4 }}>{t("rum.intensity").toUpperCase()}: {"●".repeat(Math.round(r.siddet))}</Text>
+                <View style={{ flexDirection: "row", gap: 7, marginTop: 8 }}>
+                  <Pressable disabled={!canAct} onPress={() => { hap("tap"); playTap(); apply((s) => rumorAction(s, r.id, "yuzles")); }} style={{ flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.parchment }}>{t("rum.confront")}</Text>
+                  </Pressable>
+                  {r.yon > 0 && (
+                    <Pressable disabled={!canAct} onPress={() => { hap("tap"); playTap(); apply((s) => rumorAction(s, r.id, "yay")); }} style={{ flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: 7, borderWidth: 1, borderColor: "rgba(124,160,90,0.5)", backgroundColor: "rgba(124,160,90,0.1)" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.sage }}>{t("rum.spread")}</Text>
+                    </Pressable>
+                  )}
+                  <Pressable disabled={!canAct || p.money < cost} onPress={() => { hap("tap"); playTap(); apply((s) => rumorAction(s, r.id, "sustur")); }} style={{ flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: 7, borderWidth: 1, borderColor: (canAct && p.money >= cost) ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: C.bg }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: (canAct && p.money >= cost) ? C.gold : C.parchmentMuted }}>{t("rum.silence")} {cost}⚜</Text>
+                  </Pressable>
+                </View>
+              </View>
+            );
+          });
+        })()}
 
         <Section title={t("soc.act.h")} sub="" />
         {actions.map((act) => (
