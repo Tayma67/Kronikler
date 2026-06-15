@@ -22,6 +22,12 @@ export function mkRng(seed: number) {
   return () => { s |= 0; s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 
+// Tohumdan, seçilen dilin kültürüne göre tek ad (eş/ebeveyn isimleri için).
+export function localFirstName(seed: number, gender: "erkek" | "kadın", lang: Lang = "tr"): string {
+  const pool = NAME_POOLS[lang] || NAME_POOLS.tr;
+  const arr = gender === "erkek" ? pool.m : pool.f;
+  return arr[(seed >>> 0) % arr.length];
+}
 export function generateNPCs(seed: number, n = 30, lang: Lang = "tr", prefix = "npc"): NPC[] {
   const r = mkRng(seed);
   const pool = NAME_POOLS[lang] || NAME_POOLS.tr;

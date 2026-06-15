@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, equippedQualityMult, QUALITY_LABEL } from "../../lib/game";
-import { ITEMS } from "../../lib/world";
+import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
@@ -247,16 +247,16 @@ export default function Karakter() {
               {/* Ebeveynler */}
               <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
                 <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>👵 {t("char.mother")}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.mother || t("char.none")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.mother_seed != null ? localFirstName(p.mother_seed, "kadın", lang) : (p.mother || t("char.none"))}</Text>
               </View>
               <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
                 <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>👴 {t("char.father")}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.father || t("char.none")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{p.father_seed != null ? localFirstName(p.father_seed, "erkek", lang) : (p.father || t("char.none"))}</Text>
               </View>
               {/* Eş */}
               <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
                 <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>💍 {t("char.spouse")}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 14, color: p.spouse_name ? C.parchment : C.parchmentMuted }}>{p.spouse_name || t("char.none")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 14, color: p.spouse_name ? C.parchment : C.parchmentMuted }}>{p.spouse_seed != null ? localFirstName(p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek", lang) : (p.spouse_name || t("char.none"))}</Text>
               </View>
               {/* Çocuklar */}
               <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 }}>

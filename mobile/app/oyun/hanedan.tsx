@@ -10,7 +10,7 @@ import {
   WILL_STYLES, throneRequirements, throneBacking, canClaimThrone, throneOdds, claimThrone, THRONE_COST,
   canFoundSettlement, foundSettlement, settlementIncome, SETTLE_COST, SETTLE_MAX, developSettlement, developSettlementCost,
 } from "../../lib/game";
-import { generateDynasties, houseName as rivalHouseName } from "../../lib/world";
+import { generateDynasties, houseName as rivalHouseName, localFirstName } from "../../lib/world";
 import { professionNameL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -78,7 +78,7 @@ export default function Hanedan() {
           {/* Aile özeti */}
           <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 12, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border, alignSelf: "stretch" }}>
             <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>👤 {p.name}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>💍 {p.married && p.spouse_name ? p.spouse_name : t("dyn.unwed")}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>💍 {p.married ? (p.spouse_seed != null ? localFirstName(p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek", lang) : (p.spouse_name || t("dyn.unwed"))) : t("dyn.unwed")}</Text>
             <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>👶 {p.children.length}</Text>
           </View>
           <Pressable onPress={() => { hap("tap"); router.push("/oyun/nesil"); }} style={{ marginTop: 10 }}>

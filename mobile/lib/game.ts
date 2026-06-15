@@ -15,6 +15,7 @@ export interface Player {
   stats: Stats; stat_points: number; dead: boolean; location_name: string; home_name: string;
   married: boolean; spouse_name: string | null; children: string[];
   mother?: string; father?: string;
+  mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
   inventory: Record<string, number>; properties: Property[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
@@ -313,7 +314,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       reputation: 0, honor: 0, fear: 0, fame: 0,
       stats: { strength: 1, intelligence: 1, charisma: 1, stamina: 2 },
       stat_points: 0, dead: false, location_name: birthplace, home_name: birthplace,
-      married: false, spouse_name: null, children: [], mother: rnd(SPOUSE_K), father: rnd(SPOUSE_E), inventory: { ekmek: 2 },
+      married: false, spouse_name: null, children: [], mother: rnd(SPOUSE_K), father: rnd(SPOUSE_E), mother_seed: Math.floor(Math.random() * 1e9), father_seed: Math.floor(Math.random() * 1e9), inventory: { ekmek: 2 },
       properties: [], generation: 1,
       faction: null, faction_standing: {},
       skills: { combat: 0, trade: 0, crafting: 0, social: 0 },
@@ -379,7 +380,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.dead) return;
   // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50);
-  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.reputation += 5; push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true); }
+  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.reputation += 5; push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true); }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true); }
   // ── Yaşam-evresi anıları: her döneme doku katan küçük anlar (ara sıra; bazıları aileyi isimle anar) ──
   if (!p.dead && chance(0.14)) {
@@ -1046,7 +1047,7 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   const karizmaBonus = hasPerk(p, "karizmatik") ? 0.2 : 0;
   const ok = Math.random() < Math.min(0.97, 0.25 + (rel - 50) * 0.012 + p.stats.charisma * 0.03 + karizmaBonus + courtBonus(s));
   if (ok) {
-    p.married = true; p.spouse_name = npc.name; p.reputation = Math.min(100, p.reputation + 5);
+    p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.reputation = Math.min(100, p.reputation + 5);
     bumpNam(p, "capkin", 5);
     push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true);
   } else {
@@ -1417,6 +1418,8 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       stats, stat_points: startPoints,
       dead: false, location_name: p.location_name, home_name: p.home_name || p.location_name, married: false, spouse_name: null, children: [],
       mother: p.gender === "erkek" ? (p.spouse_name || rnd(SPOUSE_K)) : p.name, father: p.gender === "erkek" ? p.name : (p.spouse_name || rnd(SPOUSE_E)),
+      // Eş tarafı ebeveyn kültürel tohumla (dile göre çözülür); önceki oyuncu tarafı kendi adıyla kalır.
+      mother_seed: p.gender === "erkek" ? p.spouse_seed : undefined, father_seed: p.gender === "erkek" ? undefined : p.spouse_seed,
       inventory: { ekmek: 2 }, properties: props, generation: gen,
       faction: null, faction_standing: {},
       skills, skill_xp: { combat: skills.combat * 100, trade: 0, crafting: skills.crafting * 100, social: skills.social * 100 },
