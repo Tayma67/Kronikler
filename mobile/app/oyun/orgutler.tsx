@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar } from "../../lib/game";
+import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -87,6 +87,15 @@ export default function Orgutler() {
                 {isMember && <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 1 }}>{t("misc.member")} ✓</Text>}
               </View>
               <Bar value={standing} max={need} />
+              {isMember && (() => {
+                const ri = factionRankIndex(standing); const rank = FACTION_RANKS[ri]; const next = FACTION_RANKS[ri + 1];
+                return (
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: C.border }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: C.gold }}>🎖 {rank.title} <Text style={{ color: C.parchmentMuted, fontSize: 9 }}>(ödül ×{rank.mult})</Text></Text>
+                    {next ? <Text style={{ fontFamily: F.display, fontSize: 9, color: C.parchmentMuted }}>{next.title}: {standing}/{next.min}</Text> : <Text style={{ fontFamily: F.display, fontSize: 9, color: C.sage }}>EN ÜST</Text>}
+                  </View>
+                );
+              })()}
 
               <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
                 <Pressable disabled={!canAct} onPress={() => { hap("tap"); apply((s) => doFactionTask(s, f.id)); }} style={{ flex: 1, paddingVertical: 10, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, alignItems: "center" }}>

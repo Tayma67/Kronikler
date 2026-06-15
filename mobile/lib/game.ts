@@ -1123,11 +1123,24 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
 
 // ── Örgüt eylemleri ──
 // Örgüt için bir görev üstlen: akçe + örgüt itibarı kazandırır, biraz tokluk götürür.
+// Lonca rütbeleri — standing'e göre yükseliş (unvan + ödül çarpanı).
+export const FACTION_RANKS = [
+  { min: 0, title: "Yeni Üye", mult: 1.0 },
+  { min: 30, title: "Güvenilir", mult: 1.15 },
+  { min: 70, title: "Kıdemli", mult: 1.3 },
+  { min: 120, title: "Lonca Büyüğü", mult: 1.5 },
+];
+export function factionRankIndex(standing: number): number {
+  let idx = 0; for (let i = 0; i < FACTION_RANKS.length; i++) if (standing >= FACTION_RANKS[i].min) idx = i; return idx;
+}
+export function factionRank(standing: number) { return FACTION_RANKS[factionRankIndex(standing)]; }
+
 export function doFactionTask(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const f = factionById(id);
   if (!f || p.dead || p.age < 13) return s;
+  const rank = factionRank(p.faction_standing[id] || 0);            // rütbe ödülü ölçekler
   const statBonus = p.stats[f.stat] * 2;
-  let reward = f.task.reward + statBonus + Math.floor(Math.random() * 8);
+  let reward = Math.round((f.task.reward + statBonus + Math.floor(Math.random() * 8)) * rank.mult);
   if (id === "tuccar" && hasPerk(p, "guvenli_kervan")) reward = Math.round(reward * 1.5);
   p.money += reward; p.hunger = Math.max(0, p.hunger - 6);
   let standing = f.task.standing * factionStandingMod(s, id);
