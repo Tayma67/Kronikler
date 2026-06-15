@@ -96,10 +96,10 @@ const SOCG: Record<Lang, Dict> = {
   es: _socgTR, pt: _socgTR, ar: _socgTR, ru: _socgTR,
 };
 // Sancak hakimiyeti (emergent fraksiyon şehir-kontrolü). es/pt/ar/ru → TR yedeği.
-const _realmTR: Dict = { "realm.title":"Sancak Hakimiyeti", "realm.forControl":"için", "realm.month":"ay", "realm.contests":"hakimiyete göz dikti" };
+const _realmTR: Dict = { "realm.title":"Sancak Hakimiyeti", "realm.forControl":"için", "realm.month":"ay", "realm.contests":"hakimiyete göz dikti", "realm.domHere":"Loncan bu sancağa hâkim — burada görevler %25 fazla kazandırır." };
 const REALM: Record<Lang, Dict> = {
   tr: _realmTR,
-  en: { "realm.title":"Sanjak Control", "realm.forControl":"at stake", "realm.month":"mo", "realm.contests":"contests it" },
+  en: { "realm.title":"Sanjak Control", "realm.forControl":"at stake", "realm.month":"mo", "realm.contests":"contests it", "realm.domHere":"Your guild holds this sanjak — tasks here pay 25% more." },
   es: _realmTR, pt: _realmTR, ar: _realmTR, ru: _realmTR,
 };
 // Mülk-işçi (NPC istihdamı) ekonomisi. es/pt/ar/ru → TR yedeği.

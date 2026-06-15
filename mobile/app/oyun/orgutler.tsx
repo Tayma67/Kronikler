@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex, BEYLIKS, beylikName, defaultRealm } from "../../lib/game";
+import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex, BEYLIKS, beylikName, defaultRealm, factionHoldsHere } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -44,6 +44,9 @@ export default function Orgutler() {
         <View style={{ marginHorizontal: 16, marginBottom: 6, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(201,168,76,0.08)" }}>
           <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>{current.icon} {t("fac."+current.id+".n")} {t("org.youMember")}</Text>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, marginTop: 3 }}>{t("fac."+current.id+".p")}</Text>
+          {factionHoldsHere(state, p.faction) && (
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.sage, marginTop: 5 }}>🏰 {t("realm.domHere")}</Text>
+          )}
           <Pressable onPress={() => { hap("tap"); apply(leaveFaction); }} style={{ alignSelf: "flex-start", marginTop: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 10, color: C.blood, letterSpacing: 1 }}>{t("fac.leave")}</Text>
           </Pressable>

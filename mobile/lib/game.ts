@@ -1440,21 +1440,30 @@ export function factionRankIndex(standing: number): number {
 }
 export function factionRank(standing: number) { return FACTION_RANKS[factionRankIndex(standing)]; }
 
+// Bir fraksiyon, oyuncunun bulunduğu yerin sancağına hâkim mi? (emergent şehir-kontrolü etkisi)
+export function factionHoldsHere(s: GameState, factionId: string | null): boolean {
+  if (!factionId) return false;
+  const region = regionOf(s.player.location_name);
+  return (s.realm || defaultRealm()).some((r) => r.id === region && r.holder === factionId);
+}
 export function doFactionTask(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const f = factionById(id);
   if (!f || p.dead || p.age < 13) return s;
   const rank = factionRank(p.faction_standing[id] || 0);            // rütbe ödülü ölçekler
   const statBonus = p.stats[f.stat] * 2;
-  let reward = Math.round((f.task.reward + statBonus + Math.floor(Math.random() * 8)) * rank.mult);
+  // Loncan bu sancağa hâkimse burada daha güçlüsün: görev daha çok kazandırır.
+  const dom = factionHoldsHere(s, id) ? 1.25 : 1;
+  let reward = Math.round((f.task.reward + statBonus + Math.floor(Math.random() * 8)) * rank.mult * dom);
   if (id === "tuccar" && hasPerk(p, "guvenli_kervan")) reward = Math.round(reward * 1.5);
   p.money += reward; p.hunger = Math.max(0, p.hunger - 6);
-  let standing = f.task.standing * factionStandingMod(s, id);
+  let standing = f.task.standing * factionStandingMod(s, id) * dom;
   if (hasPerk(p, "lider")) standing = standing * 1.5;
   standing = Math.round(standing);
   p.faction_standing[id] = (p.faction_standing[id] || 0) + standing;
   p.reputation = Math.min(100, p.reputation + 2);
   gainSkill(s, f.stat === "strength" ? "combat" : f.stat === "charisma" ? "social" : "trade", 6);
-  push(s, "örgüt_görev", `${f.name} için "${f.task.label}" görevini gördün (+${reward} akçe, itibar arttı).`);
+  const domNote = dom > 1 ? " Loncan bu sancağa hâkim — sözün daha çok geçti." : "";
+  push(s, "örgüt_görev", `${f.name} için "${f.task.label}" görevini gördün (+${reward} akçe, itibar arttı).${domNote}`);
   return s;
 }
 
