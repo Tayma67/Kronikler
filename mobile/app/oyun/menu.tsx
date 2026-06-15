@@ -2,6 +2,7 @@ import { View, Text, Pressable, Alert, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
+import { pendingPerkCount, playerWar } from "../../lib/game";
 import { useI18n } from "../../lib/i18n";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -45,8 +46,21 @@ const SECTIONS: { title: string; items: Item[] }[] = [
 export default function Menu() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { resetGame } = useGame();
+  const { state, resetGame } = useGame();
   const { t } = useI18n();
+  const p = state?.player;
+  // Ekran başına eylem-bekleyen durum rozeti: {n: sayı, urgent: kırmızı mı}.
+  const badgeFor = (key: string): { n: number; urgent: boolean } => {
+    if (!state || !p) return { n: 0, urgent: false };
+    switch (key) {
+      case "beceriler": return { n: pendingPerkCount(p), urgent: false };
+      case "hikayeler": return { n: state.story?.active ? 1 : 0, urgent: false };
+      case "orgutler": return { n: playerWar(state) ? 1 : 0, urgent: true };
+      case "pazar": return { n: state.caravan ? 1 : 0, urgent: false };
+      case "nesil": return { n: p.dead && p.children.length > 0 ? 1 : 0, urgent: true };
+      default: return { n: 0, urgent: false };
+    }
+  };
   const confirmReset = () => {
     Alert.alert(t("settings.newLife"), t("settings.reset"), [
       { text: t("common.cancel"), style: "cancel" },
@@ -88,6 +102,11 @@ export default function Menu() {
                     <GameIcon name={m.icon} size={18} color={C.gold} />
                   </View>
                   <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 0.8, color: C.parchment }}>{t("scr." + key)}</Text>
+                  {(() => { const b = badgeFor(key); return b.n > 0 ? (
+                    <View style={{ minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 5, alignItems: "center", justifyContent: "center", backgroundColor: b.urgent ? "rgba(200,64,64,0.9)" : "rgba(201,168,76,0.9)" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10, color: "#1a1206" }}>{b.n}</Text>
+                    </View>
+                  ) : null; })()}
                   <Text style={{ color: C.goldDim, fontSize: 16, fontFamily: F.display }}>›</Text>
                 </Pressable>
               );
