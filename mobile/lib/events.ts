@@ -390,6 +390,43 @@ export const DILEMMAS: Dilemma[] = [
       { label: "Bu sefer olmaz", delta: { reputation: -5 }, result: "Geri çevirdin; loncadaki itibarın biraz zedelendi." },
     ],
   },
+  // ── Yeni sistemlere tepki veren ikilemler (işçi/kalite/zanaat/dostluk) ──
+  {
+    id: "isci_zammi", icon: "coins", title: "Bir İşçinin Talebi",
+    text: "Mülkündeki işçilerden biri huzuruna çıkıp zam istiyor: \"Alın terim daha fazlasını hak ediyor efendim.\"",
+    when: (p) => p.properties.some((pr) => (pr.workers || []).length > 0),
+    choices: [
+      { label: "Zammı ver (cömert)", delta: { money: -8, reputation: 4, nam: { comert: 3 } }, result: "İşçinin yüzü güldü; adın eli açık bir efendi olarak anıldı." },
+      { label: "Sertçe geri çevir", delta: { money: 3, reputation: -3, fear: 2, nam: { zalim: 2 } }, result: "İşçi başını eğip çekildi; kapında çalışanlar senden çekinir oldu." },
+    ],
+  },
+  {
+    id: "kusurlu_sikayet", icon: "anvil", title: "Kusurlu Mal Şikâyeti",
+    text: "Bir müşteri öfkeyle geri döndü: \"Senden aldığım mal ilk kullanışta elimde paramparça oldu! Bunun hesabını ver.\"",
+    when: (p) => Object.values(p.inv_q || {}).some((q) => (q.kusurlu || 0) > 0),
+    choices: [
+      { label: "Parasını iade et", delta: { money: -10, reputation: 5, honor: 4 }, result: "Zararını karşıladın; dürüstlüğün çarşıda konuşuldu." },
+      { label: "Suçu ona at", delta: { reputation: -6, fear: 2, nam: { zalim: 2 } }, result: "Adamı kapı dışarı ettin; ama dedikodun kötü yayıldı." },
+    ],
+  },
+  {
+    id: "usta_siparis", icon: "anvil", title: "Usta İşi Sipariş",
+    text: "Varlıklı bir bey kapına geldi: yalnız usta ellerden çıkacak, ince işçilik isteyen bir sipariş için seni arıyor.",
+    when: (p) => p.skills.crafting >= 5,
+    choices: [
+      { label: "Siparişi al (zahmetli)", delta: { money: 35, reputation: 5, honor: 3 }, result: "Geceni gündüzüne kattın; ortaya çıkan eser beyi mest etti, adın ustalıkla anıldı." },
+      { label: "Vaktim yok", delta: {}, result: "Bey omuz silkip başka kapı aradı." },
+    ],
+  },
+  {
+    id: "dost_rakip", icon: "family", title: "İki Arada",
+    text: "Bir dostunun eski rakibi sana yanaşıp kulağına fısıldıyor: \"Onun yerine benim safımda dur, kazançlı çıkarsın.\"",
+    when: (p) => p.age >= 15,
+    choices: [
+      { label: "Dostuna sadık kal", delta: { honor: 6, reputation: 3, nam: { mert: 3 } }, result: "Sözünden dönmedin; sadakatin dostunun gönlünde taht kurdu." },
+      { label: "Çıkarına bak", delta: { money: 12, honor: -5, reputation: -2 }, result: "Cebin doldu ama vefasızlığın el altından konuşuldu." },
+    ],
+  },
 ];
 
 // Tura göre bir ikilem seç (deterministik değil; çağıran olasılıkla tetikler).
