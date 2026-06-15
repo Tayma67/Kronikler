@@ -346,7 +346,7 @@ function push(s: GameState, type: string, text: string, scope: "kişisel" | "mak
   s.history.push({ day: s.turn, type, text, scope, landmark, k: loc?.k, p: loc?.p });
 }
 function clone(s: GameState): GameState { return JSON.parse(JSON.stringify(s)); }
-function die(s: GameState, text: string, loc?: { k: string; p?: EvtParam[] }) { s.player.dead = true; push(s, "ölüm", text, "kişisel", true, loc); }
+function die(s: GameState, text: string, loc?: { k: string; p?: EvtParam[] }) { s.player.dead = true; if (loc && s.player.gender === "kadın") loc = { ...loc, k: loc.k + "#f" }; push(s, "ölüm", text, "kişisel", true, loc); }
 
 function monthlyFlavor(s: GameState, cal: CalendarInfo): string {
   const child = s.player.age < 13; const pool: string[] = [];
