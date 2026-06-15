@@ -792,7 +792,9 @@ export function advance(prev: GameState, n = 1): GameState {
     }
     const child = s.player.age < 13;
     // Çocuğu ailesi besler: açlık daha yavaş düşer ve dipte aile karnını doyurur.
-    const drop = Math.round((child ? 4 : 8) * (cal.season === "Kış" ? 1.3 : 1.0));
+    const seasonMult = ({ "İlkbahar": 1.0, "Yaz": 1.1, "Sonbahar": 0.9, "Kış": 1.3 } as Record<string, number>)[cal.season] ?? 1; // 4 mevsim eğrisi (Vercel season_hunger_mult)
+    const stamReduce = child ? 0 : Math.min(0.3, effStat(s.player, "stamina") * 0.03); // dayanıklılık açlığı yavaşlatır (Vercel stamina_hunger_reduction)
+    const drop = Math.max(child ? 2 : 3, Math.round((child ? 4 : 8) * seasonMult * (1 - stamReduce)));
     s.player.hunger = Math.max(0, s.player.hunger - drop);
     if (child && s.player.hunger < 30) s.player.hunger = Math.min(100, s.player.hunger + 20); // anne-baba sofrası
     if (s.player.hunger < 20 && !child) s.player.health = Math.max(0, s.player.health - 6);
