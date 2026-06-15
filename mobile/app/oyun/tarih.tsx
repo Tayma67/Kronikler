@@ -25,7 +25,7 @@ export default function Tarih() {
           return (
             <View key={i} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: e.landmark ? C.gold : C.border, borderLeftWidth: e.landmark ? 2.5 : 1, borderRadius: 8, padding: 11, marginBottom: 7 }}>
               <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: C.parchmentMuted }}>{t("cal.month." + cal.month_no).toUpperCase()} {cal.year}{e.landmark ? "  ⚜" : ""}</Text>
-              <Text style={{ fontFamily: F.serif, fontSize: 13, color: e.landmark ? C.parchment : C.parchmentDim, marginTop: 2 }}>{renderEvt(e.k, e.text, e.p, lang, t)}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 13, color: e.landmark ? C.parchment : C.parchmentDim, marginTop: 2 }}>{renderEvt(e.k, e.text, e.p, lang, t, state.player.gender === "kadın")}</Text>
             </View>
           );
         })}

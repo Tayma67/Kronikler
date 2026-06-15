@@ -52,7 +52,7 @@ export default function Roman() {
           {c.events.map((e, i) => (
             <View key={i} style={{ flexDirection: "row", gap: 8, marginBottom: e.landmark ? 10 : 6 }}>
               {e.landmark && <Text style={{ color: C.gold }}>⚜</Text>}
-              <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, lineHeight: 23, color: e.landmark ? C.parchment : C.parchmentDim, fontStyle: e.landmark ? "normal" : "italic" }}>{renderEvt(e.k, e.text, e.p, lang, t)}</Text>
+              <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 15, lineHeight: 23, color: e.landmark ? C.parchment : C.parchmentDim, fontStyle: e.landmark ? "normal" : "italic" }}>{renderEvt(e.k, e.text, e.p, lang, t, state.player.gender === "kadın")}</Text>
             </View>
           ))}
         </View>

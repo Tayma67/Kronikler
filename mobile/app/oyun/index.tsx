@@ -180,7 +180,7 @@ export default function Dashboard() {
     const cfg = EVT[e.type] || DEFAULT_EVT;
     const land = !!e.landmark;
     const col = land ? C.goldBright : cfg.col;
-    const txt = renderEvt(e.k, e.text, e.p, lang, t);
+    const txt = renderEvt(e.k, e.text, e.p, lang, t, state?.player.gender === "kadın");
     return (
       <View style={{ flexDirection: "row", paddingBottom: last ? 0 : 8 }}>
         {/* İkon sütunu + zaman çizgisi */}
