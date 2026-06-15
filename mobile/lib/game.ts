@@ -996,6 +996,44 @@ export const TRAVEL_ROUTES: { id: TravelRoute; label: string; desc: string }[] =
   { id: "patika", label: "Patika", desc: "Kestirme — ama haydut riski var." },
   { id: "kervan", label: "Kervanla", desc: "Rahat ve güvenli (8 akçe)." },
 ];
+// ── Yol olayları (Vercel travel_rework.py portu) — otomatik stat-testli, mevcut akışa additif ──
+// Rotaya göre yolda bir olay tetiklenebilir; sonuç oyuncunun istatistiğiyle çözülür ve günlüğe düşer.
+function rollTravelEvent(s: GameState, route: TravelRoute) {
+  const p = s.player;
+  if (p.dead || p.age < 13) return;
+  const chance = route === "patika" ? 0.42 : route === "kervan" ? 0.5 : 0.34;
+  if (Math.random() >= chance) return;
+  const test = (stat: keyof Stats, per = 0.05, base = 0.4) => Math.random() < Math.min(0.9, base + effStat(p, stat) * per);
+  // Kervan rotası güvenli/sosyal olaylara yönelir; diğerleri tüm havuzu çeker.
+  const pool = route === "kervan" ? ["han", "yolcu", "tuccar"] : ["han", "yolcu", "tuccar", "firtina", "gecit", "kervanf"];
+  const ev = pool[Math.floor(Math.random() * pool.length)];
+  if (ev === "han") {
+    const cost = Math.min(p.money, 4 + Math.floor(Math.random() * 4));
+    if (cost > 0) { p.money -= cost; p.health = Math.min(100, p.health + 8); p.hunger = Math.min(100, p.hunger + 12); push(s, "yolculuk", `Yol üstü bir handa mola verdin (−${cost} akçe); dinlenip karnını doyurdun.`); }
+  } else if (ev === "tuccar") {
+    // Gezgin satıcı: ucuza yararlı bir mal.
+    const goods = ["sifa", "ekmek", "et", "bal"]; const g = goods[Math.floor(Math.random() * goods.length)];
+    if (test("charisma", 0.06, 0.45)) { p.inventory[g] = (p.inventory[g] || 0) + 1; push(s, "yolculuk", `Gezgin bir satıcıyla karşılaştın; pazarlıkla ucuza bir ${ITEMS[g]?.name || g} kaptın.`, "kişisel", true); }
+    else push(s, "yolculuk", "Gezgin bir satıcı malını fazla pahalı istedi; eli boş yürüdün.");
+  } else if (ev === "yolcu") {
+    // Yol arkadaşı (derviş/kaçak/tüccar/asker) — sohbetten beceri/irfan.
+    const kinds = ["derviş", "kaçak tüccar", "yaşlı asker", "seyyah"]; const who = kinds[Math.floor(Math.random() * kinds.length)];
+    if (test("charisma", 0.05, 0.5)) { gainSkill(s, "social", 12); push(s, "yolculuk", `Yolda bir ${who} ile dertleştin; sohbetinden hisse kaptın (sosyal beceri arttı).`, "kişisel", true); }
+    else push(s, "yolculuk", `Yolda bir ${who} ile yürüdün; lafı pek tutmadı.`);
+  } else if (ev === "firtina") {
+    if (test("stamina", 0.06, 0.45)) push(s, "yolculuk", "Yolda fırtınaya yakalandın ama sağlam bir kayalığa sığınıp atlattın.");
+    else { const hurt = 5 + Math.floor(Math.random() * 8); p.health = Math.max(1, p.health - hurt); p.hunger = Math.max(0, p.hunger - 8); push(s, "yolculuk", `Yolda fırtına seni hırpaladı (−${hurt} sağlık).`, "kişisel", true); }
+  } else if (ev === "gecit") {
+    if (test("strength", 0.06, 0.42)) { gainSkill(s, "combat", 6); push(s, "yolculuk", "Sarp bir geçidi güçle aşıp kestirme yaptın."); }
+    else { const hurt = 4 + Math.floor(Math.random() * 7); p.health = Math.max(1, p.health - hurt); push(s, "yolculuk", `Sarp geçitte ayağın kaydı, biraz hırpalandın (−${hurt} sağlık).`); }
+  } else if (ev === "kervanf") {
+    // Kervan fırsatı: ticaret testiyle küçük kâr.
+    if (test("intelligence", 0.05, 0.4)) { const gain = 10 + Math.floor(Math.random() * 25); p.money += gain; gainSkill(s, "trade", 6); push(s, "yolculuk", `Yolda bir kervana ufak bir ticaret yaptın (+${gain} akçe).`, "kişisel", true); }
+    else push(s, "yolculuk", "Yolda bir kervan gördün ama denk bir alışveriş çıkmadı.");
+  }
+  if (p.health <= 0) die(s, `${p.name}, yolda can verdi.`);
+}
+
 export function travelBy(prev: GameState, dest: string, route: TravelRoute): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || dest === p.location_name) return s;
