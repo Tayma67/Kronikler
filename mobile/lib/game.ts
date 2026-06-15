@@ -23,6 +23,7 @@ export interface Player {
   skills: Skills; skill_xp: Skills; perks: string[];
   injuries: Injury[]; career_xp: number;
   nam: Nam; child_invests: Record<string, string[]>;
+  child_edu?: Record<string, { track: string; weeks: number }>; // süregelen evlat eğitimi (haftalık biriken)
   equipped: { silah: string | null; zirh: string | null };
   equipped_q?: { silah?: QualityTier; zirh?: QualityTier }; // kuşanılı teçhizatın kalite kademesi
   crowned?: boolean; will_pref?: string;
@@ -45,6 +46,17 @@ export const INVESTMENTS: Investment[] = [
   { id: "sosyal", label: "Sosyal Terbiye",icon: "lyre",           cost: 40, desc: "Vâris olursa +2 karizma, sosyal beceri." },
   { id: "saglik", label: "Sağlık Bakımı", icon: "healing",        cost: 30, desc: "Vâris olursa dinç başlar (+itibar)." },
 ];
+// Süregelen eğitim yolu — tek-seferlik yatırımdan farklı olarak HER AY emek+akçe ister ve birikir;
+// vâris olunca biriken aylara göre ölçekli bonus verir (Vercel legacy_system EDUCATION_TRACKS portu).
+export interface EduTrack { id: string; label: string; icon: string; weekly: number; stat?: keyof Stats; skill?: keyof Skills; }
+export const EDU_TRACKS: EduTrack[] = [
+  { id: "ilim",    label: "İlim Yolu",    icon: "graduate-cap",   weekly: 3, stat: "intelligence" },
+  { id: "savas",   label: "Savaş Yolu",   icon: "crossed-swords", weekly: 3, stat: "strength", skill: "combat" },
+  { id: "zanaat",  label: "Zanaat Yolu",  icon: "anvil",          weekly: 2, skill: "crafting" },
+  { id: "ticaret", label: "Ticaret Yolu", icon: "coins",          weekly: 2, stat: "charisma", skill: "trade" },
+];
+// Biriken ay sayısı → bonus kademesi: <10 ay etkisiz, ~6 ayda +1 (max +3). Vercel apply_child_bonus hizası.
+export function eduLevel(weeks: number): number { return weeks < 10 ? 0 : Math.max(1, Math.min(3, Math.floor(weeks / 26))); }
 // Vasiyet stilleri — miras oranı ve yeni nesle etki.
 export interface WillStyle { id: string; label: string; desc: string; frac: number; repBonus: number; }
 export const WILL_STYLES: WillStyle[] = [
@@ -658,6 +670,16 @@ export function advance(prev: GameState, n = 1): GameState {
     }
     gossipTick(s); // tanıklı skandallar → oyuncu söylentileri (haftalık)
     seedTick(s);   // geçmişin tohumları filizlenir (haftalık en çok 1)
+    // Süregelen evlat eğitimi: haftalık masraf düşer, birikim vâris olunca bonusa döner (Vercel child_investment_tick).
+    if (s.player.child_edu) {
+      for (const cn in s.player.child_edu) {
+        if (!s.player.children.includes(cn)) { delete s.player.child_edu[cn]; continue; } // ölen/ayrılan çocuğu temizle
+        const tr = EDU_TRACKS.find((x) => x.id === s.player.child_edu![cn].track);
+        if (!tr || s.player.money < tr.weekly) continue; // parasızken eğitim duraklar (birikim de durur)
+        s.player.money -= tr.weekly;
+        s.player.child_edu![cn].weeks += 1;
+      }
+    }
     const child = s.player.age < 13;
     // Çocuğu ailesi besler: açlık daha yavaş düşer ve dipte aile karnını doyurur.
     const drop = Math.round((child ? 4 : 8) * (cal.season === "Kış" ? 1.3 : 1.0));
@@ -1694,6 +1716,20 @@ export function investInChild(prev: GameState, childName: string, investId: stri
   return s;
 }
 
+// Çocuk için süregelen eğitim yolu belirle/kaldır — haftalık masraf advance() içinde işlenir.
+// Aynı yola devam edersen birikim korunur; yön değiştirirsen sıfırdan başlar (emek boşa gitmesin diye uyarı UI'da).
+export function setChildEducation(prev: GameState, childName: string, trackId: string | null): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !p.children.includes(childName)) return s;
+  if (!p.child_edu) p.child_edu = {};
+  if (!trackId) { delete p.child_edu[childName]; return s; }
+  const tr = EDU_TRACKS.find((x) => x.id === trackId); if (!tr) return s;
+  const cur = p.child_edu[childName];
+  p.child_edu[childName] = { track: trackId, weeks: cur && cur.track === trackId ? cur.weeks : 0 };
+  push(s, "nesil_yatirim", `${childName} ${tr.label.toLowerCase()}'na verildi; her ay emek ve akçe ister.`, "kişisel", false, { k: "edu.set", p: [childName, { edul: trackId }] });
+  return s;
+}
+
 // Nesil mirası: ölünce vâris (varsayılan ilk çocuk) ile devam et. Vasiyet stili miras oranını belirler.
 export function continueAsHeir(prev: GameState, willId = "esit", heirName?: string): GameState {
   const s = clone(prev); const p = s.player;
@@ -1716,6 +1752,18 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     if (inv === "zanaat") { skills.crafting = 2; startMoney += 30; investNotes.push("zanaat öğrenmiş"); }
     if (inv === "sosyal") { stats.charisma += 2; skills.social = 2; investNotes.push("terbiyeli"); }
     if (inv === "saglik") { startHealth = 100; startRep += 6; investNotes.push("dinç"); }
+  }
+  // Süregelen eğitim yolu: biriken aylara göre ölçekli bonus (Vercel apply_child_bonus portu).
+  const edu = p.child_edu && p.child_edu[heir];
+  if (edu) {
+    const tr = EDU_TRACKS.find((x) => x.id === edu.track);
+    const lvl = eduLevel(edu.weeks);
+    if (tr && lvl > 0) {
+      if (tr.stat) stats[tr.stat] = Math.min(10, stats[tr.stat] + lvl);
+      if (tr.skill) skills[tr.skill] = Math.min(10, skills[tr.skill] + lvl);
+      startRep += lvl; // köklü eğitim saygınlık katar
+      investNotes.push(`${tr.label.toLowerCase()}nda yetişmiş (${lvl}. kademe)`);
+    }
   }
   const ancestor: DynastyRecord = {
     generation: p.generation, name: p.name, profession: p.profession === "işsiz" ? "—" : p.profession,

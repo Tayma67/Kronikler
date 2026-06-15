@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { INVESTMENTS, WILL_STYLES, investInChild, continueAsHeir } from "../../lib/game";
+import { INVESTMENTS, WILL_STYLES, investInChild, continueAsHeir, EDU_TRACKS, eduLevel, setChildEducation } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -45,6 +45,7 @@ export default function Nesil() {
                 <GameIcon name="baby" size={16} color={C.gold} />
                 <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.parchment }}>{c}</Text>
                 {(p.child_invests?.[c]?.length || 0) > 0 && <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim }}>{p.child_invests[c].length} {t("nes.invests")}</Text>}
+                {p.child_edu?.[c] && eduLevel(p.child_edu[c].weeks) > 0 && <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.gold }}>{t("edu.track." + p.child_edu[c].track)} {eduLevel(p.child_edu[c].weeks)}</Text>}
                 {chosenHeir === c && <Text style={{ color: C.gold }}>✓</Text>}
               </Pressable>
             ))}
@@ -83,6 +84,27 @@ export default function Nesil() {
                       </Pressable>
                     );
                   })}
+                  {/* Süregelen eğitim yolu — haftalık emek/akçe biriktirir, vâris olunca ölçekli bonus verir */}
+                  <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim, marginTop: 12, marginBottom: 3 }}>{t("edu.head")}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.parchmentMuted, marginBottom: 7 }}>{t("edu.hint")}</Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                    {EDU_TRACKS.map((tr) => {
+                      const on = p.child_edu?.[c]?.track === tr.id;
+                      const afford = p.money >= tr.weekly;
+                      return (
+                        <Pressable key={tr.id} disabled={!on && !afford} onPress={() => { hap("tap"); apply((s) => setChildEducation(s, c, on ? null : tr.id)); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 7, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.12)" : C.card, opacity: !on && !afford ? 0.5 : 1 }}>
+                          <GameIcon name={tr.icon} size={13} color={on ? C.gold : C.goldDim} />
+                          <Text style={{ fontFamily: F.display, fontSize: 11, color: on ? C.gold : C.parchment }}>{t("edu.track." + tr.id)}</Text>
+                          <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.parchmentMuted }}>{t("edu.cost").replace("%1", String(tr.weekly))}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  {p.child_edu?.[c] && (
+                    <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim, marginTop: 6 }}>
+                      {t("edu.months").replace("%1", String(p.child_edu[c].weeks))} · {eduLevel(p.child_edu[c].weeks) > 0 ? t("edu.proj").replace("%1", String(eduLevel(p.child_edu[c].weeks))) : t("edu.notyet")}
+                    </Text>
+                  )}
                 </View>
               );
             })}

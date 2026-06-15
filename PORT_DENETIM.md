@@ -36,7 +36,7 @@ Durum: 🟢 iyi (≈%80+) · 🟡 kısmi · 🔴 sığ/eksik · 🔵 kasıtlı s
 | Kariyer merdiveni + skill-XP (`skills.py`) | ~70% | 🟡 | 15/30 meslek, perk sistemi ~%80 |
 | Stat-XP ilerleme eğrisi | ~30% | 🔴 | APK düz `allocateStat`, Vercel 25+lvl×15 eğrisi yok |
 | Şehir yönetimi (`city_governance.py`) | ~55% | 🟡 | meşruiyet/vali/vergi var; garrison/özerklik/azil yok |
-| Evlat eğitimi (`legacy_system.py`) | ~50% | 🟡 | APK anlık tek-seferlik; haftalık biriken masraf yok |
+| Evlat eğitimi (`legacy_system.py`) | ~95% | ✅ | PORTLANDI: haftalık biriken eğitim yolu (EDU_TRACKS) + UI + 6 dil; vâris bonusu aylara göre ölçekli |
 | Aile görevleri (`family_quests.py`) | ~50% | 🟡 | 8/16 görev; ark-zinciri (requires) yok |
 | Mülk (`property_system.py`) | ~60% | 🟡 | 4 tip+işçi var; han, ledger, gerçek mevsim çevrimi yok |
 | Suç reworku (`crime_rework.py`) | ~55% | 🟡 | kesinti sahnesi var; keşif, kaçış planı, sıcak mal yok |

@@ -25,6 +25,7 @@ for (let i = 0; i < 300; i++) {
           else if (act < 0.64 && npcs.length) s = g.exploitNpcGoal(s, R(npcs));
           else if (act < 0.70 && p.money > 200) s = g.buyProperty(s, R(["tarla","ev","dukkan"]));
           else if (act < 0.76 && p.properties.length && npcs.length) s = g.hireWorker(s, 0, R(npcs).id);
+          else if (act < 0.80 && p.children && p.children.length) s = g.setChildEducation(s, p.children[0], R(["ilim","savas","zanaat","ticaret"]));
         } catch (e) { errors++; if (errors <= 5) console.log("AKSİYON HATASI:", e.message); }
         try { if (s.pendingScene && s.pendingScene.kind === "crime") s = g.resolveCrimeScene(s, R(["saklan","rusvet","kac"])); } catch (e) { errors++; if (errors <= 5) console.log("SAHNE HATASI:", e.message); }
       }
