@@ -72,7 +72,7 @@ export function upgradeProperty(prev: GameState, index: number): GameState {
   if (!pr || (pr.level || 1) >= PROP_MAX_LEVEL) return s;
   const cost = propUpgradeCost(pr); if (p.money < cost) return s;
   p.money -= cost; pr.level = (pr.level || 1) + 1;
-  push(s, "mülk", `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) büyütüldü — kademe ${pr.level} (−${cost} akçe).`, "kişisel", true);
+  push(s, "mülk", `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) büyütüldü — kademe ${pr.level} (−${cost} akçe).`, "kişisel", true, { k: "evj.propUp", p: [{ pt2: pr.type }, { pl: pr.loc }, pr.level || 1, cost] });
   return s;
 }
 export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: number; income: number; slots: number }> = {
@@ -382,7 +382,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50);
   if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.reputation += 5; push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
-  if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true); }
+  if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: "evj.childBorn", p: [c] }); }
   // ── Yaşam-evresi anıları: her döneme doku katan küçük anlar (ara sıra; bazıları aileyi isimle anar) ──
   if (!p.dead && chance(0.14)) {
     const child = p.children.length ? rnd(p.children) : null;
@@ -416,7 +416,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     push(s, p.age < 13 ? "cocukluk" : "gunluk", m.text);
   }
   if (chance(0.05)) { const g = 5 + Math.floor(Math.random() * 20); p.money += g; push(s, "gunluk", `Yolda ${g} akçe buldun.`, "kişisel", false, { k: "evj.foundCoin", p: [g] }); }
-  if (chance(0.04)) { p.health = Math.max(0, p.health - 12); push(s, "hastalik", "Hastalandın, birkaç gün yatakta kaldın."); }
+  if (chance(0.04)) { p.health = Math.max(0, p.health - 12); push(s, "hastalik", "Hastalandın, birkaç gün yatakta kaldın.", "kişisel", false, { k: "evj.sick" }); }
   // ── Nemesis dünyada yaşıyor: musallat olur; yoksa derin bir husumet amansız hasma dönüşebilir ──
   if (!p.dead && p.age >= 14 && s.story) {
     if (s.story.nemesis && chance(0.10)) {
@@ -502,7 +502,7 @@ export function advance(prev: GameState, n = 1): GameState {
       if (pr.cond > 40 && chance(0.2)) pr.cond -= 1;                                   // zamanla aşınma
       if (ci.security < 30 && chance(0.02)) {                                          // düşük güvenlikte yağma
         pr.cond = Math.max(20, pr.cond - 15);
-        if (i === n - 1) push(s, "mülk_yagma", `${PROPERTY_TYPES[pr.type]?.name || "Mülkün"} (${pr.loc}) yağmaya uğradı; onarım gerek.`);
+        if (i === n - 1) push(s, "mülk_yagma", `${PROPERTY_TYPES[pr.type]?.name || "Mülkün"} (${pr.loc}) yağmaya uğradı; onarım gerek.`, "kişisel", false, { k: "evj.propRaid", p: [{ pt2: pr.type }, { pl: pr.loc }] });
       }
     }
     inc = Math.round(inc * pmult);
@@ -593,13 +593,13 @@ function tickFactions(s: GameState, announce: boolean) {
     if (!sn.contender && sn.tension > 40 && Math.random() < 0.35) {
       const rivals = ids.filter((id) => id !== sn.holder);
       sn.contender = rivals[Math.floor(Math.random() * rivals.length)];
-      if (announce) push(s, "ocak_savasi", `${factionById(sn.contender)?.name}, ${beylikName(sn.id)} üzerinde hak iddia ediyor.`, "makro", true);
+      if (announce) push(s, "ocak_savasi", `${factionById(sn.contender)?.name}, ${beylikName(sn.id)} üzerinde hak iddia ediyor.`, "makro", true, { k: "evj.warClaim", p: [{ fc: sn.contender! }, { bl: sn.id }] });
     }
     // Gerilim dorukta + rakip var → savaş patlar.
     if (sn.tension >= 100 && sn.contender) {
       s.wars.push({ a: sn.holder, b: sn.contender, turnsLeft: 4 + Math.floor(Math.random() * 4), aScore: 0, bScore: 0, prize: sn.id });
       sn.tension = 55;
-      if (announce) push(s, "ocak_savasi", `${factionById(sn.holder)?.name} ile ${factionById(sn.contender)?.name}, ${beylikName(sn.id)} için savaşa tutuştu!`, "makro", true);
+      if (announce) push(s, "ocak_savasi", `${factionById(sn.holder)?.name} ile ${factionById(sn.contender)?.name}, ${beylikName(sn.id)} için savaşa tutuştu!`, "makro", true, { k: "evj.warStart", p: [{ fc: sn.holder }, { fc: sn.contender! }, { bl: sn.id }] });
     } else if (!sn.contender) {
       sn.tension = Math.max(0, sn.tension - 2); // rakip yoksa gerilim yavaşça söner
     }
@@ -625,11 +625,11 @@ function tickDynasties(s: GameState, announce: boolean) {
   const roll = Math.random();
   if (h.trait === "ihtiraslı" || roll < 0.4) {
     h.power = Math.min(100, h.power + 4);
-    push(s, "hanedan_haber", `${h.name} yeni bir kale ele geçirdi; gücü artıyor.`, "makro", true);
+    push(s, "hanedan_haber", `${h.name} yeni bir kale ele geçirdi; gücü artıyor.`, "makro", true, { k: "evj.houseCastle", p: [{ hn: h.nameIdx }] });
   } else if (h.trait === "kindar" || roll < 0.7) {
-    push(s, "hanedan_haber", `${h.name} ile ${other.name} arasında husumet alevlendi.`, "makro", true);
+    push(s, "hanedan_haber", `${h.name} ile ${other.name} arasında husumet alevlendi.`, "makro", true, { k: "evj.houseFeud", p: [{ hn: h.nameIdx }, { hn: other.nameIdx }] });
   } else {
-    push(s, "hanedan_haber", `${h.name} ile ${other.name} bir ittifak kurdu; diyarda dengeler değişiyor.`, "makro", true);
+    push(s, "hanedan_haber", `${h.name} ile ${other.name} bir ittifak kurdu; diyarda dengeler değişiyor.`, "makro", true, { k: "evj.houseAlly", p: [{ hn: h.nameIdx }, { hn: other.nameIdx }] });
   }
 }
 function tickWars(s: GameState, announce: boolean) {
@@ -641,7 +641,7 @@ function tickWars(s: GameState, announce: boolean) {
     let b = ids[Math.floor(Math.random() * ids.length)];
     if (b === a) b = ids[(ids.indexOf(a) + 1) % ids.length];
     s.wars.push({ a, b, turnsLeft: 4 + Math.floor(Math.random() * 4), aScore: 0, bScore: 0 });
-    if (announce) push(s, "ocak_savasi", `${factionById(a)?.name} ile ${factionById(b)?.name} arasında savaş çıktı!`, "makro", true);
+    if (announce) push(s, "ocak_savasi", `${factionById(a)?.name} ile ${factionById(b)?.name} arasında savaş çıktı!`, "makro", true, { k: "evj.warGeneric", p: [{ fc: a }, { fc: b }] });
   }
   for (const w of s.wars) {
     w.turnsLeft -= 1;
@@ -661,7 +661,7 @@ function tickWars(s: GameState, announce: boolean) {
         if (announce) push(s, "ocak_savasi", flipped ? `${wf?.name}, ${beylikName(w.prize)}'ni ele geçirdi!` : `${wf?.name}, ${beylikName(w.prize)} üzerindeki hakimiyetini korudu.`, "makro", true);
       }
     } else if (announce) {
-      push(s, "ocak_savasi", `Savaş sona erdi: ${wf?.name} üstün geldi.`, "makro", true);
+      push(s, "ocak_savasi", `Savaş sona erdi: ${wf?.name} üstün geldi.`, "makro", true, { k: "evj.warEnd", p: [{ fc: winner }] });
     }
     // Oyuncu kazanan tarafın üyesiyse itibar
     if (s.player.faction === winner) { s.player.faction_standing[winner] = (s.player.faction_standing[winner] || 0) + 8; s.player.fame = Math.min(100, s.player.fame + 4); }
@@ -700,8 +700,8 @@ function tickEconomy(s: GameState, announce: boolean) {
   // dengeye dön
   s.econ += (1 - s.econ) * 0.25;
   if (Math.random() < 0.08) {
-    if (Math.random() < 0.5) { s.econ = Math.min(1.5, s.econ + 0.22); if (announce) push(s, "piyasa", "Kıtlık baş gösterdi; pazarda fiyatlar fırladı.", "makro"); }
-    else { s.econ = Math.max(0.7, s.econ - 0.18); if (announce) push(s, "piyasa", "Bereketli hasat; pazarda fiyatlar düştü.", "makro"); }
+    if (Math.random() < 0.5) { s.econ = Math.min(1.5, s.econ + 0.22); if (announce) push(s, "piyasa", "Kıtlık baş gösterdi; pazarda fiyatlar fırladı.", "makro", false, { k: "evj.scarcity" }); }
+    else { s.econ = Math.max(0.7, s.econ - 0.18); if (announce) push(s, "piyasa", "Bereketli hasat; pazarda fiyatlar düştü.", "makro", false, { k: "evj.abundance" }); }
   }
   s.econ = Math.round(s.econ * 100) / 100;
   // Geçici piyasa olayı: süresi dolanı kapat, ara sıra yenisini başlat
@@ -906,7 +906,7 @@ export function useItem(prev: GameState, id: string): GameState {
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
   if (it.feed) p.hunger = Math.min(100, p.hunger + it.feed);
   if (it.heal) p.health = Math.min(100, p.health + it.heal);
-  push(s, "kullanım", `${it.name} kullandın.`);
+  push(s, "kullanım", `${it.name} kullandın.`, "kişisel", false, { k: "evj.useItem", p: [{ i: id }] });
   return s;
 }
 
@@ -993,7 +993,7 @@ export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   ns.mood = Math.max(-100, Math.min(100, ns.mood + 14));
   ns.memories.push(`${ITEMS[itemId]?.name || "Bir hediye"} hediye ettin.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
-  push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`);
+  push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`, "kişisel", false, { k: "evj.gift", p: [npc.name, { i: itemId }] });
   return s;
 }
 
@@ -1051,10 +1051,10 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   if (ok) {
     p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.reputation = Math.min(100, p.reputation + 5);
     bumpNam(p, "capkin", 5);
-    push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true);
+    push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
   } else {
     s.relationships[npc.id] = Math.max(0, rel - 8);
-    push(s, "sohbet", `${npc.name} teklifini şimdilik geri çevirdi. Vakit ister.`);
+    push(s, "sohbet", `${npc.name} teklifini şimdilik geri çevirdi. Vakit ister.`, "kişisel", false, { k: "evj.proposeNo", p: [npc.name] });
   }
   return s;
 }
@@ -1117,9 +1117,9 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
   const s = clone(prev); const p = s.player;
   if (p.dead || dest === p.location_name) return s;
   if (route === "kervan") {
-    if (p.money < 8) { push(s, "yolculuk", "Kervana verecek akçen yok."); return s; }
+    if (p.money < 8) { push(s, "yolculuk", "Kervana verecek akçen yok.", "kişisel", false, { k: "evj.noCar" }); return s; }
     p.money -= 8; p.hunger = Math.max(0, p.hunger - 3); p.location_name = dest;
-    push(s, "yolculuk", `Kervana katılıp ${dest}'e rahatça vardın.`);
+    push(s, "yolculuk", `Kervana katılıp ${dest}'e rahatça vardın.`, "kişisel", false, { k: "evj.carJoin", p: [{ pl: dest }] });
   } else if (route === "patika") {
     p.hunger = Math.max(0, p.hunger - 7); p.location_name = dest;
     const ambush = Math.random() < Math.max(0.08, 0.3 - combatPower(p) * 0.012);
@@ -1127,10 +1127,10 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
       const hurt = 8 + Math.floor(Math.random() * 10) - armorDefense(p);
       const loss = Math.min(p.money, 5 + Math.floor(Math.random() * 15));
       p.health = Math.max(0, p.health - Math.max(3, hurt)); p.money -= loss;
-      push(s, "yolculuk", `Patikada haydut bastı! ${dest}'e zor ulaştın (−sağlık, −${loss} akçe).`, "kişisel", true);
+      push(s, "yolculuk", `Patikada haydut bastı! ${dest}'e zor ulaştın (−sağlık, −${loss} akçe).`, "kişisel", true, { k: "evj.pathAmbush", p: [{ pl: dest }, loss] });
       if (p.health <= 0) die(s, `${p.name}, patikada haydutlara yenik düştü.`);
     } else {
-      push(s, "yolculuk", `Patikadan kestirerek ${dest}'e vardın.`);
+      push(s, "yolculuk", `Patikadan kestirerek ${dest}'e vardın.`, "kişisel", false, { k: "evj.pathOk", p: [{ pl: dest }] });
     }
   } else {
     p.hunger = Math.max(0, p.hunger - 5); p.location_name = dest;
@@ -1145,7 +1145,7 @@ export function changeProfession(prev: GameState, prof: string): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || prof === p.profession || !PROFS.includes(prof)) return s;
   p.profession = prof; p.career_xp = 0;
-  push(s, "meslek_değişimi", `${professionById(prof)?.name || cap(prof)} mesleğine geçtin — yeniden en alttan.`, "kişisel", true);
+  push(s, "meslek_değişimi", `${professionById(prof)?.name || cap(prof)} mesleğine geçtin — yeniden en alttan.`, "kişisel", true, { k: "evj.profSwitch", p: [{ pr: prof }] });
   return s;
 }
 
@@ -1202,8 +1202,8 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   // ── Sınav: her 4 derste bir (ilgili statla test) ──
   if (p.lesson_count % 4 === 0) {
     const passed = Math.random() < Math.min(0.9, 0.35 + effStat(p, EXAM_STAT[id] || "intelligence") * 0.12);
-    if (passed) { p.stat_points += 1; chips.push({ label: "📜 Sınav geçildi · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Sınava girdin ve geçtin — bir özellik puanı kazandın.", "kişisel", true); }
-    else { chips.push({ label: "📜 Sınavda zorlandın", col: "#C0556B" }); push(s, "mektep", "Sınava girdin ama zorlandın; daha çok çalışmalısın.", "kişisel", false); }
+    if (passed) { p.stat_points += 1; chips.push({ label: "📜 Sınav geçildi · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Sınava girdin ve geçtin — bir özellik puanı kazandın.", "kişisel", true, { k: "evj.examPass" }); }
+    else { chips.push({ label: "📜 Sınavda zorlandın", col: "#C0556B" }); push(s, "mektep", "Sınava girdin ama zorlandın; daha çok çalışmalısın.", "kişisel", false, { k: "evj.examFail" }); }
   }
   return { state: s, key, chips };
 }
@@ -1238,7 +1238,7 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
     const scratch = 2 + Math.floor(Math.random() * (ct.sev * 2));
     p.health = Math.max(1, p.health - scratch); p.fear = Math.min(100, p.fear + 1);
     gainSkill(s, "combat", 3);
-    push(s, "suç", `İş ters gitti ama kovalamacada kıl payı sıvıştın (−${scratch} sağlık).`, "kişisel", true);
+    push(s, "suç", `İş ters gitti ama kovalamacada kıl payı sıvıştın (−${scratch} sağlık).`, "kişisel", true, { k: "evj.crimeEscape", p: [scratch] });
     return s;
   }
   // Kaçamadın → yakalandın (şiddete göre ceza).
@@ -1264,9 +1264,9 @@ export function resolveOpportunity(prev: GameState, opp: Opportunity): GameState
     if (hasPerk(p, "keskin_goz")) reward = Math.round(reward * 1.3);
     p.money += reward; p.reputation = Math.min(100, p.reputation + 4);
     gainSkill(s, opp.stat === "strength" ? "combat" : opp.stat === "charisma" ? "social" : "trade", 7);
-    push(s, "görev_tamamlandı", `"${opp.title}" görevini başardın (+${reward} akçe).`, "kişisel", true);
+    push(s, "görev_tamamlandı", `"${opp.title}" görevini başardın (+${reward} akçe).`, "kişisel", true, { k: "evj.oppWin", p: [{ opp: opp.key }, reward] });
   }
-  else { p.reputation = Math.max(-100, p.reputation - 3); push(s, "görev_başarısız", `"${opp.title}" görevinde başarısız oldun.`); }
+  else { p.reputation = Math.max(-100, p.reputation - 3); push(s, "görev_başarısız", `"${opp.title}" görevinde başarısız oldun.`, "kişisel", false, { k: "evj.oppLose", p: [{ opp: opp.key }] }); }
   return s;
 }
 
@@ -1297,7 +1297,7 @@ export function buyProperty(prev: GameState, type: string): GameState {
   const s = clone(prev); const p = s.player; const t = PROPERTY_TYPES[type];
   if (!t || p.dead || p.money < t.cost) return s;
   p.money -= t.cost; p.properties.push({ type, loc: p.location_name, cond: 100 });
-  push(s, "mülk_alım", `${p.location_name}'de ${t.name} satın aldın. Adına bir tapu daha.`, "kişisel", true);
+  push(s, "mülk_alım", `${p.location_name}'de ${t.name} satın aldın. Adına bir tapu daha.`, "kişisel", true, { k: "evj.propBuy", p: [{ pl: p.location_name }, { pt2: type }] });
   return s;
 }
 // Onarım bedeli (eksik kondisyonla orantılı).
@@ -1307,7 +1307,7 @@ export function repairProperty(prev: GameState, index: number): GameState {
   if (!pr || pr.cond >= 100) return s;
   const cost = repairCost(pr); if (p.money < cost) return s;
   p.money -= cost; pr.cond = 100;
-  push(s, "mülk", `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) onarıldı (−${cost} akçe).`);
+  push(s, "mülk", `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) onarıldı (−${cost} akçe).`, "kişisel", false, { k: "evj.propRepair", p: [{ pt2: pr.type }, { pl: pr.loc }, cost] });
   return s;
 }
 
@@ -1482,7 +1482,7 @@ export function joinFaction(prev: GameState, id: string): GameState {
   const need = hasPerk(p, "karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep;
   if ((p.faction_standing[id] || 0) < need) return s;
   p.faction = id; p.reputation = Math.min(100, p.reputation + 6);
-  push(s, "örgüt_katılım", `${f.name} saflarına katıldın. ${f.perk}`, "kişisel", true);
+  push(s, "örgüt_katılım", `${f.name} saflarına katıldın. ${f.perk}`, "kişisel", true, { k: "evj.facJoin", p: [{ fc: f.id }, f.perk] });
   return s;
 }
 
@@ -1491,7 +1491,7 @@ export function leaveFaction(prev: GameState): GameState {
   const s = clone(prev); const p = s.player; const f = factionById(p.faction);
   if (!f) return s;
   p.faction = null; p.reputation = Math.max(-100, p.reputation - 4);
-  push(s, "örgüt_ayrılma", `${f.name} saflarından ayrıldın.`, "kişisel");
+  push(s, "örgüt_ayrılma", `${f.name} saflarından ayrıldın.`, "kişisel", false, { k: "evj.facLeave", p: [{ fc: f.id }] });
   return s;
 }
 
@@ -1521,7 +1521,7 @@ export function hostFeast(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
   const cost = 40;
-  if (p.money < cost) { push(s, "sosyal", "Ziyafet verecek akçen yok."); return s; }
+  if (p.money < cost) { push(s, "sosyal", "Ziyafet verecek akçen yok.", "kişisel", false, { k: "evj.noFeast" }); return s; }
   let fame = 8, rep = 5;
   if (hasPerk(p, "sohret_avcisi")) fame += 5;
   if (hasPerk(p, "diplomat")) { fame = Math.round(fame * 1.5); rep = Math.round(rep * 1.5); }
@@ -1537,14 +1537,14 @@ export function giveAlms(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
   const cost = 15;
-  if (p.money < cost) { push(s, "sosyal", "Sadaka verecek akçen yok."); return s; }
+  if (p.money < cost) { push(s, "sosyal", "Sadaka verecek akçen yok.", "kişisel", false, { k: "evj.noAlms" }); return s; }
   let honor = 7, rep = 3;
   if (hasPerk(p, "hosgoru")) honor += 5;
   if (hasPerk(p, "diplomat")) { honor = Math.round(honor * 1.5); rep = Math.round(rep * 1.5); }
   p.money -= cost; p.honor = Math.min(100, p.honor + honor); p.reputation = Math.min(100, p.reputation + rep);
   gainSkill(s, "social", 5);
   bumpNam(p, "comert", 6); bumpNam(p, "dindar", 5);
-  push(s, "sosyal", "Yoksullara sadaka dağıttın; vicdanın hafifledi, şerefin yükseldi.");
+  push(s, "sosyal", "Yoksullara sadaka dağıttın; vicdanın hafifledi, şerefin yükseldi.", "kişisel", false, { k: "evj.alms" });
   return s;
 }
 
@@ -1610,7 +1610,7 @@ export function unequipItem(prev: GameState, slot: "silah" | "zirh"): GameState 
   const oq = p.equipped_q?.[slot]; if (oq) addQuality(p, old, oq); // kaliteyi envantere geri ver
   p.equipped[slot] = null;
   if (p.equipped_q) delete p.equipped_q[slot];
-  push(s, "kusanma", `${ITEMS[old]?.name || "Teçhizat"} çıkardın.`);
+  push(s, "kusanma", `${ITEMS[old]?.name || "Teçhizat"} çıkardın.`, "kişisel", false, { k: "evj.unequip", p: [{ i: old }] });
   return s;
 }
 
@@ -1644,12 +1644,12 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
     const floor = hasPerk(p, "yilmaz") ? 5 : 1;
     p.health = Math.max(floor, Math.round(finalHp));
     maybeInjure(s, false);
-    push(s, "savaş_zafer", `${e.title}: Zafer senin! (+${reward} akçe, şöhretin arttı.)`, "kişisel", true);
+    push(s, "savaş_zafer", `${e.title}: Zafer senin! (+${reward} akçe, şöhretin arttı.)`, "kişisel", true, { k: "evj.battleWin", p: [{ enc: e.id }, reward] });
   } else {
     p.health = Math.max(0, Math.round(finalHp));
     if (p.health <= 0) { die(s, `${p.name}, ${e.title.toLowerCase()} sırasında can verdi.`); return s; }
     maybeInjure(s, true);
-    push(s, "savaş_yenilgi", `${e.title}: Yenildin, yaralarını sardın.`, "kişisel");
+    push(s, "savaş_yenilgi", `${e.title}: Yenildin, yaralarını sardın.`, "kişisel", false, { k: "evj.battleLose", p: [{ enc: e.id }] });
     // Yenilgi bir düşmanlık doğurabilir (nemesis)
     if (s.story && !s.story.nemesis && Math.random() < 0.4) {
       const name = `${NEMESIS_NAMES[Math.floor(Math.random() * NEMESIS_NAMES.length)]}`;
@@ -1673,12 +1673,12 @@ export function applyNemesisOutcome(prev: GameState, won: boolean, finalHp: numb
     bumpNam(p, "mert", 8);
     const floor = hasPerk(p, "yilmaz") ? 5 : 1; p.health = Math.max(floor, Math.round(finalHp));
     s.story.nemesis = null;
-    push(s, "nemesis", `${n.name}'ı alt ettin! Hesap kapandı, adın korkusuz diye anıldı.`, "kişisel", true);
+    push(s, "nemesis", `${n.name}'ı alt ettin! Hesap kapandı, adın korkusuz diye anıldı.`, "kişisel", true, { k: "evj.nemWin", p: [n.name] });
   } else {
     p.health = Math.max(0, Math.round(finalHp));
     if (p.health <= 0) { die(s, `${p.name}, ${n.name} ile hesaplaşmada can verdi.`); return s; }
     maybeInjure(s, true);
-    push(s, "nemesis", `${n.name} yine üstün geldi; intikam bir başka bahara kaldı.`, "kişisel");
+    push(s, "nemesis", `${n.name} yine üstün geldi; intikam bir başka bahara kaldı.`, "kişisel", false, { k: "evj.nemLose", p: [n.name] });
   }
   return s;
 }
@@ -1889,7 +1889,7 @@ export function choosePerk(prev: GameState, id: string): GameState {
   if (p.skills[pk.tree] < pk.tier) return s;
   if (pendingPerkTier(p, pk.tree) !== pk.tier) return s; // bu kademe zaten doldurulmuş
   p.perks.push(id);
-  push(s, "hüner", `Yeni hüner: ${pk.name} — ${pk.desc}`, "kişisel", true);
+  push(s, "hüner", `Yeni hüner: ${pk.name} — ${pk.desc}`, "kişisel", true, { k: "evj.perk", p: [pk.name, pk.desc] });
   return s;
 }
 
@@ -2125,7 +2125,7 @@ export function developSettlement(prev: GameState, index: number): GameState {
   const cost = developSettlementCost(st); if (p.money < cost) return s;
   p.money -= cost; st.dev = Math.min(100, st.dev + 8);
   if (st.dev >= 100) p.fame = Math.min(100, p.fame + 3);
-  push(s, "yerlesim", `${st.name} için akçe döktün; mezra hızla gelişti (gelişmişlik %${st.dev}).`, "kişisel");
+  push(s, "yerlesim", `${st.name} için akçe döktün; mezra hızla gelişti (gelişmişlik %${st.dev}).`, "kişisel", false, { k: "evj.settleDev", p: [st.name, st.dev] });
   return s;
 }
 // Bir yerleşimin yıllık vergi geliri (gelişmişliğe + halk desteğine göre).
@@ -2149,7 +2149,7 @@ export function runForGovernor(prev: GameState, name: string): GameState {
   if (!p.governorships) p.governorships = [];
   p.governorships.push(name);
   p.reputation = Math.min(100, p.reputation + 5); p.fame = Math.min(100, p.fame + 6);
-  push(s, "yonetim", `${name} valiliğine getirildin — artık ${GOV_TITLE[placeKind(name)] || "Vali"}sin.`, "kişisel", true);
+  push(s, "yonetim", `${name} valiliğine getirildin — artık ${GOV_TITLE[placeKind(name)] || "Vali"}sin.`, "kişisel", true, { k: "evj.govAppoint", p: [{ pl: name }] });
   return s;
 }
 // Valilik vergi payı (her tur): şehrin refahına göre.
