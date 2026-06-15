@@ -118,12 +118,12 @@ const NPCGOAL: Record<Lang, Dict> = {
 };
 // Pano kanca/bağlam şeritleri (sıradaki hedef + diyar savaşı).
 const DASH3: Record<Lang, Dict> = {
-  tr: { "dash.nextGoal":"Sıradaki Hedef", "dash.goalNow":"şimdi", "dash.goalReady":"hazır ✓", "dash.warMine":"Loncan savaşta — cepheye git", "dash.warFor":"için savaş sürüyor" },
-  en: { "dash.nextGoal":"Next Goal", "dash.goalNow":"now", "dash.goalReady":"ready ✓", "dash.warMine":"Your guild is at war — to the front", "dash.warFor":"is being contested" },
-  es: { "dash.nextGoal":"Próxima Meta", "dash.goalNow":"ahora", "dash.goalReady":"listo ✓", "dash.warMine":"Tu gremio está en guerra — al frente", "dash.warFor":"está en disputa" },
-  pt: { "dash.nextGoal":"Próxima Meta", "dash.goalNow":"agora", "dash.goalReady":"pronto ✓", "dash.warMine":"A tua guilda está em guerra — à frente", "dash.warFor":"está em disputa" },
-  ar: { "dash.nextGoal":"الهدف التالي", "dash.goalNow":"الآن", "dash.goalReady":"جاهز ✓", "dash.warMine":"نقابتك في حرب — إلى الجبهة", "dash.warFor":"محلّ نزاع" },
-  ru: { "dash.nextGoal":"Следующая цель", "dash.goalNow":"сейчас", "dash.goalReady":"готово ✓", "dash.warMine":"Твоя гильдия в войне — на фронт", "dash.warFor":"оспаривается" },
+  tr: { "dash.caravan":"Kervan yolda", "dash.nextGoal":"Sıradaki Hedef", "dash.goalNow":"şimdi", "dash.goalReady":"hazır ✓", "dash.warMine":"Loncan savaşta — cepheye git", "dash.warFor":"için savaş sürüyor" },
+  en: { "dash.caravan":"Caravan en route", "dash.nextGoal":"Next Goal", "dash.goalNow":"now", "dash.goalReady":"ready ✓", "dash.warMine":"Your guild is at war — to the front", "dash.warFor":"is being contested" },
+  es: { "dash.caravan":"Caravana en ruta", "dash.nextGoal":"Próxima Meta", "dash.goalNow":"ahora", "dash.goalReady":"listo ✓", "dash.warMine":"Tu gremio está en guerra — al frente", "dash.warFor":"está en disputa" },
+  pt: { "dash.caravan":"Caravana a caminho", "dash.nextGoal":"Próxima Meta", "dash.goalNow":"agora", "dash.goalReady":"pronto ✓", "dash.warMine":"A tua guilda está em guerra — à frente", "dash.warFor":"está em disputa" },
+  ar: { "dash.caravan":"القافلة في الطريق", "dash.nextGoal":"الهدف التالي", "dash.goalNow":"الآن", "dash.goalReady":"جاهز ✓", "dash.warMine":"نقابتك في حرب — إلى الجبهة", "dash.warFor":"محلّ نزاع" },
+  ru: { "dash.caravan":"Караван в пути", "dash.nextGoal":"Следующая цель", "dash.goalNow":"сейчас", "dash.goalReady":"готово ✓", "dash.warMine":"Твоя гильдия в войне — на фронт", "dash.warFor":"оспаривается" },
 };
 // Mülk tip adları + kademe (önceden inline TR'ydi). es/pt/ar/ru → TR yedeği.
 const _mulk2TR: Dict = { "mulk.level":"Kademe", "pt.tarla":"Tarla", "pt.ev":"Ev", "pt.dukkan":"Dükkân", "pt.degirmen":"Değirmen" };

@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
-import { careerTitleL } from "../../lib/locale-data";
+import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre } from "../../lib/ui";
@@ -347,6 +347,28 @@ export default function Dashboard() {
           </Pressable>
         );
       })()}
+
+      {/* Kervan yolculuğu (bağlam) — çok-adımlı rota ilerlemesi */}
+      {!p.dead && state.caravan?.route && (
+        <Pressable onPress={() => { hap("tap"); router.push("/oyun/pazar"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(224,90,48,0.4)", backgroundColor: "rgba(224,90,48,0.08)" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Text style={{ fontSize: 14 }}>🐫</Text>
+            <Text style={{ flex: 1, fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.ember, textTransform: "uppercase" }}>{t("dash.caravan")}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>{(state.caravan.step ?? 0)}/{state.caravan.route.length - 1}</Text>
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 2, marginTop: 5 }}>
+            {state.caravan.route.map((stop, i) => {
+              const cur = i === (state.caravan!.step ?? 0); const done = i < (state.caravan!.step ?? 0);
+              return (
+                <View key={i} style={{ flexDirection: "row", alignItems: "center" }}>
+                  {i > 0 && <Text style={{ color: done ? C.ember : C.border, fontSize: 10, marginHorizontal: 1 }}>→</Text>}
+                  <Text style={{ fontFamily: cur ? F.display : F.serif, fontSize: cur ? 10.5 : 9.5, color: cur ? C.ember : done ? C.parchmentMuted : C.parchmentDim }}>{cur ? "🐫" : ""}{placeName(stop, lang)}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </Pressable>
+      )}
 
       {/* ── GÜNLÜK KART PANELİ ── */}
       <View style={{ flex: 1, margin: 12, borderWidth: 1, borderColor: C.borderHi, borderRadius: 10, backgroundColor: C.card, overflow: "hidden" }}>
