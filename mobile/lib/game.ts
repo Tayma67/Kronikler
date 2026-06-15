@@ -1486,6 +1486,64 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   return s;
 }
 
+// ── Ek NPC etkileşim eylemleri (Vercel npc_interactions.py portu): hakaret / flört / dedikodu / para ──
+export function insultNpc(prev: GameState, npc: NPC): GameState {
+  const s = clone(prev); const p = s.player; if (p.dead || p.age < 13) return s;
+  const ns = npcStateOf(s, npc.id); const rel = s.relationships[npc.id] || 0;
+  let drop = 8 + Math.floor(Math.random() * 8);
+  if (npc.trait === "öfkeli") { drop += 5; p.fear = Math.min(100, p.fear + 2); } // öfkeli sert karşılık verir
+  s.relationships[npc.id] = Math.max(-100, rel - drop);
+  ns.mood = Math.max(-100, ns.mood - 20);
+  p.honor = Math.max(0, p.honor - 2);
+  remember(s, npc, "hakaret");
+  witnessScandal(s, "hakaret", 0.4); // tanık varsa dedikodu kaynağı
+  push(s, "sohbet", `${npc.name}'a ağzına geleni söyledin; aranıza duvar girdi (−${drop} ilişki).`, "kişisel", false, { k: "npca.insult", p: [npc.name, drop] });
+  return s;
+}
+export function canFlirt(p: Player, npc: NPC, rel: number): boolean {
+  return !p.dead && !p.married && p.age >= 16 && npc.age >= 16 && npc.gender !== p.gender && rel >= 15;
+}
+export function flirtWith(prev: GameState, npc: NPC): GameState {
+  const s = clone(prev); const p = s.player; const rel = s.relationships[npc.id] || 0;
+  if (!canFlirt(p, npc, rel)) return s;
+  const ns = npcStateOf(s, npc.id);
+  const ok = Math.random() < Math.min(0.9, 0.35 + (rel - 15) * 0.01 + p.stats.charisma * 0.04 + allureBonus(s));
+  if (ok) {
+    const up = 6 + Math.floor(Math.random() * 8);
+    s.relationships[npc.id] = Math.min(100, rel + up); ns.mood = Math.max(-100, Math.min(100, ns.mood + 12));
+    bumpNam(p, "capkin", 3); remember(s, npc, "guzel_sohbet");
+    push(s, "sohbet", `${npc.name} ile gönül eğlendirdin; arana kıvılcım düştü (+${up} ilişki).`, "kişisel", false, { k: "npca.flirtWin", p: [npc.name, up] });
+  } else {
+    s.relationships[npc.id] = Math.max(-100, rel - 5); ns.mood = Math.max(-100, ns.mood - 6);
+    push(s, "sohbet", `${npc.name} yüz vermedi; mahcup oldun.`, "kişisel", false, { k: "npca.flirtLose", p: [npc.name] });
+  }
+  return s;
+}
+export function gossipAbout(prev: GameState, npc: NPC): GameState {
+  const s = clone(prev); const p = s.player; if (p.dead || p.age < 13) return s;
+  const ns = npcStateOf(s, npc.id); const rel = s.relationships[npc.id] || 0;
+  const ok = Math.random() < Math.min(0.85, 0.4 + (p.skills?.social || 0) * 0.05 + p.stats.charisma * 0.02);
+  if (ok) {
+    s.relationships[npc.id] = Math.max(-100, rel - 4); ns.mood = Math.max(-100, ns.mood - 4); bumpNam(p, "zalim", 2);
+    push(s, "sohbet", `${npc.name} hakkında diller döktürdün; namı sarsıldı.`, "kişisel", false, { k: "npca.gossipWin", p: [npc.name] });
+  } else {
+    s.relationships[npc.id] = Math.max(-100, rel - 12); ns.mood = Math.max(-100, ns.mood - 14); remember(s, npc, "hakaret");
+    push(s, "sohbet", `Dedikodun ${npc.name}'in kulağına gitti; sana diş biledi (−12 ilişki).`, "kişisel", false, { k: "npca.gossipLose", p: [npc.name] });
+  }
+  return s;
+}
+export const GIVE_MONEY_AMT = 10;
+export function giveMoneyTo(prev: GameState, npc: NPC): GameState {
+  const s = clone(prev); const p = s.player; if (p.dead || p.money < GIVE_MONEY_AMT) return s;
+  p.money -= GIVE_MONEY_AMT;
+  const ns = npcStateOf(s, npc.id); const rel = s.relationships[npc.id] || 0;
+  const up = rel < 70 ? 9 : 3; // azalan getiri
+  s.relationships[npc.id] = Math.min(100, rel + up); ns.mood = Math.max(-100, Math.min(100, ns.mood + 10));
+  p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 3); remember(s, npc, "hediye");
+  push(s, "sohbet", `${npc.name}'in avucuna ${GIVE_MONEY_AMT} akçe sıkıştırdın; duası seninle.`, "kişisel", false, { k: "npca.money", p: [npc.name, GIVE_MONEY_AMT] });
+  return s;
+}
+
 // Seyahat: başka bir yerleşime git (pazar/atmosfer değişir, biraz tokluk gider).
 export function travelTo(prev: GameState, dest: string): GameState {
   const s = clone(prev); const p = s.player;

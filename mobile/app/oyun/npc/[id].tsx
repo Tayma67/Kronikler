@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith } from "../../../lib/game";
+import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, GIVE_MONEY_AMT } from "../../../lib/game";
 import { useI18n } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
@@ -197,6 +197,26 @@ export default function NpcDetail() {
             </View>
           </Pressable>
         )}
+        {/* Ek etkileşimler (Vercel npc_interactions): para / flört / dedikodu / hakaret */}
+        <Pressable onPress={() => { if (state.player.money >= GIVE_MONEY_AMT) { hap("tap"); apply((s) => giveMoneyTo(s, npc)); } }} disabled={state.player.money < GIVE_MONEY_AMT} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+          <Text style={{ fontSize: 16 }}>🪙</Text>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: state.player.money >= GIVE_MONEY_AMT ? C.parchment : C.parchmentMuted }}>{t("npca.moneyBtn")}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>{GIVE_MONEY_AMT} ⚜</Text>
+        </Pressable>
+        {canFlirt(state.player, npc, v) && (
+          <Pressable onPress={() => { hap("success"); apply((s) => flirtWith(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+            <Text style={{ fontSize: 16 }}>💞</Text>
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t("npca.flirtBtn")}</Text>
+          </Pressable>
+        )}
+        <Pressable onPress={() => { hap("tap"); apply((s) => gossipAbout(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+          <Text style={{ fontSize: 16 }}>🗣</Text>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npca.gossipBtn")}</Text>
+        </Pressable>
+        <Pressable onPress={() => { hap("tap"); apply((s) => insultNpc(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+          <Text style={{ fontSize: 16 }}>🗯</Text>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.blood }}>{t("npca.insultBtn")}</Text>
+        </Pressable>
       </View>
 
       {/* Hediye listesi (açılır) */}

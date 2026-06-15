@@ -23,6 +23,7 @@ for (let i = 0; i < 300; i++) {
           else if (act < 0.54) s = g.travelBy(s, R(g.LOCATIONS.filter(l=>l!==p.location_name)), R(["anayol","patika","kervan"]));
           else if (act < 0.60 && npcs.length) s = g.helpNpcGoal(s, R(npcs));
           else if (act < 0.64 && npcs.length) s = g.exploitNpcGoal(s, R(npcs));
+          else if (act < 0.67 && npcs.length) { const nn = R(npcs); s = g.giveMoneyTo(s, nn); s = g.gossipAbout(s, nn); s = g.insultNpc(s, nn); s = g.flirtWith(s, nn); }
           else if (act < 0.70 && p.money > 200) s = g.buyProperty(s, R(["tarla","ev","dukkan"]));
           else if (act < 0.76 && p.properties.length && npcs.length) s = g.hireWorker(s, 0, R(npcs).id);
           else if (act < 0.80 && p.children && p.children.length) s = g.setChildEducation(s, p.children[0], R(["ilim","savas","zanaat","ticaret"]));
