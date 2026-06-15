@@ -10,6 +10,61 @@ export interface Dilemma {
 }
 
 export const DILEMMAS: Dilemma[] = [
+  // ── Orta yaş / yaşlılık / ekonomik kriz ikilemleri (Vercel life_events_v2 boşluğu) ──
+  {
+    id: "orta_borc", icon: "coins", title: "Borç Tuzağı",
+    text: "İşler kötü; bir tefeci ağır faizle borç öneriyor. Kese şişer ama zincir de gelir.",
+    when: (p) => p.age >= 25,
+    choices: [
+      { label: "Borcu al", delta: { money: 40, fear: 2, nam: { capkin: 1 } }, result: "Keseyi aldın; şimdilik rahatladın ama tefecinin gözü artık üstünde." },
+      { label: "Dişini sık", delta: { honor: 4 }, result: "Borca bulaşmadın; karın aç ama boynun dik kaldı." },
+    ],
+  },
+  {
+    id: "orta_tefeci", icon: "skull", title: "Tefecinin Yolu",
+    text: "Eline geçen parayı faizle işletmen öneriliyor. Kazanç tatlı, ama lanet de ağır.",
+    when: (p) => p.age >= 28,
+    choices: [
+      { label: "Faizle işlet", delta: { money: 35, reputation: -6, nam: { zalim: 6 } }, result: "Paran para doğurdu; ama mahallede adın 'kan emici'ye çıktı." },
+      { label: "Helalinden kazan", delta: { honor: 6, nam: { dindar: 3 } }, result: "Doğru yoldan şaşmadın; kesen ince, vicdanın temiz." },
+    ],
+  },
+  {
+    id: "orta_vergi", icon: "scroll", title: "Vergi Tahsildarı",
+    text: "Tahsildar kapına dayandı; hesapta olmayan bir vergi istiyor. Rüşvetle de kapatılır.",
+    when: (p) => p.age >= 25,
+    choices: [
+      { label: "Avucuna sıkıştır", delta: { money: -25, reputation: 2 }, result: "Birkaç akçeyle meseleyi kapattın; tahsildar güler yüzle gitti." },
+      { label: "Diren", delta: { fear: 4, honor: 5, reputation: -2 }, result: "Boyun eğmedin; tahsildar diş gıcırdatarak çekildi, ama defterine yazdı." },
+    ],
+  },
+  {
+    id: "orta_usta", icon: "anvil", title: "Ustanın Azarı",
+    text: "Bir büyüğün, herkesin içinde seni haksız yere azarladı. Kan beynine sıçradı.",
+    when: (p) => p.age >= 16 && p.age < 50,
+    choices: [
+      { label: "Sus, geç", delta: { honor: 3, nam: { mert: 2 } }, result: "Dilini tuttun; olgunluğun konuştu, içindeki fırtınayı yuttun." },
+      { label: "Dik dur", delta: { fear: 5, reputation: -3, honor: 2 }, result: "Karşılık verdin; kimi 'küstah' dedi, kimi 'yürekli' — ama kimse unutmadı." },
+    ],
+  },
+  {
+    id: "yasli_miras", icon: "scroll-open", title: "Miras Kavgası",
+    text: "Bir akrabanın ardından miras paylaşımı kızıştı. Hakkını istersen aile dağılabilir.",
+    when: (p) => p.age >= 45,
+    choices: [
+      { label: "Hakkını al", delta: { money: 60, reputation: -4 }, result: "Payını söke söke aldın; kesen doldu ama sofranda birkaç yüz eksildi." },
+      { label: "Feragat et", delta: { honor: 10, nam: { comert: 5 } }, result: "Hakkından vazgeçtin; 'gönlü zengin' diye anıldın, akraban minnettar kaldı." },
+    ],
+  },
+  {
+    id: "kriz_kitlik", icon: "healing", title: "Kıtlık Kapıda",
+    text: "Hasat tutmadı, kıtlık söylentileri dolaşıyor. Elindeki erzakı saklayıp vurgun yapabilirsin.",
+    when: (p) => p.age >= 18,
+    choices: [
+      { label: "Stokla, pahalı sat", delta: { money: 45, reputation: -8, nam: { zalim: 5 } }, result: "Aç günlerde erzakı katmerli sattın; kasan doldu, halkın lanetini aldın." },
+      { label: "Komşunla paylaş", delta: { money: -15, honor: 8, reputation: 6, nam: { comert: 6 } }, result: "Ekmeğini böldün; o kış kimse senin kapından aç dönmedi." },
+    ],
+  },
   // ── Yaşam olayı genişlemesi (Vercel life_events/life_events_v2 ruhu): zayıf katmanlar ──
   {
     id: "cocuk_kavga", icon: "crossed-swords", title: "Mektepte Kavga",
