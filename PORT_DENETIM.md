@@ -30,6 +30,35 @@
 
 > Devam: bir sonraki oturum `mobile/`de `npm install` (gerekiyorsa) → kalan ⬜ sistemleri sırayla.
 
+## 2. DERİN DENETİM (2026-06-15) — KALAN DERİNLEŞTİRMELER
+
+> 7 kilit sistem portlandıktan SONRA, 6 ajanla tüm Vercel tekrar tarandı. Aşağıdakiler
+> hâlâ eksik/sığ. Çoğu "yok" değil, mevcut çalışan sistemin DERİNLEŞTİRİLMESİ — ama
+> oyunun "yaşam romanı" hissi için kritik. Öncelik = oynanabilirlik etkisi.
+
+### 🔴 Yüksek etki
+1. **Denge hatası (HÂLÂ açık):** yetişkin açlık kaybı 8 vs Vercel 5 (+%60); açlık hasarı −6 vs −2 (3×); mevsim çarpanı sadece Kış. → `advance()` ~663. **Efor: küçük, etki büyük.**
+2. **Diyalog derinliği:** Vercel 8 konu × 4 katman (bağlam+hafıza geri çağrımı+spontane NPC sözü); APK 4 niyet, `converse()` npc-mind hafızasını kullanmıyor → sohbet statik. **Efor: büyük.**
+3. **NPC etkileşim eylemleri (5 eksik):** hakaret, flört/kur (evlilik öncesi), dedikodu yay, para verme, saldırı/kaçırma (combat var ama NPC ekranına bağlı değil). **Efor: orta.**
+4. **Yıllık hikâye özeti (`generate_year_story`):** roman.tsx olay LİSTESİ gösteriyor; Vercel paragraf anlatı üretiyor → "roman" hissi eksik. **Efor: orta, yüksek değer.**
+5. **Mektep derinliği:** ders içi olaylar (%85 seçimli), kulüpler, hoca NPC ilişkisi, mevsimsel/özel olaylar — APK'da 4 ders+sınav. **Efor: büyük.**
+
+### 🟡 Orta etki
+6. **Hikâye Yönetmeni:** kıvılcım kartları (durgunluk destesi), perdeler (Chronicle 2.0 bölüm başlıkları), event-bias, doruğun pozitif varyantları. **Efor: büyük.**
+7. **Anlatı motoru:** ilişki-temelli ölüm/doğum/savaş anlatıları + paylaşılabilir final kartı. **Efor: orta.**
+8. **Fraksiyon dünya dinamiği:** darbe (fazlı), NPC isyanı/iç savaş, fraksiyonlar arası ilişki/diplomasi/koalisyon/ateşkes, şehir nüfuzu (city_influence), NPC fraksiyon değiştirme, gizli cemiyet operasyon+ifşa. **Efor: büyük (parça parça yapılabilir).**
+9. **Yaşam olayı içeriği:** ikilemler 57/170 — orta yaş/yaşlılık/ekonomik kriz eksik; fırsatlar NPC+mevsim+dünya-olayı bağı yok (artık locEvents/tips ile bağlanabilir). **Efor: orta.**
+10. **Seyahat & çalışma seçim katmanı:** rota seçimi + kervan yolcu profilleri (seyahat); meslek-özel mini-olay havuzu + seçim (çalışma) — APK otomatik. **Efor: büyük.**
+11. **Pazarlık:** satıcı kişiliği + ilişki kademesi + taban görünürlüğü (koz). **Efor: orta.**
+
+### 🟢 Düşük efor / cila
+12. Kervan arbitraj kâr detayı + saldırı riski göstergesi. 13. Mülk: han tipi + ledger (muhasebe) + gerçek mevsim çevrimi (propYield mevsimsiz). 14. Suç: sıcak mal + tanık NPC anısı. 15. Eşya kalite incelemesi (trade/inspect). 16. Fraksiyon küçükleri: paralı asker, ambargo/fetva/şeriat, zanaatkar grevi, mevsim savaş çarpanı.
+
+### 🔵 Kasıtlı (dokunma)
+- NPC yaşlanma/ölüm/doğum: APK offline deterministik tasarımı gereği KAPALI — risk değil, tercih.
+
+---
+
 ## DAL STRATEJİSİ (kullanıcı kararı)
 
 - **2 dal hedefi:** biri Vercel (web) bölümü, biri APK (mobil) bölümü. Şu an tüm port işi
