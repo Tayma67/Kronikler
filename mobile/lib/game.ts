@@ -1143,27 +1143,46 @@ export function studySubject(prev: GameState, id: string): StudyResult {
 }
 
 // ── Suç/Gölge: risk/ödül ──
-export function doCrime(prev: GameState, kind: "yankesicilik" | "soygun"): GameState {
+// Suç türleri (Vercel crime_rework.py portu): risk/ödül kademeleri + şiddet.
+export type CrimeKind = "yankesicilik" | "dukkan_soyma" | "soygun" | "konak_soygunu";
+export const CRIME_TYPES: Record<CrimeKind, { base: number; lootMin: number; lootMax: number; fine: number; hurt: number; fear: number; nam: number; sev: number; label: string }> = {
+  yankesicilik:  { base: 0.70, lootMin: 6,  lootMax: 22,  fine: 10, hurt: 3,  fear: 2, nam: 2, sev: 1, label: "Bir yankesicilik" },
+  dukkan_soyma:  { base: 0.55, lootMin: 18, lootMax: 45,  fine: 22, hurt: 6,  fear: 4, nam: 4, sev: 2, label: "Bir dükkân soygunu" },
+  soygun:        { base: 0.45, lootMin: 25, lootMax: 65,  fine: 30, hurt: 10, fear: 5, nam: 5, sev: 3, label: "Bir yol soygunu" },
+  konak_soygunu: { base: 0.34, lootMin: 50, lootMax: 110, fine: 50, hurt: 14, fear: 7, nam: 7, sev: 4, label: "Bir konak soygunu" },
+};
+export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
-  const base = kind === "soygun" ? 0.45 : 0.7;            // başarı şansı
+  const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
   const golgeBonus = p.faction === "golge" ? 0.12 : 0;     // Gölge Kardeşliği avantajı
-  const success = Math.random() < base + p.stats.charisma * 0.01 + golgeBonus + crimeSuccessMod(s);
+  const success = Math.random() < ct.base + p.stats.charisma * 0.01 + golgeBonus + crimeSuccessMod(s);
   gainSkill(s, "social", 4);
   if (success) {
-    const loot = kind === "soygun" ? 25 + Math.floor(Math.random() * 40) : 6 + Math.floor(Math.random() * 16);
-    p.money += loot; p.fear = Math.min(100, p.fear + (kind === "soygun" ? 5 : 2));
-    bumpNam(p, "zalim", kind === "soygun" ? 5 : 2);
+    const loot = ct.lootMin + Math.floor(Math.random() * (ct.lootMax - ct.lootMin + 1));
+    p.money += loot; p.fear = Math.min(100, p.fear + ct.fear);
+    bumpNam(p, "zalim", ct.nam);
     const why = dread(s) > 30 ? " Korkulan adın kurbanını dondurdu." : "";
-    push(s, "suç", `${kind === "soygun" ? "Bir soygun" : "Bir yankesicilik"} işini başardın (+${loot} akçe).${why}`);
-  } else {
-    const fine = Math.min(p.money, kind === "soygun" ? 30 : 10);
-    const hurt = (kind === "soygun" ? 10 : 3) * (p.faction === "asker" ? 0.5 : 1);
-    const extra = crimeCaughtPenalty(s);
-    p.money -= fine; p.reputation = Math.max(-100, p.reputation - 8 - extra); p.health = Math.max(0, p.health - hurt);
-    const why = extra >= 4 ? " Senin gibi tanınmış birinden beklenmezdi; ceza ağır oldu." : "";
-    push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.${why}`, "kişisel");
+    push(s, "suç", `${ct.label} işini başardın (+${loot} akçe).${why}`);
+    return s;
   }
+  // ── Kesinti anı (Vercel interrupt sahnesi): yakalanmak üzereyken kaçış testi ──
+  const escapeChance = 0.18 + (p.stats.strength + p.stats.stamina) * 0.02 + golgeBonus - ct.sev * 0.03;
+  if (Math.random() < Math.max(0.05, escapeChance)) {
+    const scratch = 2 + Math.floor(Math.random() * (ct.sev * 2));
+    p.health = Math.max(1, p.health - scratch); p.fear = Math.min(100, p.fear + 1);
+    gainSkill(s, "combat", 3);
+    push(s, "suç", `İş ters gitti ama kovalamacada kıl payı sıvıştın (−${scratch} sağlık).`, "kişisel", true);
+    return s;
+  }
+  // Kaçamadın → yakalandın (şiddete göre ceza).
+  const fine = Math.min(p.money, ct.fine);
+  const hurt = Math.round(ct.hurt * (p.faction === "asker" ? 0.5 : 1));
+  const extra = crimeCaughtPenalty(s);
+  p.money -= fine; p.reputation = Math.max(-100, p.reputation - 6 - ct.sev * 2 - extra); p.health = Math.max(0, p.health - hurt);
+  const why = extra >= 4 ? " Senin gibi tanınmış birinden beklenmezdi; ceza ağır oldu." : "";
+  push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.${why}`, "kişisel", true);
+  if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`);
   return s;
 }
 

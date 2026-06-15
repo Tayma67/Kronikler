@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { doCrime } from "../../lib/game";
+import { doCrime, CrimeKind } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -31,7 +31,7 @@ export default function Suc() {
 
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
 
-  const Crime = ({ kind, title, desc }: { kind: "yankesicilik" | "soygun"; title: string; desc: string }) => (
+  const Crime = ({ kind, title, desc }: { kind: CrimeKind; title: string; desc: string }) => (
     <Pressable onPress={() => { hap("advance"); apply((s) => doCrime(s, kind)); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 11, padding: 14, marginBottom: 10 }}>
       <View style={{ width: 38, height: 38, borderRadius: 9, backgroundColor: "rgba(123,79,175,0.12)", borderWidth: 1, borderColor: "rgba(123,79,175,0.35)", alignItems: "center", justifyContent: "center" }}>
         <Text style={{ fontSize: 18 }}>🗡</Text>
@@ -62,7 +62,9 @@ export default function Suc() {
         ) : (
           <>
             <Crime kind="yankesicilik" title={t("crime.yankesicilik.l")} desc={t("crime.yankesicilik.d")} />
+            <Crime kind="dukkan_soyma" title={t("crime.dukkan_soyma.l")} desc={t("crime.dukkan_soyma.d")} />
             <Crime kind="soygun" title={t("crime.soygun.l")} desc={t("crime.soygun.d")} />
+            <Crime kind="konak_soygunu" title={t("crime.konak_soygunu.l")} desc={t("crime.konak_soygunu.d")} />
           </>
         )}
       </ScrollView>
