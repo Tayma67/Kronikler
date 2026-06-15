@@ -21,8 +21,8 @@
 - ✅ **Evlat eğitimi haftalık birikimi** (commit 03e4dee)
 - ✅ **Şehir yönetim kolları** (vergi/memnuniyet/hazine) (commit 6f80942)
 - ✅ **Eyleme dönük söylentiler** (piyasa ipucu + istihbarat) (commit 84dc7d9)
-- ⬜ **Kariyer merdiveni + stat-XP** — sıradaki
-- ⬜ **Üretim zincirleri** (işçi→gerçek üretim/arz)
+- ✅ **Kariyer merdiveni + stat-XP** (özellikler kullanımla büyür) (commit bu turda)
+- ⬜ **Üretim zincirleri** (işçi→gerçek üretim/arz) — sıradaki
 - ⬜ **Tipli dünya olayları** (lokasyon etkisi — DİKKAT: offline deterministik tasarımla uyumlu kalmalı)
 - ⬜ **Fraksiyon AI + güç yüzeyi** (en büyük; ~30 AI eylemi)
 
@@ -47,7 +47,7 @@ Durum: 🟢 iyi (≈%80+) · 🟡 kısmi · 🔴 sığ/eksik · 🔵 kasıtlı s
 | Hikâye arc / quest motoru (`arcs.ts`) | ~85% | 🟢 | 13 arc, ~52/60 adım; seçim+cooldown var |
 | Başarımlar (`achievements`) | ~95% | 🟢 | ~40 rozet portlandı |
 | Kariyer merdiveni + skill-XP (`skills.py`) | ~70% | 🟡 | 15/30 meslek, perk sistemi ~%80 |
-| Stat-XP ilerleme eğrisi | ~30% | 🔴 | APK düz `allocateStat`, Vercel 25+lvl×15 eğrisi yok |
+| Stat-XP ilerleme eğrisi | ~90% | ✅ | PORTLANDI: stat_xp + addStatXp (eğri 25+lvl×15); iş/ders/savaş özelliği kullanımla büyütür; karakter ekranında ilerleme çubuğu; stat_points'e EK |
 | Şehir yönetimi (`city_governance.py`) | ~90% | ✅ | PORTLANDI: vergi oranı (tradeoff) + halk memnuniyeti + şehir hazinesi + hazineden proje (hizmet/asayiş); memnuniyet→meşruiyet→azil döngüsü |
 | Evlat eğitimi (`legacy_system.py`) | ~95% | ✅ | PORTLANDI: haftalık biriken eğitim yolu (EDU_TRACKS) + UI + 6 dil; vâris bonusu aylara göre ölçekli |
 | Aile görevleri (`family_quests.py`) | ~50% | 🟡 | 8/16 görev; ark-zinciri (requires) yok |

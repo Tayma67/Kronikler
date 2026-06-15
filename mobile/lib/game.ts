@@ -21,6 +21,7 @@ export interface Player {
   inventory: Record<string, number>; properties: Property[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
+  stat_xp?: Stats; // özellik tecrübesi (kullanımla birikir; stat_points'e EK — Vercel add_stat_xp)
   injuries: Injury[]; career_xp: number;
   nam: Nam; child_invests: Record<string, string[]>;
   child_edu?: Record<string, { track: string; weeks: number }>; // süregelen evlat eğitimi (haftalık biriken)
@@ -1119,6 +1120,7 @@ export function supportWar(prev: GameState): GameState {
   const pw = combatPower(p);
   const win = Math.random() < Math.max(0.2, Math.min(0.9, 0.4 + pw * 0.02));
   gainSkill(s, "combat", 8);
+  addStatXp(s, "strength", 3); // cephe tecrübesi gücü geliştirir
   if (win) {
     if (mine === "a") w.aScore += 3; else w.bScore += 3;
     const loot = 20 + Math.floor(Math.random() * 25);
@@ -1162,6 +1164,7 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
   let earn = Math.round((base + stat * 2 + Math.floor(Math.random() * 6)) * mult * titleMult * ws.mult);
   p.career_xp += 1;
   gainSkill(s, PROF_SKILL[p.profession] || "crafting", 8);
+  addStatXp(s, PROF_STAT[p.profession] || "stamina", 4); // meslek özelliğin işle gelişir
   p.hunger = Math.max(0, p.hunger - (style === "kaytarici" ? 3 : 6));
   // Risk: hırslı bedenini yorar, kaytarıcı yakalanabilir
   const failed = ws.fail > 0 && Math.random() < ws.fail;
@@ -1490,6 +1493,22 @@ export function allocateStat(prev: GameState, key: keyof Stats): GameState {
   p.stat_points -= 1; p.stats[key] += 1;
   return s;
 }
+// ── Stat-XP (Vercel skills.add_stat_xp portu): özellikler kullanımla yavaşça büyür (stat_points'e EK) ──
+const STAT_LABEL: Record<keyof Stats, string> = { strength: "Güç", intelligence: "Zekâ", charisma: "Karizma", stamina: "Dayanıklılık" };
+export function statXpForNext(level: number): number { return 25 + level * 15; } // bir üst seviye için gereken tecrübe
+export function statXpOf(p: Player, key: keyof Stats): number { return p.stat_xp?.[key] ?? 0; }
+function addStatXp(s: GameState, key: keyof Stats, amt: number) {
+  const p = s.player;
+  if (p.stats[key] >= 10) return;
+  if (!p.stat_xp) p.stat_xp = { strength: 0, intelligence: 0, charisma: 0, stamina: 0 };
+  p.stat_xp[key] += amt;
+  while (p.stats[key] < 10 && p.stat_xp[key] >= statXpForNext(p.stats[key])) {
+    p.stat_xp[key] -= statXpForNext(p.stats[key]);
+    p.stats[key] += 1;
+    push(s, "beceri", `${STAT_LABEL[key]} özelliğin tecrübeyle gelişti (${p.stats[key]}).`, "kişisel", false, { k: "statxp.up", p: [{ statk: key }, p.stats[key]] });
+  }
+  if (p.stats[key] >= 10) p.stat_xp[key] = 0;
+}
 
 // ── Mektep: 4 ders, her biri farklı yön geliştirir ──
 export interface Subject { id: string; name: string; icon: string; desc: string; }
@@ -1513,6 +1532,7 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   p.last_study_turn = s.turn;
   p.lesson_count = (p.lesson_count || 0) + 1;
   p.hunger = Math.max(0, p.hunger - 5);
+  addStatXp(s, EXAM_STAT[id] || "intelligence", 5); // dersin özelliği tecrübeyle gelişir
   const lucky = hasPerk(p, "mucit") || chance(0.5);
   const chips: { label: string; col: string }[] = [];
   let key = "";
