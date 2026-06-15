@@ -52,15 +52,25 @@ varyantlar, `renderEvt(...,female)`); kültürel isimler; eksik 38 UI dizesi + K
 11. **İkilem→tohum bağlantısı** (`DILEMMA_SEEDS`, Vercel `LIFE_EVENT_SEEDS`): çocukluk/yaşam ikilem
     seçimleri sessiz tohum eker → yıllar/nesiller sonra dorukta biçilir (örn. çocukken savunduğun çocuk
     lonca başı olur, +100 akçe). `applyDilemma(...,seedKey)`. i18n `seed.*` (2. parti). **İmza döngüsü: ikilem+tohum+yönetmen birleşik.**
+12. **İnteraktif sahne mimarisi + suç kesintisi** (`crime_rework`): `s.pendingScene` + `resolveCrimeScene`;
+    yakalanmak üzereyken Saklan/Rüşvet/Kaç seçimi (suç ekranında modal). Yeniden kullanılabilir desen — okul/iş sahneleri buna eklenebilir. i18n `crimesc.*`. **Smoke runner pendingScene'i çözer.**
+13. **Pazarlık blöfü** (`bargain.py`): mevcut sabır-ibreli pazarlığa "Çarşıda ucuza buldum" blöf hamlesi (pazar.tsx, yüksek risk/ödül). i18n `paz.bluff*`.
+14. **Valilik döngüsü** (`city_governance.py`): meşruiyet (`Player.govLeg`, rep/şerefe göre kayar) + isyan→azil (`governorTick`) + meşruiyeti tazeleme (`shoreUpLegitimacy`); gelir meşruiyetle ölçeklenir; UI diyar/[name].tsx. i18n `gov.*`.
+15. **Fraksiyon üyelik bedeli** (`FACTION_MEMBERSHIP`): ayrılınca geri dönüş yasağı (`Player.factionBans`, 26/52/156 tur tırmanır) + itibar yarılanması; `factionBanLeft`. UI orgutler.tsx. i18n `evj.facBanned`, `fac.banLeft`.
+16. **Per-fraksiyon rütbe unvanları** (`FACTION_HIERARCHIES`): her loncanın kendi kademe adları (`frank.<faction>.<tier>`). UI orgutler.tsx.
 
-## KALAN GEDİKLER (öncelik sırası — sıradaki iş)
-1. **İnteraktif sahneler** (suç kesintisi: Saklan/Sustur/Kaç; okul dersi; iş olayı; seyahat) —
-   eylem-tetikli seçim akışı gerekir (`s.pendingScene` + UI modalı; mevcut DilemmaModal genelleştirilebilir). EN YÜKSEK kalan değer.
-2. **Pazarlık mini-oyunu** (`bargain.py`: Blöf/Karşı Teklif/satıcı kişiliği) — pazar ekranı reworku.
-3. **Hikâye Yönetmeni kıvılcım kartları** (durgunlukta flavor + çocukluk seed-eken kartlar) — director'ın 3. ayağı.
-4. **NPC yaşam-simülasyonu** (yaşlanma/ölüm/evlenme) — DİKKAT: APK'nın deterministik-lokasyon-tohumu
-   tasarımını bozmadan yap (offline için iyi; bu tasarımı KORU).
-5. Daha çok yaşam-olayı içeriği (Vercel ~130, APK ~54 ikilem şu an).
+## KALAN GEDİKLER (artık çoğu "basitleştirilmiş", "eksik" değil)
+> Vercel'in gerçekten EKSİK sistemleri (NPC hafıza, dedikodu, tohum, hanedan AI, yönetmen, çağ,
+> suç kesintisi, valilik döngüsü, fraksiyon bedeli) portlandı. Kalanlar mevcut-çalışan sistemlerin
+> DERİNLEŞTİRİLMESİ — daha çok emek/UI, daha az "yok":
+1. **İnteraktif sahne içeriği genişletme**: `s.pendingScene` mimarisi HAZIR (suç kesintisi kullanıyor);
+   okul dersleri / iş olayları / seyahat olaylarını aynı desenle çok-seçimli yapmak. Orta-yüksek değer.
+2. **Diyalog derinliği** (`dialogue.py` 1465 satır, 8 konu, 4 katman, sohbet kartları/intel) — APK 4 niyet. Büyük içerik+çeviri işi.
+3. **Hikâye Yönetmeni kıvılcım kartları** (durgunlukta flavor + çocukluk seed-eken kartlar) — director'ın 3. ayağı (doruk+nefes hazır).
+4. **Savaş reworku** (düşman niyet ipucu, kuşatma/turnuva çok-aşama) — APK düz dövüş çalışıyor.
+5. **Üretim zincirleri / kervan gerçek-mal** — APK zanaat/kervan çalışıyor, soyut.
+6. **NPC yaşam-simülasyonu** (yaşlanma/ölüm) — DİKKAT: APK'nın deterministik-lokasyon tasarımını KORU (offline için iyi).
+7. Daha çok yaşam-olayı içeriği (Vercel ~130, APK ~62 ikilem).
 
 ## Notlar / tuzaklar
 - Perl `-i` UTF-8'i bozuyor → i18n düzenlemelerinde Python `io.open(encoding='utf-8')` kullan.
