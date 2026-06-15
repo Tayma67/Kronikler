@@ -3,7 +3,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { worldNews, rumors } from "../../lib/lore";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
+import { placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { C, F } from "../../lib/theme";
 import { BackLabel } from "../../lib/ui";
@@ -16,6 +17,7 @@ export default function Haberler() {
   const cal = currentCalendar(state.turn);
   const news = worldNews(state.turn, state.seed, lang);
   const gossip = rumors(state.turn, state.seed, lang);
+  const tips = state.tips || [];
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
@@ -36,6 +38,21 @@ export default function Haberler() {
             <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, lineHeight: 19, marginTop: 4 }}>{n.body}</Text>
           </View>
         ))}
+
+        {tips.length > 0 && (
+          <>
+            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 14, marginBottom: 8 }}>💡 {t("tip.head")}</Text>
+            {tips.map((tp) => (
+              <View key={tp.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.sage, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
+                <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, lineHeight: 19 }}>
+                  {tp.kind === "market"
+                    ? applyParams(t("tip.market"), [t("it." + tp.good), placeName(tp.cheap || "", lang), placeName(tp.expensive || "", lang)])
+                    : applyParams(t("tip.intel"), [t("fac." + tp.fac + ".n"), t("fac." + tp.vsFac + ".n")])}
+                </Text>
+              </View>
+            ))}
+          </>
+        )}
 
         <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 14, marginBottom: 8 }}>🗣 {t("hab.gossip")}</Text>
         {gossip.map((g) => (

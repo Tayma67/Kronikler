@@ -50,7 +50,7 @@ Durum: 🟢 iyi (≈%80+) · 🟡 kısmi · 🔴 sığ/eksik · 🔵 kasıtlı s
 | Fraksiyon AI + güç yüzeyi (`faction_system.py` 4258) | ~20% | 🔴 | katıl/görev/rütbe/savaş var; **~30 AI eylemi (darbe/suikast/sabotaj/koalisyon/isyan) yok** |
 | Diyalog (`dialogue.py` 1464) | ~15% | 🔴 | APK 4 niyet; Vercel 8 konu × 4 katman (bağlam/hafıza/spontane) yok |
 | Mektep (`school.py` 1648) | ~15% | 🔴 | 4 ders+sınav var; ders olayları, kulüpler, hoca hafızası, mevsim etkinlik yok |
-| Eyleme dönük söylentiler (`rumors.py`) | ~15% | 🔴 | yüzleş/yay/sustur var; piyasa ipucu / NPC sırrı / fraksiyon istihbaratı yok |
+| Eyleme dönük söylentiler (`rumors.py`) | ~75% | ✅ | PORTLANDI: piyasa ipucu (deterministik GERÇEK arbitraj: ucuz→pahalı şehir) + fraksiyon istihbaratı (savaş önceden duyulur); Haberler'de "Duyumlar". NPC sırrı/şantaj kaldı (bounty NPC yok) |
 | NPC etkileşim eylemleri (`npc_interactions.py`) | 4/9 | 🔴 | iltifat/para/hakaret/flört/dedikodu/kaçırma/saldırı yok |
 | Yaşam olayları / ikilemler (`life_events*.py`) | 56/169 | 🔴 | orta yaş + yaşlılık + ekonomik kriz ikilemleri eksik |
 | Fırsatlar (`opportunities.py`) | 13/25 | 🔴 | sabit havuz; dünya olayına dinamik tepki yok |
@@ -169,6 +169,7 @@ Küçük açık: rüşvet-sonrası "dolandırıcılık" söylentisi döngüsü, 
 - Smoke ~5 dk (yaşayan-dünya yüzünden yavaş, "takıldı" sanma); hızlı ölçüm için `i < 300`→`i < 30`.
 - APK 100 MB sınırı → daima `-PreactNativeArchitectures=arm64-v8a`; Gradle 8.14.3 (9.x IBM_SEMERU hatası).
 - Her commit öncesi güvenlik kapısı: `cd mobile && npx tsc --noEmit` + `bash scripts/smoke.sh` (HATA:0).
+- **Taze konteyner:** `mobile/node_modules` ephemeral; yoksa önce `cd mobile && npm install --no-audit --no-fund` (~25 sn). Sonra tsc/smoke çalışır (smoke esbuild'i `npx` ile çeker).
 - Kural: mevcut çalışan sistemi BOZMA, üzerine ekle (additif port); APK'da daha iyi olanı KORU.
 - Bu rapordaki satır/yüzde değerleri ajan taramasından gelir; bir maddeye dokunmadan önce ilgili
   Vercel modülü + APK karşılığı tekrar okunup doğrulanmalı.

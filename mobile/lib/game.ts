@@ -303,6 +303,36 @@ function gossipTick(s: GameState) {
   }
   s.player_rumors = rumors.slice(-12);
 }
+// ── Eyleme dönük duyumlar (Vercel rumors.py actionable_rumors portu) ──
+// Piyasa ipucu: deterministik fiyat modelinden GERÇEK arbitraj (ucuz şehir → pahalı şehir); takip eden kazanır.
+// Fraksiyon istihbaratı: süren bir savaşın önceden duyulması.
+export interface Tip { id: string; kind: "market" | "intel"; hafta: number; good?: string; cheap?: string; expensive?: string; fac?: string; vsFac?: string; }
+function makeMarketTip(turn: number): Tip | null {
+  const goods = Object.keys(ITEMS);
+  const gid = goods[Math.floor(Math.random() * goods.length)];
+  let cheap = "", exp = ""; let lowBuy = Infinity, highSell = -Infinity;
+  for (const loc of LOCATIONS) {
+    const g = marketGoods(locSeed(loc)).find((x) => x.id === gid); if (!g) continue;
+    if (g.buy < lowBuy) { lowBuy = g.buy; cheap = loc; }
+    if (g.sell > highSell) { highSell = g.sell; exp = loc; }
+  }
+  if (!cheap || !exp || cheap === exp || highSell < lowBuy * 1.15) return null; // anlamlı marj yoksa ipucu üretme
+  return { id: Math.random().toString(36).slice(2, 10), kind: "market", hafta: turn, good: gid, cheap, expensive: exp };
+}
+function tipsTick(s: GameState) {
+  let tips = (s.tips || []).filter((tp) => s.turn - tp.hafta <= 6); // ~6 ay sonra bayatlar
+  if (Math.random() < 0.22 && tips.length < 4) {
+    const war = (s.wars || [])[0];
+    if (war && Math.random() < 0.5) {
+      if (!tips.some((tp) => tp.kind === "intel" && tp.fac === war.a && tp.vsFac === war.b))
+        tips.push({ id: Math.random().toString(36).slice(2, 10), kind: "intel", hafta: s.turn, fac: war.a, vsFac: war.b });
+    } else {
+      const mt = makeMarketTip(s.turn);
+      if (mt && !tips.some((tp) => tp.kind === "market" && tp.good === mt.good && tp.cheap === mt.cheap)) tips.push(mt);
+    }
+  }
+  s.tips = tips.slice(-4);
+}
 // Söylenti eylemi: yüzleş / yay / sustur (Vercel rumor_action). Döndürür yeni state.
 export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | "yay" | "sustur"): GameState {
   const s = clone(prev); const p = s.player;
@@ -363,6 +393,7 @@ export interface GameState {
   allied_houses?: string[]; // ittifak kurulan hanelerin id'leri
   epochNext?: number; // bir sonraki çağ olayının turu (legacy_system epoch_tick)
   pendingScene?: { kind: string; ctx: Record<string, string> } | null; // oyuncu seçimi bekleyen interaktif sahne (suç kesintisi vb.)
+  tips?: Tip[]; // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
 }
 // Dost bir hanedanın oyuncuya teklifi (ittifak veya evlilik).
 export interface DynastyOffer { id: string; houseId: string; nameIdx: number; type: "ittifak" | "evlilik"; }
@@ -750,6 +781,7 @@ export function advance(prev: GameState, n = 1): GameState {
     tickCaravan(s);
     tickEconomy(s, i === n - 1);
     if (i === n - 1 && !s.player.dead && chance(0.16)) worldNews(s);  // diyarın diline düşenler
+    if (i === n - 1) tipsTick(s); // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
     if (i === n - 1) claimAchievements(s); // ay sonunda yeni başarımları ödüllendir
     if (i === n - 1) claimFamilyQuests(s); // ay sonunda tamamlanan aile/yaşam görevlerini ödüllendir
     const inBreath = (s.story?.breath || 0) > 0; // doruk sonrası sakin dönem
