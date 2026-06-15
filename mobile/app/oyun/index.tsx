@@ -47,6 +47,20 @@ const EVT: Record<string, { c: string; col: string; gi: string }> = {
   hediye: { c: "sohbet", col: C.rose, gi: "ring" }, ölüm: { c: "dunya", col: C.parchmentMuted, gi: "tombstone" }, olum: { c: "dunya", col: C.parchmentMuted, gi: "tombstone" },
   kıtlık: { c: "dunya", col: "#D4820A", gi: "bucket" }, festival: { c: "dunya", col: C.gold, gi: "party" }, şenlik: { c: "dunya", col: C.gold, gi: "party" },
   isyan: { c: "dunya", col: "#D4820A", gi: "fist" }, gunluk: { c: "olay", col: C.gold, gi: "star" },
+  // Sonradan eklenen sistemlerin olay türleri (önceden varsayılan yıldıza düşüyordu)
+  aile_gorevi: { c: "aile", col: C.rose, gi: "family" }, hanedan_haber: { c: "dunya", col: C.gold, gi: "banner" },
+  ocak_savasi: { c: "savas", col: C.ember, gi: "crossed-swords" }, kervan: { c: "ticaret", col: C.sage, gi: "scales" },
+  görev_tamamlandı: { c: "gorev", col: C.sage, gi: "scroll-open" }, görev_başarısız: { c: "gorev", col: C.blood, gi: "scroll-open" },
+  hikaye_basladi: { c: "hikaye", col: C.ink, gi: "book" }, hikaye_bitti: { c: "hikaye", col: C.gold, gi: "book" },
+  kusanma: { c: "beceri", col: C.gold, gi: "shield" }, meslek_edinme: { c: "kariyer", col: C.gold, gi: "crown" },
+  mülk_alım: { c: "mulk", col: C.gold, gi: "house" }, mülk_hasat: { c: "mulk", col: C.sage, gi: "coins" }, mülk_yagma: { c: "mulk", col: C.blood, gi: "house" },
+  nesil_yatirim: { c: "nesil", col: C.rose, gi: "family" }, piyasa: { c: "ticaret", col: C.gold, gi: "scales" },
+  savaş_zafer: { c: "savas", col: C.ember, gi: "crossed-swords" }, savaş_yenilgi: { c: "savas", col: C.blood, gi: "shield" },
+  suç_yakalandı: { c: "ceza", col: C.blood, gi: "prisoner" }, taht: { c: "kariyer", col: C.gold, gi: "crown" }, taht_basarisiz: { c: "kariyer", col: C.blood, gi: "crown" },
+  terfi: { c: "kariyer", col: C.gold, gi: "crown" }, yerlesim: { c: "mulk", col: C.gold, gi: "castle" }, yonetim: { c: "kariyer", col: C.gold, gi: "crown" },
+  fisilti: { c: "sohbet", col: C.parchmentMuted, gi: "family" }, hastalik: { c: "saglik", col: C.blood, gi: "healing" }, yaralanma: { c: "saglik", col: C.blood, gi: "healing" },
+  kader: { c: "dunya", col: C.gold, gi: "star" }, nemesis: { c: "savas", col: C.ink, gi: "skull" }, hüner: { c: "beceri", col: C.gold, gi: "medal" },
+  örgüt_katılım: { c: "kariyer", col: C.gold, gi: "crown" }, örgüt_ayrılma: { c: "kariyer", col: C.parchmentMuted, gi: "crown" }, örgüt_görev: { c: "gorev", col: C.sage, gi: "scroll-open" },
 };
 const DEFAULT_EVT = { c: "olay", col: C.gold, gi: "star" };
 
