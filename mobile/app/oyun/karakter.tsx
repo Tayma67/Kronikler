@@ -158,7 +158,7 @@ export default function Karakter() {
               </View>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1.5, color: C.parchmentMuted }}>KARİYER XP</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1.5, color: C.parchmentMuted }}>{t("char.careerXp")}</Text>
                   <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold }}>{xpInLevel} / 30</Text>
                 </View>
                 <ProgressBar value={xpInLevel} max={30} color={C.gold} h={5} />

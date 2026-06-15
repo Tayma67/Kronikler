@@ -19,7 +19,6 @@ const META: Record<string, { kind: "skill" | "nam"; key: string; tone: string }>
   edebiyat:  { kind: "skill", key: "social", tone: "#6FA0C0" },
   beden:     { kind: "skill", key: "combat", tone: "#E0922E" },
 };
-const SKILL_NAME: Record<string, string> = { trade: "Ticaret", social: "Sosyal", combat: "Savaş", crafting: "Zanaat" };
 
 export default function Mektep() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -50,7 +49,7 @@ export default function Mektep() {
     const lvl = (p.skills as any)[m.key] as number;
     const xp = (p.skill_xp as any)[m.key] as number;
     const pct = lvl >= 10 ? 100 : xp % 100;
-    return { label: `${SKILL_NAME[m.key]} · ${t("mek.lv")}${lvl}`, sub: lvl >= 10 ? "MAX" : `${xp % 100}/100`, pct };
+    return { label: `${t("skill." + m.key)} · ${t("mek.lv")}${lvl}`, sub: lvl >= 10 ? "MAX" : `${xp % 100}/100`, pct };
   };
 
   return (
