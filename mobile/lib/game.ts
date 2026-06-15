@@ -2059,7 +2059,7 @@ export function doFactionTask(prev: GameState, id: string): GameState {
 function factionAITick(s: GameState) {
   if (Math.random() >= 0.14) return;
   const f = FACTIONS[Math.floor(Math.random() * FACTIONS.length)];
-  const act = rnd(["bagis", "sabotaj", "nufuz", "suikast", "uye"]);
+  const act = rnd(["bagis", "sabotaj", "nufuz", "suikast", "uye", "darbe"]);
   if (act === "bagis") {
     if (s.player.faction === f.id) { s.player.faction_standing[f.id] = (s.player.faction_standing[f.id] || 0) + 4; const g = 6 + Math.floor(Math.random() * 10); s.player.money += g; push(s, "örgüt", `${f.name} kasasını açtı; üyelerine pay dağıttı (+${g} akçe).`, "makro", false, { k: "fai.bagis.member", p: [{ fc: f.id }, g] }); }
     else push(s, "örgüt", `${f.name} yoksullara sadaka dağıttı; halkın gözünde itibar kazandı.`, "makro", false, { k: "fai.bagis", p: [{ fc: f.id }] });
@@ -2074,6 +2074,21 @@ function factionAITick(s: GameState) {
   } else if (act === "suikast") {
     const rivals = ensureRivals(s); if (rivals.length) { const rv = rivals[Math.floor(Math.random() * rivals.length)]; rv.power = Math.max(1, Math.round(rv.power * 0.85)); }
     push(s, "örgüt", `Karanlık bir suikast şehirleri çalkaladı; parmaklar ${f.name}'i gösteriyor.`, "makro", true, { k: "fai.suikast", p: [{ fc: f.id }] });
+  } else if (act === "darbe") { // darbe: yüksek gerilimli sancakta hakimiyet el değiştirebilir (canlı dünya)
+    const realm = ensureRealm(s);
+    const hot = realm.filter((sn) => sn.tension >= 45 && !s.wars.some((w) => w.prize === sn.id));
+    if (hot.length) {
+      const sn = hot[Math.floor(Math.random() * hot.length)];
+      const challenger = sn.contender || rnd(FACTIONS.map((x) => x.id).filter((id) => id !== sn.holder));
+      if (challenger && challenger !== sn.holder && Math.random() < 0.5) {
+        const old = sn.holder; sn.holder = challenger; sn.contender = null; sn.tension = 40;
+        if (challenger === s.player.faction) s.player.faction_standing[challenger] = (s.player.faction_standing[challenger] || 0) + 8;
+        push(s, "ocak_savasi", `Darbe! ${factionById(challenger)?.name}, ${beylikName(sn.id)}'i ${factionById(old)?.name}'in elinden aldı.`, "makro", true, { k: "fai.darbe", p: [{ fc: challenger }, { bl: sn.id }, { fc: old }] });
+      } else {
+        sn.tension = Math.max(0, sn.tension - 20);
+        push(s, "ocak_savasi", `${beylikName(sn.id)}'de bir darbe girişimi bastırıldı; ortalık yatıştı.`, "makro", false, { k: "fai.darbeFail", p: [{ bl: sn.id }] });
+      }
+    }
   } else { // üye toplama — sadece oyuncu aday durumundaysa anlamlı
     if (s.player.faction !== f.id && (s.player.faction_standing[f.id] || 0) < f.joinRep)
       push(s, "örgüt", `${f.name} saflarına yeni yiğitler arıyor; kapısı çalınmayı bekliyor.`, "makro", false, { k: "fai.uye", p: [{ fc: f.id }] });
