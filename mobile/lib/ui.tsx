@@ -245,6 +245,7 @@ export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, p
 // Anlık fırsat pop-up'ı (eski Fırsatlar sayfasının yerine).
 export function OpportunityModal({ opp, onTake, onPass }: { opp: Opportunity | null; onTake: () => void; onPass: () => void }) {
   const { t } = useI18n();
+  const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
   const rk = opp ? (opp.risk >= 0.55 ? { k: "high", c: C.blood } : opp.risk >= 0.35 ? { k: "mid", c: C.ember } : { k: "low", c: C.sage }) : { k: "low", c: C.sage };
   return (
     <Modal visible={!!opp} transparent animationType="fade" onRequestClose={onPass}>
@@ -253,8 +254,8 @@ export function OpportunityModal({ opp, onTake, onPass }: { opp: Opportunity | n
           <Animated.View entering={FadeInUp.springify().damping(16)} style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 14, padding: 22 }}>
             <View style={{ alignItems: "center", marginBottom: 4 }}><Text style={{ fontSize: 28 }}>🎲</Text></View>
             <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, textAlign: "center", marginTop: 4 }}>{t("frs.popTitle").toUpperCase()}</Text>
-            <Text style={{ fontFamily: F.display, fontSize: 17, color: C.gold, textAlign: "center", letterSpacing: 0.5, marginTop: 4 }}>{opp.title}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: "center", lineHeight: 21, marginTop: 10, marginBottom: 14 }}>{opp.desc}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 17, color: C.gold, textAlign: "center", letterSpacing: 0.5, marginTop: 4 }}>{gt("opp." + opp.key + ".t", opp.title)}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: "center", lineHeight: 21, marginTop: 10, marginBottom: 14 }}>{gt("opp." + opp.key + ".d", opp.desc)}</Text>
 
             <View style={{ flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
               <View style={{ backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingVertical: 4, paddingHorizontal: 11 }}>

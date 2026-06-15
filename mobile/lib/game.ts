@@ -1248,7 +1248,7 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
 }
 
 // ── Fırsat: kabul edilince stat'a göre çözülür ──
-export interface Opportunity { id: string; title: string; desc: string; reward: number; risk: number; stat: keyof Stats; }
+export interface Opportunity { id: string; key: string; title: string; desc: string; reward: number; risk: number; stat: keyof Stats; }
 export function resolveOpportunity(prev: GameState, opp: Opportunity): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead) return s;
@@ -1268,19 +1268,19 @@ export function resolveOpportunity(prev: GameState, opp: Opportunity): GameState
 // Tura göre deterministik fırsat listesi.
 export function opportunitiesFor(s: GameState): Opportunity[] {
   const pool: Omit<Opportunity, "id">[] = [
-    { title: "Pazarda Düzen", desc: "Voyvoda kavgayı yatıştırmanı istiyor.", reward: 30, risk: 0.4, stat: "charisma" },
-    { title: "Kervan Muhafızlığı", desc: "Tehlikeli yolda kervana eşlik et.", reward: 60, risk: 0.6, stat: "strength" },
-    { title: "Şifalı Ot Topla", desc: "Şifacı için dağdan ot getir.", reward: 20, risk: 0.25, stat: "stamina" },
-    { title: "Hesap Tut", desc: "Tüccarın defterini düzelt.", reward: 25, risk: 0.3, stat: "intelligence" },
+    { key: "pazar_duzen", title: "Pazarda Düzen", desc: "Voyvoda kavgayı yatıştırmanı istiyor.", reward: 30, risk: 0.4, stat: "charisma" },
+    { key: "kervan_muhafiz", title: "Kervan Muhafızlığı", desc: "Tehlikeli yolda kervana eşlik et.", reward: 60, risk: 0.6, stat: "strength" },
+    { key: "sifa_ot", title: "Şifalı Ot Topla", desc: "Şifacı için dağdan ot getir.", reward: 20, risk: 0.25, stat: "stamina" },
+    { key: "hesap_tut", title: "Hesap Tut", desc: "Tüccarın defterini düzelt.", reward: 25, risk: 0.3, stat: "intelligence" },
     // ── Vercel opportunities.py'den ek fırsatlar ──
-    { title: "Kurt Avı", desc: "Köyü basan kurt sürüsünü avla.", reward: 55, risk: 0.55, stat: "strength" },
-    { title: "Alacak Tahsili", desc: "Borçlu bir esnaftan tüccarın alacağını topla.", reward: 35, risk: 0.45, stat: "charisma" },
-    { title: "Haber Götür", desc: "Komşu sancağa acele bir mektup ulaştır.", reward: 28, risk: 0.35, stat: "stamina" },
-    { title: "Köprü Onarımı", desc: "Sel basmış köprünün onarımına el ver.", reward: 32, risk: 0.4, stat: "strength" },
-    { title: "Sınır Devriyesi", desc: "Sancak beyi için sınır yolunu kolla.", reward: 48, risk: 0.5, stat: "strength" },
-    { title: "Düğün Kâhyalığı", desc: "Bir konağın düğün hazırlığını yönet.", reward: 38, risk: 0.3, stat: "charisma" },
-    { title: "Mahkeme Şahitliği", desc: "Kadı huzurunda adil bir ifade ver.", reward: 26, risk: 0.35, stat: "intelligence" },
-    { title: "Maden Keşfi", desc: "Dağ eteğinde damar olduğu söylenen yeri araştır.", reward: 70, risk: 0.65, stat: "intelligence" },
+    { key: "kurt_avi", title: "Kurt Avı", desc: "Köyü basan kurt sürüsünü avla.", reward: 55, risk: 0.55, stat: "strength" },
+    { key: "alacak_tahsil", title: "Alacak Tahsili", desc: "Borçlu bir esnaftan tüccarın alacağını topla.", reward: 35, risk: 0.45, stat: "charisma" },
+    { key: "haber_gotur", title: "Haber Götür", desc: "Komşu sancağa acele bir mektup ulaştır.", reward: 28, risk: 0.35, stat: "stamina" },
+    { key: "kopru_onarim", title: "Köprü Onarımı", desc: "Sel basmış köprünün onarımına el ver.", reward: 32, risk: 0.4, stat: "strength" },
+    { key: "sinir_devriye", title: "Sınır Devriyesi", desc: "Sancak beyi için sınır yolunu kolla.", reward: 48, risk: 0.5, stat: "strength" },
+    { key: "dugun_kahya", title: "Düğün Kâhyalığı", desc: "Bir konağın düğün hazırlığını yönet.", reward: 38, risk: 0.3, stat: "charisma" },
+    { key: "mahkeme_sahit", title: "Mahkeme Şahitliği", desc: "Kadı huzurunda adil bir ifade ver.", reward: 26, risk: 0.35, stat: "intelligence" },
+    { key: "maden_kesfi", title: "Maden Keşfi", desc: "Dağ eteğinde damar olduğu söylenen yeri araştır.", reward: 70, risk: 0.65, stat: "intelligence" },
   ];
   const seed = (s.turn * 2654435761) >>> 0;
   return pool.filter((_, i) => ((seed >> i) & 1) === 1 || i === seed % pool.length)
