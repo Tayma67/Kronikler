@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, sellItem, launchCaravan, negotiatedBuy, bargainBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS } from "../../lib/game";
+import { buyItem, sellItem, launchCaravan, negotiatedBuy, bargainBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -163,7 +163,12 @@ export default function Pazar() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment }}>{t("it." + g.id)}</Text>
-                        <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("paz.have")} {have}</Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                          <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("paz.have")} {have}</Text>
+                          {(() => { const bq = have > 0 ? bestQualityTier(p, g.id) : "siradan"; return bq !== "siradan" ? (
+                            <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: bq === "kusurlu" ? C.blood : C.gold }}>✦ {QUALITY_LABEL[bq]}</Text>
+                          ) : null; })()}
+                        </View>
                       </View>
                       <Coin v={g.buy} />
                     </View>

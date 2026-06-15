@@ -25,6 +25,7 @@ export interface Player {
   fates?: string[]; // tetiklenen kader anları (yaş dönümleri)
   claimed?: string[]; // ödülü alınan başarımlar
   fq_claimed?: string[]; // tamamlanan aile/yaşam görevleri (family_quests portu)
+  inv_q?: Record<string, Partial<Record<QualityTier, number>>>; // eşya kalite kırılımı (quality.py portu; sıradan izlenmez)
   last_study_turn?: number; lesson_count?: number; // mektep: ayda 1 ders + sınav sayacı
   governorships?: string[]; // valisi olunan şehirler
 }
@@ -964,10 +965,14 @@ export function sellItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!(p.inventory[id] > 0)) return s;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
+  // Kalite kademeli malda en iyi birimi sat; fiyata kalite çarpanı uygula.
+  const tier = QUALITY_GOODS.has(id) ? takeQualityUnit(p, id) : "siradan";
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
-  let sell = Math.round(marketPrice(g.sell, s.econ) * goodPriceMult(s, id));
+  let sell = Math.round(marketPrice(g.sell, s.econ) * goodPriceMult(s, id) * QUALITY_MULT[tier]);
   if (hasPerk(p, "dilbaz")) sell = Math.round(sell * 1.25);
-  p.money += sell; gainSkill(s, "trade", 5); push(s, "ticaret", `${g.name} sattın (+${sell} akçe).`);
+  p.money += sell; gainSkill(s, "trade", 5);
+  const qNote = tier !== "siradan" ? ` (${QUALITY_LABEL[tier]})` : "";
+  push(s, "ticaret", `${g.name}${qNote} sattın (+${sell} akçe).`);
   return s;
 }
 
@@ -2150,12 +2155,61 @@ export function canCraft(p: Player, r: Recipe): boolean {
   if (p.skills.crafting < r.minSkill) return false;
   return Object.entries(r.inputs).every(([id, q]) => (p.inventory[id] || 0) >= q);
 }
+// ── Eşya kalitesi (Vercel quality.py portu) — dayanıklı/zanaat malları için 4 kademe ──
+export type QualityTier = "kusurlu" | "siradan" | "iyi" | "usta_isi";
+export const QUALITY_MULT: Record<QualityTier, number> = { kusurlu: 0.6, siradan: 1.0, iyi: 1.5, usta_isi: 2.5 };
+export const QUALITY_LABEL: Record<QualityTier, string> = { kusurlu: "kusurlu", siradan: "sıradan", iyi: "iyi", usta_isi: "usta işi" };
+const QUALITY_GOODS = new Set(["bicak", "kilic", "celik_kilic", "savas_balta", "yay", "kalkan", "deri_zirh", "zincir_zirh", "iksir"]);
+const Q_ORDER: QualityTier[] = ["usta_isi", "iyi", "siradan", "kusurlu"];
+// Zanaat becerisine göre üretilen kalite kademesini çek.
+function rollCraftQuality(skill: number): QualityTier {
+  const usta = Math.min(0.35, 0.02 + skill * 0.03);
+  const iyi = Math.min(0.40, 0.10 + skill * 0.03);
+  const kusurlu = Math.max(0.03, 0.20 - skill * 0.02);
+  const r = Math.random();
+  if (r < usta) return "usta_isi";
+  if (r < usta + iyi) return "iyi";
+  if (r > 1 - kusurlu) return "kusurlu";
+  return "siradan";
+}
+function addQuality(p: Player, id: string, tier: QualityTier, n = 1) {
+  if (tier === "siradan" || n <= 0) return; // sıradan izlenmez (varsayılan)
+  if (!p.inv_q) p.inv_q = {};
+  if (!p.inv_q[id]) p.inv_q[id] = {};
+  p.inv_q[id]![tier] = (p.inv_q[id]![tier] || 0) + n;
+}
+// Bir maldan satılacak en iyi kademeyi belirle (izlenen kademe yoksa sıradan).
+export function bestQualityTier(p: Player, id: string): QualityTier {
+  const q = p.inv_q?.[id]; if (!q) return "siradan";
+  for (const t of Q_ORDER) if (t !== "siradan" && (q[t] || 0) > 0) return t;
+  return "siradan";
+}
+// Satışta bir birimi en iyi kademeden düş, kademesini döndür.
+function takeQualityUnit(p: Player, id: string): QualityTier {
+  const t = bestQualityTier(p, id);
+  if (t !== "siradan" && p.inv_q?.[id]) {
+    p.inv_q[id]![t] = (p.inv_q[id]![t] || 0) - 1;
+    if ((p.inv_q[id]![t] || 0) <= 0) delete p.inv_q[id]![t];
+    if (Object.keys(p.inv_q[id]!).length === 0) delete p.inv_q[id];
+  }
+  return t;
+}
+
 export function craft(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const r = RECIPES.find((x) => x.id === id);
   if (!r || p.dead || !canCraft(p, r)) return s;
   for (const [iid, q] of Object.entries(r.inputs)) { p.inventory[iid] -= q; if (p.inventory[iid] <= 0) delete p.inventory[iid]; }
   p.inventory[r.out] = (p.inventory[r.out] || 0) + r.outQty;
   gainSkill(s, "crafting", 6);
-  push(s, "zanaat", `${ITEMS[r.out]?.name || r.out} ürettin${r.outQty > 1 ? ` (×${r.outQty})` : ""}.`);
+  // Kalite kademeli mallar için zanaat becerisine göre kalite üret.
+  let qNote = "";
+  if (QUALITY_GOODS.has(r.out)) {
+    for (let k = 0; k < r.outQty; k++) {
+      const tier = rollCraftQuality(p.skills.crafting);
+      addQuality(p, r.out, tier);
+      if (k === 0 && tier !== "siradan") qNote = ` — ${QUALITY_LABEL[tier]} işçilik!`;
+    }
+  }
+  push(s, "zanaat", `${ITEMS[r.out]?.name || r.out} ürettin${r.outQty > 1 ? ` (×${r.outQty})` : ""}${qNote}.`);
   return s;
 }
