@@ -1346,10 +1346,16 @@ export function bargainBase(s: GameState, id: string): number {
   if (hasPerk(p, "pazarlikci")) disc -= 0.10;
   return Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id)));
 }
-// Pazarlık başarı olasılığı (karizma + ticaret becerisi).
+// Pazarlıkta satıcı kişiliği (Vercel bargain.py): şehre göre deterministik mizaç; pazarlık havasını belirler.
+export const SELLER_PERSONAS: { id: string; mult: number }[] = [
+  { id: "comert", mult: 1.18 }, { id: "durust", mult: 1.0 }, { id: "tuccar", mult: 0.9 }, { id: "inatci", mult: 0.78 }, { id: "cimri", mult: 0.68 },
+];
+export function sellerPersona(loc: string): { id: string; mult: number } { return SELLER_PERSONAS[locSeed(loc + "satici") % SELLER_PERSONAS.length]; }
+export function sellerPersonaOf(s: GameState): { id: string; mult: number } { return sellerPersona(s.player.location_name); }
+// Pazarlık başarı olasılığı (karizma + ticaret becerisi × satıcı mizacı).
 export function bargainChance(s: GameState): number {
   const p = s.player;
-  return Math.max(0.15, Math.min(0.95, 0.42 + effStat(p, "charisma") * 0.035 + p.skills.trade * 0.025 + bargainBonus(s)));
+  return Math.max(0.1, Math.min(0.95, (0.42 + effStat(p, "charisma") * 0.035 + p.skills.trade * 0.025 + bargainBonus(s)) * sellerPersona(p.location_name).mult));
 }
 // Müzakere sonunda anlaşılan fiyattan alım.
 export function negotiatedBuy(prev: GameState, id: string, price: number): GameState {

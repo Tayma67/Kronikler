@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, sellItem, launchCaravan, negotiatedBuy, bargainBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL } from "../../lib/game";
+import { buyItem, sellItem, launchCaravan, negotiatedBuy, bargainBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -223,6 +223,7 @@ export default function Pazar() {
                   <Text style={{ fontSize: 34 }}>{barg.icon}</Text>
                   <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, marginTop: 6, letterSpacing: 0.5 }}>{barg.name}</Text>
                   <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, marginTop: 2 }}>{t("paz.bargainWith").toUpperCase()}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("paz.seller." + sellerPersonaOf(state).id)}</Text>
                 </View>
 
                 {/* Fiyat */}
