@@ -197,7 +197,7 @@ export default function Hanedan() {
         {/* ── DİYARIN HANEDANLARI ── */}
         {(() => {
           const mine = { id: "mine", name: houseName, power, mine: true, attitude: 0 };
-          const rivals = baseRivals.map((h) => ({ id: h.id, name: h.nameIdx != null ? rivalHouseName(h.nameIdx, lang) : h.name, power: h.power, mine: false, attitude: houseAttitude(p, h) }));
+          const rivals = baseRivals.map((h) => ({ id: h.id, name: h.nameIdx != null ? rivalHouseName(h.nameIdx, lang) : h.name, power: h.power, mine: false, attitude: h.tutum ?? houseAttitude(p, h) }));
           const all = [...rivals, mine].sort((a, b) => b.power - a.power);
           return (
             <>

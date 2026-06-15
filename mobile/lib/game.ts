@@ -750,9 +750,24 @@ export function ensureRivals(s: GameState): RivalHouse[] {
 // Rakip hanedan tikİ (Vercel dynasties.py portu): güç mizaca göre sürüklenir + ara sıra hamle yaparlar.
 function tickDynasties(s: GameState, announce: boolean) {
   const rivals = ensureRivals(s);
+  const p = s.player;
   for (const h of rivals) {
     const drift = (h.trait === "ihtiraslı" ? 1 : 0) + Math.floor(Math.random() * 4) - 1;
     h.power = Math.max(20, Math.min(100, h.power + drift));
+    // Oyuncuya tutum: yaşayan değer — oyuncunun nam/itibarına göre hedefe doğru sürüklenir (Vercel oyuncuya_tutum).
+    const target = houseAttitude(p, h);
+    h.tutum = Math.round(Math.max(-100, Math.min(100, (h.tutum ?? target) * 0.85 + target * 0.15)));
+  }
+  // Düşman hane sabotajı: tutumu çok düşük bir hane oyuncunun mülküne el uzatır (gerçek zarar).
+  if (announce && p.properties.length) {
+    const foes = rivals.filter((h) => (h.tutum ?? 0) <= -25);
+    if (foes.length && Math.random() < 0.12) {
+      const h = foes[Math.floor(Math.random() * foes.length)];
+      const pr = p.properties[Math.floor(Math.random() * p.properties.length)];
+      pr.cond = Math.max(15, pr.cond - 22);
+      h.tutum = Math.max(-100, (h.tutum ?? 0) - 3);
+      push(s, "hanedan_haber", `${h.name} adamları ${PROPERTY_TYPES[pr.type]?.name || "mülküne"} (${pr.loc}) zarar verdi; hesap büyüyor.`, "makro", true, { k: "evj.houseSabotage", p: [{ hn: h.nameIdx }, { pt2: pr.type }, { pl: pr.loc }] });
+    }
   }
   if (!announce || rivals.length < 2 || Math.random() >= 0.14) return;
   const h = rivals[Math.floor(Math.random() * rivals.length)];

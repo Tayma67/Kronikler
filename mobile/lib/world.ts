@@ -184,7 +184,7 @@ export function cityInfo(name: string, kind: string, lang: Lang = "tr"): CityInf
 }
 
 // Rakip hanedanlar — diyarın güç odakları (deterministik). nameIdx = kültürel havuz indeksi.
-export interface RivalHouse { id: string; name: string; nameIdx: number; power: number; pride: number; trait: string; }
+export interface RivalHouse { id: string; name: string; nameIdx: number; power: number; pride: number; trait: string; tutum?: number; }
 const HOUSE_NAMES = ["Karaoğulları","Akhanlılar","Demiroğulları","Şahinoğulları","Bozkurtlar","Yıldızoğulları","Çelikhanlar","Aslanoğulları","Toprakoğulları","Gümüşhanlılar","Kayıoğulları","Doğanoğulları"];
 // Hanedan adları seçilen dilin kültürüne göre (index-index TR ile eşleşir).
 const HOUSE_POOLS: Record<Lang, string[]> = {
