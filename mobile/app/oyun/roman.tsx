@@ -18,6 +18,32 @@ const BANDS = [
   { key: "ihtiyarlik", lo: 60, hi: 200 },
 ];
 
+// Olay türünü bir temaya indirger (yıllık hikâye özeti — Vercel generate_year_story ruhu).
+function catOf(type: string): string {
+  if (/savas|savaş|ocak|doruk|combat/.test(type)) return "catisma";
+  if (/ticaret|mulk|mülk|hasat|kervan|atolye|zanaat/.test(type)) return "kazanc";
+  if (/evlilik|dogum|doğum|nesil|aile/.test(type)) return "aile";
+  if (/sohbet|orgut|örgüt|fai/.test(type)) return "dostluk";
+  if (/mektep|beceri/.test(type)) return "ogrenme";
+  if (/suc|suç|ceza|golge|gölge/.test(type)) return "karanlik";
+  if (/yonetim|yönetim/.test(type)) return "mevki";
+  if (/hikaye|hikâye|seyahat|yolculuk|dunya|dünya|fisilti|fısıltı/.test(type)) return "yollar";
+  if (/saglik|sağlık|iyilesme|iyileşme/.test(type)) return "saglik";
+  return "gunluk";
+}
+// Bir çağın olaylarından kısa anlatı özeti üretir.
+function bandNarrative(events: { type: string; landmark?: boolean }[], t: (k: string) => string): string {
+  const counts: Record<string, number> = {};
+  let landmarks = 0;
+  for (const e of events) { if (e.landmark) landmarks++; const c = catOf(e.type); if (c !== "gunluk") counts[c] = (counts[c] || 0) + 1; }
+  const top = Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, 2);
+  let s = "";
+  if (top.length >= 2) s = t("rom.narr.two").replace("%1", t("rom.th." + top[0])).replace("%2", t("rom.th." + top[1]));
+  else if (top.length === 1) s = t("rom.narr.one").replace("%1", t("rom.th." + top[0]));
+  if (landmarks > 0) s = (s ? s + " " : "") + t("rom.narr.landmarks").replace("%1", String(landmarks));
+  return s;
+}
+
 export default function Roman() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -48,6 +74,7 @@ export default function Roman() {
         <View key={ci} style={{ marginBottom: 24 }}>
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textAlign: "center" }}>{t("rom.chapter")} {ci + 1}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 19, color: C.gold, textAlign: "center", marginTop: 2 }}>{t("rom.band." + c.band.key)}</Text>
+          {(() => { const narr = bandNarrative(c.events, t); return narr ? <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", lineHeight: 20, marginTop: 8, paddingHorizontal: 8 }}>{narr}</Text> : null; })()}
           <View style={{ width: "55%", height: 1, backgroundColor: C.borderHi, alignSelf: "center", marginVertical: 14 }} />
           {c.events.map((e, i) => (
             <View key={i} style={{ flexDirection: "row", gap: 8, marginBottom: e.landmark ? 10 : 6 }}>
