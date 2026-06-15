@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker } from "../../lib/game";
+import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, propWorkerStats } from "../../lib/game";
 import { placeName, professionNameL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -79,7 +79,15 @@ export default function Mulkler() {
                       <View style={{ marginTop: 9 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
                           <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: C.parchmentMuted, width: 64 }}>👷 {t("mulk.workers").toUpperCase()}</Text>
-                          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 11, color: C.parchmentDim }}>{hired.length}/{slots}</Text>
+                          <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentDim }}>{hired.length}/{slots}</Text>
+                          {hired.length > 0 && (() => {
+                            const base = PROPERTY_TYPES[pr.type]?.income || 0;
+                            const cpl = (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5);
+                            const w = propWorkerStats(pr, base, cpl, lang);
+                            const net = Math.round(w.gross - w.wage);
+                            return <Text style={{ flex: 1, fontFamily: F.display, fontSize: 9.5, color: net >= 0 ? C.sage : C.blood }}>{net >= 0 ? "+" : ""}{net} ⚜/{t("mulk.perMonth").replace("⚜/", "")}</Text>;
+                          })()}
+                          {hired.length === 0 && <View style={{ flex: 1 }} />}
                           {hired.length < slots && (
                             <Pressable onPress={() => { hap("tap"); setHireOpen(open ? null : i); }} style={{ paddingVertical: 4, paddingHorizontal: 9, borderRadius: 6, borderWidth: 1, borderColor: "rgba(127,166,106,0.5)", backgroundColor: "rgba(127,166,106,0.12)" }}>
                               <Text style={{ fontFamily: F.display, fontSize: 9, color: C.sage }}>{open ? "⌄" : t("mulk.hire")}</Text>
