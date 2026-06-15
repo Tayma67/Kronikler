@@ -1,0 +1,174 @@
+# PORT DENETİM RAPORU — Vercel (web) ↔ APK (mobil)
+
+> **Amaç:** Vercel'deki (`backend/*.py` ~33.700 satır / 50+ modül) sistemlerin APK'ya
+> (`mobile/` ~6.650 satır TS) ne kadar aktarıldığını modül modül gösteren tek denetim
+> tablosu. Vercel'in **%100** aktarıldığından emin olunca tek dala geçilecek.
+>
+> **Yöntem:** 10 inceleme ajanı her modül grubunu Vercel↔APK olarak karşılaştırdı
+> (şirket/departman mantığı, tek elden birleştirildi). Bu dosya tek doğruluk kaynağıdır;
+> bağlam (sohbet hafızası) kaybolsa da burası + git geçmişi + kod tam durumu taşır.
+>
+> Son güncelleme: 2026-06-15 · Dal: `claude/gifted-volta-fwqcqn`
+>
+> **Referans botlar:** Vercel tarafı `backend/tools/player_bot.py` (gerçek HTTP rotalarını
+> oynatır) · APK tarafı `mobile/scripts/smoke.sh` (300 sanal hayat × tüm aksiyonlar, HATA:0 kapısı).
+
+---
+
+## DAL STRATEJİSİ (kullanıcı kararı)
+
+- **2 dal hedefi:** biri Vercel (web) bölümü, biri APK (mobil) bölümü. Şu an tüm port işi
+  `claude/gifted-volta-fwqcqn` dalında ilerliyor; sürekli yeni dal AÇILMAYACAK.
+- Vercel'deki her şeyin APK'ya aktarıldığı doğrulanınca **tek dala** geçilecek.
+
+---
+
+## GENEL KAPSAMA TABLOSU
+
+Durum: 🟢 iyi (≈%80+) · 🟡 kısmi · 🔴 sığ/eksik · 🔵 kasıtlı sadeleştirme (offline tasarımı)
+
+| Sistem | APK kapsama | Durum | Ana not |
+|---|---|---|---|
+| NPC zihni / yapısal hafıza (`npc-mind.ts`) | ~85% | 🟢 | 34 anı türü, decay, travma, nam, davranış kademesi portlandı |
+| Tohum sistemi (seeds/sowSeed/germinate) | ~80% | 🟢 | `LIFE_EVENT_SEEDS` (Vercel 13 eşleme) APK'da kısmi |
+| Hikâye arc / quest motoru (`arcs.ts`) | ~85% | 🟢 | 13 arc, ~52/60 adım; seçim+cooldown var |
+| Başarımlar (`achievements`) | ~95% | 🟢 | ~40 rozet portlandı |
+| Kariyer merdiveni + skill-XP (`skills.py`) | ~70% | 🟡 | 15/30 meslek, perk sistemi ~%80 |
+| Stat-XP ilerleme eğrisi | ~30% | 🔴 | APK düz `allocateStat`, Vercel 25+lvl×15 eğrisi yok |
+| Şehir yönetimi (`city_governance.py`) | ~55% | 🟡 | meşruiyet/vali/vergi var; garrison/özerklik/azil yok |
+| Evlat eğitimi (`legacy_system.py`) | ~50% | 🟡 | APK anlık tek-seferlik; haftalık biriken masraf yok |
+| Aile görevleri (`family_quests.py`) | ~50% | 🟡 | 8/16 görev; ark-zinciri (requires) yok |
+| Mülk (`property_system.py`) | ~60% | 🟡 | 4 tip+işçi var; han, ledger, gerçek mevsim çevrimi yok |
+| Suç reworku (`crime_rework.py`) | ~55% | 🟡 | kesinti sahnesi var; keşif, kaçış planı, sıcak mal yok |
+| Pazarlık (`bargain.py`) | ~50% | 🟡 | sabır ibresi+blöf var; satıcı kişiliği, koz, nam koruması yok |
+| Çalışma reworku (`work_rework.py`) | ~50% | 🟡 | 4 tarz var; mesleğe özel mini-olay havuzu sığ |
+| Hikâye Yönetmeni (`story_director.py`) | ~45% | 🟡 | gerilim+nefes+doruk var; **kıvılcım kartları, perdeler, event-bias yok** |
+| Eşya + kalite (`items.py`/`quality.py`) | ~40% | 🔴 | kalite sistemi (kusurlu/iyi/usta işi + tuzak) tamamen yok |
+| Seyahat reworku (`travel_rework.py`) | ~30% | 🔴 | 3 rota var; kervan yolcu profilleri ve olay seçimleri yok |
+| Savaş (`combat_engine.py`) | ~25% | 🔴 | duruş+kart var; yaralanma kademesi, niyet ipucu, kuşatma/turnuva çok-aşama yok |
+| Üretim zincirleri (`production_chains.py`) | ~25% | 🔴 | işçi UI var ama üretime etki/kâr yok; ham→ara→nihai akışı yok |
+| Fraksiyon AI + güç yüzeyi (`faction_system.py` 4258) | ~20% | 🔴 | katıl/görev/rütbe/savaş var; **~30 AI eylemi (darbe/suikast/sabotaj/koalisyon/isyan) yok** |
+| Diyalog (`dialogue.py` 1464) | ~15% | 🔴 | APK 4 niyet; Vercel 8 konu × 4 katman (bağlam/hafıza/spontane) yok |
+| Mektep (`school.py` 1648) | ~15% | 🔴 | 4 ders+sınav var; ders olayları, kulüpler, hoca hafızası, mevsim etkinlik yok |
+| Eyleme dönük söylentiler (`rumors.py`) | ~15% | 🔴 | yüzleş/yay/sustur var; piyasa ipucu / NPC sırrı / fraksiyon istihbaratı yok |
+| NPC etkileşim eylemleri (`npc_interactions.py`) | 4/9 | 🔴 | iltifat/para/hakaret/flört/dedikodu/kaçırma/saldırı yok |
+| Yaşam olayları / ikilemler (`life_events*.py`) | 56/169 | 🔴 | orta yaş + yaşlılık + ekonomik kriz ikilemleri eksik |
+| Fırsatlar (`opportunities.py`) | 13/25 | 🔴 | sabit havuz; dünya olayına dinamik tepki yok |
+| Anlatı motoru (`narrative_engine.py`) | ~20% | 🔴 | eulogy/epithet var; ilişki-temelli ölüm/doğum/savaş anlatısı + yıllık özet yok |
+| NPC profil derinliği (`npc_profile.py`) | sade | 🔵 | sır/aktivite/haftalık yaşam yok — **offline deterministik tasarım, kasıtlı** |
+| NPC yaşlanma/ölüm/doğum (`simulation.py`) | yok | 🔵/🔴 | Vercel'de de pasif; APK deterministik tasarımı KORUNMALI (offline) |
+
+---
+
+## DENGE SAPMALARI (önce bunlar — küçük efor, büyük etki)
+
+`backend/balance_config.py` ↔ `mobile/lib/game.ts` karşılaştırması:
+
+| Parametre | Vercel | APK | Sapma | Etki |
+|---|---|---|---|---|
+| Haftalık açlık kaybı (yetişkin) | 5 | 8 | +%60 | Oyuncu çok hızlı acıkıyor |
+| Açlık 0'da haftalık hasar | −2 | −6 | 3× | Çok daha hızlı ölüm |
+| Doğal sağlık rejenerasyonu | +1 | +2 | 2× | Hasardan çok hızlı iyileşme |
+| Mevsim açlık çarpanı | 4 mevsim (İlkbahar 1.0 … Kış 1.3) | sadece Kış 1.3 | İlkbahar/Yaz/Sonbahar yok | Mevsim hissi zayıf |
+| Stamina açlık indirimi | 0.15 | yok | — | Dayanıklılık açlığı azaltmıyor |
+| Enflasyon (haftalık) | ~%0.1 | %0 | — | Uzun oyunda pazar çökmüyor |
+
+> Not: Bu sapmalar oyun dengesini ölçülebilir biçimde değiştiriyor; doğrulanıp tek tek
+> hizalanmalı (smoke ile A/B). Düzeltmesi küçük, etkisi büyük.
+
+---
+
+## DOMAİN BAZINDA DETAY
+
+### 1) Çekirdek haftalık tick (`simulation.py` → `advance()`)
+Vercel tick sırası (özet): yaşlanma/ölüm → evlilik/doğum → ölü NPC budama → ekonomi →
+kervan → rastgele olay → piyasa olayı → görev üretimi/süresi → dünya olayı → NPC profil
+tiki → aile desteği → işgal kontrolü → oyuncu tiki → otomatik yeme.
+APK `advance()` karşılığı: turn, kervan, piyasa, dünya olayı (dar kapsam), oyuncu tiki var.
+**Eksik:** dinamik görev üretimi/süre, işgal dalgaları, otomatik yeme, ay-sonu "hasat" UI,
+NPC profil rutinleri. (NPC yaşlanma/ölüm bilinçli olarak APK'da yok — offline tasarımı.)
+
+### 2) Fraksiyon AI + güç yüzeyi
+Vercel `faction_system.py` (4258 satır) bir **dinamik dünya**: ~30 AI eylemi (savaş aç,
+suikast, sabotaj, manipülasyon, darbe hazırlığı/fazları, isyan/iç savaş, ambargo, fetva/şeriat,
+bölge infiltrasyonu, paralı asker, gizli cemiyet operasyonları + ifşa, koalisyon tetikleme),
+faksiyonlar arası ilişki skoru (−100..+100), casus belli, ateşkes, NPC'lerin faksiyon değiştirmesi.
+APK'da: katıl/görev/rütbe/sancak gerilimi/savaş + sosyal eksenler. **Diplomasi, çöküş, gizlilik
+katmanları %0.** En önemli 3: gizli cemiyet operasyonları+ifşa (büyük), darbe+NPC isyan (büyük),
+ilişki skoru+koalisyon (orta).
+
+### 3) Diyalog & NPC etkileşimi (sıradaki iş için en yüksek değer)
+`dialogue.py` mimarisi: **8 konu** (selam/iş/aile/dünya/hakkımda/üzgün/hedef/veda) × **4 katman**
+(konu havuzu → bağlam enjeksiyonu → hafıza geri çağrımı ~%30 → NPC spontane gündemi ~%25) +
+flavor katmanları (meslek farkındalığı, kişilik, suç/itibar filtresi, tekrar cezası).
+`PROFESSION_TALK` 18 meslek × ~10 satır. `conversation.py`: 3'lü sohbet kartı (güvenli/riskli/kişisel),
+hediye tercihleri (meslek+kişilik → 0× … 2.5×).
+APK: `dialogue.ts` (60 satır) **4 niyet** (hoşbeş/iltifat/dert/şaka) — konu/bağlam/hafıza/spontane yok.
+NPC eylemleri: VAR → giftTo, proposeMarriage, helpNpcGoal, exploitNpcGoal. YOK → iltifat,
+para verme, hakaret, flört, dedikodu, kaçırma, saldırı (`npc_interactions.py` 9 eylemden 4'ü).
+Eksik mekanikler: cooldown/spam cezası, tanık→dedikodu kaskadı, meslek hediye tercihi, nam efektleri.
+**İş kalemleri (sıralı):** (a) konu yapısı + i18n havuzu, (b) 4 katmanlı `converse` motoru,
+(c) eksik 5-7 NPC eylemi, (d) hediye tercihi + nam efektleri.
+
+### 4) Mektep (`school.py` 1648 → ~%15)
+Vercel: 4 ders + ders olayları (%85, her derste 2-3 seçim, "cesur" seçenek hoca anısına yazılır),
+hoca NPC ilişkisi, 3 öğrenci topluluğu (koro/güreş/çırak), mevsimsel çocukluk etkinlikleri,
+özel olaylar (düğün/bayram/yangın/cenaze), sınıf rekabeti, mezuniyet.
+APK: 4 ders + 4 derste sınav (stat testli). **Olaylar, kulüpler, hoca hafızası, etkinlikler yok.**
+
+### 5) Savaş (`combat_engine.py` 474 → ~%25)
+Vercel: 4 tür (düello/soygun/turnuva/kuşatma), turnuva/kuşatma çok-aşamalı, rakip niyet ipucu
+(%70 doğru), yaralanma kademesi (sıyrık→yara→ağır→sakatlık→ölüm, kalıcı sakatlık tavanı 3),
+komutan modu (3 stratejik karar ±%30). APK `combat.ts` (79): duruş + taş-kağıt-makas kart var;
+**çok-aşama, niyet ipucu, yaralanma kademesi, komutan modu yok.**
+
+### 6) Ekonomi: üretim zincirleri / dünya olayları / fırsatlar / söylentiler
+- Üretim: APK'da işçi tut/çıkar UI var ama üretime etki ve kâr yok; ham→ara→nihai akışı yok.
+- Dünya olayları: APK piyasa fiyat çarpanı + 4 çağ olayı (epoch) var; lokasyon `wealth/security/
+  prosperity/population` etkisi ve haftalık sönüm yok (Vercel 13 olay gerçek etkili).
+- Fırsatlar: APK 13 sabit şablon; Vercel 25 dinamik (kuraklık→su taşı, salgın→ilaç ara) — adaptasyon yok.
+- Söylentiler: APK yüzleş/yay/sustur; Vercel piyasa ipucu (arbitraj), NPC sırrı (şantaj), fraksiyon
+  istihbaratı gibi **eyleme dönük** söylenti yok.
+
+### 7) Yaşam olayları / ikilemler (56/169)
+Vercel `life_events.py` (100) + `life_events_v2.py` (69) = 169. APK `events.ts` = 56 (gençliğe ağır).
+Eksik kümeler: yetişkinlik (−~52) ve orta yaş (−~33) ikilemleri; ekonomik krizler (borç tuzağı,
+tefeci, kuraklık, vergi kararı, sefer çağrısı), siyasi (muhtarlık/lonca seçimi), toplumsal (sel,
+veba, asker toplama). En hızlı kazanç: v2'den 40-50 olayı `events.ts`'e taşımak.
+
+### 8) Hikâye Yönetmeni & anlatı (`story_director.py`/`narrative_engine.py`)
+VAR: gerilim hesabı+güncelleme, nefes kuralı, tohumlar (sow/seed/germinate), nesil aşma.
+EKSİK: **kıvılcım kartları** (durgunlukta 10 kartlı deste — devir notu doğrulandı), doruğun pozitif
+varyantları (cömert nam doruğu, hanedan), `LIFE_EVENT_SEEDS` seçim→tohum eşlemesi, **perdeler**
+(Chronicle 2.0 dinamik bölüm başlıkları), event-bias (nefeste gergin olayları eleme), ilişki-temelli
+ölüm/doğum/savaş anlatıları, yıllık hikâye özeti, paylaşılabilir final kartı.
+
+### 9) NPC zihni/profil/dünya
+`npc-mind.ts` Vercel `npc_mind.py`'nin ~%85'i (anı türleri/decay/travma/nam/davranış kademesi tam).
+Küçük açık: rüşvet-sonrası "dolandırıcılık" söylentisi döngüsü, söylenti yoğunluğu kalibrasyonu.
+`npc_profile.py` derinliği (30 hedef, 50+ sır, 200+ aktivite, haftalık yaşam olayları) APK'da
+**kasıtlı olarak sade** — offline deterministik tasarım gereği (KORUNMALI).
+
+---
+
+## ÖNERİLEN ÖNCELİK SIRASI
+
+1. **Denge hizalama** (açlık/sağlık/mevsim sabitleri) — küçük efor, dengeyi hemen düzeltir.
+2. **Diyalog derinliği** (8 konu + 4 katman + eksik NPC eylemleri) — oyuncu deneyimine en yüksek etki.
+3. **Hikâye Yönetmeni kıvılcım kartları + perdeler** — dramaturji makinesinin eksik ayağı.
+4. **Yaşam olayı içeriği** (v2'den 40-50 ikilem) — düşük risk, yüksek doluluk.
+5. **Mektep olayları/kulüpler** — büyük ama çocukluk fazına derinlik katar.
+6. **Fraksiyon AI eylemleri** (ilişki skoru+koalisyon → darbe/isyan) — dünyayı "canlı" yapar.
+7. **Savaş yaralanma + niyet ipucu**, **eşya kalite sistemi**, **üretim/dünya-olay etkileri** — derinlik.
+
+---
+
+## TUZAKLAR / NOTLAR
+
+- Perl `-i` UTF-8'i bozar → i18n düzenlemede Python `io.open(encoding='utf-8')` kullan.
+- Smoke ~5 dk (yaşayan-dünya yüzünden yavaş, "takıldı" sanma); hızlı ölçüm için `i < 300`→`i < 30`.
+- APK 100 MB sınırı → daima `-PreactNativeArchitectures=arm64-v8a`; Gradle 8.14.3 (9.x IBM_SEMERU hatası).
+- Her commit öncesi güvenlik kapısı: `cd mobile && npx tsc --noEmit` + `bash scripts/smoke.sh` (HATA:0).
+- Kural: mevcut çalışan sistemi BOZMA, üzerine ekle (additif port); APK'da daha iyi olanı KORU.
+- Bu rapordaki satır/yüzde değerleri ajan taramasından gelir; bir maddeye dokunmadan önce ilgili
+  Vercel modülü + APK karşılığı tekrar okunup doğrulanmalı.
