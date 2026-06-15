@@ -1476,7 +1476,7 @@ export function doFactionTask(prev: GameState, id: string): GameState {
   p.reputation = Math.min(100, p.reputation + 2);
   gainSkill(s, f.stat === "strength" ? "combat" : f.stat === "charisma" ? "social" : "trade", 6);
   const domNote = dom > 1 ? " Loncan bu sancağa hâkim — sözün daha çok geçti." : "";
-  push(s, "örgüt_görev", `${f.name} için "${f.task.label}" görevini gördün (+${reward} akçe, itibar arttı).${domNote}`, "kişisel", false, { k: "evj.factionTask", p: [{ fc: id }, f.task.label, reward, dom > 1 ? { sfx: "sfx.factionDom" } : ""] });
+  push(s, "örgüt_görev", `${f.name} için "${f.task.label}" görevini gördün (+${reward} akçe, itibar arttı).${domNote}`, "kişisel", false, { k: "evj.factionTask", p: [{ fc: id }, { ftl: id }, reward, dom > 1 ? { sfx: "sfx.factionDom" } : ""] });
   return s;
 }
 
