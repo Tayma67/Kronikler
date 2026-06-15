@@ -2,9 +2,9 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { travelBy, placeKind, TRAVEL_ROUTES, beylikOf } from "../../../lib/game";
+import { travelBy, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep } from "../../../lib/game";
 import { cityInfo, marketGoods, locSeed, localSpecialtyName } from "../../../lib/world";
-import { useI18n } from "../../../lib/i18n";
+import { useI18n, applyParams } from "../../../lib/i18n";
 import { placeName } from "../../../lib/locale-data";
 import { C, F } from "../../../lib/theme";
 import { BackLabel } from "../../../lib/ui";
@@ -44,6 +44,26 @@ export default function DiyarDetay() {
         <Stat label={t("diyar.security")} value={`${info.security}/100`} />
         <Stat label={t("diyar.prosperity")} value={`${info.prosperity}/100`} />
         <Stat label={t("diyar.livelihood")} value={localSpecialtyName(locSeed(name), lang)} />
+      </View>
+
+      {/* ── Şehir Yönetimi (Vercel city_governance.py portu) ── */}
+      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("gov.title").toUpperCase()}</Text>
+      <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{GOV_TITLE[kind] || t("diyar.governor")}</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 14, color: isGovernor(state.player, name) ? C.gold : C.parchment }}>{isGovernor(state.player, name) ? `★ ${state.player.name}` : info.governor}</Text>
+        </View>
+        {isGovernor(state.player, name) ? (
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.sage, marginTop: 10 }}>★ {t("gov.youGovern")} · +{Math.max(1, Math.round(info.prosperity / 4))} {t("gov.taxShare")}</Text>
+        ) : here ? (
+          canRunForGovernor(state, name) ? (
+            <Pressable onPress={() => apply((s) => runForGovernor(s, name))} style={{ marginTop: 12, paddingVertical: 11, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: "rgba(201,168,76,0.14)", alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>{t("gov.run")}</Text>
+            </Pressable>
+          ) : (
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 10 }}>{applyParams(t("gov.needRep"), [govReqRep(kind)])}</Text>
+          )
+        ) : null}
       </View>
 
       <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("diyar.fromMarket")}</Text>

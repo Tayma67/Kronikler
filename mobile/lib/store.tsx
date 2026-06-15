@@ -31,6 +31,7 @@ function migrate(s: GameState): GameState {
   if (p.crowned === undefined) p.crowned = false;
   if (!p.will_pref) p.will_pref = "esit";
   if (!p.fates) p.fates = [];
+  if (!p.governorships) p.governorships = [];
   // Eski kayıt: hâlihazırda tamamlanmış başarımları 'alınmış' say (retroaktif puan seli olmasın).
   if (!p.claimed) { try { p.claimed = achievementsOf(s).filter((x) => x.done).map((x) => x.a.id); } catch { p.claimed = []; } }
   if (!(s as any).settlements) (s as any).settlements = [];

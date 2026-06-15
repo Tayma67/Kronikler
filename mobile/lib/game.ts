@@ -25,6 +25,7 @@ export interface Player {
   fates?: string[]; // tetiklenen kader anları (yaş dönümleri)
   claimed?: string[]; // ödülü alınan başarımlar
   last_study_turn?: number; lesson_count?: number; // mektep: ayda 1 ders + sınav sayacı
+  governorships?: string[]; // valisi olunan şehirler
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -398,6 +399,7 @@ export function advance(prev: GameState, n = 1): GameState {
       inc += settlementIncome(s);
     }
     if (s.player.crowned) inc += 15; // hükümdar hazinesi
+    inc += governorIncome(s); // valilik vergi payı
     if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", `Mülk ve yerleşimlerinden ${inc} akçe gelir geldi.`); }
     // Aylık geçim gideri (yaş + servetle hafifçe artar) — para birikimini dengeler
     if (s.player.age >= 13 && s.player.money > 0) {
@@ -1023,7 +1025,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       faction: null, faction_standing: {},
       skills, skill_xp: { combat: skills.combat * 100, trade: 0, crafting: skills.crafting * 100, social: skills.social * 100 },
       perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
-      crowned: p.crowned || false, will_pref: "esit", fates: [], claimed: [], // taht irsîdir; kader anları & başarımlar yeni baştan
+      crowned: p.crowned || false, will_pref: "esit", fates: [], claimed: [], governorships: [], // taht irsîdir; kader/başarım/valilik yeni baştan
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, ${will.label.toLowerCase()} vasiyetiyle mirası devraldı (${inheritMoney} akçe, ${props.length} mülk).${noteStr}`, scope: "kişisel", landmark: true }],
   };
@@ -1640,6 +1642,29 @@ export function settlementIncome(s: GameState): number {
   if (!s.settlements?.length) return 0;
   const repMult = 1 + Math.max(0, s.player.reputation) / 300;
   return Math.round(s.settlements.reduce((a, st) => a + st.dev * 0.25, 0) * repMult);
+}
+
+// ── Şehir Yönetimi (Vercel city_governance.py portu) ──
+export const GOV_TITLE: Record<string, string> = { "köy": "Muhtar", "kale": "Kale Beyi", "şehir": "Büyük Lord" };
+export function govReqRep(kind: string): number { return kind === "şehir" ? 50 : kind === "kale" ? 40 : 20; }
+export function isGovernor(p: Player, name: string): boolean { return (p.governorships || []).includes(name); }
+export function canRunForGovernor(s: GameState, name: string): boolean {
+  const p = s.player;
+  return !p.dead && p.age >= 18 && !isGovernor(p, name) && p.reputation >= govReqRep(placeKind(name));
+}
+export function runForGovernor(prev: GameState, name: string): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!canRunForGovernor(s, name)) return s;
+  if (!p.governorships) p.governorships = [];
+  p.governorships.push(name);
+  p.reputation = Math.min(100, p.reputation + 5); p.fame = Math.min(100, p.fame + 6);
+  push(s, "yonetim", `${name} valiliğine getirildin — artık ${GOV_TITLE[placeKind(name)] || "Vali"}sin.`, "kişisel", true);
+  return s;
+}
+// Valilik vergi payı (her tur): şehrin refahına göre.
+export function governorIncome(s: GameState): number {
+  const list = s.player.governorships; if (!list?.length) return 0;
+  return list.reduce((a, loc) => a + Math.max(1, Math.round(cityInfo(loc, placeKind(loc)).prosperity / 4)), 0);
 }
 
 // ── Zanaat / üretim zincirleri — hammaddeyi mamule çevir ──
