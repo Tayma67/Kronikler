@@ -8,6 +8,7 @@ import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, explo
 import { useI18n } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
+import { topMemories } from "../../../lib/npc-mind";
 import { professionNameL, traitL, quirkL, goalL } from "../../../lib/locale-data";
 import { ITEMS, npcSocialGraph, TieKind } from "../../../lib/world";
 import { Portre, BackLabel } from "../../../lib/ui";
@@ -214,6 +215,26 @@ export default function NpcDetail() {
           ))}
         </View>
       )}
+
+      {/* ── Seni hatırlıyor (yapısal anılar, en ağır) ── */}
+      {(() => {
+        const tops = topMemories(ns.anilar, 3);
+        if (!tops.length) return null;
+        return (
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 12, padding: 14, marginBottom: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+              <Text style={{ fontSize: 13 }}>💭</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.remembers")}</Text>
+            </View>
+            {tops.map((m, i) => (
+              <View key={i} style={{ flexDirection: "row", gap: 7, marginBottom: 5, alignItems: "flex-start" }}>
+                <Text style={{ color: m.travma ? C.blood : m.yon > 0 ? C.sage : C.blood, fontSize: 12 }}>{m.travma ? "⚡" : m.yon > 0 ? "♥" : "✖"}</Text>
+                <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12.5, color: m.travma ? C.blood : C.parchmentDim, lineHeight: 17 }}>{t("mem.remember." + m.tur)}{m.travma ? ` — ${t("npc.trauma")}` : ""}</Text>
+              </View>
+            ))}
+          </View>
+        );
+      })()}
 
       {/* ── Onun Zihninde (anılar) ── */}
       {ns.memories.length > 0 && (
