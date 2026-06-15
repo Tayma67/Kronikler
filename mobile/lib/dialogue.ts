@@ -1,7 +1,7 @@
 // Bağlamlı diyalog — NPC kişiliği + ruh hali + ilişki + hafızaya göre cevap.
 import { NPC } from "./world";
 import { tFor } from "./i18n";
-import { quirkL, Lang } from "./locale-data";
+import { quirkL, goalL, professionNameL, Lang } from "./locale-data";
 
 export interface Intent { id: string; label: string; icon: string; }
 export const INTENTS: Intent[] = [
@@ -9,6 +9,10 @@ export const INTENTS: Intent[] = [
   { id: "iltifat", label: "İltifat et",  icon: "lyre" },
   { id: "dert",    label: "Dert dinle",  icon: "prayer-beads" },
   { id: "saka",    label: "Şaka yap",    icon: "party" },
+  { id: "is",      label: "İşini sor",   icon: "anvil" },
+  { id: "aile",    label: "Ailesini sor",icon: "baby" },
+  { id: "dunya",   label: "Dünyayı konuş",icon: "scroll" },
+  { id: "hedef",   label: "Hayalini sor", icon: "star" },
 ];
 
 export interface ConvResult { line: string; moodDelta: number; relDelta: number; memory: string; }
@@ -43,12 +47,49 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
     if (!opens) return { line: L("dlg.dert.closed"), moodDelta: 1, relDelta: 2, memory: L("dlg.dert.closed.m") };
     return { line: L("dlg.dert.open"), moodDelta: 10, relDelta: 8, memory: L("dlg.dert.open.m") };
   }
+  if (intent === "is") {
+    const pn = professionNameL(npc.profession, lang);
+    const line = (hitch ? L("dlg.is.cold") : L("dlg.is.warm")).replace("%p", pn);
+    return { line, moodDelta: hitch ? 1 : 4, relDelta: hitch ? 1 : 3, memory: L("dlg.is.m") };
+  }
+  if (intent === "aile") {
+    const opens = rt !== "yabancı" || t === "sıcakkanlı" || t === "dertli";
+    if (!opens) return { line: L("dlg.aile.closed"), moodDelta: 1, relDelta: 1, memory: L("dlg.aile.closed.m") };
+    return { line: L("dlg.aile.open"), moodDelta: 6, relDelta: 5, memory: L("dlg.aile.open.m") };
+  }
+  if (intent === "dunya") {
+    return { line: L("dlg.dunya.line"), moodDelta: 3, relDelta: 3, memory: L("dlg.dunya.m") };
+  }
+  if (intent === "hedef") {
+    const line = L("dlg.hedef.line").replace("%g", goalL(npc.goal, lang));
+    return { line, moodDelta: rt === "yabancı" ? 2 : 7, relDelta: rt === "yabancı" ? 2 : 6, memory: L("dlg.hedef.m") };
+  }
   // şaka
   const likes = t === "neşeli" || t === "sıcakkanlı";
   const dislikes = t === "ciddi" || t === "dindar" || t === "kibirli";
   if (dislikes && mt !== "neşeli") return { line: L("dlg.saka.bad"), moodDelta: -4, relDelta: -3, memory: L("dlg.saka.bad.m") };
   if (likes) return { line: L("dlg.saka.good"), moodDelta: 12, relDelta: 7, memory: L("dlg.saka.good.m") };
   return { line: L("dlg.saka.mild"), moodDelta: 5, relDelta: 4, memory: L("dlg.saka.mild.m") };
+}
+
+// NPC bazen kendi gündemini açar (Vercel _spontaneous_line). Ruh haline/hedefe göre; boş dönebilir.
+export function spontaneousLine(npc: NPC, mood: number, lang: Lang = "tr"): string {
+  const fn = npc.name.split(" ")[0];
+  const L = (k: string) => tFor(lang, k).replace("%n", fn).replace("%g", goalL(npc.goal, lang));
+  const mt = moodTier(mood);
+  if (mt === "neşeli") return L("dlg.spont.happy");
+  if (mt === "küs" || mt === "soğuk") return L("dlg.spont.sad");
+  return Math.random() < 0.5 ? L("dlg.spont.goal") : "";
+}
+// Yapısal anı türüne göre sohbette geçmişe gönderme (Vercel _memory_callback). Boş dönebilir.
+export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr"): string {
+  const map: Record<string, string> = {
+    hediye: "dlg.cb.gift", comert_hediye: "dlg.cb.gift", yardim: "dlg.cb.help",
+    hakaret: "dlg.cb.insult", alay: "dlg.cb.insult", somuru: "dlg.cb.exploit",
+    icten_sohbet: "dlg.cb.warm", guzel_sohbet: "dlg.cb.warm",
+  };
+  const k = map[memTur]; if (!k) return "";
+  return tFor(lang, k).replace("%n", npc.name.split(" ")[0]);
 }
 
 export function moodLabel(m: number): string {
