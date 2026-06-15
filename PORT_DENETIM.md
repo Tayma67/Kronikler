@@ -22,8 +22,8 @@
 - ✅ **Şehir yönetim kolları** (vergi/memnuniyet/hazine) (commit 6f80942)
 - ✅ **Eyleme dönük söylentiler** (piyasa ipucu + istihbarat) (commit 84dc7d9)
 - ✅ **Kariyer merdiveni + stat-XP** (özellikler kullanımla büyür) (commit bu turda)
-- ⬜ **Üretim zincirleri** (işçi→gerçek üretim/arz) — sıradaki
-- ⬜ **Tipli dünya olayları** (lokasyon etkisi — DİKKAT: offline deterministik tasarımla uyumlu kalmalı)
+- ✅ **Üretim zincirleri** (işçili mülk → gerçek hammadde → zanaat zinciri) (commit bu turda)
+- ⬜ **Tipli dünya olayları** (lokasyon etkisi — DİKKAT: offline deterministik tasarımla uyumlu kalmalı) — sıradaki
 - ⬜ **Fraksiyon AI + güç yüzeyi** (en büyük; ~30 AI eylemi)
 
 > Devam: bir sonraki oturum `mobile/`de `npm install` (gerekiyorsa) → kalan ⬜ sistemleri sırayla.
@@ -59,7 +59,7 @@ Durum: 🟢 iyi (≈%80+) · 🟡 kısmi · 🔴 sığ/eksik · 🔵 kasıtlı s
 | Eşya + kalite (`items.py`/`quality.py`) | ~40% | 🔴 | kalite sistemi (kusurlu/iyi/usta işi + tuzak) tamamen yok |
 | Seyahat reworku (`travel_rework.py`) | ~30% | 🔴 | 3 rota var; kervan yolcu profilleri ve olay seçimleri yok |
 | Savaş (`combat_engine.py`) | ~25% | 🔴 | duruş+kart var; yaralanma kademesi, niyet ipucu, kuşatma/turnuva çok-aşama yok |
-| Üretim zincirleri (`production_chains.py`) | ~25% | 🔴 | işçi UI var ama üretime etki/kâr yok; ham→ara→nihai akışı yok |
+| Üretim zincirleri (`production_chains.py`) | ~80% | ✅ | PORTLANDI: işçili mülk gerçek hammadde üretir (tarla→buğday, değirmen→un) → mevcut tarif/zanaat zincirini besler (propYield); zaten zengin RECIPES + kalite vardı |
 | Fraksiyon AI + güç yüzeyi (`faction_system.py` 4258) | ~20% | 🔴 | katıl/görev/rütbe/savaş var; **~30 AI eylemi (darbe/suikast/sabotaj/koalisyon/isyan) yok** |
 | Diyalog (`dialogue.py` 1464) | ~15% | 🔴 | APK 4 niyet; Vercel 8 konu × 4 katman (bağlam/hafıza/spontane) yok |
 | Mektep (`school.py` 1648) | ~15% | 🔴 | 4 ders+sınav var; ders olayları, kulüpler, hoca hafızası, mevsim etkinlik yok |

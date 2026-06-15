@@ -136,6 +136,17 @@ export function propWorkerStats(pr: Property, base: number, condProspLevel: numb
   }
   return { gross, wage, count: ids.length };
 }
+// Üretim zinciri (Vercel production_chains.py): işçili mülk gerçek hammadde üretir → zanaat/ticaret beslenir.
+export const PROP_YIELD: Record<string, string> = { tarla: "bugday", degirmen: "un" };
+export function propYield(pr: Property, lang: Lang = "tr"): { good: string; qty: number } | null {
+  const good = PROP_YIELD[pr.type]; const ids = pr.workers || [];
+  if (!good || !ids.length) return null;
+  const npcs = townNpcsOf(pr.loc, lang);
+  let units = 0;
+  for (const id of ids) { const npc = npcs.find((x) => x.id === id); if (npc) units += workerProductivity(npc, pr.type) * (1 + ((pr.level || 1) - 1) * 0.3); }
+  const qty = Math.floor(units); // ~işçi başına ayda ~1 birim (üretkenlikle ölçekli)
+  return qty > 0 ? { good, qty } : null;
+}
 // İşçi işe al (mülkün bulunduğu şehrin NPC'lerinden, boş slot varsa).
 export function hireWorker(prev: GameState, index: number, npcId: string): GameState {
   const s = clone(prev); const pr = s.player.properties[index];
@@ -737,6 +748,7 @@ export function advance(prev: GameState, n = 1): GameState {
     if (hasPerk(s.player, "tamirci")) pmult += 0.15;
     let inc = 0;
     let wages = 0; // işçi ücretleri (ekonomiden çıkan; pmult'tan bağımsız)
+    const produced: Record<string, number> = {}; // işçilerin ürettiği gerçek hammadde (üretim zinciri)
     const cityCache: Record<string, { prosperity: number; security: number }> = {};
     const cityOf = (loc: string) => cityCache[loc] || (cityCache[loc] = cityInfo(loc, placeKind(loc)));
     for (const pr of s.player.properties) {
@@ -752,6 +764,7 @@ export function advance(prev: GameState, n = 1): GameState {
       // İşçi ekonomisi: çalışan NPC'ler üretimi artırır ama ücret ister.
       const w = propWorkerStats(pr, base, condProspLevel);
       inc += w.gross; wages += w.wage;
+      const y = propYield(pr); if (y) produced[y.good] = (produced[y.good] || 0) + y.qty; // işçi emeği → gerçek hammadde
       if (pr.cond > 40 && chance(0.2)) pr.cond -= 1;                                   // zamanla aşınma
       if (ci.security < 30 && chance(0.02)) {                                          // düşük güvenlikte yağma
         pr.cond = Math.max(20, pr.cond - 15);
@@ -769,6 +782,12 @@ export function advance(prev: GameState, n = 1): GameState {
     const wageCost = Math.round(wages);
     if (wageCost > 0) s.player.money -= wageCost; // işçi maaşları (her hâlükârda ödenir)
     if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", wageCost > 0 ? `Mülk ve yerleşimlerinden ${inc} akçe gelir geldi (${wageCost} akçe işçi ücreti ödendi).` : `Mülk ve yerleşimlerinden ${inc} akçe gelir geldi.`, "kişisel", false, wageCost > 0 ? { k: "evj.propHarvestW", p: [inc, wageCost] } : { k: "evj.propHarvest", p: [inc] }); }
+    // Üretim zinciri: işçilerin ürettiği hammadde envantere girer (tarla→buğday, değirmen→un) → zanaata/ticarete besler
+    { const goods = Object.keys(produced).filter((g) => produced[g] > 0);
+      if (goods.length) {
+        for (const g of goods) s.player.inventory[g] = (s.player.inventory[g] || 0) + produced[g];
+        if (i === n - 1) { const g0 = goods[0]; push(s, "mülk_hasat", `Mülklerinde işçilerin ${produced[g0]} ${ITEMS[g0]?.name || g0} üretti.`, "kişisel", false, { k: "evj.propProduce", p: [produced[g0], { i: g0 }] }); }
+      } }
     // Aylık geçim gideri (yaş + servetle hafifçe artar) — para birikimini dengeler
     if (s.player.age >= 13 && s.player.money > 0) {
       const upkeep = Math.min(s.player.money, 2 + Math.floor(s.player.age / 12) + Math.floor(s.player.money / 600));
