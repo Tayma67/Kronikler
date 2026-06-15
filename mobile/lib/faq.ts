@@ -66,7 +66,17 @@ const TR: FaqSection[] = [
     icon: "🎲", title: "Fırsatlar & İkilemler",
     items: [
       { q: "Ekrana çıkan fırsat/ikilem nedir?", a: "Ayı ilerletirken ara sıra bir fırsat (üstlen/vazgeç) ya da bir ikilem (seçim) çıkar. Fırsatlar ödül-risk taşır; gereken özelliğin yüksekse başarı şansın artar." },
-      { q: "Görevler ekranı ne için?", a: "Bekleyen önemli işleri (özellik puanı dağıt, hüner seç, evlen, loncaya katıl, savaş, vâris...) tek listede toplar ve ilgili ekrana götürür." },
+      { q: "Görevler ekranı ne için?", a: "Bekleyen önemli işleri (özellik puanı dağıt, hüner seç, evlen, loncaya katıl, savaş, vâris...) tek listede toplar ve ilgili ekrana götürür. Altında 'Aile Görevleri' paneli de vardır." },
+    ],
+  },
+  {
+    icon: "🏰", title: "Diyar Sistemleri",
+    items: [
+      { q: "Kervan nasıl çalışır? Rota nedir?", a: "Pazardan akçe yatırıp kervan gönderirsin. Kervan başlangıç→ara konak(lar)→hedef rotası izler, her ay bir konak ilerler. Yolda eşkıya saldırısı olabilir (itibarın, ticaret becerin ve korkun riski düşürür; gücün ile dövüş becerin kaybı azaltır). Varışta hayatta kalan sermaye üzerinden kâr döner. İlerlemeyi ana ekrandan ve pazardan izleyebilirsin." },
+      { q: "Sancak hakimiyeti ve ocak savaşları nedir?", a: "4 sancağın her birini bir lonca tutar. Zamanla rakip loncalar göz diker, gerilim birikir ve bir sancak için savaş patlar; kazanan sancağı ele geçirir. Loncan taraf olursa Örgütler'den cepheye gidip sonucu etkileyebilirsin. Loncan bulunduğun sancağa hâkimse oradaki lonca görevleri %25 fazla kazandırır." },
+      { q: "Mülke işçi almak ne sağlar?", a: "Mülklerine o şehrin halkından işçi alırsın (tip ve kademeye göre slot sayısı). İşçi üretimi artırır ama aylık ücret ister; düşük kondisyon/refahta ücret kârı yiyebilir. İşçi panelinde aylık net gelir (yeşil/kırmızı) görünür. İşçi verimi yaş + meslek uyumu + mizaçtan gelir." },
+      { q: "Eşya kalitesi nedir?", a: "Silah, zırh, iksir gibi dayanıklı mallar 4 kalitede olur: kusurlu, sıradan, iyi, usta işi. Zanaat becerin yüksekse daha kaliteli üretirsin. Kaliteli mal pazarda daha pahalı satılır; kuşandığın silah/zırhın kalitesi savaş gücüne ve savunmana da yansır." },
+      { q: "NPC'nin çevresi ve 'amaca yardım' ne işe yarar?", a: "Her NPC'nin bir ailesi, dostları ve rakipleri (çevresi) ile bir hayat hedefi vardır; bunları NPC ekranında görürsün. Amacına yardım edebilir (akçe karşılığı büyük yakınlık + cömert nam) ya da istismar edebilirsin (akçe koparır ama güvenini yakar, zalim nam)." },
     ],
   },
 ];
@@ -134,7 +144,17 @@ const EN: FaqSection[] = [
     icon: "🎲", title: "Opportunities & Dilemmas",
     items: [
       { q: "What are the pop-ups?", a: "While advancing, an opportunity (take/pass) or a dilemma (choice) occasionally appears. Opportunities carry reward and risk; a higher relevant attribute improves your odds." },
-      { q: "What is the Tasks screen for?", a: "It gathers pending important matters (spend stat points, pick a perk, marry, join a guild, war, heir...) in one list and takes you to the right screen." },
+      { q: "What is the Tasks screen for?", a: "It gathers pending important matters (spend stat points, pick a perk, marry, join a guild, war, heir...) in one list and takes you to the right screen. It also has a 'Family Milestones' panel below." },
+    ],
+  },
+  {
+    icon: "🏰", title: "Realm Systems",
+    items: [
+      { q: "How do caravans and routes work?", a: "From the market you invest coin and send a caravan. It follows an origin→stop(s)→destination route, advancing one stop per month. Bandits may strike en route (reputation, trade skill and dread lower the risk; strength and combat skill reduce the loss). On arrival, profit returns on the surviving capital. You can follow the journey from the home screen and the market." },
+      { q: "What is sanjak control and guild war?", a: "Each of the 4 sanjaks is held by a guild. Over time rivals covet them, tension builds, and a war erupts over a sanjak; the winner takes it. If your guild is involved you can go to the front from Guilds and sway the outcome. If your guild holds the sanjak you are in, guild tasks there pay 25% more." },
+      { q: "What do property workers do?", a: "You hire workers from the town's folk onto your properties (slot count by type and tier). Workers raise output but cost a monthly wage; at low condition/prosperity the wage can eat the profit. The worker panel shows the monthly net (green/red). Productivity comes from age + profession fit + temperament." },
+      { q: "What is item quality?", a: "Durable goods (weapons, armor, elixirs) come in 4 tiers: faulty, ordinary, good, masterwork. Higher crafting skill yields better quality. Quality goods sell for more; the quality of your equipped weapon/armor also affects your combat power and defense." },
+      { q: "What is an NPC's circle and 'help their goal'?", a: "Every NPC has a family, friends and rivals (their circle) and a life goal, shown on the NPC's screen. You can help their goal (coin for a big bond + generous repute) or exploit it (extort coin but burn their trust, cruel repute)." },
     ],
   },
 ];
