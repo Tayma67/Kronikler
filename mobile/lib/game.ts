@@ -290,7 +290,11 @@ export interface GameState {
   marketEvent?: { goods: string[]; mult: number; until: number; key: string } | null; // geçici piyasa olayı
   player_rumors?: Rumor[]; // oyuncu hakkında dolaşan söylentiler (npc_mind dedikodu ağı)
   seeds?: Seed[]; // sonuç tohumları (geçmişin geleceğe etkisi)
+  dynastyOffers?: DynastyOffer[]; // dost hanelerden ittifak/evlilik teklifleri
+  allied_houses?: string[]; // ittifak kurulan hanelerin id'leri
 }
+// Dost bir hanedanın oyuncuya teklifi (ittifak veya evlilik).
+export interface DynastyOffer { id: string; houseId: string; nameIdx: number; type: "ittifak" | "evlilik"; }
 // Oyuncu hakkında söylenti — tanıklı skandal anıdan doğar, zamanla söner.
 export interface Rumor { id: string; hafta: number; tur: string; vi: number; nam: string | null; yon: number; siddet: number; kaynak: string; }
 // Hanedanın kurduğu yerleşim — mezra olarak başlar, yıllarca gelişir, vergi getirir.
@@ -769,6 +773,19 @@ function tickDynasties(s: GameState, announce: boolean) {
       push(s, "hanedan_haber", `${h.name} adamları ${PROPERTY_TYPES[pr.type]?.name || "mülküne"} (${pr.loc}) zarar verdi; hesap büyüyor.`, "makro", true, { k: "evj.houseSabotage", p: [{ hn: h.nameIdx }, { pt2: pr.type }, { pl: pr.loc }] });
     }
   }
+  // Dost hane teklifi: tutumu yüksek bir hane ittifak ya da evlilik önerir (oyuncu kabul/ret eder).
+  if (announce) {
+    const offers = s.dynastyOffers || [];
+    const allied = s.allied_houses || [];
+    const friends = rivals.filter((h) => (h.tutum ?? 0) >= 35 && !offers.some((o) => o.houseId === h.id) && !allied.includes(h.id));
+    if (friends.length && Math.random() < 0.08) {
+      const h = friends[Math.floor(Math.random() * friends.length)];
+      const canMarry = !p.married && p.age >= 16 && p.age < 55;
+      const type: "ittifak" | "evlilik" = canMarry && Math.random() < 0.45 ? "evlilik" : "ittifak";
+      (s.dynastyOffers = offers).push({ id: "off_" + Math.random().toString(36).slice(2, 8), houseId: h.id, nameIdx: h.nameIdx, type });
+      push(s, "hanedan_haber", type === "evlilik" ? `${h.name} hanedanı sana evlilik ittifakı teklif etti.` : `${h.name} hanedanı sana ittifak teklif etti.`, "makro", true, { k: type === "evlilik" ? "evj.houseMarryOffer" : "evj.houseAllyOffer", p: [{ hn: h.nameIdx }] });
+    }
+  }
   if (!announce || rivals.length < 2 || Math.random() >= 0.14) return;
   const h = rivals[Math.floor(Math.random() * rivals.length)];
   const other = rivals[(rivals.indexOf(h) + 1 + Math.floor(Math.random() * (rivals.length - 1))) % rivals.length];
@@ -781,6 +798,37 @@ function tickDynasties(s: GameState, announce: boolean) {
   } else {
     push(s, "hanedan_haber", `${h.name} ile ${other.name} bir ittifak kurdu; diyarda dengeler değişiyor.`, "makro", true, { k: "evj.houseAlly", p: [{ hn: h.nameIdx }, { hn: other.nameIdx }] });
   }
+}
+// Dost hane teklifini kabul et (ittifak veya evlilik).
+export function acceptDynastyOffer(prev: GameState, offerId: string): GameState {
+  const s = clone(prev); const p = s.player;
+  const offer = (s.dynastyOffers || []).find((o) => o.id === offerId);
+  if (!offer) return s;
+  s.dynastyOffers = (s.dynastyOffers || []).filter((o) => o.id !== offerId);
+  const h = ensureRivals(s).find((x) => x.id === offer.houseId);
+  if (h) h.tutum = Math.min(100, (h.tutum ?? 0) + (offer.type === "evlilik" ? 40 : 30));
+  if (!s.allied_houses) s.allied_houses = [];
+  if (!s.allied_houses.includes(offer.houseId)) s.allied_houses.push(offer.houseId);
+  if (offer.type === "evlilik" && !p.married) {
+    const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E);
+    p.married = true; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9);
+    p.reputation = Math.min(100, p.reputation + 8); p.fame = Math.min(100, p.fame + 6);
+    push(s, "evlilik", `${h?.name || "Köklü bir hanedan"} ile evlilik ittifakı kurdun; iki ocak birleşti.`, "kişisel", true, { k: "evj.houseMarryAccept", p: [h ? { hn: h.nameIdx } : "", { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] });
+  } else {
+    p.reputation = Math.min(100, p.reputation + 5);
+    push(s, "hanedan_haber", `${h?.name || "Bir hanedan"} ile ittifak kurdun; artık arkanı kollayan bir gücün var.`, "makro", true, { k: "evj.houseAllyAccept", p: [h ? { hn: h.nameIdx } : ""] });
+  }
+  return s;
+}
+// Hane teklifini geri çevir (tutum biraz düşer).
+export function declineDynastyOffer(prev: GameState, offerId: string): GameState {
+  const s = clone(prev);
+  const offer = (s.dynastyOffers || []).find((o) => o.id === offerId);
+  if (!offer) return s;
+  s.dynastyOffers = (s.dynastyOffers || []).filter((o) => o.id !== offerId);
+  const h = ensureRivals(s).find((x) => x.id === offer.houseId);
+  if (h) h.tutum = Math.max(-100, (h.tutum ?? 0) - 8);
+  return s;
 }
 function tickWars(s: GameState, announce: boolean) {
   if (!s.wars) s.wars = [];

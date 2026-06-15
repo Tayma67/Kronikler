@@ -9,6 +9,7 @@ import {
   playerHousePower, houseAttitude, dynastyPower, houseSeal,
   WILL_STYLES, throneRequirements, throneBacking, canClaimThrone, throneOdds, claimThrone, THRONE_COST,
   canFoundSettlement, foundSettlement, settlementIncome, SETTLE_COST, SETTLE_MAX, developSettlement, developSettlementCost,
+  acceptDynastyOffer, declineDynastyOffer,
 } from "../../lib/game";
 import { generateDynasties, houseName as rivalHouseName, localFirstName } from "../../lib/world";
 import { professionNameL } from "../../lib/locale-data";
@@ -195,6 +196,24 @@ export default function Hanedan() {
         )}
 
         {/* ── DİYARIN HANEDANLARI ── */}
+        {(state.dynastyOffers || []).length > 0 && (
+          <>
+            <SecTitle>{t("dyn.offers")}</SecTitle>
+            {(state.dynastyOffers || []).map((o) => (
+              <View key={o.id} style={{ backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", borderRadius: 9, padding: 12, marginBottom: 8 }}>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment }}>{rivalHouseName(o.nameIdx, lang)} {o.type === "evlilik" ? t("dyn.offerMarry") : t("dyn.offerAlly")}.</Text>
+                <View style={{ flexDirection: "row", gap: 8, marginTop: 9 }}>
+                  <Pressable onPress={() => apply((s) => acceptDynastyOffer(s, o.id))} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(124,160,90,0.5)", backgroundColor: "rgba(124,160,90,0.12)" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 11, color: C.sage }}>{t("dyn.accept")}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => apply((s) => declineDynastyOffer(s, o.id))} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: C.border, backgroundColor: C.bg }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchmentMuted }}>{t("dyn.decline")}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </>
+        )}
         {(() => {
           const mine = { id: "mine", name: houseName, power, mine: true, attitude: 0 };
           const rivals = baseRivals.map((h) => ({ id: h.id, name: h.nameIdx != null ? rivalHouseName(h.nameIdx, lang) : h.name, power: h.power, mine: false, attitude: h.tutum ?? houseAttitude(p, h) }));
