@@ -164,8 +164,10 @@ export function cityInfo(name: string, kind: string, lang: Lang = "tr"): CityInf
   const r = mkRng(locSeed(name) ^ 0x5bd1e995);
   // RNG sırası korunur: unvan, ad, soyad, ... , tasvir.
   const ti = Math.floor(r() * GOV_KEYS.length);
-  const ad = AD_E[Math.floor(r() * AD_E.length)];
-  const soyad = SOYAD[Math.floor(r() * SOYAD.length)];
+  // Vali adı seçilen dilin kültürüne göre (NAME_POOLS); RNG sırası AD_E/SOYAD ile birebir korunur.
+  const pool = NAME_POOLS[lang] || NAME_POOLS.tr;
+  const ad = pool.m[Math.floor(r() * pool.m.length)];
+  const soyad = pool.s[Math.floor(r() * pool.s.length)];
   const gov = `${tFor(lang, GOV_KEYS[ti])} ${ad} ${soyad}`;
   const base = kind === "şehir" ? 4000 : kind === "kale" ? 300 : 200;
   const population = base + Math.floor(r() * (kind === "şehir" ? 8000 : kind === "kale" ? 400 : 500));
