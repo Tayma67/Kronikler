@@ -2,7 +2,7 @@
 // Eksik anahtar Türkçe'ye, o da yoksa anahtarın kendisine düşer (oyun hiç bozulmaz).
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Lang, LANGS, placeName, careerTitleL, professionNameL, NAME_POOLS } from "./locale-data";
+import { Lang, LANGS, placeName, careerTitleL, professionNameL, goalL, NAME_POOLS } from "./locale-data";
 
 const KEY = "kronikler_lang_v1";
 
@@ -858,7 +858,7 @@ const HOUSE_POOLS_I: Record<Lang, string[]> = {
   ar: ["بنو غُراب","آل الصقر","بنو الحديد","بنو الذئب","آل النجم","بنو الفولاذ","آل الأسد","بنو الأرض","آل الفضّة","بنو النسر","آل البلّوط","بنو الثور"],
   ru: ["Воронцовы","Соколовы","Железновы","Волковы","Звездины","Стальновы","Львовы","Земцовы","Серебровы","Орловы","Дубовы","Турановы"],
 };
-export type EvtParam = string | number | { i: string } | { pl: string } | { c: [string, number] } | { pr: string } | { q: string } | { route: string[] } | { fn: [number, "erkek" | "kadın"] } | { pt2: string } | { fc: string } | { wc: number } | { hn: number } | { bl: string } | { enc: string } | { opp: string } | { mev: string } | { wevt: string } | { wevw: string } | { wevl: string } | { cr: string } | { wd: number } | { wai: string } | { invl: string } | { ftl: string } | { sfx: string };
+export type EvtParam = string | number | { i: string } | { pl: string } | { c: [string, number] } | { pr: string } | { q: string } | { route: string[] } | { fn: [number, "erkek" | "kadın"] } | { pt2: string } | { fc: string } | { wc: number } | { hn: number } | { bl: string } | { enc: string } | { opp: string } | { mev: string } | { wevt: string } | { wevw: string } | { wevl: string } | { cr: string } | { wd: number } | { wai: string } | { invl: string } | { ftl: string } | { goalk: string } | { sfx: string };
 function resolveEvtParam(v: EvtParam | undefined, lang: Lang, t: (k: string) => string): string {
   if (v == null) return "";
   if (typeof v === "object") {
@@ -885,6 +885,7 @@ function resolveEvtParam(v: EvtParam | undefined, lang: Lang, t: (k: string) => 
     if ("wai" in v) return t("whoami." + v.wai); // kim olduğun (aynadaki)
     if ("invl" in v) return t("inv." + v.invl + ".l"); // nesil yatırımı adı
     if ("ftl" in v) return t("fac." + v.ftl + ".tl"); // fraksiyon görev etiketi
+    if ("goalk" in v) return goalL(v.goalk, lang); // NPC amacı (TR ifadeden çözülür)
     if ("sfx" in v) return v.sfx ? t(v.sfx) : ""; // koşullu ek cümle (anahtarlı)
     return "";
   }

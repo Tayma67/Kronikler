@@ -1021,7 +1021,7 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   gainSkill(s, "social", 6);
   ns.memories.push(`Amacına omuz verdin: ${npc.goal}.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
-  push(s, "sohbet", `${npc.name}'in "${npc.goal}" derdine ${GOAL_HELP_COST} akçeyle omuz verdin; sana minnettar kaldı.`, "kişisel", true, { k: "evj.helpGoal", p: [npc.name, npc.goal, GOAL_HELP_COST] });
+  push(s, "sohbet", `${npc.name}'in "${npc.goal}" derdine ${GOAL_HELP_COST} akçeyle omuz verdin; sana minnettar kaldı.`, "kişisel", true, { k: "evj.helpGoal", p: [npc.name, { goalk: npc.goal }, GOAL_HELP_COST] });
   return s;
 }
 export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
@@ -1040,7 +1040,7 @@ export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
   bumpNam(p, "zalim", 5);
   ns.memories.push(`Amacını istismar edip seni kullandı.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
-  push(s, "sohbet", `${npc.name}'in "${npc.goal}" umudunu istismar edip ${gain} akçe kopardın; sana diş biledi.`, "kişisel", true, { k: "evj.exploitGoal", p: [npc.name, npc.goal, gain] });
+  push(s, "sohbet", `${npc.name}'in "${npc.goal}" umudunu istismar edip ${gain} akçe kopardın; sana diş biledi.`, "kişisel", true, { k: "evj.exploitGoal", p: [npc.name, { goalk: npc.goal }, gain] });
   return s;
 }
 
