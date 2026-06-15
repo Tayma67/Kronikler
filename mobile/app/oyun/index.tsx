@@ -61,6 +61,7 @@ const EVT: Record<string, { c: string; col: string; gi: string }> = {
   fisilti: { c: "sohbet", col: C.parchmentMuted, gi: "family" }, hastalik: { c: "saglik", col: C.blood, gi: "healing" }, yaralanma: { c: "saglik", col: C.blood, gi: "healing" },
   kader: { c: "dunya", col: C.gold, gi: "star" }, nemesis: { c: "savas", col: C.ink, gi: "skull" }, hüner: { c: "beceri", col: C.gold, gi: "medal" },
   örgüt_katılım: { c: "kariyer", col: C.gold, gi: "crown" }, örgüt_ayrılma: { c: "kariyer", col: C.parchmentMuted, gi: "crown" }, örgüt_görev: { c: "gorev", col: C.sage, gi: "scroll-open" },
+  söylenti: { c: "dunya", col: C.rose, gi: "speaker" }, tohum: { c: "olay", col: C.gold, gi: "star" },
 };
 const DEFAULT_EVT = { c: "olay", col: C.gold, gi: "star" };
 

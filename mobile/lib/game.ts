@@ -167,6 +167,41 @@ function remember(s: GameState, npc: { id: string; name: string }, tur: string, 
   if (!ns.anilar) ns.anilar = [];
   addMemory(ns.anilar, tur, s.turn, { ...opts, kaynak: npc.name });
 }
+// ── Sonuç tohumları (Vercel story_director sow_seed): bugün ektiğin yıllar sonra biçilir ──
+export interface Seed { id: string; kaynak: string; ekim: number; hmin: number; hmax: number; agirlik: "kucuk" | "orta" | "buyuk"; nesil: boolean; etki?: { money?: number; reputation?: number; health?: number }; npcName?: string; }
+function sowSeed(s: GameState, opts: Omit<Seed, "id" | "ekim">) {
+  if (!s.seeds) s.seeds = [];
+  s.seeds.push({ ...opts, id: opts.kaynak + "_" + Math.random().toString(36).slice(2, 8), ekim: s.turn });
+  if (s.seeds.length > 30) s.seeds = s.seeds.slice(-30);
+}
+function seedKosulOk(s: GameState, t: Seed): boolean {
+  return true; // (ileride itibar/para koşulu eklenebilir)
+}
+function germinateSeed(s: GameState, t: Seed) {
+  s.seeds = (s.seeds || []).filter((x) => x.id !== t.id);
+  const p = s.player;
+  if (t.etki?.money) p.money = Math.max(0, p.money + t.etki.money);
+  if (t.etki?.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + t.etki.reputation));
+  if (t.etki?.health) p.health = Math.max(1, Math.min(100, p.health + t.etki.health));
+  push(s, "tohum", `🌰 Geçmiş kapını çaldı.`, "kişisel", true, { k: "seed." + t.kaynak, p: [t.npcName || "", p.name] });
+}
+function seedTick(s: GameState) {
+  const seeds = s.seeds; if (!seeds || !seeds.length) return;
+  const turn = s.turn; const ready: [Seed, boolean][] = [];
+  for (const t of seeds) {
+    const yas = turn - t.ekim;
+    if (yas >= t.hmax) ready.push([t, true]);
+    else if (yas >= t.hmin && seedKosulOk(s, t)) {
+      if (t.agirlik === "buyuk") { if (Math.random() < 0.06) ready.push([t, true]); }
+      else if (Math.random() < 0.05) ready.push([t, false]);
+    }
+  }
+  if (!ready.length) return;
+  ready.sort((a, b) => (a[1] === b[1] ? a[0].ekim - b[0].ekim : (a[1] ? -1 : 1)));
+  germinateSeed(s, ready[0][0]);
+}
+// (Nesil devri tohum aktarımı continueAsHeir içinde: sadece nesil aşabilenler kalır.)
+
 // Skandal bir eyleme yakındaki bir NPC tanık olur → skandal anı (dedikodu kaynağı).
 function witnessScandal(s: GameState, tur: string, chance: number) {
   if (Math.random() >= chance) return;
@@ -254,6 +289,7 @@ export interface GameState {
   settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
   marketEvent?: { goods: string[]; mult: number; until: number; key: string } | null; // geçici piyasa olayı
   player_rumors?: Rumor[]; // oyuncu hakkında dolaşan söylentiler (npc_mind dedikodu ağı)
+  seeds?: Seed[]; // sonuç tohumları (geçmişin geleceğe etkisi)
 }
 // Oyuncu hakkında söylenti — tanıklı skandal anıdan doğar, zamanla söner.
 export interface Rumor { id: string; hafta: number; tur: string; vi: number; nam: string | null; yon: number; siddet: number; kaynak: string; }
@@ -561,6 +597,7 @@ export function advance(prev: GameState, n = 1): GameState {
       if ((!ns.anilar || !ns.anilar.length) && Math.abs(s.relationships[id] || 0) < 5 && Math.abs(ns.mood) < 5 && (!ns.memories || !ns.memories.length)) delete s.npc_state[id];
     }
     gossipTick(s); // tanıklı skandallar → oyuncu söylentileri (haftalık)
+    seedTick(s);   // geçmişin tohumları filizlenir (haftalık en çok 1)
     const child = s.player.age < 13;
     // Çocuğu ailesi besler: açlık daha yavaş düşer ve dipte aile karnını doyurur.
     const drop = Math.round((child ? 4 : 8) * (cal.season === "Kış" ? 1.3 : 1.0));
@@ -1122,6 +1159,8 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   ns.memories.push(`Amacına omuz verdin: ${npc.goal}.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   remember(s, npc, "yardim"); // kalıcıya yakın +20 anı (Vercel: "sana borçlu")
+  // Velinimet tohumu: bu iyilik yıllar sonra keseyle ve itibarla döner (nesil aşabilir).
+  sowSeed(s, { kaynak: "velinimet", hmin: 24, hmax: 96, agirlik: "buyuk", nesil: true, etki: { money: 90, reputation: 6 }, npcName: npc.name });
   push(s, "sohbet", `${npc.name}'in "${npc.goal}" derdine ${GOAL_HELP_COST} akçeyle omuz verdin; sana minnettar kaldı.`, "kişisel", true, { k: "evj.helpGoal", p: [npc.name, { goalk: npc.goal }, GOAL_HELP_COST] });
   return s;
 }
@@ -1142,6 +1181,8 @@ export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
   ns.memories.push(`Amacını istismar edip seni kullandı.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   remember(s, npc, "somuru"); // skandal anı → ileride dedikoduya dönüşür
+  // İstismar tohumu: kullandığın kişi güçlenince geri döner (nesil aşabilir).
+  sowSeed(s, { kaynak: "somuru_intikam", hmin: 36, hmax: 144, agirlik: "orta", nesil: true, etki: { reputation: -5, money: -25 }, npcName: npc.name });
   push(s, "sohbet", `${npc.name}'in "${npc.goal}" umudunu istismar edip ${gain} akçe kopardın; sana diş biledi.`, "kişisel", true, { k: "evj.exploitGoal", p: [npc.name, { goalk: npc.goal }, gain] });
   return s;
 }
@@ -1356,6 +1397,7 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   const extra = crimeCaughtPenalty(s);
   p.money -= fine; p.reputation = Math.max(-100, p.reputation - 6 - ct.sev * 2 - extra); p.health = Math.max(0, p.health - hurt);
   witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.7); // yakalanınca tanık çok
+  if (ct.sev >= 3 && Math.random() < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } }); // ağır suç geçmişi geri gelir
   const why = extra >= 4 ? " Senin gibi tanınmış birinden beklenmezdi; ceza ağır oldu." : "";
   push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.${why}`, "kişisel", true, { k: "evj.crimeCaught", p: [fine, extra >= 4 ? { sfx: "sfx.crimeHard" } : ""] });
   if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
@@ -1523,6 +1565,8 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     // Hanedan hafızası vârise geçer: ataların tamamladığı yaylar bayrak olarak kalır, az da olsa anlatı momentumu verir.
     story: { active: null, completed: [], tension: Math.min(20, Object.keys(prev.story?.flags || {}).length * 3), nemesis: null, flags: { ...(prev.story?.flags || {}) }, lull: 0 }, wars: [], caravan: null, econ: 1,
     settlements: prev.settlements || [], // dynastinin kurduğu yerleşimler vârise kalır
+    seeds: (prev.seeds || []).filter((t) => t.nesil), // sadece nesil aşabilen tohumlar vârise geçer
+    player_rumors: [],
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
       base_age: 7, age: 7, money: startMoney, profession: "işsiz", health: startHealth, hunger: 100,
