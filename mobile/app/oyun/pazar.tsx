@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, sellItem, launchCaravan, negotiatedBuy, bargainBase, bargainChance, marketPrice, econKey } from "../../lib/game";
+import { buyItem, sellItem, launchCaravan, negotiatedBuy, bargainBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -45,7 +45,8 @@ export default function Pazar() {
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const econ = state.econ || 1;
-  const goods = marketGoods(locSeed(p.location_name)).map((g) => ({ ...g, buy: marketPrice(g.buy, econ), sell: marketPrice(g.sell, econ) }));
+  const goods = marketGoods(locSeed(p.location_name)).map((g) => { const m = goodPriceMult(state, g.id); return { ...g, buy: Math.max(1, Math.round(marketPrice(g.buy, econ) * m)), sell: Math.max(1, Math.round(marketPrice(g.sell, econ) * m)), pm: m }; });
+  const mev = state.marketEvent && state.marketEvent.until > state.turn ? MARKET_EVENTS.find((e) => e.key === state.marketEvent!.key) : null;
   const econColor = econ >= 1.06 ? C.blood : econ <= 0.94 ? C.sage : C.parchmentMuted;
 
   // ── Pazarlık müzakeresi (anlık alım yok; sabır ibresiyle tur tur) ──
@@ -96,6 +97,14 @@ export default function Pazar() {
             <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
           </View>
         </View>
+
+        {/* Aktif piyasa olayı */}
+        {mev && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: mev.mult > 1 ? "rgba(200,64,64,0.10)" : "rgba(127,166,106,0.10)", borderWidth: 1, borderColor: mev.mult > 1 ? "rgba(200,64,64,0.4)" : "rgba(127,166,106,0.4)", borderRadius: 10, padding: 11, marginBottom: 12 }}>
+            <Text style={{ fontSize: 14 }}>{mev.mult > 1 ? "📈" : "📉"}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{mev.text}</Text>
+          </View>
+        )}
 
         {/* Kervan paneli */}
         <Panel title={t("paz.caravanTitle")} icon="🐫" tone={C.ember}>

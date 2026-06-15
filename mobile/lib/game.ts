@@ -99,11 +99,34 @@ export interface GameState {
   caravan: { invested: number; returnTurn: number; dest: string } | null;
   econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
   settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
+  marketEvent?: { goods: string[]; mult: number; until: number; key: string } | null; // geçici piyasa olayı
 }
 // Hanedanın kurduğu yerleşim — mezra olarak başlar, yıllarca gelişir, vergi getirir.
 export interface Settlement { name: string; founded: number; dev: number; }
 // Piyasa çarpanına göre fiyat.
 export function marketPrice(base: number, econ: number): number { return Math.max(1, Math.round(base * (econ || 1))); }
+// Mevsimsel fiyat çarpanları (Vercel SEASON_PRICE_MULT portu; mobil eşya kimlikleriyle).
+const SEASON_MULT: Record<string, Record<string, number>> = {
+  "Kış":      { kereste: 1.25, bugday: 1.15, et: 1.10, ekmek: 1.10, corba: 1.10 },
+  "İlkbahar": { yun: 0.9, deri: 0.95 },
+  "Yaz":      { kereste: 0.9, et: 0.95, balik: 0.9 },
+  "Sonbahar": { bugday: 0.85, sarap: 1.10, kereste: 1.05, un: 0.9 },
+};
+// Geçici piyasa olayları havuzu (Vercel market_events.py portu, sadeleştirilmiş).
+export const MARKET_EVENTS: { key: string; goods: string[]; mult: number; months: number; text: string }[] = [
+  { key: "kithasat", goods: ["bugday", "un", "ekmek"], mult: 1.5, months: 4, text: "Kötü hasat: tahıl fiyatları fırladı." },
+  { key: "bolluk",   goods: ["bugday", "un", "ekmek"], mult: 0.7, months: 4, text: "Bereketli hasat: tahıl ucuzladı." },
+  { key: "savas",    goods: ["demir", "bicak", "kilic", "kalkan"], mult: 1.45, months: 5, text: "Savaş söylentisi: silah ve demir pahalandı." },
+  { key: "kervanb",  goods: ["sarap", "bal", "iksir", "sifa"], mult: 1.4, months: 3, text: "Kervan baskını: lüks mallar kıtlaştı." },
+  { key: "kuraklik", goods: ["bugday", "et", "balik"], mult: 1.35, months: 5, text: "Kuraklık: yiyecek fiyatları yükseldi." },
+];
+// Bir malın anlık fiyat çarpanı: mevsim × aktif piyasa olayı.
+export function goodPriceMult(s: GameState, goodId: string): number {
+  let m = (SEASON_MULT[currentCalendar(s.turn).season] || {})[goodId] || 1;
+  const ev = s.marketEvent;
+  if (ev && ev.until > s.turn && ev.goods.includes(goodId)) m *= ev.mult;
+  return m;
+}
 export function econLabel(econ: number): string {
   if (econ >= 1.18) return "Kıtlık — fiyatlar yüksek";
   if (econ >= 1.06) return "Pahalılık";
@@ -480,6 +503,13 @@ function tickEconomy(s: GameState, announce: boolean) {
     else { s.econ = Math.max(0.7, s.econ - 0.18); if (announce) push(s, "piyasa", "Bereketli hasat; pazarda fiyatlar düştü.", "makro"); }
   }
   s.econ = Math.round(s.econ * 100) / 100;
+  // Geçici piyasa olayı: süresi dolanı kapat, ara sıra yenisini başlat
+  if (s.marketEvent && s.marketEvent.until <= s.turn) s.marketEvent = null;
+  if (!s.marketEvent && Math.random() < 0.07) {
+    const ev = MARKET_EVENTS[Math.floor(Math.random() * MARKET_EVENTS.length)];
+    s.marketEvent = { goods: ev.goods, mult: ev.mult, until: s.turn + ev.months, key: ev.key };
+    if (announce) push(s, "piyasa", ev.text, "makro");
+  }
 }
 
 // Kervan döndüğünde sonucu çöz (kâr ya da baskın).
@@ -609,7 +639,7 @@ export function buyItem(prev: GameState, id: string): GameState {
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   let disc = p.faction === "tuccar" ? 0.85 : 1;
   if (hasPerk(p, "pazarlikci")) disc -= 0.10;
-  const price = Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc));
+  const price = Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id)));
   if (p.money < price) return s;
   p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
   gainSkill(s, "trade", 5);
@@ -622,7 +652,7 @@ export function bargainBuy(prev: GameState, id: string): GameState {
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   let disc = p.faction === "tuccar" ? 0.85 : 1;
   if (hasPerk(p, "pazarlikci")) disc -= 0.10;
-  const base = Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc));
+  const base = Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id)));
   const ok = Math.random() < 0.4 + effStat(p, "charisma") * 0.04 + p.skills.trade * 0.03 + bargainBonus(s);
   const price = ok ? Math.max(1, Math.round(base * 0.8)) : base;
   if (p.money < price) return s;
@@ -643,7 +673,7 @@ export function bargainBase(s: GameState, id: string): number {
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return 0;
   let disc = p.faction === "tuccar" ? 0.85 : 1;
   if (hasPerk(p, "pazarlikci")) disc -= 0.10;
-  return Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc));
+  return Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id)));
 }
 // Pazarlık başarı olasılığı (karizma + ticaret becerisi).
 export function bargainChance(s: GameState): number {
@@ -665,7 +695,7 @@ export function sellItem(prev: GameState, id: string): GameState {
   if (!(p.inventory[id] > 0)) return s;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
-  let sell = marketPrice(g.sell, s.econ);
+  let sell = Math.round(marketPrice(g.sell, s.econ) * goodPriceMult(s, id));
   if (hasPerk(p, "dilbaz")) sell = Math.round(sell * 1.25);
   p.money += sell; gainSkill(s, "trade", 5); push(s, "ticaret", `${g.name} sattın (+${sell} akçe).`);
   return s;
