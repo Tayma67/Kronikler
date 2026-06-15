@@ -59,7 +59,7 @@ export function effStat(p: Player, key: keyof Stats): number {
   return Math.max(0, p.stats[key] - pen);
 }
 // Mülk: konuma bağlı (loc) + kondisyon (cond 0..100) + kademe (level 1..3). Gelir refah×kondisyon×kademe.
-export interface Property { type: string; loc: string; cond: number; level?: number; }
+export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; }
 export const PROP_MAX_LEVEL = 3;
 export function propUpgradeCost(pr: Property): number { return Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * (pr.level || 1) * 0.8); }
 export function upgradeProperty(prev: GameState, index: number): GameState {
@@ -70,12 +70,65 @@ export function upgradeProperty(prev: GameState, index: number): GameState {
   push(s, "mülk", `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) büyütüldü — kademe ${pr.level} (−${cost} akçe).`, "kişisel", true);
   return s;
 }
-export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: number; income: number }> = {
-  tarla:    { name: "Tarla",    icon: "🌾", cost: 80,  income: 6 },
-  ev:       { name: "Ev",       icon: "🏠", cost: 150, income: 10 },
-  dukkan:   { name: "Dükkân",   icon: "🏪", cost: 300, income: 22 },
-  degirmen: { name: "Değirmen", icon: "🏭", cost: 600, income: 48 },
+export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: number; income: number; slots: number }> = {
+  tarla:    { name: "Tarla",    icon: "🌾", cost: 80,  income: 6,  slots: 3 },
+  ev:       { name: "Ev",       icon: "🏠", cost: 150, income: 10, slots: 1 },
+  dukkan:   { name: "Dükkân",   icon: "🏪", cost: 300, income: 22, slots: 2 },
+  degirmen: { name: "Değirmen", icon: "🏭", cost: 600, income: 48, slots: 4 },
 };
+// ── Mülk-işçi (NPC istihdamı) ekonomisi — Vercel property_system.py portu ──
+// Bir mülkün işçi alabileceği yer sayısı: tip slotu + her kademe için +1.
+export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); }
+// Bir mülkün şehrinin işçi havuzu (deterministik; NPC istatistikleri dilden bağımsız).
+export function townNpcsOf(loc: string, lang: Lang = "tr"): NPC[] { return generateNPCs(locSeed(loc), 12, lang, loc); }
+// Mesleğe göre üretkenlik uyumu (çiftçi tarlada, demirci değirmende daha verimli).
+const PROP_PROF_FIT: Record<string, string[]> = {
+  tarla: ["çiftçi", "çoban"],
+  ev: ["şifacı", "müzisyen"],
+  dukkan: ["tüccar", "fırıncı", "balıkçı"],
+  degirmen: ["demirci", "çiftçi"],
+};
+// İşçi üretkenliği (Vercel _worker_productivity portu): yaş eğrisi + meslek uyumu + mizaç. 0.6–1.6.
+export function workerProductivity(npc: NPC, propType: string): number {
+  let p = 1.0;
+  if (npc.age < 18) p -= 0.3; else if (npc.age <= 45) p += 0.2; else if (npc.age > 55) p -= 0.25;
+  if ((PROP_PROF_FIT[propType] || []).includes(npc.profession)) p += 0.3;
+  if (npc.trait === "hırslı") p += 0.1; else if (npc.trait === "yalnız" || npc.trait === "dertli") p -= 0.05;
+  return Math.max(0.6, Math.min(1.6, p));
+}
+const WORKER_GROSS = 0.45, WORKER_WAGE = 0.24;
+// Bir mülkün işçilerinden gelen brüt katkı ve toplam ücret (tik + UI ortak).
+export function propWorkerStats(pr: Property, base: number, condProspLevel: number, lang: Lang = "tr"): { gross: number; wage: number; count: number } {
+  const ids = pr.workers || [];
+  if (!ids.length) return { gross: 0, wage: 0, count: 0 };
+  const npcs = townNpcsOf(pr.loc, lang);
+  let gross = 0, wage = 0;
+  for (const id of ids) {
+    const npc = npcs.find((x) => x.id === id); if (!npc) continue;
+    const prod = workerProductivity(npc, pr.type);
+    gross += base * WORKER_GROSS * prod * condProspLevel;
+    wage += base * WORKER_WAGE * prod;
+  }
+  return { gross, wage, count: ids.length };
+}
+// İşçi işe al (mülkün bulunduğu şehrin NPC'lerinden, boş slot varsa).
+export function hireWorker(prev: GameState, index: number, npcId: string): GameState {
+  const s = clone(prev); const pr = s.player.properties[index];
+  if (!pr) return s;
+  pr.workers = pr.workers || [];
+  if (pr.workers.includes(npcId) || pr.workers.length >= propWorkerSlots(pr)) return s;
+  pr.workers.push(npcId);
+  const npc = townNpcsOf(pr.loc).find((x) => x.id === npcId);
+  push(s, "mülk", `${npc?.name || "Bir işçi"}, ${PROPERTY_TYPES[pr.type]?.name || "mülkünde"} (${pr.loc}) işe alındı.`, "kişisel", true);
+  return s;
+}
+// İşçi çıkar.
+export function fireWorker(prev: GameState, index: number, npcId: string): GameState {
+  const s = clone(prev); const pr = s.player.properties[index];
+  if (!pr || !pr.workers) return s;
+  pr.workers = pr.workers.filter((id) => id !== npcId);
+  return s;
+}
 // ── Örgütler / Loncalar — 1247 Anadolu'sunun güç odakları ──
 export interface Faction {
   id: string; name: string; icon: string; blurb: string;
@@ -418,12 +471,17 @@ export function advance(prev: GameState, n = 1): GameState {
     if (hasPerk(s.player, "tuccar_prensi")) pmult += 0.3;
     if (hasPerk(s.player, "tamirci")) pmult += 0.15;
     let inc = 0;
+    let wages = 0; // işçi ücretleri (ekonomiden çıkan; pmult'tan bağımsız)
     const cityCache: Record<string, { prosperity: number; security: number }> = {};
     const cityOf = (loc: string) => cityCache[loc] || (cityCache[loc] = cityInfo(loc, placeKind(loc)));
     for (const pr of s.player.properties) {
       const base = PROPERTY_TYPES[pr.type]?.income || 0;
       const ci = cityOf(pr.loc || s.player.location_name);
-      inc += base * (0.75 + ci.prosperity / 200) * (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5);
+      const condProspLevel = (0.75 + ci.prosperity / 200) * (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5);
+      inc += base * condProspLevel;
+      // İşçi ekonomisi: çalışan NPC'ler üretimi artırır ama ücret ister.
+      const w = propWorkerStats(pr, base, condProspLevel);
+      inc += w.gross; wages += w.wage;
       if (pr.cond > 40 && chance(0.2)) pr.cond -= 1;                                   // zamanla aşınma
       if (ci.security < 30 && chance(0.02)) {                                          // düşük güvenlikte yağma
         pr.cond = Math.max(20, pr.cond - 15);
@@ -438,7 +496,9 @@ export function advance(prev: GameState, n = 1): GameState {
     }
     if (s.player.crowned) inc += 15; // hükümdar hazinesi
     inc += governorIncome(s); // valilik vergi payı
-    if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", `Mülk ve yerleşimlerinden ${inc} akçe gelir geldi.`); }
+    const wageCost = Math.round(wages);
+    if (wageCost > 0) s.player.money -= wageCost; // işçi maaşları (her hâlükârda ödenir)
+    if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", wageCost > 0 ? `Mülk ve yerleşimlerinden ${inc} akçe gelir geldi (${wageCost} akçe işçi ücreti ödendi).` : `Mülk ve yerleşimlerinden ${inc} akçe gelir geldi.`); }
     // Aylık geçim gideri (yaş + servetle hafifçe artar) — para birikimini dengeler
     if (s.player.age >= 13 && s.player.money > 0) {
       const upkeep = Math.min(s.player.money, 2 + Math.floor(s.player.age / 12) + Math.floor(s.player.money / 600));

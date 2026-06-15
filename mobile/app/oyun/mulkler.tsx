@@ -1,18 +1,20 @@
+import { useState } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES } from "../../lib/game";
-import { placeName } from "../../lib/locale-data";
+import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker } from "../../lib/game";
+import { placeName, professionNameL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader, Panel } from "../../lib/ui";
+import { BackLabel, PageHeader, Panel, Portre } from "../../lib/ui";
 
 export default function Mulkler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
   const { lang, t } = useI18n();
+  const [hireOpen, setHireOpen] = useState<number | null>(null);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const here = p.location_name;
@@ -66,6 +68,54 @@ export default function Mulkler() {
                     </View>
                     <Text style={{ fontFamily: F.display, fontSize: 10, color: condCol, width: 32, textAlign: "right" }}>{pr.cond}%</Text>
                   </View>
+                  {/* ── İşçiler (NPC istihdamı) ── */}
+                  {(() => {
+                    const slots = propWorkerSlots(pr);
+                    const town = townNpcsOf(pr.loc, lang);
+                    const hired = (pr.workers || []).map((id) => town.find((nn) => nn.id === id)).filter(Boolean) as NonNullable<ReturnType<typeof town.find>>[];
+                    const open = hireOpen === i;
+                    const avail = town.filter((nn) => !(pr.workers || []).includes(nn.id));
+                    return (
+                      <View style={{ marginTop: 9 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: C.parchmentMuted, width: 64 }}>👷 {t("mulk.workers").toUpperCase()}</Text>
+                          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 11, color: C.parchmentDim }}>{hired.length}/{slots}</Text>
+                          {hired.length < slots && (
+                            <Pressable onPress={() => { hap("tap"); setHireOpen(open ? null : i); }} style={{ paddingVertical: 4, paddingHorizontal: 9, borderRadius: 6, borderWidth: 1, borderColor: "rgba(127,166,106,0.5)", backgroundColor: "rgba(127,166,106,0.12)" }}>
+                              <Text style={{ fontFamily: F.display, fontSize: 9, color: C.sage }}>{open ? "⌄" : t("mulk.hire")}</Text>
+                            </Pressable>
+                          )}
+                        </View>
+                        {hired.length > 0 && (
+                          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                            {hired.map((nn) => (
+                              <Pressable key={nn.id} onPress={() => { hap("tap"); apply((s) => fireWorker(s, i, nn.id)); }} style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 12, borderWidth: 1, borderColor: C.border, backgroundColor: C.bg }}>
+                                <Portre age={nn.age} gender={nn.gender} size={18} ring={false} seed={nn.id} />
+                                <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchment }}>{nn.name.split(" ")[0]}</Text>
+                                <Text style={{ fontFamily: F.display, fontSize: 8.5, color: C.goldDim }}>×{workerProductivity(nn, pr.type).toFixed(1)}</Text>
+                                <Text style={{ color: C.blood, fontSize: 11 }}>×</Text>
+                              </Pressable>
+                            ))}
+                          </View>
+                        )}
+                        {open && (
+                          <View style={{ marginTop: 7, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 7 }}>
+                            <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginBottom: 5 }}>{t("mulk.wageNote")}</Text>
+                            {avail.slice(0, 8).map((nn) => (
+                              <Pressable key={nn.id} onPress={() => { hap("success"); apply((s) => hireWorker(s, i, nn.id)); setHireOpen(null); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 5 }}>
+                                <Portre age={nn.age} gender={nn.gender} size={26} ring={false} seed={nn.id} />
+                                <View style={{ flex: 1, minWidth: 0 }}>
+                                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12, color: C.parchment }}>{nn.name}</Text>
+                                  <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted }}>{professionNameL(nn.profession, lang)} · {nn.age}</Text>
+                                </View>
+                                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.sage }}>{t("mulk.prod")} ×{workerProductivity(nn, pr.type).toFixed(1)}</Text>
+                              </Pressable>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })()}
                 </View>
               );
             })}
