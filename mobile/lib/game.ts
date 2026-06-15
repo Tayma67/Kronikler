@@ -344,6 +344,7 @@ export interface GameState {
   dynastyOffers?: DynastyOffer[]; // dost hanelerden ittifak/evlilik teklifleri
   allied_houses?: string[]; // ittifak kurulan hanelerin id'leri
   epochNext?: number; // bir sonraki çağ olayının turu (legacy_system epoch_tick)
+  pendingScene?: { kind: string; ctx: Record<string, string> } | null; // oyuncu seçimi bekleyen interaktif sahne (suç kesintisi vb.)
 }
 // Dost bir hanedanın oyuncuya teklifi (ittifak veya evlilik).
 export interface DynastyOffer { id: string; houseId: string; nameIdx: number; type: "ittifak" | "evlilik"; }
@@ -1505,26 +1506,62 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
     push(s, "suç", `${ct.label} işini başardın (+${loot} akçe).${why}`, "kişisel", false, { k: "evj.crimeWin", p: [{ cr: kind }, loot, dread(s) > 30 ? { sfx: "sfx.crimeDread" } : ""] });
     return s;
   }
-  // ── Kesinti anı (Vercel interrupt sahnesi): yakalanmak üzereyken kaçış testi ──
-  const escapeChance = 0.18 + (p.stats.strength + p.stats.stamina) * 0.02 + golgeBonus - ct.sev * 0.03;
-  if (Math.random() < Math.max(0.05, escapeChance)) {
-    const scratch = 2 + Math.floor(Math.random() * (ct.sev * 2));
-    p.health = Math.max(1, p.health - scratch); p.fear = Math.min(100, p.fear + 1);
-    gainSkill(s, "combat", 3);
-    push(s, "suç", `İş ters gitti ama kovalamacada kıl payı sıvıştın (−${scratch} sağlık).`, "kişisel", true, { k: "evj.crimeEscape", p: [scratch] });
+  // ── Kesinti anı (Vercel interrupt sahnesi): yakalanmak üzeresin — oyuncu seçer (Saklan/Rüşvet/Kaç).
+  s.pendingScene = { kind: "crime", ctx: { crime: kind } };
+  return s;
+}
+
+// Suç kesinti sahnesinin sonucunu uygula (Saklan/Rüşvet/Kaç). UI s.pendingScene'i görünce çağırır.
+export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" | "kac"): GameState {
+  const s = clone(prev); const p = s.player;
+  const kind = (s.pendingScene?.ctx?.crime as CrimeKind) || "yankesicilik";
+  s.pendingScene = null;
+  const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
+  const golgeBonus = p.faction === "golge" ? 0.12 : 0;
+  let escaped = false; let scratch = 0; let note: { k: string; p?: EvtParam[] };
+  if (choice === "saklan") {
+    // Saklan: gizlenme testi (dayanıklılık + gölge). Sessiz kaçış.
+    const chance = 0.42 + p.stats.stamina * 0.03 + golgeBonus - ct.sev * 0.04;
+    escaped = Math.random() < Math.max(0.08, chance);
+    gainSkill(s, "social", 3);
+    note = { k: escaped ? "crimesc.hideWin" : "crimesc.hideLose" };
+  } else if (choice === "rusvet") {
+    // Rüşvet: para ile sustur. Yeterli akçe varsa kaçarsın ama %30 rüşvet söylentisi doğar.
+    const cost = Math.round(ct.fine * 1.2);
+    if (p.money >= cost) {
+      p.money -= cost; escaped = true;
+      if (Math.random() < 0.3) { bumpNam(p, "zalim", 3); p.reputation = Math.max(-100, p.reputation - 3); note = { k: "crimesc.bribeLeak", p: [cost] }; }
+      else note = { k: "crimesc.bribeWin", p: [cost] };
+    } else { escaped = false; note = { k: "crimesc.bribePoor" }; }
+  } else {
+    // Kaç: atletik test (güç + dayanıklılık). Başarırsan sıyrıkla kurtulursun.
+    const chance = 0.34 + (p.stats.strength + p.stats.stamina) * 0.025 + golgeBonus - ct.sev * 0.03;
+    escaped = Math.random() < Math.max(0.06, chance);
+    if (escaped) { scratch = 2 + Math.floor(Math.random() * (ct.sev * 2)); p.health = Math.max(1, p.health - scratch); }
+    gainSkill(s, "combat", 4);
+    note = { k: escaped ? "crimesc.runWin" : "crimesc.runLose", p: escaped ? [scratch] : undefined };
+  }
+  if (escaped) {
+    p.fear = Math.min(100, p.fear + 1);
+    push(s, "suç", `Kesintiyi atlattın.`, "kişisel", true, note);
     return s;
   }
-  // Kaçamadın → yakalandın (şiddete göre ceza).
+  // Kaçamadın → yakalandın.
+  crimeCaught(s, kind);
+  return s;
+}
+
+// Yakalanma cezasını uygula (kesinti sahnesinden veya doğrudan). Şiddete göre ceza + tanık + tohum.
+function crimeCaught(s: GameState, kind: CrimeKind) {
+  const p = s.player; const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
   const fine = Math.min(p.money, ct.fine);
   const hurt = Math.round(ct.hurt * (p.faction === "asker" ? 0.5 : 1));
   const extra = crimeCaughtPenalty(s);
   p.money -= fine; p.reputation = Math.max(-100, p.reputation - 6 - ct.sev * 2 - extra); p.health = Math.max(0, p.health - hurt);
-  witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.7); // yakalanınca tanık çok
-  if (ct.sev >= 3 && Math.random() < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } }); // ağır suç geçmişi geri gelir
-  const why = extra >= 4 ? " Senin gibi tanınmış birinden beklenmezdi; ceza ağır oldu." : "";
-  push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.${why}`, "kişisel", true, { k: "evj.crimeCaught", p: [fine, extra >= 4 ? { sfx: "sfx.crimeHard" } : ""] });
+  witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.7);
+  if (ct.sev >= 3 && Math.random() < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } });
+  push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.`, "kişisel", true, { k: "evj.crimeCaught", p: [fine, extra >= 4 ? { sfx: "sfx.crimeHard" } : ""] });
   if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
-  return s;
 }
 
 // ── Fırsat: kabul edilince stat'a göre çözülür ──

@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { doCrime, CrimeKind } from "../../lib/game";
+import { doCrime, resolveCrimeScene, CrimeKind } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -68,6 +68,21 @@ export default function Suc() {
           </>
         )}
       </ScrollView>
+
+      {/* Kesinti sahnesi — yakalanmak üzeresin: Saklan / Rüşvet / Kaç (Vercel interrupt) */}
+      {state.pendingScene?.kind === "crime" && (
+        <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.72)", alignItems: "center", justifyContent: "center", padding: 22 }}>
+          <Animated.View entering={FadeInDown.duration(220)} style={{ width: "100%", maxWidth: 420, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.ink, borderRadius: 14, padding: 18 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 17, color: C.ink, textAlign: "center", letterSpacing: 0.5 }}>{t("crimesc.title")}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment, textAlign: "center", lineHeight: 20, marginTop: 10, marginBottom: 16 }}>{t("crimesc.text")}</Text>
+            {([["saklan", "crimesc.hide"], ["rusvet", "crimesc.bribe"], ["kac", "crimesc.run"]] as const).map(([ch, key]) => (
+              <Pressable key={ch} onPress={() => { hap("selection"); apply((s) => resolveCrimeScene(s, ch)); }} style={{ borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, borderRadius: 9, paddingVertical: 12, marginTop: 8, alignItems: "center" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.5 }}>{t(key)}</Text>
+              </Pressable>
+            ))}
+          </Animated.View>
+        </View>
+      )}
     </View>
   );
 }
