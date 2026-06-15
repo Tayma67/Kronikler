@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyProperty, repairProperty, repairCost, PROPERTY_TYPES } from "../../lib/game";
+import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES } from "../../lib/game";
 import { placeName } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -17,7 +17,7 @@ export default function Mulkler() {
   const p = state.player;
   const here = p.location_name;
   // Tahmini aylık gelir (kondisyon × ~refah; ekranda yaklaşık).
-  const estIncome = Math.round(p.properties.reduce((a, pr) => a + (PROPERTY_TYPES[pr.type]?.income || 0) * (pr.cond / 100), 0));
+  const estIncome = Math.round(p.properties.reduce((a, pr) => a + (PROPERTY_TYPES[pr.type]?.income || 0) * (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5), 0));
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
@@ -42,14 +42,21 @@ export default function Mulkler() {
                       <Text style={{ fontSize: 20 }}>{ty.icon}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{ty.name}</Text>
-                      <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>📍 {placeName(pr.loc, lang)} · {ty.income} {t("mulk.perMonth")}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{ty.name} <Text style={{ fontSize: 10, color: C.goldDim }}>Kademe {pr.level || 1}</Text></Text>
+                      <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>📍 {placeName(pr.loc, lang)} · {Math.round(ty.income * (1 + ((pr.level || 1) - 1) * 0.5))} {t("mulk.perMonth")}</Text>
                     </View>
-                    {pr.cond < 100 && (
-                      <Pressable onPress={() => { hap("tap"); apply((s) => repairProperty(s, i)); }} disabled={p.money < rc} style={{ paddingVertical: 6, paddingHorizontal: 11, borderRadius: 7, borderWidth: 1, borderColor: p.money < rc ? C.border : "rgba(201,168,76,0.5)", backgroundColor: p.money < rc ? C.bg : "rgba(201,168,76,0.12)" }}>
-                        <Text style={{ fontFamily: F.display, fontSize: 10, color: p.money < rc ? C.parchmentMuted : C.gold }}>{t("mulk.repair")} {rc}⚜</Text>
-                      </Pressable>
-                    )}
+                    <View style={{ gap: 5 }}>
+                      {pr.cond < 100 && (
+                        <Pressable onPress={() => { hap("tap"); apply((s) => repairProperty(s, i)); }} disabled={p.money < rc} style={{ paddingVertical: 5, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: p.money < rc ? C.border : "rgba(201,168,76,0.5)", backgroundColor: p.money < rc ? C.bg : "rgba(201,168,76,0.12)" }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 9.5, color: p.money < rc ? C.parchmentMuted : C.gold }}>{t("mulk.repair")} {rc}⚜</Text>
+                        </Pressable>
+                      )}
+                      {(pr.level || 1) < PROP_MAX_LEVEL && (() => { const uc = propUpgradeCost(pr); return (
+                        <Pressable onPress={() => { hap("tap"); apply((s) => upgradeProperty(s, i)); }} disabled={p.money < uc} style={{ paddingVertical: 5, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: p.money < uc ? C.border : "rgba(201,168,76,0.5)", backgroundColor: p.money < uc ? C.bg : "rgba(201,168,76,0.12)" }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 9.5, color: p.money < uc ? C.parchmentMuted : C.gold }}>{t("mulk.upgrade")} {uc}⚜</Text>
+                        </Pressable>
+                      ); })()}
+                    </View>
                   </View>
                   {/* Kondisyon çubuğu */}
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginTop: 8 }}>

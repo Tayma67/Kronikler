@@ -81,8 +81,8 @@ const PAZPG: Record<Lang, Dict> = {
   ru: { "paz.marketSuffix":"Рынок" },
 };
 const MULKPG: Record<Lang, Dict> = {
-  tr: { "mulk.hint":"Adına yazılı her tapu, çocuklarına kalır.", "mulk.income":"Aylık gelir", "mulk.perMonth":"⚜/ay", "mulk.owned":"Mülklerin", "mulk.buyHere":"Bu Şehirde Satın Al", "mulk.cond":"Kondisyon", "mulk.repair":"ONAR", "mulk.none":"Henüz mülkün yok. Aşağıdan bu şehirde bir mülk edin.", "mulk.locNote":"Mülkler bulunduğun şehre kayıtlıdır; gelir o şehrin refahına bağlıdır." },
-  en: { "mulk.hint":"Every deed in your name passes to your children.", "mulk.income":"Monthly income", "mulk.perMonth":"⚜/mo", "mulk.owned":"Your Properties", "mulk.buyHere":"Buy in This Town", "mulk.cond":"Condition", "mulk.repair":"REPAIR", "mulk.none":"You own no property yet. Buy one in this town below.", "mulk.locNote":"Properties are tied to the town where bought; income scales with that town's prosperity." },
+  tr: { "mulk.hint":"Adına yazılı her tapu, çocuklarına kalır.", "mulk.income":"Aylık gelir", "mulk.perMonth":"⚜/ay", "mulk.owned":"Mülklerin", "mulk.buyHere":"Bu Şehirde Satın Al", "mulk.cond":"Kondisyon", "mulk.repair":"ONAR", "mulk.upgrade":"BÜYÜT", "mulk.none":"Henüz mülkün yok. Aşağıdan bu şehirde bir mülk edin.", "mulk.locNote":"Mülkler bulunduğun şehre kayıtlıdır; gelir o şehrin refahına bağlıdır." },
+  en: { "mulk.hint":"Every deed in your name passes to your children.", "mulk.income":"Monthly income", "mulk.perMonth":"⚜/mo", "mulk.owned":"Your Properties", "mulk.buyHere":"Buy in This Town", "mulk.cond":"Condition", "mulk.repair":"REPAIR", "mulk.upgrade":"UPGRADE", "mulk.none":"You own no property yet. Buy one in this town below.", "mulk.locNote":"Properties are tied to the town where bought; income scales with that town's prosperity." },
   es: { "mulk.hint":"Cada escritura a tu nombre pasa a tus hijos.", "mulk.income":"Ingreso mensual", "mulk.perMonth":"⚜/mes" },
   pt: { "mulk.hint":"Cada escritura em teu nome passa aos teus filhos.", "mulk.income":"Renda mensal", "mulk.perMonth":"⚜/mês" },
   ar: { "mulk.hint":"كل سند باسمك ينتقل إلى أبنائك.", "mulk.income":"الدخل الشهري", "mulk.perMonth":"⚜/شهر" },

@@ -58,8 +58,18 @@ export function effStat(p: Player, key: keyof Stats): number {
   const pen = (p.injuries || []).filter((i) => i.stat === key).reduce((a, i) => a + i.delta, 0);
   return Math.max(0, p.stats[key] - pen);
 }
-// Mülk: konuma bağlı (loc) + kondisyon (cond 0..100). Gelir şehrin refahı + kondisyonla ölçeklenir.
-export interface Property { type: string; loc: string; cond: number; }
+// Mülk: konuma bağlı (loc) + kondisyon (cond 0..100) + kademe (level 1..3). Gelir refah×kondisyon×kademe.
+export interface Property { type: string; loc: string; cond: number; level?: number; }
+export const PROP_MAX_LEVEL = 3;
+export function propUpgradeCost(pr: Property): number { return Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * (pr.level || 1) * 0.8); }
+export function upgradeProperty(prev: GameState, index: number): GameState {
+  const s = clone(prev); const p = s.player; const pr = p.properties[index];
+  if (!pr || (pr.level || 1) >= PROP_MAX_LEVEL) return s;
+  const cost = propUpgradeCost(pr); if (p.money < cost) return s;
+  p.money -= cost; pr.level = (pr.level || 1) + 1;
+  push(s, "mülk", `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) büyütüldü — kademe ${pr.level} (−${cost} akçe).`, "kişisel", true);
+  return s;
+}
 export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: number; income: number }> = {
   tarla:    { name: "Tarla",    icon: "🌾", cost: 80,  income: 6 },
   ev:       { name: "Ev",       icon: "🏠", cost: 150, income: 10 },
@@ -408,7 +418,7 @@ export function advance(prev: GameState, n = 1): GameState {
     for (const pr of s.player.properties) {
       const base = PROPERTY_TYPES[pr.type]?.income || 0;
       const ci = cityOf(pr.loc || s.player.location_name);
-      inc += base * (0.75 + ci.prosperity / 200) * (pr.cond / 100);
+      inc += base * (0.75 + ci.prosperity / 200) * (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5);
       if (pr.cond > 40 && chance(0.2)) pr.cond -= 1;                                   // zamanla aşınma
       if (ci.security < 30 && chance(0.02)) {                                          // düşük güvenlikte yağma
         pr.cond = Math.max(20, pr.cond - 15);
