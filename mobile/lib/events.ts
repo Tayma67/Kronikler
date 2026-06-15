@@ -352,6 +352,44 @@ export const DILEMMAS: Dilemma[] = [
       { label: "Geri çevir", delta: { honor: -3 }, result: "Kapını açmadın; çocuk başını önüne eğip gitti." },
     ],
   },
+
+  // ── Portlanan sistemlere tepki veren olaylar ──
+  {
+    id: "vali_vergi", icon: "scales", title: "Vali Olarak Vergi Kararı", identity: true,
+    text: "Valisi olduğun şehirde hazine zayıf. Vergiyi artırabilir ya da halkı kollayabilirsin.",
+    when: (p) => (p.governorships?.length || 0) > 0,
+    choices: [
+      { label: "Vergiyi artır (+akçe)", delta: { money: 40, reputation: -6, fear: 4 }, result: "Kese doldu ama halk homurdandı." },
+      { label: "Halkı kolla", delta: { reputation: 8, honor: 5, nam: { comert: 3 } }, result: "Vergiyi hafiflettin; halk seni bağrına bastı." },
+    ],
+  },
+  {
+    id: "beylik_sadakat", icon: "crown", title: "Beyin Çağrısı", identity: true,
+    text: "Beyliğinin beyi sadakatini sınıyor; bir armağan ve biat bekliyor.",
+    when: (p) => p.age >= 16 && p.reputation >= 10,
+    choices: [
+      { label: "Biat et, armağan sun (−25)", delta: { money: -25, reputation: 8, fame: 4 }, result: "Beyin gözüne girdin; kapılar aralandı." },
+      { label: "Onurunla geri dur", delta: { honor: 5, reputation: -3, nam: { mert: 3 } }, result: "Boyun eğmedin; kimi mert dedi, kimi küstah." },
+    ],
+  },
+  {
+    id: "spekulasyon", icon: "coins", title: "Pazar Söylentisi", identity: true,
+    text: "Bir tüccar, fiyatların yakında fırlayacağını fısıldıyor — şimdi alırsan vurur musun?",
+    when: (p) => p.age >= 16 && p.money >= 40 && (p.skills?.trade || 0) >= 1,
+    choices: [
+      { label: "Stok yap, riske gir (−35)", delta: { money: 60, reputation: 2 }, result: "Söylenti doğru çıktı; depoladığın malı kârla sattın." },
+      { label: "Güvenme, geç", delta: {}, result: "Temkinli kaldın; söylenti bu kez boş çıktı, iyi ki girmedin." },
+    ],
+  },
+  {
+    id: "lonca_sadakat", icon: "scales", title: "Loncanın İsteği", identity: true,
+    text: "Loncan zor bir görev için seni çağırıyor; reddedersen itibarın sarsılır.",
+    when: (p) => !!p.faction && p.age >= 14,
+    choices: [
+      { label: "Görevi üstlen", delta: { reputation: 5, honor: 3, health: -4 }, result: "Lonca için yoruldun ama saygın arttı." },
+      { label: "Bu sefer olmaz", delta: { reputation: -5 }, result: "Geri çevirdin; loncadaki itibarın biraz zedelendi." },
+    ],
+  },
 ];
 
 // Tura göre bir ikilem seç (deterministik değil; çağıran olasılıkla tetikler).
