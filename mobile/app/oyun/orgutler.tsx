@@ -132,8 +132,8 @@ export default function Orgutler() {
                 const ri = factionRankIndex(standing); const rank = FACTION_RANKS[ri]; const next = FACTION_RANKS[ri + 1];
                 return (
                   <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: C.border }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: C.gold }}>🎖 {rank.title} <Text style={{ color: C.parchmentMuted, fontSize: 9 }}>(ödül ×{rank.mult})</Text></Text>
-                    {next ? <Text style={{ fontFamily: F.display, fontSize: 9, color: C.parchmentMuted }}>{next.title}: {standing}/{next.min}</Text> : <Text style={{ fontFamily: F.display, fontSize: 9, color: C.sage }}>EN ÜST</Text>}
+                    <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: C.gold }}>🎖 {t("frank." + f.id + "." + ri)} <Text style={{ color: C.parchmentMuted, fontSize: 9 }}>({t("fac.reward")} ×{rank.mult})</Text></Text>
+                    {next ? <Text style={{ fontFamily: F.display, fontSize: 9, color: C.parchmentMuted }}>{t("frank." + f.id + "." + (ri + 1))}: {standing}/{next.min}</Text> : <Text style={{ fontFamily: F.display, fontSize: 9, color: C.sage }}>{t("fac.maxRank")}</Text>}
                   </View>
                 );
               })()}
