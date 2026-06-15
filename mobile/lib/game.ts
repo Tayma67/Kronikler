@@ -2231,12 +2231,21 @@ export function talkWarmthMod(s: GameState): number {
 export function allureBonus(s: GameState): number {
   return Math.min(0.2, (s.player.nam?.capkin || 0) / 100 * 0.2);
 }
+// Baskın nam: en yüksek eksen ≥40 ve ikinciden belirgin önde ise (Vercel dominant_nam, sayaç ölçeği).
+export function playerDominantNam(p: Player): string | null {
+  const n = p.nam || ({} as Nam);
+  const sorted = (Object.entries(n) as [string, number][]).sort((a, b) => b[1] - a[1]);
+  if (!sorted.length) return null;
+  const [top, second] = [sorted[0], sorted[1] || ["", 0]];
+  return top[1] >= 40 && top[1] >= (second[1] as number) * 1.3 ? top[0] : null;
+}
 // Evlilik teklifi şansına ek: mert/şeref/dindar (tanınmışsa) güven verir; çapkın namı saygın aileyi ürkütür; korku düşürür.
 export function courtBonus(s: GameState): number {
   const p = s.player; const n = p.nam || ({} as Nam);
   const trust = ((n.mert || 0) + p.honor * 0.6 + (n.dindar || 0) * 0.4) / 100;
   const scandal = (n.capkin || 0) / 100, menace = dread(s) / 100;
-  return Math.max(-0.25, Math.min(0.25, recognition(s) * trust * 0.2 - scandal * 0.12 - menace * 0.15));
+  const zalimRet = playerDominantNam(p) === "zalim" ? 0.18 : 0; // baskın zalim → iyi aileler teklifi reddeder
+  return Math.max(-0.4, Math.min(0.25, recognition(s) * trust * 0.2 - scandal * 0.12 - menace * 0.15 - zalimRet));
 }
 // Lonca itibar kazancı çarpanı: onurlu loncalar mert/şerefe değer verir; Gölge Kardeşliği zalim/korkuya.
 export function factionStandingMod(s: GameState, faction: string): number {

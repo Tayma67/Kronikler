@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { SOCIAL_AXES, socialTierIndex, hostFeast, giveAlms, intimidate, factionById, NAM_META, rumorAction } from "../../lib/game";
+import { SOCIAL_AXES, socialTierIndex, hostFeast, giveAlms, intimidate, factionById, NAM_META, rumorAction, playerDominantNam } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -109,6 +109,15 @@ export default function Sosyal() {
             );
           })}
         </View>
+        {(() => {
+          const dom = playerDominantNam(p);
+          return (
+            <View style={{ backgroundColor: dom ? "rgba(201,168,76,0.1)" : C.card, borderWidth: 1, borderColor: dom ? "rgba(201,168,76,0.4)" : C.border, borderLeftWidth: 3, borderLeftColor: dom ? C.gold : C.border, borderRadius: 10, padding: 12, marginBottom: 6 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 1.5, color: C.goldDim, textTransform: "uppercase" }}>{t("nam.dominant")}{dom ? `: ${t("nam." + dom)}` : ""}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentDim, lineHeight: 18, marginTop: 4 }}>{t(dom ? "nam.dom." + dom : "nam.dom.none")}</Text>
+            </View>
+          );
+        })()}
 
         <Section title={t("rum.title")} sub="" />
         {(() => {
