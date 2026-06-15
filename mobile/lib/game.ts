@@ -99,6 +99,7 @@ export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: 
   tarla:    { name: "Tarla",    icon: "🌾", cost: 80,  income: 6,  slots: 3 },
   ev:       { name: "Ev",       icon: "🏠", cost: 150, income: 10, slots: 1 },
   dukkan:   { name: "Dükkân",   icon: "🏪", cost: 300, income: 22, slots: 2 },
+  han:      { name: "Han",      icon: "🏨", cost: 450, income: 30, slots: 3 },
   degirmen: { name: "Değirmen", icon: "🏭", cost: 600, income: 48, slots: 4 },
 };
 // ── Mülk-işçi (NPC istihdamı) ekonomisi — Vercel property_system.py portu ──
@@ -827,13 +828,14 @@ export function advance(prev: GameState, n = 1): GameState {
       // Tipe özgü davranış (Vercel property_system per-tip tick ruhu): tarla mevsimlik, dükkân refaha duyarlı.
       const typeMult = pr.type === "tarla" ? ({ "İlkbahar": 1.0, "Yaz": 1.15, "Sonbahar": 1.7, "Kış": 0.25 }[cal.season] ?? 1)
         : pr.type === "dukkan" ? (1 + effProsp / 300)
+        : pr.type === "han" ? (0.6 + (effProsp + effSec) / 250)  // han: yolcu trafiği refah+güvenlikle artar
         : pr.type === "ev" ? 0.7 : 1;
       inc += base * condProspLevel * typeMult;
       if (pr.type === "ev" && (pr.level || 1) >= 2 && chance(0.04)) s.player.reputation = Math.min(100, s.player.reputation + 1); // köklü ev → itibar damlası
       // İşçi ekonomisi: çalışan NPC'ler üretimi artırır ama ücret ister.
       const w = propWorkerStats(pr, base, condProspLevel);
       inc += w.gross; wages += w.wage;
-      const y = propYield(pr); if (y) produced[y.good] = (produced[y.good] || 0) + y.qty; // işçi emeği → gerçek hammadde
+      const y = propYield(pr); if (y) { const sm = pr.type === "tarla" ? ({ "İlkbahar": 0.6, "Yaz": 1.0, "Sonbahar": 1.8, "Kış": 0.2 }[cal.season] ?? 1) : 1; const q = Math.round(y.qty * sm); if (q > 0) produced[y.good] = (produced[y.good] || 0) + q; } // işçi emeği → gerçek hammadde (tarla mevsimlik)
       if (pr.cond > 40 && chance(0.2)) pr.cond -= 1;                                   // zamanla aşınma
       if (effSec < 30 && chance(0.02 + (effSec < 10 ? 0.03 : 0))) {                    // düşük güvenlikte (eşkıya/yangın olayı kötüleştirir) yağma
         pr.cond = Math.max(20, pr.cond - 15);
