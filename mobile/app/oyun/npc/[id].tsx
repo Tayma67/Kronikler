@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt } from "../../../lib/game";
+import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST } from "../../../lib/game";
 import { useI18n } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
@@ -77,6 +77,7 @@ export default function NpcDetail() {
     .filter((tt) => tt.who)
     .sort((a, z) => TIE_ORDER.indexOf(a.kind) - TIE_ORDER.indexOf(z.kind));
   const couldMarry = !state.player.dead && !state.player.married && state.player.age >= 18 && npc.age >= 18 && npc.gender !== state.player.gender;
+  const canGoal = !state.player.dead && state.player.age >= 13;
 
   const speak = (intent: string) => {
     let said = "";
@@ -162,11 +163,29 @@ export default function NpcDetail() {
           </Pressable>
         ))}
         {/* Hediye */}
-        <Pressable onPress={() => setGiftOpen((o) => !o)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: couldMarry ? 1 : 0, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+        <Pressable onPress={() => setGiftOpen((o) => !o)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
           <Text style={{ fontSize: 16 }}>🎁</Text>
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npc.gift")}</Text>
           <Text style={{ color: C.goldDim, fontSize: 15 }}>{giftOpen ? "⌄" : "›"}</Text>
         </Pressable>
+        {/* Amacına yardım et / istismar et (npc_mind goal_action) */}
+        {canGoal && (
+          <Pressable onPress={() => { if (state.player.money >= GOAL_HELP_COST) { hap("success"); apply((s) => helpNpcGoal(s, npc)); } }} disabled={state.player.money < GOAL_HELP_COST} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+            <Text style={{ fontSize: 16 }}>🕊</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.serif, fontSize: 14, color: state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted }}>{t("npc.helpGoal")}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 1 }}>{goalL(npc.goal, lang)}</Text>
+            </View>
+            <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>{GOAL_HELP_COST}⚜</Text>
+          </Pressable>
+        )}
+        {canGoal && (
+          <Pressable onPress={() => { hap("tap"); apply((s) => exploitNpcGoal(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: couldMarry ? 1 : 0, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+            <Text style={{ fontSize: 16 }}>🪤</Text>
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.ember }}>{t("npc.exploitGoal")}</Text>
+            <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
+          </Pressable>
+        )}
         {/* Evlenme teklifi */}
         {couldMarry && (
           <Pressable onPress={() => { if (courtable) { hap("success"); apply((s) => proposeMarriage(s, npc)); } }} disabled={!courtable} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: courtable ? "rgba(201,168,76,0.08)" : "transparent" }}>

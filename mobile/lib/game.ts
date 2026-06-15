@@ -972,6 +972,40 @@ export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   return s;
 }
 
+// ── NPC'nin amacına yardım/sömürü (Vercel npc_mind goal_action portu) ──
+// Her NPC'nin bir hayat hedefi var (npc.goal); ona yardım büyük yakınlık + cömert nam,
+// istismar ise akçe + zalim nam getirir ama ilişkiyi yakar.
+export const GOAL_HELP_COST = 25;
+export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13 || p.money < GOAL_HELP_COST) return s;
+  p.money -= GOAL_HELP_COST;
+  const ns = npcStateOf(s, npc.id);
+  s.relationships[npc.id] = Math.min(100, (s.relationships[npc.id] || 0) + 18);
+  ns.mood = Math.max(-100, Math.min(100, ns.mood + 18));
+  p.reputation = Math.min(100, p.reputation + 3);
+  bumpNam(p, "comert", 4); gainSkill(s, "social", 6);
+  ns.memories.push(`Amacına omuz verdin: ${npc.goal}.`);
+  if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
+  push(s, "sohbet", `${npc.name}'in "${npc.goal}" derdine ${GOAL_HELP_COST} akçeyle omuz verdin; sana minnettar kaldı.`, "kişisel", true);
+  return s;
+}
+export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13) return s;
+  const gain = 15 + Math.floor(Math.random() * 20);
+  p.money += gain;
+  const ns = npcStateOf(s, npc.id);
+  s.relationships[npc.id] = Math.max(-100, (s.relationships[npc.id] || 0) - 22);
+  ns.mood = Math.max(-100, ns.mood - 25);
+  p.reputation = Math.max(-100, p.reputation - 4); p.fear = Math.min(100, p.fear + 3);
+  bumpNam(p, "zalim", 5);
+  ns.memories.push(`Amacını istismar edip seni kullandı.`);
+  if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
+  push(s, "sohbet", `${npc.name}'in "${npc.goal}" umudunu istismar edip ${gain} akçe kopardın; sana diş biledi.`, "kişisel", true);
+  return s;
+}
+
 // Dünür gönderebilir misin? (Bekâr, 18+, karşı cinsten yetişkin, yakınlık yeterli.)
 export function canCourt(p: Player, npc: NPC, rel: number): boolean {
   return !p.dead && !p.married && p.age >= 18 && npc.age >= 18 && npc.gender !== p.gender && rel >= 50;
