@@ -93,28 +93,37 @@ const _socgTR: Dict = { "npc.ties":"Çevresi", "tie.es":"Eş", "tie.ebeveyn":"Eb
 const SOCG: Record<Lang, Dict> = {
   tr: _socgTR,
   en: { "npc.ties":"Their Circle", "tie.es":"Spouse", "tie.ebeveyn":"Parent", "tie.evlat":"Child", "tie.kardes":"Sibling", "tie.dost":"Friend", "tie.rakip":"Rival", "npc.tiesNote":"Has ties with %1." },
-  es: _socgTR, pt: _socgTR, ar: _socgTR, ru: _socgTR,
+  es: { "npc.ties":"Su Círculo", "tie.es":"Cónyuge", "tie.ebeveyn":"Progenitor", "tie.evlat":"Hijo/a", "tie.kardes":"Hermano/a", "tie.dost":"Amigo", "tie.rakip":"Rival", "npc.tiesNote":"Tiene vínculos con %1." },
+  pt: { "npc.ties":"O Seu Círculo", "tie.es":"Cônjuge", "tie.ebeveyn":"Progenitor", "tie.evlat":"Filho/a", "tie.kardes":"Irmão/ã", "tie.dost":"Amigo", "tie.rakip":"Rival", "npc.tiesNote":"Tem laços com %1." },
+  ar: { "npc.ties":"دائرته", "tie.es":"زوج", "tie.ebeveyn":"أحد الوالدين", "tie.evlat":"ابن", "tie.kardes":"شقيق", "tie.dost":"صديق", "tie.rakip":"خصم", "npc.tiesNote":"له صلات مع %1." },
+  ru: { "npc.ties":"Его круг", "tie.es":"Супруг", "tie.ebeveyn":"Родитель", "tie.evlat":"Дитя", "tie.kardes":"Брат/сестра", "tie.dost":"Друг", "tie.rakip":"Соперник", "npc.tiesNote":"Связан с %1." },
 };
 // Sancak hakimiyeti (emergent fraksiyon şehir-kontrolü). es/pt/ar/ru → TR yedeği.
 const _realmTR: Dict = { "realm.title":"Sancak Hakimiyeti", "realm.forControl":"için", "realm.month":"ay", "realm.contests":"hakimiyete göz dikti", "realm.domHere":"Loncan bu sancağa hâkim — burada görevler %25 fazla kazandırır.", "realm.holder":"Sancak Hâkimi" };
 const REALM: Record<Lang, Dict> = {
   tr: _realmTR,
   en: { "realm.title":"Sanjak Control", "realm.forControl":"at stake", "realm.month":"mo", "realm.contests":"contests it", "realm.domHere":"Your guild holds this sanjak — tasks here pay 25% more.", "realm.holder":"Sanjak Holder" },
-  es: _realmTR, pt: _realmTR, ar: _realmTR, ru: _realmTR,
+  es: { "realm.title":"Control del Sanjak", "realm.forControl":"en disputa", "realm.month":"mes", "realm.contests":"reclama el control", "realm.domHere":"Tu gremio domina este sanjak — aquí las tareas pagan 25% más.", "realm.holder":"Señor del Sanjak" },
+  pt: { "realm.title":"Controlo do Sanjaco", "realm.forControl":"em disputa", "realm.month":"mês", "realm.contests":"reivindica o controlo", "realm.domHere":"A tua guilda domina este sanjaco — aqui as tarefas pagam 25% mais.", "realm.holder":"Senhor do Sanjaco" },
+  ar: { "realm.title":"السيطرة على السنجق", "realm.forControl":"محلّ نزاع", "realm.month":"شهر", "realm.contests":"يطالب بالسيطرة", "realm.domHere":"نقابتك تسيطر على هذا السنجق — المهام هنا تدفع 25% أكثر.", "realm.holder":"حائز السنجق" },
+  ru: { "realm.title":"Контроль санджака", "realm.forControl":"оспаривается", "realm.month":"мес", "realm.contests":"оспаривает власть", "realm.domHere":"Твоя гильдия владеет этим санджаком — задания здесь платят на 25% больше.", "realm.holder":"Владелец санджака" },
 };
 // Mülk-işçi (NPC istihdamı) ekonomisi. es/pt/ar/ru → TR yedeği.
 const _wrkTR: Dict = { "mulk.workers":"İşçiler", "mulk.hire":"İşçi Al", "mulk.wageNote":"Aylık ücret öder, mülkün üretimini artırır. Çıkarmak için işçiye dokun.", "mulk.prod":"verim" };
 const WORKERS: Record<Lang, Dict> = {
   tr: _wrkTR,
   en: { "mulk.workers":"Workers", "mulk.hire":"Hire", "mulk.wageNote":"Pays a monthly wage, boosts the property's output. Tap a worker to dismiss.", "mulk.prod":"yield" },
-  es: _wrkTR, pt: _wrkTR, ar: _wrkTR, ru: _wrkTR,
+  es: { "mulk.workers":"Trabajadores", "mulk.hire":"Contratar", "mulk.wageNote":"Paga un salario mensual y aumenta la producción. Toca a un trabajador para despedirlo.", "mulk.prod":"rinde" },
+  pt: { "mulk.workers":"Trabalhadores", "mulk.hire":"Contratar", "mulk.wageNote":"Paga um salário mensal e aumenta a produção. Toca num trabalhador para o despedir.", "mulk.prod":"rende" },
+  ar: { "mulk.workers":"العمّال", "mulk.hire":"توظيف", "mulk.wageNote":"يدفع أجرًا شهريًا ويزيد الإنتاج. انقر على عامل لطرده.", "mulk.prod":"إنتاجية" },
+  ru: { "mulk.workers":"Работники", "mulk.hire":"Нанять", "mulk.wageNote":"Платит месячное жалованье и повышает выработку. Нажми на работника, чтобы уволить.", "mulk.prod":"выработка" },
 };
 // NPC amaca yardım/istismar eylemleri (npc_mind goal_action). es/pt/ar/ru → TR yedeği.
 const _goalTR: Dict = { "npc.helpGoal":"Amacına Yardım Et", "npc.exploitGoal":"Amacını İstismar Et" };
 const NPCGOAL: Record<Lang, Dict> = {
   tr: _goalTR,
   en: { "npc.helpGoal":"Help Their Goal", "npc.exploitGoal":"Exploit Their Goal" },
-  es: _goalTR, pt: _goalTR, ar: _goalTR, ru: _goalTR,
+  es: { "npc.helpGoal":"Ayuda a Su Meta", "npc.exploitGoal":"Explota Su Meta" }, pt: { "npc.helpGoal":"Ajuda a Sua Meta", "npc.exploitGoal":"Explora a Sua Meta" }, ar: { "npc.helpGoal":"ساعد هدفه", "npc.exploitGoal":"استغلّ هدفه" }, ru: { "npc.helpGoal":"Помочь его цели", "npc.exploitGoal":"Использовать его цель" },
 };
 // Pano kanca/bağlam şeritleri (sıradaki hedef + diyar savaşı).
 const DASH3: Record<Lang, Dict> = {
@@ -140,7 +149,7 @@ const _fqTR: Dict = { "fq.panelTitle":"Aile Görevleri" };
 const FQ: Record<Lang, Dict> = {
   tr: _fqTR,
   en: { "fq.panelTitle":"Family Milestones" },
-  es: _fqTR, pt: _fqTR, ar: _fqTR, ru: _fqTR,
+  es: { "fq.panelTitle":"Hitos Familiares" }, pt: { "fq.panelTitle":"Marcos Familiares" }, ar: { "fq.panelTitle":"محطّات العائلة" }, ru: { "fq.panelTitle":"Семейные вехи" },
 };
 // Sonradan eklenen 10 hikaye yayı için başlık/açıklama (önceden yalnız arcs.ts TR'ydi).
 const _arcTR: Dict = {
