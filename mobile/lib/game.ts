@@ -200,6 +200,30 @@ function seedTick(s: GameState) {
 }
 // (Nesil devri tohum aktarımı continueAsHeir içinde: sadece nesil aşabilenler kalır.)
 
+// ── Çağ olayları (Vercel legacy_system epoch_tick): her ~60-90 turda kalıcı dünya kırılması ──
+function epochTick(s: GameState) {
+  if (s.player.dead) return;
+  if (s.epochNext == null) { s.epochNext = s.turn + 60 + Math.floor(Math.random() * 36); return; }
+  if (s.turn < s.epochNext) return;
+  s.epochNext = s.turn + 60 + Math.floor(Math.random() * 36);
+  const k = rnd(["savas", "salgin", "taht", "altincag"]);
+  if (k === "savas") {
+    s.econ = Math.max(0.7, (s.econ || 1) - 0.2); s.player.fear = Math.min(100, s.player.fear + 2);
+    if (s.realm) for (const sn of s.realm) sn.tension = Math.min(120, sn.tension + 15); // savaş sancakları kızıştırır
+    push(s, "cag", `Çağın gölgesi: diyarı büyük bir savaş sardı; yollar tehlikeli, pazar daraldı.`, "makro", true, { k: "epoch.savas" });
+  } else if (k === "salgin") {
+    s.econ = Math.max(0.7, (s.econ || 1) - 0.15);
+    if (Math.random() < 0.3) s.player.health = Math.max(1, s.player.health - 10);
+    push(s, "cag", `Çağın gölgesi: bir salgın diyarı kırıp geçiyor; herkes kapısını sıkı tuttu.`, "makro", true, { k: "epoch.salgin" });
+  } else if (k === "taht") {
+    if (s.realm && s.realm.length) { const sn = rnd(s.realm); sn.tension = Math.min(120, sn.tension + 25); }
+    push(s, "cag", `Çağın gölgesi: tahtta el değişti; yeni efendiler, yeni dengeler.`, "makro", true, { k: "epoch.taht" });
+  } else {
+    s.econ = Math.min(1.5, (s.econ || 1) + 0.25);
+    push(s, "cag", `Çağın aydınlığı: bir altın çağ başladı; bolluk ve bereket diyara yayıldı.`, "makro", true, { k: "epoch.altincag" });
+  }
+}
+
 // ── Hikâye Yönetmeni (Vercel story_director): doruk üretimi + nefes kuralı ──
 // Gerilim 80+ → tek büyük dramatik an (olgun büyük tohum varsa onu doruğa saklamıştı);
 // sonra gerilim düşer ve birkaç tur "nefes" (sakin dönem) garanti edilir.
@@ -319,6 +343,7 @@ export interface GameState {
   seeds?: Seed[]; // sonuç tohumları (geçmişin geleceğe etkisi)
   dynastyOffers?: DynastyOffer[]; // dost hanelerden ittifak/evlilik teklifleri
   allied_houses?: string[]; // ittifak kurulan hanelerin id'leri
+  epochNext?: number; // bir sonraki çağ olayının turu (legacy_system epoch_tick)
 }
 // Dost bir hanedanın oyuncuya teklifi (ittifak veya evlilik).
 export interface DynastyOffer { id: string; houseId: string; nameIdx: number; type: "ittifak" | "evlilik"; }
@@ -707,6 +732,7 @@ export function advance(prev: GameState, n = 1): GameState {
       s.story.lull = hadLandmark ? 0 : (s.story.lull || 0) + 1;
       if (!inBreath && (s.story.lull || 0) >= 5) s.story.tension = Math.min(100, s.story.tension + 2); // uzayan sessizlik gerilimi körükler
       directorTick(s); // doruk üretimi + nefes kuralı (gerilim 80+ → tek büyük an)
+      epochTick(s);    // çağ olayları (her ~60-90 turda kalıcı dünya kırılması)
     }
     // Proaktif hikâye: dünya ara sıra kendiliğinden bir yay açar (gerilim + durgunluk arttıkça daha olası; nefes/dorukta bastırılır).
     if (s.story && !s.story.active && (s.story.breath || 0) === 0 && i === n - 1 && !s.player.dead && s.player.age >= 14) {

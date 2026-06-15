@@ -63,6 +63,7 @@ const EVT: Record<string, { c: string; col: string; gi: string }> = {
   örgüt_katılım: { c: "kariyer", col: C.gold, gi: "crown" }, örgüt_ayrılma: { c: "kariyer", col: C.parchmentMuted, gi: "crown" }, örgüt_görev: { c: "gorev", col: C.sage, gi: "scroll-open" },
   söylenti: { c: "dunya", col: C.rose, gi: "speaker" }, tohum: { c: "olay", col: C.gold, gi: "star" },
   doruk: { c: "olay", col: C.goldBright, gi: "crossed-swords" }, huzur: { c: "dunya", col: C.sage, gi: "prayer-beads" },
+  cag: { c: "dunya", col: C.goldBright, gi: "crown" },
 };
 const DEFAULT_EVT = { c: "olay", col: C.gold, gi: "star" };
 
