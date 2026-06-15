@@ -2068,7 +2068,19 @@ export interface Delta {
   nam?: { [k in keyof Nam]?: number };
 }
 const clampStat = (x: number) => Math.max(0, Math.min(100, x));
-export function applyDilemma(prev: GameState, delta: Delta, resultText: string): GameState {
+// İkilem seçimi → sonuç tohumu (Vercel LIFE_EVENT_SEEDS): "<dilemmaId>:<seçimIdx>" → tohum tarifi.
+// Çocukluk/gençlik seçimleri yıllar (hatta nesiller) sonra dramatik zirvede biçilir.
+export const DILEMMA_SEEDS: Record<string, Omit<Seed, "id" | "ekim">> = {
+  "cocuk_kese:0": { kaynak: "kese_goren", hmin: 24, hmax: 120, agirlik: "kucuk", nesil: false, etki: { money: -20, reputation: -4 } },
+  "cocuk_kese:1": { kaynak: "durust_cocuk", hmin: 36, hmax: 120, agirlik: "kucuk", nesil: false, etki: { reputation: 6 } },
+  "cocuk_kavga:0": { kaynak: "savundugun_cocuk", hmin: 120, hmax: 240, agirlik: "buyuk", nesil: true, etki: { money: 100, reputation: 8 } },
+  "cocuk_kavga:1": { kaynak: "savunmadigin_cocuk", hmin: 120, hmax: 240, agirlik: "buyuk", nesil: true, etki: { reputation: -8 } },
+  "yetiskin_yangin:1": { kaynak: "yangin_sustun", hmin: 60, hmax: 144, agirlik: "buyuk", nesil: true, etki: { reputation: -6 } },
+  "yetiskin_yangin:0": { kaynak: "yangin_kahramani", hmin: 36, hmax: 120, agirlik: "orta", nesil: false, etki: { reputation: 6 } },
+  "yetiskin_kumar:0": { kaynak: "kumar_borcu", hmin: 12, hmax: 60, agirlik: "kucuk", nesil: false, etki: { money: 15 } },
+};
+
+export function applyDilemma(prev: GameState, delta: Delta, resultText: string, seedKey?: string): GameState {
   const s = clone(prev); const p = s.player;
   if (delta.money) p.money = Math.max(0, p.money + delta.money);
   if (delta.health) p.health = clampStat(p.health + delta.health);
@@ -2081,6 +2093,7 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string):
   if (delta.addItem) p.inventory[delta.addItem] = (p.inventory[delta.addItem] || 0) + 1;
   if (delta.nam) for (const k of Object.keys(delta.nam) as (keyof Nam)[]) bumpNam(p, k, delta.nam[k]!);
   if (delta.standing && p.faction) p.faction_standing[p.faction] = (p.faction_standing[p.faction] || 0) + delta.standing; // lonca itibarı (fraksiyon sahnesi)
+  if (seedKey && DILEMMA_SEEDS[seedKey]) sowSeed(s, DILEMMA_SEEDS[seedKey]); // sessiz tohum: seçim yıllar sonra döner
   push(s, "olay", resultText, "kişisel");
   if (p.health <= 0) die(s, `${p.name} bu olaydan sağ çıkamadı.`, { k: "evj.dieEvent", p: [p.name] });
   return s;
