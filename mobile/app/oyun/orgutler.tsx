@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex, BEYLIKS, beylikName, defaultRealm, factionHoldsHere } from "../../lib/game";
+import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex, BEYLIKS, beylikName, defaultRealm, factionHoldsHere, regionOf } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -74,18 +74,23 @@ export default function Orgutler() {
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 12, marginBottom: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
             <Text style={{ fontSize: 13 }}>🏰</Text>
-            <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("realm.title")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.display, fontSize: 9.5, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("realm.title")}</Text>
+            {!!p.faction && (() => { const n = realm.filter((sn) => sn.holder === p.faction).length; return (
+              <Text style={{ fontFamily: F.display, fontSize: 9.5, color: n > 0 ? C.sage : C.parchmentMuted }}>{current?.icon} {n}/{realm.length}</Text>
+            ); })()}
           </View>
           {realm.map((sn) => {
             const b = BEYLIKS.find((x) => x.id === sn.id);
             const holder = factionById(sn.holder);
             const contender = sn.contender ? factionById(sn.contender) : null;
+            const here = regionOf(p.location_name) === sn.id;
+            const mine = sn.holder === p.faction;
             return (
               <View key={sn.id} style={{ paddingVertical: 7, borderTopWidth: 1, borderTopColor: C.border }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: b?.tone || C.gold }} />
-                  <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{beylikName(sn.id)}</Text>
-                  <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{holder?.icon} {holder ? t("fac."+holder.id+".n") : sn.holder}</Text>
+                  <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: here ? C.gold : C.parchment }}>{here ? "📍 " : ""}{beylikName(sn.id)}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: mine ? C.sage : C.gold }}>{holder?.icon} {holder ? t("fac."+holder.id+".n") : sn.holder}</Text>
                 </View>
                 {contender && (
                   <View style={{ marginTop: 5, marginLeft: 16 }}>
