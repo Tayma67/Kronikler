@@ -610,7 +610,40 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
     push(s, "çalışma", `${careerTitle(p.profession, p.career_xp - 1)} olarak çalıştın, ${earn} akçe kazandın.`);
   }
   if (pr) { const after = careerTier(pr, p.career_xp); if (after > tierBefore) push(s, "terfi", `Yükseldin: artık ${pr.tiers[after]}!`, "kişisel", true); }
+  if (!failed && chance(0.3)) rollWorkEvent(s);                 // %30 meslek mini-olayı
   return s;
+}
+
+// ── Meslek mini-olayları (Vercel work_rework.py portu) — stat testli, otomatik çözümlü ──
+interface WorkEvent { text: string; stat: keyof Stats; win: string; lose: string; wMoney?: number; wHealth?: number; wRep?: number; lHealth?: number; lRep?: number; skill?: SkillKey; }
+const WORK_EVENTS: Record<string, WorkEvent[]> = {
+  demirci:  [{ text: "Çetin bir sipariş", stat: "strength", win: "Zorlu siparişi ustaca bitirdin", lose: "Örste elin ezildi", wMoney: 18, lHealth: 5, skill: "crafting" }],
+  tüccar:   [{ text: "Kurnaz bir müşteri", stat: "charisma", win: "Müşteriyi ikna ettin, kârlı sattın", lose: "Müşteri seni dolandırdı", wMoney: 25, lRep: 2, skill: "trade" }],
+  çiftçi:   [{ text: "Hava kapanıyor", stat: "stamina", win: "Hasadı vaktinde topladın", lose: "Yağmur ürünü vurdu", wMoney: 15, lHealth: 3 }],
+  avcı:     [{ text: "İz süren bir av", stat: "strength", win: "Büyük bir av düşürdün", lose: "Av elinden kaçtı, yoruldun", wMoney: 20, lHealth: 4, skill: "combat" }],
+  asker:    [{ text: "Ani bir devriye", stat: "strength", win: "Devriyede yararlık gösterdin", lose: "Çatışmada sıyrık aldın", wMoney: 16, wRep: 2, lHealth: 6, skill: "combat" }],
+  şifacı:   [{ text: "Ağır bir hasta", stat: "intelligence", win: "Hastayı iyileştirdin, dualar aldın", lose: "Hastayı kurtaramadın", wMoney: 22, wRep: 3, lRep: 3 }],
+  müzisyen: [{ text: "Bir düğün daveti", stat: "charisma", win: "Sazınla meclisi coşturdun", lose: "Telin koptu, mahcup oldun", wMoney: 18, wRep: 2, lRep: 1, skill: "social" }],
+  hancı:    [{ text: "Kalabalık bir gece", stat: "charisma", win: "Hanı tıka basa doldurdun", lose: "Sarhoş kavgası çıktı", wMoney: 20, lRep: 2 }],
+  kuyumcu:  [{ text: "Nazik bir takı işi", stat: "intelligence", win: "İnce işçiliğin takdir topladı", lose: "Taşı çatlattın", wMoney: 28, lHealth: 0, skill: "crafting" }],
+  _:        [{ text: "Sıradan bir gün", stat: "stamina", win: "İşini sağlam yaptın, fazladan kazandın", lose: "Yorgun bir gündü", wMoney: 10, lHealth: 2 }],
+};
+function rollWorkEvent(s: GameState) {
+  const p = s.player;
+  const pool = WORK_EVENTS[p.profession] || WORK_EVENTS._;
+  const ev = pool[Math.floor(Math.random() * pool.length)];
+  const ok = Math.random() < 0.4 + effStat(p, ev.stat) * 0.06;
+  if (ok) {
+    if (ev.wMoney) p.money += ev.wMoney;
+    if (ev.wHealth) p.health = Math.min(100, p.health + ev.wHealth);
+    if (ev.wRep) p.reputation = Math.min(100, p.reputation + ev.wRep);
+    if (ev.skill) gainSkill(s, ev.skill, 4);
+    push(s, "çalışma", `${ev.text}: ${ev.win}${ev.wMoney ? ` (+${ev.wMoney} akçe)` : ""}.`);
+  } else {
+    if (ev.lHealth) p.health = Math.max(0, p.health - ev.lHealth);
+    if (ev.lRep) p.reputation = Math.max(-100, p.reputation - ev.lRep);
+    push(s, "çalışma", `${ev.text}: ${ev.lose}.`);
+  }
 }
 
 export function eat(prev: GameState): GameState {
