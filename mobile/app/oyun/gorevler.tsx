@@ -70,8 +70,8 @@ export default function Gorevler() {
                   <Text style={{ fontSize: 16 }}>{q.icon}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 12.5, color: claimed ? C.sage : C.parchment }}>{q.title}</Text>
-                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>{q.desc}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 12.5, color: claimed ? C.sage : C.parchment }}>{t("fq." + q.id + ".t")}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>{t("fq." + q.id + ".d")}</Text>
                 </View>
                 <Text style={{ fontFamily: F.display, fontSize: 13, color: tone, width: 28, textAlign: "right" }}>{status}</Text>
               </View>

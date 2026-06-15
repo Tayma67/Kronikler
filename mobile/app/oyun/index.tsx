@@ -340,7 +340,7 @@ export default function Dashboard() {
             <Text style={{ fontSize: 17 }}>{goal.q.icon}</Text>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: tone, textTransform: "uppercase" }}>{t("dash.nextGoal")}</Text>
-              <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginTop: 1 }}>{goal.q.title} <Text style={{ color: C.parchmentMuted, fontSize: 10.5 }}>· {goal.q.desc}</Text></Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginTop: 1 }}>{t("fq." + goal.q.id + ".t")} <Text style={{ color: C.parchmentMuted, fontSize: 10.5 }}>· {t("fq." + goal.q.id + ".d")}</Text></Text>
             </View>
             <Text style={{ fontFamily: F.display, fontSize: 9.5, color: tone, letterSpacing: 0.5 }}>{lbl}</Text>
           </Pressable>
