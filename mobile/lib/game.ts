@@ -32,6 +32,7 @@ export interface Player {
   inv_q?: Record<string, Partial<Record<QualityTier, number>>>; // eşya kalite kırılımı (quality.py portu; sıradan izlenmez)
   last_study_turn?: number; lesson_count?: number; // mektep: ayda 1 ders + sınav sayacı
   governorships?: string[]; // valisi olunan şehirler
+  govLeg?: Record<string, number>; // valilik meşruiyeti (şehir → 0-100); düşerse isyan/azil
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -734,6 +735,7 @@ export function advance(prev: GameState, n = 1): GameState {
       if (!inBreath && (s.story.lull || 0) >= 5) s.story.tension = Math.min(100, s.story.tension + 2); // uzayan sessizlik gerilimi körükler
       directorTick(s); // doruk üretimi + nefes kuralı (gerilim 80+ → tek büyük an)
       epochTick(s);    // çağ olayları (her ~60-90 turda kalıcı dünya kırılması)
+      governorTick(s); // valilik meşruiyeti + isyan/azil (yalnız vali ise)
     }
     // Proaktif hikâye: dünya ara sıra kendiliğinden bir yay açar (gerilim + durgunluk arttıkça daha olası; nefes/dorukta bastırılır).
     if (s.story && !s.story.active && (s.story.breath || 0) === 0 && i === n - 1 && !s.player.dead && s.player.age >= 14) {
@@ -2486,14 +2488,47 @@ export function runForGovernor(prev: GameState, name: string): GameState {
   if (!canRunForGovernor(s, name)) return s;
   if (!p.governorships) p.governorships = [];
   p.governorships.push(name);
+  if (!p.govLeg) p.govLeg = {};
+  p.govLeg[name] = 60; // başlangıç meşruiyeti
   p.reputation = Math.min(100, p.reputation + 5); p.fame = Math.min(100, p.fame + 6);
   push(s, "yonetim", `${name} valiliğine getirildin — artık ${GOV_TITLE[placeKind(name)] || "Vali"}sin.`, "kişisel", true, { k: "evj.govAppoint", p: [{ pl: name }] });
   return s;
 }
-// Valilik vergi payı (her tur): şehrin refahına göre.
+// Valilik meşruiyetini para harcayarak tazele (halkı kazan, hizmet götür).
+export const GOV_SHORE_COST = 30;
+export function shoreUpLegitimacy(prev: GameState, name: string): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!p.governorships?.includes(name) || p.money < GOV_SHORE_COST) return s;
+  p.money -= GOV_SHORE_COST;
+  if (!p.govLeg) p.govLeg = {};
+  p.govLeg[name] = Math.min(100, (p.govLeg[name] ?? 60) + 14);
+  p.reputation = Math.min(100, p.reputation + 1);
+  push(s, "yonetim", `${name}'de hayır işleri ve hizmet götürdün; halkın gözünde meşruiyetin arttı.`, "kişisel", false, { k: "gov.shoreDone", p: [{ pl: name }] });
+  return s;
+}
+export function govLegOf(p: Player, name: string): number { return p.govLeg?.[name] ?? 60; }
+// Valilik döngüsü (her tur, yalnız vali ise): meşruiyet rep/şerefe göre kayar; düşerse isyan → azil.
+function governorTick(s: GameState) {
+  const p = s.player; const list = p.governorships; if (!list?.length) return;
+  if (!p.govLeg) p.govLeg = {};
+  for (const loc of [...list]) {
+    const target = 40 + (p.reputation - 50) * 0.4 + p.honor * 0.12 - p.fear * 0.05;
+    let leg = p.govLeg[loc] ?? 60;
+    leg += (target - leg) * 0.12 - 1.2; // hedefe çekilir + tabii aşınma
+    leg = Math.max(0, Math.min(100, leg));
+    p.govLeg[loc] = Math.round(leg);
+    if (leg < 18 && Math.random() < 0.12 + (18 - leg) * 0.02) { // düşük meşruiyet → isyan
+      p.governorships = p.governorships!.filter((x) => x !== loc);
+      delete p.govLeg[loc];
+      p.reputation = Math.max(-100, p.reputation - 8);
+      push(s, "yonetim", `${loc}'de halk ayaklandı; valilikten azledildin.`, "kişisel", true, { k: "gov.deposed", p: [{ pl: loc }] });
+    }
+  }
+}
+// Valilik vergi payı (her tur): şehrin refahına × meşruiyet (düşük meşruiyet az toplar).
 export function governorIncome(s: GameState): number {
   const list = s.player.governorships; if (!list?.length) return 0;
-  return list.reduce((a, loc) => a + Math.max(1, Math.round(cityInfo(loc, placeKind(loc)).prosperity / 4)), 0);
+  return list.reduce((a, loc) => a + Math.max(1, Math.round(cityInfo(loc, placeKind(loc)).prosperity / 4 * (0.4 + govLegOf(s.player, loc) / 100 * 0.8))), 0);
 }
 
 // ── Zanaat / üretim zincirleri — hammaddeyi mamule çevir ──

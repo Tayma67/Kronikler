@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { travelBy, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep } from "../../../lib/game";
+import { travelBy, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST } from "../../../lib/game";
 import { cityInfo, marketGoods, locSeed, localSpecialtyName } from "../../../lib/world";
 import { useI18n, applyParams } from "../../../lib/i18n";
 import { placeName } from "../../../lib/locale-data";
@@ -53,9 +53,27 @@ export default function DiyarDetay() {
           <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{GOV_TITLE[kind] || t("diyar.governor")}</Text>
           <Text style={{ fontFamily: F.serif, fontSize: 14, color: isGovernor(state.player, name) ? C.gold : C.parchment }}>{isGovernor(state.player, name) ? `★ ${state.player.name}` : info.governor}</Text>
         </View>
-        {isGovernor(state.player, name) ? (
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.sage, marginTop: 10 }}>★ {t("gov.youGovern")} · +{Math.max(1, Math.round(info.prosperity / 4))} {t("gov.taxShare")}</Text>
-        ) : here ? (
+        {isGovernor(state.player, name) ? (() => {
+          const leg = govLegOf(state.player, name);
+          const legCol = leg > 55 ? C.sage : leg > 30 ? C.gold : C.blood;
+          return (
+            <View style={{ marginTop: 10 }}>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.sage }}>★ {t("gov.youGovern")} · +{Math.max(1, Math.round(info.prosperity / 4 * (0.4 + leg / 100 * 0.8)))} {t("gov.taxShare")}</Text>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10, marginBottom: 4 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted }}>{t("gov.legitimacy").toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 9, color: legCol }}>{leg}/100</Text>
+              </View>
+              <View style={{ height: 7, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                <View style={{ width: `${leg}%`, height: 7, borderRadius: 4, backgroundColor: legCol }} />
+              </View>
+              {here && (
+                <Pressable disabled={state.player.money < GOV_SHORE_COST} onPress={() => apply((s) => shoreUpLegitimacy(s, name))} style={{ marginTop: 10, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: state.player.money < GOV_SHORE_COST ? C.bg : "rgba(201,168,76,0.12)", alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: state.player.money < GOV_SHORE_COST ? C.parchmentMuted : C.gold }}>{t("gov.shoreUp")} (−{GOV_SHORE_COST} ⚜)</Text>
+                </Pressable>
+              )}
+            </View>
+          );
+        })() : here ? (
           canRunForGovernor(state, name) ? (
             <Pressable onPress={() => apply((s) => runForGovernor(s, name))} style={{ marginTop: 12, paddingVertical: 11, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: "rgba(201,168,76,0.14)", alignItems: "center" }}>
               <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>{t("gov.run")}</Text>
