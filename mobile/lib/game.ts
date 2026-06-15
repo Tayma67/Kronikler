@@ -406,6 +406,7 @@ export interface GameState {
   epochNext?: number; // bir sonraki çağ olayının turu (legacy_system epoch_tick)
   pendingScene?: { kind: string; ctx: Record<string, string> } | null; // oyuncu seçimi bekleyen interaktif sahne (suç kesintisi vb.)
   tips?: Tip[]; // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
+  locEvents?: LocEvent[]; // lokasyon-bazlı tipli dünya olayları (kuraklık/panayır/veba...)
 }
 // Dost bir hanedanın oyuncuya teklifi (ittifak veya evlilik).
 export interface DynastyOffer { id: string; houseId: string; nameIdx: number; type: "ittifak" | "evlilik"; }
@@ -446,7 +447,70 @@ export function goodPriceMult(s: GameState, goodId: string): number {
   let m = (SEASON_MULT[currentCalendar(s.turn).season] || {})[goodId] || 1;
   const ev = s.marketEvent;
   if (ev && ev.until > s.turn && ev.goods.includes(goodId)) m *= ev.mult;
+  m *= locPriceMult(s, s.player.location_name, goodId); // bulunduğun şehirdeki olaylar (kuraklık/panayır...) fiyata yansır
   return m;
+}
+// ── Tipli lokasyon-bazlı dünya olayları (Vercel world_events.py portu) ──
+// Her olay BİR şehri vurur: refah/güvenlik + fiyat etkisi + (oradaysan) seni etkiler. Haftalık söner.
+export interface LocEvent { id: string; loc: string; type: string; hafta: number; until: number; }
+export interface LocEventType { id: string; icon: string; prosp: number; sec: number; goods: string[]; priceMult: number; months: [number, number] }
+export const LOC_EVENT_TYPES: Record<string, LocEventType> = {
+  kuraklik: { id: "kuraklik", icon: "☀️", prosp: -12, sec: 0,   goods: ["bugday", "un", "ekmek", "et", "balik"], priceMult: 1.4, months: [4, 7] },
+  bereket:  { id: "bereket",  icon: "🌾", prosp: 10,  sec: 0,   goods: ["bugday", "un", "ekmek"],               priceMult: 0.7, months: [3, 5] },
+  eskiya:   { id: "eskiya",   icon: "⚔️", prosp: -6,  sec: -22, goods: [],                                       priceMult: 1.0, months: [3, 6] },
+  panayir:  { id: "panayir",  icon: "🎪", prosp: 8,   sec: 0,   goods: ["sarap", "bal", "peynir", "et"],         priceMult: 1.3, months: [2, 3] },
+  yangin:   { id: "yangin",   icon: "🔥", prosp: -14, sec: -5,  goods: ["kereste"],                              priceMult: 1.4, months: [3, 5] },
+  veba:     { id: "veba",     icon: "☠️", prosp: -16, sec: 0,   goods: ["sifa", "iksir"],                        priceMult: 1.6, months: [4, 7] },
+};
+const LOC_EVENT_LABEL: Record<string, string> = { kuraklik: "Kuraklık baş gösterdi", bereket: "Bereketli hasat", eskiya: "Eşkıya türedi", panayir: "Panayır kuruldu", yangin: "Yangın çıktı", veba: "Veba salgını" };
+// Bir şehirde aktif olayların toplam refah/güvenlik etkisi (mülk geliri, seyahat için).
+export function cityFx(s: GameState, loc: string): { prosp: number; sec: number } {
+  let prosp = 0, sec = 0;
+  for (const e of s.locEvents || []) {
+    if (e.loc !== loc || e.until <= s.turn) continue;
+    const t = LOC_EVENT_TYPES[e.type]; if (t) { prosp += t.prosp; sec += t.sec; }
+  }
+  return { prosp, sec };
+}
+// Bir şehirdeki aktif olayların bir mala uyguladığı fiyat çarpanı.
+function locPriceMult(s: GameState, loc: string, goodId: string): number {
+  let m = 1;
+  for (const e of s.locEvents || []) {
+    if (e.loc !== loc || e.until <= s.turn) continue;
+    const t = LOC_EVENT_TYPES[e.type]; if (t && t.goods.includes(goodId)) m *= t.priceMult;
+  }
+  return m;
+}
+// Bir şehirdeki aktif olay tiplerini döndür (UI için).
+export function locEventsAt(s: GameState, loc: string): string[] {
+  return (s.locEvents || []).filter((e) => e.loc === loc && e.until > s.turn).map((e) => e.type);
+}
+// Haftalık: eski olaylar söner, ara sıra yeni olay doğar (oyuncunun yeri + mülk şehirleri biraz daha olası).
+function locEventTick(s: GameState) {
+  let evs = (s.locEvents || []).filter((e) => e.until > s.turn);
+  if (evs.length < 3 && Math.random() < 0.12) {
+    const types = Object.keys(LOC_EVENT_TYPES);
+    const type = types[Math.floor(Math.random() * types.length)];
+    const pool = [s.player.location_name, ...(s.player.properties || []).map((p) => p.loc), rnd(LOCATIONS)].filter(Boolean);
+    const loc = pool[Math.floor(Math.random() * pool.length)];
+    if (loc && !evs.some((e) => e.loc === loc)) { // bir şehirde aynı anda tek olay
+      const t = LOC_EVENT_TYPES[type];
+      const dur = t.months[0] + Math.floor(Math.random() * (t.months[1] - t.months[0] + 1));
+      evs.push({ id: Math.random().toString(36).slice(2, 10), loc, type, hafta: s.turn, until: s.turn + dur });
+      push(s, "dunya_olayi", `${loc}: ${LOC_EVENT_LABEL[type]} (${LOC_EVENT_TYPES[type].icon})`, "makro", true, { k: "lev." + type, p: [{ pl: loc }] });
+    }
+  }
+  s.locEvents = evs.slice(-4);
+}
+// Oyuncu olaylı bir şehirdeyse doğrudan hisseder (veba→sağlık, panayır→kazanç, kuraklık→açlık, eşkıya→korku).
+function locEventPersonal(s: GameState) {
+  for (const e of s.locEvents || []) {
+    if (e.loc !== s.player.location_name || e.until <= s.turn) continue;
+    if (e.type === "veba" && chance(0.15)) { const h = 6 + Math.floor(Math.random() * 8); s.player.health = Math.max(1, s.player.health - h); push(s, "saglik", `${e.loc}'deki veba sana da bulaştı; halsiz düştün (−${h} sağlık).`, "kişisel", false, { k: "lev.veba.hit", p: [h] }); }
+    else if (e.type === "panayir" && chance(0.30)) { const g = 5 + Math.floor(Math.random() * 10); s.player.money += g; s.player.reputation = Math.min(100, s.player.reputation + 1); push(s, "gunluk", `${e.loc} panayırında eğlendin, biraz da kazandın (+${g} akçe).`, "kişisel", false, { k: "lev.panayir.gain", p: [g] }); }
+    else if (e.type === "kuraklik" && chance(0.25)) { s.player.hunger = Math.max(0, s.player.hunger - 6); push(s, "gunluk", `${e.loc}'de kuraklık; karın doyurmak zorlaştı.`, "kişisel", false, { k: "lev.kuraklik.hit" }); }
+    else if (e.type === "yangin" && chance(0.10)) { s.player.fear = Math.min(100, s.player.fear + 3); push(s, "gunluk", `${e.loc}'deki yangın korku saldı.`, "kişisel", false, { k: "lev.yangin.hit" }); }
+  }
 }
 export function econLabel(econ: number): string {
   if (econ >= 1.18) return "Kıtlık — fiyatlar yüksek";
@@ -754,10 +818,13 @@ export function advance(prev: GameState, n = 1): GameState {
     for (const pr of s.player.properties) {
       const base = PROPERTY_TYPES[pr.type]?.income || 0;
       const ci = cityOf(pr.loc || s.player.location_name);
-      const condProspLevel = (0.75 + ci.prosperity / 200) * (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5);
+      const fx = cityFx(s, pr.loc || s.player.location_name); // aktif dünya olayları (kuraklık/yangın/panayır...)
+      const effProsp = Math.max(5, ci.prosperity + fx.prosp);
+      const effSec = Math.max(0, ci.security + fx.sec);
+      const condProspLevel = (0.75 + effProsp / 200) * (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5);
       // Tipe özgü davranış (Vercel property_system per-tip tick ruhu): tarla mevsimlik, dükkân refaha duyarlı.
       const typeMult = pr.type === "tarla" ? ({ "İlkbahar": 1.0, "Yaz": 1.15, "Sonbahar": 1.7, "Kış": 0.25 }[cal.season] ?? 1)
-        : pr.type === "dukkan" ? (1 + ci.prosperity / 300)
+        : pr.type === "dukkan" ? (1 + effProsp / 300)
         : pr.type === "ev" ? 0.7 : 1;
       inc += base * condProspLevel * typeMult;
       if (pr.type === "ev" && (pr.level || 1) >= 2 && chance(0.04)) s.player.reputation = Math.min(100, s.player.reputation + 1); // köklü ev → itibar damlası
@@ -766,7 +833,7 @@ export function advance(prev: GameState, n = 1): GameState {
       inc += w.gross; wages += w.wage;
       const y = propYield(pr); if (y) produced[y.good] = (produced[y.good] || 0) + y.qty; // işçi emeği → gerçek hammadde
       if (pr.cond > 40 && chance(0.2)) pr.cond -= 1;                                   // zamanla aşınma
-      if (ci.security < 30 && chance(0.02)) {                                          // düşük güvenlikte yağma
+      if (effSec < 30 && chance(0.02 + (effSec < 10 ? 0.03 : 0))) {                    // düşük güvenlikte (eşkıya/yangın olayı kötüleştirir) yağma
         pr.cond = Math.max(20, pr.cond - 15);
         if (i === n - 1) push(s, "mülk_yagma", `${PROPERTY_TYPES[pr.type]?.name || "Mülkün"} (${pr.loc}) yağmaya uğradı; onarım gerek.`, "kişisel", false, { k: "evj.propRaid", p: [{ pt2: pr.type }, { pl: pr.loc }] });
       }
@@ -802,6 +869,7 @@ export function advance(prev: GameState, n = 1): GameState {
     tickEconomy(s, i === n - 1);
     if (i === n - 1 && !s.player.dead && chance(0.16)) worldNews(s);  // diyarın diline düşenler
     if (i === n - 1) tipsTick(s); // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
+    if (i === n - 1) { locEventTick(s); locEventPersonal(s); } // tipli lokasyon olayları (kuraklık/panayır/veba) + oradaysan hisset
     if (i === n - 1) claimAchievements(s); // ay sonunda yeni başarımları ödüllendir
     if (i === n - 1) claimFamilyQuests(s); // ay sonunda tamamlanan aile/yaşam görevlerini ödüllendir
     const inBreath = (s.story?.breath || 0) > 0; // doruk sonrası sakin dönem
@@ -1436,7 +1504,8 @@ export const TRAVEL_ROUTES: { id: TravelRoute; label: string; desc: string }[] =
 function rollTravelEvent(s: GameState, route: TravelRoute) {
   const p = s.player;
   if (p.dead || p.age < 13) return;
-  const chance = route === "patika" ? 0.42 : route === "kervan" ? 0.5 : 0.34;
+  const insec = Math.max(0, -cityFx(s, p.location_name).sec); // eşkıya/yangın olayı varış şehrini tehlikeli yapar
+  const chance = (route === "patika" ? 0.42 : route === "kervan" ? 0.5 : 0.34) + insec * 0.012;
   if (Math.random() >= chance) return;
   const test = (stat: keyof Stats, per = 0.05, base = 0.4) => Math.random() < Math.min(0.9, base + effStat(p, stat) * per);
   // Kervan rotası güvenli/sosyal olaylara yönelir; diğerleri tüm havuzu çeker.

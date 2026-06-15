@@ -23,8 +23,8 @@
 - ✅ **Eyleme dönük söylentiler** (piyasa ipucu + istihbarat) (commit 84dc7d9)
 - ✅ **Kariyer merdiveni + stat-XP** (özellikler kullanımla büyür) (commit bu turda)
 - ✅ **Üretim zincirleri** (işçili mülk → gerçek hammadde → zanaat zinciri) (commit bu turda)
-- ⬜ **Tipli dünya olayları** (lokasyon etkisi — DİKKAT: offline deterministik tasarımla uyumlu kalmalı) — sıradaki
-- ⬜ **Fraksiyon AI + güç yüzeyi** (en büyük; ~30 AI eylemi)
+- ✅ **Tipli dünya olayları** (lokasyon-bazlı, hissedilir: fiyat/gelir/seyahat/kişisel) (commit bu turda)
+- ⬜ **Fraksiyon AI + güç yüzeyi** (en büyük; ~30 AI eylemi) — son sistem
 
 > Devam: bir sonraki oturum `mobile/`de `npm install` (gerekiyorsa) → kalan ⬜ sistemleri sırayla.
 
@@ -60,7 +60,8 @@ Durum: 🟢 iyi (≈%80+) · 🟡 kısmi · 🔴 sığ/eksik · 🔵 kasıtlı s
 | Seyahat reworku (`travel_rework.py`) | ~30% | 🔴 | 3 rota var; kervan yolcu profilleri ve olay seçimleri yok |
 | Savaş (`combat_engine.py`) | ~25% | 🔴 | duruş+kart var; yaralanma kademesi, niyet ipucu, kuşatma/turnuva çok-aşama yok |
 | Üretim zincirleri (`production_chains.py`) | ~80% | ✅ | PORTLANDI: işçili mülk gerçek hammadde üretir (tarla→buğday, değirmen→un) → mevcut tarif/zanaat zincirini besler (propYield); zaten zengin RECIPES + kalite vardı |
-| Fraksiyon AI + güç yüzeyi (`faction_system.py` 4258) | ~20% | 🔴 | katıl/görev/rütbe/savaş var; **~30 AI eylemi (darbe/suikast/sabotaj/koalisyon/isyan) yok** |
+| Tipli dünya olayları (`world_events.py`) | ~85% | ✅ | PORTLANDI: lokasyon-bazlı (kuraklık/bereket/eşkıya/panayır/yangın/veba) — fiyat/mülk geliri/seyahat/kişisel etki; diyar "Şehirde Olanlar" |
+| Fraksiyon AI + güç yüzeyi (`faction_system.py` 4258) | ~20% | 🔴 | katıl/görev/rütbe/savaş var; **~30 AI eylemi (darbe/suikast/sabotaj/koalisyon/isyan) yok** — SON sistem |
 | Diyalog (`dialogue.py` 1464) | ~15% | 🔴 | APK 4 niyet; Vercel 8 konu × 4 katman (bağlam/hafıza/spontane) yok |
 | Mektep (`school.py` 1648) | ~15% | 🔴 | 4 ders+sınav var; ders olayları, kulüpler, hoca hafızası, mevsim etkinlik yok |
 | Eyleme dönük söylentiler (`rumors.py`) | ~75% | ✅ | PORTLANDI: piyasa ipucu (deterministik GERÇEK arbitraj: ucuz→pahalı şehir) + fraksiyon istihbaratı (savaş önceden duyulur); Haberler'de "Duyumlar". NPC sırrı/şantaj kaldı (bounty NPC yok) |

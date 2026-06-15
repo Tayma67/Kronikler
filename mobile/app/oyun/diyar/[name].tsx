@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { travelBy, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST } from "../../../lib/game";
+import { travelBy, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES } from "../../../lib/game";
 import { cityInfo, marketGoods, locSeed, localSpecialtyName } from "../../../lib/world";
 import { useI18n, applyParams } from "../../../lib/i18n";
 import { placeName } from "../../../lib/locale-data";
@@ -45,6 +45,19 @@ export default function DiyarDetay() {
         <Stat label={t("diyar.prosperity")} value={`${info.prosperity}/100`} />
         <Stat label={t("diyar.livelihood")} value={localSpecialtyName(locSeed(name), lang)} />
       </View>
+
+      {/* Şehirde olan tipli dünya olayları (Vercel world_events.py) */}
+      {locEventsAt(state, name).length > 0 && (
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("lev.head").toUpperCase()}</Text>
+          {locEventsAt(state, name).map((ty, idx) => (
+            <View key={idx} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: ty === "panayir" || ty === "bereket" ? C.sage : C.blood, borderLeftWidth: 2.5, borderRadius: 8, padding: 11, marginBottom: 6 }}>
+              <Text style={{ fontSize: 15 }}>{LOC_EVENT_TYPES[ty]?.icon}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{t("lev." + ty + ".l")}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* ── Şehir Yönetimi (Vercel city_governance.py portu) ── */}
       <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("gov.title").toUpperCase()}</Text>
