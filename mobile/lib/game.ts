@@ -190,17 +190,44 @@ function seedTick(s: GameState) {
   const turn = s.turn; const ready: [Seed, boolean][] = [];
   for (const t of seeds) {
     const yas = turn - t.ekim;
-    if (yas >= t.hmax) ready.push([t, true]);
-    else if (yas >= t.hmin && seedKosulOk(s, t)) {
-      if (t.agirlik === "buyuk") { if (Math.random() < 0.06) ready.push([t, true]); }
-      else if (Math.random() < 0.05) ready.push([t, false]);
-    }
+    if (yas >= t.hmax) ready.push([t, true]); // vadesi doldu — zorla biçilir
+    // Büyük tohumlar doruğu bekler (directorTick'te biçilir); küçük/orta tohumlar kendiliğinden filizlenir.
+    else if (yas >= t.hmin && seedKosulOk(s, t) && t.agirlik !== "buyuk" && Math.random() < 0.05) ready.push([t, false]);
   }
   if (!ready.length) return;
   ready.sort((a, b) => (a[1] === b[1] ? a[0].ekim - b[0].ekim : (a[1] ? -1 : 1)));
   germinateSeed(s, ready[0][0]);
 }
 // (Nesil devri tohum aktarımı continueAsHeir içinde: sadece nesil aşabilenler kalır.)
+
+// ── Hikâye Yönetmeni (Vercel story_director): doruk üretimi + nefes kuralı ──
+// Gerilim 80+ → tek büyük dramatik an (olgun büyük tohum varsa onu doruğa saklamıştı);
+// sonra gerilim düşer ve birkaç tur "nefes" (sakin dönem) garanti edilir.
+function directorTick(s: GameState) {
+  const st = s.story; if (!st || s.player.dead) return;
+  if ((st.breath || 0) > 0) {
+    st.breath = (st.breath || 0) - 1;
+    st.tension = Math.max(0, st.tension - 2);
+    if (st.breath === 0) push(s, "huzur", `Fırtına dindi; bir süre sular durulur.`, "kişisel", false, { k: "dir.breathEnd" });
+    return;
+  }
+  if (st.tension < 80) return;
+  // 1) Olgunlaşmış büyük tohum varsa doruğa o saklanmıştı — şimdi biçilir.
+  const big = (s.seeds || []).filter((t) => t.agirlik === "buyuk" && s.turn - t.ekim >= t.hmin).sort((a, b) => a.ekim - b.ekim)[0];
+  if (big) {
+    germinateSeed(s, big);
+  } else if (st.nemesis && Math.random() < 0.6) {
+    push(s, "doruk", `Husumet doruğa çıktı: ${st.nemesis.name} gölgeden çıkıp üstüne geldi.`, "kişisel", true, { k: "dir.climaxNemesis", p: [st.nemesis.name] });
+    s.player.fear = Math.min(100, s.player.fear + 4);
+    st.nemesis.power += 3;
+  } else if (Math.random() < 0.5) {
+    s.player.reputation = Math.min(100, s.player.reputation + 5); s.player.fame = Math.min(100, s.player.fame + 4);
+    push(s, "doruk", `Yıllardır biriken gerilim doruğa vardı — ve bu kez talih senden yana döndü.`, "kişisel", true, { k: "dir.climaxWin" });
+  } else {
+    push(s, "doruk", `Hayatın bir dönüm noktasına geldi; eski dengeler sarsıldı.`, "kişisel", true, { k: "dir.climaxTurn" });
+  }
+  st.tension = 30; st.breath = 4; st.lull = 0;
+}
 
 // Skandal bir eyleme yakındaki bir NPC tanık olur → skandal anı (dedikodu kaynağı).
 function witnessScandal(s: GameState, tur: string, chance: number) {
@@ -274,7 +301,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
   }
   return s;
 }
-export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; }
+export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; breath?: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
   relationships: Record<string, number>; world: { ready: boolean };
@@ -671,16 +698,18 @@ export function advance(prev: GameState, n = 1): GameState {
     if (i === n - 1 && !s.player.dead && chance(0.16)) worldNews(s);  // diyarın diline düşenler
     if (i === n - 1) claimAchievements(s); // ay sonunda yeni başarımları ödüllendir
     if (i === n - 1) claimFamilyQuests(s); // ay sonunda tamamlanan aile/yaşam görevlerini ödüllendir
-    if (s.story) s.story.tension = Math.min(100, s.story.tension + 1); // gerilim zamanla birikir
+    const inBreath = (s.story?.breath || 0) > 0; // doruk sonrası sakin dönem
+    if (s.story && !inBreath) s.story.tension = Math.min(100, s.story.tension + 1); // gerilim zamanla birikir (nefeste durur)
     // Durgunluk dedektörü (Vercel story_director "Nefes Kuralı" portu): sessiz aylar birikince
     // dünya kendini hatırlatır — gerilim ve proaktif hikâye şansı tırmanır.
     if (s.story && i === n - 1) {
       const hadLandmark = s.history.some((e) => e.day === s.turn && e.landmark);
       s.story.lull = hadLandmark ? 0 : (s.story.lull || 0) + 1;
-      if ((s.story.lull || 0) >= 5) s.story.tension = Math.min(100, s.story.tension + 2); // uzayan sessizlik gerilimi körükler
+      if (!inBreath && (s.story.lull || 0) >= 5) s.story.tension = Math.min(100, s.story.tension + 2); // uzayan sessizlik gerilimi körükler
+      directorTick(s); // doruk üretimi + nefes kuralı (gerilim 80+ → tek büyük an)
     }
-    // Proaktif hikâye: dünya ara sıra kendiliğinden bir yay açar (gerilim + durgunluk arttıkça daha olası).
-    if (s.story && !s.story.active && i === n - 1 && !s.player.dead && s.player.age >= 14) {
+    // Proaktif hikâye: dünya ara sıra kendiliğinden bir yay açar (gerilim + durgunluk arttıkça daha olası; nefes/dorukta bastırılır).
+    if (s.story && !s.story.active && (s.story.breath || 0) === 0 && i === n - 1 && !s.player.dead && s.player.age >= 14) {
       const avail = availableArcs(s.player, s.story.completed, s.story.tension, null);
       const lullBoost = Math.max(0, (s.story.lull || 0) - 4) * 0.04;
       if (avail.length && chance(0.09 + s.story.tension / 500 + lullBoost)) {
