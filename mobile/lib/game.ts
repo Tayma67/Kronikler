@@ -152,7 +152,7 @@ export function joinThreshold(p: Player, f: Faction): number { return p.perks.in
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: (string | number)[]; }
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; }
 export interface NpcState { mood: number; memories: string[]; }
-export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; }
+export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
   relationships: Record<string, number>; world: { ready: boolean };
@@ -526,13 +526,21 @@ export function advance(prev: GameState, n = 1): GameState {
     if (i === n - 1) claimAchievements(s); // ay sonunda yeni başarımları ödüllendir
     if (i === n - 1) claimFamilyQuests(s); // ay sonunda tamamlanan aile/yaşam görevlerini ödüllendir
     if (s.story) s.story.tension = Math.min(100, s.story.tension + 1); // gerilim zamanla birikir
-    // Proaktif hikâye: dünya ara sıra kendiliğinden bir yay açar (gerilim arttıkça daha olası).
+    // Durgunluk dedektörü (Vercel story_director "Nefes Kuralı" portu): sessiz aylar birikince
+    // dünya kendini hatırlatır — gerilim ve proaktif hikâye şansı tırmanır.
+    if (s.story && i === n - 1) {
+      const hadLandmark = s.history.some((e) => e.day === s.turn && e.landmark);
+      s.story.lull = hadLandmark ? 0 : (s.story.lull || 0) + 1;
+      if ((s.story.lull || 0) >= 5) s.story.tension = Math.min(100, s.story.tension + 2); // uzayan sessizlik gerilimi körükler
+    }
+    // Proaktif hikâye: dünya ara sıra kendiliğinden bir yay açar (gerilim + durgunluk arttıkça daha olası).
     if (s.story && !s.story.active && i === n - 1 && !s.player.dead && s.player.age >= 14) {
       const avail = availableArcs(s.player, s.story.completed, s.story.tension, null);
-      if (avail.length && chance(0.09 + s.story.tension / 500)) {
+      const lullBoost = Math.max(0, (s.story.lull || 0) - 4) * 0.04;
+      if (avail.length && chance(0.09 + s.story.tension / 500 + lullBoost)) {
         const a = rnd(avail);
         s.story.active = { id: a.id, stage: a.start };
-        s.story.tension = Math.max(0, s.story.tension - 4);
+        s.story.tension = Math.max(0, s.story.tension - 4); s.story.lull = 0;
         push(s, "hikaye_basladi", `Bir hikâye kapını çaldı: "${a.title}". (Hikâyelerim'den sürdür.)`, "kişisel", true);
       }
     }
@@ -1377,7 +1385,9 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null, econ: 1,
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {},
+    // Hanedan hafızası vârise geçer: ataların tamamladığı yaylar bayrak olarak kalır, az da olsa anlatı momentumu verir.
+    story: { active: null, completed: [], tension: Math.min(20, Object.keys(prev.story?.flags || {}).length * 3), nemesis: null, flags: { ...(prev.story?.flags || {}) }, lull: 0 }, wars: [], caravan: null, econ: 1,
     settlements: prev.settlements || [], // dynastinin kurduğu yerleşimler vârise kalır
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
@@ -1872,6 +1882,7 @@ export function advanceArc(prev: GameState, choiceIdx: number, loc?: { result?: 
   if (c.next === "end") {
     push(s, "hikaye_bitti", loc?.endLabel || `"${a.title}" sona erdi.`, "kişisel", true);
     s.story.completed.push(a.id);
+    s.story.flags = { ...(s.story.flags || {}), [a.id]: true }; // hanedan hafızası (nesiller arası kalıcı)
     s.story.active = null;
     s.story.tension = Math.max(0, s.story.tension - 2);
   } else {
