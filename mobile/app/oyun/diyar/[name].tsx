@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { travelBy, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST } from "../../../lib/game";
+import { travelBy, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST } from "../../../lib/game";
 import { cityInfo, marketGoods, locSeed, localSpecialtyName } from "../../../lib/world";
 import { useI18n, applyParams } from "../../../lib/i18n";
 import { placeName } from "../../../lib/locale-data";
@@ -70,6 +70,54 @@ export default function DiyarDetay() {
                 <Pressable disabled={state.player.money < GOV_SHORE_COST} onPress={() => apply((s) => shoreUpLegitimacy(s, name))} style={{ marginTop: 10, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: state.player.money < GOV_SHORE_COST ? C.bg : "rgba(201,168,76,0.12)", alignItems: "center" }}>
                   <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: state.player.money < GOV_SHORE_COST ? C.parchmentMuted : C.gold }}>{t("gov.shoreUp")} (−{GOV_SHORE_COST} ⚜)</Text>
                 </Pressable>
+              )}
+              {/* Vergi oranı (tradeoff: gelir/hazine ↔ memnuniyet) */}
+              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted, marginTop: 14, marginBottom: 5 }}>{t("gov.tax").toUpperCase()} · %{govTaxOf(state.player, name)}</Text>
+              <View style={{ flexDirection: "row", gap: 6 }}>
+                {GOV_TAX_PRESETS.map((tp) => {
+                  const on = govTaxOf(state.player, name) === tp.rate;
+                  const lbl = tp.id === "dusuk" ? t("gov.taxLow") : tp.id === "orta" ? t("gov.taxMid") : t("gov.taxHigh");
+                  return (
+                    <Pressable key={tp.id} disabled={!here} onPress={() => apply((s) => setGovTax(s, name, tp.rate))} style={{ flex: 1, paddingVertical: 8, borderRadius: 8, borderWidth: 1, alignItems: "center", borderColor: on ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.12)" : C.card, opacity: here ? 1 : 0.6 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10, color: on ? C.gold : C.parchment }}>{lbl}</Text>
+                      <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.parchmentMuted }}>%{tp.rate}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {/* Halk memnuniyeti */}
+              {(() => {
+                const hp = govHappyOf(state.player, name);
+                const hpCol = hp > 55 ? C.sage : hp > 30 ? C.gold : C.blood;
+                return (
+                  <>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 12, marginBottom: 4 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted }}>{t("gov.happy").toUpperCase()}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 9, color: hpCol }}>{hp}/100</Text>
+                    </View>
+                    <View style={{ height: 7, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                      <View style={{ width: `${hp}%`, height: 7, borderRadius: 4, backgroundColor: hpCol }} />
+                    </View>
+                  </>
+                );
+              })()}
+              {/* Şehir hazinesi + projeler */}
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 12 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted }}>{t("gov.treasury").toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.gold }}>{govTreasuryOf(state.player, name)} ⚜</Text>
+              </View>
+              {here && (
+                <View style={{ flexDirection: "row", gap: 6, marginTop: 8 }}>
+                  {(["hizmet", "asayis"] as const).map((kind) => {
+                    const can = govTreasuryOf(state.player, name) >= GOV_INVEST_COST;
+                    return (
+                      <Pressable key={kind} disabled={!can} onPress={() => apply((s) => investTreasury(s, name, kind))} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1, alignItems: "center", borderColor: "rgba(201,168,76,0.5)", backgroundColor: can ? "rgba(201,168,76,0.12)" : C.bg, opacity: can ? 1 : 0.5 }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold }}>{t(kind === "hizmet" ? "gov.invService" : "gov.invSecurity")}</Text>
+                        <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.parchmentMuted }}>−{GOV_INVEST_COST} ⚜</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               )}
             </View>
           );

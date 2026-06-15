@@ -34,6 +34,9 @@ export interface Player {
   last_study_turn?: number; lesson_count?: number; // mektep: ayda 1 ders + sınav sayacı
   governorships?: string[]; // valisi olunan şehirler
   govLeg?: Record<string, number>; // valilik meşruiyeti (şehir → 0-100); düşerse isyan/azil
+  govTax?: Record<string, number>; // valilikte vergi oranı (şehir → %; default 15)
+  govHappy?: Record<string, number>; // valilikte halk memnuniyeti (0-100)
+  govTreasury?: Record<string, number>; // şehir hazinesi (vergiyle dolar, projeye harcanır)
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
 }
@@ -2570,28 +2573,67 @@ export function shoreUpLegitimacy(prev: GameState, name: string): GameState {
   return s;
 }
 export function govLegOf(p: Player, name: string): number { return p.govLeg?.[name] ?? 60; }
-// Valilik döngüsü (her tur, yalnız vali ise): meşruiyet rep/şerefe göre kayar; düşerse isyan → azil.
+// Şehir yönetim kolları (Vercel city_governance portu): vergi oranı, halk memnuniyeti, şehir hazinesi.
+export function govTaxOf(p: Player, name: string): number { return p.govTax?.[name] ?? 15; }
+export function govHappyOf(p: Player, name: string): number { return p.govHappy?.[name] ?? 60; }
+export function govTreasuryOf(p: Player, name: string): number { return p.govTreasury?.[name] ?? 0; }
+export const GOV_TAX_PRESETS: { id: string; rate: number }[] = [{ id: "dusuk", rate: 8 }, { id: "orta", rate: 15 }, { id: "yuksek", rate: 28 }];
+// Vergi oranı belirle — yüksek vergi hazineyi/geliri büyütür ama halkı küstürür (memnuniyet → meşruiyet → azil riski).
+export function setGovTax(prev: GameState, name: string, rate: number): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!p.governorships?.includes(name)) return s;
+  const r = Math.max(5, Math.min(40, Math.round(rate)));
+  if (!p.govTax) p.govTax = {};
+  p.govTax[name] = r;
+  const lvl = r <= 10 ? "taxd" : r >= 22 ? "taxh" : "taxm";
+  push(s, "yonetim", `${name}'de vergi siyasetini ayarladın (%${r}).`, "kişisel", false, { k: "gov." + lvl + "Set", p: [{ pl: name }] });
+  return s;
+}
+// Şehir hazinesinden projeye harca: halka hizmet (+memnuniyet) veya asayiş (+meşruiyet).
+export const GOV_INVEST_COST = 40;
+export function investTreasury(prev: GameState, name: string, kind: "hizmet" | "asayis"): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!p.governorships?.includes(name) || govTreasuryOf(p, name) < GOV_INVEST_COST) return s;
+  if (!p.govTreasury) p.govTreasury = {}; if (!p.govHappy) p.govHappy = {}; if (!p.govLeg) p.govLeg = {};
+  p.govTreasury[name] = govTreasuryOf(p, name) - GOV_INVEST_COST;
+  if (kind === "hizmet") { p.govHappy[name] = Math.min(100, govHappyOf(p, name) + 10); p.govLeg[name] = Math.min(100, govLegOf(p, name) + 3); }
+  else { p.govLeg[name] = Math.min(100, govLegOf(p, name) + 8); p.govHappy[name] = Math.min(100, govHappyOf(p, name) + 3); }
+  push(s, "yonetim", `${name}'de şehir hazinesinden ${kind === "hizmet" ? "halka hizmet" : "asayiş"} için harcadın.`, "kişisel", false, { k: "gov.invDone." + kind, p: [{ pl: name }] });
+  return s;
+}
+// Valilik döngüsü (her tur, yalnız vali ise): vergi → hazine, vergi → memnuniyet, memnuniyet+rep → meşruiyet; düşerse isyan/azil.
 function governorTick(s: GameState) {
   const p = s.player; const list = p.governorships; if (!list?.length) return;
-  if (!p.govLeg) p.govLeg = {};
+  if (!p.govLeg) p.govLeg = {}; if (!p.govHappy) p.govHappy = {}; if (!p.govTreasury) p.govTreasury = {};
   for (const loc of [...list]) {
-    const target = 40 + (p.reputation - 50) * 0.4 + p.honor * 0.12 - p.fear * 0.05;
+    const tax = govTaxOf(p, loc);
+    const prosperity = cityInfo(loc, placeKind(loc)).prosperity;
+    p.govTreasury[loc] = Math.round((p.govTreasury[loc] ?? 0) + prosperity * tax / 100 * 0.4); // hazine vergiyle dolar
+    let happy = p.govHappy[loc] ?? 60;
+    const happyTarget = Math.max(35, Math.min(90, 72 - (tax - 15) * 1.4)); // yüksek vergi → homurtu
+    happy = Math.max(0, Math.min(100, happy + (happyTarget - happy) * 0.1));
+    p.govHappy[loc] = Math.round(happy);
+    const target = 40 + (p.reputation - 50) * 0.4 + p.honor * 0.12 - p.fear * 0.05 + (happy - 60) * 0.25;
     let leg = p.govLeg[loc] ?? 60;
-    leg += (target - leg) * 0.12 - 1.2; // hedefe çekilir + tabii aşınma
-    leg = Math.max(0, Math.min(100, leg));
+    leg = Math.max(0, Math.min(100, leg + (target - leg) * 0.12 - 1.2));
     p.govLeg[loc] = Math.round(leg);
-    if (leg < 18 && Math.random() < 0.12 + (18 - leg) * 0.02) { // düşük meşruiyet → isyan
+    if (leg < 18 && Math.random() < 0.12 + (18 - leg) * 0.02) { // meşruiyet krizi → azil
       p.governorships = p.governorships!.filter((x) => x !== loc);
-      delete p.govLeg[loc];
+      delete p.govLeg[loc]; delete p.govHappy[loc]; delete p.govTreasury[loc];
       p.reputation = Math.max(-100, p.reputation - 8);
       push(s, "yonetim", `${loc}'de halk ayaklandı; valilikten azledildin.`, "kişisel", true, { k: "gov.deposed", p: [{ pl: loc }] });
+    } else if (happy < 22 && Math.random() < 0.04 + (22 - happy) * 0.01) { // memnuniyet krizi → isyan (azil değil, zarar)
+      p.govHappy[loc] = Math.min(100, happy + 18);
+      p.govTreasury[loc] = Math.round((p.govTreasury[loc] ?? 0) * 0.5);
+      p.reputation = Math.max(-100, p.reputation - 3);
+      push(s, "yonetim", `${loc}'de halk homurdandı; şehir hazinesi zarar gördü.`, "kişisel", false, { k: "gov.unrest", p: [{ pl: loc }] });
     }
   }
 }
-// Valilik vergi payı (her tur): şehrin refahına × meşruiyet (düşük meşruiyet az toplar).
+// Valilik vergi payı (her tur): şehrin refahına × meşruiyet × vergi oranı (yüksek vergi çok toplar, düşük meşruiyet azaltır).
 export function governorIncome(s: GameState): number {
   const list = s.player.governorships; if (!list?.length) return 0;
-  return list.reduce((a, loc) => a + Math.max(1, Math.round(cityInfo(loc, placeKind(loc)).prosperity / 4 * (0.4 + govLegOf(s.player, loc) / 100 * 0.8))), 0);
+  return list.reduce((a, loc) => a + Math.max(1, Math.round(cityInfo(loc, placeKind(loc)).prosperity / 4 * (0.4 + govLegOf(s.player, loc) / 100 * 0.8) * (govTaxOf(s.player, loc) / 15))), 0);
 }
 
 // ── Zanaat / üretim zincirleri — hammaddeyi mamule çevir ──
