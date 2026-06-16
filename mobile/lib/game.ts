@@ -202,6 +202,10 @@ export function factionStance(a: string, b: string): number {
   if (factionTrait(b).enemies.includes(a)) return -1;
   return 0;
 }
+// İki lonca arası ateşkes (savaştan sonra hemen tekrar savaşmasınlar).
+function warPairKey(a: string, b: string): string { return [a, b].sort().join("|"); }
+function onWarCooldown(s: GameState, a: string, b: string): boolean { return (s.warCooldowns?.[warPairKey(a, b)] ?? 0) > s.turn; }
+function setWarCooldown(s: GameState, a: string, b: string, turns: number) { if (!s.warCooldowns) s.warCooldowns = {}; s.warCooldowns[warPairKey(a, b)] = s.turn + turns; }
 // Loncaya katılım eşiği (karizmatik hüneri %20 indirir). UI ile çekirdek tutarlı olsun diye.
 export function joinThreshold(p: Player, f: Faction): number { return p.perks.includes("karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep; }
 
@@ -414,6 +418,7 @@ export interface GameState {
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
   wars: FactionWar[];
+  warCooldowns?: Record<string, number>; // iki lonca arası ateşkes: pair → bu tura kadar yeni savaş yok
   realm?: SancakHold[]; // 4 sancağın fraksiyon hakimiyeti (emergent şehir-kontrolü)
   rivals?: RivalHouse[]; // rakip hanedanların yaşayan gücü (zamanla değişir + hamle yapar)
   caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number } | null;
@@ -969,6 +974,7 @@ function tickFactions(s: GameState, announce: boolean) {
       const holderAllies = factionTrait(sn.holder).allies;
       const weighted = ids
         .filter((id) => id !== sn.holder && !holderAllies.includes(id))
+        .filter((id) => !onWarCooldown(s, sn.holder, id)) // yeni ateşkesteki loncalar göz dikmez
         .map((id) => { let w = factionTrait(id).aggression; if (factionStance(id, sn.holder) < 0) w *= 2.2; return { id, w }; })
         .filter((x) => x.w > 0.12); // barışçıl fraksiyonlar (şifacı) hak iddia etmez
       const total = weighted.reduce((a, x) => a + x.w, 0);
@@ -979,8 +985,10 @@ function tickFactions(s: GameState, announce: boolean) {
         if (announce) push(s, "ocak_savasi", `${factionById(sn.contender)?.name}, ${beylikName(sn.id)} üzerinde hak iddia ediyor.`, "makro", true, { k: "evj.warClaim", p: [{ fc: sn.contender! }, { bl: sn.id }] });
       }
     }
-    // Gerilim dorukta + rakip var → savaş patlar.
-    if (sn.tension >= 100 && sn.contender) {
+    // Gerilim dorukta + rakip var → savaş patlar (ateşkes yoksa).
+    if (sn.tension >= 100 && sn.contender && onWarCooldown(s, sn.holder, sn.contender)) {
+      sn.contender = null; sn.tension = 70; // ateşkes sürüyor: savaş ertelenir
+    } else if (sn.tension >= 100 && sn.contender) {
       s.wars.push({ a: sn.holder, b: sn.contender, turnsLeft: 4 + Math.floor(Math.random() * 4), aScore: 0, bScore: 0, prize: sn.id });
       sn.tension = 55;
       if (announce) push(s, "ocak_savasi", `${factionById(sn.holder)?.name} ile ${factionById(sn.contender)?.name}, ${beylikName(sn.id)} için savaşa tutuştu!`, "makro", true, { k: "evj.warStart", p: [{ fc: sn.holder }, { fc: sn.contender! }, { bl: sn.id }] });
@@ -1091,8 +1099,10 @@ function tickWars(s: GameState, announce: boolean) {
     const pool = enemies.length ? enemies : targets;
     if (pool.length) {
       const b = pool[Math.floor(Math.random() * pool.length)];
-      s.wars.push({ a, b, turnsLeft: 4 + Math.floor(Math.random() * 4), aScore: 0, bScore: 0 });
-      if (announce) push(s, "ocak_savasi", `${factionById(a)?.name} ile ${factionById(b)?.name} arasında savaş çıktı!`, "makro", true, { k: "evj.warGeneric", p: [{ fc: a }, { fc: b }] });
+      if (!onWarCooldown(s, a, b)) {
+        s.wars.push({ a, b, turnsLeft: 4 + Math.floor(Math.random() * 4), aScore: 0, bScore: 0 });
+        if (announce) push(s, "ocak_savasi", `${factionById(a)?.name} ile ${factionById(b)?.name} arasında savaş çıktı!`, "makro", true, { k: "evj.warGeneric", p: [{ fc: a }, { fc: b }] });
+      }
     }
   }
   for (const w of s.wars) {
@@ -1120,6 +1130,7 @@ function tickWars(s: GameState, announce: boolean) {
     }
     // Oyuncu kazanan tarafın üyesiyse itibar
     if (s.player.faction === winner) { s.player.faction_standing[winner] = (s.player.faction_standing[winner] || 0) + 8; s.player.fame = Math.min(100, s.player.fame + 4); }
+    setWarCooldown(s, w.a, w.b, 12); // savaş sonrası ~1 yıl ateşkes (sürekli savaş döngüsünü kırar)
   }
   s.wars = s.wars.filter((w) => w.turnsLeft > 0);
 }
