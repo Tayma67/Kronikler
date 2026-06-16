@@ -53,13 +53,19 @@
 - ✅ **Ateşkes:** savaş sonrası ~12 tur yeni savaş yok (sürekli savaş döngüsü kırıldı).
 - ✅ **factionStance() diplomasi temeli** + orgutler'de her loncanın mizaç satırı.
 
-### Hâlâ açık
-- ✅ **Mektep:** ders-içi olaylar + **kulüpler (koro/güreş/çıraklık) + hoca bağı** tamam.
-- 🟡 **Çalışma/seyahat:** ✅ 15 meslekte iş mini-olayı; ⬜ seyahat çok-seçimli olay + kervan yolcu profilleri kaldı.
-- 🟡 **Fraksiyon diplomasi:** ✅ arketip + ateşkes + takviye + yerel sancak dostluğu; ⬜ koalisyon savaşları kaldı.
-- ✅ **Suç sıcak mal + kara borsa** (gölge avantajı) tamam.
-- 🐞 **Düzeltildi:** `crimesc.bribePoor` tanımsız i18n anahtarı.
-- 🟢 Kalan cila: eşya kalite incelemesi, mülk ledger, paylaşılabilir final kartı.
+### Tek-oyunculu cila yol haritası (multiplayer ERTELENDİ — önce SP kusursuz)
+> Karar: önce single-player kusursuz oynanılır olacak, sonra online entegre edilecek.
+- ✅ **Fraksiyon diplomasi tamamlandı:** arketip + ateşkes + müttefik takviyesi + yerel sancak dostluğu + darbe + **koalisyon**.
+- ✅ **Mektep** (ders olayları + kulüpler + hoca bağı) · ✅ **Suç sıcak mal** · ✅ **Çalışma mini-olayları (15 meslek)**.
+- ⬜ **Seyahat çok-seçimli sahneler** (kervan yolcu profilleri) — `pendingScene` için global sahne modalı gerekir (dashboard'a), orta efor.
+- ⬜ **İçerik doluluğu:** aile görevleri 10→16, fırsatlar 12→25 (artık locEvents/tips'e bağlanabilir).
+- ⬜ **Cila:** eşya kalite incelemesi (pazar), mülk ledger, paylaşılabilir final kartı.
+- ⬜ **QA sertleştirme:** smoke kapsamını derinleştir (vâris zinciri, valilik, fraksiyon gücü, çok-nesil), i18n anahtar denetimini CI kapısı yap.
+
+### Multiplayer (SONRA — notlar)
+- Vizyon: aynı dünya/aynı zaman, ~5 kişi, çoğunluk "ay ilerlet"e basınca ilerler, eylemler birbirini etkiler.
+- Mimari: otoriter sunucu (çekirdek `game.ts` Node'da koşuyor → yeniden kullanılır) + "tek dünya + N oyuncu" durum refaktörü + oda/hazır-oy netcode. Ücretsiz deneme için Colyseus+Render / Supabase / PartyKit yeterli.
+- Ayrı `multiplayer` feature-branch + sunucu ayrı küçük servis. SP kusursuz olunca başlanacak.
 
 ---
 
