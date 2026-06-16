@@ -1000,6 +1000,20 @@ function tickFactions(s: GameState, announce: boolean) {
       sn.tension = Math.max(0, sn.tension - 2); // rakip yoksa gerilim yavaşça söner
     }
   }
+  // Koalisyon (Vercel _check_coalition_trigger): bir lonca aşırı baskınsa (3+ sancak) zayıflar birleşip bir sancağına yüklenir.
+  const counts: Record<string, number> = {};
+  for (const sn of realm) counts[sn.holder] = (counts[sn.holder] || 0) + 1;
+  const dominant = ids.find((id) => (counts[id] || 0) >= 3);
+  if (dominant && Math.random() < 0.12) {
+    const target = realm.find((sn) => sn.holder === dominant && !sn.contender && !s.wars.some((w) => w.prize === sn.id));
+    const challenger = ids
+      .filter((id) => id !== dominant && !factionTrait(dominant).allies.includes(id) && factionTrait(id).aggression > 0.12 && !onWarCooldown(s, dominant, id))
+      .sort((a, b) => factionTrait(b).aggression - factionTrait(a).aggression)[0];
+    if (target && challenger) {
+      target.contender = challenger; target.tension = Math.max(target.tension, 92);
+      if (announce) push(s, "ocak_savasi", `${factionById(dominant)?.name} fazla güçlendi; zayıf loncalar ${factionById(challenger)?.name} öncülüğünde koalisyon kurdu.`, "makro", true, { k: "fai.coalition", p: [{ fc: dominant }, { fc: challenger }] });
+    }
+  }
 }
 // Rakip hanedanların yaşayan durumu (yoksa tohumdan başlat).
 export function ensureRivals(s: GameState): RivalHouse[] {

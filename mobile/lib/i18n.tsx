@@ -1146,12 +1146,12 @@ const PZS: Record<Lang, Dict> = {
 };
 // Fraksiyon darbe olayı (Vercel faction_system darbe).
 const FAI2: Record<Lang, Dict> = {
-  tr: { "fai.darbe":"Darbe! %1, %2'i %3'in elinden aldı.","fai.darbeFail":"%1'de bir darbe girişimi bastırıldı; ortalık yatıştı." },
-  en: { "fai.darbe":"Coup! %1 wrested %2 from %3.","fai.darbeFail":"A coup attempt in %1 was put down; things settled." },
-  es: { "fai.darbe":"¡Golpe! %1 arrebató %2 a %3.","fai.darbeFail":"Un intento de golpe en %1 fue sofocado; todo se calmó." },
-  pt: { "fai.darbe":"Golpe! %1 arrancou %2 de %3.","fai.darbeFail":"Uma tentativa de golpe em %1 foi sufocada; tudo acalmou." },
-  ar: { "fai.darbe":"انقلاب! انتزعت %1 %2 من %3.","fai.darbeFail":"أُخمدت محاولة انقلاب في %1؛ وهدأت الأمور." },
-  ru: { "fai.darbe":"Переворот! %1 вырвал %2 у %3.","fai.darbeFail":"Попытку переворота в %1 подавили; всё улеглось." },
+  tr: { "fai.coalition":"%1 fazla güçlendi; zayıf loncalar %2 öncülüğünde koalisyon kurdu.","fai.darbe":"Darbe! %1, %2'i %3'in elinden aldı.","fai.darbeFail":"%1'de bir darbe girişimi bastırıldı; ortalık yatıştı." },
+  en: { "fai.coalition":"%1 grew too strong; the weaker orders formed a coalition led by %2.","fai.darbe":"Coup! %1 wrested %2 from %3.","fai.darbeFail":"A coup attempt in %1 was put down; things settled." },
+  es: { "fai.coalition":"%1 se hizo demasiado fuerte; las órdenes débiles formaron una coalición liderada por %2.","fai.darbe":"¡Golpe! %1 arrebató %2 a %3.","fai.darbeFail":"Un intento de golpe en %1 fue sofocado; todo se calmó." },
+  pt: { "fai.coalition":"%1 ficou forte demais; as ordens mais fracas formaram uma coligação liderada por %2.","fai.darbe":"Golpe! %1 arrancou %2 de %3.","fai.darbeFail":"Uma tentativa de golpe em %1 foi sufocada; tudo acalmou." },
+  ar: { "fai.coalition":"اشتدّت %1 أكثر من اللازم؛ فشكّلت المنظّمات الضعيفة تحالفًا بقيادة %2.","fai.darbe":"انقلاب! انتزعت %1 %2 من %3.","fai.darbeFail":"أُخمدت محاولة انقلاب في %1؛ وهدأت الأمور." },
+  ru: { "fai.coalition":"%1 слишком усилился; слабые ордены сколотили коалицию во главе с %2.","fai.darbe":"Переворот! %1 вырвал %2 у %3.","fai.darbeFail":"Попытку переворота в %1 подавили; всё улеглось." },
 };
 // Kıvılcım kartları (Vercel story_director _draw_spark): durgunlukta küçük anlar.
 const SPARK: Record<Lang, Dict> = {
