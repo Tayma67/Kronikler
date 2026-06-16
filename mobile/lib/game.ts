@@ -1339,6 +1339,12 @@ const WORK_EVENTS: Record<string, WorkEvent[]> = {
   müzisyen: [{ text: "Bir düğün daveti", stat: "charisma", win: "Sazınla meclisi coşturdun", lose: "Telin koptu, mahcup oldun", wMoney: 18, wRep: 2, lRep: 1, skill: "social" }],
   hancı:    [{ text: "Kalabalık bir gece", stat: "charisma", win: "Hanı tıka basa doldurdun", lose: "Sarhoş kavgası çıktı", wMoney: 20, lRep: 2 }],
   kuyumcu:  [{ text: "Nazik bir takı işi", stat: "intelligence", win: "İnce işçiliğin takdir topladı", lose: "Taşı çatlattın", wMoney: 28, lHealth: 0, skill: "crafting" }],
+  balıkçı:  [{ text: "Fırtınalı bir deniz", stat: "stamina", win: "Ağları dolu çektin", lose: "Dalga teknene vurdu", wMoney: 16, lHealth: 4, skill: "trade" }],
+  marangoz: [{ text: "İnce bir doğrama işi", stat: "intelligence", win: "Kusursuz bir dolap çıkardın", lose: "Tahta çatladı", wMoney: 18, lHealth: 2, skill: "crafting" }],
+  çoban:    [{ text: "Sürüde huzursuzluk", stat: "stamina", win: "Sürüyü kurttan kolladın", lose: "Birkaç koyun telef oldu", wMoney: 14, wRep: 1, lHealth: 3 }],
+  fırıncı:  [{ text: "Şafak vakti fırın", stat: "stamina", win: "Ekmekler altın gibi çıktı", lose: "Hamur ekşidi", wMoney: 15, lRep: 1, skill: "crafting" }],
+  katip:    [{ text: "Çetrefil bir ferman", stat: "intelligence", win: "Belgeyi kusursuz yazdın", lose: "Mürekkep dağıldı", wMoney: 20, wRep: 2, lRep: 1, skill: "social" }],
+  dokumacı: [{ text: "Nazik bir sipariş", stat: "intelligence", win: "Kumaşın göz kamaştırdı", lose: "İplik koptu", wMoney: 17, lHealth: 1, skill: "crafting" }],
   _:        [{ text: "Sıradan bir gün", stat: "stamina", win: "İşini sağlam yaptın, fazladan kazandın", lose: "Yorgun bir gündü", wMoney: 10, lHealth: 2 }],
 };
 function rollWorkEvent(s: GameState) {
