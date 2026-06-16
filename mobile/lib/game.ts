@@ -536,8 +536,10 @@ export const LOC_EVENT_TYPES: Record<string, LocEventType> = {
   panayir:  { id: "panayir",  icon: "🎪", prosp: 8,   sec: 0,   goods: ["sarap", "bal", "peynir", "et"],         priceMult: 1.3, months: [2, 3] },
   yangin:   { id: "yangin",   icon: "🔥", prosp: -14, sec: -5,  goods: ["kereste"],                              priceMult: 1.4, months: [3, 5] },
   veba:     { id: "veba",     icon: "☠️", prosp: -16, sec: 0,   goods: ["sifa", "iksir"],                        priceMult: 1.6, months: [4, 7] },
+  ticaret:  { id: "ticaret",  icon: "🐫", prosp: 12,  sec: 0,   goods: ["sarap", "bal", "iksir", "sifa"],        priceMult: 0.75, months: [3, 5] },
+  isyan:    { id: "isyan",    icon: "🚩", prosp: -10, sec: -18, goods: [],                                       priceMult: 1.0,  months: [3, 5] },
 };
-const LOC_EVENT_LABEL: Record<string, string> = { kuraklik: "Kuraklık baş gösterdi", bereket: "Bereketli hasat", eskiya: "Eşkıya türedi", panayir: "Panayır kuruldu", yangin: "Yangın çıktı", veba: "Veba salgını" };
+const LOC_EVENT_LABEL: Record<string, string> = { kuraklik: "Kuraklık baş gösterdi", bereket: "Bereketli hasat", eskiya: "Eşkıya türedi", panayir: "Panayır kuruldu", yangin: "Yangın çıktı", veba: "Veba salgını", ticaret: "Ticaret patlaması", isyan: "Ayaklanma çıktı" };
 // Bir şehirde aktif olayların toplam refah/güvenlik etkisi (mülk geliri, seyahat için).
 export function cityFx(s: GameState, loc: string): { prosp: number; sec: number } {
   let prosp = 0, sec = 0;
