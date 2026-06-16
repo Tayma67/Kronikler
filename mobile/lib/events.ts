@@ -65,6 +65,61 @@ export const DILEMMAS: Dilemma[] = [
       { label: "Komşunla paylaş", delta: { money: -15, honor: 8, reputation: 6, nam: { comert: 6 } }, result: "Ekmeğini böldün; o kış kimse senin kapından aç dönmedi." },
     ],
   },
+  // ── Yaşam evresi çeşitliliği (çocukluk/gençlik/yetişkinlik/yaşlılık) ──
+  {
+    id: "cocuk_kus", icon: "healing", title: "Yaralı Kuş",
+    text: "Kanadı kırık bir kuş yuvadan düşmüş, çırpınıyor.",
+    when: (p) => p.age < 13,
+    choices: [
+      { label: "Bağrına bas, iyileştir", delta: { honor: 4, nam: { dindar: 2 } }, result: "Günlerce besledin; kanadı tutunca gökyüzüne saldın. İçin ısındı." },
+      { label: "Doğaya bırak", delta: {}, result: "Kaderine bıraktın; tabiatın işine karışmadın." },
+    ],
+  },
+  {
+    id: "cocuk_yalan", icon: "scroll", title: "Küçük Bir Yalan",
+    text: "Kırdığın testiyi soruyorlar; suç başkasına atılabilir.",
+    when: (p) => p.age >= 7 && p.age < 13,
+    choices: [
+      { label: "Doğruyu söyle", delta: { honor: 6, reputation: 2 }, result: "Azar işittin ama dürüstlüğün konuşuldu." },
+      { label: "Sus, üstüne atma", delta: { honor: -3, nam: { zalim: 1 } }, result: "Kurtuldun; ama içinde küçük bir leke kaldı." },
+    ],
+  },
+  {
+    id: "genc_ilkask", icon: "ring", title: "İlk Sevda",
+    text: "Gönlün birine kaydı; çarşıda her gün yolunu gözlüyorsun.",
+    when: (p) => p.age >= 14 && p.age < 22 && !p.married,
+    choices: [
+      { label: "İçini dök", delta: { nam: { capkin: 4 } }, result: "Yüreğini açtın; kabul de gelse ret de, delikanlılığın damga vurdu." },
+      { label: "İçine at", delta: { honor: 2 }, result: "Sözü yuttun; sevda içinde bir türkü gibi kaldı." },
+    ],
+  },
+  {
+    id: "genc_meydan", icon: "crossed-swords", title: "Meydan Okuma",
+    text: "Mahallenin kabadayısı seni er meydanına çağırıyor; herkes bakıyor.",
+    when: (p) => p.age >= 15 && p.age < 26,
+    choices: [
+      { label: "Meydanı kabul et", delta: { health: -6, honor: 8, fear: 3 }, result: "Yumruk yedin yumruk attın; kazan ya da kaybet, korkak demediler." },
+      { label: "Geç, oyununa gelme", delta: { honor: -2 }, result: "Bilgece geçtin; kimi 'akıllı' dedi, kimi yan baktı." },
+    ],
+  },
+  {
+    id: "yetiskin_ortaklik", icon: "coins", title: "Ortaklık Teklifi",
+    text: "Bir tüccar seni ortaklığa çağırıyor; kâr da var, batma riski de.",
+    when: (p) => p.age >= 22 && p.age < 55,
+    choices: [
+      { label: "Ortak ol", delta: { money: 30, fear: 1 }, result: "Sermayeni kattın; talih yâr olursa kazanırsın." },
+      { label: "Tek başına yürü", delta: { honor: 2 }, result: "Riske girmedin; kendi yağınla kavruldun." },
+    ],
+  },
+  {
+    id: "yasli_vasiyet", icon: "scroll-open", title: "Vasiyet Vakti",
+    text: "Yaşın ilerledi; biriktirdiğini ne yapacağını düşünüyorsun.",
+    when: (p) => p.age >= 55,
+    choices: [
+      { label: "Bir kısmını hayra ver", delta: { money: -25, honor: 10, nam: { comert: 6, dindar: 3 } }, result: "Yoksulun duasını aldın; adın hayırla anılacak." },
+      { label: "Hepsini vârise sakla", delta: { money: 10 }, result: "Her akçeyi soyuna sakladın; bereketi onlara kalsın." },
+    ],
+  },
   // ── Yol/yolcu karşılaşmaları (Vercel travel_rework yolcu profilleri) — çok-seçimli ──
   {
     id: "yol_dervis", icon: "prayer-beads", title: "Yolda Bir Derviş",
