@@ -54,9 +54,9 @@
 - ✅ **factionStance() diplomasi temeli** + orgutler'de her loncanın mizaç satırı.
 
 ### Hâlâ açık (büyük; taze bağlam ister)
-- ⬜ **Mektep ders olayları + kulüpler + hoca ilişkisi** (school.py 1648 — en büyük tek kalem).
+- 🟡 **Mektep:** ✅ ders-içi olaylar (6, stat-testli) eklendi; ⬜ kulüpler + hoca NPC ilişkisi kaldı.
 - ⬜ **Seyahat & çalışma çok-seçimli olay katmanı** (rota/yolcu profilleri; meslek-özel iş olayları).
-- 🟡 **Fraksiyon ileri diplomasi** (oyuncu-loncasının dost/düşmanına NPC tepkisi, koalisyon savaşları — temel atıldı).
+- 🟡 **Fraksiyon ileri diplomasi** (oyuncu-loncasının dost/düşmanına NPC tepkisi, koalisyon savaşları — arketip+ateşkes+takviye temeli atıldı).
 - 🟢 Cila: suç sıcak mal, eşya kalite incelemesi, mülk ledger, paylaşılabilir final kartı.
 
 ---
