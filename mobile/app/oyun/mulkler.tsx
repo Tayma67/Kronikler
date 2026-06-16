@@ -68,6 +68,15 @@ export default function Mulkler() {
                     </View>
                     <Text style={{ fontFamily: F.display, fontSize: 10, color: condCol, width: 32, textAlign: "right" }}>{pr.cond}%</Text>
                   </View>
+                  {/* ── Mülk defteri (yıllık net geçmişi) ── */}
+                  {(pr.ledger?.length || 0) > 0 && (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("mulk.ledger").toUpperCase()}</Text>
+                      {pr.ledger!.slice(-5).map((e, li) => (
+                        <Text key={li} style={{ fontFamily: F.serif, fontSize: 10, color: e.net >= 0 ? C.sage : C.blood }}>{e.net >= 0 ? "+" : ""}{e.net}</Text>
+                      ))}
+                    </View>
+                  )}
                   {/* ── İşçiler (NPC istihdamı) ── */}
                   {(() => {
                     const slots = propWorkerSlots(pr);

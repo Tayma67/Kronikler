@@ -86,7 +86,7 @@ export function effStat(p: Player, key: keyof Stats): number {
   return Math.max(0, p.stats[key] - pen);
 }
 // Mülk: konuma bağlı (loc) + kondisyon (cond 0..100) + kademe (level 1..3). Gelir refah×kondisyon×kademe.
-export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; }
+export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number }[]; }
 export const PROP_MAX_LEVEL = 3;
 export function propUpgradeCost(pr: Property): number { return Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * (pr.level || 1) * 0.8); }
 export function upgradeProperty(prev: GameState, index: number): GameState {
@@ -910,6 +910,8 @@ export function advance(prev: GameState, n = 1): GameState {
       // İşçi ekonomisi: çalışan NPC'ler üretimi artırır ama ücret ister.
       const w = propWorkerStats(s, pr, base, condProspLevel);
       inc += w.gross; wages += w.wage;
+      // Mülk defteri: yıllık net (gelir − ücret) geçmişi (Vercel property ledger; şeffaflık).
+      if (i === n - 1 && s.turn > 0 && s.turn % 12 === 0) { pr.ledger = pr.ledger || []; pr.ledger.push({ y: Math.floor(s.turn / 12), net: Math.round((base * condProspLevel * typeMult + w.gross - w.wage) * pmult) }); if (pr.ledger.length > 6) pr.ledger = pr.ledger.slice(-6); }
       const y = propYield(s, pr); if (y) { const sm = pr.type === "tarla" ? ({ "İlkbahar": 0.6, "Yaz": 1.0, "Sonbahar": 1.8, "Kış": 0.2 }[cal.season] ?? 1) : 1; const q = Math.round(y.qty * sm); if (q > 0) produced[y.good] = (produced[y.good] || 0) + q; } // işçi emeği → gerçek hammadde (tarla mevsimlik)
       if (pr.cond > 40 && chance(0.2)) pr.cond -= 1;                                   // zamanla aşınma
       if (effSec < 30 && chance(0.02 + (effSec < 10 ? 0.03 : 0))) {                    // düşük güvenlikte (eşkıya/yangın olayı kötüleştirir) yağma
