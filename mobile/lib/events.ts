@@ -65,6 +65,43 @@ export const DILEMMAS: Dilemma[] = [
       { label: "Komşunla paylaş", delta: { money: -15, honor: 8, reputation: 6, nam: { comert: 6 } }, result: "Ekmeğini böldün; o kış kimse senin kapından aç dönmedi." },
     ],
   },
+  // ── Yol/yolcu karşılaşmaları (Vercel travel_rework yolcu profilleri) — çok-seçimli ──
+  {
+    id: "yol_dervis", icon: "prayer-beads", title: "Yolda Bir Derviş",
+    text: "Tozlu yolda bir derviş yanına ilişti; gözleri derin, sözü az.",
+    when: (p) => p.age >= 13,
+    choices: [
+      { label: "Sohbetine kulak ver", delta: { honor: 4, nam: { dindar: 3 } }, result: "Birkaç hikmet sözü gönlüne işledi; içine bir huzur doldu." },
+      { label: "Yoluna devam et", delta: {}, result: "Selam verip geçtin; aklın işindeydi." },
+    ],
+  },
+  {
+    id: "yol_kacak", icon: "coins", title: "Kaçak Tüccar",
+    text: "Bir kaçak tüccar, gümrüksüz malı yarı fiyatına fısıldıyor.",
+    when: (p) => p.age >= 16,
+    choices: [
+      { label: "Ucuza kap", delta: { money: 20, fear: 1, nam: { zalim: 2 } }, result: "Kelepir malı aldın; ama bu işin ucu yanabilir." },
+      { label: "Bulaşma", delta: { honor: 3 }, result: "Temiz kaldın; kese ince ama vicdan rahat." },
+    ],
+  },
+  {
+    id: "yol_asker", icon: "crossed-swords", title: "Yaşlı Bir Gazi",
+    text: "Yol kenarında bir gazi, eski seferlerini anlatıyor.",
+    when: (p) => p.age >= 14,
+    choices: [
+      { label: "Anlattıklarını dinle", delta: { stat_points: 1 }, result: "Savaş hilelerini dinledin; bir şeyler öğrendin (özellik puanı)." },
+      { label: "Vaktin yok", delta: {}, result: "Başınla selam verip geçtin." },
+    ],
+  },
+  {
+    id: "yol_haydut", icon: "skull", title: "Yol Kesen",
+    text: "Daracık geçitte bir haydut yolunu kesti: 'Geçiş parası!'",
+    when: (p) => p.age >= 15,
+    choices: [
+      { label: "Bahşişi ver", delta: { money: -15 }, result: "Birkaç akçeyle başını derde sokmadan geçtin." },
+      { label: "Diren", delta: { health: -8, honor: 6, fear: 3 }, result: "Diretip yumruk salladın; hırpalandın ama boyun eğmedin." },
+    ],
+  },
   // ── Yaşam olayı genişlemesi (Vercel life_events/life_events_v2 ruhu): zayıf katmanlar ──
   {
     id: "cocuk_kavga", icon: "crossed-swords", title: "Mektepte Kavga",
