@@ -110,46 +110,48 @@ export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[p
 // Yaşayan dünya kadrosu: deterministik temel (isim dile göre çözülür) + kalıcı evrim katmanı (ölüm/yaş/doğum).
 // Kadro büyüklüğü yerleşim tipine göre: şehir kalabalık, köy tenha (canlı dünya hissi).
 export function rosterSize(loc: string): number { const k = placeKind(loc); return k === "şehir" ? 18 : k === "kale" ? 12 : 8; }
+// Dünya saati: nesiller boyu biriken yıl (NPC'ler bununla yaşlanır).
+export function worldYears(s: GameState): number { return (s.world?.npcYears || 0) + Math.floor(s.turn / 12); }
 export function rosterAt(s: GameState, loc: string, lang: Lang = "tr"): NPC[] {
-  const evo = s.world?.npcEvo;
-  const base = generateNPCs(locSeed(loc), rosterSize(loc), lang, loc).map((n) => {
-    const e = evo?.[n.id];
-    return e ? { ...n, age: e.age ?? n.age, alive: e.dead ? false : true } : n;
-  }).filter((n) => n.alive !== false);
-  const born = (s.world?.npcBorn || []).filter((n) => n.loc === loc && n.alive !== false);
+  const wy = worldYears(s); const evo = s.world?.npcEvo;
+  const base = generateNPCs(locSeed(loc), rosterSize(loc), lang, loc)
+    .map((n) => ({ ...n, age: Math.min(95, n.age + wy), alive: evo?.[n.id]?.dead ? false : true }))
+    .filter((n) => n.alive !== false);
+  const born = (s.world?.npcBorn || []).filter((n) => n.loc === loc && n.alive !== false)
+    .map((n) => ({ ...n, age: Math.min(95, n.age + Math.max(0, wy - (n.bornY ?? wy))) }));
   return born.length ? [...base, ...born] : base;
 }
 // Bir mülkün şehrinin işçi havuzu (yaşayan kadrodan).
 export function townNpcsOf(s: GameState, loc: string, lang: Lang = "tr"): NPC[] { return rosterAt(s, loc, lang); }
-// Yaşayan dünya tiki (Vercel simulation _age_and_die / _marry_and_birth ruhu): yılda bir ölüm+yeni nesil / evlilik / doğum.
+// Yaşayan dünya tiki (Vercel simulation _age_and_die / _marry_and_birth): yılda bir yaşa-bağlı ölüm + dengeli doğum (nüfus stabil) + evlilik haberi.
+function npcBaby(s: GameState, loc: string): NPC {
+  const n = generateNPCs((locSeed(loc) ^ s.turn ^ Math.floor(Math.random() * 1e6)) >>> 0, 1, "tr", "born")[0];
+  n.id = `born_${loc}_${s.turn}_${Math.floor(Math.random() * 1e6)}`; n.loc = loc; n.alive = true; n.age = 0; n.bornY = worldYears(s);
+  return n;
+}
 function npcLifeTick(s: GameState) {
   if (s.turn === 0 || s.turn % 12 !== 0) return; // yılda bir
-  if (Math.random() >= 0.7) return;
   if (!s.world.npcEvo) s.world.npcEvo = {};
   if (!s.world.npcBorn) s.world.npcBorn = [];
-  const loc = rnd(LOCATIONS);
-  const roster = rosterAt(s, loc);
-  const roll = Math.random();
-  const newId = (tag: string) => `born_${loc}_${tag}_${s.turn}_${Math.floor(Math.random() * 1e6)}`;
-  const freshNpc = (tag: string, age: number) => { const n = generateNPCs((locSeed(loc) ^ s.turn ^ Math.floor(Math.random() * 1e6)) >>> 0, 1, "tr", "born")[0]; n.id = newId(tag); n.loc = loc; n.alive = true; n.age = age; return n; };
-  if (roll < 0.4) { // ölüm + yeni nesil (nüfus dengeli)
-    const elders = roster.filter((n) => n.age >= 55);
-    if (!elders.length) return;
-    const gone = rnd(elders);
-    if (gone.id.startsWith("born_")) { const b = s.world.npcBorn.find((x) => x.id === gone.id); if (b) b.alive = false; }
-    else s.world.npcEvo[gone.id] = { ...(s.world.npcEvo[gone.id] || {}), dead: true };
-    s.world.npcBorn.push(freshNpc("genc", 16 + Math.floor(Math.random() * 8)));
-    if (s.npc_state?.[gone.id]) push(s, "dunya_olayi", `${gone.name} bu dünyadan göçtü; tanıdık bir yüz eksildi.`, "kişisel", true, { k: "npclife.deathKnown", p: [gone.name] });
-    else push(s, "dunya_olayi", `${loc}'de bir ömür tükendi; ardından genç bir soluk şehre karıştı.`, "makro", false, { k: "npclife.death", p: [{ pl: loc }] });
-  } else if (roll < 0.7) { // evlilik (haber)
-    const m = roster.find((n) => n.gender === "erkek" && n.age >= 18 && n.age < 55);
-    const f = roster.find((n) => n.gender === "kadın" && n.age >= 18 && n.age < 55);
-    if (m && f) push(s, "dunya_olayi", `${loc}'de ${m.name} ile ${f.name} dünyaevi kurdu.`, "makro", false, { k: "npclife.marry", p: [m.name, f.name] });
-  } else { // doğum (yeni evlat) + haber
-    const parent = roster.find((n) => n.age >= 20 && n.age < 50);
-    if (parent && s.world.npcBorn.length < 50) { s.world.npcBorn.push(freshNpc("cocuk", 1 + Math.floor(Math.random() * 3))); push(s, "dunya_olayi", `${loc}'de ${parent.name}'in bir evladı dünyaya geldi.`, "makro", false, { k: "npclife.birth", p: [parent.name] }); }
+  let knownGone: string | null = null;
+  for (const loc of LOCATIONS) {
+    for (const n of rosterAt(s, loc)) {
+      const dc = n.age < 55 ? 0 : n.age < 70 ? 0.02 : n.age < 82 ? 0.07 : 0.18; // yaşa göre ölüm şansı
+      if (dc <= 0 || Math.random() >= dc) continue;
+      if (n.id.startsWith("born_")) { const b = s.world.npcBorn.find((x) => x.id === n.id); if (b) b.alive = false; }
+      else s.world.npcEvo[n.id] = { dead: true };
+      s.world.npcBorn.push(npcBaby(s, loc)); // her ölüm bir doğumla dengelenir → nüfus stabil
+      if (!knownGone && s.npc_state?.[n.id]) knownGone = n.name;
+    }
   }
-  if (s.world.npcBorn.length > 60) s.world.npcBorn = s.world.npcBorn.filter((n) => n.alive !== false).slice(-60);
+  if (knownGone) push(s, "dunya_olayi", `${knownGone} bu dünyadan göçtü; tanıdık bir yüz eksildi.`, "kişisel", true, { k: "npclife.deathKnown", p: [knownGone] });
+  else if (Math.random() < 0.5) { // evlilik haberi (nüfus etkisi yok)
+    const loc = rnd(LOCATIONS); const r = rosterAt(s, loc);
+    const m = r.find((n) => n.gender === "erkek" && n.age >= 18 && n.age < 55);
+    const f = r.find((n) => n.gender === "kadın" && n.age >= 18 && n.age < 55);
+    if (m && f) push(s, "dunya_olayi", `${loc}'de ${m.name} ile ${f.name} dünyaevi kurdu.`, "makro", false, { k: "npclife.marry", p: [m.name, f.name] });
+  }
+  if (s.world.npcBorn.length > 260) s.world.npcBorn = s.world.npcBorn.filter((n) => n.alive !== false).slice(-260);
 }
 // Mesleğe göre üretkenlik uyumu (çiftçi tarlada, demirci değirmende daha verimli).
 const PROP_PROF_FIT: Record<string, string[]> = {
@@ -457,7 +459,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; breath?: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
-  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean }>; npcBorn?: NPC[] };
+  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean }>; npcBorn?: NPC[]; npcYears?: number };
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
@@ -2175,7 +2177,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn }, relationships: {}, dynasty, npc_state: {},
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12) }, relationships: {}, dynasty, npc_state: {},
     // Hanedan hafızası vârise geçer: ataların tamamladığı yaylar bayrak olarak kalır, az da olsa anlatı momentumu verir.
     story: { active: null, completed: [], tension: Math.min(20, Object.keys(prev.story?.flags || {}).length * 3), nemesis: null, flags: { ...(prev.story?.flags || {}) }, lull: 0 }, wars: [], caravan: null, econ: 1,
     settlements: prev.settlements || [], // dynastinin kurduğu yerleşimler vârise kalır
