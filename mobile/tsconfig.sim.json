@@ -1,0 +1,1 @@
+{ "compilerOptions": { "module":"commonjs","target":"es2019","moduleResolution":"node","esModuleInterop":true,"skipLibCheck":true,"outDir":"/tmp/sim","strict":false,"noEmitOnError":false,"ignoreDeprecations":"6.0" }, "include":["lib/**/*.ts","scripts/balance-sim.ts"] }

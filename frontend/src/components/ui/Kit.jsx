@@ -13,6 +13,22 @@
  *   <Coin>        — para gösterimi (her yerde aynı)
  */
 import React from "react";
+import GameIcon from "./GameIcon";
+
+// Emojileri tutarlı game-icons'a çevirir (eşi yoksa emoji kalır).
+// Hem PageHeader hem EmptyState bunu kullanır → tüm sayfalarda tek dil.
+const EMOJI_GI = {
+  "⚔️": "crossed-swords", "⚔": "crossed-swords", "🗡": "crossed-swords", "🗡️": "crossed-swords",
+  "📜": "scroll-open", "🌒": "hood", "🗝": "hood", "🗝️": "hood",
+  "🏰": "castle", "👶": "baby", "🎒": "backpack", "👑": "crown", "💍": "ring",
+  "🏘": "family", "🏘️": "family", "🤝": "family", "👨‍👩‍👧": "family",
+  "🔥": "flame", "🫂": "family", "👂": "speaker",
+  "🎓": "graduate-cap", "🏫": "graduate-cap", "🕯": "cog", "🕯️": "cog", "🏅": "medal", "🏆": "trophy",
+  "⚖": "scales", "⚖️": "scales", "📖": "book", "📚": "book", "📯": "speaker", "🗺️": "map", "🗺": "map",
+  "🏠": "house", "🏚": "house", "🏚️": "house", "🜂": "flame", "👥": "family",
+  "🌍": "map", "🌎": "map", "⚱": "tombstone", "🪦": "tombstone", "💰": "coins", "⚜": "crown",
+  "🛡": "shield", "🛡️": "shield", "✨": "star", "🌿": "herbs", "🎶": "lyre", "🐫": "camel",
+};
 
 export const TONES = {
   gold:  { text: "#C9A84C", border: "rgba(201,168,76,0.45)",  bg: "rgba(201,168,76,0.08)" },
@@ -43,7 +59,11 @@ export function PageHeader({ kicker, title, sub, icon, right }) {
             alignItems: "center", gap: "0.6rem",
             textShadow: "0 2px 12px rgba(0,0,0,0.6), 0 0 24px rgba(201,168,76,0.12)",
           }}>
-            {icon && <span style={{ fontSize: "1.25rem", filter: "drop-shadow(0 0 8px rgba(201,168,76,0.4))" }}>{icon}</span>}
+            {icon && (EMOJI_GI[icon]
+              ? <span style={{ filter: "drop-shadow(0 0 8px rgba(201,168,76,0.4))", display: "inline-flex" }}>
+                  <GameIcon name={EMOJI_GI[icon]} size="1.4rem" color="var(--color-gold)" />
+                </span>
+              : <span style={{ fontSize: "1.25rem", filter: "drop-shadow(0 0 8px rgba(201,168,76,0.4))" }}>{icon}</span>)}
             <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
           </h1>
           {sub && (
@@ -101,7 +121,11 @@ export function Stat({ icon, label, value, max, tone = "gold", suffix = "" }) {
   const pct = max ? Math.max(0, Math.min(100, (value / max) * 100)) : null;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", padding: "0.3rem 0" }}>
-      {icon && <span style={{ fontSize: "0.85rem", width: "1.2rem", textAlign: "center", flexShrink: 0 }}>{icon}</span>}
+      {icon && (EMOJI_GI[icon]
+        ? <span style={{ width: "1.2rem", display: "inline-flex", justifyContent: "center", flexShrink: 0 }}>
+            <GameIcon name={EMOJI_GI[icon]} size="0.95rem" color={t.text} />
+          </span>
+        : <span style={{ fontSize: "0.85rem", width: "1.2rem", textAlign: "center", flexShrink: 0 }}>{icon}</span>)}
       <span className="font-display" style={{
         fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase",
         color: "var(--color-parchment-muted)", width: "5.5rem", flexShrink: 0,
@@ -173,9 +197,12 @@ export function GoldRule({ label }) {
 export function EmptyState({ icon = "🕯", title, sub }) {
   return (
     <div style={{ textAlign: "center", padding: "2.2rem 1rem" }}>
-      <div style={{ fontSize: "1.8rem", marginBottom: "0.6rem", opacity: 0.45,
-                    filter: "drop-shadow(0 0 12px rgba(201,168,76,0.3))" }}>
-        {icon}
+      <div style={{ marginBottom: "0.6rem", opacity: 0.5,
+                    filter: "drop-shadow(0 0 12px rgba(201,168,76,0.3))",
+                    display: "inline-flex", justifyContent: "center" }}>
+        {EMOJI_GI[icon]
+          ? <GameIcon name={EMOJI_GI[icon]} size="2rem" color="var(--color-gold)" />
+          : <span style={{ fontSize: "1.8rem" }}>{icon}</span>}
       </div>
       <p className="font-serif" style={{
         fontSize: "0.9rem", fontStyle: "italic", color: "var(--color-parchment-dim)",
