@@ -61,6 +61,13 @@
 - ✅ Yerleşim ölçeği (şehir 18/kale 12/köy 8) · ölen işçi mülkten çıkar+bildirilir.
 - ⬜ İnce: born NPC isimleri dile göre çözülmüyor (tr sabit); oyuncu ailesi (eş/çocuk) henüz roster'a bağlı değil.
 
+### ✅ SP CİLA YOL HARİTASI — FİİLEN TAMAM (2026-06-16)
+> Tek-oyunculu artık "kusursuz oynanılır" hedefinde: yaşayan dünya + tam fraksiyon diplomasisi +
+> dolu içerik + cila. Final QA: tanımsız i18n anahtarı YOK, smoke HATA:0, 102 dil grubu.
+> Kalan tek kalem **eşya kalite incelemesi**: APK pazarında gizli kusurlu mal olmadığından
+> tasarıma uymuyor → DÜŞÜRÜLDÜ (zorlamak alış ekonomisini riske atardı).
+> **Sıradaki büyük faz: MULTIPLAYER** (kullanıcının sunucu/host kararını bekliyor).
+
 ### SP cila — bu seansta tamamlananlar (2026-06-16)
 - ✅ Mektep kulüpleri + hoca bağı · ✅ Suç sıcak mal · ✅ Çalışma mini-olayları (15 meslek)
 - ✅ Fraksiyon koalisyonu (diplomasi track tam) · ✅ Aile görevleri 10→16 · ✅ Fırsatlar 12→18 (yaşayan-dünya temalı)
