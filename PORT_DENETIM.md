@@ -53,6 +53,14 @@
 - ✅ **Ateşkes:** savaş sonrası ~12 tur yeni savaş yok (sürekli savaş döngüsü kırıldı).
 - ✅ **factionStance() diplomasi temeli** + orgutler'de her loncanın mizaç satırı.
 
+### 🌍 YAŞAYAN DÜNYA (2026-06-16) — TAMAM ✅ (determinizmden vazgeçildi, kullanıcı kararı)
+> Kullanıcı: "her açılışta birebir aynı olması oyunu yapma amacıma aykırı; yaşayan dünya olacak."
+- ✅ **Faz 1:** kalıcı NPC kadrosu — `rosterAt` (deterministik temel + `world.npcEvo`/`npcBorn` evrim katmanı); isimler dile göre çözülür; evrim vârise taşınır.
+- ✅ **Faz 2:** yaşam tiki — ölüm/yeni nesil + evlilik + doğum haberleri.
+- ✅ **Faz 3:** gerçek yaşlanma (`world.npcYears` dünya saati) — bebek doğar/büyür, yetişkin yaşlanır, yaşlı yaşa-bağlı ölür; her ölüm bir doğumla dengeli → **nüfus stabil (ölçüm: tam 138, boş şehir yok, ort. yaş 32.6)**.
+- ✅ Yerleşim ölçeği (şehir 18/kale 12/köy 8) · ölen işçi mülkten çıkar+bildirilir.
+- ⬜ İnce: born NPC isimleri dile göre çözülmüyor (tr sabit); oyuncu ailesi (eş/çocuk) henüz roster'a bağlı değil.
+
 ### Tek-oyunculu cila yol haritası (multiplayer ERTELENDİ — önce SP kusursuz)
 > Karar: önce single-player kusursuz oynanılır olacak, sonra online entegre edilecek.
 - ✅ **Fraksiyon diplomasi tamamlandı:** arketip + ateşkes + müttefik takviyesi + yerel sancak dostluğu + darbe + **koalisyon**.
