@@ -1174,9 +1174,9 @@ function tickCaravan(s: GameState) {
   const mult = 1.35 + Math.random() * 0.4 + p.skills.trade * 0.03;
   const ret = Math.round(c.invested * mult);
   p.money += ret; gainSkill(s, "trade", 10);
-  if (ret - c.invested > 200) p.reputation = Math.min(100, p.reputation + 2); // büyük kâr nam getirir
-  const note = (c.lost ?? 0) > 0 ? ` (yolda ${c.lost} akçe yağmaya gitti)` : "";
-  push(s, "kervan", `${c.dest} kervanın vardı ve mallarını sattı: ${ret} akçe${note}.`, "kişisel", true, { k: "evj.carArrive", p: [{ pl: c.dest }, ret, ""] });
+  const paid = c.invested + (c.lost ?? 0); const net = ret - paid; // gerçek kâr/zarar (yağma dahil)
+  if (net > 200) p.reputation = Math.min(100, p.reputation + 2); // büyük kâr nam getirir
+  push(s, "kervan", `${c.dest} kervanın vardı: ${paid} akçe yatırmıştın, ${ret} akçe döndü (net ${net >= 0 ? "+" : ""}${net}).`, "kişisel", true, { k: "evj.carArrive2", p: [{ pl: c.dest }, paid, ret, (net >= 0 ? "+" : "") + net] });
   s.caravan = null;
 }
 // Kervan gönder: akçe yatır; çok konaklı bir rota kur, her ay bir konak ilerlesin.
