@@ -10,6 +10,10 @@ for (let i = 0; i < 300; i++) {
       const p = s.player;
       if (p.hunger < 35) s = g.eat(s);
       if (p.age >= 13 && p.profession !== "işsiz" && p.hunger >= 30) s = g.work(s);
+      // Mektep çağı: ders + kulüp (okul olayları/hoca bağı/kulüp kapsamı)
+      if (p.age < 18) { try { if (Math.random() < 0.4) s = g.studySubject(s, R(["din","matematik","edebiyat","beden"])).state; if (Math.random() < 0.1) s = g.joinClub(s, R(["koro","gures","cirak"])); } catch (e) { errors++; if (errors <= 5) console.log("MEKTEP HATASI:", e.message); } }
+      // Diyalog (yeni konular dahil)
+      if (p.age >= 13) { const ns = g.npcsOf(s); if (ns.length && Math.random() < 0.2) { try { s = g.talkWith(s, R(ns), R(["hosbes","iltifat","dert","saka","is","aile","dunya","hedef"])).state; } catch (e) { errors++; if (errors <= 5) console.log("DİYALOG HATASI:", e.message); } } }
       if (p.age >= 13) {
         const act = Math.random(); const npcs = g.npcsOf(s);
         try {
