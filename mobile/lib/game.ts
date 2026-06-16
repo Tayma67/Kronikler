@@ -2629,6 +2629,12 @@ export const FAMILY_QUESTS: FamilyQuest[] = [
   { id: "yuvakur",    icon: "💍", title: "Yuva Kur",      desc: "Evlen, bir ocak tüttür.",               minAge: 18, reward: { money: 20, fame: 3 },          done: (s) => s.player.married },
   { id: "ilktapu",    icon: "🏠", title: "İlk Tapu",      desc: "Adına bir mülk edin.",                  minAge: 18, reward: { money: 0, rep: 3, statPt: 1 },  done: (s) => s.player.properties.length >= 1 },
   { id: "ocagituttur",icon: "👶", title: "Ocağı Tüttür",  desc: "Soyunu sürdürecek bir evlat sahibi ol.",minAge: 20, reward: { money: 25, fame: 4 },          done: (s) => s.player.children.length >= 1 },
+  { id: "silahsor",   icon: "⚔️", title: "Silahşör",      desc: "Savaş becerini 6'ya çıkar.",            minAge: 20, reward: { money: 20, fame: 3 },          done: (s) => s.player.skills.combat >= 6 },
+  { id: "ustasinavi", icon: "⚒",  title: "Usta Sınavı",   desc: "Zanaat becerini 6'ya çıkar.",           minAge: 22, reward: { money: 25, fame: 3 },          done: (s) => s.player.skills.crafting >= 6 },
+  { id: "bezirgan",   icon: "⚖️", title: "Bezirgân",      desc: "Ticaret becerini 6'ya çıkar.",          minAge: 22, reward: { money: 30, rep: 3 },           done: (s) => s.player.skills.trade >= 6 },
+  { id: "konaksahibi",icon: "🏛", title: "Konak Sahibi",  desc: "Üç mülk edin.",                         minAge: 25, reward: { money: 0, rep: 5, statPt: 1 },  done: (s) => s.player.properties.length >= 3 },
+  { id: "itibarli",   icon: "🎖", title: "İtibarlı",      desc: "İtibarını 60'a çıkar.",                 minAge: 30, reward: { money: 30, fame: 5 },          done: (s) => s.player.reputation >= 60 },
+  { id: "soyagaci",   icon: "🌳", title: "Soyağacı",      desc: "Hanedanını sürdür (2. nesil ve ötesi).",minAge: 7,  reward: { money: 40, fame: 8 },          done: (s) => s.player.generation >= 2 },
 ];
 export function familyQuestsOf(s: GameState): { q: FamilyQuest; done: boolean; claimed: boolean; locked: boolean }[] {
   const p = s.player; const cl = p.fq_claimed || [];
