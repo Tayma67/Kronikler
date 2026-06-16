@@ -71,7 +71,7 @@ export default function Mulkler() {
                   {/* ── İşçiler (NPC istihdamı) ── */}
                   {(() => {
                     const slots = propWorkerSlots(pr);
-                    const town = townNpcsOf(pr.loc, lang);
+                    const town = townNpcsOf(state, pr.loc, lang);
                     const hired = (pr.workers || []).map((id) => town.find((nn) => nn.id === id)).filter(Boolean) as NonNullable<ReturnType<typeof town.find>>[];
                     const open = hireOpen === i;
                     const avail = town.filter((nn) => !(pr.workers || []).includes(nn.id));
@@ -83,7 +83,7 @@ export default function Mulkler() {
                           {hired.length > 0 && (() => {
                             const base = PROPERTY_TYPES[pr.type]?.income || 0;
                             const cpl = (pr.cond / 100) * (1 + ((pr.level || 1) - 1) * 0.5);
-                            const w = propWorkerStats(pr, base, cpl, lang);
+                            const w = propWorkerStats(state, pr, base, cpl, lang);
                             const net = Math.round(w.gross - w.wage);
                             return <Text style={{ flex: 1, fontFamily: F.display, fontSize: 9.5, color: net >= 0 ? C.sage : C.blood }}>{net >= 0 ? "+" : ""}{net} ⚜/{t("mulk.perMonth").replace("⚜/", "")}</Text>;
                           })()}

@@ -107,8 +107,18 @@ export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: 
 // ── Mülk-işçi (NPC istihdamı) ekonomisi — Vercel property_system.py portu ──
 // Bir mülkün işçi alabileceği yer sayısı: tip slotu + her kademe için +1.
 export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); }
-// Bir mülkün şehrinin işçi havuzu (deterministik; NPC istatistikleri dilden bağımsız).
-export function townNpcsOf(loc: string, lang: Lang = "tr"): NPC[] { return generateNPCs(locSeed(loc), 12, lang, loc); }
+// Yaşayan dünya kadrosu: deterministik temel (isim dile göre çözülür) + kalıcı evrim katmanı (ölüm/yaş/doğum).
+export function rosterAt(s: GameState, loc: string, lang: Lang = "tr"): NPC[] {
+  const evo = s.world?.npcEvo;
+  const base = generateNPCs(locSeed(loc), 12, lang, loc).map((n) => {
+    const e = evo?.[n.id];
+    return e ? { ...n, age: e.age ?? n.age, alive: e.dead ? false : true } : n;
+  }).filter((n) => n.alive !== false);
+  const born = (s.world?.npcBorn || []).filter((n) => n.loc === loc && n.alive !== false);
+  return born.length ? [...base, ...born] : base;
+}
+// Bir mülkün şehrinin işçi havuzu (yaşayan kadrodan).
+export function townNpcsOf(s: GameState, loc: string, lang: Lang = "tr"): NPC[] { return rosterAt(s, loc, lang); }
 // Mesleğe göre üretkenlik uyumu (çiftçi tarlada, demirci değirmende daha verimli).
 const PROP_PROF_FIT: Record<string, string[]> = {
   tarla: ["çiftçi", "çoban"],
@@ -126,10 +136,10 @@ export function workerProductivity(npc: NPC, propType: string): number {
 }
 const WORKER_GROSS = 0.45, WORKER_WAGE = 0.24;
 // Bir mülkün işçilerinden gelen brüt katkı ve toplam ücret (tik + UI ortak).
-export function propWorkerStats(pr: Property, base: number, condProspLevel: number, lang: Lang = "tr"): { gross: number; wage: number; count: number } {
+export function propWorkerStats(s: GameState, pr: Property, base: number, condProspLevel: number, lang: Lang = "tr"): { gross: number; wage: number; count: number } {
   const ids = pr.workers || [];
   if (!ids.length) return { gross: 0, wage: 0, count: 0 };
-  const npcs = townNpcsOf(pr.loc, lang);
+  const npcs = townNpcsOf(s, pr.loc, lang);
   let gross = 0, wage = 0;
   for (const id of ids) {
     const npc = npcs.find((x) => x.id === id); if (!npc) continue;
@@ -141,10 +151,10 @@ export function propWorkerStats(pr: Property, base: number, condProspLevel: numb
 }
 // Üretim zinciri (Vercel production_chains.py): işçili mülk gerçek hammadde üretir → zanaat/ticaret beslenir.
 export const PROP_YIELD: Record<string, string> = { tarla: "bugday", degirmen: "un" };
-export function propYield(pr: Property, lang: Lang = "tr"): { good: string; qty: number } | null {
+export function propYield(s: GameState, pr: Property, lang: Lang = "tr"): { good: string; qty: number } | null {
   const good = PROP_YIELD[pr.type]; const ids = pr.workers || [];
   if (!good || !ids.length) return null;
-  const npcs = townNpcsOf(pr.loc, lang);
+  const npcs = townNpcsOf(s, pr.loc, lang);
   let units = 0;
   for (const id of ids) { const npc = npcs.find((x) => x.id === id); if (npc) units += workerProductivity(npc, pr.type) * (1 + ((pr.level || 1) - 1) * 0.3); }
   const qty = Math.floor(units); // ~işçi başına ayda ~1 birim (üretkenlikle ölçekli)
@@ -157,7 +167,7 @@ export function hireWorker(prev: GameState, index: number, npcId: string): GameS
   pr.workers = pr.workers || [];
   if (pr.workers.includes(npcId) || pr.workers.length >= propWorkerSlots(pr)) return s;
   pr.workers.push(npcId);
-  const npc = townNpcsOf(pr.loc).find((x) => x.id === npcId);
+  const npc = townNpcsOf(s, pr.loc).find((x) => x.id === npcId);
   push(s, "mülk", `${npc?.name || "Bir işçi"}, ${PROPERTY_TYPES[pr.type]?.name || "mülkünde"} (${pr.loc}) işe alındı.`, "kişisel", true, { k: "evj.workerHired", p: [npc?.name || "Bir işçi", { pt2: pr.type }, { pl: pr.loc }] });
   return s;
 }
@@ -415,7 +425,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; breath?: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
-  relationships: Record<string, number>; world: { ready: boolean };
+  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean }>; npcBorn?: NPC[] };
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
@@ -634,7 +644,7 @@ const chance = (p: number) => Math.random() < p;
 const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
 
 // NPC'ler KONUMA bağlı: her şehrin kendi insanları (konum tohumlu + konum-önekli kimlik).
-export function npcsOf(s: GameState, lang: Lang = "tr"): NPC[] { return generateNPCs(locSeed(s.player.location_name), 12, lang, s.player.location_name); }
+export function npcsOf(s: GameState, lang: Lang = "tr"): NPC[] { return rosterAt(s, s.player.location_name, lang); }
 
 export function newGame(first: string, surname: string, gender: "erkek" | "kadın"): GameState {
   const birthplace = rnd(LOCATIONS);
@@ -862,9 +872,9 @@ export function advance(prev: GameState, n = 1): GameState {
       inc += base * condProspLevel * typeMult;
       if (pr.type === "ev" && (pr.level || 1) >= 2 && chance(0.04)) s.player.reputation = Math.min(100, s.player.reputation + 1); // köklü ev → itibar damlası
       // İşçi ekonomisi: çalışan NPC'ler üretimi artırır ama ücret ister.
-      const w = propWorkerStats(pr, base, condProspLevel);
+      const w = propWorkerStats(s, pr, base, condProspLevel);
       inc += w.gross; wages += w.wage;
-      const y = propYield(pr); if (y) { const sm = pr.type === "tarla" ? ({ "İlkbahar": 0.6, "Yaz": 1.0, "Sonbahar": 1.8, "Kış": 0.2 }[cal.season] ?? 1) : 1; const q = Math.round(y.qty * sm); if (q > 0) produced[y.good] = (produced[y.good] || 0) + q; } // işçi emeği → gerçek hammadde (tarla mevsimlik)
+      const y = propYield(s, pr); if (y) { const sm = pr.type === "tarla" ? ({ "İlkbahar": 0.6, "Yaz": 1.0, "Sonbahar": 1.8, "Kış": 0.2 }[cal.season] ?? 1) : 1; const q = Math.round(y.qty * sm); if (q > 0) produced[y.good] = (produced[y.good] || 0) + q; } // işçi emeği → gerçek hammadde (tarla mevsimlik)
       if (pr.cond > 40 && chance(0.2)) pr.cond -= 1;                                   // zamanla aşınma
       if (effSec < 30 && chance(0.02 + (effSec < 10 ? 0.03 : 0))) {                    // düşük güvenlikte (eşkıya/yangın olayı kötüleştirir) yağma
         pr.cond = Math.max(20, pr.cond - 15);
@@ -2132,7 +2142,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true }, relationships: {}, dynasty, npc_state: {},
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn }, relationships: {}, dynasty, npc_state: {},
     // Hanedan hafızası vârise geçer: ataların tamamladığı yaylar bayrak olarak kalır, az da olsa anlatı momentumu verir.
     story: { active: null, completed: [], tension: Math.min(20, Object.keys(prev.story?.flags || {}).length * 3), nemesis: null, flags: { ...(prev.story?.flags || {}) }, lull: 0 }, wars: [], caravan: null, econ: 1,
     settlements: prev.settlements || [], // dynastinin kurduğu yerleşimler vârise kalır
