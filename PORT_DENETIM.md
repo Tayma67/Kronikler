@@ -285,3 +285,30 @@ Küçük açık: rüşvet-sonrası "dolandırıcılık" söylentisi döngüsü, 
 - Kural: mevcut çalışan sistemi BOZMA, üzerine ekle (additif port); APK'da daha iyi olanı KORU.
 - Bu rapordaki satır/yüzde değerleri ajan taramasından gelir; bir maddeye dokunmadan önce ilgili
   Vercel modülü + APK karşılığı tekrar okunup doğrulanmalı.
+
+---
+
+## EKONOMİ YENİDEN TASARIMI (gerçek hayat filtresi)
+
+**Talep:** Mülk fiyatları çok düşüktü (600); en ucuz ~2k olmalı. Şehir kurma 8k saçma.
+Bölgede mülk toplayıp kademeli köy→kasaba kurma. Enflasyon gerçek/dünya-bazlı (oyuncu-bazlı nerf değil).
+Aşırı zengin oyuncu "Elon Musk" gibi ekonomiyi oynatabilmeli.
+
+**Yapılanlar (`lib/game.ts` + `lib/i18n.tsx` + `app/oyun/{mulkler,hanedan}.tsx`):**
+- **Mülk fiyatları gerçekçi:** tarla 2.000 / ev 2.500 / dükkân 6.500 / han 11.000 / değirmen 18.000.
+  Alış bedeli `propBuyCost = nominal × enflasyon` (geç-oyunda pahalanır).
+- **Kademeli yaşam gideri (`lifestyleUpkeep`):** hane + mülk/yerleşim bakımı + servete göre
+  marjinal yük (5k/20k/100k dilimleri %3/%6/%10 yıllık). Biriken nakti eritir, fakir oyuncuyu ezmez.
+- **Gerçek enflasyon (`s.world.inflation`):** yıllık ~%0.5–1.1 sürüklenme (savaş hızlandırır), cap 2.5×.
+  Dünya-bazlı, oyuncudan bağımsız. Gelirler de (iş/mülk/vergi) enflasyonla ölçeklenir →
+  üretken servet değerini korur, biriken nakit erir. Vârise taşınır.
+- **Kademeli yerleşim (mezra→köy→kasaba→şehir):** bölgede mülk + gelişmişlik + berat şartı.
+  mezra(3 mülk/2.5k) → köy(5/dev40/6k) → kasaba(8/dev70/16k) → şehir(12/dev100/40k). Konuma bağlı.
+- **Görkem & bağış muslukları:** hekim (sağlık, tekrar), imaret, vakıf, anıt — servete pozitif çıkış.
+- **Piyasa oynatma ("Elon Musk"):** 50k+ akçeli oyuncu büyük sermaye dökerek `s.econ`'u oynatır
+  (pump/dump), etki herkesi bağlar, 6 ay soğuma.
+- **Ömür dengesi:** sağlık aşınması yumuşatıldı; 70+ artık nadir-ama-erişilebilir (bilge başarımı yaşadı).
+- **+5 başarım:** kasabalı, şehir-kuran, vakıf, anıt, 100k hazine.
+
+**Teşhis (300 hayat, engaged earner bot):** para medyan 4.268 / p90 12.036 / max 31.615 (eski 552k runaway çözüldü).
+70+ %14. Enflasyon ort 1.6×. Yerleşim: 241 kurdu, 84 köy / 4 kasaba'ya büyüdü. HATA:0. tsc temiz.

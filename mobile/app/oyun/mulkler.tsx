@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, propWorkerStats } from "../../lib/game";
+import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, propWorkerStats } from "../../lib/game";
 import { placeName, professionNameL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -141,7 +141,9 @@ export default function Mulkler() {
 
         {/* ── Bu şehirde satın al ── */}
         <Panel title={`${t("mulk.buyHere")} · ${placeName(here, lang)}`} icon="🏗" noPad>
-          {Object.entries(PROPERTY_TYPES).map(([id, ty], i, arr) => (
+          {Object.entries(PROPERTY_TYPES).map(([id, ty], i, arr) => {
+            const cost = propBuyCost(state, id);
+            return (
             <View key={id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: i === arr.length - 1 ? 0 : 1, borderBottomColor: C.border }}>
               <View style={{ width: 40, height: 40, borderRadius: 9, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
                 <Text style={{ fontSize: 20 }}>{ty.icon}</Text>
@@ -150,11 +152,13 @@ export default function Mulkler() {
                 <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("pt." + id)}</Text>
                 <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{ty.income} {t("mulk.perMonth")}</Text>
               </View>
-              <Pressable onPress={() => { hap("tap"); apply((s) => buyProperty(s, id)); }} disabled={p.money < ty.cost} style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < ty.cost ? C.bg : "rgba(201,168,76,0.12)" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < ty.cost ? C.parchmentMuted : C.gold }}>{t("misc.buy")} {ty.cost}⚜</Text>
+              <Pressable onPress={() => { hap("tap"); apply((s) => buyProperty(s, id)); }} disabled={p.money < cost} style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < cost ? C.bg : "rgba(201,168,76,0.12)" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < cost ? C.parchmentMuted : C.gold }}>{t("misc.buy")} {cost}⚜</Text>
               </Pressable>
             </View>
-          ))}
+            );
+          })}
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, paddingHorizontal: 12, paddingVertical: 8 }}>{t("mulk.priceNote")}</Text>
         </Panel>
       </ScrollView>
     </View>

@@ -36,6 +36,7 @@ export interface Player {
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
   hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
   governorships?: string[]; // valisi olunan şehirler
+  legacy?: Record<string, boolean>; // kalıcı görkem eserleri (vakıf/anıt/imaret) — bir kez kurulur
   govLeg?: Record<string, number>; // valilik meşruiyeti (şehir → 0-100); düşerse isyan/azil
   govTax?: Record<string, number>; // valilikte vergi oranı (şehir → %; default 15)
   govHappy?: Record<string, number>; // valilikte halk memnuniyeti (0-100)
@@ -97,13 +98,36 @@ export function upgradeProperty(prev: GameState, index: number): GameState {
   push(s, "mülk", `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) büyütüldü — kademe ${pr.level} (−${cost} akçe).`, "kişisel", true, { k: "evj.propUp", p: [{ pt2: pr.type }, { pl: pr.loc }, pr.level || 1, cost] });
   return s;
 }
+// Gerçekçi fiyatlar: bir mülk yıllarca geri ödenen ciddi bir yatırımdır (en ucuzu ~2.000 akçe).
+// Nominal "cost" enflasyonla çarpılarak güncel alış bedeli bulunur (propBuyCost).
 export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: number; income: number; slots: number }> = {
-  tarla:    { name: "Tarla",    icon: "🌾", cost: 80,  income: 6,  slots: 3 },
-  ev:       { name: "Ev",       icon: "🏠", cost: 150, income: 10, slots: 1 },
-  dukkan:   { name: "Dükkân",   icon: "🏪", cost: 300, income: 22, slots: 2 },
-  han:      { name: "Han",      icon: "🏨", cost: 450, income: 30, slots: 3 },
-  degirmen: { name: "Değirmen", icon: "🏭", cost: 600, income: 48, slots: 4 },
+  tarla:    { name: "Tarla",    icon: "🌾", cost: 2000,  income: 30,  slots: 3 },
+  ev:       { name: "Ev",       icon: "🏠", cost: 2500,  income: 36,  slots: 1 },
+  dukkan:   { name: "Dükkân",   icon: "🏪", cost: 6500,  income: 90,  slots: 2 },
+  han:      { name: "Han",      icon: "🏨", cost: 11000, income: 150, slots: 3 },
+  degirmen: { name: "Değirmen", icon: "🏭", cost: 18000, income: 210, slots: 4 },
 };
+// Güncel alış bedeli = nominal × enflasyon (geç-oyunda mülk pahalanır → nakit erir, değer korunur).
+export function propBuyCost(s: GameState, type: string): number { return Math.round((PROPERTY_TYPES[type]?.cost || 0) * inflationFactor(s)); }
+// Bir konumdaki (bölge) sahip olunan mülk sayısı — kademeli yerleşim kurma şartı.
+export function propsInLoc(s: GameState, loc: string): number { return s.player.properties.filter((pr) => pr.loc === loc).length; }
+// Aylık yaşam gideri (gerçek hayat filtresi): hane masrafı + mülk/yerleşim bakımı + servete göre
+// artan maiyet/ziyafet/sadaka/vergi yükü. Zengin oldukça gider de büyür → para hep önemli kalır.
+// Bu enflasyon DEĞİL; soylunun kendi yaşam masrafıdır (oyuncu-bazlı, dünya enflasyonundan ayrı).
+export function lifestyleUpkeep(s: GameState): number {
+  const p = s.player; const inf = inflationFactor(s);
+  let u = (4 + Math.floor(p.age / 10)) * inf;                    // hane geçim gideri (yaş + enflasyonla artar)
+  u += p.properties.length * 3 * inf;                            // mülk bakımı & tapu vergisi
+  u += (s.settlements?.length || 0) * 8 * inf;                   // yerleşim idare gideri
+  // Servete göre kademeli yaşam yükü (maiyet, ziyafet, sadaka beklentisi, divan vergisi) — zengini ısırır.
+  const w = p.money; const b1 = 5000 * inf, b2 = 20000 * inf, b3 = 100000 * inf;
+  let annual = 0;
+  if (w > b1) annual += (Math.min(w, b2) - b1) * 0.03;
+  if (w > b2) annual += (Math.min(w, b3) - b2) * 0.06;
+  if (w > b3) annual += (w - b3) * 0.10;
+  u += annual / 12;
+  return Math.max(0, Math.round(u));
+}
 // ── Mülk-işçi (NPC istihdamı) ekonomisi — Vercel property_system.py portu ──
 // Bir mülkün işçi alabileceği yer sayısı: tip slotu + her kademe için +1.
 export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); }
@@ -462,7 +486,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; breath?: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
-  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean }>; npcBorn?: NPC[]; npcYears?: number };
+  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number };
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
@@ -488,9 +512,13 @@ export interface DynastyOffer { id: string; houseId: string; nameIdx: number; ty
 // Oyuncu hakkında söylenti — tanıklı skandal anıdan doğar, zamanla söner.
 export interface Rumor { id: string; hafta: number; tur: string; vi: number; nam: string | null; yon: number; siddet: number; kaynak: string; }
 // Hanedanın kurduğu yerleşim — mezra olarak başlar, yıllarca gelişir, vergi getirir.
-export interface Settlement { name: string; founded: number; dev: number; }
+export interface Settlement { name: string; founded: number; dev: number; tier?: string; loc?: string; }
 // Piyasa çarpanına göre fiyat.
 export function marketPrice(base: number, econ: number): number { return Math.max(1, Math.round(base * (econ || 1))); }
+// ── Enflasyon (gerçek hayattaki gibi: dünya tabanlı, oyuncudan bağımsız) ──
+// Para yıllar geçtikçe yavaşça değer kaybeder (sikke tağşişi); savaş/kıtlık hızlandırır.
+// Hisse: biriken nakit erir, üretken mülk değerini korur → para hep önemli kalır.
+export function inflationFactor(s: GameState): number { return s.world?.inflation || 1; }
 // Mevsimsel fiyat çarpanları (Vercel SEASON_PRICE_MULT portu; mobil eşya kimlikleriyle).
 const SEASON_MULT: Record<string, Record<string, number>> = {
   "Kış":      { kereste: 1.25, bugday: 1.15, et: 1.10, ekmek: 1.10, corba: 1.10 },
@@ -688,7 +716,7 @@ export function npcsOf(s: GameState, lang: Lang = "tr"): NPC[] { return rosterAt
 export function newGame(first: string, surname: string, gender: "erkek" | "kadın"): GameState {
   const birthplace = rnd(LOCATIONS);
   return {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true },
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, inflation: 1 },
     relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null, econ: 1,
     player: {
       name: surname ? `${first} ${surname}` : first, surname, gender, base_age: 7, age: 7,
@@ -820,10 +848,12 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       }
     }
   }
-  // Yaşlanma + ölümlülük — geniş dağılım: bazıları genç hastalık/kazaya, sağlıklılar 70-80'e
-  if (p.age >= 50) p.health = Math.max(0, p.health - Math.floor((p.age - 48) / 5));
+  // Yaşlanma + ölümlülük — geniş dağılım: bazıları genç hastalık/kazaya, sağlıklı & bakımlı olanlar 70-80'e ulaşabilir.
+  // Sağlık aşınması daha yumuşak (ayda değil seyrek) → servetle hekim tutan uzun yaşar (gerçek hayat filtresi).
+  if (p.age >= 52 && chance(0.5)) p.health = Math.max(0, p.health - Math.floor((p.age - 48) / 7));
   const accident = (p.age >= 25 ? 0.0008 : 0) + (p.health < 25 ? 0.012 : 0);
-  const aging = p.age >= 58 ? (p.age - 58) * 0.006 + (p.health < 40 ? 0.01 : 0) : 0;
+  const frail = p.health < 40 ? 0.008 : 0;
+  const aging = p.age >= 62 ? (p.age - 62) * 0.0045 + frail : frail;
   if (chance(accident + aging)) {
     const old = p.age >= 60;
     die(s, old ? `${p.name}, ${p.age} yaşında huzur içinde göçtü.` : `${p.name}, ${p.age} yaşında ${p.health < 25 ? "amansız bir hastalığa" : "ecel"} yenik düştü.`, old ? { k: "evj.dieOld", p: [p.name, p.age] } : (p.health < 25 ? { k: "evj.dieIll", p: [p.name, p.age] } : { k: "evj.dieAge", p: [p.name, p.age] }));
@@ -930,6 +960,10 @@ export function advance(prev: GameState, n = 1): GameState {
     }
     if (s.player.crowned) inc += 15; // hükümdar hazinesi
     inc += governorIncome(s); // valilik vergi payı
+    // Enflasyon nominal gelirleri de yükseltir (gerçek ekonomi): üretken servet değerini korur, biriken nakit erir.
+    const inf = inflationFactor(s);
+    inc = Math.round(inc * inf);
+    wages = wages * inf;
     const wageCost = Math.round(wages);
     if (wageCost > 0) s.player.money -= wageCost; // işçi maaşları (her hâlükârda ödenir)
     if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", wageCost > 0 ? `Mülk ve yerleşimlerinden ${inc} akçe gelir geldi (${wageCost} akçe işçi ücreti ödendi).` : `Mülk ve yerleşimlerinden ${inc} akçe gelir geldi.`, "kişisel", false, wageCost > 0 ? { k: "evj.propHarvestW", p: [inc, wageCost] } : { k: "evj.propHarvest", p: [inc] }); }
@@ -941,7 +975,7 @@ export function advance(prev: GameState, n = 1): GameState {
       } }
     // Aylık geçim gideri (yaş + servetle hafifçe artar) — para birikimini dengeler
     if (s.player.age >= 13 && s.player.money > 0) {
-      const upkeep = Math.min(s.player.money, 2 + Math.floor(s.player.age / 12) + Math.floor(s.player.money / 600));
+      const upkeep = Math.min(s.player.money, lifestyleUpkeep(s));
       s.player.money -= upkeep;
     }
     push(s, s.player.age < 13 ? "cocukluk" : "gunluk", monthlyFlavor(s, cal));
@@ -1242,6 +1276,19 @@ function tickEconomy(s: GameState, announce: boolean) {
     else { s.econ = Math.max(0.7, s.econ - 0.18); if (announce) push(s, "piyasa", "Bereketli hasat; pazarda fiyatlar düştü.", "makro", false, { k: "evj.abundance" }); }
   }
   s.econ = Math.round(s.econ * 100) / 100;
+  // Gerçek enflasyon (dünya tabanlı, oyuncudan bağımsız): yılda bir sikke yavaşça değer kaybeder.
+  // Savaş/kıtlık hızlandırır, bereket hafifçe yavaşlatır; net eğilim yukarı (medeniyet tağşişi).
+  if (s.turn > 0 && s.turn % 12 === 0 && s.world) {
+    let inf = s.world.inflation || 1;
+    let drift = 0.005 + Math.random() * 0.006;               // taban: yıllık ~%0.5–1.1 (yumuşak)
+    const wars = (s.wars?.length || 0);
+    if (wars > 0) drift += 0.004 * Math.min(3, wars);         // savaş paranın değerini düşürür
+    if (s.econ < 0.85) drift -= 0.006;                        // bereketli yıl fiyatları gevşetir
+    inf = Math.max(1, Math.min(2.5, inf * (1 + drift)));
+    s.world.inflation = Math.round(inf * 1000) / 1000;
+    if (announce && Math.random() < 0.25 && s.world.inflation > 1.15)
+      push(s, "piyasa", `Diyarda hayat pahalılığı arttı; sikke eski değerinde değil (enflasyon %${Math.round((s.world.inflation - 1) * 100)}).`, "makro", false, { k: "evj.inflation", p: [Math.round((s.world.inflation - 1) * 100)] });
+  }
   // Geçici piyasa olayı: süresi dolanı kapat, ara sıra yenisini başlat
   if (s.marketEvent && s.marketEvent.until <= s.turn) s.marketEvent = null;
   if (!s.marketEvent && Math.random() < 0.07) {
@@ -1376,7 +1423,7 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
   const tierBefore = pr ? careerTier(pr, p.career_xp) : 0;
   const titleMult = TITLE_MULT[tierBefore] || 1;
   const base = pr ? pr.base : 4;
-  let earn = Math.round((base + stat * 2 + Math.floor(Math.random() * 6)) * mult * titleMult * ws.mult);
+  let earn = Math.round((base + stat * 2 + Math.floor(Math.random() * 6)) * mult * titleMult * ws.mult * inflationFactor(s));
   p.career_xp += 1;
   gainSkill(s, PROF_SKILL[p.profession] || "crafting", 8);
   addStatXp(s, PROF_STAT[p.profession] || "stamina", 4); // meslek özelliğin işle gelişir
@@ -2051,8 +2098,9 @@ export function opportunitiesFor(s: GameState): Opportunity[] {
 // Mülk satın al
 export function buyProperty(prev: GameState, type: string): GameState {
   const s = clone(prev); const p = s.player; const t = PROPERTY_TYPES[type];
-  if (!t || p.dead || p.money < t.cost) return s;
-  p.money -= t.cost; p.properties.push({ type, loc: p.location_name, cond: 100 });
+  const cost = propBuyCost(s, type);
+  if (!t || p.dead || p.money < cost) return s;
+  p.money -= cost; p.properties.push({ type, loc: p.location_name, cond: 100 });
   push(s, "mülk_alım", `${p.location_name}'de ${t.name} satın aldın. Adına bir tapu daha.`, "kişisel", true, { k: "evj.propBuy", p: [{ pl: p.location_name }, { pt2: type }] });
   return s;
 }
@@ -2191,7 +2239,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12) }, relationships: {}, dynasty, npc_state: {},
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, relationships: {}, dynasty, npc_state: {},
     // Hanedan hafızası vârise geçer: ataların tamamladığı yaylar bayrak olarak kalır, az da olsa anlatı momentumu verir.
     story: { active: null, completed: [], tension: Math.min(20, Object.keys(prev.story?.flags || {}).length * 3), nemesis: null, flags: { ...(prev.story?.flags || {}) }, lull: 0 }, wars: [], caravan: null, econ: 1,
     settlements: prev.settlements || [], // dynastinin kurduğu yerleşimler vârise kalır
@@ -2631,6 +2679,12 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "cokdost",  name: "Sevilen Yüz",     desc: "8 kişiyle yakın dost ol (ilişki ≥ 40).", icon: "family",   done: (s) => Object.values(s.relationships || {}).filter((v) => v >= 40).length >= 8 },
   { id: "hayirsever",name:"Hayırsever",      desc: "Cömert namın 60'ı aşsın.",          icon: "coins",        done: (s) => (s.player.nam?.comert || 0) >= 60 },
   { id: "korkulanad",name:"Korkulan Ad",     desc: "Zalim namın 60'ı aşsın.",           icon: "skull",        done: (s) => (s.player.nam?.zalim || 0) >= 60 },
+  // ── Ekonomi / görkem başarımları (kademeli yerleşim + bağış muslukları) ──
+  { id: "kasabali",  name: "Kasaba Beyi",     desc: "Bir yerleşimini kasabaya büyüt.",   icon: "castle",       done: (s) => (s.settlements || []).some((st) => st.tier === "kasaba" || st.tier === "şehir") },
+  { id: "sehirkuran",name: "Şehir Kuran",     desc: "Bir yerleşimini şehre büyüt.",      icon: "castle",       done: (s) => (s.settlements || []).some((st) => st.tier === "şehir") },
+  { id: "vakifsahibi",name:"Vakıf Sahibi",    desc: "Adına bir vakıf kur.",              icon: "scroll-open",  done: (s) => !!s.player.legacy?.vakif },
+  { id: "anitkuran", name: "Anıt Diktiren",   desc: "Görkemli bir anıt diktir.",         icon: "banner",       done: (s) => !!s.player.legacy?.anit },
+  { id: "hanedanservet",name:"Hazine Sahibi", desc: "Servetin 100.000 akçeyi aşsın.",    icon: "gems",         done: (s) => s.player.money >= 100000 },
 ];
 export function achievementsOf(s: GameState): { a: Achievement; done: boolean }[] {
   return ACHIEVEMENTS.map((a) => ({ a, done: a.done(s) }));
@@ -3010,45 +3064,127 @@ export function claimThrone(prev: GameState): { state: GameState; success: boole
   return { state: s, success };
 }
 
-// ── YERLEŞİM KUR (gerçekçi: mevki + sermaye; mezradan gelişir) ──
-export const SETTLE_COST = 1500;
+// ── KADEMELİ YERLEŞİM (gerçek hayat filtresi): bir bölgede mülk topla → mezra kur (berat öde)
+//    → mülk ekleyip akçe dökerek geliştir → köy → kasaba → şehir doğru kademe kademe büyüt. ──
+export const SETTLE_TIERS = ["mezra", "köy", "kasaba", "şehir"];
+// Her kademenin şartı: o bölgede sahip olunması gereken mülk + gerekli gelişmişlik + berat bedeli (nominal; enflasyonla çarpılır) + vergi katsayısı.
+export const SETTLE_TIER: Record<string, { props: number; dev: number; fee: number; tax: number }> = {
+  mezra:  { props: 3,  dev: 0,   fee: 2500,  tax: 0.25 },
+  "köy":  { props: 5,  dev: 40,  fee: 6000,  tax: 0.55 },
+  kasaba: { props: 8,  dev: 70,  fee: 16000, tax: 1.0 },
+  "şehir":{ props: 12, dev: 100, fee: 40000, tax: 1.7 },
+};
 export const SETTLE_MAX = 3;
+// Berat bedeli güncel (enflasyonlu).
+export function settleFee(s: GameState, tier: string): number { return Math.round((SETTLE_TIER[tier]?.fee || 0) * inflationFactor(s)); }
+// Mezra kurmak için: bu bölgede yeterli mülk + berat parası + henüz burada yerleşim yok.
 export function canFoundSettlement(s: GameState): { ok: boolean; reason: string } {
-  const p = s.player;
+  const p = s.player; const here = p.location_name;
   if (p.dead) return { ok: false, reason: "dead" };
   if ((s.settlements?.length || 0) >= SETTLE_MAX) return { ok: false, reason: "max" };
-  if (dynastyPower(s) < 80) return { ok: false, reason: "power" };
-  if (p.properties.length < 1) return { ok: false, reason: "prop" };
-  if (p.money < SETTLE_COST) return { ok: false, reason: "gold" };
+  if ((s.settlements || []).some((st) => st.loc === here)) return { ok: false, reason: "here" };
+  if (propsInLoc(s, here) < SETTLE_TIER.mezra.props) return { ok: false, reason: "prop" };
+  if (p.money < settleFee(s, "mezra")) return { ok: false, reason: "gold" };
   return { ok: true, reason: "" };
 }
 export function foundSettlement(prev: GameState, name: string): GameState {
-  const s = clone(prev); const p = s.player;
+  const s = clone(prev); const p = s.player; const here = p.location_name;
   if (!canFoundSettlement(s).ok || !name.trim()) return s;
-  p.money -= SETTLE_COST;
+  p.money -= settleFee(s, "mezra");
   if (!s.settlements) s.settlements = [];
-  s.settlements.push({ name: name.trim().slice(0, 24), founded: s.turn, dev: 8 });
-  p.fame = Math.min(100, p.fame + 5); p.reputation = Math.min(100, p.reputation + 4);
-  push(s, "yerlesim", `${name.trim()} adıyla yeni bir mezra kurdun — zamanla gelişip vergi getirecek.`, "kişisel", true, { k: "ev.settle.found", p: [name.trim()] });
+  s.settlements.push({ name: name.trim().slice(0, 24), founded: s.turn, dev: 8, tier: "mezra", loc: here });
+  p.fame = Math.min(100, p.fame + 4); p.reputation = Math.min(100, p.reputation + 3);
+  push(s, "yerlesim", `${name.trim()} adıyla bir mezra kurdun (${here}). Mülk ekleyip geliştirdikçe köye, kasabaya doğru büyüyecek.`, "kişisel", true, { k: "ev.settle.found", p: [name.trim(), { pl: here }] });
   return s;
 }
-// Yerleşim geliştirme bedeli (gelişmişlik arttıkça pahalanır) — geç-oyun servetine üretken musluk.
-export function developSettlementCost(st: Settlement): number { return Math.round(60 + st.dev * 7); }
-// Akçe dökerek yerleşimini hızla geliştir (vergi gelirini artırır).
+// Bir yerleşimin bir sonraki kademesi (yoksa null = en üst).
+export function nextSettleTier(st: Settlement): string | null {
+  const i = SETTLE_TIERS.indexOf(st.tier || "mezra");
+  return i >= 0 && i < SETTLE_TIERS.length - 1 ? SETTLE_TIERS[i + 1] : null;
+}
+// Kademe yükseltme uygunluğu: bölgede yeterli mülk + gelişmişlik + berat parası.
+export function canUpgradeSettleTier(s: GameState, index: number): { ok: boolean; reason: string; next: string | null } {
+  const st = s.settlements?.[index]; if (!st) return { ok: false, reason: "none", next: null };
+  const next = nextSettleTier(st); if (!next) return { ok: false, reason: "top", next: null };
+  const req = SETTLE_TIER[next];
+  if (st.dev < req.dev) return { ok: false, reason: "dev", next };
+  if (propsInLoc(s, st.loc || "") < req.props) return { ok: false, reason: "prop", next };
+  if (s.player.money < settleFee(s, next)) return { ok: false, reason: "gold", next };
+  return { ok: true, reason: "", next };
+}
+export function upgradeSettleTier(prev: GameState, index: number): GameState {
+  const s = clone(prev); const chk = canUpgradeSettleTier(s, index);
+  if (!chk.ok || !chk.next) return s;
+  const st = s.settlements![index]; const p = s.player;
+  p.money -= settleFee(s, chk.next);
+  st.tier = chk.next; st.dev = Math.max(8, st.dev - 30); // büyüyen yerleşim yeniden gelişmeye başlar
+  p.fame = Math.min(100, p.fame + 6); p.reputation = Math.min(100, p.reputation + 4);
+  push(s, "yerlesim", `${st.name} artık bir ${chk.next}! Hanedanının nüfuzu büyüyor.`, "kişisel", true, { k: "ev.settle.up", p: [st.name, { stt: chk.next }] });
+  return s;
+}
+// Yerleşim geliştirme bedeli (kademe + gelişmişlik arttıkça pahalanır) — geç-oyun servetine üretken musluk.
+export function developSettlementCost(st: Settlement): number { const tm = 1 + SETTLE_TIERS.indexOf(st.tier || "mezra") * 0.6; return Math.round((120 + st.dev * 12) * tm); }
+// Akçe dökerek yerleşimini hızla geliştir (vergi gelirini artırır + kademe yükseltmenin önünü açar).
 export function developSettlement(prev: GameState, index: number): GameState {
   const s = clone(prev); const p = s.player; const st = s.settlements?.[index];
   if (!st || st.dev >= 100) return s;
   const cost = developSettlementCost(st); if (p.money < cost) return s;
   p.money -= cost; st.dev = Math.min(100, st.dev + 8);
   if (st.dev >= 100) p.fame = Math.min(100, p.fame + 3);
-  push(s, "yerlesim", `${st.name} için akçe döktün; mezra hızla gelişti (gelişmişlik %${st.dev}).`, "kişisel", false, { k: "evj.settleDev", p: [st.name, st.dev] });
+  push(s, "yerlesim", `${st.name} için akçe döktün; ${st.tier || "mezra"} hızla gelişti (gelişmişlik %${st.dev}).`, "kişisel", false, { k: "evj.settleDev", p: [st.name, st.dev] });
   return s;
 }
-// Bir yerleşimin yıllık vergi geliri (gelişmişliğe + halk desteğine göre).
+// Bir yerleşimin yıllık vergi geliri (kademe × gelişmişlik × halk desteği).
 export function settlementIncome(s: GameState): number {
   if (!s.settlements?.length) return 0;
   const repMult = 1 + Math.max(0, s.player.reputation) / 300;
-  return Math.round(s.settlements.reduce((a, st) => a + st.dev * 0.25, 0) * repMult);
+  return Math.round(s.settlements.reduce((a, st) => a + st.dev * (SETTLE_TIER[st.tier || "mezra"]?.tax || 0.25), 0) * repMult);
+}
+
+// ── GÖRKEM & BAĞIŞ (geç-oyun servetine anlamlı musluklar; gerçek hayat filtresi) ──
+// Soylular vakıf kurar, imaret açar, anıt diktirir, hekim tutar. Para harcanacak yer bulur,
+// servet itibara/şöhrete/sağlığa/mirasa dönüşür. Bedeller enflasyonla güncellenir.
+export const PRESTIGE: Record<string, { cost: number; repeat?: boolean; once?: boolean }> = {
+  hekim:  { cost: 2500,  repeat: true },   // özel hekim → sağlık (ömrü uzatır)
+  imaret: { cost: 9000 },                   // imaret/aşevi → itibar + halk desteği
+  vakif:  { cost: 28000, once: true },      // vakıf → büyük itibar/şöhret + miras
+  anit:   { cost: 90000, once: true },      // anıt → kalıcı şöhret + başarım
+};
+export function prestigeCost(s: GameState, id: string): number { return Math.round((PRESTIGE[id]?.cost || 0) * inflationFactor(s)); }
+export function fundPrestige(prev: GameState, id: string): GameState {
+  const s = clone(prev); const p = s.player; const def = PRESTIGE[id]; if (!def || p.dead) return s;
+  const cost = prestigeCost(s, id); if (p.money < cost) return s;
+  if (def.once && p.legacy?.[id]) return s;
+  p.money -= cost; p.legacy = p.legacy || {};
+  if (id === "hekim") { p.health = Math.min(100, p.health + 16); push(s, "saglik", `Usta bir hekim tuttun; sağlığın tazelendi (+16 sağlık).`, "kişisel", false, { k: "ev.prestige.hekim" }); }
+  else if (id === "imaret") { p.reputation = Math.min(100, p.reputation + 9); p.fame = Math.min(100, p.fame + 3); p.legacy.imaret = true; push(s, "bagis", `Bir imaret açtın; yoksullar adını hayırla anıyor (+itibar).`, "kişisel", true, { k: "ev.prestige.imaret" }); }
+  else if (id === "vakif") { p.reputation = Math.min(100, p.reputation + 12); p.fame = Math.min(100, p.fame + 9); p.legacy.vakif = true; push(s, "bagis", `Adına bir vakıf kurdun; hayrın nesiller boyu sürecek (+itibar +şöhret).`, "kişisel", true, { k: "ev.prestige.vakif" }); }
+  else if (id === "anit") { p.fame = Math.min(100, p.fame + 16); p.legacy.anit = true; push(s, "bagis", `Görkemli bir anıt diktirdin; diyar bu eseri asırlarca konuşacak (+şöhret).`, "kişisel", true, { k: "ev.prestige.anit" }); }
+  return s;
+}
+
+// ── PİYASA OYNATMA ("Elon Musk" — haddinden fazla zengin oyuncu ekonominin dinamolarını oynatır) ──
+// Yalnızca çok zengin oyuncu (≥50.000 akçe) büyük sermaye dökerek piyasayı kasıtlı oynatabilir;
+// etki herkesi bağlar (dünya-bazlı sonuç) ve bir süre sürer. Soğuma: aktifken tekrar oynatılamaz.
+export const MARKET_LEVER_MIN = 50000;
+export function marketLeverCost(s: GameState): number { return Math.round(20000 * inflationFactor(s)); }
+export function canManipulateMarket(s: GameState): { ok: boolean; reason: string } {
+  const p = s.player;
+  if (p.dead) return { ok: false, reason: "dead" };
+  if (p.money < MARKET_LEVER_MIN) return { ok: false, reason: "poor" };
+  if ((s.world?.marketLeverUntil || 0) > s.turn) return { ok: false, reason: "cool" };
+  if (p.money < marketLeverCost(s)) return { ok: false, reason: "gold" };
+  return { ok: true, reason: "" };
+}
+export function manipulateMarket(prev: GameState, dir: "pump" | "dump"): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!canManipulateMarket(s).ok) return s;
+  p.money -= marketLeverCost(s);
+  if (dir === "pump") { s.econ = Math.min(2, (s.econ || 1) + 0.45); push(s, "piyasa", `Pazarı kasıp kavurdun — malları topladın, fiyatlar fırladı. Diyar seni konuşuyor.`, "makro", true, { k: "ev.lever.pump" }); }
+  else { s.econ = Math.max(0.5, (s.econ || 1) - 0.45); push(s, "piyasa", `Ambarlarını açtın — piyasayı mala boğdun, fiyatlar düştü. Halk minnettar, tüccarlar küplere bindi.`, "makro", true, { k: "ev.lever.dump" }); }
+  if (s.world) s.world.marketLeverUntil = s.turn + 6;
+  p.fame = Math.min(100, p.fame + 3);
+  return s;
 }
 
 // ── Şehir Yönetimi (Vercel city_governance.py portu) ──

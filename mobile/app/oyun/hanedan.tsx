@@ -8,11 +8,13 @@ import { useGame } from "../../lib/store";
 import {
   playerHousePower, houseAttitude, dynastyPower, houseSeal,
   WILL_STYLES, throneRequirements, throneBacking, canClaimThrone, throneOdds, claimThrone, THRONE_COST,
-  canFoundSettlement, foundSettlement, settlementIncome, SETTLE_COST, SETTLE_MAX, developSettlement, developSettlementCost,
+  canFoundSettlement, foundSettlement, settlementIncome, settleFee, SETTLE_MAX, SETTLE_TIER, developSettlement, developSettlementCost,
+  nextSettleTier, canUpgradeSettleTier, upgradeSettleTier, propsInLoc,
+  PRESTIGE, prestigeCost, fundPrestige, MARKET_LEVER_MIN, marketLeverCost, canManipulateMarket, manipulateMarket,
   acceptDynastyOffer, declineDynastyOffer,
 } from "../../lib/game";
 import { generateDynasties, houseName as rivalHouseName, localFirstName } from "../../lib/world";
-import { professionNameL } from "../../lib/locale-data";
+import { professionNameL, placeName } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -136,31 +138,52 @@ export default function Hanedan() {
           )}
         </View>
 
-        {/* ── YERLEŞİM KUR ── */}
+        {/* ── KADEMELİ YERLEŞİM ── */}
         <SecTitle>{t("dyn.settle")}</SecTitle>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginBottom: 9 }}>{t("set.hint")}</Text>
-        {settlements.length > 0 && settlements.map((st, i) => (
+        {settlements.length > 0 && settlements.map((st, i) => {
+          const tier = st.tier || "mezra";
+          const up = canUpgradeSettleTier(state, i);
+          const here = st.loc ? placeName(st.loc, lang) : "";
+          return (
           <View key={i} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(127,166,106,0.35)", borderRadius: 11, padding: 12, marginBottom: 8 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13.5, color: C.parchment }}>🏘 {st.name}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13.5, color: C.parchment }}>🏘 {st.name} <Text style={{ fontSize: 10, color: C.goldDim }}>· {t("stt." + tier)}{here ? ` · ${here}` : ""}</Text></Text>
               <Text style={{ fontFamily: F.display, fontSize: 11, color: C.sage }}>{t("set.dev")} %{st.dev}</Text>
             </View>
             <View style={{ height: 5, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.08)", marginTop: 7, overflow: "hidden" }}>
               <View style={{ width: `${st.dev}%`, height: 5, backgroundColor: C.sage, borderRadius: 3 }} />
             </View>
-            {st.dev < 100 && (() => { const dc = developSettlementCost(st); return (
-              <Pressable onPress={() => { hap("tap"); apply((s) => developSettlement(s, i)); }} disabled={p.money < dc} style={{ alignSelf: "flex-start", marginTop: 9, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: p.money < dc ? C.border : "rgba(127,166,106,0.5)", backgroundColor: p.money < dc ? C.bg : "rgba(127,166,106,0.12)" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 10, color: p.money < dc ? C.parchmentMuted : C.sage }}>{t("set.develop")} {dc}⚜</Text>
-              </Pressable>
-            ); })()}
+            <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", marginTop: 9 }}>
+              {st.dev < 100 && (() => { const dc = developSettlementCost(st); return (
+                <Pressable onPress={() => { hap("tap"); apply((s) => developSettlement(s, i)); }} disabled={p.money < dc} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: p.money < dc ? C.border : "rgba(127,166,106,0.5)", backgroundColor: p.money < dc ? C.bg : "rgba(127,166,106,0.12)" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10, color: p.money < dc ? C.parchmentMuted : C.sage }}>{t("set.develop")} {dc}⚜</Text>
+                </Pressable>
+              ); })()}
+              {up.next && (
+                <Pressable onPress={() => { if (!up.ok) return; hap("success"); apply((s) => upgradeSettleTier(s, i)); }} disabled={!up.ok} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: up.ok ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: up.ok ? "rgba(201,168,76,0.14)" : C.bg }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10, color: up.ok ? C.gold : C.parchmentMuted }}>{t("set.toTier").replace("%1", t("stt." + up.next))} · {settleFee(state, up.next)}⚜</Text>
+                </Pressable>
+              )}
+            </View>
+            {up.next && (
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: up.ok ? C.goldDim : C.ember, marginTop: 7 }}>
+                {up.ok
+                  ? t("set.req").replace("%1", String(SETTLE_TIER[up.next].props)).replace("%2", `%${SETTLE_TIER[up.next].dev}`)
+                  : up.reason === "dev" ? t("set.up.dev") : up.reason === "prop" ? `${t("set.up.prop")} (${propsInLoc(state, st.loc || "")}/${SETTLE_TIER[up.next].props})` : t("set.up.gold")}
+              </Text>
+            )}
+            {!up.next && <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.goldDim, marginTop: 7 }}>{t("set.up.top")}</Text>}
           </View>
-        ))}
+          );
+        })}
         {settlements.length > 0 && (
           <Text style={{ fontFamily: F.display, fontSize: 10, color: C.goldDim, marginBottom: 10, textAlign: "right" }}>+{settlementIncome(state)} ⚜ {t("set.tax")}</Text>
         )}
-        {/* Kurucu */}
+        {/* Kurucu — bulunduğun bölgede yeterli mülkün varsa mezra kur */}
         {settlements.length < SETTLE_MAX && (
           <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 11, padding: 12 }}>
+            <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginBottom: 8 }}>{t("set.regionProps").replace("%1", String(propsInLoc(state, p.location_name)))} · {placeName(p.location_name, lang)}</Text>
             <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
               <TextInput
                 value={settleName} onChangeText={setSettleName} placeholder={t("set.name")} placeholderTextColor={C.parchmentMuted} maxLength={24}
@@ -171,10 +194,57 @@ export default function Hanedan() {
               </Pressable>
             </View>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: settleChk.ok ? C.goldDim : C.ember, marginTop: 8 }}>
-              {settleChk.ok ? `${SETTLE_COST} ⚜` : t("set.r." + settleChk.reason)}
+              {settleChk.ok ? `${t("set.fee")}: ${settleFee(state, "mezra")} ⚜` : t("set.r." + settleChk.reason)}
             </Text>
           </View>
         )}
+
+        {/* ── GÖRKEM & BAĞIŞ (servet muslukları) ── */}
+        <SecTitle>{t("prx.title")}</SecTitle>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginBottom: 9 }}>{t("prx.hint")}</Text>
+        {Object.keys(PRESTIGE).map((id) => {
+          const def = PRESTIGE[id]; const cost = prestigeCost(state, id); const done = !!def.once && !!p.legacy?.[id];
+          const afford = p.money >= cost && !done;
+          return (
+            <View key={id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 11, padding: 12, marginBottom: 8, flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment }}>{t("prx." + id + ".n")}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{t("prx." + id + ".d")}</Text>
+              </View>
+              {done ? (
+                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.sage }}>✓ {t("prx.done")}</Text>
+              ) : (
+                <Pressable onPress={() => { if (!afford) return; hap("success"); apply((s) => fundPrestige(s, id)); }} disabled={!afford} style={{ paddingVertical: 8, paddingHorizontal: 13, borderRadius: 7, borderWidth: 1, borderColor: afford ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: afford ? "rgba(201,168,76,0.14)" : C.bg }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10.5, color: afford ? C.gold : C.parchmentMuted }}>{cost}⚜</Text>
+                </Pressable>
+              )}
+            </View>
+          );
+        })}
+
+        {/* ── PİYASAYI OYNAT (yalnızca çok zengin) ── */}
+        {p.money >= MARKET_LEVER_MIN && (() => {
+          const chk = canManipulateMarket(state); const cost = marketLeverCost(state);
+          return (
+            <>
+              <SecTitle>{t("mlev.title")}</SecTitle>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginBottom: 9 }}>{t("mlev.hint")}</Text>
+              <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 11, padding: 12 }}>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <Pressable onPress={() => { if (!chk.ok) return; hap("success"); apply((s) => manipulateMarket(s, "pump")); }} disabled={!chk.ok} style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: chk.ok ? "rgba(200,64,64,0.5)" : C.border, backgroundColor: chk.ok ? "rgba(200,64,64,0.12)" : C.bg, alignItems: "center" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: chk.ok ? C.ember : C.parchmentMuted }}>{t("mlev.pump")}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => { if (!chk.ok) return; hap("success"); apply((s) => manipulateMarket(s, "dump")); }} disabled={!chk.ok} style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: chk.ok ? "rgba(127,166,106,0.5)" : C.border, backgroundColor: chk.ok ? "rgba(127,166,106,0.12)" : C.bg, alignItems: "center" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: chk.ok ? C.sage : C.parchmentMuted }}>{t("mlev.dump")}</Text>
+                  </Pressable>
+                </View>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: chk.ok ? C.goldDim : C.ember, marginTop: 8 }}>
+                  {chk.ok ? `${t("mlev.cost")}: ${cost} ⚜` : chk.reason === "cool" ? t("mlev.cool") : t("mlev.poor")}
+                </Text>
+              </View>
+            </>
+          );
+        })()}
 
         {/* ── ATALAR ── */}
         {past.length > 0 && (
