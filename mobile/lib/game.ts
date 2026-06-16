@@ -43,6 +43,7 @@ export interface Player {
   govTreasury?: Record<string, number>; // şehir hazinesi (vergiyle dolar, projeye harcanır)
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
+  priceMem?: Record<string, number>; // fiyat hafızası: "loc|good" → geçen ay kaydedilen alış fiyatı (pazar 'geçen fiyat' göstergesi)
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -555,6 +556,17 @@ export function goodPriceMult(s: GameState, goodId: string): number {
   m *= tradePressureMult(s, s.player.location_name, goodId); // oyuncunun alış-satış baskısı (kıtlaştırma/doldurma)
   return m;
 }
+// Pazarda gösterilen anlık alış fiyatı (pazar.tsx ile birebir aynı formül). Bulunduğun şehir için geçerli.
+export function effectiveBuyPrice(s: GameState, baseBuy: number, goodId: string): number {
+  return Math.max(1, Math.round(marketPrice(baseBuy, s.econ || 1) * goodPriceMult(s, goodId)));
+}
+// Fiyat hafızası anlık-görüntüsü: bulunduğun şehrin güncel alış fiyatlarını "loc|good" anahtarıyla kaydet.
+// advance'te tur ilerlemeden ÖNCE çağrılır → ayrılan ayın fiyatı saklanır; sonraki ay pazarda "geçen X" olarak görünür.
+function snapshotPrices(s: GameState) {
+  const loc = s.player.location_name;
+  if (!s.player.priceMem) s.player.priceMem = {};
+  for (const g of marketGoods(locSeed(loc))) s.player.priceMem[loc + "|" + g.id] = effectiveBuyPrice(s, g.buy, g.id);
+}
 
 // ── ARZ–TALEP: şehrin NPC meslekleri gerçek yerel arzı belirler (yaşayan dünyayla değişir) ──
 // Hangi meslek hangi malı üretir (ağırlıklı): çiftçi buğday yetiştirir, demirci demir/silah döver...
@@ -977,6 +989,7 @@ export function advance(prev: GameState, n = 1): GameState {
   const s = clone(prev);
   for (let i = 0; i < n; i++) {
     if (s.player.dead) break;
+    snapshotPrices(s); // ayrılan ayın pazar fiyatlarını hafızaya al (R3.3 'geçen fiyat')
     s.turn += 1; const cal = currentCalendar(s.turn);
     s.player.age = playerAge(s.player.base_age, s.turn);
     // NPC anıları haftalık söner (travmalar kalıcı); anlamsız geçici girdiler budanır (perf + temizlik).

@@ -199,6 +199,12 @@ export default function Pazar() {
                               </View>
                             );
                           })()}
+                          {(() => {
+                            const prev = state.player.priceMem?.[p.location_name + "|" + g.id];
+                            return prev != null && prev !== g.buy ? (
+                              <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: g.buy > prev ? C.blood : C.sage }}>{t("paz.prev")} {prev}⚜</Text>
+                            ) : null;
+                          })()}
                         </View>
                       </View>
                       <Coin v={g.buy} />
