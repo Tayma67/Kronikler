@@ -182,6 +182,26 @@ export const FACTIONS: Faction[] = [
   { id: "golge", name: "Gölge Kardeşliği", icon: "🌒", blurb: "Adı anılmaz, yüzü görülmez; ama her kapıda bir kulağı vardır.", stat: "charisma", joinRep: 25, perk: "Gölge işlerinde yakalanma riskin azalır.", task: { label: "Haber taşı", reward: 22, standing: 12, desc: "Kardeşlik için sessizce bir sır ulaştır." } },
 ];
 export function factionById(id: string | null): Faction | undefined { return FACTIONS.find((f) => f.id === id); }
+// Fraksiyon arketipleri — AI'ın MANTIKLI davranması için (şifacı savaş açmaz, müttefikler birbirine saldırmaz).
+//  aggression: savaşa/darbeye iştah (0 barışçıl … 1 savaşçı) · enemies/allies: doğal husumet/dostluk · acts: karaktere uygun AI eylemleri.
+export interface FactionTrait { aggression: number; enemies: string[]; allies: string[]; acts: string[]; }
+export const FACTION_TRAITS: Record<string, FactionTrait> = {
+  asker:   { aggression: 0.90, enemies: ["golge"],            allies: ["demirci"],        acts: ["nufuz", "darbe", "bagis"] },
+  golge:   { aggression: 0.70, enemies: ["asker", "tuccar"],  allies: [],                 acts: ["sabotaj", "suikast", "nufuz"] },
+  tuccar:  { aggression: 0.35, enemies: ["golge"],            allies: ["demirci"],        acts: ["bagis", "nufuz"] },
+  demirci: { aggression: 0.40, enemies: [],                   allies: ["asker", "tuccar"], acts: ["nufuz", "bagis"] },
+  sifaci:  { aggression: 0.05, enemies: [],                   allies: [],                 acts: ["bagis", "uye"] }, // barışçıl: asla savaş/darbe/suikast
+};
+export function factionTrait(id: string): FactionTrait { return FACTION_TRAITS[id] || { aggression: 0.3, enemies: [], allies: [], acts: ["bagis"] }; }
+// İki fraksiyon arasındaki doğal duruş: -1 düşman, +1 dost, 0 nötr (UI + AI için).
+export function factionStance(a: string, b: string): number {
+  if (a === b) return 1;
+  const ta = factionTrait(a);
+  if (ta.allies.includes(b)) return 1;
+  if (ta.enemies.includes(b)) return -1;
+  if (factionTrait(b).enemies.includes(a)) return -1;
+  return 0;
+}
 // Loncaya katılım eşiği (karizmatik hüneri %20 indirir). UI ile çekirdek tutarlı olsun diye.
 export function joinThreshold(p: Player, f: Faction): number { return p.perks.includes("karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep; }
 
@@ -943,11 +963,21 @@ function tickFactions(s: GameState, announce: boolean) {
     // Bu sancak için zaten bir savaş varsa karışma.
     if (s.wars.some((w) => w.prize === sn.id)) continue;
     sn.tension = Math.min(120, sn.tension + Math.floor(Math.random() * 5)); // 0-4 sürtüşme
-    // Rakip fraksiyon yoksa ve gerilim arttıysa biri göz diker.
-    if (!sn.contender && sn.tension > 40 && Math.random() < 0.35) {
-      const rivals = ids.filter((id) => id !== sn.holder);
-      sn.contender = rivals[Math.floor(Math.random() * rivals.length)];
-      if (announce) push(s, "ocak_savasi", `${factionById(sn.contender)?.name}, ${beylikName(sn.id)} üzerinde hak iddia ediyor.`, "makro", true, { k: "evj.warClaim", p: [{ fc: sn.contender! }, { bl: sn.id }] });
+    // Rakip fraksiyon yoksa ve gerilim arttıysa, KARAKTERE UYGUN bir aday göz diker.
+    // Müttefikler saldırmaz; iştahsız (şifacı gibi barışçıl) fraksiyonlar göz dikmez; düşmanlık iştahı katlar.
+    if (!sn.contender && sn.tension > 40) {
+      const holderAllies = factionTrait(sn.holder).allies;
+      const weighted = ids
+        .filter((id) => id !== sn.holder && !holderAllies.includes(id))
+        .map((id) => { let w = factionTrait(id).aggression; if (factionStance(id, sn.holder) < 0) w *= 2.2; return { id, w }; })
+        .filter((x) => x.w > 0.12); // barışçıl fraksiyonlar (şifacı) hak iddia etmez
+      const total = weighted.reduce((a, x) => a + x.w, 0);
+      if (total > 0 && Math.random() < 0.30 * Math.min(1, total)) {
+        let r = Math.random() * total; let pick = weighted[0].id;
+        for (const x of weighted) { r -= x.w; if (r <= 0) { pick = x.id; break; } }
+        sn.contender = pick;
+        if (announce) push(s, "ocak_savasi", `${factionById(sn.contender)?.name}, ${beylikName(sn.id)} üzerinde hak iddia ediyor.`, "makro", true, { k: "evj.warClaim", p: [{ fc: sn.contender! }, { bl: sn.id }] });
+      }
     }
     // Gerilim dorukta + rakip var → savaş patlar.
     if (sn.tension >= 100 && sn.contender) {
@@ -2072,7 +2102,7 @@ function sparkCard(s: GameState) {
 function factionAITick(s: GameState) {
   if (Math.random() >= 0.14) return;
   const f = FACTIONS[Math.floor(Math.random() * FACTIONS.length)];
-  const act = rnd(["bagis", "sabotaj", "nufuz", "suikast", "uye", "darbe"]);
+  const act = rnd(factionTrait(f.id).acts); // eylem fraksiyonun karakterine göre (şifacı asla sabotaj/suikast/darbe yapmaz)
   if (act === "bagis") {
     if (s.player.faction === f.id) { s.player.faction_standing[f.id] = (s.player.faction_standing[f.id] || 0) + 4; const g = 6 + Math.floor(Math.random() * 10); s.player.money += g; push(s, "örgüt", `${f.name} kasasını açtı; üyelerine pay dağıttı (+${g} akçe).`, "makro", false, { k: "fai.bagis.member", p: [{ fc: f.id }, g] }); }
     else push(s, "örgüt", `${f.name} yoksullara sadaka dağıttı; halkın gözünde itibar kazandı.`, "makro", false, { k: "fai.bagis", p: [{ fc: f.id }] });
@@ -2087,16 +2117,15 @@ function factionAITick(s: GameState) {
   } else if (act === "suikast") {
     const rivals = ensureRivals(s); if (rivals.length) { const rv = rivals[Math.floor(Math.random() * rivals.length)]; rv.power = Math.max(1, Math.round(rv.power * 0.85)); }
     push(s, "örgüt", `Karanlık bir suikast şehirleri çalkaladı; parmaklar ${f.name}'i gösteriyor.`, "makro", true, { k: "fai.suikast", p: [{ fc: f.id }] });
-  } else if (act === "darbe") { // darbe: yüksek gerilimli sancakta hakimiyet el değiştirebilir (canlı dünya)
+  } else if (act === "darbe") { // darbe: SALDIRGAN fraksiyon (f) sahibi olmadığı, müttefiki olmayan yüksek-gerilimli sancağı ele geçirmeye çalışır
     const realm = ensureRealm(s);
-    const hot = realm.filter((sn) => sn.tension >= 45 && !s.wars.some((w) => w.prize === sn.id));
+    const hot = realm.filter((sn) => sn.tension >= 45 && sn.holder !== f.id && factionStance(f.id, sn.holder) <= 0 && !s.wars.some((w) => w.prize === sn.id));
     if (hot.length) {
       const sn = hot[Math.floor(Math.random() * hot.length)];
-      const challenger = sn.contender || rnd(FACTIONS.map((x) => x.id).filter((id) => id !== sn.holder));
-      if (challenger && challenger !== sn.holder && Math.random() < 0.5) {
-        const old = sn.holder; sn.holder = challenger; sn.contender = null; sn.tension = 40;
-        if (challenger === s.player.faction) s.player.faction_standing[challenger] = (s.player.faction_standing[challenger] || 0) + 8;
-        push(s, "ocak_savasi", `Darbe! ${factionById(challenger)?.name}, ${beylikName(sn.id)}'i ${factionById(old)?.name}'in elinden aldı.`, "makro", true, { k: "fai.darbe", p: [{ fc: challenger }, { bl: sn.id }, { fc: old }] });
+      if (Math.random() < 0.5) {
+        const old = sn.holder; sn.holder = f.id; sn.contender = null; sn.tension = 40;
+        if (f.id === s.player.faction) s.player.faction_standing[f.id] = (s.player.faction_standing[f.id] || 0) + 8;
+        push(s, "ocak_savasi", `Darbe! ${f.name}, ${beylikName(sn.id)}'i ${factionById(old)?.name}'in elinden aldı.`, "makro", true, { k: "fai.darbe", p: [{ fc: f.id }, { bl: sn.id }, { fc: old }] });
       } else {
         sn.tension = Math.max(0, sn.tension - 20);
         push(s, "ocak_savasi", `${beylikName(sn.id)}'de bir darbe girişimi bastırıldı; ortalık yatıştı.`, "makro", false, { k: "fai.darbeFail", p: [{ bl: sn.id }] });

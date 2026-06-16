@@ -140,6 +140,7 @@ export default function Orgutler() {
                 </View>
               </View>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 6, lineHeight: 18 }}>{t("fac."+f.id+".b")}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.goldDim, marginTop: 4 }}>⚔ {t("ftrait." + f.id)}</Text>
 
               <View style={{ marginTop: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 10, color: C.parchmentMuted, letterSpacing: 1 }}>{t("fac.repute")} {standing}/{need}</Text>
