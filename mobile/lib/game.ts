@@ -898,7 +898,7 @@ export function advance(prev: GameState, n = 1): GameState {
         s.story.active = { id: a.id, stage: a.start };
         s.story.tension = Math.max(0, s.story.tension - 4); s.story.lull = 0;
         push(s, "hikaye_basladi", `Bir hikâye kapını çaldı: "${a.title}". (Hikâyelerim'den sürdür.)`, "kişisel", true, { k: "evj.arcKnock", p: [a.title] });
-      }
+      } else if ((s.story.lull || 0) >= 4 && chance(0.35)) { sparkCard(s); } // durgunlukta kıvılcım kartı (Vercel _draw_spark)
     }
     // İlk aylarda yeni oyuncuya garantili olumlu an (tempo: önce kazandır)
     if (s.turn <= 3 && !s.player.dead && i === n - 1) {
@@ -2058,6 +2058,17 @@ export function doFactionTask(prev: GameState, id: string): GameState {
 }
 
 // ── Fraksiyon AI (Vercel faction_system AI özü) — örgütler dünyada görünür eylemler yapar (haber + gerçek etki) ──
+// Kıvılcım kartları (Vercel story_director _draw_spark): durgunlukta küçük bir an dünyayı hatırlatır.
+function sparkCard(s: GameState) {
+  const p = s.player;
+  const card = rnd(["yabanci", "eskidost", "kese", "yolcu", "ruya"]);
+  if (card === "yabanci") { p.reputation = Math.min(100, p.reputation + 1); push(s, "fisilti", "Bir yabancı yolda iki çift laf edip bir haber bıraktı.", "kişisel", false, { k: "spark.yabanci" }); }
+  else if (card === "eskidost") { gainSkill(s, "social", 6); push(s, "sohbet", "Eski bir dost çıkageldi; hâl hatır sorup gönlünü ferahlattın.", "kişisel", false, { k: "spark.eskidost" }); }
+  else if (card === "kese") { const g = 5 + Math.floor(Math.random() * 9); p.money += g; push(s, "gunluk", `Yolda küçük bir kese buldun (+${g} akçe).`, "kişisel", false, { k: "spark.kese", p: [g] }); }
+  else if (card === "yolcu") { p.fame = Math.min(100, p.fame + 1); push(s, "fisilti", "Bir yolcunun uzak diyar masalı dilden dile yayıldı; adın da geçti.", "kişisel", false, { k: "spark.yolcu" }); }
+  else { push(s, "gunluk", "Gece tuhaf bir rüya gördün; sabaha içinde bir his kaldı.", "kişisel", false, { k: "spark.ruya" }); }
+  if (s.story) s.story.lull = 0;
+}
 function factionAITick(s: GameState) {
   if (Math.random() >= 0.14) return;
   const f = FACTIONS[Math.floor(Math.random() * FACTIONS.length)];
