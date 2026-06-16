@@ -53,11 +53,13 @@
 - ✅ **Ateşkes:** savaş sonrası ~12 tur yeni savaş yok (sürekli savaş döngüsü kırıldı).
 - ✅ **factionStance() diplomasi temeli** + orgutler'de her loncanın mizaç satırı.
 
-### Hâlâ açık (büyük; taze bağlam ister)
-- 🟡 **Mektep:** ✅ ders-içi olaylar; ⬜ kulüpler + hoca NPC ilişkisi kaldı.
-- 🟡 **Çalışma/seyahat:** ✅ tüm 15 meslekte iş mini-olayı; ⬜ seyahat çok-seçimli olay + kervan yolcu profilleri kaldı.
-- 🟡 **Fraksiyon diplomasi:** ✅ arketip + ateşkes + müttefik takviyesi + **yerel sancak dostluğu pazarı etkiliyor**; ⬜ koalisyon savaşları kaldı.
-- 🟢 Cila: suç sıcak mal, eşya kalite incelemesi, mülk ledger, paylaşılabilir final kartı.
+### Hâlâ açık
+- ✅ **Mektep:** ders-içi olaylar + **kulüpler (koro/güreş/çıraklık) + hoca bağı** tamam.
+- 🟡 **Çalışma/seyahat:** ✅ 15 meslekte iş mini-olayı; ⬜ seyahat çok-seçimli olay + kervan yolcu profilleri kaldı.
+- 🟡 **Fraksiyon diplomasi:** ✅ arketip + ateşkes + takviye + yerel sancak dostluğu; ⬜ koalisyon savaşları kaldı.
+- ✅ **Suç sıcak mal + kara borsa** (gölge avantajı) tamam.
+- 🐞 **Düzeltildi:** `crimesc.bribePoor` tanımsız i18n anahtarı.
+- 🟢 Kalan cila: eşya kalite incelemesi, mülk ledger, paylaşılabilir final kartı.
 
 ---
 
