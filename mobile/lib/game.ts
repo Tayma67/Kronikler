@@ -33,6 +33,7 @@ export interface Player {
   fq_claimed?: string[]; // tamamlanan aile/yaşam görevleri (family_quests portu)
   inv_q?: Record<string, Partial<Record<QualityTier, number>>>; // eşya kalite kırılımı (quality.py portu; sıradan izlenmez)
   last_study_turn?: number; lesson_count?: number; // mektep: ayda 1 ders + sınav sayacı
+  club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
   governorships?: string[]; // valisi olunan şehirler
   govLeg?: Record<string, number>; // valilik meşruiyeti (şehir → 0-100); düşerse isyan/azil
   govTax?: Record<string, number>; // valilikte vergi oranı (şehir → %; default 15)
@@ -816,6 +817,8 @@ export function advance(prev: GameState, n = 1): GameState {
         s.player.child_edu![cn].weeks += 1;
       }
     }
+    // Mektep kulübü: okul çağında (7-17) her ay sessiz pasif beceri kazanımı (Vercel öğrenci topluluğu).
+    if (s.player.club && s.player.age >= 7 && s.player.age < 18) { const cl = CLUBS.find((c) => c.id === s.player.club); if (cl) gainSkill(s, cl.skill, 2); }
     const child = s.player.age < 13;
     // Çocuğu ailesi besler: açlık daha yavaş düşer ve dipte aile karnını doyurur.
     const seasonMult = ({ "İlkbahar": 1.0, "Yaz": 1.1, "Sonbahar": 0.9, "Kış": 1.3 } as Record<string, number>)[cal.season] ?? 1; // 4 mevsim eğrisi (Vercel season_hunger_mult)
@@ -1760,6 +1763,19 @@ const SCHOOL_EV_TR: Record<string, string> = {
   "yaramazlik.win":"Sınıfta küçük bir muziplik yaptın; herkes güldü.", "yaramazlik.lose":"Muzipliğin ters tepti; hoca kızdı.",
   "yardim.win":"Geri kalan bir arkadaşına ders çalıştırdın; ikiniz de kazandınız.", "yardim.lose":"Yardım etmeye çalıştın ama anlatamadın.",
 };
+// Mektep kulüpleri (Vercel school.py öğrenci topluluğu): okul çağında (7-17) haftalık pasif beceri XP'si.
+export interface SchoolClub { id: string; skill: SkillKey; }
+export const CLUBS: SchoolClub[] = [{ id: "koro", skill: "social" }, { id: "gures", skill: "combat" }, { id: "cirak", skill: "crafting" }];
+const CLUB_TR: Record<string, string> = { koro: "Koro", gures: "Güreş", cirak: "Çıraklık" };
+export function joinClub(prev: GameState, id: string | null): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead) return s;
+  if (!id) { p.club = undefined; return s; }
+  if (!CLUBS.find((c) => c.id === id)) return s;
+  p.club = id;
+  push(s, "mektep", `${CLUB_TR[id]} kulübüne katıldın; her ay sessizce gelişeceksin.`, "kişisel", false, { k: "club.join." + id });
+  return s;
+}
 // Bir ders çalış — ayda 1 ders sınırı + 4 derste bir sınav (school.py portu).
 export function studySubject(prev: GameState, id: string): StudyResult {
   const s = clone(prev); const p = s.player;
@@ -1772,6 +1788,8 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   const lucky = hasPerk(p, "mucit") || chance(0.5);
   const chips: { label: string; col: string }[] = [];
   let key = "";
+  p.teacherBond = (p.teacherBond || 0) + 1; // hoca bağı çalıştıkça güçlenir
+  if (p.teacherBond % 8 === 0) { p.stat_points += 1; chips.push({ label: "Hoca takdiri · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Hocan emeğini gördü ve seni takdir etti (özellik puanı).", "kişisel", true, { k: "club.bond" }); }
   if (id === "din") {
     bumpNam(p, "dindar", 4); chips.push({ label: "Dindar +4", col: "#9C7BC4" });
     if (lucky) { p.honor = Math.min(100, p.honor + 2); chips.push({ label: "Şeref +2", col: "#7FA66A" }); key = "ev.study.din.l"; push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu.", "kişisel", false, { k: key }); }

@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { SUBJECTS, studySubject, studiedThisTurn, lessonsToExam } from "../../lib/game";
+import { SUBJECTS, studySubject, studiedThisTurn, lessonsToExam, CLUBS, joinClub } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -77,6 +77,25 @@ export default function Mektep() {
             <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment }}>{t("mek.pointsCta")}</Text>
             <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.gold }}>{t("mek.spend")} ›</Text>
           </Pressable>
+        )}
+
+        {/* Mektep kulübü (okul çağı) */}
+        {p.age < 18 && (
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 12, marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim, marginBottom: 7 }}>{t("club.head").toUpperCase()}</Text>
+            <View style={{ flexDirection: "row", gap: 7 }}>
+              {CLUBS.map((cl) => {
+                const on = p.club === cl.id;
+                return (
+                  <Pressable key={cl.id} onPress={() => { hap("tap"); apply((s) => joinClub(s, on ? null : cl.id)); }} style={{ flex: 1, paddingVertical: 9, borderRadius: 9, borderWidth: 1, alignItems: "center", borderColor: on ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.12)" : C.bg }}>
+                    <GameIcon name={cl.id === "koro" ? "lyre" : cl.id === "gures" ? "crossed-swords" : "anvil"} size={16} color={on ? C.gold : C.goldDim} />
+                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: on ? C.gold : C.parchment, marginTop: 4 }}>{t("club." + cl.id)}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 7 }}>{t("club.hint")}</Text>
+          </View>
         )}
 
         {/* Anlık sonuç bandı */}
