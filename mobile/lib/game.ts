@@ -486,7 +486,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; breath?: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
-  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number };
+  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
@@ -545,13 +545,73 @@ export const MARKET_EVENTS: { key: string; goods: string[]; mult: number; months
   { key: "sogukdalg",goods: ["kereste", "et", "corba"], mult: 1.3, months: 4, text: "Sert kış: yakacak ve sıcak yemek arandı." },
   { key: "madendam", goods: ["demir", "bicak", "kilic", "zincir_zirh"], mult: 0.7, months: 4, text: "Yeni maden damarı: demir ve demir işi ucuzladı." },
 ];
-// Bir malın anlık fiyat çarpanı: mevsim × aktif piyasa olayı.
+// Bir malın anlık fiyat çarpanı: mevsim × aktif piyasa olayı × ARZ-TALEP (NPC meslekleri) × oyuncu baskısı.
 export function goodPriceMult(s: GameState, goodId: string): number {
   let m = (SEASON_MULT[currentCalendar(s.turn).season] || {})[goodId] || 1;
   const ev = s.marketEvent;
   if (ev && ev.until > s.turn && ev.goods.includes(goodId)) m *= ev.mult;
   m *= locPriceMult(s, s.player.location_name, goodId); // bulunduğun şehirdeki olaylar (kuraklık/panayır...) fiyata yansır
+  m *= supplyDemandMult(s, s.player.location_name, goodId); // şehrin NPC meslekleri → gerçek yerel arz
+  m *= tradePressureMult(s, s.player.location_name, goodId); // oyuncunun alış-satış baskısı (kıtlaştırma/doldurma)
   return m;
+}
+
+// ── ARZ–TALEP: şehrin NPC meslekleri gerçek yerel arzı belirler (yaşayan dünyayla değişir) ──
+// Hangi meslek hangi malı üretir (ağırlıklı): çiftçi buğday yetiştirir, demirci demir/silah döver...
+const GOOD_PRODUCERS: Record<string, [string, number][]> = {
+  bugday: [["çiftçi", 1]], un: [["çiftçi", 0.5], ["fırıncı", 0.5]], ekmek: [["fırıncı", 1]], corba: [["fırıncı", 0.4], ["hancı", 0.6]],
+  peynir: [["çoban", 1]], et: [["avcı", 0.6], ["çoban", 0.5]], balik: [["balıkçı", 1]], yun: [["çoban", 0.7], ["dokumacı", 0.4]],
+  bal: [["çiftçi", 0.5]], sarap: [["çiftçi", 0.5]], sifa: [["şifacı", 1]], iksir: [["şifacı", 0.7]],
+  demir: [["demirci", 1]], kereste: [["marangoz", 1]], deri: [["avcı", 0.7]],
+  bicak: [["demirci", 1]], kilic: [["demirci", 1]], celik_kilic: [["demirci", 1]], savas_balta: [["demirci", 1]], kalkan: [["demirci", 1]], zincir_zirh: [["demirci", 1]],
+  yay: [["marangoz", 0.6], ["avcı", 0.4]], deri_zirh: [["avcı", 0.5], ["demirci", 0.3]],
+};
+// Malın talep yoğunluğu (nüfusa oranlı): yiyecek herkesçe tüketilir; silah/zırh azdır; hammadde zanaatkârlarca aranır.
+const DEMAND_COEF: Record<string, number> = {
+  ekmek: 0.16, corba: 0.12, peynir: 0.10, et: 0.12, balik: 0.10, bugday: 0.14, un: 0.10,
+  bal: 0.06, sarap: 0.07, sifa: 0.06, iksir: 0.04, yun: 0.07, demir: 0.09, kereste: 0.08, deri: 0.07,
+  bicak: 0.05, kilic: 0.04, celik_kilic: 0.03, savas_balta: 0.03, kalkan: 0.03, zincir_zirh: 0.03, yay: 0.04, deri_zirh: 0.03,
+};
+function workerAgeProd(age: number): number { return age < 16 ? 0.3 : age <= 50 ? 1 : age <= 65 ? 0.7 : 0.4; }
+let _profCache: { key: string; counts: Record<string, number> } | null = null;
+// Şehrin yaşayan kadrosundaki meslek dağılımı (yaşa göre üretkenlik ağırlıklı). Yılda bir değişir → memo.
+function cityProfCounts(s: GameState, loc: string): Record<string, number> {
+  const key = loc + "@" + worldYears(s) + "#" + s.seed;
+  if (_profCache && _profCache.key === key) return _profCache.counts;
+  const counts: Record<string, number> = {};
+  for (const n of rosterAt(s, loc)) counts[n.profession] = (counts[n.profession] || 0) + workerAgeProd(n.age);
+  _profCache = { key, counts };
+  return counts;
+}
+// Bir malın yerel arzı: üreten mesleklerin ağırlıklı sayısı × mevsim (tarım/hayvancılık/balıkçılık hasadı).
+export function cityGoodSupply(s: GameState, loc: string, good: string): number {
+  const prod = GOOD_PRODUCERS[good]; if (!prod) return 0;
+  const counts = cityProfCounts(s, loc);
+  let sup = 0; for (const [prof, w] of prod) sup += (counts[prof] || 0) * w;
+  if (prod.some(([p]) => p === "çiftçi" || p === "çoban" || p === "balıkçı"))
+    sup *= ({ "İlkbahar": 1.0, "Yaz": 1.1, "Sonbahar": 1.5, "Kış": 0.5 }[currentCalendar(s.turn).season] ?? 1); // mevsim üretimi etkiler
+  return sup;
+}
+// Bir malın yerel talebi (nüfusa oranlı). Savaşta silah/zırh talebi artar.
+export function cityGoodDemand(s: GameState, loc: string, good: string): number {
+  let d = (DEMAND_COEF[good] || 0.06) * rosterSize(loc);
+  if ((s.wars?.length || 0) > 0 && (ITEMS[good]?.kind === "silah" || ITEMS[good]?.kind === "zirh")) d *= 1.6;
+  return d;
+}
+// Arz/talep fiyat çarpanı: arz bolsa ucuz, kıt/yoksa pahalı (~0.65–1.6). +0.3: dışarıdan az da olsa mal sızar.
+export function supplyDemandMult(s: GameState, loc: string, good: string): number {
+  const dem = cityGoodDemand(s, loc, good); if (dem <= 0) return 1;
+  const ratio = (cityGoodSupply(s, loc, good) + 0.3) / dem;
+  return Math.max(0.65, Math.min(1.6, 1 / (0.55 + 0.45 * ratio)));
+}
+// Oyuncunun alış-satış baskısı (kıtlaştırma/doldurma) — kalıcı, zamanla söner. Alış fiyatı yukarı, satış aşağı iter.
+export function tradePressureMult(s: GameState, loc: string, good: string): number {
+  return 1 + Math.max(-0.4, Math.min(0.6, s.world?.mkt?.[loc + "|" + good] || 0));
+}
+function addTradePressure(s: GameState, loc: string, good: string, delta: number) {
+  if (!s.world) return; s.world.mkt = s.world.mkt || {};
+  const key = loc + "|" + good;
+  s.world.mkt[key] = Math.max(-0.5, Math.min(0.8, (s.world.mkt[key] || 0) + delta));
 }
 // ── Tipli lokasyon-bazlı dünya olayları (Vercel world_events.py portu) ──
 // Her olay BİR şehri vurur: refah/güvenlik + fiyat etkisi + (oradaysan) seni etkiler. Haftalık söner.
@@ -1269,6 +1329,8 @@ function worldNews(s: GameState) {
 // Ekonomi: piyasa zamanla dengeye döner; ara sıra kıtlık/bolluk şoku.
 function tickEconomy(s: GameState, announce: boolean) {
   if (s.econ === undefined) s.econ = 1;
+  // Oyuncunun alış-satış baskısı zamanla normale döner (piyasa kendini toparlar).
+  if (s.world?.mkt) { for (const k in s.world.mkt) { s.world.mkt[k] *= 0.82; if (Math.abs(s.world.mkt[k]) < 0.02) delete s.world.mkt[k]; } }
   // dengeye dön
   s.econ += (1 - s.econ) * 0.25;
   if (Math.random() < 0.08) {
@@ -1518,6 +1580,7 @@ export function buyItem(prev: GameState, id: string): GameState {
   const price = Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id)));
   if (p.money < price) return s;
   p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
+  addTradePressure(s, p.location_name, id, 0.05); // alım yerel arzı azaltır → fiyat tırmanır
   gainSkill(s, "trade", 5);
   push(s, "ticaret", `${g.name} aldın (${price} akçe).`, "kişisel", false, { k: "evj.buy", p: [{ i: id }, price] });
   return s;
@@ -1548,6 +1611,7 @@ export function negotiatedBuy(prev: GameState, id: string, price: number): GameS
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   if (p.money < price) return s;
   p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
+  addTradePressure(s, p.location_name, id, 0.05);
   gainSkill(s, "trade", 6);
   push(s, "ticaret", `Pazarlıkla ${g.name} aldın (${price} akçe).`, "kişisel", false, { k: "evj.buyHaggle", p: [{ i: id }, price] });
   return s;
@@ -1561,7 +1625,8 @@ export function sellItem(prev: GameState, id: string): GameState {
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
   let sell = Math.round(marketPrice(g.sell, s.econ) * goodPriceMult(s, id) * QUALITY_MULT[tier]);
   if (hasPerk(p, "dilbaz")) sell = Math.round(sell * 1.25);
-  p.money += sell; gainSkill(s, "trade", 5);
+  p.money += sell; addTradePressure(s, p.location_name, id, -0.045); // satış yerel arzı artırır → fiyat düşer
+  gainSkill(s, "trade", 5);
   const qNote = tier !== "siradan" ? ` (${QUALITY_LABEL[tier]})` : "";
   if (tier !== "siradan") push(s, "ticaret", `${g.name}${qNote} sattın (+${sell} akçe).`, "kişisel", false, { k: "evj.sellQ", p: [{ i: id }, { q: tier }, sell] });
   else push(s, "ticaret", `${g.name} sattın (+${sell} akçe).`, "kişisel", false, { k: "evj.sell", p: [{ i: id }, sell] });
