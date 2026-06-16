@@ -318,3 +318,12 @@ Enflasyon endeksi artık tek yönlü değil: uzun barış + bolluk → deflasyon
 iner, nakit değer kazanır), savaş + kıtlık → enflasyon. Nadir gümüş/sikke kıtlığı şoku belirgin
 deflasyon getirir. Taban 0.8 / tavan 2.5. `evj.deflation` haberi 6 dilde. Teşhis: enflasyon ort 1.1×
 (barış ağırlıklı bot deflasyon baskısıyla ~1.0 civarında salınıyor), para medyan 3.109, kasaba 12, HATA:0.
+
+### Gerçek arz–talep (NPC meslekleri → fiyat)
+Çarşı fiyatları artık şehrin YAŞAYAN NPC meslek dağılımından besleniyor: çiftçi→buğday, demirci→demir/silah,
+çoban→yün/et/peynir, balıkçı→balık, marangoz→kereste/yay, şifacı→şifa/iksir... `cityGoodSupply` (meslek×yaş
+üretkenliği×mevsim) / `cityGoodDemand` (nüfus×kategori; savaşta silah talebi ×1.6) → `supplyDemandMult` (~0.65–1.6),
+`goodPriceMult`'a katmanlandı. Oyuncunun alış-satışı `s.world.mkt` baskısını oynatıyor (alış fiyatı yukarı, satış
+aşağı; aylık ~%18 söner) → "piyasayı köşeye sıkıştırma" kendiliğinden oluşuyor. Doğrulama: Akpınar (çok çiftçi)
+buğday ×0.65 / Yenişehir (demircisiz) demir ×1.58; 12 buğday alımı çarpanı 1.0→1.6, 2 yılda 1.0'a döndü.
+Meslekler artık dünyayı şekillendiriyor; yaşayan dünyada nüfus değiştikçe şehir fiyatları da kayıyor. tsc temiz, HATA:0.
