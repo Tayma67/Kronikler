@@ -61,6 +61,12 @@
 - ✅ Yerleşim ölçeği (şehir 18/kale 12/köy 8) · ölen işçi mülkten çıkar+bildirilir.
 - ⬜ İnce: born NPC isimleri dile göre çözülmüyor (tr sabit); oyuncu ailesi (eş/çocuk) henüz roster'a bağlı değil.
 
+### SP cila — bu seansta tamamlananlar (2026-06-16)
+- ✅ Mektep kulüpleri + hoca bağı · ✅ Suç sıcak mal · ✅ Çalışma mini-olayları (15 meslek)
+- ✅ Fraksiyon koalisyonu (diplomasi track tam) · ✅ Aile görevleri 10→16 · ✅ Fırsatlar 12→18 (yaşayan-dünya temalı)
+- ✅ **Yaşayan dünya (3 faz): kalıcı kadro + yaşam tiki + gerçek yaşlanma** · ✅ ölen işçi temizliği · ✅ Mülk defteri (ledger)
+- ⬜ Kalan: eşya kalite incelemesi (alış akışı — dikkatli), seyahat çok-seçimli sahne (dashboard'a global modal), paylaşılabilir final kartı (share infra).
+
 ### Tek-oyunculu cila yol haritası (multiplayer ERTELENDİ — önce SP kusursuz)
 > Karar: önce single-player kusursuz oynanılır olacak, sonra online entegre edilecek.
 - ✅ **Fraksiyon diplomasi tamamlandı:** arketip + ateşkes + müttefik takviyesi + yerel sancak dostluğu + darbe + **koalisyon**.
