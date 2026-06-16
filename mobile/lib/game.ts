@@ -108,9 +108,11 @@ export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: 
 // Bir mülkün işçi alabileceği yer sayısı: tip slotu + her kademe için +1.
 export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); }
 // Yaşayan dünya kadrosu: deterministik temel (isim dile göre çözülür) + kalıcı evrim katmanı (ölüm/yaş/doğum).
+// Kadro büyüklüğü yerleşim tipine göre: şehir kalabalık, köy tenha (canlı dünya hissi).
+export function rosterSize(loc: string): number { const k = placeKind(loc); return k === "şehir" ? 18 : k === "kale" ? 12 : 8; }
 export function rosterAt(s: GameState, loc: string, lang: Lang = "tr"): NPC[] {
   const evo = s.world?.npcEvo;
-  const base = generateNPCs(locSeed(loc), 12, lang, loc).map((n) => {
+  const base = generateNPCs(locSeed(loc), rosterSize(loc), lang, loc).map((n) => {
     const e = evo?.[n.id];
     return e ? { ...n, age: e.age ?? n.age, alive: e.dead ? false : true } : n;
   }).filter((n) => n.alive !== false);
