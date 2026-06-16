@@ -1739,6 +1739,20 @@ export function studiedThisTurn(s: GameState): boolean { return s.player.last_st
 // Sınava kaç ders kaldı (4 derste bir sınav).
 export function lessonsToExam(p: Player): number { return 4 - ((p.lesson_count || 0) % 4); }
 const EXAM_STAT: Record<string, keyof Stats> = { din: "intelligence", matematik: "intelligence", edebiyat: "charisma", beden: "strength" };
+// Ders-içi olaylar (Vercel school.py ders olayları): mektep günlerine doku katar; stat testli.
+interface SchoolEvent { id: string; stat: keyof Stats; }
+const SCHOOL_EVENTS: SchoolEvent[] = [
+  { id: "kopya", stat: "intelligence" }, { id: "kavga", stat: "strength" }, { id: "siir", stat: "charisma" },
+  { id: "soru", stat: "intelligence" }, { id: "yaramazlik", stat: "charisma" }, { id: "yardim", stat: "intelligence" },
+];
+const SCHOOL_EV_TR: Record<string, string> = {
+  "kopya.win":"Sınavda kopya teklif edildi; reddedip kendi emeğine güvendin.", "kopya.lose":"Kopyaya kalkıştın ve yakalandın; yüzün kızardı.",
+  "kavga.win":"Avluda zayıf bir arkadaşını korudun; biraz hırpalandın ama dimdik durdun.", "kavga.lose":"Bir kavgaya karıştın ve dayak yedin.",
+  "siir.win":"Mecliste bir beyit okudun; alkış topladın.", "siir.lose":"Söz alırken dilin dolaştı; biraz utandın.",
+  "soru.win":"Hocanın çetin sorusunu bildin; takdir kazandın (özellik puanı).", "soru.lose":"Hocanın sorusunda bocaladın.",
+  "yaramazlik.win":"Sınıfta küçük bir muziplik yaptın; herkes güldü.", "yaramazlik.lose":"Muzipliğin ters tepti; hoca kızdı.",
+  "yardim.win":"Geri kalan bir arkadaşına ders çalıştırdın; ikiniz de kazandınız.", "yardim.lose":"Yardım etmeye çalıştın ama anlatamadın.",
+};
 // Bir ders çalış — ayda 1 ders sınırı + 4 derste bir sınav (school.py portu).
 export function studySubject(prev: GameState, id: string): StudyResult {
   const s = clone(prev); const p = s.player;
@@ -1767,6 +1781,19 @@ export function studySubject(prev: GameState, id: string): StudyResult {
     gainSkill(s, "combat", 5); chips.push({ label: "Savaş +5", col: "#C9A84C" });
     if (lucky) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); key = "ev.study.beden.l"; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
     else { key = "ev.study.beden.p"; push(s, "mektep", "Ter döktün, güçlendin.", "kişisel", false, { k: key }); }
+  }
+  // ── Ders-içi olay (Vercel school.py ders olayları): %40, stat testli; "cesur" sonuç anlatılır ──
+  if (chance(0.4)) {
+    const ev = rnd(SCHOOL_EVENTS);
+    const pass = Math.random() < Math.min(0.9, 0.4 + effStat(p, ev.stat) * 0.06);
+    const w = pass ? "win" : "lose";
+    if (ev.id === "kopya") { if (pass) { p.honor = Math.min(100, p.honor + 4); chips.push({ label: "Şeref +4", col: "#7FA66A" }); } else { p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); chips.push({ label: "Şeref −3", col: "#C0556B" }); } }
+    else if (ev.id === "kavga") { if (pass) { p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 2); p.health = Math.max(1, p.health - 3); chips.push({ label: "Şeref +5", col: "#7FA66A" }); } else { p.health = Math.max(1, p.health - 5); chips.push({ label: "Sağlık −5", col: "#C0556B" }); } }
+    else if (ev.id === "siir") { if (pass) { gainSkill(s, "social", 8); p.fame = Math.min(100, p.fame + 1); chips.push({ label: "Sosyal +8", col: "#C9A84C" }); } else { p.honor = Math.max(0, p.honor - 1); } }
+    else if (ev.id === "soru") { if (pass) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); } }
+    else if (ev.id === "yaramazlik") { if (pass) { bumpNam(p, "capkin", 2); } else { p.honor = Math.max(0, p.honor - 2); chips.push({ label: "Şeref −2", col: "#C0556B" }); } }
+    else { if (pass) { p.honor = Math.min(100, p.honor + 3); gainSkill(s, "social", 6); chips.push({ label: "Sosyal +6", col: "#C9A84C" }); } }
+    push(s, "mektep", `Mektep: ${SCHOOL_EV_TR[ev.id + "." + w]}`, "kişisel", false, { k: "sch." + ev.id + "." + w });
   }
   // ── Sınav: her 4 derste bir (ilgili statla test) ──
   if (p.lesson_count % 4 === 0) {
