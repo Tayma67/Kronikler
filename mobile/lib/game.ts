@@ -2030,6 +2030,13 @@ export function opportunitiesFor(s: GameState): Opportunity[] {
     { key: "dugun_kahya", title: "Düğün Kâhyalığı", desc: "Bir konağın düğün hazırlığını yönet.", reward: 38, risk: 0.3, stat: "charisma" },
     { key: "mahkeme_sahit", title: "Mahkeme Şahitliği", desc: "Kadı huzurunda adil bir ifade ver.", reward: 26, risk: 0.35, stat: "intelligence" },
     { key: "maden_kesfi", title: "Maden Keşfi", desc: "Dağ eteğinde damar olduğu söylenen yeri araştır.", reward: 70, risk: 0.65, stat: "intelligence" },
+    // ── Yaşayan dünyaya bağlı fırsatlar (vefat/düğün/yetim) ──
+    { key: "miras_katibi", title: "Miras Kâtibi", desc: "Vefat eden bir konak sahibinin mirasını adilce paylaştır.", reward: 42, risk: 0.4, stat: "intelligence" },
+    { key: "dugun_sazi", title: "Düğün Sazı", desc: "Bir düğünde saz çalıp meclisi şenlendir.", reward: 30, risk: 0.3, stat: "charisma" },
+    { key: "yetime_kanat", title: "Yetime Kanat", desc: "Kimsesiz kalmış bir çocuğa kol kanat ger.", reward: 24, risk: 0.3, stat: "charisma" },
+    { key: "hasat_imece", title: "Hasat İmecesi", desc: "Köyün hasadına imece ile omuz ver.", reward: 28, risk: 0.35, stat: "stamina" },
+    { key: "kayip_cocuk", title: "Kayıp Çocuk", desc: "Pazarda kaybolan bir çocuğu bul.", reward: 34, risk: 0.45, stat: "intelligence" },
+    { key: "esnaf_arasi", title: "Esnaf Arası", desc: "Kavgaya tutuşan iki esnafı ayır.", reward: 30, risk: 0.45, stat: "strength" },
   ];
   const seed = (s.turn * 2654435761) >>> 0;
   return pool.filter((_, i) => ((seed >> i) & 1) === 1 || i === seed % pool.length)
