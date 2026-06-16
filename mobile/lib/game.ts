@@ -1416,7 +1416,8 @@ export function sellerPersonaOf(s: GameState): { id: string; mult: number } { re
 // Pazarlık başarı olasılığı (karizma + ticaret becerisi × satıcı mizacı).
 export function bargainChance(s: GameState): number {
   const p = s.player;
-  return Math.max(0.1, Math.min(0.95, (0.42 + effStat(p, "charisma") * 0.035 + p.skills.trade * 0.025 + bargainBonus(s)) * sellerPersona(p.location_name).mult));
+  const favor = 1 + factionLocalFavor(s) * 0.08; // loncanın hâkim olduğu sancakta pazarlık kolay, düşmanın elinde zor
+  return Math.max(0.1, Math.min(0.95, (0.42 + effStat(p, "charisma") * 0.035 + p.skills.trade * 0.025 + bargainBonus(s)) * sellerPersona(p.location_name).mult * favor));
 }
 // Müzakere sonunda anlaşılan fiyattan alım.
 export function negotiatedBuy(prev: GameState, id: string, price: number): GameState {
@@ -2121,6 +2122,15 @@ export function factionHoldsHere(s: GameState, factionId: string | null): boolea
   if (!factionId) return false;
   const region = regionOf(s.player.location_name);
   return (s.realm || defaultRealm()).some((r) => r.id === region && r.holder === factionId);
+}
+// Bulunduğun sancağı tutan lonca, senin loncana göre dost mu düşman mı? +1 dost/kendi, -1 düşman, 0 nötr/loncasız.
+export function factionLocalFavor(s: GameState): number {
+  const fid = s.player.faction; if (!fid) return 0;
+  const region = regionOf(s.player.location_name);
+  const sn = (s.realm || defaultRealm()).find((r) => r.id === region); if (!sn) return 0;
+  if (sn.holder === fid) return 1;
+  const st = factionStance(fid, sn.holder);
+  return st > 0 ? 1 : st < 0 ? -1 : 0;
 }
 export function doFactionTask(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const f = factionById(id);
