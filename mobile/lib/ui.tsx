@@ -1,4 +1,4 @@
-import { View, Image, Modal, Text, Pressable, TextInput, ViewStyle, StyleProp, TextStyle } from "react-native";
+import { View, Image, Modal, Text, Pressable, TextInput, ViewStyle, StyleProp, TextStyle, Share } from "react-native";
 import { useEffect } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, useDerivedValue, withTiming, withSpring, withRepeat, withSequence, ZoomIn, FadeIn, FadeInUp, FadeInDown } from "react-native-reanimated";
 import { portreImage } from "./assets";
@@ -213,6 +213,11 @@ export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, p
 }) {
   const { t } = useI18n();
   const body = [professionLine, ...lines].filter(Boolean);
+  // Paylaşılabilir final kartı (RN yerleşik Share — ekstra paket yok).
+  const shareCard = () => {
+    const card = `⚜ ${name} ⚜\n${epithet ? `"${epithet}"\n` : ""}${bornYear} – ${diedYear} · ${age} ${t("eul.years")}\n\n${body.join(" ")}\n${close}\n\n— Kronikler`;
+    Share.share({ message: card }).catch(() => {});
+  };
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => {}}>
       <View style={{ flex: 1, backgroundColor: "rgba(4,3,2,0.975)", alignItems: "center", justifyContent: "center", paddingHorizontal: 28, paddingVertical: 40 }}>
@@ -228,7 +233,12 @@ export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, p
           <Animated.Text entering={FadeIn.duration(900).delay(1150)} style={{ fontFamily: F.serif, fontSize: 14.5, color: C.parchmentDim, textAlign: "center", lineHeight: 23 }}>{body.join(" ")}</Animated.Text>
           <Animated.Text entering={FadeIn.duration(900).delay(1500)} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.gold, textAlign: "center", lineHeight: 23, marginTop: 14 }}>{close}</Animated.Text>
 
-          <Animated.View entering={FadeInUp.duration(700).delay(1900)} style={{ flexDirection: "row", gap: 10, marginTop: 28, alignSelf: "stretch" }}>
+          <Animated.View entering={FadeIn.duration(700).delay(1800)} style={{ marginTop: 18 }}>
+            <Pressable onPress={shareCard} style={{ paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10.5, letterSpacing: 1, color: C.gold }}>↗ {t("eul.share")}</Text>
+            </Pressable>
+          </Animated.View>
+          <Animated.View entering={FadeInUp.duration(700).delay(1900)} style={{ flexDirection: "row", gap: 10, marginTop: 14, alignSelf: "stretch" }}>
             <Pressable onPress={onChronicle} style={{ flex: 1, paddingVertical: 13, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, alignItems: "center" }}>
               <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchment }}>{t("eul.chronicle")}</Text>
             </Pressable>
