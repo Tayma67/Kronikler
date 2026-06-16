@@ -1,7 +1,7 @@
 // Dünya modeli — NPC'ler, eşyalar, pazar. Offline, deterministik üretim.
 import { NAME_POOLS, Lang } from "./locale-data";
 import { tFor } from "./i18n";
-export interface NPC { id: string; name: string; age: number; gender: "erkek" | "kadın"; profession: string; trait: string; quirk: string; goal: string; loc?: string; alive?: boolean; bornY?: number; }
+export interface NPC { id: string; name: string; age: number; gender: "erkek" | "kadın"; profession: string; trait: string; quirk: string; goal: string; loc?: string; alive?: boolean; bornY?: number; nameSeed?: number; }
 // Kişilik özellikleri (deterministik atanır).
 export const TRAITS = ["neşeli","ciddi","kibirli","cömert","dertli","yalnız","kurnaz","mert","dindar","hırslı","utangaç","sıcakkanlı"];
 const QUIRKS = ["sürekli hava durumundan dert yanar","eski günleri anlatmayı sever","herkese lakap takar","az konuşur çok dinler","yüksek sesle güler","pazarlığa bayılır","komşularını çekiştirir","bir türküyü mırıldanır"];
@@ -27,6 +27,11 @@ export function localFirstName(seed: number, gender: "erkek" | "kadın", lang: L
   const pool = NAME_POOLS[lang] || NAME_POOLS.tr;
   const arr = gender === "erkek" ? pool.m : pool.f;
   return arr[(seed >>> 0) % arr.length];
+}
+// Tohumdan dile göre soyad (doğan NPC'lerin ismini dile göre çözmek için).
+export function localSurname(seed: number, lang: Lang = "tr"): string {
+  const pool = NAME_POOLS[lang] || NAME_POOLS.tr;
+  return pool.s[(seed >>> 0) % pool.s.length];
 }
 export function generateNPCs(seed: number, n = 30, lang: Lang = "tr", prefix = "npc"): NPC[] {
   const r = mkRng(seed);

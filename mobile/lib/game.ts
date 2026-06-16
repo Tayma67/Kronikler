@@ -1,7 +1,7 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import type { EvtParam } from "./i18n";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
-import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx } from "./world";
+import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname } from "./world";
 import { Lang } from "./locale-data";
 import { converse, ConvResult, spontaneousLine, callbackLine } from "./dialogue";
 import { Memory, addMemory, decayMemories, effectiveRel, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS } from "./npc-mind";
@@ -118,7 +118,7 @@ export function rosterAt(s: GameState, loc: string, lang: Lang = "tr"): NPC[] {
     .map((n) => ({ ...n, age: Math.min(95, n.age + wy), alive: evo?.[n.id]?.dead ? false : true }))
     .filter((n) => n.alive !== false);
   const born = (s.world?.npcBorn || []).filter((n) => n.loc === loc && n.alive !== false)
-    .map((n) => ({ ...n, age: Math.min(95, n.age + Math.max(0, wy - (n.bornY ?? wy))) }));
+    .map((n) => ({ ...n, age: Math.min(95, n.age + Math.max(0, wy - (n.bornY ?? wy))), name: n.nameSeed != null ? `${localFirstName(n.nameSeed, n.gender, lang)} ${localSurname(n.nameSeed * 2 + 1, lang)}` : n.name }));
   return born.length ? [...base, ...born] : base;
 }
 // Bir mülkün şehrinin işçi havuzu (yaşayan kadrodan).
@@ -127,6 +127,7 @@ export function townNpcsOf(s: GameState, loc: string, lang: Lang = "tr"): NPC[] 
 function npcBaby(s: GameState, loc: string): NPC {
   const n = generateNPCs((locSeed(loc) ^ s.turn ^ Math.floor(Math.random() * 1e6)) >>> 0, 1, "tr", "born")[0];
   n.id = `born_${loc}_${s.turn}_${Math.floor(Math.random() * 1e6)}`; n.loc = loc; n.alive = true; n.age = 0; n.bornY = worldYears(s);
+  n.nameSeed = (Math.floor(Math.random() * 1e9)) >>> 0; // isim dile göre çözülsün
   return n;
 }
 function npcLifeTick(s: GameState) {
