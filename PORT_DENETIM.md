@@ -30,6 +30,28 @@
 
 > Devam: bir sonraki oturum `mobile/`de `npm install` (gerekiyorsa) → kalan ⬜ sistemleri sırayla.
 
+## 3. GECE ÇALIŞMASI (2026-06-16) — DERİNLEŞTİRMELER TAMAMLANDI
+
+> Tek elden, durmadan. Her biri tsc + smoke (HATA:0) + commit + push. 6 dil dahil.
+- ✅ **Denge:** 4 mevsim açlık eğrisi + dayanıklılık-açlık azaltması.
+- ✅ **NPC etkileşim eylemleri:** hakaret / flört(kur) / dedikodu / para ver (4/5; saldırı-kaçırma offline combat'a bırakıldı).
+- ✅ **Diyalog derinliği:** 4 yeni konu (iş/aile/dünya/hayal) + spontane NPC sözü + hafıza geri çağrımı.
+- ✅ **Hayat Romanı:** yıllık anlatı özeti (tema-bazlı paragraf, 9 tema).
+- ✅ **Yaşam ikilemleri:** +6 olay (orta yaş/yaşlılık/ekonomik kriz).
+- ✅ **Pazarlık:** satıcı kişiliği (cömert/dürüst/tüccar/inatçı/cimri).
+- ✅ **Fraksiyon darbe:** sancak hakimiyeti dinamik el değiştirir.
+- ✅ **Hikâye Yönetmeni:** kıvılcım kartları (durgunlukta küçük anlar).
+- ✅ **Mülk derinliği:** han tipi + mevsimsel üretim.
+- ✅ **Kervan:** kâr şeffaflığı (yatırılan→dönen→net).
+
+### Hâlâ açık (büyük; taze bağlam ister)
+- ⬜ **Mektep ders olayları + kulüpler + hoca ilişkisi** (school.py 1648 — en büyük tek kalem).
+- ⬜ **Seyahat & çalışma çok-seçimli olay katmanı** (rota/yolcu profilleri; meslek-özel iş olayları).
+- ⬜ **Fraksiyon tam diplomasi** (ilişki skoru/koalisyon/ateşkes/şehir nüfuzu — darbe dilimi yapıldı).
+- 🟢 Cila: suç sıcak mal, eşya kalite incelemesi, mülk ledger, paylaşılabilir final kartı.
+
+---
+
 ## 2. DERİN DENETİM (2026-06-15) — KALAN DERİNLEŞTİRMELER
 
 > 7 kilit sistem portlandıktan SONRA, 6 ajanla tüm Vercel tekrar tarandı. Aşağıdakiler
