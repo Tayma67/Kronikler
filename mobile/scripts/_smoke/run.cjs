@@ -17,7 +17,7 @@ for (let i = 0; i < 300; i++) {
           else if (act < 0.18) s = g.craft(s, R(["bicak","kilic","yay","savas_balta","zincir_zirh"]));
           else if (act < 0.24) s = g.sellItem(s, R(Object.keys(p.inventory||{})) || "demir");
           else if (act < 0.30 && p.money > 60) s = g.launchCaravan(s, 50);
-          else if (act < 0.36) s = g.doCrime(s, R(["yankesicilik","dukkan_soyma","soygun","konak_soygunu"]));
+          else if (act < 0.36) { s = g.doCrime(s, R(["yankesicilik","dukkan_soyma","soygun","konak_soygunu"])); if ((s.player.hotGoods||0) > 0 && Math.random() < 0.5) s = g.fenceHotGoods(s); }
           else if (act < 0.42) s = g.doFactionTask(s, R(["tuccar","demirci","asker"]));
           else if (act < 0.48) s = g.equipItem(s, R(["kilic","bicak","kalkan","deri_zirh"]));
           else if (act < 0.54) s = g.travelBy(s, R(g.LOCATIONS.filter(l=>l!==p.location_name)), R(["anayol","patika","kervan"]));

@@ -34,6 +34,7 @@ export interface Player {
   inv_q?: Record<string, Partial<Record<QualityTier, number>>>; // eşya kalite kırılımı (quality.py portu; sıradan izlenmez)
   last_study_turn?: number; lesson_count?: number; // mektep: ayda 1 ders + sınav sayacı
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
+  hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
   governorships?: string[]; // valisi olunan şehirler
   govLeg?: Record<string, number>; // valilik meşruiyeti (şehir → 0-100); düşerse isyan/azil
   govTax?: Record<string, number>; // valilikte vergi oranı (şehir → %; default 15)
@@ -1847,11 +1848,16 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   gainSkill(s, "social", 4);
   if (success) {
     const loot = ct.lootMin + Math.floor(Math.random() * (ct.lootMax - ct.lootMin + 1));
-    p.money += loot; p.fear = Math.min(100, p.fear + ct.fear);
+    // Büyük soygunlarda ganimetin bir kısmı SICAK MAL: nakde çevrilmesi (eritme) riskli.
+    const hot = ct.sev >= 3 ? Math.round(loot * 0.45) : 0;
+    const cash = loot - hot;
+    p.money += cash; if (hot > 0) p.hotGoods = (p.hotGoods || 0) + hot;
+    p.fear = Math.min(100, p.fear + ct.fear);
     bumpNam(p, "zalim", ct.nam);
     witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.22);
     const why = dread(s) > 30 ? " Korkulan adın kurbanını dondurdu." : "";
-    push(s, "suç", `${ct.label} işini başardın (+${loot} akçe).${why}`, "kişisel", false, { k: "evj.crimeWin", p: [{ cr: kind }, loot, dread(s) > 30 ? { sfx: "sfx.crimeDread" } : ""] });
+    push(s, "suç", `${ct.label} işini başardın (+${cash} akçe).${why}`, "kişisel", false, { k: "evj.crimeWin", p: [{ cr: kind }, cash, dread(s) > 30 ? { sfx: "sfx.crimeDread" } : ""] });
+    if (hot > 0) push(s, "suç", `Ganimetin ${hot} akçelik kısmı sıcak mal; eritmek için kara borsa lazım.`, "kişisel", false, { k: "crime.hotGot", p: [hot] });
     return s;
   }
   // ── Kesinti anı (Vercel interrupt sahnesi): yakalanmak üzeresin — oyuncu seçer (Saklan/Rüşvet/Kaç).
@@ -1859,6 +1865,23 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   return s;
 }
 
+// Sıcak malı erit (kara borsa): gölge loncası iyi oran + düşük risk; diğerleri kötü oran + yakalanma riski.
+export function fenceHotGoods(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  const hot = p.hotGoods || 0; if (hot <= 0 || p.dead) return s;
+  const golge = p.faction === "golge";
+  p.hotGoods = 0;
+  if (Math.random() < (golge ? 0.05 : 0.18)) {
+    const fine = Math.round(hot * 0.4);
+    p.money = Math.max(0, p.money - fine); p.fear = Math.min(100, p.fear + 3); p.reputation = Math.max(-100, p.reputation - 3);
+    push(s, "suç", `Sıcak malı eritirken yakalandın; ${fine} akçe ceza ve leke.`, "kişisel", true, { k: "crime.fenceCaught", p: [fine] });
+  } else {
+    const got = Math.round(hot * (golge ? 0.8 : 0.55));
+    p.money += got; gainSkill(s, "trade", 4);
+    push(s, "suç", `Sıcak malı kara borsada erittin (+${got} akçe).`, "kişisel", false, { k: "crime.fenceWin", p: [got] });
+  }
+  return s;
+}
 // Suç kesinti sahnesinin sonucunu uygula (Saklan/Rüşvet/Kaç). UI s.pendingScene'i görünce çağırır.
 export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" | "kac"): GameState {
   const s = clone(prev); const p = s.player;

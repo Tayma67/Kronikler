@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { doCrime, resolveCrimeScene, CrimeKind } from "../../lib/game";
+import { doCrime, resolveCrimeScene, CrimeKind, fenceHotGoods } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -55,6 +55,17 @@ export default function Suc() {
           <Animated.View key={res.tick} entering={FadeInDown.duration(240)} style={{ backgroundColor: res.ok ? "rgba(127,166,106,0.10)" : "rgba(200,64,64,0.10)", borderWidth: 1, borderColor: res.ok ? "rgba(127,166,106,0.5)" : "rgba(200,64,64,0.5)", borderLeftWidth: 3, borderLeftColor: res.ok ? C.sage : C.blood, borderRadius: 10, padding: 12, marginBottom: 12 }}>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment, lineHeight: 19 }}>{res.text}</Text>
           </Animated.View>
+        )}
+
+        {(state.player.hotGoods || 0) > 0 && (
+          <View style={{ backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderRadius: 11, padding: 13, marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("crime.hotPanel").toUpperCase()}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, marginTop: 4 }}>{state.player.hotGoods} ⚜ {t("crime.hotValue")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{t(state.player.faction === "golge" ? "crime.fenceGolge" : "crime.fenceRisk")}</Text>
+            <Pressable onPress={() => { hap("advance"); apply((s) => fenceHotGoods(s)); }} style={{ marginTop: 9, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 11.5, letterSpacing: 0.5, color: C.gold }}>{t("crime.fence")}</Text>
+            </Pressable>
+          </View>
         )}
 
         {state.player.age < 13 ? (
