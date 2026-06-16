@@ -127,6 +127,13 @@
 
 ---
 
+## GÜNCEL DURUM (2026-06-16) — içerik & sistemler
+- **Yaşayan dünya:** ✅ kalıcı kadro + yaşlanma + ölüm/doğum/evlilik, nüfus stabil (~138), nesiller boyu evrilir, çok-dilli isimler.
+- **Fraksiyon:** ✅ arketipler + ateşkes + müttefik takviyesi + yerel diplomasi + darbe + koalisyon (mantıklı AI).
+- **İçerik:** 75 ikilem · 18 fırsat · 16 aile görevi · 61 başarım · mektep ders olayları+kulüpler · 15 meslekte iş olayı · yol karşılaşmaları · stat-XP · suç sıcak mal · pazarlık kişiliği · kervan kâr şeffaflığı · mülk han/defter · paylaşılabilir final kartı.
+- **Kalite:** tsc temiz · smoke 300 hayat HATA:0 · tanımsız i18n anahtarı yok · 6 dil (tr/en/es/pt/ar/ru) · ~110 i18n grubu.
+- **Multiplayer:** ERTELENDİ (SP kusursuz olunca; sunucu/host kararı kullanıcıda).
+
 ## GENEL KAPSAMA TABLOSU
 
 Durum: 🟢 iyi (≈%80+) · 🟡 kısmi · 🔴 sığ/eksik · 🔵 kasıtlı sadeleştirme (offline tasarımı)
