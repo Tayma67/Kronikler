@@ -135,7 +135,7 @@ export const ITEMS: Record<string, Item> = {
 };
 
 // Her yerleşimin bir geçim uzmanlığı vardır; o gruptaki mallar yerel üretimle ucuzlar.
-const SPECIALTIES: { name: string; goods: string[] }[] = [
+export const SPECIALTIES: { name: string; goods: string[] }[] = [
   { name: "Tahıl ambarı", goods: ["bugday", "un", "ekmek"] },
   { name: "Balıkçı iskelesi", goods: ["balik", "corba"] },
   { name: "Demirci ocağı", goods: ["demir", "bicak", "kilic", "celik_kilic", "savas_balta", "kalkan"] },

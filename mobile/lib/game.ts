@@ -1,7 +1,7 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import type { EvtParam } from "./i18n";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
-import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname } from "./world";
+import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname, SPECIALTIES } from "./world";
 import { Lang } from "./locale-data";
 import { converse, ConvResult, spontaneousLine, callbackLine } from "./dialogue";
 import { Memory, addMemory, decayMemories, effectiveRel, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS } from "./npc-mind";
@@ -494,7 +494,7 @@ export interface GameState {
   warCooldowns?: Record<string, number>; // iki lonca arası ateşkes: pair → bu tura kadar yeni savaş yok
   realm?: SancakHold[]; // 4 sancağın fraksiyon hakimiyeti (emergent şehir-kontrolü)
   rivals?: RivalHouse[]; // rakip hanedanların yaşayan gücü (zamanla değişir + hamle yapar)
-  caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number } | null;
+  caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number; good?: string; spread?: number } | null;
   econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
   settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
   marketEvent?: { goods: string[]; mult: number; until: number; key: string } | null; // geçici piyasa olayı
@@ -583,14 +583,54 @@ function cityProfCounts(s: GameState, loc: string): Record<string, number> {
   _profCache = { key, counts };
   return counts;
 }
-// Bir malın yerel arzı: üreten mesleklerin ağırlıklı sayısı × mevsim (tarım/hayvancılık/balıkçılık hasadı).
+// Oyuncunun bir şehirdeki işçili mülklerinin o malı aylık üretimi (üretim zinciri → şehir arzı).
+// Çiftliğin buğdayı sadece oyuncu envanterine değil, o şehrin pazarına da akar → yerel fiyatı düşürür.
+function playerPropSupply(s: GameState, loc: string, good: string): number {
+  let extra = 0;
+  for (const pr of s.player.properties || []) {
+    if (pr.loc !== loc || !(pr.workers?.length)) continue;
+    const y = propYield(s, pr);
+    if (y && y.good === good) extra += y.qty;
+  }
+  return extra;
+}
+// Bir malın yerel arzı: üreten mesleklerin ağırlıklı sayısı × mevsim + oyuncu mülklerinin üretimi.
 export function cityGoodSupply(s: GameState, loc: string, good: string): number {
   const prod = GOOD_PRODUCERS[good]; if (!prod) return 0;
   const counts = cityProfCounts(s, loc);
   let sup = 0; for (const [prof, w] of prod) sup += (counts[prof] || 0) * w;
   if (prod.some(([p]) => p === "çiftçi" || p === "çoban" || p === "balıkçı"))
     sup *= ({ "İlkbahar": 1.0, "Yaz": 1.1, "Sonbahar": 1.5, "Kış": 0.5 }[currentCalendar(s.turn).season] ?? 1); // mevsim üretimi etkiler
+  sup += playerPropSupply(s, loc, good); // oyuncunun çiftlik/değirmen üretimi yerel arzı şişirir
   return sup;
+}
+// Şehrin GERÇEK geçim uzmanlığı: yaşayan kadronun en çok ürettiği mal grubu (SPECIALTIES indeksi).
+// Statik tohum yerine canlı dünyaya bağlı: demirciler ölüp çiftçiler çoğaldıkça uzmanlık kayar.
+export function citySpecialtyIdx(s: GameState, loc: string): number {
+  let best = 0, bestSup = -1;
+  for (let i = 0; i < SPECIALTIES.length; i++) {
+    let sup = 0; for (const g of SPECIALTIES[i].goods) sup += cityGoodSupply(s, loc, g);
+    if (sup > bestSup) { bestSup = sup; best = i; }
+  }
+  return best;
+}
+// Bir malın o şehirdeki anlık pazar durumu (UI rozeti): bol (ucuz) / kıt (pahalı) / dengeli / izlenmiyor.
+export function goodMarketTag(s: GameState, loc: string, good: string): "bol" | "kit" | "denge" | null {
+  if (!GOOD_PRODUCERS[good]) return null; // arz-talebi modellenmeyen mal (rozet yok)
+  const sd = supplyDemandMult(s, loc, good);
+  if (sd <= 0.85) return "bol";   // arz bol → ucuz
+  if (sd >= 1.18) return "kit";   // arz kıt → pahalı
+  return "denge";
+}
+// Bir malın yerel fiyat yönü (trend oku): oyuncu baskısı + aktif piyasa/şehir olayları. +1 yükseliyor, -1 düşüyor.
+export function goodTrend(s: GameState, loc: string, good: string): -1 | 0 | 1 {
+  let dir = s.world?.mkt?.[loc + "|" + good] || 0; // oyuncunun alış(+)/satış(−) baskısı
+  const me = s.marketEvent;
+  if (me && me.until > s.turn && me.goods.includes(good)) dir += (me.mult - 1); // diyar piyasa olayı
+  dir += (locPriceMult(s, loc, good) - 1); // şehir olayları (kuraklık/panayır/veba...)
+  if (dir > 0.06) return 1;
+  if (dir < -0.06) return -1;
+  return 0;
 }
 // Bir malın yerel talebi (nüfusa oranlı). Savaşta silah/zırh talebi artar.
 export function cityGoodDemand(s: GameState, loc: string, good: string): number {
@@ -1408,23 +1448,48 @@ function tickCaravan(s: GameState) {
     }
     return; // hâlâ yolda
   }
-  // Varış: hayatta kalan sermaye üzerinden kâr çöz.
-  const mult = 1.35 + Math.random() * 0.4 + p.skills.trade * 0.03;
+  // Varış: hayatta kalan sermaye üzerinden kâr çöz — fiyat farkı (arbitraj) kârı belirler.
+  // spread = malın hedefteki/çıkıştaki fiyat endeksi (1 = fark yok, >1 kârlı, <1 zarar). Eski kayıt: spread yoksa 1.
+  const spread = c.spread ?? (c.good ? cityGoodPriceIndex(s, c.dest, c.good) / Math.max(0.5, cityGoodPriceIndex(s, route[0], c.good)) : 1.2);
+  const mult = Math.max(0.4, (0.85 + 0.5 * spread) * (1 + p.skills.trade * 0.03) + (Math.random() * 0.3 - 0.05));
   const ret = Math.round(c.invested * mult);
   p.money += ret; gainSkill(s, "trade", 10);
   const paid = c.invested + (c.lost ?? 0); const net = ret - paid; // gerçek kâr/zarar (yağma dahil)
   if (net > 200) p.reputation = Math.min(100, p.reputation + 2); // büyük kâr nam getirir
-  push(s, "kervan", `${c.dest} kervanın vardı: ${paid} akçe yatırmıştın, ${ret} akçe döndü (net ${net >= 0 ? "+" : ""}${net}).`, "kişisel", true, { k: "evj.carArrive2", p: [{ pl: c.dest }, paid, ret, (net >= 0 ? "+" : "") + net] });
+  const carried = c.good ? { i: c.good } : { i: "bugday" };
+  push(s, "kervan", `${c.dest} kervanın vardı: ${paid} akçe yatırmıştın, ${ret} akçe döndü (net ${net >= 0 ? "+" : ""}${net}).`, "kişisel", true, { k: "evj.carArrive2", p: [{ pl: c.dest }, paid, ret, (net >= 0 ? "+" : "") + net, carried] });
   s.caravan = null;
 }
-// Kervan gönder: akçe yatır; çok konaklı bir rota kur, her ay bir konak ilerlesin.
+// Bir malın bir şehirdeki yapısal fiyat endeksi (arz-talep; ~0.65 bol/ucuz .. 1.6 kıt/pahalı). Oyuncu baskısı hariç.
+function cityGoodPriceIndex(s: GameState, loc: string, good: string): number {
+  return supplyDemandMult(s, loc, good);
+}
+// En kârlı kervan rotası: bir malı ucuz olduğu (bol) şehirden alıp pahalı olduğu (kıt) şehirde satmak.
+// Şehirler-arası gerçek fiyat farkını tarar; çıkışta bol + hedefte kıt olan malı/şehri seçer.
+function bestCaravanRoute(s: GameState, origin: string): { dest: string; good: string; spread: number } | null {
+  const goods = Object.keys(GOOD_PRODUCERS);
+  const oIdx: Record<string, number> = {};
+  for (const g of goods) oIdx[g] = Math.max(0.5, cityGoodPriceIndex(s, origin, g)); // çıkış fiyatı (ucuza al)
+  let best: { dest: string; good: string; spread: number } | null = null;
+  for (const dest of LOCATIONS) {
+    if (dest === origin) continue;
+    for (const g of goods) {
+      const spread = cityGoodPriceIndex(s, dest, g) / oIdx[g]; // hedefte pahalı / çıkışta ucuz
+      if (!best || spread > best.spread) best = { dest, good: g, spread };
+    }
+  }
+  return best;
+}
+// Kervan gönder: en kârlı şehirler-arası rotayı bul, çok konaklı yol kur, her ay bir konak ilerlesin.
 export function launchCaravan(prev: GameState, amount: number): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || s.caravan || amount <= 0 || p.money < amount) return s;
   const origin = p.location_name;
   const others = LOCATIONS.filter((l) => l !== origin);
   if (others.length === 0) return s;
-  const dest = others[Math.floor(Math.random() * others.length)];
+  // Arbitraj: en iyi fiyat farkını veren mal+hedef. Bulunamazsa rastgele hedef (emniyet).
+  const arb = bestCaravanRoute(s, origin);
+  const dest = arb ? arb.dest : others[Math.floor(Math.random() * others.length)];
   // 1-2 ara konak (origin ve hedef hariç).
   const pool = others.filter((l) => l !== dest);
   const nwp = Math.min(pool.length, 1 + (Math.random() < 0.5 ? 1 : 0));
@@ -1432,8 +1497,9 @@ export function launchCaravan(prev: GameState, amount: number): GameState {
   for (let i = 0; i < nwp; i++) waypoints.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   const route = [origin, ...waypoints, dest];
   p.money -= amount;
-  s.caravan = { invested: amount, dest, route, step: 0, lost: 0 };
-  push(s, "kervan", `${amount} akçelik kervan yola çıktı: ${route.join(" → ")}. ${route.length - 1} konak sürecek.`, "kişisel", false, { k: "evj.carLaunch", p: [amount, { route }, route.length - 1] });
+  s.caravan = { invested: amount, dest, route, step: 0, lost: 0, good: arb?.good, spread: arb?.spread };
+  const carried = arb ? { i: arb.good } : { i: "bugday" };
+  push(s, "kervan", `${amount} akçelik kervan yola çıktı: ${route.join(" → ")}. ${route.length - 1} konak sürecek.`, "kişisel", false, { k: "evj.carLaunch", p: [amount, { route }, route.length - 1, carried] });
   return s;
 }
 

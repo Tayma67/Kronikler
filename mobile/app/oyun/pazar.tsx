@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, sellItem, launchCaravan, negotiatedBuy, bargainBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor } from "../../lib/game";
+import { buyItem, sellItem, launchCaravan, negotiatedBuy, bargainBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -109,6 +109,7 @@ export default function Pazar() {
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textTransform: "uppercase" }}>{t("scr.pazar")}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginTop: 4, textAlign: "center" }}>🛒 {placeName(p.location_name, lang)}</Text>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: econColor, marginTop: 4 }}>⚖ {t("econ." + econKey(econ))}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.sage, marginTop: 2 }}>🏷 {t("paz.spec")}: {t("spec." + citySpecialtyIdx(state, p.location_name))}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, alignSelf: "stretch" }}>
             <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
             <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], marginHorizontal: 8 }} />
@@ -186,6 +187,18 @@ export default function Pazar() {
                           {(() => { const bq = have > 0 ? bestQualityTier(p, g.id) : "siradan"; return bq !== "siradan" ? (
                             <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: bq === "kusurlu" ? C.blood : C.gold }}>✦ {QUALITY_LABEL[bq]}</Text>
                           ) : null; })()}
+                          {(() => {
+                            const tag = goodMarketTag(state, p.location_name, g.id);
+                            if (!tag) return null;
+                            const tone = tag === "bol" ? C.sage : tag === "kit" ? C.ember : C.parchmentDim;
+                            const trend = goodTrend(state, p.location_name, g.id);
+                            return (
+                              <View style={{ flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, borderWidth: 1, borderColor: tone + "55", backgroundColor: tone + "14" }}>
+                                <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 0.5, color: tone }}>{t("paz." + tag)}</Text>
+                                {trend !== 0 && <Text style={{ fontSize: 8, color: trend > 0 ? C.blood : C.sage }}>{trend > 0 ? "▲" : "▼"}</Text>}
+                              </View>
+                            );
+                          })()}
                         </View>
                       </View>
                       <Coin v={g.buy} />

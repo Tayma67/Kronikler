@@ -2,8 +2,8 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { travelBy, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES } from "../../../lib/game";
-import { cityInfo, marketGoods, locSeed, localSpecialtyName } from "../../../lib/world";
+import { travelBy, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES, citySpecialtyIdx } from "../../../lib/game";
+import { cityInfo, marketGoods, locSeed } from "../../../lib/world";
 import { useI18n, applyParams } from "../../../lib/i18n";
 import { placeName } from "../../../lib/locale-data";
 import { C, F } from "../../../lib/theme";
@@ -43,7 +43,7 @@ export default function DiyarDetay() {
         <Stat label={t("diyar.governor")} value={info.governor} />
         <Stat label={t("diyar.security")} value={`${info.security}/100`} />
         <Stat label={t("diyar.prosperity")} value={`${info.prosperity}/100`} />
-        <Stat label={t("diyar.livelihood")} value={localSpecialtyName(locSeed(name), lang)} />
+        <Stat label={t("diyar.livelihood")} value={t("spec." + citySpecialtyIdx(state, name))} />
       </View>
 
       {/* Şehirde olan tipli dünya olayları (Vercel world_events.py) */}
