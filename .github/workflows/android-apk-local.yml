@@ -2,6 +2,7 @@ name: APK (yerel derleme - hesapsiz)
 
 # Elle tetiklenir: GitHub -> Actions -> "APK (yerel derleme - hesapsiz)" -> Run workflow.
 # EXPO_TOKEN / Expo hesabi GEREKMEZ. Her zaman 'apk' dalini (tum guncellemeler) derler.
+# RELEASE derler (JS gomulu -> telefonda tek basina calisir, splash'ta takilmaz).
 # APK'yi 'apk-latest' Release'ine yukler -> dogrudan indirme linki:
 #   https://github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk
 permissions:
@@ -31,11 +32,11 @@ jobs:
       - name: Expo prebuild (android native uret)
         working-directory: mobile
         run: npx expo prebuild --platform android --no-install --non-interactive
-      - name: Gradle assembleDebug (arm64-v8a)
+      - name: Gradle assembleRelease (arm64-v8a, JS gomulu)
         working-directory: mobile/android
-        run: ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon --stacktrace
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon --stacktrace
       - name: APK'yi yeniden adlandir
-        run: cp mobile/android/app/build/outputs/apk/debug/app-debug.apk Kronikler.apk
+        run: cp mobile/android/app/build/outputs/apk/release/app-release.apk Kronikler.apk
       - name: Artefakt (yedek indirme)
         uses: actions/upload-artifact@v4
         with:
