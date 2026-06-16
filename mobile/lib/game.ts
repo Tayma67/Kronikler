@@ -2620,6 +2620,15 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "sevgili_a",name: "Halkın Sevgilisi",desc: "İtibar ve şöhretin 70'i aşsın.",    icon: "prayer-beads", done: (s) => s.player.reputation >= 70 && s.player.fame >= 70 },
   { id: "cenkust",  name: "Cenk Üstadı",     desc: "Savaş becerini 10'a çıkar.",        icon: "crossed-swords", done: (s) => s.player.skills.combat >= 10 },
   { id: "define",   name: "Define Sahibi",   desc: "10.000 akçeye ulaş.",               icon: "gems",         done: (s) => s.player.money >= 10000 },
+  // ── Yeni sistemlere bağlı başarımlar (yaşayan dünya / fraksiyon / valilik) ──
+  { id: "soylukan", name: "Soylu Kan",       desc: "Hanedanını 3. nesle taşı.",         icon: "crown",        done: (s) => s.player.generation >= 3 },
+  { id: "vali",     name: "Valilik Mührü",   desc: "Bir şehrin valisi ol.",             icon: "scroll",       done: (s) => (s.player.governorships || []).length >= 1 },
+  { id: "loncabuyugu",name:"Lonca Büyüğü",   desc: "Bir loncada 120 itibara ulaş.",     icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 120) },
+  { id: "sancakhakimi",name:"Sancak Hâkimi", desc: "Loncan bir sancağa hâkim olsun.",   icon: "castle",       done: (s) => !!s.player.faction && (s.realm || []).some((sn) => sn.holder === s.player.faction) },
+  { id: "golgeeli", name: "Gölge Eli",       desc: "Gölge Kardeşliği'ne katıl.",        icon: "skull",        done: (s) => s.player.faction === "golge" },
+  { id: "cokdost",  name: "Sevilen Yüz",     desc: "8 kişiyle yakın dost ol (ilişki ≥ 40).", icon: "family",   done: (s) => Object.values(s.relationships || {}).filter((v) => v >= 40).length >= 8 },
+  { id: "hayirsever",name:"Hayırsever",      desc: "Cömert namın 60'ı aşsın.",          icon: "coins",        done: (s) => (s.player.nam?.comert || 0) >= 60 },
+  { id: "korkulanad",name:"Korkulan Ad",     desc: "Zalim namın 60'ı aşsın.",           icon: "skull",        done: (s) => (s.player.nam?.zalim || 0) >= 60 },
 ];
 export function achievementsOf(s: GameState): { a: Achievement; done: boolean }[] {
   return ACHIEVEMENTS.map((a) => ({ a, done: a.done(s) }));
