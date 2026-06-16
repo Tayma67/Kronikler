@@ -44,10 +44,19 @@
 - ✅ **Mülk derinliği:** han tipi + mevsimsel üretim.
 - ✅ **Kervan:** kâr şeffaflığı (yatırılan→dönen→net).
 
+### Fraksiyon AI MANTIK düzeltmesi + derinleştirme (2026-06-16) ✅
+> Kullanıcı: "şifacı savaş açıyordu, herkes herkesle savaşıyordu, dindar+eşkıya ittifakı vardı — mantıksızlık çoktu."
+- ✅ **FACTION_TRAITS arketipleri:** aggression + doğal dost/düşman + karaktere uygun eylemler.
+- ✅ **Savaş rakibi seçimi:** barışçıl (şifacı) göz dikmez; müttefik (asker-demirci, tüccar-demirci) saldırmaz; düşmanlık iştahı katlar. Arka plan savaşları da arketipe uygun.
+- ✅ **AI eylemleri karaktere bağlı:** şifacı yalnız bağış/üye; gölge sabotaj/suikast; asker darbe. Kimse karakterine aykırı davranmıyor.
+- ✅ **Müttefik takviyesi:** dostu çok olan taraf savaşta ek ağırlık alır.
+- ✅ **Ateşkes:** savaş sonrası ~12 tur yeni savaş yok (sürekli savaş döngüsü kırıldı).
+- ✅ **factionStance() diplomasi temeli** + orgutler'de her loncanın mizaç satırı.
+
 ### Hâlâ açık (büyük; taze bağlam ister)
 - ⬜ **Mektep ders olayları + kulüpler + hoca ilişkisi** (school.py 1648 — en büyük tek kalem).
 - ⬜ **Seyahat & çalışma çok-seçimli olay katmanı** (rota/yolcu profilleri; meslek-özel iş olayları).
-- ⬜ **Fraksiyon tam diplomasi** (ilişki skoru/koalisyon/ateşkes/şehir nüfuzu — darbe dilimi yapıldı).
+- 🟡 **Fraksiyon ileri diplomasi** (oyuncu-loncasının dost/düşmanına NPC tepkisi, koalisyon savaşları — temel atıldı).
 - 🟢 Cila: suç sıcak mal, eşya kalite incelemesi, mülk ledger, paylaşılabilir final kartı.
 
 ---
