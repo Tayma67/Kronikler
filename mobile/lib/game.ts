@@ -1276,18 +1276,24 @@ function tickEconomy(s: GameState, announce: boolean) {
     else { s.econ = Math.max(0.7, s.econ - 0.18); if (announce) push(s, "piyasa", "Bereketli hasat; pazarda fiyatlar düştü.", "makro", false, { k: "evj.abundance" }); }
   }
   s.econ = Math.round(s.econ * 100) / 100;
-  // Gerçek enflasyon (dünya tabanlı, oyuncudan bağımsız): yılda bir sikke yavaşça değer kaybeder.
-  // Savaş/kıtlık hızlandırır, bereket hafifçe yavaşlatır; net eğilim yukarı (medeniyet tağşişi).
+  // Gerçek enflasyon–deflasyon döngüsü (dünya tabanlı, oyuncudan bağımsız): sikkenin değeri iki yönlü oynar.
+  // Savaş + kıtlık → enflasyon (yukarı). Uzun barış + bolluk → deflasyon (aşağı, nakit değer kazanır).
+  // Nadiren gümüş/sikke kıtlığı belirgin deflasyon getirir. Hafif tağşiş tabanı uzun vadede yukarı eğilimli.
   if (s.turn > 0 && s.turn % 12 === 0 && s.world) {
     let inf = s.world.inflation || 1;
-    let drift = 0.005 + Math.random() * 0.006;               // taban: yıllık ~%0.5–1.1 (yumuşak)
+    let drift = 0.002 + Math.random() * 0.004;               // hafif tağşiş tabanı (~%0.2–0.6)
     const wars = (s.wars?.length || 0);
-    if (wars > 0) drift += 0.004 * Math.min(3, wars);         // savaş paranın değerini düşürür
-    if (s.econ < 0.85) drift -= 0.006;                        // bereketli yıl fiyatları gevşetir
-    inf = Math.max(1, Math.min(2.5, inf * (1 + drift)));
+    if (wars > 0) drift += 0.006 * Math.min(3, wars);        // savaş finansmanı → enflasyon
+    else drift -= 0.005;                                      // barış yılı → fiyatlar gevşer (deflasyon baskısı)
+    if (s.econ < 0.85) drift -= 0.005;                        // bolluk/bereket → deflasyon
+    else if (s.econ > 1.2) drift += 0.004;                    // kıtlık → enflasyon
+    if (Math.random() < 0.025) drift -= 0.018;               // nadir gümüş/sikke kıtlığı → belirgin deflasyon
+    inf = Math.max(0.8, Math.min(2.5, inf * (1 + drift)));
     s.world.inflation = Math.round(inf * 1000) / 1000;
-    if (announce && Math.random() < 0.25 && s.world.inflation > 1.15)
-      push(s, "piyasa", `Diyarda hayat pahalılığı arttı; sikke eski değerinde değil (enflasyon %${Math.round((s.world.inflation - 1) * 100)}).`, "makro", false, { k: "evj.inflation", p: [Math.round((s.world.inflation - 1) * 100)] });
+    if (announce && Math.random() < 0.3) {
+      if (s.world.inflation > 1.15) push(s, "piyasa", `Diyarda hayat pahalılığı arttı; sikke eski değerinde değil (enflasyon %${Math.round((s.world.inflation - 1) * 100)}).`, "makro", false, { k: "evj.inflation", p: [Math.round((s.world.inflation - 1) * 100)] });
+      else if (s.world.inflation < 0.92) push(s, "piyasa", `Fiyatlar geneline düştü; sikke değer kazandı (deflasyon %${Math.round((1 - s.world.inflation) * 100)}).`, "makro", false, { k: "evj.deflation", p: [Math.round((1 - s.world.inflation) * 100)] });
+    }
   }
   // Geçici piyasa olayı: süresi dolanı kapat, ara sıra yenisini başlat
   if (s.marketEvent && s.marketEvent.until <= s.turn) s.marketEvent = null;

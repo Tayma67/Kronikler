@@ -312,3 +312,9 @@ Aşırı zengin oyuncu "Elon Musk" gibi ekonomiyi oynatabilmeli.
 
 **Teşhis (300 hayat, engaged earner bot):** para medyan 4.268 / p90 12.036 / max 31.615 (eski 552k runaway çözüldü).
 70+ %14. Enflasyon ort 1.6×. Yerleşim: 241 kurdu, 84 köy / 4 kasaba'ya büyüdü. HATA:0. tsc temiz.
+
+### Enflasyon → iki yönlü (gerçek deflasyon eklendi)
+Enflasyon endeksi artık tek yönlü değil: uzun barış + bolluk → deflasyon (endeks 1.0 altına, ≥0.8'e
+iner, nakit değer kazanır), savaş + kıtlık → enflasyon. Nadir gümüş/sikke kıtlığı şoku belirgin
+deflasyon getirir. Taban 0.8 / tavan 2.5. `evj.deflation` haberi 6 dilde. Teşhis: enflasyon ort 1.1×
+(barış ağırlıklı bot deflasyon baskısıyla ~1.0 civarında salınıyor), para medyan 3.109, kasaba 12, HATA:0.
