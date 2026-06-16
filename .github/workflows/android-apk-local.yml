@@ -2,7 +2,10 @@ name: APK (yerel derleme - hesapsiz)
 
 # Elle tetiklenir: GitHub -> Actions -> "APK (yerel derleme - hesapsiz)" -> Run workflow.
 # EXPO_TOKEN / Expo hesabi GEREKMEZ. Her zaman 'apk' dalini (tum guncellemeler) derler.
-# APK indirilebilir artefakt olarak yuklenir (run sayfasi altinda "kronikler-apk").
+# APK'yi 'apk-latest' Release'ine yukler -> dogrudan indirme linki:
+#   https://github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk
+permissions:
+  contents: write
 on:
   workflow_dispatch:
 
@@ -31,9 +34,16 @@ jobs:
       - name: Gradle assembleDebug (arm64-v8a)
         working-directory: mobile/android
         run: ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon --stacktrace
-      - name: APK'yi yukle (artefakt)
+      - name: APK'yi yeniden adlandir
+        run: cp mobile/android/app/build/outputs/apk/debug/app-debug.apk Kronikler.apk
+      - name: Artefakt (yedek indirme)
         uses: actions/upload-artifact@v4
         with:
           name: kronikler-apk
-          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+          path: Kronikler.apk
+      - name: Release'e yukle (dogrudan indirme linki)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: Kronikler - guncel APK
+          files: Kronikler.apk
