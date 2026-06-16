@@ -1077,19 +1077,31 @@ export function declineDynastyOffer(prev: GameState, offerId: string): GameState
 }
 function tickWars(s: GameState, announce: boolean) {
   if (!s.wars) s.wars = [];
-  // Yeni jenerik savaş (ödülsüz arka plan; en fazla bağımsız 1 tane, %6 şans)
+  // Yeni jenerik savaş (ödülsüz arka plan; en fazla bağımsız 1 tane, %6 şans) — KARAKTERE UYGUN
   if (s.wars.filter((w) => !w.prize).length === 0 && Math.random() < 0.06) {
     const ids = FACTIONS.map((f) => f.id);
-    const a = ids[Math.floor(Math.random() * ids.length)];
-    let b = ids[Math.floor(Math.random() * ids.length)];
-    if (b === a) b = ids[(ids.indexOf(a) + 1) % ids.length];
-    s.wars.push({ a, b, turnsLeft: 4 + Math.floor(Math.random() * 4), aScore: 0, bScore: 0 });
-    if (announce) push(s, "ocak_savasi", `${factionById(a)?.name} ile ${factionById(b)?.name} arasında savaş çıktı!`, "makro", true, { k: "evj.warGeneric", p: [{ fc: a }, { fc: b }] });
+    // saldırgan başlatıcı (agresyona göre ağırlıklı; barışçıl şifacı savaş başlatmaz)
+    const aw = ids.map((id) => ({ id, w: factionTrait(id).aggression })).filter((x) => x.w > 0.12);
+    const at = aw.reduce((acc, x) => acc + x.w, 0);
+    let r = Math.random() * at; let a = aw[0].id;
+    for (const x of aw) { r -= x.w; if (r <= 0) { a = x.id; break; } }
+    // hedef: müttefik değil; mümkünse doğal düşman
+    const targets = ids.filter((id) => id !== a && factionStance(a, id) <= 0);
+    const enemies = targets.filter((id) => factionStance(a, id) < 0);
+    const pool = enemies.length ? enemies : targets;
+    if (pool.length) {
+      const b = pool[Math.floor(Math.random() * pool.length)];
+      s.wars.push({ a, b, turnsLeft: 4 + Math.floor(Math.random() * 4), aScore: 0, bScore: 0 });
+      if (announce) push(s, "ocak_savasi", `${factionById(a)?.name} ile ${factionById(b)?.name} arasında savaş çıktı!`, "makro", true, { k: "evj.warGeneric", p: [{ fc: a }, { fc: b }] });
+    }
   }
   for (const w of s.wars) {
     w.turnsLeft -= 1;
-    // doğal gidişat
-    w.aScore += Math.floor(Math.random() * 3); w.bScore += Math.floor(Math.random() * 3);
+    // doğal gidişat + müttefik takviyesi (dostu çok olan tarafa fazladan ağırlık)
+    const aRein = factionTrait(w.a).allies.length * 0.5;
+    const bRein = factionTrait(w.b).allies.length * 0.5;
+    w.aScore += Math.floor(Math.random() * 3) + (Math.random() < aRein ? 1 : 0);
+    w.bScore += Math.floor(Math.random() * 3) + (Math.random() < bRein ? 1 : 0);
   }
   const ended = s.wars.filter((w) => w.turnsLeft <= 0);
   for (const w of ended) {
