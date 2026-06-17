@@ -58,6 +58,9 @@ const MEKTEP: Record<string, any> = {
 export const MEKTEP_HERO = require("../assets/mektep/mektep_hero.jpg");
 export function subjImage(id: string): any { return MEKTEP[id]; }
 
+// Diyar haritası — 5 beylik bölgeli Anadolu (hero).
+export const MAP_HERO = require("../assets/map/anadolu.jpg");
+
 // Portreler — yaş kuşağı + cinsiyete göre.
 const PORTRE: Record<string, any> = {
   e_cocuk: require("../assets/portre/e_cocuk.jpg"), e_ergen: require("../assets/portre/e_ergen.jpg"),
