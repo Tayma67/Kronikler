@@ -37,6 +37,17 @@ export function heroImage(age: number, season: string): any {
   return set[season] || set["Yaz"];
 }
 
+// Mülk illüstrasyonları (FLUX üretimi; 13. yy Anadolu yağlıboya — portre/hero ile aynı stil).
+const MULK: Record<string, any> = {
+  tarla: require("../assets/mulk/tarla.jpg"),
+  ev: require("../assets/mulk/ev.jpg"),
+  dukkan: require("../assets/mulk/dukkan.jpg"),
+  han: require("../assets/mulk/han.jpg"),
+  degirmen: require("../assets/mulk/degirmen.jpg"),
+};
+export const MULK_BOS = require("../assets/mulk/bos.jpg");
+export function mulkImage(type: string): any { return MULK[type] || MULK.ev; }
+
 // Portreler — yaş kuşağı + cinsiyete göre.
 const PORTRE: Record<string, any> = {
   e_cocuk: require("../assets/portre/e_cocuk.jpg"), e_ergen: require("../assets/portre/e_ergen.jpg"),
