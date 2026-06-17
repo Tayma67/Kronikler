@@ -48,6 +48,16 @@ const MULK: Record<string, any> = {
 export const MULK_BOS = require("../assets/mulk/bos.jpg");
 export function mulkImage(type: string): any { return MULK[type] || MULK.ev; }
 
+// Mektep illüstrasyonları (FLUX; ders amblemleri + okul atmosferi).
+const MEKTEP: Record<string, any> = {
+  din: require("../assets/mektep/din.jpg"),
+  matematik: require("../assets/mektep/matematik.jpg"),
+  edebiyat: require("../assets/mektep/edebiyat.jpg"),
+  beden: require("../assets/mektep/beden.jpg"),
+};
+export const MEKTEP_HERO = require("../assets/mektep/mektep_hero.jpg");
+export function subjImage(id: string): any { return MEKTEP[id]; }
+
 // Portreler — yaş kuşağı + cinsiyete göre.
 const PORTRE: Record<string, any> = {
   e_cocuk: require("../assets/portre/e_cocuk.jpg"), e_ergen: require("../assets/portre/e_ergen.jpg"),
