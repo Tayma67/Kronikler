@@ -370,12 +370,12 @@ const _frankRU: Dict = { "frank.tuccar.0":"Ученик", "frank.tuccar.1":"По
 const FRANK: Record<Lang, Dict> = { tr: _frankTR, en: _frankEN, es: _frankES, pt: _frankPT, ar: _frankAR, ru: _frankRU };
 // Sancak (beylik) adları — günlük haberlerinde dile çözülür.
 const BEYLIK: Record<Lang, Dict> = {
-  tr: { "beylik.demirhan":"Demirhan Beyliği", "beylik.yenisehir":"Yenişehir Sancağı", "beylik.gumushisar":"Gümüşhisar Beyliği", "beylik.aksehir":"Akşehir Sancağı" },
-  en: { "beylik.demirhan":"Demirhan March", "beylik.yenisehir":"Newburgh Sanjak", "beylik.gumushisar":"Silverfort March", "beylik.aksehir":"Whitetown Sanjak" },
-  es: { "beylik.demirhan":"Marca de Demirhan", "beylik.yenisehir":"Sanjak de Villanueva", "beylik.gumushisar":"Marca de Fuerteplata", "beylik.aksehir":"Sanjak de Villablanca" },
-  pt: { "beylik.demirhan":"Marca de Demirhan", "beylik.yenisehir":"Sanjaco de Vila Nova", "beylik.gumushisar":"Marca de Forte-Prata", "beylik.aksehir":"Sanjaco de Vila Branca" },
-  ar: { "beylik.demirhan":"إمارة ديمرهان", "beylik.yenisehir":"سنجق المدينة الجديدة", "beylik.gumushisar":"إمارة حصن الفضّة", "beylik.aksehir":"سنجق المدينة البيضاء" },
-  ru: { "beylik.demirhan":"Демирханское бейство", "beylik.yenisehir":"Новоградский санджак", "beylik.gumushisar":"Сребреградское бейство", "beylik.aksehir":"Белоградский санджак" },
+  tr: { "beylik.demirhan":"Demirhan Beyliği", "beylik.yenisehir":"Yenişehir Sancağı", "beylik.gumushisar":"Gümüşhisar Beyliği", "beylik.aksehir":"Akşehir Sancağı", "beylik.karahisar":"Karahisar Beyliği" },
+  en: { "beylik.demirhan":"Demirhan March", "beylik.yenisehir":"Newburgh Sanjak", "beylik.gumushisar":"Silverfort March", "beylik.aksehir":"Whitetown Sanjak", "beylik.karahisar":"Blackfort March" },
+  es: { "beylik.demirhan":"Marca de Demirhan", "beylik.yenisehir":"Sanjak de Villanueva", "beylik.gumushisar":"Marca de Fuerteplata", "beylik.aksehir":"Sanjak de Villablanca", "beylik.karahisar":"Marca de Fuertenegro" },
+  pt: { "beylik.demirhan":"Marca de Demirhan", "beylik.yenisehir":"Sanjaco de Vila Nova", "beylik.gumushisar":"Marca de Forte-Prata", "beylik.aksehir":"Sanjaco de Vila Branca", "beylik.karahisar":"Marca de Forte-Negro" },
+  ar: { "beylik.demirhan":"إمارة ديمرهان", "beylik.yenisehir":"سنجق المدينة الجديدة", "beylik.gumushisar":"إمارة حصن الفضّة", "beylik.aksehir":"سنجق المدينة البيضاء", "beylik.karahisar":"إمارة الحصن الأسود" },
+  ru: { "beylik.demirhan":"Демирханское бейство", "beylik.yenisehir":"Новоградский санджак", "beylik.gumushisar":"Сребреградское бейство", "beylik.aksehir":"Белоградский санджак", "beylik.karahisar":"Чернокрепостное бейство" },
 };
 // Seyahat olayları + yol arkadaşı türleri (renderEvt). 6 dil.
 const EVJ2: Record<Lang, Dict> = {

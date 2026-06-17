@@ -152,16 +152,22 @@ export function localSpecialtyName(locationSeed: number, lang: Lang = "tr"): str
   return tFor(lang, `spec.${locationSeed % SPECIALTIES.length}`);
 }
 // Pazar malları — yerel uzmanlık (ucuz) + kıtlık (pahalı) + küçük dalgalanma.
+// Saf ve deterministik (yalnızca locationSeed'e bağlı) → önbelleğe alınır.
+// (42 yerleşimli dünyada arbitraj/ipucu taramaları bunu döngüde çağırıyordu.)
+const _marketCache: Record<number, Item[]> = {};
 export function marketGoods(locationSeed: number): Item[] {
+  const hit = _marketCache[locationSeed]; if (hit) return hit;
   const r = mkRng(locationSeed);
   const spec = localSpecialty(locationSeed);
   const scarce = SPECIALTIES[(locationSeed + 3) % SPECIALTIES.length]; // burada üretilmeyen, pahalı grup
-  return Object.values(ITEMS).map((it) => {
+  const out = Object.values(ITEMS).map((it) => {
     let m = 0.9 + r() * 0.25;
     if (spec.goods.includes(it.id)) m *= 0.72;        // yerel bolluk
     else if (scarce.goods.includes(it.id)) m *= 1.28; // yerel kıtlık
     return { ...it, buy: Math.max(1, Math.round(it.buy * m)), sell: Math.max(1, Math.round(it.sell * m)) };
   });
+  _marketCache[locationSeed] = out;
+  return out;
 }
 
 export function locSeed(name: string): number {

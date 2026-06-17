@@ -137,9 +137,18 @@ export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[p
 export function rosterSize(loc: string): number { const k = placeKind(loc); return k === "şehir" ? 18 : k === "kale" ? 12 : 8; }
 // Dünya saati: nesiller boyu biriken yıl (NPC'ler bununla yaşlanır).
 export function worldYears(s: GameState): number { return (s.world?.npcYears || 0) + Math.floor(s.turn / 12); }
+// Deterministik temel kadro önbelleği: generateNPCs(loc,lang) saf ve değişmez → sonsuza dek memo'lanır.
+// (42 yerleşimli dünyada yaşayan-dünya tikinin her yıl tüm lokasyonları taramasını ucuzlatır.)
+const _rosterBaseCache: Record<string, NPC[]> = {};
+function rosterBase(loc: string, lang: Lang): NPC[] {
+  const key = loc + "|" + lang;
+  let b = _rosterBaseCache[key];
+  if (!b) { b = generateNPCs(locSeed(loc), rosterSize(loc), lang, loc); _rosterBaseCache[key] = b; }
+  return b;
+}
 export function rosterAt(s: GameState, loc: string, lang: Lang = "tr"): NPC[] {
   const wy = worldYears(s); const evo = s.world?.npcEvo;
-  const base = generateNPCs(locSeed(loc), rosterSize(loc), lang, loc)
+  const base = rosterBase(loc, lang)
     .map((n) => ({ ...n, age: Math.min(95, n.age + wy), alive: evo?.[n.id]?.dead ? false : true }))
     .filter((n) => n.alive !== false);
   const born = (s.world?.npcBorn || []).filter((n) => n.loc === loc && n.alive !== false)
@@ -585,14 +594,17 @@ const DEMAND_COEF: Record<string, number> = {
   bicak: 0.05, kilic: 0.04, celik_kilic: 0.03, savas_balta: 0.03, kalkan: 0.03, zincir_zirh: 0.03, yay: 0.04, deri_zirh: 0.03,
 };
 function workerAgeProd(age: number): number { return age < 16 ? 0.3 : age <= 50 ? 1 : age <= 65 ? 0.7 : 0.4; }
-let _profCache: { key: string; counts: Record<string, number> } | null = null;
+// Çok-girişli memo (42 yerleşimli dünyada kervan arbitrajı tüm lokasyonları taradığından tek-giriş thrash ediyordu).
+let _profCache: Record<string, Record<string, number>> = {};
 // Şehrin yaşayan kadrosundaki meslek dağılımı (yaşa göre üretkenlik ağırlıklı). Yılda bir değişir → memo.
 function cityProfCounts(s: GameState, loc: string): Record<string, number> {
   const key = loc + "@" + worldYears(s) + "#" + s.seed;
-  if (_profCache && _profCache.key === key) return _profCache.counts;
-  const counts: Record<string, number> = {};
+  let counts = _profCache[key];
+  if (counts) return counts;
+  if (Object.keys(_profCache).length > 600) _profCache = {}; // sınır: ara sıra tümden temizle (tembelce yeniden dolar)
+  counts = {};
   for (const n of rosterAt(s, loc)) counts[n.profession] = (counts[n.profession] || 0) + workerAgeProd(n.age);
-  _profCache = { key, counts };
+  _profCache[key] = counts;
   return counts;
 }
 // Oyuncunun bir şehirdeki işçili mülklerinin o malı aylık üretimi (üretim zinciri → şehir arzı).
@@ -757,25 +769,54 @@ export function npcStateOf(s: GameState, id: string): NpcState {
 
 // Yerleşimler — şehir/köy/kale, beyliklere (region) bağlı. Seyahat ve atmosfer.
 export interface Place { name: string; kind: "şehir" | "köy" | "kale"; region: string; }
-export const PLACES: Place[] = [
-  { name: "Üzümlü", kind: "köy", region: "demirhan" }, { name: "Akpınar", kind: "köy", region: "demirhan" }, { name: "Demirhan", kind: "kale", region: "demirhan" },
-  { name: "Yenişehir", kind: "şehir", region: "yenisehir" }, { name: "Karaağaç", kind: "köy", region: "yenisehir" }, { name: "Söğütlü", kind: "köy", region: "yenisehir" },
-  { name: "Bozkır", kind: "kale", region: "gumushisar" }, { name: "Gümüşhisar", kind: "şehir", region: "gumushisar" }, { name: "Çakıllı", kind: "köy", region: "gumushisar" },
-  { name: "Kavaklı", kind: "köy", region: "aksehir" }, { name: "Sarıkaya", kind: "kale", region: "aksehir" }, { name: "Akşehir", kind: "şehir", region: "aksehir" },
-];
-export const LOCATIONS = PLACES.map((p) => p.name);
-// Beylikler — 4 sancak; her birinin merkezi (şehir/kale) ve rengi.
+// Beylikler — 5 sancak; her birinin merkezi (şehir/kale) ve rengi.
 export const BEYLIKS: { id: string; name: string; tone: string }[] = [
   { id: "demirhan",   name: "Demirhan Beyliği",   tone: "#E0922E" },
   { id: "yenisehir",  name: "Yenişehir Sancağı",  tone: "#6FA0C0" },
   { id: "gumushisar", name: "Gümüşhisar Beyliği", tone: "#9C7BC4" },
   { id: "aksehir",    name: "Akşehir Sancağı",    tone: "#7FA66A" },
+  { id: "karahisar",  name: "Karahisar Beyliği",  tone: "#C56B5C" },
 ];
-export function regionOf(name: string): string { return PLACES.find((p) => p.name === name)?.region || "demirhan"; }
+// ── Dünya üretimi (Vercel world_gen.py ölçeği): 5 beylik · 8 şehir · 12 kale · 22 köy = 42 yerleşim ──
+// Mevcut 12 yerleşim KORUNUR (kayıt/çeviri/harita sürekliliği); üstüne deterministik olarak yenileri eklenir.
+const BASE_PLACES: Place[] = [
+  { name: "Üzümlü", kind: "köy", region: "demirhan" }, { name: "Akpınar", kind: "köy", region: "demirhan" }, { name: "Demirhan", kind: "kale", region: "demirhan" },
+  { name: "Yenişehir", kind: "şehir", region: "yenisehir" }, { name: "Karaağaç", kind: "köy", region: "yenisehir" }, { name: "Söğütlü", kind: "köy", region: "yenisehir" },
+  { name: "Bozkır", kind: "kale", region: "gumushisar" }, { name: "Gümüşhisar", kind: "şehir", region: "gumushisar" }, { name: "Çakıllı", kind: "köy", region: "gumushisar" },
+  { name: "Kavaklı", kind: "köy", region: "aksehir" }, { name: "Sarıkaya", kind: "kale", region: "aksehir" }, { name: "Akşehir", kind: "şehir", region: "aksehir" },
+];
+// Yeni yerleşim ad havuzları (Anadolu toponimleri) — tür bazlı, mevcut adlarla çakışmaz.
+const NEW_CITY = ["Develi", "Konuralp", "Alaşehir", "Beyşehir", "Eğirdir", "Honaz", "Ilgın"];
+const NEW_CASTLE = ["Akkale", "Karakale", "Şahinkaya", "Kızılhisar", "Gökçekale", "Boğazkale", "Aslanhisar", "Demirkapı", "Yarhisar", "Uçhisar", "Kovalı", "Taşköprü"];
+const NEW_VILLAGE = ["Çamlıca", "Gökçeören", "Yeşilköy", "Taşpınar", "Karadere", "Akören", "Yaylabaşı", "Çukurca", "Gümüşköy", "Derbent", "Sazak", "Kuyucak", "Ballıca", "Çiğdemli", "Ovacık", "Pınarbaşı", "Gölcük", "Çayırlı"];
+// Her beyliğe eklenecek (şehir, kale, köy) sayısı — toplamlar hedefe (8/12/22) tamamlanır.
+const EXTRA_DIST: Record<string, [number, number, number]> = {
+  demirhan:   [2, 2, 3], // mevcut 0ş/1k/2v → 2ş/3k/5v
+  yenisehir:  [1, 2, 3], // 1/0/2 → 2/2/5
+  gumushisar: [0, 2, 3], // 1/1/1 → 1/3/4
+  aksehir:    [0, 1, 3], // 1/1/1 → 1/2/4
+  karahisar:  [2, 2, 4], // 0/0/0 → 2/2/4
+};
+function buildPlaces(): Place[] {
+  const out: Place[] = [...BASE_PLACES];
+  let ci = 0, ki = 0, vi = 0;
+  for (const b of BEYLIKS) {
+    const d = EXTRA_DIST[b.id]; if (!d) continue;
+    for (let i = 0; i < d[0]; i++) out.push({ name: NEW_CITY[ci++], kind: "şehir", region: b.id });
+    for (let i = 0; i < d[1]; i++) out.push({ name: NEW_CASTLE[ki++], kind: "kale", region: b.id });
+    for (let i = 0; i < d[2]; i++) out.push({ name: NEW_VILLAGE[vi++], kind: "köy", region: b.id });
+  }
+  return out;
+}
+export const PLACES: Place[] = buildPlaces();
+export const LOCATIONS = PLACES.map((p) => p.name);
+// O(1) ada-göre yer tablosu: regionOf/placeKind sıcak yolda milyonlarca kez çağrılıyor (PLACES.find O(n)'di → 42 yerle ağırlaştı).
+const _placeByName: Record<string, Place> = (() => { const m: Record<string, Place> = {}; for (const p of PLACES) m[p.name] = p; return m; })();
+export function regionOf(name: string): string { return _placeByName[name]?.region || "demirhan"; }
 export function beylikOf(name: string): { id: string; name: string; tone: string } { const r = regionOf(name); return BEYLIKS.find((b) => b.id === r) || BEYLIKS[0]; }
 export function beylikName(id: string): string { return BEYLIKS.find((b) => b.id === id)?.name || id; }
 export function sameBeylik(a: string, b: string): boolean { return regionOf(a) === regionOf(b); }
-export function placeKind(name: string): string { return PLACES.find((p) => p.name === name)?.kind || "köy"; }
+export function placeKind(name: string): string { return _placeByName[name]?.kind || "köy"; }
 
 // Meslekler — kariyer merdivenli (15 meslek). Unvanlar deneyimle yükselir.
 export interface Profession { id: string; name: string; stat: keyof Stats; base: number; tiers: string[]; }
