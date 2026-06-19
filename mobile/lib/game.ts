@@ -463,7 +463,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
   if (!r) return s;
   const social = p.skills?.social || 0;
   if (eylem === "yuzles") {
-    const sans = Math.max(0.15, Math.min(0.85, 0.40 + social * 0.05 + p.stats.charisma * 0.03 - r.siddet * 0.08));
+    const sans = Math.max(0.15, Math.min(0.85, 0.40 + social * 0.05 + socialPresence(p) * 0.03 - r.siddet * 0.08));
     if (Math.random() < sans) {
       s.player_rumors = rumors.filter((x) => x.id !== rumorId);
       p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 3);
@@ -1761,7 +1761,7 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   const ns = npcStateOf(s, npc.id);
   const rel = s.relationships[npc.id] || 0;
   // NPC, sohbette etkin ilişkiye (taban + anılar) göre davranır — hatırladıkları konuşmasına yansır.
-  const r: ConvResult = converse(npc, ns.mood, effectiveRel(rel, ns.anilar), p.stats.charisma, intent, lang as any);
+  const r: ConvResult = converse(npc, ns.mood, effectiveRel(rel, ns.anilar), socialPresence(p), intent, lang as any);
   let relDelta = r.relDelta;
   if (relDelta > 0) {
     relDelta *= talkWarmthMod(s);                                  // sıcak/korkulan tanınmanın etkisi
@@ -1857,7 +1857,7 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; const rel = s.relationships[npc.id] || 0;
   if (!canCourt(p, npc, rel)) return s;
   const karizmaBonus = hasPerk(p, "karizmatik") ? 0.2 : 0;
-  const ok = Math.random() < Math.min(0.97, 0.25 + (rel - 50) * 0.012 + p.stats.charisma * 0.03 + karizmaBonus + courtBonus(s));
+  const ok = Math.random() < Math.min(0.97, 0.25 + (rel - 50) * 0.012 + socialPresence(p) * 0.03 + karizmaBonus + courtBonus(s));
   if (ok) {
     p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.reputation = Math.min(100, p.reputation + 5);
     bumpNam(p, "capkin", 5);
@@ -1890,7 +1890,7 @@ export function flirtWith(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; const rel = s.relationships[npc.id] || 0;
   if (!canFlirt(p, npc, rel)) return s;
   const ns = npcStateOf(s, npc.id);
-  const ok = Math.random() < Math.min(0.9, 0.35 + (rel - 15) * 0.01 + p.stats.charisma * 0.04 + allureBonus(s));
+  const ok = Math.random() < Math.min(0.9, 0.35 + (rel - 15) * 0.01 + socialPresence(p) * 0.04 + allureBonus(s));
   if (ok) {
     const up = 6 + Math.floor(Math.random() * 8);
     s.relationships[npc.id] = Math.min(100, rel + up); ns.mood = Math.max(-100, Math.min(100, ns.mood + 12));
@@ -2739,6 +2739,11 @@ export function attireScore(p: Player): { charisma: number; prestige: number } {
   const it = ITEMS[id]; const m = equippedQualityMult(p, "kiyafet");
   const damp = 1 - 0.7 * martialLoad(p); // tam zırhta sosyal katkı %70 kırpılır
   return { charisma: Math.round((it?.charisma || 0) * m * damp), prestige: Math.round((it?.prestige || 0) * m * damp) };
+}
+// Sosyal varlık: karizma (kıyafet dahil) eksi cenk yükü cezası. Silahlı/zırhlı biri divanda,
+// düğünde, flörtte çekici değil tehditkâr/heybetli durur — bu yüzden ikna gücü düşer.
+export function socialPresence(p: Player): number {
+  return Math.max(0, effStat(p, "charisma") - Math.round(martialLoad(p) * 2));
 }
 // Eşya kuşan (silah/zırh) — envanterden çıkarıp slota koyar, eskisini geri verir.
 export function equipItem(prev: GameState, id: string): GameState {
