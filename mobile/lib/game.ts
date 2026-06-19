@@ -104,11 +104,11 @@ export function upgradeProperty(prev: GameState, index: number): GameState {
 // Gerçekçi fiyatlar: bir mülk yıllarca geri ödenen ciddi bir yatırımdır (en ucuzu ~2.000 akçe).
 // Nominal "cost" enflasyonla çarpılarak güncel alış bedeli bulunur (propBuyCost).
 export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: number; income: number; slots: number }> = {
-  tarla:    { name: "Tarla",    icon: "🌾", cost: 2000,  income: 30,  slots: 3 },
-  ev:       { name: "Ev",       icon: "🏠", cost: 2500,  income: 36,  slots: 1 },
-  dukkan:   { name: "Dükkân",   icon: "🏪", cost: 6500,  income: 90,  slots: 2 },
-  han:      { name: "Han",      icon: "🏨", cost: 11000, income: 150, slots: 3 },
-  degirmen: { name: "Değirmen", icon: "🏭", cost: 18000, income: 210, slots: 4 },
+  tarla:    { name: "Tarla",    icon: "wheat", cost: 2000,  income: 30,  slots: 3 },
+  ev:       { name: "Ev",       icon: "house", cost: 2500,  income: 36,  slots: 1 },
+  dukkan:   { name: "Dükkân",   icon: "coins", cost: 6500,  income: 90,  slots: 2 },
+  han:      { name: "Han",      icon: "castle", cost: 11000, income: 150, slots: 3 },
+  degirmen: { name: "Değirmen", icon: "anvil", cost: 18000, income: 210, slots: 4 },
 };
 // Güncel alış bedeli = nominal × enflasyon (geç-oyunda mülk pahalanır → nakit erir, değer korunur).
 export function propBuyCost(s: GameState, type: string): number { return Math.round((PROPERTY_TYPES[type]?.cost || 0) * inflationFactor(s)); }
@@ -323,7 +323,7 @@ function germinateSeed(s: GameState, t: Seed) {
   if (t.etki?.money) p.money = Math.max(0, p.money + t.etki.money);
   if (t.etki?.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + t.etki.reputation));
   if (t.etki?.health) p.health = Math.max(1, Math.min(100, p.health + t.etki.health));
-  push(s, "tohum", `🌰 Geçmiş kapını çaldı.`, "kişisel", true, { k: "seed." + t.kaynak, p: [t.npcName || "", p.name] });
+  push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", true, { k: "seed." + t.kaynak, p: [t.npcName || "", p.name] });
 }
 function seedTick(s: GameState) {
   const seeds = s.seeds; if (!seeds || !seeds.length) return;
@@ -2130,8 +2130,8 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   // ── Sınav: her 4 derste bir (ilgili statla test) ──
   if (p.lesson_count % 4 === 0) {
     const passed = Math.random() < Math.min(0.9, 0.35 + effStat(p, EXAM_STAT[id] || "intelligence") * 0.12);
-    if (passed) { p.stat_points += 1; chips.push({ label: "📜 Sınav geçildi · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Sınava girdin ve geçtin — bir özellik puanı kazandın.", "kişisel", true, { k: "evj.examPass" }); }
-    else { chips.push({ label: "📜 Sınavda zorlandın", col: "#C0556B" }); push(s, "mektep", "Sınava girdin ama zorlandın; daha çok çalışmalısın.", "kişisel", false, { k: "evj.examFail" }); }
+    if (passed) { p.stat_points += 1; chips.push({ label: "Sınav geçildi · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Sınava girdin ve geçtin — bir özellik puanı kazandın.", "kişisel", true, { k: "evj.examPass" }); }
+    else { chips.push({ label: "Sınavda zorlandın", col: "#C0556B" }); push(s, "mektep", "Sınava girdin ama zorlandın; daha çok çalışmalısın.", "kişisel", false, { k: "evj.examFail" }); }
   }
   return { state: s, key, chips };
 }
