@@ -7,7 +7,7 @@ export const TRAITS = ["neşeli","ciddi","kibirli","cömert","dertli","yalnız",
 const QUIRKS = ["sürekli hava durumundan dert yanar","eski günleri anlatmayı sever","herkese lakap takar","az konuşur çok dinler","yüksek sesle güler","pazarlığa bayılır","komşularını çekiştirir","bir türküyü mırıldanır"];
 // NPC'nin peşinde olduğu hayat hedefi (söylenti ve sohbete renk katar).
 const GOALS = ["bir dükkân açmanın hayalini kuruyor","kızını/oğlunu evermek istiyor","borçlarından kurtulmaya çalışıyor","hacca gitmeyi diliyor","toprak satın almak için biriktiriyor","ustabaşı olmak istiyor","küs olduğu kardeşiyle barışmak istiyor","bir ev yaptırmanın derdinde","kervan ticaretine atılmak istiyor","adını duyurmak istiyor"];
-export interface Item { id: string; name: string; icon: string; buy: number; sell: number; kind: "yiyecek" | "esya" | "silah" | "zirh"; heal?: number; feed?: number; power?: number; defense?: number; }
+export interface Item { id: string; name: string; icon: string; buy: number; sell: number; kind: "yiyecek" | "esya" | "silah" | "zirh" | "kalkan" | "baslik" | "eldiven" | "ayakkabi" | "kiyafet"; heal?: number; feed?: number; power?: number; defense?: number; charisma?: number; prestige?: number; }
 
 const AD_E = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim","Osman","Yusuf","Murat","Kerem","Emre","Cihan","Barış","Tolga","Mert"];
 const AD_K = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif","Nur","Reyhan","Cansu","Derya","Sevda","Pınar","Gül","Nazlı","Hande"];
@@ -124,25 +124,48 @@ export const ITEMS: Record<string, Item> = {
   deri:    { id: "deri",    name: "Deri",       icon: "🟫", buy: 9,  sell: 4,  kind: "esya" },
   // Silahlar (power)
   bicak:        { id: "bicak",        name: "Bıçak",        icon: "🗡", buy: 20,  sell: 8,   kind: "silah", power: 4 },
-  kilic:        { id: "kilic",        name: "Kılıç",        icon: "⚔", buy: 60,  sell: 24,  kind: "silah", power: 8 },
-  celik_kilic:  { id: "celik_kilic",  name: "Çelik Kılıç",  icon: "⚔", buy: 140, sell: 56,  kind: "silah", power: 13 },
-  savas_balta:  { id: "savas_balta",  name: "Savaş Baltası",icon: "🪓", buy: 110, sell: 44,  kind: "silah", power: 11 },
+  hancer:       { id: "hancer",       name: "Hançer",       icon: "🗡", buy: 32,  sell: 13,  kind: "silah", power: 5 },
   yay:          { id: "yay",          name: "Av Yayı",      icon: "🏹", buy: 50,  sell: 20,  kind: "silah", power: 7 },
-  // Zırh (defense)
+  kilic:        { id: "kilic",        name: "Kılıç",        icon: "⚔", buy: 60,  sell: 24,  kind: "silah", power: 8 },
+  gurz:         { id: "gurz",         name: "Gürz",         icon: "🔨", buy: 88,  sell: 35,  kind: "silah", power: 9 },
+  mizrak:       { id: "mizrak",       name: "Mızrak",       icon: "🔱", buy: 100, sell: 40,  kind: "silah", power: 10 },
+  savas_balta:  { id: "savas_balta",  name: "Savaş Baltası",icon: "🪓", buy: 110, sell: 44,  kind: "silah", power: 11 },
+  celik_kilic:  { id: "celik_kilic",  name: "Çelik Kılıç",  icon: "⚔", buy: 140, sell: 56,  kind: "silah", power: 13 },
+  yatagan:      { id: "yatagan",      name: "Yatağan",      icon: "⚔", buy: 210, sell: 84,  kind: "silah", power: 15 },
+  // Gövde zırhı (defense)
   deri_zirh:    { id: "deri_zirh",    name: "Deri Zırh",    icon: "🦺", buy: 45,  sell: 18,  kind: "zirh", defense: 4 },
+  pamuk_zirh:   { id: "pamuk_zirh",   name: "Pamuklu Zırh", icon: "🦺", buy: 82,  sell: 33,  kind: "zirh", defense: 6 },
   zincir_zirh:  { id: "zincir_zirh",  name: "Zincir Zırh",  icon: "🛡", buy: 120, sell: 48,  kind: "zirh", defense: 9 },
-  kalkan:       { id: "kalkan",       name: "Kalkan",       icon: "🛡", buy: 70,  sell: 28,  kind: "zirh", defense: 6 },
+  plaka_zirh:   { id: "plaka_zirh",   name: "Plaka Zırh",   icon: "🛡", buy: 250, sell: 100, kind: "zirh", defense: 13 },
+  // Kalkan (defense, ayrı slot)
+  kalkan:       { id: "kalkan",       name: "Kalkan",       icon: "🛡", buy: 70,  sell: 28,  kind: "kalkan", defense: 6 },
+  buyuk_kalkan: { id: "buyuk_kalkan", name: "Büyük Kalkan", icon: "🛡", buy: 135, sell: 54,  kind: "kalkan", defense: 9 },
+  // Başlık / miğfer (defense)
+  deri_baslik:  { id: "deri_baslik",  name: "Deri Başlık",  icon: "🪖", buy: 26,  sell: 10,  kind: "baslik", defense: 2 },
+  demir_migfer: { id: "demir_migfer", name: "Demir Miğfer", icon: "🪖", buy: 78,  sell: 31,  kind: "baslik", defense: 5 },
+  tolga:        { id: "tolga",        name: "Tolga",        icon: "🪖", buy: 165, sell: 66,  kind: "baslik", defense: 8 },
+  // Eldiven (defense)
+  deri_eldiven: { id: "deri_eldiven", name: "Deri Eldiven", icon: "🧤", buy: 18,  sell: 7,   kind: "eldiven", defense: 1 },
+  zincir_eldiven:{ id: "zincir_eldiven",name: "Zincir Eldiven",icon: "🧤",buy: 56, sell: 22,  kind: "eldiven", defense: 3 },
+  // Ayakkabı / çizme (defense)
+  carik:        { id: "carik",        name: "Çarık",        icon: "🥾", buy: 15,  sell: 6,   kind: "ayakkabi", defense: 1 },
+  demir_cizme:  { id: "demir_cizme",  name: "Demir Çizme",  icon: "🥾", buy: 62,  sell: 25,  kind: "ayakkabi", defense: 3 },
+  // Kıyafet (karizma + itibar/prestij)
+  gunluk_kiyafet:{ id: "gunluk_kiyafet",name: "Günlük Kıyafet",icon: "🧥",buy: 22, sell: 9,   kind: "kiyafet", charisma: 0, prestige: 1 },
+  yun_cubbe:    { id: "yun_cubbe",    name: "Yün Cübbe",    icon: "🧥", buy: 64,  sell: 26,  kind: "kiyafet", charisma: 1, prestige: 3 },
+  resmi_kaftan: { id: "resmi_kaftan", name: "Resmi Kaftan", icon: "🧥", buy: 130, sell: 52,  kind: "kiyafet", charisma: 2, prestige: 6 },
+  ipek_kaftan:  { id: "ipek_kaftan",  name: "İpek Kaftan",  icon: "🧥", buy: 330, sell: 132, kind: "kiyafet", charisma: 4, prestige: 12 },
 };
 
 // Her yerleşimin bir geçim uzmanlığı vardır; o gruptaki mallar yerel üretimle ucuzlar.
 export const SPECIALTIES: { name: string; goods: string[] }[] = [
   { name: "Tahıl ambarı", goods: ["bugday", "un", "ekmek"] },
   { name: "Balıkçı iskelesi", goods: ["balik", "corba"] },
-  { name: "Demirci ocağı", goods: ["demir", "bicak", "kilic", "celik_kilic", "savas_balta", "kalkan"] },
-  { name: "Avcı yatağı", goods: ["et", "deri", "deri_zirh", "yay"] },
+  { name: "Demirci ocağı", goods: ["demir", "bicak", "kilic", "celik_kilic", "savas_balta", "gurz", "mizrak", "yatagan", "kalkan", "buyuk_kalkan", "zincir_zirh", "plaka_zirh", "demir_migfer", "tolga", "zincir_eldiven", "demir_cizme"] },
+  { name: "Avcı yatağı", goods: ["et", "deri", "deri_zirh", "yay", "hancer", "deri_baslik", "deri_eldiven", "carik"] },
   { name: "Bağ & arı", goods: ["bal", "sarap"] },
   { name: "Şifacı yurdu", goods: ["sifa", "iksir"] },
-  { name: "Dokuma tezgâhı", goods: ["yun"] },
+  { name: "Dokuma tezgâhı", goods: ["yun", "pamuk_zirh", "gunluk_kiyafet", "yun_cubbe", "resmi_kaftan", "ipek_kaftan"] },
 ];
 export function localSpecialty(locationSeed: number): { name: string; goods: string[] } {
   return SPECIALTIES[locationSeed % SPECIALTIES.length];

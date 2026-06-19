@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
@@ -98,27 +98,25 @@ function RelativeTile({ role, name, age, gender, seed, has }: { role: string; na
   );
 }
 
-// Donanım yuvası (silah/zırh) — ikon kutusu + ad + bonus + çıkar.
-function GearSlot({ icon, label, item, quality, bonus, onRemove, t }: { icon: string; label: string; item?: string; quality?: string; bonus?: number; onRemove?: () => void; t: (k: string) => string }) {
+// Donanım yuvası karosu — ızgarada gösterilir. Boşsa kesik çerçeve.
+function GearTile({ icon, label, item, quality, bonus, statColor, onRemove, t }: { icon: string; label: string; item?: string | null; quality?: string; bonus?: number; statColor: string; onRemove?: () => void; t: (k: string) => string }) {
   const equipped = !!item;
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: equipped ? GB : C.border, borderRadius: 11, padding: 11, gap: 8 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{label}</Text>
-        {equipped && bonus != null && bonus > 0 ? <Text style={{ fontFamily: F.display, fontSize: 11, color: C.ember }}>+{bonus}</Text> : null}
+    <View style={{ width: "31.5%", backgroundColor: C.bg, borderWidth: 1, borderColor: equipped ? GB : C.border, borderRadius: 11, paddingVertical: 10, paddingHorizontal: 7, alignItems: "center", gap: 5 }}>
+      <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: equipped ? GBG : "transparent", borderWidth: 1, borderColor: equipped ? GB : C.border, alignItems: "center", justifyContent: "center" }}>
+        <GameIcon name={icon} size={20} color={equipped ? C.gold : C.parchmentMuted} />
       </View>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
-        <View style={{ width: 38, height: 38, borderRadius: 9, backgroundColor: equipped ? GBG : "transparent", borderWidth: 1, borderColor: equipped ? GB : C.border, alignItems: "center", justifyContent: "center" }}>
-          <GameIcon name={icon} size={19} color={equipped ? C.gold : C.parchmentMuted} />
+      <Text style={{ fontFamily: F.display, fontSize: 7.5, letterSpacing: 0.5, color: C.parchmentMuted, textTransform: "uppercase" }} numberOfLines={1}>{label}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 11.5, color: equipped ? C.parchment : C.parchmentMuted, textAlign: "center" }}>{equipped ? t("it." + item) : "—"}</Text>
+      {equipped ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          {bonus != null && bonus > 0 ? <Text style={{ fontFamily: F.display, fontSize: 11, color: statColor }}>+{bonus}</Text> : null}
+          {quality && quality !== "siradan" ? <Text style={{ fontFamily: F.serifItalic, fontSize: 9, color: C.goldDim }}>{QUALITY_LABEL[quality as keyof typeof QUALITY_LABEL]}</Text> : null}
         </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 13, color: equipped ? C.parchment : C.parchmentMuted }}>{equipped ? t("it." + item) : "—"}</Text>
-          {equipped && quality && quality !== "siradan" ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.goldDim }}>{QUALITY_LABEL[quality as keyof typeof QUALITY_LABEL]}</Text> : null}
-        </View>
-      </View>
+      ) : <View style={{ height: 14 }} />}
       {equipped && onRemove ? (
-        <Pressable onPress={onRemove} style={{ alignSelf: "flex-start", paddingVertical: 3, paddingHorizontal: 9, borderRadius: 6, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)" }}>
-          <Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.blood }}>{t("misc.remove")}</Text>
+        <Pressable onPress={onRemove} style={{ paddingVertical: 2, paddingHorizontal: 8, borderRadius: 5, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)" }}>
+          <Text style={{ fontFamily: F.display, fontSize: 8.5, color: C.blood }}>{t("misc.remove")}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -129,11 +127,26 @@ function GearSlot({ icon, label, item, quality, bonus, onRemove, t }: { icon: st
 function itemIcon(it: any): string {
   if (!it) return "menu";
   if (it.kind === "silah") return "silah";
-  if (it.kind === "zirh") return "karakter";
+  if (it.kind === "zirh") return "shield";
+  if (it.kind === "kalkan") return "kite";
+  if (it.kind === "baslik") return "hood";
+  if (it.kind === "eldiven") return "fist";
+  if (it.kind === "ayakkabi") return "boot";
+  if (it.kind === "kiyafet") return "wool";
   if (it.heal) return "saglik";
   if (it.feed) return "ye";
   return "menu";
 }
+
+// Teçhizat slot meta'sı (savaş slotları + kıyafet).
+const GEAR_META: { slot: "silah" | "kalkan" | "zirh" | "baslik" | "eldiven" | "ayakkabi"; icon: string; labelKey: string; field: "power" | "defense" }[] = [
+  { slot: "silah", icon: "silah", labelKey: "char.weapon", field: "power" },
+  { slot: "kalkan", icon: "kite", labelKey: "char.shield", field: "defense" },
+  { slot: "zirh", icon: "shield", labelKey: "char.armor", field: "defense" },
+  { slot: "baslik", icon: "hood", labelKey: "char.helmet", field: "defense" },
+  { slot: "eldiven", icon: "fist", labelKey: "char.gloves", field: "defense" },
+  { slot: "ayakkabi", icon: "boot", labelKey: "char.boots", field: "defense" },
+];
 
 export default function Karakter() {
   const insets = useSafeAreaInsets();
@@ -353,15 +366,59 @@ export default function Karakter() {
         {tab === "seruven" && (
           <>
             <Card>
-              <SectionHead title={t("char.gear")} right={<View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="crossed-swords" size={12} color={C.ember} /><Text style={{ fontFamily: F.display, fontSize: 11, color: C.ember }}>{t("char.combatReady")}: {combatPower(p)}</Text></View>} />
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <GearSlot icon="silah" label={t("char.weapon")} item={p.equipped?.silah ?? undefined} quality={p.equipped_q?.silah ?? undefined}
-                  bonus={p.equipped?.silah ? Math.round((ITEMS[p.equipped.silah]?.power || 0) * equippedQualityMult(p, "silah")) : undefined}
-                  onRemove={p.equipped?.silah ? () => apply((s) => unequipItem(s, "silah")) : undefined} t={t} />
-                <GearSlot icon="karakter" label={t("char.armor")} item={p.equipped?.zirh ?? undefined} quality={p.equipped_q?.zirh ?? undefined}
-                  bonus={p.equipped?.zirh ? Math.round((ITEMS[p.equipped.zirh]?.defense || 0) * equippedQualityMult(p, "zirh")) : undefined}
-                  onRemove={p.equipped?.zirh ? () => apply((s) => unequipItem(s, "zirh")) : undefined} t={t} />
+              <SectionHead title={t("char.gear")} right={
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="crossed-swords" size={11} color={C.ember} /><Text style={{ fontFamily: F.display, fontSize: 11, color: C.ember }}>{combatPower(p)}</Text></View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="shield" size={11} color={C.azure} /><Text style={{ fontFamily: F.display, fontSize: 11, color: C.azure }}>{armorDefense(p)}</Text></View>
+                </View>
+              } />
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
+                {GEAR_META.map((g) => {
+                  const id = p.equipped?.[g.slot];
+                  const it = id ? ITEMS[id] : null;
+                  const raw = it ? (g.field === "power" ? (it.power || 0) : (it.defense || 0)) : 0;
+                  const bonus = id ? Math.round(raw * equippedQualityMult(p, g.slot)) : undefined;
+                  return (
+                    <GearTile key={g.slot} icon={g.icon} label={t(g.labelKey)} item={id ?? undefined} quality={p.equipped_q?.[g.slot] ?? undefined}
+                      bonus={bonus} statColor={g.field === "power" ? C.ember : C.azure}
+                      onRemove={id ? () => apply((s) => unequipItem(s, g.slot)) : undefined} t={t} />
+                  );
+                })}
               </View>
+            </Card>
+
+            {/* Kıyafet — sosyal görünüm (karizma + itibar) */}
+            <Card>
+              {(() => {
+                const at = attireScore(p);
+                const cid = p.equipped?.kiyafet;
+                const cit = cid ? ITEMS[cid] : null;
+                const cq = p.equipped_q?.kiyafet;
+                return (
+                  <>
+                    <SectionHead title={t("char.attire")} right={
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="karizma" size={11} color={C.ember} /><Text style={{ fontFamily: F.display, fontSize: 11, color: C.ember }}>+{at.charisma}</Text></View>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="orgutler" size={11} color={C.gold} /><Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>+{at.prestige}</Text></View>
+                      </View>
+                    } />
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 11 }}>
+                      <View style={{ width: 46, height: 46, borderRadius: 11, backgroundColor: cid ? GBG : "transparent", borderWidth: 1, borderColor: cid ? GB : C.border, alignItems: "center", justifyContent: "center" }}>
+                        <GameIcon name="wool" size={23} color={cid ? C.gold : C.parchmentMuted} />
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: cid ? C.parchment : C.parchmentMuted }}>{cid ? t("it." + cid) : t("char.attireNone")}</Text>
+                        <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 1 }}>{cid ? (cq && cq !== "siradan" ? QUALITY_LABEL[cq as keyof typeof QUALITY_LABEL] + " · " : "") + t("char.attireHint") : t("char.attireHint")}</Text>
+                      </View>
+                      {cid ? (
+                        <Pressable onPress={() => apply((s) => unequipItem(s, "kiyafet"))} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: 6, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)" }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.blood }}>{t("misc.remove")}</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  </>
+                );
+              })()}
             </Card>
             <Card>
               <SectionHead title={t("char.bag")} right={inv.length ? <Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.parchmentMuted }}>{inv.length}</Text> : undefined} />
@@ -370,7 +427,7 @@ export default function Karakter() {
               ) : (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                   {inv.map((k) => {
-                    const it = ITEMS[k]; const usable = it && (it.feed || it.heal); const equipable = it && (it.kind === "silah" || it.kind === "zirh");
+                    const it = ITEMS[k]; const usable = it && (it.feed || it.heal); const equipable = it && ["silah", "kalkan", "zirh", "baslik", "eldiven", "ayakkabi", "kiyafet"].includes(it.kind);
                     return (
                       <View key={k} style={{ width: "48%", backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 10, gap: 8 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>

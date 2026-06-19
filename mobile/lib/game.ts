@@ -25,8 +25,8 @@ export interface Player {
   injuries: Injury[]; career_xp: number;
   nam: Nam; child_invests: Record<string, string[]>;
   child_edu?: Record<string, { track: string; weeks: number }>; // süregelen evlat eğitimi (haftalık biriken)
-  equipped: { silah: string | null; zirh: string | null };
-  equipped_q?: { silah?: QualityTier; zirh?: QualityTier }; // kuşanılı teçhizatın kalite kademesi
+  equipped: { silah: string | null; zirh: string | null } & Partial<Record<EquipSlot, string | null>>;
+  equipped_q?: Partial<Record<EquipSlot, QualityTier>>; // kuşanılı teçhizatın kalite kademesi
   crowned?: boolean; will_pref?: string;
   fates?: string[]; // tetiklenen kader anları (yaş dönümleri)
   claimed?: string[]; // ödülü alınan başarımlar
@@ -85,7 +85,9 @@ function bumpNam(p: Player, key: keyof Nam, amt: number) { if (p.nam) p.nam[key]
 // Yaralanmalar bir özelliği geçici/kalıcı düşürür. Etkili (effective) değer.
 export function effStat(p: Player, key: keyof Stats): number {
   const pen = (p.injuries || []).filter((i) => i.stat === key).reduce((a, i) => a + i.delta, 0);
-  return Math.max(0, p.stats[key] - pen);
+  let base = p.stats[key];
+  if (key === "charisma" && p.equipped?.kiyafet) base += attireScore(p).charisma; // kıyafet karizmaya katkı
+  return Math.max(0, base - pen);
 }
 // Mülk: konuma bağlı (loc) + kondisyon (cond 0..100) + kademe (level 1..3). Gelir refah×kondisyon×kademe.
 export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number }[]; }
@@ -2697,15 +2699,28 @@ export function combatPower(p: Player): number {
   if (hasPerk(p, "nisanci")) pw += 5;
   return pw;
 }
-// Kuşanılı zırhın savunması (savaşta alınan hasarı azaltır).
+// Kuşanılı zırhın toplam savunması (gövde + kalkan + miğfer + eldiven + çizme). Savaşta hasarı azaltır.
 export function armorDefense(p: Player): number {
-  const aid = p.equipped?.zirh; return aid ? Math.round((ITEMS[aid]?.defense || 0) * equippedQualityMult(p, "zirh")) : 0;
+  let d = 0;
+  for (const sl of DEFENSE_SLOTS) {
+    const id = p.equipped?.[sl];
+    if (id) d += Math.round((ITEMS[id]?.defense || 0) * equippedQualityMult(p, sl));
+  }
+  return d;
+}
+// Kuşanılı kıyafetin sosyal katkısı (karizma + itibar/prestij). Kalite kademesiyle ölçeklenir.
+export function attireScore(p: Player): { charisma: number; prestige: number } {
+  const id = p.equipped?.kiyafet;
+  if (!id) return { charisma: 0, prestige: 0 };
+  const it = ITEMS[id]; const m = equippedQualityMult(p, "kiyafet");
+  return { charisma: Math.round((it?.charisma || 0) * m), prestige: Math.round((it?.prestige || 0) * m) };
 }
 // Eşya kuşan (silah/zırh) — envanterden çıkarıp slota koyar, eskisini geri verir.
 export function equipItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const it = ITEMS[id];
-  if (!it || !(p.inventory[id] > 0) || (it.kind !== "silah" && it.kind !== "zirh")) return s;
-  const slot: "silah" | "zirh" = it.kind === "silah" ? "silah" : "zirh";
+  if (!it || !(p.inventory[id] > 0)) return s;
+  const slot = slotOfKind(it.kind);
+  if (!slot) return s;
   // Eskisini (kalitesiyle) envantere geri koy.
   const old = p.equipped[slot];
   if (old) { p.inventory[old] = (p.inventory[old] || 0) + 1; const oq = p.equipped_q?.[slot]; if (oq) addQuality(p, old, oq); }
@@ -2719,7 +2734,7 @@ export function equipItem(prev: GameState, id: string): GameState {
   push(s, "kusanma", `${it.name}${qNote} kuşandın.`, "kişisel", false, tier !== "siradan" ? { k: "evj.equipQ", p: [{ i: id }, { q: tier }] } : { k: "evj.equip", p: [{ i: id }] });
   return s;
 }
-export function unequipItem(prev: GameState, slot: "silah" | "zirh"): GameState {
+export function unequipItem(prev: GameState, slot: EquipSlot): GameState {
   const s = clone(prev); const p = s.player; const old = p.equipped[slot];
   if (!old) return s;
   p.inventory[old] = (p.inventory[old] || 0) + 1;
@@ -3126,7 +3141,7 @@ export function recognition(s: GameState): number {
 // İmzalı "ne kadar olumlu tanınıyorsun" — tanınma ile kapılı.
 export function esteem(s: GameState): number {
   const p = s.player; const n = p.nam || ({} as Nam);
-  const ch = p.reputation + p.honor * 0.8 + (n.comert || 0) * 0.5 + (n.mert || 0) * 0.5 + (n.dindar || 0) * 0.3 - (n.zalim || 0) * 0.7 - p.fear * 0.4;
+  const ch = p.reputation + p.honor * 0.8 + (n.comert || 0) * 0.5 + (n.mert || 0) * 0.5 + (n.dindar || 0) * 0.3 - (n.zalim || 0) * 0.7 - p.fear * 0.4 + attireScore(p).prestige;
   return Math.round(ch * recognition(s));
 }
 // "Ne kadar korkulan/çekinilen" (0..+) — tanınma ile kapılı; cömertlik/mertlik korkuyu yumuşatır.
@@ -3499,9 +3514,18 @@ export type QualityTier = "kusurlu" | "siradan" | "iyi" | "usta_isi";
 export const QUALITY_MULT: Record<QualityTier, number> = { kusurlu: 0.6, siradan: 1.0, iyi: 1.5, usta_isi: 2.5 };
 // Savaşta kalite etkisi (satıştan daha yumuşak): kuşanılı silah gücü / zırh savunması çarpanı.
 export const QUALITY_COMBAT: Record<QualityTier, number> = { kusurlu: 0.75, siradan: 1.0, iyi: 1.2, usta_isi: 1.4 };
-export function equippedQualityMult(p: Player, slot: "silah" | "zirh"): number { return QUALITY_COMBAT[p.equipped_q?.[slot] || "siradan"]; }
+export function equippedQualityMult(p: Player, slot: EquipSlot): number { return QUALITY_COMBAT[p.equipped_q?.[slot] || "siradan"]; }
 export const QUALITY_LABEL: Record<QualityTier, string> = { kusurlu: "kusurlu", siradan: "sıradan", iyi: "iyi", usta_isi: "usta işi" };
-const QUALITY_GOODS = new Set(["bicak", "kilic", "celik_kilic", "savas_balta", "yay", "kalkan", "deri_zirh", "zincir_zirh", "iksir"]);
+
+// Kuşanılabilir tüm slotlar. silah=el, kalkan=öbür el, zirh=gövde, baslik=baş, eldiven=el, ayakkabi=ayak, kiyafet=giysi (sosyal).
+export type EquipSlot = "silah" | "kalkan" | "zirh" | "baslik" | "eldiven" | "ayakkabi" | "kiyafet";
+export const EQUIP_SLOTS: EquipSlot[] = ["silah", "kalkan", "zirh", "baslik", "eldiven", "ayakkabi", "kiyafet"];
+export const COMBAT_SLOTS: EquipSlot[] = ["silah", "kalkan", "zirh", "baslik", "eldiven", "ayakkabi"];
+export const DEFENSE_SLOTS: EquipSlot[] = ["zirh", "kalkan", "baslik", "eldiven", "ayakkabi"];
+const EQUIP_KINDS = new Set<string>(["silah", "kalkan", "zirh", "baslik", "eldiven", "ayakkabi", "kiyafet"]);
+export function slotOfKind(kind: string): EquipSlot | null { return EQUIP_KINDS.has(kind) ? (kind as EquipSlot) : null; }
+
+const QUALITY_GOODS = new Set(["bicak", "hancer", "kilic", "celik_kilic", "yatagan", "savas_balta", "gurz", "mizrak", "yay", "kalkan", "buyuk_kalkan", "deri_zirh", "pamuk_zirh", "zincir_zirh", "plaka_zirh", "demir_migfer", "tolga", "iksir"]);
 const Q_ORDER: QualityTier[] = ["usta_isi", "iyi", "siradan", "kusurlu"];
 // Zanaat becerisine göre üretilen kalite kademesini çek.
 function rollCraftQuality(skill: number): QualityTier {

@@ -9,15 +9,33 @@ import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
+import { GameIcon } from "../../lib/icons";
 import { BackLabel } from "../../lib/ui";
+
+// Pazar malı ikonu — eşya türüne göre (emoji yerine GameIcon).
+function marketItemIcon(g: { kind?: string; heal?: number; feed?: number }): string {
+  switch (g.kind) {
+    case "silah": return "silah";
+    case "kalkan": return "kite";
+    case "zirh": return "shield";
+    case "baslik": return "hood";
+    case "eldiven": return "fist";
+    case "ayakkabi": return "boot";
+    case "kiyafet": return "wool";
+  }
+  if (g.heal) return "saglik";
+  if (g.feed || g.kind === "yiyecek") return "ye";
+  return "menu";
+}
 
 const CARAVAN_AMOUNTS = [50, 120, 300];
 // Pazar tezgâhları — mallar türüne göre dükkânlara ayrılır (pazar hissi).
 const STALLS = [
-  { kind: "yiyecek", icon: "🍲", key: "paz.stall.food", tone: C.sage },
-  { kind: "esya", icon: "🪵", key: "paz.stall.goods", tone: C.gold },
-  { kind: "silah", icon: "⚔️", key: "paz.stall.arms", tone: C.ember },
-  { kind: "zirh", icon: "🛡", key: "paz.stall.armor", tone: C.azure },
+  { kinds: ["yiyecek"], icon: "ye", key: "paz.stall.food", tone: C.sage },
+  { kinds: ["esya"], icon: "menu", key: "paz.stall.goods", tone: C.gold },
+  { kinds: ["silah"], icon: "silah", key: "paz.stall.arms", tone: C.ember },
+  { kinds: ["zirh", "kalkan", "baslik", "eldiven", "ayakkabi"], icon: "shield", key: "paz.stall.armor", tone: C.azure },
+  { kinds: ["kiyafet"], icon: "wool", key: "paz.stall.attire", tone: C.ink },
 ] as const;
 
 // Vercel "Panel" — başlık (ikon + ad + ton) + gövde.
@@ -25,7 +43,7 @@ function Panel({ title, icon, tone, children }: { title: string; icon: string; t
   return (
     <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: tone + "33", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: tone + "12" }}>
-        <Text style={{ fontSize: 15 }}>{icon}</Text>
+        <GameIcon name={icon} size={15} color={tone} />
         <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: tone, textTransform: "uppercase" }}>{title}</Text>
       </View>
       <View style={{ padding: 12 }}>{children}</View>
@@ -168,17 +186,17 @@ export default function Pazar() {
 
         {/* ── Pazar: tezgâh tezgâh ayrılmış dükkânlar ── */}
         {STALLS.map((stall) => {
-          const items = goods.filter((g) => (g.kind || "esya") === stall.kind);
+          const items = goods.filter((g) => (stall.kinds as readonly string[]).includes(g.kind || "esya"));
           if (items.length === 0) return null;
           return (
-            <Panel key={stall.kind} title={t(stall.key)} icon={stall.icon} tone={stall.tone}>
+            <Panel key={stall.key} title={t(stall.key)} icon={stall.icon} tone={stall.tone}>
               {items.map((g, gi) => {
                 const have = p.inventory[g.id] || 0;
                 return (
                   <View key={g.id} style={{ paddingVertical: 9, borderBottomWidth: gi === items.length - 1 ? 0 : 1, borderBottomColor: C.border }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                       <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: stall.tone + "14", borderWidth: 1, borderColor: stall.tone + "33", alignItems: "center", justifyContent: "center" }}>
-                        <Text style={{ fontSize: 18 }}>{g.icon}</Text>
+                        <GameIcon name={marketItemIcon(g)} size={18} color={stall.tone} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment }}>{t("it." + g.id)}</Text>
