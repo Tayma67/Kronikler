@@ -26,7 +26,7 @@ function Axis({ icon, label, value, tier, desc }: { icon: string; label: string;
   return (
     <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 1 }}>{icon} {label}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><GameIcon name={icon} size={13} color={C.gold} /><Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 1 }}>{label}</Text></View>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold }}>{tier}</Text>
       </View>
       <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{desc}</Text>

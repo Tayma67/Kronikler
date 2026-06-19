@@ -684,14 +684,14 @@ function addTradePressure(s: GameState, loc: string, good: string, delta: number
 export interface LocEvent { id: string; loc: string; type: string; hafta: number; until: number; }
 export interface LocEventType { id: string; icon: string; prosp: number; sec: number; goods: string[]; priceMult: number; months: [number, number] }
 export const LOC_EVENT_TYPES: Record<string, LocEventType> = {
-  kuraklik: { id: "kuraklik", icon: "☀️", prosp: -12, sec: 0,   goods: ["bugday", "un", "ekmek", "et", "balik"], priceMult: 1.4, months: [4, 7] },
-  bereket:  { id: "bereket",  icon: "🌾", prosp: 10,  sec: 0,   goods: ["bugday", "un", "ekmek"],               priceMult: 0.7, months: [3, 5] },
-  eskiya:   { id: "eskiya",   icon: "⚔️", prosp: -6,  sec: -22, goods: [],                                       priceMult: 1.0, months: [3, 6] },
-  panayir:  { id: "panayir",  icon: "🎪", prosp: 8,   sec: 0,   goods: ["sarap", "bal", "peynir", "et"],         priceMult: 1.3, months: [2, 3] },
-  yangin:   { id: "yangin",   icon: "🔥", prosp: -14, sec: -5,  goods: ["kereste"],                              priceMult: 1.4, months: [3, 5] },
-  veba:     { id: "veba",     icon: "☠️", prosp: -16, sec: 0,   goods: ["sifa", "iksir"],                        priceMult: 1.6, months: [4, 7] },
-  ticaret:  { id: "ticaret",  icon: "🐫", prosp: 12,  sec: 0,   goods: ["sarap", "bal", "iksir", "sifa"],        priceMult: 0.75, months: [3, 5] },
-  isyan:    { id: "isyan",    icon: "🚩", prosp: -10, sec: -18, goods: [],                                       priceMult: 1.0,  months: [3, 5] },
+  kuraklik: { id: "kuraklik", icon: "sun", prosp: -12, sec: 0,   goods: ["bugday", "un", "ekmek", "et", "balik"], priceMult: 1.4, months: [4, 7] },
+  bereket:  { id: "bereket",  icon: "wheat", prosp: 10,  sec: 0,   goods: ["bugday", "un", "ekmek"],               priceMult: 0.7, months: [3, 5] },
+  eskiya:   { id: "eskiya",   icon: "crossed-swords", prosp: -6,  sec: -22, goods: [],                                       priceMult: 1.0, months: [3, 6] },
+  panayir:  { id: "panayir",  icon: "party", prosp: 8,   sec: 0,   goods: ["sarap", "bal", "peynir", "et"],         priceMult: 1.3, months: [2, 3] },
+  yangin:   { id: "yangin",   icon: "flame", prosp: -14, sec: -5,  goods: ["kereste"],                              priceMult: 1.4, months: [3, 5] },
+  veba:     { id: "veba",     icon: "skull", prosp: -16, sec: 0,   goods: ["sifa", "iksir"],                        priceMult: 1.6, months: [4, 7] },
+  ticaret:  { id: "ticaret",  icon: "camel", prosp: 12,  sec: 0,   goods: ["sarap", "bal", "iksir", "sifa"],        priceMult: 0.75, months: [3, 5] },
+  isyan:    { id: "isyan",    icon: "crossed-swords", prosp: -10, sec: -18, goods: [],                                       priceMult: 1.0,  months: [3, 5] },
 };
 const LOC_EVENT_LABEL: Record<string, string> = { kuraklik: "Kuraklık baş gösterdi", bereket: "Bereketli hasat", eskiya: "Eşkıya türedi", panayir: "Panayır kuruldu", yangin: "Yangın çıktı", veba: "Veba salgını", ticaret: "Ticaret patlaması", isyan: "Ayaklanma çıktı" };
 // Bir şehirde aktif olayların toplam refah/güvenlik etkisi (mülk geliri, seyahat için).
@@ -2617,10 +2617,10 @@ export function leaveFaction(prev: GameState): GameState {
 // Mevki kademeleri (değere göre unvan).
 export interface SocialAxis { key: "reputation" | "honor" | "fear" | "fame"; label: string; icon: string; tiers: string[]; desc: string; }
 export const SOCIAL_AXES: SocialAxis[] = [
-  { key: "reputation", label: "İtibar", icon: "⚜", desc: "Halkın gözündeki saygınlığın.", tiers: ["Lekeli", "Sıradan", "Hatırı Sayılır", "Saygın", "Diyarın İncisi"] },
-  { key: "honor", label: "Şeref", icon: "🕊", desc: "Sözünün ve adaletinin ağırlığı.", tiers: ["Onursuz", "Sıradan", "Mert", "Şerefli", "Erdemin Timsali"] },
-  { key: "fear", label: "Korku", icon: "🌒", desc: "Adının uyandırdığı çekince.", tiers: ["Zararsız", "Bilinen", "Çekinilen", "Korkulan", "Diyarın Kâbusu"] },
-  { key: "fame", label: "Şöhret", icon: "🔥", desc: "Adının ne kadar uzağa ulaştığı.", tiers: ["Meçhul", "Tanınan", "Ünlü", "Meşhur", "Destanlaşan"] },
+  { key: "reputation", label: "İtibar", icon: "karakter", desc: "Halkın gözündeki saygınlığın.", tiers: ["Lekeli", "Sıradan", "Hatırı Sayılır", "Saygın", "Diyarın İncisi"] },
+  { key: "honor", label: "Şeref", icon: "medal", desc: "Sözünün ve adaletinin ağırlığı.", tiers: ["Onursuz", "Sıradan", "Mert", "Şerefli", "Erdemin Timsali"] },
+  { key: "fear", label: "Korku", icon: "skull", desc: "Adının uyandırdığı çekince.", tiers: ["Zararsız", "Bilinen", "Çekinilen", "Korkulan", "Diyarın Kâbusu"] },
+  { key: "fame", label: "Şöhret", icon: "crown", desc: "Adının ne kadar uzağa ulaştığı.", tiers: ["Meçhul", "Tanınan", "Ünlü", "Meşhur", "Destanlaşan"] },
 ];
 export function socialTierIndex(value: number): number {
   const v = Math.max(0, value);

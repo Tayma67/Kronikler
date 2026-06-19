@@ -341,7 +341,7 @@ export default function Dashboard() {
         const lbl = goal.done ? t("dash.goalReady") : goal.locked ? `${goal.q.minAge}+` : t("dash.goalNow");
         return (
           <Pressable onPress={() => { hap("tap"); router.push("/oyun/gorevler"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: tone + "55", backgroundColor: tone + "12", flexDirection: "row", alignItems: "center", gap: 9 }}>
-            <Text style={{ fontSize: 17 }}>{goal.q.icon}</Text>
+            <GameIcon name={goal.q.icon} size={16} color={tone} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: tone, textTransform: "uppercase" }}>{t("dash.nextGoal")}</Text>
               <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginTop: 1 }}>{t("fq." + goal.q.id + ".t")} <Text style={{ color: C.parchmentMuted, fontSize: 10.5 }}>· {t("fq." + goal.q.id + ".d")}</Text></Text>

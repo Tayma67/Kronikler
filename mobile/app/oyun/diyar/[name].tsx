@@ -7,6 +7,16 @@ import { cityInfo, marketGoods, locSeed } from "../../../lib/world";
 import { useI18n, applyParams } from "../../../lib/i18n";
 import { placeName } from "../../../lib/locale-data";
 import { C, F } from "../../../lib/theme";
+import { GameIcon } from "../../../lib/icons";
+
+// Mal ikonu — türüne göre (emoji yerine GameIcon).
+function goodIcon(g: any): string {
+  switch (g?.kind) {
+    case "silah": return "silah"; case "kalkan": return "kite"; case "zirh": return "shield";
+    case "baslik": return "hood"; case "eldiven": return "fist"; case "ayakkabi": return "boot"; case "kiyafet": return "wool";
+  }
+  if (g?.heal) return "saglik"; if (g?.feed || g?.kind === "yiyecek") return "ye"; return "menu";
+}
 import { BackLabel } from "../../../lib/ui";
 
 const KIND_KEY: Record<string, string> = { "şehir": "sehir", "kale": "kale", "köy": "koy" };
@@ -52,7 +62,7 @@ export default function DiyarDetay() {
           <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("lev.head").toUpperCase()}</Text>
           {locEventsAt(state, name).map((ty, idx) => (
             <View key={idx} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: ty === "panayir" || ty === "bereket" ? C.sage : C.blood, borderLeftWidth: 2.5, borderRadius: 8, padding: 11, marginBottom: 6 }}>
-              <Text style={{ fontSize: 15 }}>{LOC_EVENT_TYPES[ty]?.icon}</Text>
+              <GameIcon name={LOC_EVENT_TYPES[ty]?.icon || "scroll"} size={15} color={ty === "panayir" || ty === "bereket" ? C.sage : C.blood} />
               <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{t("lev." + ty + ".l")}</Text>
             </View>
           ))}
@@ -149,7 +159,7 @@ export default function DiyarDetay() {
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14, marginBottom: 16 }}>
         {goods.map((g) => (
           <View key={g.id} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
-            <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{g.icon} {t("it."+g.id)}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}><GameIcon name={goodIcon(g)} size={13} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{t("it."+g.id)}</Text></View>
             <Text style={{ fontFamily: F.display, fontSize: 12, color: C.goldDim }}>{t("diyar.buyAbbr")} {g.buy} · {t("diyar.sellAbbr")} {g.sell}</Text>
           </View>
         ))}

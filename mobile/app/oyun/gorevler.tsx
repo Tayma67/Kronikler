@@ -67,7 +67,7 @@ export default function Gorevler() {
             return (
               <View key={q.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 11, borderBottomWidth: i === arr.length - 1 ? 0 : 1, borderBottomColor: C.border, opacity: locked ? 0.55 : 1 }}>
                 <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: claimed ? "rgba(127,166,106,0.5)" : "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ fontSize: 16 }}>{q.icon}</Text>
+                  <GameIcon name={q.icon} size={16} color={claimed ? C.sage : C.gold} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 12.5, color: claimed ? C.sage : C.parchment }}>{t("fq." + q.id + ".t")}</Text>

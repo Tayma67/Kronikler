@@ -7,6 +7,7 @@ import { faqFor } from "../../lib/faq";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
+import { GameIcon } from "../../lib/icons";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -35,7 +36,7 @@ export default function SSS() {
         {sections.map((sec) => (
           <View key={sec.title} style={{ marginBottom: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 9 }}>
-              <Text style={{ fontSize: 15 }}>{sec.icon}</Text>
+              <GameIcon name={sec.icon} size={15} color={C.gold} />
               <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1.5, color: C.gold }}>{sec.title.toUpperCase()}</Text>
               <View style={{ flex: 1, height: 1, backgroundColor: "rgba(201,168,76,0.25)" }} />
             </View>
