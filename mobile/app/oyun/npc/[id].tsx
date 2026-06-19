@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, GIVE_MONEY_AMT } from "../../../lib/game";
+import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, GIVE_MONEY_AMT, martialLoad } from "../../../lib/game";
 import { useI18n } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
@@ -53,6 +53,23 @@ function RelBand({ score }: { score: number }) {
       </Svg>
     </View>
   );
+}
+
+// Hediye eşya ikonu — türüne göre (emoji yerine GameIcon).
+function giftIcon(it: any): string {
+  if (!it) return "menu";
+  switch (it.kind) {
+    case "silah": return "silah";
+    case "kalkan": return "kite";
+    case "zirh": return "shield";
+    case "baslik": return "hood";
+    case "eldiven": return "fist";
+    case "ayakkabi": return "boot";
+    case "kiyafet": return "wool";
+  }
+  if (it.heal) return "saglik";
+  if (it.feed || it.kind === "yiyecek") return "ye";
+  return "menu";
 }
 
 export default function NpcDetail() {
@@ -156,6 +173,12 @@ export default function NpcDetail() {
         <View style={{ paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border }}>
           <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 2.5, color: C.parchmentMuted }}>{t("npc.interaction")}</Text>
         </View>
+        {martialLoad(state.player) > 0 && (couldMarry || canFlirt(state.player, npc, v)) ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(224,90,48,0.07)" }}>
+            <GameIcon name="crossed-swords" size={12} color={C.ember} />
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11, color: C.ember, lineHeight: 15 }}>{t("npca.martialWarn")}</Text>
+          </View>
+        ) : null}
         {INTENTS.map((it) => (
           <Pressable key={it.id} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
             <GameIcon name={it.icon} size={17} color={C.gold} />
@@ -165,14 +188,14 @@ export default function NpcDetail() {
         ))}
         {/* Hediye */}
         <Pressable onPress={() => setGiftOpen((o) => !o)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
-          <Text style={{ fontSize: 16 }}>🎁</Text>
+          <GameIcon name="gems" size={16} color={C.gold} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npc.gift")}</Text>
           <Text style={{ color: C.goldDim, fontSize: 15 }}>{giftOpen ? "⌄" : "›"}</Text>
         </Pressable>
         {/* Amacına yardım et / istismar et (npc_mind goal_action) */}
         {canGoal && (
           <Pressable onPress={() => { if (state.player.money >= GOAL_HELP_COST) { hap("success"); apply((s) => helpNpcGoal(s, npc)); } }} disabled={state.player.money < GOAL_HELP_COST} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
-            <Text style={{ fontSize: 16 }}>🕊</Text>
+            <GameIcon name="leaf" size={16} color={state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.serif, fontSize: 14, color: state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted }}>{t("npc.helpGoal")}</Text>
               <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 1 }}>{goalL(npc.goal, lang)}</Text>
@@ -182,7 +205,7 @@ export default function NpcDetail() {
         )}
         {canGoal && v > -25 && (
           <Pressable onPress={() => { hap("tap"); apply((s) => exploitNpcGoal(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: couldMarry ? 1 : 0, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
-            <Text style={{ fontSize: 16 }}>🪤</Text>
+            <GameIcon name="hood" size={16} color={C.ember} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.ember }}>{t("npc.exploitGoal")}</Text>
             <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
           </Pressable>
@@ -199,22 +222,22 @@ export default function NpcDetail() {
         )}
         {/* Ek etkileşimler (Vercel npc_interactions): para / flört / dedikodu / hakaret */}
         <Pressable onPress={() => { if (state.player.money >= GIVE_MONEY_AMT) { hap("tap"); apply((s) => giveMoneyTo(s, npc)); } }} disabled={state.player.money < GIVE_MONEY_AMT} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
-          <Text style={{ fontSize: 16 }}>🪙</Text>
+          <GameIcon name="akce" size={16} color={state.player.money >= GIVE_MONEY_AMT ? C.gold : C.parchmentMuted} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: state.player.money >= GIVE_MONEY_AMT ? C.parchment : C.parchmentMuted }}>{t("npca.moneyBtn")}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>{GIVE_MONEY_AMT} ⚜</Text>
         </Pressable>
         {canFlirt(state.player, npc, v) && (
           <Pressable onPress={() => { hap("success"); apply((s) => flirtWith(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
-            <Text style={{ fontSize: 16 }}>💞</Text>
+            <GameIcon name="lyre" size={16} color={C.gold} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t("npca.flirtBtn")}</Text>
           </Pressable>
         )}
         <Pressable onPress={() => { hap("tap"); apply((s) => gossipAbout(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
-          <Text style={{ fontSize: 16 }}>🗣</Text>
+          <GameIcon name="speaker" size={16} color={C.parchment} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npca.gossipBtn")}</Text>
         </Pressable>
         <Pressable onPress={() => { hap("tap"); apply((s) => insultNpc(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
-          <Text style={{ fontSize: 16 }}>🗯</Text>
+          <GameIcon name="skull" size={16} color={C.blood} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.blood }}>{t("npca.insultBtn")}</Text>
         </Pressable>
       </View>
@@ -227,7 +250,7 @@ export default function NpcDetail() {
           ) : giftables.map((k) => (
             <Pressable key={k} onPress={() => { hap("tap"); apply((s) => giftTo(s, npc, k)); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7 }}>
               <View style={{ width: 32, height: 32, borderRadius: 7, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 16 }}>{ITEMS[k]?.icon || "📦"}</Text>
+                <GameIcon name={giftIcon(ITEMS[k])} size={16} color={C.gold} />
               </View>
               <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{t("it." + k)}</Text>
               <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchmentMuted }}>×{state.player.inventory[k]}</Text>
