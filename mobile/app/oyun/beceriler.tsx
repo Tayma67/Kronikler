@@ -123,7 +123,7 @@ export default function Beceriler() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 100 }}>
-        <PageHeader kicker={t("scr.beceriler")} icon="🌿" title={t("scr.beceriler")} sub={t("bec.intro")} />
+        <PageHeader kicker={t("scr.beceriler")} title={t("scr.beceriler")} sub={t("bec.intro")} />
         {SKILL_META.map((m) => <Tree key={m.key} tree={m.key} icon={m.icon} />)}
       </ScrollView>
     </View>

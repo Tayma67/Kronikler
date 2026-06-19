@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { View, Text, ScrollView, Pressable, Image } from "react-native";
-import Svg, { Polyline, Polygon } from "react-native-svg";
+import { View, Text, ScrollView, Pressable, Image, ImageBackground } from "react-native";
+import Svg, { Polyline, Polygon, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker } from "../../lib/game";
 import { placeName, professionNameL } from "../../lib/locale-data";
-import { mulkImage, MULK_BOS } from "../../lib/assets";
+import { mulkImage, MULK_BOS, MULK_HERO } from "../../lib/assets";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader, Panel, Portre } from "../../lib/ui";
+import { GameIcon } from "../../lib/icons";
+import { BackLabel, Panel, Portre } from "../../lib/ui";
 
 // Mülk gelirini seviyeye göre hesapla (Vercel property_system ile aynı: taban × (1 + (seviye-1)*0.5)).
 function propIncome(type: string, level: number): number {
@@ -56,14 +57,43 @@ export default function Mulkler() {
   const condColor = (c: number) => (c >= 75 ? C.sage : c >= 45 ? C.gold : C.blood);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12 }}>
-        <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money} ⚜</Text>
-      </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
-        <PageHeader kicker={t("scr.mulkler")} icon="🏯" title={t("scr.mulkler")} sub={t("mulk.hint")} />
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}>
+        {/* ── Hero afişi ── */}
+        <ImageBackground source={MULK_HERO} style={{ width: "100%", height: 182 }} resizeMode="cover">
+          {/* okunaklık için alt/üst karartma */}
+          <Svg width="100%" height="100%" style={{ position: "absolute", left: 0, top: 0 }}>
+            <Defs>
+              <LinearGradient id="mulkscrim" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor="#0D0A06" stopOpacity={0.55} />
+                <Stop offset="0.45" stopColor="#0D0A06" stopOpacity={0.1} />
+                <Stop offset="1" stopColor="#0D0A06" stopOpacity={0.95} />
+              </LinearGradient>
+            </Defs>
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#mulkscrim)" />
+          </Svg>
+          {/* üst sıra: geri + akçe */}
+          <View style={{ paddingTop: insets.top + 10, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Pressable onPress={() => router.back()} style={{ backgroundColor: "rgba(13,10,6,0.5)", borderRadius: 13, paddingVertical: 5, paddingHorizontal: 11 }}><BackLabel /></Pressable>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(13,10,6,0.5)", borderRadius: 13, paddingVertical: 5, paddingHorizontal: 11, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)" }}>
+              <GameIcon name="akce" size={12} color={C.gold} />
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money}</Text>
+            </View>
+          </View>
+          {/* başlık bloğu */}
+          <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingBottom: 14, alignItems: "center" }}>
+            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textTransform: "uppercase" }}>{t("scr.mulkler")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 24, color: C.parchment, letterSpacing: 1.5, marginTop: 3 }}>{t("scr.mulkler")}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 }}>
+              <View style={{ width: 18, height: 1, backgroundColor: C.goldDim, opacity: 0.7 }} />
+              <View style={{ width: 5, height: 5, backgroundColor: C.gold, transform: [{ rotate: "45deg" }] }} />
+              <View style={{ width: 18, height: 1, backgroundColor: C.goldDim, opacity: 0.7 }} />
+            </View>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim, marginTop: 6, textAlign: "center" }}>{t("mulk.hint")}</Text>
+          </View>
+        </ImageBackground>
 
+        <View style={{ paddingHorizontal: 14, paddingTop: 14 }}>
         {/* Özet kartı */}
         <View style={{ flexDirection: "row", backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.borderHi, borderRadius: 13, overflow: "hidden", marginBottom: 15 }}>
           {[
@@ -79,7 +109,7 @@ export default function Mulkler() {
         </View>
 
         {/* Mülklerim */}
-        <Panel title={t("mulk.owned")} icon="🏠" noPad>
+        <Panel title={t("mulk.owned")} noPad>
           {p.properties.length === 0 ? (
             <View style={{ alignItems: "center", padding: 18 }}>
               <Image source={MULK_BOS} style={{ width: 132, height: 80, borderRadius: 10, borderWidth: 1, borderColor: C.borderHi }} resizeMode="cover" />
@@ -103,7 +133,10 @@ export default function Mulkler() {
                     <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t("pt." + pr.type)} <Text style={{ fontSize: 9, color: C.goldDim }}>{t("mulk.level")} {lvl}</Text></Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 }}>
                       <Text style={{ fontFamily: F.display, fontSize: 11, color: C.sage }}>+{inc} {t("mulk.perMonth")}</Text>
-                      <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentDim }}>👷 {(pr.workers?.length || 0)}/{slots}</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <GameIcon name="iliskiler" size={11} color={C.parchmentDim} />
+                        <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentDim }}>{(pr.workers?.length || 0)}/{slots}</Text>
+                      </View>
                     </View>
                   </View>
                   <View style={{ alignItems: "flex-end", gap: 6 }}>
@@ -145,8 +178,9 @@ export default function Mulkler() {
                           )}
                         </View>
                       )}
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-                        <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: C.parchmentMuted }}>👷 {t("mulk.workers").toUpperCase()} {hired.length}/{slots}</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                        <GameIcon name="iliskiler" size={11} color={C.parchmentMuted} />
+                        <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("mulk.workers").toUpperCase()} {hired.length}/{slots}</Text>
                         <View style={{ flex: 1 }} />
                         {hired.length < slots && (
                           <Pressable onPress={() => { hap("tap"); setHireOpen(ho ? null : i); }} style={{ paddingVertical: 4, paddingHorizontal: 9, borderRadius: 6, borderWidth: 1, borderColor: "rgba(127,166,106,0.5)", backgroundColor: "rgba(127,166,106,0.12)" }}>
@@ -189,7 +223,7 @@ export default function Mulkler() {
         </Panel>
 
         {/* Bu şehirde satın al — 5 tip illüstrasyonlu */}
-        <Panel title={`${t("mulk.buyHere")} · ${placeName(here, lang)}`} icon="🏗">
+        <Panel title={`${t("mulk.buyHere")} · ${placeName(here, lang)}`}>
           <View style={{ flexDirection: "row", gap: 6 }}>
             {Object.entries(PROPERTY_TYPES).map(([id, ty]) => {
               const cost = propBuyCost(state, id);
@@ -210,6 +244,7 @@ export default function Mulkler() {
           </View>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 10 }}>{t("mulk.priceNote")}</Text>
         </Panel>
+        </View>
       </ScrollView>
     </View>
   );

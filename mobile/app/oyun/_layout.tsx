@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import { View, Pressable } from "react-native";
+import Svg, { Defs, RadialGradient, Stop, Rect } from "react-native-svg";
 import { useEffect } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -72,6 +73,30 @@ function NavOrnament({ bottom }: { bottom: number }) {
   );
 }
 
+// Tüm ekranların üstüne biner: tepede sıcak ışık huzmesi + kenarlarda vinyet.
+// Siyah zemine derinlik katar; dokunuşları geçirir (pointerEvents none).
+function GlobalBackdrop({ bottom }: { bottom: number }) {
+  return (
+    <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom }}>
+      <Svg width="100%" height="100%">
+        <Defs>
+          <RadialGradient id="bgGlow" cx="50%" cy="13%" rx="78%" ry="55%">
+            <Stop offset="0" stopColor="#E0922E" stopOpacity={0.10} />
+            <Stop offset="0.5" stopColor="#C9A84C" stopOpacity={0.03} />
+            <Stop offset="1" stopColor="#0D0A06" stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient id="bgVignette" cx="50%" cy="40%" rx="76%" ry="64%">
+            <Stop offset="0.55" stopColor="#000000" stopOpacity={0} />
+            <Stop offset="1" stopColor="#000000" stopOpacity={0.34} />
+          </RadialGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#bgGlow)" />
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#bgVignette)" />
+      </Svg>
+    </View>
+  );
+}
+
 export default function OyunLayout() {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
@@ -114,6 +139,7 @@ export default function OyunLayout() {
         <Tabs.Screen name="roman" options={{ href: null }} />
         <Tabs.Screen name="npc/[id]" options={{ href: null }} />
       </Tabs>
+      <GlobalBackdrop bottom={60 + insets.bottom} />
       <NavOrnament bottom={60 + insets.bottom} />
       <AdvanceFab bottom={insets.bottom} />
       <StatDeltaOverlay />
