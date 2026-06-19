@@ -4,7 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { ENCOUNTERS, combatPower, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome } from "../../lib/game";
+import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome } from "../../lib/game";
 import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance } from "../../lib/combat";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -81,6 +81,20 @@ export default function Savas() {
         <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1, textAlign: "center" }}>{bs.enemyName}</Text>
         </View>
+        {/* Kuşam şeridi — silah arketipi · güç · zırh · kalkan bloğu */}
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12, paddingBottom: 8 }}>
+          {weaponClass(p) ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <GameIcon name="silah" size={11} color={C.ember} />
+              <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: C.ember, textTransform: "uppercase" }}>{t("wc." + weaponClass(p))}</Text>
+            </View>
+          ) : null}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="crossed-swords" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.parchmentDim }}>{pw}</Text></View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="shield" size={11} color={C.azure} /><Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.azure }}>{armorDefense(p)}</Text></View>
+          {hasShield(p) ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="kite" size={11} color={C.sage} /><Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.sage }}>{t("cb.block")} %{Math.round(shieldBlockChance(p, stance === "savunmaci") * 100)}</Text></View>
+          ) : null}
+        </View>
         <Animated.View style={[{ paddingHorizontal: 20, position: "relative" }, shakeStyle]}>
           <HpBar label={t("cb.you")} hp={bs.playerHp} max={bs.playerMax} color={C.sage} />
           <HpBar label={t("cb.enemy")} hp={bs.enemyHp} max={bs.enemyMax} color={C.blood} />
@@ -106,7 +120,12 @@ export default function Savas() {
                   return (
                     <Pressable key={s.id} onPress={() => { hap("tap"); setStance(s.id); }} style={{ flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.7)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.15)" : C.bg }}>
                       <Text style={{ fontFamily: F.display, fontSize: 10, color: on ? C.gold : C.parchmentMuted }}>{t("cb.stance." + s.id)}</Text>
-                      <Text style={{ fontFamily: F.serif, fontSize: 8.5, color: C.parchmentDim, marginTop: 1 }}>⚔{Math.round(s.atk * 100)}% 🛡{Math.round(s.def * 100)}%</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
+                        <GameIcon name="crossed-swords" size={8} color={C.parchmentDim} />
+                        <Text style={{ fontFamily: F.serif, fontSize: 8.5, color: C.parchmentDim }}>{Math.round(s.atk * 100)}%</Text>
+                        <GameIcon name="shield" size={8} color={C.parchmentDim} />
+                        <Text style={{ fontFamily: F.serif, fontSize: 8.5, color: C.parchmentDim }}>{Math.round(s.def * 100)}%</Text>
+                      </View>
                     </Pressable>
                   );
                 })}
@@ -132,17 +151,21 @@ export default function Savas() {
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <View style={{ width: 40 }} />
-        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.blood }}>⚔ {pw}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          {weaponClass(p) ? <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: C.ember, textTransform: "uppercase" }}>{t("wc." + weaponClass(p))}</Text> : null}
+          <GameIcon name="crossed-swords" size={12} color={C.blood} />
+          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.blood }}>{pw}</Text>
+        </View>
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 10 }}>
         {t("cb.subtitle")} {(p.inventory["bicak"] || 0) > 0 ? t("cb.knifeYes") : t("cb.knifeNo")}
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <PageHeader kicker={t("scr.savas")} icon="⚔️" title={t("scr.savas")} />
+        <PageHeader kicker={t("scr.savas")} title={t("scr.savas")} />
         {nemEnc && (
           <View style={{ backgroundColor: "rgba(120,20,20,0.15)", borderWidth: 1, borderColor: "rgba(200,60,60,0.6)", borderRadius: 10, padding: 14, marginBottom: 12 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 14, color: C.blood }}>☠ {nemEnc.title}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><GameIcon name="suc" size={13} color={C.blood} /><Text style={{ fontFamily: F.display, fontSize: 14, color: C.blood }}>{nemEnc.title}</Text></View>
               <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood }}>{t("cb.enemyPower")} {nemEnc.power}</Text>
             </View>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5 }}>{nemEnc.desc} {t("cb.settleTime")}</Text>
