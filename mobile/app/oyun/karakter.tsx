@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
@@ -437,6 +437,16 @@ export default function Karakter() {
                         </Pressable>
                       ) : null}
                     </View>
+                    {/* Sosyal varlık dökümü: karizma + kıyafet − cenk yükü */}
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginTop: 11, paddingTop: 11, borderTopWidth: 1, borderTopColor: C.border }}>
+                      <GameIcon name="karizma" size={13} color={C.gold} />
+                      <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.socialPresence")}</Text>
+                      <View style={{ flex: 1 }} />
+                      <Text style={{ fontFamily: F.display, fontSize: 14, color: C.goldBright }}>{socialPresence(p)}</Text>
+                    </View>
+                    {martialLoad(p) > 0 ? (
+                      <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.ember, marginTop: 5, lineHeight: 16 }}>{t("char.martialWarn")}</Text>
+                    ) : null}
                   </>
                 );
               })()}
