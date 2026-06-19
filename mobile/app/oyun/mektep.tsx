@@ -78,7 +78,7 @@ export default function Mektep() {
                   <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim, marginTop: 1 }}>{p.age < 18 ? t("mek.young") : t("mek.old")}</Text>
                 </View>
                 <View style={{ alignItems: "center", gap: 3, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.16)", borderRadius: 8, paddingVertical: 6, paddingHorizontal: 9 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 0.5, color: C.gold }}>🎓 SINAV</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="mektep" size={9} color={C.gold} /><Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 0.5, color: C.gold }}>SINAV</Text></View>
                   <Text style={{ fontFamily: F.display, fontSize: 10, color: done ? C.sage : toExam === 1 ? C.ember : C.parchment }}>{done ? "✓" : toExam === 1 ? t("mek.examNow").replace("!", "") : applyParams(t("mek.exam"), [toExam])}</Text>
                 </View>
               </View>

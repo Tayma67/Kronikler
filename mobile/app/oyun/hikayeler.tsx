@@ -28,10 +28,10 @@ export default function Hikayeler() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
-        <PageHeader kicker={t("scr.hikayeler")} icon="📖" title={t("scr.hikayeler")} />
+        <PageHeader kicker={t("scr.hikayeler")} title={t("scr.hikayeler")} />
 
         {active && stage ? (
-          <Panel title={gt("arc." + active.id + ".t", active.title)} icon="✦" tone={C.gold}>
+          <Panel title={gt("arc." + active.id + ".t", active.title)} tone={C.gold}>
             <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: 22, marginBottom: 14 }}>{gt("arc." + active.id + "." + st.active!.stage + ".x", stage.text)}</Text>
             {stage.choices.map((c, i) => (
               <Pressable key={i} onPress={() => apply((s) => advanceArc(s, i, { result: gt("arc." + active.id + "." + st.active!.stage + ".r" + i, c.result), endLabel: t("hik.ended").replace("%s", gt("arc." + active.id + ".t", active.title)) }))} style={{ paddingVertical: 12, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", marginBottom: 9 }}>
@@ -47,7 +47,7 @@ export default function Hikayeler() {
           <>
             <SectionHead title={t("hik.awaiting")} />
             {avail.map((a) => (
-              <Panel key={a.id} title={gt("arc." + a.id + ".t", a.title)} icon="✦">
+              <Panel key={a.id} title={gt("arc." + a.id + ".t", a.title)}>
                 <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 10 }}>{gt("arc." + a.id + ".b", a.blurb)}</Text>
                 <Pressable onPress={() => apply((s) => beginArc(s, a.id))} style={{ alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.1)" }}>
                   <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold, letterSpacing: 1 }}>{t("hik.begin")}</Text>
@@ -58,7 +58,7 @@ export default function Hikayeler() {
         )}
 
         {st.completed.length > 0 && (
-          <Panel title={t("hik.completed")} icon="✓" tone={C.sage} noPad>
+          <Panel title={t("hik.completed")} tone={C.sage} noPad>
             {st.completed.map((id, i) => {
               const a = arcById(id); if (!a) return null;
               return (

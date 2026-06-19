@@ -19,7 +19,7 @@ export default function Tarih() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
-        <PageHeader kicker={t("scr.tarih")} icon="📜" title={t("scr.tarih")} />
+        <PageHeader kicker={t("scr.tarih")} title={t("scr.tarih")} />
         {events.map((e, i) => {
           const cal = currentCalendar(e.day);
           return (

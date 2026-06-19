@@ -5,6 +5,7 @@ import { useGame } from "../../lib/store";
 import { RECIPES, canCraft, craft, Recipe } from "../../lib/game";
 import { ITEMS } from "../../lib/world";
 import { C, F } from "../../lib/theme";
+import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { playTap } from "../../lib/sound";
@@ -19,7 +20,7 @@ const CAT: Record<string, "food" | "arms" | "heal"> = {
 };
 const CAT_ORDER: ("food" | "arms" | "heal")[] = ["food", "arms", "heal"];
 const CAT_TONE = { food: "#7FA66A", arms: "#E0922E", heal: "#6FA0C0" };
-const CAT_ICON = { food: "🥖", arms: "⚔️", heal: "🧪" };
+const CAT_ICON = { food: "ye", arms: "silah", heal: "saglik" };
 
 export default function Atolye() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -44,7 +45,7 @@ export default function Atolye() {
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t("it." + r.out)}{r.outQty > 1 ? ` ×${r.outQty}` : ""}</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 }}>
-              <Text style={{ fontSize: 10 }}>{locked ? "🔒" : "🔨"}</Text>
+              <GameIcon name={locked ? "hood" : "anvil"} size={10} color={locked ? C.blood : C.parchmentMuted} />
               <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: locked ? C.blood : C.parchmentMuted }}>
                 {t("wsp.needSkill")}: {t("wsp.skillAbbr")}{r.minSkill} · {t("wsp.your")} {t("wsp.skillAbbr")}{skill}
               </Text>
@@ -73,7 +74,7 @@ export default function Atolye() {
           style={{ marginTop: 12, paddingVertical: 11, borderRadius: 9, borderWidth: 1, alignItems: "center",
             borderColor: able ? tone + "88" : C.border, backgroundColor: able ? tone + "1F" : C.bg }}>
           <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: able ? tone : C.parchmentMuted }}>
-            {able ? `⚒ ${t("misc.craft")}` : locked ? applyParams(t("wsp.locked"), [r.minSkill]) : t("wsp.noMat")}
+            {able ? t("misc.craft") : locked ? applyParams(t("wsp.locked"), [r.minSkill]) : t("wsp.noMat")}
           </Text>
         </Pressable>
       </View>
@@ -87,11 +88,11 @@ export default function Atolye() {
         <Pill text={`${t("skill.crafting")} ${skill}`} />
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 100 }}>
-        <PageHeader kicker={t("scr.atolye")} icon="🛠" title={t("scr.atolye")} sub={t("wsp.hint")} />
+        <PageHeader kicker={t("scr.atolye")} title={t("scr.atolye")} sub={t("wsp.hint")} />
 
         {/* Bilgi: üretim zanaatı geliştirir */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 11, marginBottom: 14 }}>
-          <Text style={{ fontSize: 14 }}>💡</Text>
+          <GameIcon name="anvil" size={13} color={C.goldDim} />
           <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted }}>{t("wsp.gain")}.</Text>
         </View>
 
@@ -101,7 +102,7 @@ export default function Atolye() {
           return (
             <View key={cat} style={{ marginBottom: 8 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                <Text style={{ fontSize: 14 }}>{CAT_ICON[cat]}</Text>
+                <GameIcon name={CAT_ICON[cat]} size={14} color={CAT_TONE[cat]} />
                 <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1.5, color: CAT_TONE[cat] }}>{t("wsp.cat." + cat).toUpperCase()}</Text>
                 <View style={{ flex: 1, height: 1, backgroundColor: CAT_TONE[cat] + "33" }} />
               </View>

@@ -23,7 +23,7 @@ export default function Basarimlar() {
         <Pill text={`${done}/${list.length}`} />
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
-        <PageHeader kicker={t("scr.basarimlar")} icon="🏆" title={t("scr.basarimlar")} sub={t("ach.subtitle")} />
+        <PageHeader kicker={t("scr.basarimlar")} title={t("scr.basarimlar")} sub={t("ach.subtitle")} />
         {list.map(({ a, done }) => (
           <View key={a.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: done ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 11, padding: 13, marginBottom: 8, opacity: done ? 1 : 0.55 }}>
             <View style={{ width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: done ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: done ? "rgba(201,168,76,0.4)" : C.border }}>

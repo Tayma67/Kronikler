@@ -30,7 +30,7 @@ export default function SSS() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
-        <PageHeader kicker={t("scr.sss")} icon="📜" title={t("scr.sss")} sub={t("sss.intro")} />
+        <PageHeader kicker={t("scr.sss")} title={t("scr.sss")} sub={t("sss.intro")} />
 
         {sections.map((sec) => (
           <View key={sec.title} style={{ marginBottom: 16 }}>

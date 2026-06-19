@@ -68,10 +68,10 @@ export default function Pazar() {
   const econColor = econ >= 1.06 ? C.blood : econ <= 0.94 ? C.sage : C.parchmentMuted;
 
   // ── Pazarlık müzakeresi (anlık alım yok; sabır ibresiyle tur tur) ──
-  const openBarg = (g: { id: string; icon: string }) => {
+  const openBarg = (g: { id: string; kind?: string; heal?: number; feed?: number }) => {
     hap("tap");
     const base = bargainBase(state, g.id);
-    setBarg({ id: g.id, icon: g.icon, name: t("it." + g.id), base, price: base, patience: 100, msg: t("paz.opening"), done: false });
+    setBarg({ id: g.id, icon: marketItemIcon(g), name: t("it." + g.id), base, price: base, patience: 100, msg: t("paz.opening"), done: false });
   };
   const doHaggle = () => {
     if (!barg || barg.done) return;
@@ -125,9 +125,9 @@ export default function Pazar() {
         {/* PageHeader */}
         <View style={{ alignItems: "center", marginBottom: 14 }}>
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textTransform: "uppercase" }}>{t("scr.pazar")}</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginTop: 4, textAlign: "center" }}>🛒 {placeName(p.location_name, lang)}</Text>
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: econColor, marginTop: 4 }}>⚖ {t("econ." + econKey(econ))}</Text>
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.sage, marginTop: 2 }}>🏷 {t("paz.spec")}: {t("spec." + citySpecialtyIdx(state, p.location_name))}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginTop: 4, textAlign: "center" }}>{placeName(p.location_name, lang)}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 }}><GameIcon name="pazar" size={12} color={econColor} /><Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: econColor }}>{t("econ." + econKey(econ))}</Text></View>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.sage, marginTop: 2 }}>{t("paz.spec")}: {t("spec." + citySpecialtyIdx(state, p.location_name))}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, alignSelf: "stretch" }}>
             <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
             <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: "45deg" }], marginHorizontal: 8 }} />
@@ -138,13 +138,13 @@ export default function Pazar() {
         {/* Aktif piyasa olayı */}
         {mev && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: mev.mult > 1 ? "rgba(200,64,64,0.10)" : "rgba(127,166,106,0.10)", borderWidth: 1, borderColor: mev.mult > 1 ? "rgba(200,64,64,0.4)" : "rgba(127,166,106,0.4)", borderRadius: 10, padding: 11, marginBottom: 12 }}>
-            <Text style={{ fontSize: 14 }}>{mev.mult > 1 ? "📈" : "📉"}</Text>
+            <GameIcon name={mev.mult > 1 ? "coins" : "wheat"} size={14} color={mev.mult > 1 ? C.blood : C.sage} />
             <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{mev.text}</Text>
           </View>
         )}
 
         {/* Kervan paneli */}
-        <Panel title={t("paz.caravanTitle")} icon="🐫" tone={C.ember}>
+        <Panel title={t("paz.caravanTitle")} icon="camel" tone={C.ember}>
           {state.caravan ? (
             <>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: state.caravan.route ? 9 : 0 }}>
@@ -156,10 +156,11 @@ export default function Pazar() {
                     const cur = i === (state.caravan!.step ?? 0);
                     const done = i < (state.caravan!.step ?? 0);
                     return (
-                      <View key={i} style={{ flexDirection: "row", alignItems: "center" }}>
+                      <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
                         {i > 0 && <Text style={{ color: done ? C.ember : C.border, fontSize: 11, marginHorizontal: 1 }}>→</Text>}
+                        {cur && <GameIcon name="camel" size={11} color={C.ember} />}
                         <Text style={{ fontFamily: cur ? F.display : F.serif, fontSize: cur ? 11.5 : 10.5, color: cur ? C.ember : done ? C.parchmentMuted : C.parchmentDim }}>
-                          {cur ? "🐫 " : ""}{placeName(stop, lang)}
+                          {placeName(stop, lang)}
                         </Text>
                       </View>
                     );
@@ -167,7 +168,7 @@ export default function Pazar() {
                 </View>
               )}
               {!!state.caravan.lost && state.caravan.lost > 0 && (
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.blood, marginTop: 6 }}>⚔ {t("paz.caravanLost").replace("%c", String(state.caravan.lost))}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 }}><GameIcon name="crossed-swords" size={10} color={C.blood} /><Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 10.5, color: C.blood }}>{t("paz.caravanLost").replace("%c", String(state.caravan.lost))}</Text></View>
               )}
             </>
           ) : (
@@ -257,7 +258,7 @@ export default function Pazar() {
             return (
               <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 16, padding: 18 }}>
                 <View style={{ alignItems: "center", marginBottom: 12 }}>
-                  <Text style={{ fontSize: 34 }}>{barg.icon}</Text>
+                  <GameIcon name={barg.icon} size={32} color={C.gold} />
                   <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, marginTop: 6, letterSpacing: 0.5 }}>{barg.name}</Text>
                   <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, marginTop: 2 }}>{t("paz.bargainWith").toUpperCase()}</Text>
                   <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("paz.seller." + sellerPersonaOf(state).id)}</Text>
@@ -285,10 +286,10 @@ export default function Pazar() {
                 {!barg.done && (
                   <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
                     <Pressable onPress={doHaggle} style={{ flex: 1, paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>🤝 {t("paz.haggle")}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>{t("paz.haggle")}</Text>
                     </Pressable>
                     <Pressable onPress={doBluff} style={{ flex: 1, paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: "rgba(123,79,175,0.5)", backgroundColor: "rgba(123,79,175,0.12)", alignItems: "center" }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.ink }}>🎭 {t("paz.bluff")}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.ink }}>{t("paz.bluff")}</Text>
                     </Pressable>
                   </View>
                 )}

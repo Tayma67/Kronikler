@@ -7,6 +7,7 @@ import { useI18n, applyParams } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { C, F } from "../../lib/theme";
+import { GameIcon } from "../../lib/icons";
 import { BackLabel } from "../../lib/ui";
 
 export default function Haberler() {
@@ -31,7 +32,7 @@ export default function Haberler() {
       </Text>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 10, marginBottom: 8 }}>📜 {t("hab.news")}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10, marginBottom: 8 }}><GameIcon name="haberler" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("hab.news")}</Text></View>
         {news.map((n) => (
           <View key={n.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.gold, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5 }}>{n.title}</Text>
@@ -41,7 +42,7 @@ export default function Haberler() {
 
         {tips.length > 0 && (
           <>
-            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 14, marginBottom: 8 }}>💡 {t("tip.head")}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 8 }}><GameIcon name="star" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("tip.head")}</Text></View>
             {tips.map((tp) => (
               <View key={tp.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.sage, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
                 <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, lineHeight: 19 }}>
@@ -54,7 +55,7 @@ export default function Haberler() {
           </>
         )}
 
-        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase", marginTop: 14, marginBottom: 8 }}>🗣 {t("hab.gossip")}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 8 }}><GameIcon name="speaker" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("hab.gossip")}</Text></View>
         {gossip.map((g) => (
           <View key={g.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 8 }}>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchment, lineHeight: 19 }}>“{g.body}”</Text>

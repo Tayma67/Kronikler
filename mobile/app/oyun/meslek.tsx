@@ -30,10 +30,10 @@ export default function Meslek() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
-        <PageHeader kicker={t("scr.meslek")} icon="⚒️" title={t("scr.meslek")} sub={t("mes.switchWarn")} />
+        <PageHeader kicker={t("scr.meslek")} title={t("scr.meslek")} sub={t("mes.switchWarn")} />
 
         {curPr && (
-          <Panel title={professionNameL(p.profession, lang)} icon="✦" right={<Pill text={`${tierIdx + 1}/${curPr.tiers.length}`} />}>
+          <Panel title={professionNameL(p.profession, lang)} right={<Pill text={`${tierIdx + 1}/${curPr.tiers.length}`} />}>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 8 }}>{careerTitleL(p.profession, p.career_xp, lang)}</Text>
             <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
               {((PROF_L10N[lang] || PROF_L10N.tr)[p.profession]?.tiers || curPr.tiers).map((tt, i) => (
@@ -43,7 +43,7 @@ export default function Meslek() {
           </Panel>
         )}
 
-        <Panel title={t("scr.meslek")} icon="🛠" noPad>
+        <Panel title={t("scr.meslek")} noPad>
           {PROFESSIONS.map((pr, i) => {
             const cur = pr.id === p.profession;
             return (

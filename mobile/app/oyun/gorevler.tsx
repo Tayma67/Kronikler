@@ -39,11 +39,11 @@ export default function Gorevler() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
-        <PageHeader kicker={t("scr.gorevler")} icon="📋" title={t("scr.gorevler")} sub={t("gv.hint")} />
+        <PageHeader kicker={t("scr.gorevler")} title={t("scr.gorevler")} sub={t("gv.hint")} />
         {tasks.length === 0 ? (
           <Panel><Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", paddingVertical: 14 }}>{t("gv.empty")}</Text></Panel>
         ) : (
-          <Panel title={t("scr.gorevler")} icon="⚜" noPad>
+          <Panel title={t("scr.gorevler")} noPad>
             {tasks.map((tk, i) => (
               <Pressable key={i} onPress={() => router.push(tk.to as any)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: i === tasks.length - 1 ? 0 : 1, borderBottomColor: C.border, borderLeftWidth: tk.urgent ? 2.5 : 0, borderLeftColor: C.gold, backgroundColor: pressed ? C.cardHi : "transparent" })}>
                 <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: tk.urgent ? "rgba(201,168,76,0.45)" : "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
@@ -60,7 +60,7 @@ export default function Gorevler() {
         )}
 
         {/* ── Aile / yaşam görevleri (family_quests portu) ── */}
-        <Panel title={t("fq.panelTitle")} icon="🏡" noPad>
+        <Panel title={t("fq.panelTitle")} noPad>
           {familyQuestsOf(state).map(({ q, done, claimed, locked }, i, arr) => {
             const tone = claimed ? C.sage : done ? C.gold : locked ? C.parchmentMuted : C.parchmentDim;
             const status = claimed ? "✓" : done ? "★" : locked ? `${q.minAge}+` : "…";

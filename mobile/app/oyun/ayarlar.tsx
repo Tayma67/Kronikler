@@ -8,6 +8,7 @@ import { LANGS } from "../../lib/locale-data";
 import { isSoundEnabled, setSoundEnabled, playTap } from "../../lib/sound";
 import { isHapticsEnabled, setHapticsEnabled, hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
+import { GameIcon } from "../../lib/icons";
 
 export default function Ayarlar() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -41,7 +42,7 @@ export default function Ayarlar() {
 
         {/* Nasıl Oynanır / SSS */}
         <Pressable onPress={() => { hap("tap"); router.push("/oyun/sss"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 10, padding: 14, marginBottom: 16 }}>
-          <Text style={{ fontSize: 20 }}>📜</Text>
+          <GameIcon name="haberler" size={20} color={C.gold} />
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.sss")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.sssDesc")}</Text>

@@ -29,7 +29,7 @@ export default function Nesil() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <PageHeader kicker={t("scr.nesil")} icon="👶" title={t("scr.nesil")} />
+        <PageHeader kicker={t("scr.nesil")} title={t("scr.nesil")} />
         {p.children.length === 0 ? (
           <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", marginTop: 30 }}>
             {t("nes.noChildren")}

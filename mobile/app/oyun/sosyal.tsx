@@ -76,7 +76,7 @@ export default function Sosyal() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <PageHeader kicker={t("scr.sosyal")} icon="👑" title={t("scr.sosyal")} />
+        <PageHeader kicker={t("scr.sosyal")} title={t("scr.sosyal")} />
         <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 4 }}>
           {t("soc.intro")} {f ? `${f.name} ${t("soc.memberSuffix")}` : t("soc.noGuild")}
         </Text>

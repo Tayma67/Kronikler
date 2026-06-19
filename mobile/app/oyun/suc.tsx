@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { doCrime, resolveCrimeScene, CrimeKind, fenceHotGoods } from "../../lib/game";
 import { C, F } from "../../lib/theme";
+import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader } from "../../lib/ui";
@@ -34,7 +35,7 @@ export default function Suc() {
   const Crime = ({ kind, title, desc }: { kind: CrimeKind; title: string; desc: string }) => (
     <Pressable onPress={() => { hap("advance"); apply((s) => doCrime(s, kind)); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 11, padding: 14, marginBottom: 10 }}>
       <View style={{ width: 38, height: 38, borderRadius: 9, backgroundColor: "rgba(123,79,175,0.12)", borderWidth: 1, borderColor: "rgba(123,79,175,0.35)", alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontSize: 18 }}>🗡</Text>
+        <GameIcon name="hood" size={18} color={C.ink} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.display, fontSize: 13, color: C.ink }}>{title}</Text>
@@ -49,7 +50,7 @@ export default function Suc() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
-        <PageHeader kicker={t("scr.suc")} icon="🥷" title={t("scr.suc")} sub={t("suc.hint")} />
+        <PageHeader kicker={t("scr.suc")} title={t("scr.suc")} sub={t("suc.hint")} />
 
         {res && (
           <Animated.View key={res.tick} entering={FadeInDown.duration(240)} style={{ backgroundColor: res.ok ? "rgba(127,166,106,0.10)" : "rgba(200,64,64,0.10)", borderWidth: 1, borderColor: res.ok ? "rgba(127,166,106,0.5)" : "rgba(200,64,64,0.5)", borderLeftWidth: 3, borderLeftColor: res.ok ? C.sage : C.blood, borderRadius: 10, padding: 12, marginBottom: 12 }}>
