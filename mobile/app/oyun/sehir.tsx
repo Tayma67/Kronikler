@@ -90,7 +90,7 @@ export default function Sehir() {
           {(() => {
             const sn = (state.realm ?? defaultRealm()).find((r) => r.id === regionOf(here));
             const f = sn ? factionById(sn.holder) : null;
-            return <InfoRow label={t("realm.holder")} value={`${beylikName(regionOf(here))} · ${f ? f.icon + " " + t("fac." + f.id + ".n") : "—"}`} last />;
+            return <InfoRow label={t("realm.holder")} value={`${beylikName(regionOf(here))} · ${f ? t("fac." + f.id + ".n") : "—"}`} last />;
           })()}
         </View>
 

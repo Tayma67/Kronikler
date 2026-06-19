@@ -46,7 +46,7 @@ export default function Orgutler() {
 
       {current && (
         <View style={{ marginHorizontal: 16, marginBottom: 6, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(201,168,76,0.08)" }}>
-          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>{current.icon} {t("fac."+current.id+".n")} {t("org.youMember")}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><GameIcon name={current.icon} size={13} color={C.gold} /><Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>{t("fac."+current.id+".n")} {t("org.youMember")}</Text></View>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, marginTop: 3 }}>{t("fac."+current.id+".p")}</Text>
           {factionHoldsHere(state, p.faction) && (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}><GameIcon name="castle" size={11} color={C.sage} /><Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.sage }}>{t("realm.domHere")}</Text></View>
@@ -99,7 +99,7 @@ export default function Orgutler() {
             <GameIcon name="castle" size={13} color={C.goldDim} />
             <Text style={{ flex: 1, fontFamily: F.display, fontSize: 9.5, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("realm.title")}</Text>
             {!!p.faction && (() => { const n = realm.filter((sn) => sn.holder === p.faction).length; return (
-              <Text style={{ fontFamily: F.display, fontSize: 9.5, color: n > 0 ? C.sage : C.parchmentMuted }}>{current?.icon} {n}/{realm.length}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>{current?.icon ? <GameIcon name={current.icon} size={11} color={n > 0 ? C.sage : C.parchmentMuted} /> : null}<Text style={{ fontFamily: F.display, fontSize: 9.5, color: n > 0 ? C.sage : C.parchmentMuted }}>{n}/{realm.length}</Text></View>
             ); })()}
           </View>
           {realm.map((sn) => {
@@ -114,11 +114,11 @@ export default function Orgutler() {
                   <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: b?.tone || C.gold }} />
                   {here && <GameIcon name="sehir" size={11} color={C.gold} />}
                   <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: here ? C.gold : C.parchment }}>{beylikName(sn.id)}</Text>
-                  <Text style={{ fontFamily: F.display, fontSize: 11, color: mine ? C.sage : C.gold }}>{holder?.icon} {holder ? t("fac."+holder.id+".n") : sn.holder}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>{holder?.icon ? <GameIcon name={holder.icon} size={11} color={mine ? C.sage : C.gold} /> : null}<Text style={{ fontFamily: F.display, fontSize: 11, color: mine ? C.sage : C.gold }}>{holder ? t("fac."+holder.id+".n") : sn.holder}</Text></View>
                 </View>
                 {contender && (
                   <View style={{ marginTop: 5, marginLeft: 16 }}>
-                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.ember }}>{contender.icon} {t("fac."+contender.id+".n")} {t("realm.contests")}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name={contender.icon} size={10} color={C.ember} /><Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 10.5, color: C.ember }}>{t("fac."+contender.id+".n")} {t("realm.contests")}</Text></View>
                     <View style={{ height: 3, backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 2, marginTop: 4 }}>
                       <View style={{ width: `${Math.min(100, sn.tension)}%`, height: 3, backgroundColor: C.blood, borderRadius: 2 }} />
                     </View>
@@ -139,7 +139,7 @@ export default function Orgutler() {
           return (
             <View key={f.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: isMember ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 10, padding: 14, marginBottom: 10 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 9, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 20 }}>{f.icon}</Text></View>
+                <View style={{ width: 40, height: 40, borderRadius: 9, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}><GameIcon name={f.icon} size={20} color={C.gold} /></View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t("fac."+f.id+".n")}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.goldDim }}>{t("fac.suitStat")}: {t("st."+f.stat)}</Text>

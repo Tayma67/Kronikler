@@ -21,6 +21,20 @@ const CAT: Record<string, "food" | "arms" | "heal"> = {
 const CAT_ORDER: ("food" | "arms" | "heal")[] = ["food", "arms", "heal"];
 const CAT_TONE = { food: "#7FA66A", arms: "#E0922E", heal: "#6FA0C0" };
 const CAT_ICON = { food: "ye", arms: "silah", heal: "saglik" };
+// Eşya ikonu — türüne göre (emoji yerine GameIcon).
+function itmIcon(it: any): string {
+  if (!it) return "menu";
+  if (it.kind === "silah") return "silah";
+  if (it.kind === "kalkan") return "kite";
+  if (it.kind === "zirh") return "shield";
+  if (it.kind === "baslik") return "hood";
+  if (it.kind === "eldiven") return "fist";
+  if (it.kind === "ayakkabi") return "boot";
+  if (it.kind === "kiyafet") return "wool";
+  if (it.heal) return "saglik";
+  if (it.feed || it.kind === "yiyecek") return "ye";
+  return "menu";
+}
 
 export default function Atolye() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -40,7 +54,7 @@ export default function Atolye() {
         {/* Üst: çıktı + zanaat şartı */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 11 }}>
           <View style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: tone + "18", borderWidth: 1, borderColor: tone + "55", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontSize: 22 }}>{ITEMS[r.out]?.icon}</Text>
+            <GameIcon name={itmIcon(ITEMS[r.out])} size={22} color={tone} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{t("it." + r.out)}{r.outQty > 1 ? ` ×${r.outQty}` : ""}</Text>
@@ -61,7 +75,7 @@ export default function Atolye() {
             const ok = have >= q;
             return (
               <View key={id} style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: ok ? "rgba(127,166,106,0.12)" : "rgba(201,168,76,0.06)", borderWidth: 1, borderColor: ok ? "rgba(127,166,106,0.5)" : C.border, borderRadius: 20, paddingVertical: 4, paddingHorizontal: 9 }}>
-                <Text style={{ fontSize: 12 }}>{ITEMS[id]?.icon}</Text>
+                <GameIcon name={itmIcon(ITEMS[id])} size={12} color={C.parchment} />
                 <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchment }}>{t("it." + id)}</Text>
                 <Text style={{ fontFamily: F.display, fontSize: 10, color: ok ? C.sage : C.blood }}>{have}/{q}</Text>
               </View>

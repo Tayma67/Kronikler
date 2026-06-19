@@ -260,11 +260,11 @@ export interface Faction {
   task: { label: string; reward: number; standing: number; desc: string };
 }
 export const FACTIONS: Faction[] = [
-  { id: "tuccar", name: "Tüccarlar Loncası", icon: "⚖️", blurb: "İpek yolunun akçesi onların avucunda döner.", stat: "charisma", joinRep: 30, perk: "Pazarda alış fiyatları senin için biraz düşer.", task: { label: "Kervan hesabı tut", reward: 28, standing: 10, desc: "Loncanın defterlerini denkleştir." } },
-  { id: "demirci", name: "Demirciler Loncası", icon: "⚒", blurb: "Köz ve örs; her kılıcın ve sabanın atası.", stat: "strength", joinRep: 30, perk: "İşten kazancın artar (zanaat eli).", task: { label: "Ocakta körük çek", reward: 24, standing: 10, desc: "Usta için ağır bir sipariş bitir." } },
-  { id: "asker", name: "Asker Ocağı", icon: "🛡", blurb: "Sınır boylarının kalkanı; sancağın gölgesi.", stat: "strength", joinRep: 40, perk: "Suç ve tehlikede sağlık kaybın azalır.", task: { label: "Devriyeye çık", reward: 32, standing: 12, desc: "Gece nöbetinde yolları kolla." } },
-  { id: "sifaci", name: "Şifacılar Meclisi", icon: "🌿", blurb: "Ot, dua ve sabır; canın sessiz bekçileri.", stat: "intelligence", joinRep: 30, perk: "Her ay az da olsa sağlık tazelenir.", task: { label: "Hastalara bak", reward: 18, standing: 10, desc: "Köyün dermansızlarına şifa dağıt." } },
-  { id: "golge", name: "Gölge Kardeşliği", icon: "🌒", blurb: "Adı anılmaz, yüzü görülmez; ama her kapıda bir kulağı vardır.", stat: "charisma", joinRep: 25, perk: "Gölge işlerinde yakalanma riskin azalır.", task: { label: "Haber taşı", reward: 22, standing: 12, desc: "Kardeşlik için sessizce bir sır ulaştır." } },
+  { id: "tuccar", name: "Tüccarlar Loncası", icon: "pazar", blurb: "İpek yolunun akçesi onların avucunda döner.", stat: "charisma", joinRep: 30, perk: "Pazarda alış fiyatları senin için biraz düşer.", task: { label: "Kervan hesabı tut", reward: 28, standing: 10, desc: "Loncanın defterlerini denkleştir." } },
+  { id: "demirci", name: "Demirciler Loncası", icon: "anvil", blurb: "Köz ve örs; her kılıcın ve sabanın atası.", stat: "strength", joinRep: 30, perk: "İşten kazancın artar (zanaat eli).", task: { label: "Ocakta körük çek", reward: 24, standing: 10, desc: "Usta için ağır bir sipariş bitir." } },
+  { id: "asker", name: "Asker Ocağı", icon: "karakter", blurb: "Sınır boylarının kalkanı; sancağın gölgesi.", stat: "strength", joinRep: 40, perk: "Suç ve tehlikede sağlık kaybın azalır.", task: { label: "Devriyeye çık", reward: 32, standing: 12, desc: "Gece nöbetinde yolları kolla." } },
+  { id: "sifaci", name: "Şifacılar Meclisi", icon: "healing", blurb: "Ot, dua ve sabır; canın sessiz bekçileri.", stat: "intelligence", joinRep: 30, perk: "Her ay az da olsa sağlık tazelenir.", task: { label: "Hastalara bak", reward: 18, standing: 10, desc: "Köyün dermansızlarına şifa dağıt." } },
+  { id: "golge", name: "Gölge Kardeşliği", icon: "hood", blurb: "Adı anılmaz, yüzü görülmez; ama her kapıda bir kulağı vardır.", stat: "charisma", joinRep: 25, perk: "Gölge işlerinde yakalanma riskin azalır.", task: { label: "Haber taşı", reward: 22, standing: 12, desc: "Kardeşlik için sessizce bir sır ulaştır." } },
 ];
 export function factionById(id: string | null): Faction | undefined { return FACTIONS.find((f) => f.id === id); }
 // Fraksiyon arketipleri — AI'ın MANTIKLI davranması için (şifacı savaş açmaz, müttefikler birbirine saldırmaz).
@@ -2936,22 +2936,22 @@ export function achievementsOf(s: GameState): { a: Achievement; done: boolean }[
 // Çocukluktan yetişkinliğe ailenin beklentileri; oyuncu normal oynayarak tamamlar, ödül kazanır.
 export interface FamilyQuest { id: string; icon: string; title: string; desc: string; minAge: number; reward: { money?: number; fame?: number; rep?: number; statPt?: number }; done: (s: GameState) => boolean; }
 export const FAMILY_QUESTS: FamilyQuest[] = [
-  { id: "ilkders",    icon: "📖", title: "İlk Ders",      desc: "Mektepte ilk dersine otur.",            minAge: 7,  reward: { money: 5, fame: 1 },          done: (s) => (s.player.lesson_count || 0) >= 1 },
-  { id: "ilkdost",    icon: "🤝", title: "İlk Dost",      desc: "Biriyle dostluk kur (ilişki ≥ 30).",    minAge: 10, reward: { money: 8, rep: 2 },           done: (s) => Object.values(s.relationships || {}).some((v) => v >= 30) },
-  { id: "okuryazar",  icon: "✒️", title: "Okuryazar",    desc: "Zekânı 3'e çıkar.",                     minAge: 12, reward: { money: 10, statPt: 1 },        done: (s) => s.player.stats.intelligence >= 3 },
-  { id: "ilkkazanc",  icon: "💰", title: "İlk Kazanç",    desc: "Bir meslekte ilk işini yap.",           minAge: 13, reward: { money: 12, rep: 2 },           done: (s) => s.player.career_xp >= 1 },
-  { id: "pehlivan",   icon: "💪", title: "Pehlivan",      desc: "Gücünü 4'e çıkar.",                     minAge: 15, reward: { money: 10, fame: 2 },          done: (s) => s.player.stats.strength >= 4 },
-  { id: "elemegi",    icon: "🔨", title: "El Emeği",      desc: "Zanaat becerini 3'e çıkar.",            minAge: 16, reward: { money: 15, statPt: 1 },        done: (s) => s.player.skills.crafting >= 3 },
-  { id: "sayginevlat",icon: "🎖", title: "Saygın Evlat",  desc: "İtibarını 30'a çıkar.",                 minAge: 18, reward: { money: 15, rep: 4 },           done: (s) => s.player.reputation >= 30 },
-  { id: "yuvakur",    icon: "💍", title: "Yuva Kur",      desc: "Evlen, bir ocak tüttür.",               minAge: 18, reward: { money: 20, fame: 3 },          done: (s) => s.player.married },
-  { id: "ilktapu",    icon: "🏠", title: "İlk Tapu",      desc: "Adına bir mülk edin.",                  minAge: 18, reward: { money: 0, rep: 3, statPt: 1 },  done: (s) => s.player.properties.length >= 1 },
-  { id: "ocagituttur",icon: "👶", title: "Ocağı Tüttür",  desc: "Soyunu sürdürecek bir evlat sahibi ol.",minAge: 20, reward: { money: 25, fame: 4 },          done: (s) => s.player.children.length >= 1 },
-  { id: "silahsor",   icon: "⚔️", title: "Silahşör",      desc: "Savaş becerini 6'ya çıkar.",            minAge: 20, reward: { money: 20, fame: 3 },          done: (s) => s.player.skills.combat >= 6 },
-  { id: "ustasinavi", icon: "⚒",  title: "Usta Sınavı",   desc: "Zanaat becerini 6'ya çıkar.",           minAge: 22, reward: { money: 25, fame: 3 },          done: (s) => s.player.skills.crafting >= 6 },
-  { id: "bezirgan",   icon: "⚖️", title: "Bezirgân",      desc: "Ticaret becerini 6'ya çıkar.",          minAge: 22, reward: { money: 30, rep: 3 },           done: (s) => s.player.skills.trade >= 6 },
-  { id: "konaksahibi",icon: "🏛", title: "Konak Sahibi",  desc: "Üç mülk edin.",                         minAge: 25, reward: { money: 0, rep: 5, statPt: 1 },  done: (s) => s.player.properties.length >= 3 },
-  { id: "itibarli",   icon: "🎖", title: "İtibarlı",      desc: "İtibarını 60'a çıkar.",                 minAge: 30, reward: { money: 30, fame: 5 },          done: (s) => s.player.reputation >= 60 },
-  { id: "soyagaci",   icon: "🌳", title: "Soyağacı",      desc: "Hanedanını sürdür (2. nesil ve ötesi).",minAge: 7,  reward: { money: 40, fame: 8 },          done: (s) => s.player.generation >= 2 },
+  { id: "ilkders",    icon: "book", title: "İlk Ders",      desc: "Mektepte ilk dersine otur.",            minAge: 7,  reward: { money: 5, fame: 1 },          done: (s) => (s.player.lesson_count || 0) >= 1 },
+  { id: "ilkdost",    icon: "prayer-beads", title: "İlk Dost",      desc: "Biriyle dostluk kur (ilişki ≥ 30).",    minAge: 10, reward: { money: 8, rep: 2 },           done: (s) => Object.values(s.relationships || {}).some((v) => v >= 30) },
+  { id: "okuryazar",  icon: "scroll", title: "Okuryazar",    desc: "Zekânı 3'e çıkar.",                     minAge: 12, reward: { money: 10, statPt: 1 },        done: (s) => s.player.stats.intelligence >= 3 },
+  { id: "ilkkazanc",  icon: "coins", title: "İlk Kazanç",    desc: "Bir meslekte ilk işini yap.",           minAge: 13, reward: { money: 12, rep: 2 },           done: (s) => s.player.career_xp >= 1 },
+  { id: "pehlivan",   icon: "fist", title: "Pehlivan",      desc: "Gücünü 4'e çıkar.",                     minAge: 15, reward: { money: 10, fame: 2 },          done: (s) => s.player.stats.strength >= 4 },
+  { id: "elemegi",    icon: "anvil", title: "El Emeği",      desc: "Zanaat becerini 3'e çıkar.",            minAge: 16, reward: { money: 15, statPt: 1 },        done: (s) => s.player.skills.crafting >= 3 },
+  { id: "sayginevlat",icon: "medal", title: "Saygın Evlat",  desc: "İtibarını 30'a çıkar.",                 minAge: 18, reward: { money: 15, rep: 4 },           done: (s) => s.player.reputation >= 30 },
+  { id: "yuvakur",    icon: "ring", title: "Yuva Kur",      desc: "Evlen, bir ocak tüttür.",               minAge: 18, reward: { money: 20, fame: 3 },          done: (s) => s.player.married },
+  { id: "ilktapu",    icon: "house", title: "İlk Tapu",      desc: "Adına bir mülk edin.",                  minAge: 18, reward: { money: 0, rep: 3, statPt: 1 },  done: (s) => s.player.properties.length >= 1 },
+  { id: "ocagituttur",icon: "baby", title: "Ocağı Tüttür",  desc: "Soyunu sürdürecek bir evlat sahibi ol.",minAge: 20, reward: { money: 25, fame: 4 },          done: (s) => s.player.children.length >= 1 },
+  { id: "silahsor",   icon: "crossed-swords", title: "Silahşör",      desc: "Savaş becerini 6'ya çıkar.",            minAge: 20, reward: { money: 20, fame: 3 },          done: (s) => s.player.skills.combat >= 6 },
+  { id: "ustasinavi", icon: "anvil",  title: "Usta Sınavı",   desc: "Zanaat becerini 6'ya çıkar.",           minAge: 22, reward: { money: 25, fame: 3 },          done: (s) => s.player.skills.crafting >= 6 },
+  { id: "bezirgan",   icon: "scales", title: "Bezirgân",      desc: "Ticaret becerini 6'ya çıkar.",          minAge: 22, reward: { money: 30, rep: 3 },           done: (s) => s.player.skills.trade >= 6 },
+  { id: "konaksahibi",icon: "castle", title: "Konak Sahibi",  desc: "Üç mülk edin.",                         minAge: 25, reward: { money: 0, rep: 5, statPt: 1 },  done: (s) => s.player.properties.length >= 3 },
+  { id: "itibarli",   icon: "medal", title: "İtibarlı",      desc: "İtibarını 60'a çıkar.",                 minAge: 30, reward: { money: 30, fame: 5 },          done: (s) => s.player.reputation >= 60 },
+  { id: "soyagaci",   icon: "leaf", title: "Soyağacı",      desc: "Hanedanını sürdür (2. nesil ve ötesi).",minAge: 7,  reward: { money: 40, fame: 8 },          done: (s) => s.player.generation >= 2 },
 ];
 export function familyQuestsOf(s: GameState): { q: FamilyQuest; done: boolean; claimed: boolean; locked: boolean }[] {
   const p = s.player; const cl = p.fq_claimed || [];
