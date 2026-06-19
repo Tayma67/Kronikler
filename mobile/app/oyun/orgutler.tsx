@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex, BEYLIKS, beylikName, defaultRealm, factionHoldsHere, regionOf, factionBanLeft, canUseFactionPower, useFactionPower, FAC_POWER_COST } from "../../lib/game";
 import { C, F } from "../../lib/theme";
+import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader } from "../../lib/ui";
@@ -34,7 +35,10 @@ export default function Orgutler() {
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <View style={{ width: 40 }} />
-        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money} ⚜</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <GameIcon name="akce" size={12} color={C.gold} />
+          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.money}</Text>
+        </View>
       </View>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, paddingHorizontal: 16, marginBottom: 8 }}>
         {t("org.subtitle")}
@@ -45,7 +49,7 @@ export default function Orgutler() {
           <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>{current.icon} {t("fac."+current.id+".n")} {t("org.youMember")}</Text>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, marginTop: 3 }}>{t("fac."+current.id+".p")}</Text>
           {factionHoldsHere(state, p.faction) && (
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.sage, marginTop: 5 }}>🏰 {t("realm.domHere")}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}><GameIcon name="castle" size={11} color={C.sage} /><Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.sage }}>{t("realm.domHere")}</Text></View>
           )}
           {/* Örgütün gücünü kullan (Güvenilir rütbe+) */}
           <View style={{ marginTop: 9, paddingTop: 9, borderTopWidth: 1, borderTopColor: "rgba(201,168,76,0.25)" }}>
@@ -74,9 +78,10 @@ export default function Orgutler() {
       {wars.length > 0 && (
         <View style={{ marginHorizontal: 16, marginBottom: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(168,52,52,0.4)", backgroundColor: "rgba(168,52,52,0.08)" }}>
           {wars.map((w, i) => (
-            <Text key={i} style={{ fontFamily: F.serif, fontSize: 12, color: C.parchment, marginBottom: 4 }}>
-              ⚔ {t("fac."+w.a+".n")} ⚔ {t("fac."+w.b+".n")}{w.prize ? ` · ${beylikName(w.prize)} ${t("realm.forControl")}` : ""} · {w.turnsLeft} {t("realm.month")}
-            </Text>
+            <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 4 }}>
+              <GameIcon name="crossed-swords" size={11} color={C.blood} />
+              <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 12, color: C.parchment }}>{t("fac."+w.a+".n")} × {t("fac."+w.b+".n")}{w.prize ? ` · ${beylikName(w.prize)} ${t("realm.forControl")}` : ""} · {w.turnsLeft} {t("realm.month")}</Text>
+            </View>
           ))}
           {myWar && (
             <Pressable onPress={() => { hap("advance"); apply(supportWar); }} style={{ marginTop: 6, alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: "rgba(168,52,52,0.55)", backgroundColor: "rgba(168,52,52,0.16)" }}>
@@ -86,12 +91,12 @@ export default function Orgutler() {
         </View>
       )}
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
-        <PageHeader kicker={t("scr.orgutler")} icon="🏛" title={t("scr.orgutler")} />
+        <PageHeader kicker={t("scr.orgutler")} title={t("scr.orgutler")} />
 
         {/* ── Sancak hakimiyeti (emergent fraksiyon şehir-kontrolü) ── */}
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 12, marginBottom: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
-            <Text style={{ fontSize: 13 }}>🏰</Text>
+            <GameIcon name="castle" size={13} color={C.goldDim} />
             <Text style={{ flex: 1, fontFamily: F.display, fontSize: 9.5, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("realm.title")}</Text>
             {!!p.faction && (() => { const n = realm.filter((sn) => sn.holder === p.faction).length; return (
               <Text style={{ fontFamily: F.display, fontSize: 9.5, color: n > 0 ? C.sage : C.parchmentMuted }}>{current?.icon} {n}/{realm.length}</Text>
@@ -107,7 +112,8 @@ export default function Orgutler() {
               <View key={sn.id} style={{ paddingVertical: 7, borderTopWidth: 1, borderTopColor: C.border }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: b?.tone || C.gold }} />
-                  <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: here ? C.gold : C.parchment }}>{here ? "📍 " : ""}{beylikName(sn.id)}</Text>
+                  {here && <GameIcon name="sehir" size={11} color={C.gold} />}
+                  <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: here ? C.gold : C.parchment }}>{beylikName(sn.id)}</Text>
                   <Text style={{ fontFamily: F.display, fontSize: 11, color: mine ? C.sage : C.gold }}>{holder?.icon} {holder ? t("fac."+holder.id+".n") : sn.holder}</Text>
                 </View>
                 {contender && (
@@ -140,7 +146,7 @@ export default function Orgutler() {
                 </View>
               </View>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 6, lineHeight: 18 }}>{t("fac."+f.id+".b")}</Text>
-              <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.goldDim, marginTop: 4 }}>⚔ {t("ftrait." + f.id)}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 }}><GameIcon name="crossed-swords" size={10} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.goldDim }}>{t("ftrait." + f.id)}</Text></View>
 
               <View style={{ marginTop: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 10, color: C.parchmentMuted, letterSpacing: 1 }}>{t("fac.repute")} {standing}/{need}</Text>
@@ -151,7 +157,7 @@ export default function Orgutler() {
                 const ri = factionRankIndex(standing); const rank = FACTION_RANKS[ri]; const next = FACTION_RANKS[ri + 1];
                 return (
                   <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: C.border }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: C.gold }}>🎖 {t("frank." + f.id + "." + ri)} <Text style={{ color: C.parchmentMuted, fontSize: 9 }}>({t("fac.reward")} ×{rank.mult})</Text></Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="medal" size={11} color={C.gold} /><Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: C.gold }}>{t("frank." + f.id + "." + ri)} <Text style={{ color: C.parchmentMuted, fontSize: 9 }}>({t("fac.reward")} ×{rank.mult})</Text></Text></View>
                     {next ? <Text style={{ fontFamily: F.display, fontSize: 9, color: C.parchmentMuted }}>{t("frank." + f.id + "." + (ri + 1))}: {standing}/{next.min}</Text> : <Text style={{ fontFamily: F.display, fontSize: 9, color: C.sage }}>{t("fac.maxRank")}</Text>}
                   </View>
                 );
