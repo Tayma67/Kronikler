@@ -56,7 +56,8 @@ export default function Iliskiler() {
   const { lang, t } = useI18n();
   const npcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang, state?.player.location_name]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
-  const all = npcs.map((n) => ({ n, v: relWith(state, n.id) }));
+  // Yalnızca gerçekten etkileşime girdiğin kişiler (ilişki ≠ 0 ya da hafızada). Yeni karakterde köy halkı otomatik "tanış" sayılmaz.
+  const all = npcs.map((n) => ({ n, v: relWith(state, n.id) })).filter(({ n, v }) => v !== 0 || !!state.npc_state?.[n.id]);
   const grouped = BANDS.map((b) => ({
     b,
     list: all.filter(({ v }) => bandOf(v).id === b.id).sort((a, z) => Math.abs(z.v) - Math.abs(a.v)),
@@ -69,8 +70,8 @@ export default function Iliskiler() {
         {/* PageHeader */}
         <View style={{ alignItems: "center", marginBottom: 14 }}>
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim, textTransform: "uppercase" }}>{t("rel.kicker")}</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginTop: 4, textAlign: "center" }}>🫂 {t("rel.headTitle")}</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: C.gold, marginTop: 3 }}>📍 {placeName(state.player.location_name, lang)}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1, marginTop: 4, textAlign: "center" }}>{t("rel.headTitle")}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: C.gold, marginTop: 3 }}>{placeName(state.player.location_name, lang)}</Text>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, marginTop: 4, textAlign: "center" }}>{applyParams(t("rel.subSome"), [total])}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, alignSelf: "stretch" }}>
             <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
@@ -79,11 +80,16 @@ export default function Iliskiler() {
           </View>
         </View>
 
-        {grouped.map(({ b, list }) => (
+        {total === 0 ? (
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 24, alignItems: "center" }}>
+            <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment, letterSpacing: 0.5 }}>{t("rel.noneTitle")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, textAlign: "center", marginTop: 7, lineHeight: 18 }}>{t("rel.noneBody")}</Text>
+          </View>
+        ) : grouped.map(({ b, list }) => (
           <View key={b.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: b.tone + "30", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
             {/* Panel başlığı */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: list.length ? 1 : 0, borderBottomColor: C.border, backgroundColor: b.tone + "10" }}>
-              <Text style={{ fontSize: 15 }}>{b.icon}</Text>
+              <View style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: b.tone, transform: [{ rotate: "45deg" }] }} />
               <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: b.tone, textTransform: "uppercase" }}>{t("relb." + b.id)}</Text>
               <Pill text={`${list.length} ${t("rel.people")}`} tone={b.tone} />
             </View>

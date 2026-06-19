@@ -406,7 +406,7 @@ export default function Dashboard() {
           </View>
           {/* Sekmeler */}
           <View style={{ flexDirection: "row", gap: 6, paddingVertical: 9 }}>
-            {([["gunluk", "📋", t("dash.tabJournal")], ["dunya", "🌍", t("dash.tabWorld")]] as const).map(([k, ic, lbl]) => {
+            {([["gunluk", "roman", t("dash.tabJournal")], ["dunya", "haberler", t("dash.tabWorld")]] as const).map(([k, ic, lbl]) => {
               const active = tab === k;
               return (
                 <Pressable key={k} onPress={() => { hap("tap"); setTab(k as "gunluk" | "dunya"); }} style={{
@@ -414,7 +414,7 @@ export default function Dashboard() {
                   borderWidth: 1, borderColor: active ? "rgba(201,168,76,0.45)" : C.border,
                   backgroundColor: active ? "rgba(201,168,76,0.14)" : "rgba(255,255,255,0.02)",
                 }}>
-                  <Text style={{ fontSize: 11 }}>{ic}</Text>
+                  <GameIcon name={ic} size={13} color={active ? C.gold : C.parchmentMuted} />
                   <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: active ? C.gold : C.parchmentMuted }}>{lbl}</Text>
                 </Pressable>
               );
@@ -426,11 +426,20 @@ export default function Dashboard() {
         <ScrollView style={{ flex: 1, backgroundColor: "#221808" }} contentContainerStyle={{ padding: 12 }}>
           <Animated.View key={tab} entering={FadeIn.duration(220)}>
           {events.length === 0 ? (
-            <View style={{ alignItems: "center", paddingVertical: 28 }}>
-              <Text style={{ fontSize: 24, opacity: 0.4, marginBottom: 8 }}>{tab === "gunluk" ? "📜" : "🌍"}</Text>
-              <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", lineHeight: 20 }}>
+            <View style={{ alignItems: "center", paddingVertical: 30 }}>
+              <View style={{ width: 54, height: 54, borderRadius: 27, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.borderHi, backgroundColor: "rgba(201,168,76,0.06)" }}>
+                <GameIcon name={tab === "gunluk" ? "roman" : "haberler"} size={26} color={C.goldDim} />
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14, alignSelf: "stretch", paddingHorizontal: 34 }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.4 }} />
+                <View style={{ width: 5, height: 5, backgroundColor: C.gold, transform: [{ rotate: "45deg" }] }} />
+                <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.4 }} />
+              </View>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.5, marginTop: 12 }}>{tab === "gunluk" ? t("dash.emptyTitle") : t("dash.worldEmptyTitle")}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, textAlign: "center", lineHeight: 19, marginTop: 6, paddingHorizontal: 18 }}>
                 {tab === "gunluk" ? t("dash.empty") : t("dash.worldEmpty")}
               </Text>
+              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: C.goldDim, marginTop: 12, textAlign: "center" }}>{t("dash.emptyHint")}</Text>
             </View>
           ) : events.map((e, i) => (
             <Animated.View key={i} entering={FadeInDown.duration(220).delay(Math.min(i, 8) * 30)}>

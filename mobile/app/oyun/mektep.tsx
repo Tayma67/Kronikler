@@ -7,6 +7,7 @@ import { useGame } from "../../lib/store";
 import { SUBJECTS, studySubject, studiedThisTurn, lessonsToExam, CLUBS, joinClub } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { subjImage, MEKTEP_HERO } from "../../lib/assets";
+import { localFirstName, locSeed } from "../../lib/world";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -24,7 +25,7 @@ const META: Record<string, { kind: "skill" | "nam"; key: string; tone: string }>
 export default function Mektep() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [last, setLast] = useState<null | { key: string; chips: { label: string; col: string }[]; tick: number }>(null);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
@@ -32,6 +33,8 @@ export default function Mektep() {
   const toExam = lessonsToExam(p);
   const bond = p.teacherBond || 0;
   const bondCycle = bond % 8;
+  // Mektebin hocası — bulunduğun yere göre deterministik (isimli gerçek hoca).
+  const teacherName = `${t("mek.teacherTitle")} ${localFirstName(locSeed(p.location_name) + 7, "erkek", lang)}`;
 
   const onStudy = (id: string) => {
     if (p.dead || done) return;
@@ -173,7 +176,8 @@ export default function Mektep() {
             <GameIcon name="prayer-beads" size={20} color={C.ink} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentDim }}>{t("mek.bondNote")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{teacherName}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 1 }}>{t("mek.bondNote")}</Text>
             <View style={{ flexDirection: "row", gap: 3, marginTop: 7 }}>
               {Array.from({ length: 8 }).map((_, i) => (
                 <View key={i} style={{ width: 15, height: 6, borderRadius: 2, backgroundColor: i < bondCycle ? C.gold : "rgba(255,255,255,0.10)" }} />
