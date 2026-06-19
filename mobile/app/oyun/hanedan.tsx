@@ -15,6 +15,7 @@ import {
 } from "../../lib/game";
 import { generateDynasties, houseName as rivalHouseName, localFirstName } from "../../lib/world";
 import { professionNameL, placeName } from "../../lib/locale-data";
+import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -60,7 +61,7 @@ export default function Hanedan() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
-        <PageHeader kicker={t("dyn.kicker")} icon={p.crowned ? "👑" : "🛡"} title={houseName} sub={t("dyn.rivalsHint")} />
+        <PageHeader kicker={t("dyn.kicker")} title={houseName} sub={t("dyn.rivalsHint")} />
 
         {/* ── HANEDAN MÜHRÜ ── */}
         <View style={{ backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 14, padding: 18, alignItems: "center", marginBottom: 10 }}>
@@ -73,16 +74,17 @@ export default function Hanedan() {
               <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: C.gold }}>{p.generation}. {t("misc.generation")}</Text>
             </View>
             {p.crowned && (
-              <View style={{ backgroundColor: C.gold, borderRadius: 14, paddingVertical: 3, paddingHorizontal: 11 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: "#1a1206" }}>👑 {t("dyn.headWord")}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: C.gold, borderRadius: 14, paddingVertical: 3, paddingHorizontal: 11 }}>
+                <GameIcon name="crown" size={11} color="#1a1206" />
+                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: "#1a1206" }}>{t("dyn.headWord")}</Text>
               </View>
             )}
           </View>
           {/* Aile özeti */}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 12, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border, alignSelf: "stretch" }}>
-            <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>👤 {p.name}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>💍 {p.married ? (p.spouse_seed != null ? localFirstName(p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek", lang) : (p.spouse_name || t("dyn.unwed"))) : t("dyn.unwed")}</Text>
-            <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>👶 {p.children.length}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 14, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border, alignSelf: "stretch" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="karakter" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{p.name}</Text></View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="ring" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{p.married ? (p.spouse_seed != null ? localFirstName(p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek", lang) : (p.spouse_name || t("dyn.unwed"))) : t("dyn.unwed")}</Text></View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="baby" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{p.children.length}</Text></View>
           </View>
           <Pressable onPress={() => { hap("tap"); router.push("/oyun/nesil"); }} style={{ marginTop: 10 }}>
             <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: C.gold }}>{t("dyn.manageHeirs")} ›</Text>
@@ -110,7 +112,7 @@ export default function Hanedan() {
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: claimable ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 12, padding: 14 }}>
           {p.crowned ? (
             <View style={{ alignItems: "center", paddingVertical: 6 }}>
-              <Text style={{ fontSize: 30 }}>👑</Text>
+              <GameIcon name="crown" size={30} color={C.gold} />
               <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, color: C.gold, textAlign: "center", marginTop: 6, lineHeight: 20 }}>{t("thr.crowned")}</Text>
             </View>
           ) : (
@@ -148,7 +150,10 @@ export default function Hanedan() {
           return (
           <View key={i} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(127,166,106,0.35)", borderRadius: 11, padding: 12, marginBottom: 8 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13.5, color: C.parchment }}>🏘 {st.name} <Text style={{ fontSize: 10, color: C.goldDim }}>· {t("stt." + tier)}{here ? ` · ${here}` : ""}</Text></Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5, flex: 1, minWidth: 0 }}>
+                <GameIcon name="house" size={13} color={C.sage} />
+                <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 13.5, color: C.parchment }}>{st.name} <Text style={{ fontSize: 10, color: C.goldDim }}>· {t("stt." + tier)}{here ? ` · ${here}` : ""}</Text></Text>
+              </View>
               <Text style={{ fontFamily: F.display, fontSize: 11, color: C.sage }}>{t("set.dev")} %{st.dev}</Text>
             </View>
             <View style={{ height: 5, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.08)", marginTop: 7, overflow: "hidden" }}>

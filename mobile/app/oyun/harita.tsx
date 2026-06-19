@@ -9,9 +9,10 @@ import { placeName } from "../../lib/locale-data";
 import { MAP_HERO } from "../../lib/assets";
 import { useI18n } from "../../lib/i18n";
 import { C, F } from "../../lib/theme";
+import { GameIcon } from "../../lib/icons";
 import { BackLabel } from "../../lib/ui";
 
-const KIND_ICON: Record<string, string> = { "şehir": "🏙", "kale": "🏰", "köy": "🏡" };
+const KIND_ICON: Record<string, string> = { "şehir": "castle", "kale": "shield", "köy": "house" };
 // Beyliğin beyi (atmosfer; özel ad — dile bağlı değil).
 const BEY: Record<string, string> = { demirhan: "Alpaslan", yenisehir: "Konur", gumushisar: "Sinaneddin", aksehir: "Demir", karahisar: "Tuğrul" };
 // İki beylik arası deterministik ilişki (statik gösterim): 0 gergin · 1 tarafsız · 2 dost.
@@ -58,7 +59,7 @@ export default function Harita() {
   const myRegion = regionOf(here);
   const relLabel = ["gergin", "tarafsiz", "dost"];
   const relColor = ["#D24A4A", "#C9B98C", "#66B070"];
-  const relIcon = ["⚔", "⚖", "🕊"];
+  const relIcon = ["crossed-swords", "scales", "leaf"];
 
   const Head = ({ title, oneri }: { title: string; oneri?: boolean }) => (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginTop: 16, marginBottom: 10 }}>
@@ -73,7 +74,10 @@ export default function Harita() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{state.player.money} ⚜</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <GameIcon name="akce" size={12} color={C.gold} />
+          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{state.player.money}</Text>
+        </View>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 100 }}>
 
@@ -114,7 +118,7 @@ export default function Harita() {
             return (
               <Pressable key={r.p.name} onPress={() => router.push(`/oyun/diyar/${encodeURIComponent(r.p.name)}`)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: isHere ? "rgba(212,180,90,0.07)" : undefined }}>
                 <View style={{ width: 34, height: 34, borderRadius: 8, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.borderHi, backgroundColor: "rgba(40,30,16,0.6)" }}>
-                  <Text style={{ fontSize: 17 }}>{KIND_ICON[r.p.kind]}</Text>
+                  <GameIcon name={KIND_ICON[r.p.kind] || "house"} size={17} color={C.gold} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment }}>{placeName(r.p.name, lang)} <Text style={{ fontSize: 9, color: C.goldDim }}>{t("kind." + (r.p.kind === "şehir" ? "sehir" : r.p.kind === "kale" ? "kale" : "koy"))}</Text></Text>
@@ -145,15 +149,15 @@ export default function Harita() {
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", paddingVertical: 4 }}>
             {[
-              { i: "👥", l: t("diyar.pop"), v: s.pop.toLocaleString("tr"), c: C.parchment },
-              { i: "📊", l: t("diyar.prosperity"), v: "%" + s.avgRef, c: C.sage },
-              { i: "🛡️", l: t("diyar.security"), v: "%" + s.avgSec, c: C.parchment },
-              { i: "⚔️", l: t("diyar.army"), v: s.ordu.toLocaleString("tr"), c: C.parchment },
-              { i: "🪙", l: t("diyar.treasury"), v: s.hazine.toLocaleString("tr"), c: C.gold },
-              { i: "🏛️", l: t("diyar.units"), v: String(s.total), c: C.parchment },
+              { i: "family", l: t("diyar.pop"), v: s.pop.toLocaleString("tr"), c: C.parchment },
+              { i: "wheat", l: t("diyar.prosperity"), v: "%" + s.avgRef, c: C.sage },
+              { i: "shield", l: t("diyar.security"), v: "%" + s.avgSec, c: C.parchment },
+              { i: "crossed-swords", l: t("diyar.army"), v: s.ordu.toLocaleString("tr"), c: C.parchment },
+              { i: "coins", l: t("diyar.treasury"), v: s.hazine.toLocaleString("tr"), c: C.gold },
+              { i: "banner", l: t("diyar.units"), v: String(s.total), c: C.parchment },
             ].map((cell, i) => (
               <View key={i} style={{ width: "33.33%", alignItems: "center", paddingVertical: 9 }}>
-                <Text style={{ fontSize: 15 }}>{cell.i}</Text>
+                <GameIcon name={cell.i} size={16} color={cell.c} />
                 <Text style={{ fontFamily: F.display, fontSize: 7, letterSpacing: 1, color: C.parchmentMuted, marginTop: 3 }}>{cell.l.toUpperCase()}</Text>
                 <Text style={{ fontFamily: F.display, fontSize: 13.5, color: cell.c, marginTop: 2 }}>{cell.v}</Text>
               </View>
@@ -167,7 +171,8 @@ export default function Harita() {
                 <View key={b.id} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 5 }}>
                   <View style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: b.tone }} />
                   <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>{b.name}</Text>
-                  <Text style={{ fontFamily: F.display, fontSize: 9.5, color: relColor[rel] }}>{relIcon[rel]} {t("diyar.rel_" + relLabel[rel])}</Text>
+                  <GameIcon name={relIcon[rel]} size={10} color={relColor[rel]} />
+                  <Text style={{ fontFamily: F.display, fontSize: 9.5, color: relColor[rel] }}>{t("diyar.rel_" + relLabel[rel])}</Text>
                 </View>
               );
             })}
