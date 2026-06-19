@@ -105,12 +105,6 @@ const MS_ACCENT: Record<string, string> = {
   tahta_çıkış: C.gold, şehir_kuruluşu: C.gold, savaş_zaferi: C.ember, komutan_savaşı: C.ember,
   ölüm: C.parchmentMuted, nesil_devri: C.ink,
 };
-const MS_BURST: Record<string, string[]> = {
-  evlilik: ["💍", "🌹", "✨"], doğum: ["✨", "🤍", "🌟"], dogum: ["✨", "🤍", "🌟"],
-  kariyer_terfi: ["👑", "✨", "⚜"], tahta_çıkış: ["👑", "✨", "⚜"], şehir_kuruluşu: ["🏰", "✨", "⚜"],
-  başarım: ["🏆", "✨", "⚜"], savaş_zaferi: ["⚔", "✨", "🛡"], komutan_savaşı: ["⚔", "✨"], nesil_devri: ["🕊", "✨", "⚜"],
-};
-
 // Yayılan parlama halkası (kutlama hissi).
 function Burst({ color }: { color: string }) {
   const s = useSharedValue(0.4); const o = useSharedValue(0);
@@ -139,7 +133,7 @@ export function MilestoneModal({ visible, type, text, onClose }: { visible: bool
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.9)", alignItems: "center", justifyContent: "center", padding: 28 }}>
         <Animated.View entering={ZoomIn.springify().damping(15).stiffness(180)} style={{ width: "100%", maxWidth: 360, backgroundColor: C.card, borderWidth: 1, borderColor: accent + "88", borderRadius: 14, padding: 24, alignItems: "center", overflow: "hidden" }}>
           <View style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, backgroundColor: accent }} />
-          {celebratory && <ParticleBurst emojis={MS_BURST[type] || ["✨", "⚜"]} count={18} top={40} />}
+          {celebratory && <ParticleBurst count={18} top={40} />}
           <View style={{ width: 80, height: 80, alignItems: "center", justifyContent: "center", marginTop: 6 }}>
             {celebratory && <GlowPulse size={80} color={accent} />}
             {celebratory && <Burst color={accent} />}

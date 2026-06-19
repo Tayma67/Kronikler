@@ -24,18 +24,20 @@ export function KenBurns({ source, children, style }: { source: ImageSourcePropT
 }
 
 // Tek partikül — merkezden dışa savrulup söner.
-function Particle({ emoji, dx, dy, rot, dur, size }: { emoji: string; dx: number; dy: number; rot: number; dur: number; size: number }) {
+// Soyut konfeti tanesi — emoji yerine sıcak tonlu küçük eşkenar dörtgen.
+function Particle({ color, dx, dy, rot, dur, size }: { color: string; dx: number; dy: number; rot: number; dur: number; size: number }) {
   const p = useSharedValue(0);
   useEffect(() => { p.value = withTiming(1, { duration: dur, easing: Easing.out(Easing.quad) }); }, []);
-  const st = useAnimatedStyle(() => ({ opacity: 1 - p.value, transform: [{ translateX: dx * p.value }, { translateY: dy * p.value }, { rotate: `${rot * p.value}deg` }, { scale: 0.6 + p.value * 0.6 }] }));
-  return <Animated.Text pointerEvents="none" style={[{ position: "absolute", fontSize: size }, st]}>{emoji}</Animated.Text>;
+  const st = useAnimatedStyle(() => ({ opacity: 1 - p.value, transform: [{ translateX: dx * p.value }, { translateY: dy * p.value }, { rotate: `${45 + rot * p.value}deg` }, { scale: 0.6 + p.value * 0.6 }] }));
+  return <Animated.View pointerEvents="none" style={[{ position: "absolute", width: size, height: size, borderRadius: Math.max(1, size * 0.18), backgroundColor: color }, st]} />;
 }
 
-// Partikül patlaması — kutlama/para/yaprak. mount'ta bir kez oynar.
-export function ParticleBurst({ emojis, count = 16, top = "40%", up = true }: { emojis: string[]; count?: number; top?: number | string; up?: boolean }) {
+// Partikül patlaması — kutlama konfetisi (sıcak tonlu). mount'ta bir kez oynar.
+const BURST_PALETTE = ["#C9A84C", "#E8D5B0", "#E0C060", "#E05A30"];
+export function ParticleBurst({ colors = BURST_PALETTE, count = 16, top = "40%", up = true }: { colors?: string[]; count?: number; top?: number | string; up?: boolean }) {
   const parts = useMemo(() => Array.from({ length: count }, () => {
     const ang = rnd(0, Math.PI * 2); const dist = rnd(70, 180);
-    return { emoji: emojis[Math.floor(Math.random() * emojis.length)], dx: Math.cos(ang) * dist, dy: Math.sin(ang) * dist - (up ? rnd(40, 110) : 0), rot: rnd(-220, 220), dur: rnd(800, 1500), size: rnd(14, 24) };
+    return { color: colors[Math.floor(Math.random() * colors.length)], dx: Math.cos(ang) * dist, dy: Math.sin(ang) * dist - (up ? rnd(40, 110) : 0), rot: rnd(-220, 220), dur: rnd(800, 1500), size: rnd(7, 13) };
   }), []);
   return <View pointerEvents="none" style={{ position: "absolute", left: "50%", top: top as any }}>{parts.map((p, i) => <Particle key={i} {...p} />)}</View>;
 }

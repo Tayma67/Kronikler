@@ -12,11 +12,11 @@ import { C, F } from "../../lib/theme";
 
 // İlişki bantları (Vercel): eşik + ikon + ton rengi + motto.
 const BANDS = [
-  { id: "dost", min: 50, icon: "🤝", tone: C.sage },
-  { id: "arkadas", min: 20, icon: "🍵", tone: C.sage },
-  { id: "tanis", min: -19, icon: "🕯", tone: C.parchmentDim },
-  { id: "rakip", min: -49, icon: "🗡", tone: C.ember },
-  { id: "dusman", min: -100, icon: "⚔", tone: C.blood },
+  { id: "dost", min: 50, tone: C.sage },
+  { id: "arkadas", min: 20, tone: C.sage },
+  { id: "tanis", min: -19, tone: C.parchmentDim },
+  { id: "rakip", min: -49, tone: C.ember },
+  { id: "dusman", min: -100, tone: C.blood },
 ];
 function bandOf(score: number) { return BANDS.find((b) => score >= b.min) || BANDS[BANDS.length - 1]; }
 
