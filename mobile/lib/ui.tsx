@@ -222,7 +222,7 @@ export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, p
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => {}}>
       <View style={{ flex: 1, backgroundColor: "rgba(4,3,2,0.975)", alignItems: "center", justifyContent: "center", paddingHorizontal: 28, paddingVertical: 40 }}>
         <Animated.View entering={FadeIn.duration(700)} style={{ alignItems: "center", width: "100%", maxWidth: 400 }}>
-          <Animated.Text entering={FadeInDown.duration(600).delay(150)} style={{ fontSize: 30 }}>🕊</Animated.Text>
+          <Animated.View entering={FadeInDown.duration(600).delay(150)}><GameIcon name="tombstone" size={32} color={C.parchmentMuted} /></Animated.View>
           <Animated.Text entering={FadeInDown.duration(600).delay(300)} style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 5, color: C.goldDim, marginTop: 12 }}>{t("eul.eyebrow")}</Animated.Text>
           {!!epithet && <Animated.Text entering={FadeInDown.duration(600).delay(450)} style={{ fontFamily: F.serifItalic, fontSize: 14, color: C.gold, marginTop: 10 }}>“{epithet}”</Animated.Text>}
           <Animated.Text entering={FadeInDown.duration(700).delay(600)} style={{ fontFamily: F.display, fontSize: 26, letterSpacing: 1, color: C.parchment, textAlign: "center", marginTop: 4 }}>{name}</Animated.Text>
@@ -262,7 +262,7 @@ export function OpportunityModal({ opp, onTake, onPass }: { opp: Opportunity | n
       <View style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.9)", alignItems: "center", justifyContent: "center", padding: 26 }}>
         {opp && (
           <Animated.View entering={FadeInUp.springify().damping(16)} style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 14, padding: 22 }}>
-            <View style={{ alignItems: "center", marginBottom: 4 }}><Text style={{ fontSize: 28 }}>🎲</Text></View>
+            <View style={{ alignItems: "center", marginBottom: 4 }}><GameIcon name="compass" size={28} color={C.gold} /></View>
             <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, textAlign: "center", marginTop: 4 }}>{t("frs.popTitle").toUpperCase()}</Text>
             <Text style={{ fontFamily: F.display, fontSize: 17, color: C.gold, textAlign: "center", letterSpacing: 0.5, marginTop: 4 }}>{gt("opp." + opp.key + ".t", opp.title)}</Text>
             <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: "center", lineHeight: 21, marginTop: 10, marginBottom: 14 }}>{gt("opp." + opp.key + ".d", opp.desc)}</Text>

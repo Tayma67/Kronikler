@@ -26,12 +26,12 @@ function bandOf(score: number) { return BANDS.find((b) => score >= b.min) || BAN
 
 // Bağ türü → ikon + ton (aile altın, dost adaçayı, rakip kan).
 const TIE_META: Record<TieKind, { icon: string; tone: string }> = {
-  es: { icon: "💍", tone: C.gold },
-  ebeveyn: { icon: "🪷", tone: C.gold },
-  evlat: { icon: "🌱", tone: C.gold },
-  kardes: { icon: "🤝", tone: C.gold },
-  dost: { icon: "🍵", tone: C.sage },
-  rakip: { icon: "🗡", tone: C.blood },
+  es: { icon: "ring", tone: C.gold },
+  ebeveyn: { icon: "family", tone: C.gold },
+  evlat: { icon: "baby", tone: C.gold },
+  kardes: { icon: "family", tone: C.gold },
+  dost: { icon: "prayer-beads", tone: C.sage },
+  rakip: { icon: "crossed-swords", tone: C.blood },
 };
 const TIE_ORDER: TieKind[] = ["es", "ebeveyn", "evlat", "kardes", "dost", "rakip"];
 
@@ -127,8 +127,8 @@ export default function NpcDetail() {
 
         {/* Hızlı bilgi */}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
-          <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>😶 {t("dlg.mood." + moodKey(ns.mood))}</Text>
-          <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>✦ {traitL(npc.trait, lang)}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="prayer-beads" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>{t("dlg.mood." + moodKey(ns.mood))}</Text></View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="star" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>{traitL(npc.trait, lang)}</Text></View>
           <Text style={{ fontFamily: F.display, fontSize: 11, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted }}>{t("npc.rel")} {v > 0 ? "+" + v : v}</Text>
         </View>
         <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted, marginTop: 6, lineHeight: 17 }}>{(() => { const q = quirkL(npc.quirk, lang); return q[0].toUpperCase() + q.slice(1); })()}.</Text>
@@ -139,7 +139,7 @@ export default function NpcDetail() {
       {ties.length > 0 && (
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 12, padding: 12, marginBottom: 10 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
-            <Text style={{ fontSize: 13 }}>🕸</Text>
+            <GameIcon name="iliskiler" size={13} color={C.goldDim} />
             <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.ties")}</Text>
           </View>
           {ties.map((tt) => {
@@ -152,7 +152,7 @@ export default function NpcDetail() {
                   <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(tt.who!.profession, lang)} · {tt.who!.age}</Text>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: meta.tone + "55", backgroundColor: meta.tone + "14" }}>
-                  <Text style={{ fontSize: 10 }}>{meta.icon}</Text>
+                  <GameIcon name={meta.icon} size={11} color={meta.tone} />
                   <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: meta.tone }}>{t("tie." + tt.kind).toUpperCase()}</Text>
                 </View>
               </Pressable>
@@ -266,12 +266,12 @@ export default function NpcDetail() {
         return (
           <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 12, padding: 14, marginBottom: 10 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
-              <Text style={{ fontSize: 13 }}>💭</Text>
+              <GameIcon name="scroll" size={13} color={C.goldDim} />
               <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.remembers")}</Text>
             </View>
             {tops.map((m, i) => (
               <View key={i} style={{ flexDirection: "row", gap: 7, marginBottom: 5, alignItems: "flex-start" }}>
-                <Text style={{ color: m.travma ? C.blood : m.yon > 0 ? C.sage : C.blood, fontSize: 12 }}>{m.travma ? "⚡" : m.yon > 0 ? "♥" : "✖"}</Text>
+                <GameIcon name={m.travma ? "skull" : m.yon > 0 ? "prayer-beads" : "crossed-swords"} size={11} color={m.travma ? C.blood : m.yon > 0 ? C.sage : C.blood} />
                 <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12.5, color: m.travma ? C.blood : C.parchmentDim, lineHeight: 17 }}>{t("mem.remember." + m.tur)}{m.travma ? ` — ${t("npc.trauma")}` : ""}</Text>
               </View>
             ))}
@@ -283,12 +283,12 @@ export default function NpcDetail() {
       {ns.memories.length > 0 && (
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", borderRadius: 12, padding: 14 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
-            <Text style={{ fontSize: 13 }}>🧠</Text>
+            <GameIcon name="book" size={13} color={C.goldDim} />
             <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("npc.mind")}</Text>
           </View>
           {[...ns.memories].reverse().map((m, i) => (
             <View key={i} style={{ flexDirection: "row", gap: 7, marginBottom: 5 }}>
-              <Text style={{ color: C.gold }}>🤍</Text>
+              <GameIcon name="prayer-beads" size={11} color={C.gold} />
               <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim, lineHeight: 17 }}>{m}</Text>
             </View>
           ))}
