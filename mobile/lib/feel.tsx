@@ -8,6 +8,7 @@ import { useI18n } from "./i18n";
 import { hap } from "./haptics";
 import { playFanfare, playTap } from "./sound";
 import { C, F } from "./theme";
+import { GameIcon } from "./icons";
 
 // Hangi alanları izliyoruz + nasıl gösteriliyor. "feel" katmanı: kimlik/itibar değişimleri anında patlar.
 type Watch = { path: string; icon: string; color: string; label: string; min: number; onlyDrop?: boolean };
@@ -63,18 +64,18 @@ export function StatDeltaOverlay() {
 
   // İzlenenler — survival decay (açlık) gürültüsünü dışta tutar; sistemlerimizin "kimlik" eksenine odaklanır.
   const WATCH: Watch[] = [
-    { path: "money",          icon: "⚜",  color: C.gold,  label: "", min: 3 },
-    { path: "reputation",     icon: "🛡", color: C.sage,  label: t("soc.reputation.l"), min: 1 },
-    { path: "honor",          icon: "⚖", color: C.azure, label: t("soc.honor.l"), min: 1 },
-    { path: "fear",           icon: "🌒", color: C.blood, label: t("soc.fear.l"), min: 1 },
-    { path: "fame",           icon: "👑", color: C.ink,   label: t("soc.fame.l"), min: 1 },
-    { path: "stat_points",    icon: "✦",  color: C.gold,  label: t("char.points"), min: 1 },
-    { path: "health",         icon: "❤", color: C.blood, label: t("char.health"), min: 4, onlyDrop: true },
-    { path: "nam.comert",     icon: "🤲", color: "#7FA66A", label: t("nam.comert"), min: 1 },
-    { path: "nam.zalim",      icon: "🗡", color: "#C0556B", label: t("nam.zalim"), min: 1 },
-    { path: "nam.capkin",     icon: "🌹", color: "#C77BA6", label: t("nam.capkin"), min: 1 },
-    { path: "nam.dindar",     icon: "📿", color: "#9C7BC4", label: t("nam.dindar"), min: 1 },
-    { path: "nam.mert",       icon: "⚔", color: "#E0922E", label: t("nam.mert"), min: 1 },
+    { path: "money",          icon: "akce",  color: C.gold,  label: "", min: 3 },
+    { path: "reputation",     icon: "karakter", color: C.sage,  label: t("soc.reputation.l"), min: 1 },
+    { path: "honor",          icon: "medal", color: C.azure, label: t("soc.honor.l"), min: 1 },
+    { path: "fear",           icon: "skull", color: C.blood, label: t("soc.fear.l"), min: 1 },
+    { path: "fame",           icon: "crown", color: C.ink,   label: t("soc.fame.l"), min: 1 },
+    { path: "stat_points",    icon: "star",  color: C.gold,  label: t("char.points"), min: 1 },
+    { path: "health",         icon: "saglik", color: C.blood, label: t("char.health"), min: 4, onlyDrop: true },
+    { path: "nam.comert",     icon: "leaf", color: "#7FA66A", label: t("nam.comert"), min: 1 },
+    { path: "nam.zalim",      icon: "skull", color: "#C0556B", label: t("nam.zalim"), min: 1 },
+    { path: "nam.capkin",     icon: "lyre", color: "#C77BA6", label: t("nam.capkin"), min: 1 },
+    { path: "nam.dindar",     icon: "prayer-beads", color: "#9C7BC4", label: t("nam.dindar"), min: 1 },
+    { path: "nam.mert",       icon: "crossed-swords", color: "#E0922E", label: t("nam.mert"), min: 1 },
   ];
 
   const read = (p: any, path: string): number => {
@@ -118,7 +119,7 @@ export function StatDeltaOverlay() {
       {settle && (
         <Animated.View key={"settle" + settle.tick} entering={ZoomIn.springify().damping(15)} exiting={FadeOut.duration(380)}
           style={{ alignItems: "center", backgroundColor: "rgba(13,10,6,0.96)", borderWidth: 1.5, borderColor: C.sage, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 22, marginBottom: 10, shadowColor: C.sage, shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 10 }}>
-          <Text style={{ fontSize: 24 }}>🏘</Text>
+          <GameIcon name="castle" size={24} color={C.sage} />
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2.5, color: C.goldDim, marginTop: 4 }}>{t("feel.settle").toUpperCase()}</Text>
           {!!settle.name && <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 1, color: C.sage, marginTop: 2 }}>{settle.name}</Text>}
         </Animated.View>
@@ -126,14 +127,14 @@ export function StatDeltaOverlay() {
       {crown && (
         <Animated.View key={"crown" + crown.tick} entering={ZoomIn.springify().damping(13)} exiting={FadeOut.duration(450)}
           style={{ alignItems: "center", backgroundColor: "rgba(13,10,6,0.97)", borderWidth: 2, borderColor: C.gold, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 26, marginBottom: 10, shadowColor: C.gold, shadowOpacity: 0.7, shadowRadius: 18, shadowOffset: { width: 0, height: 0 }, elevation: 12 }}>
-          <Text style={{ fontSize: 38 }}>👑</Text>
+          <GameIcon name="crown" size={38} color={C.gold} />
           <Text style={{ fontFamily: F.display, fontSize: 18, letterSpacing: 1.5, color: C.gold, marginTop: 6 }}>{t("feel.throne")}</Text>
         </Animated.View>
       )}
       {tierUp && (
         <Animated.View key={"tier" + tierUp.tick} entering={ZoomIn.springify().damping(14)} exiting={FadeOut.duration(400)}
           style={{ alignItems: "center", backgroundColor: "rgba(13,10,6,0.96)", borderWidth: 1.5, borderColor: C.gold, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 22, marginBottom: 10, shadowColor: C.gold, shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 10 }}>
-          <Text style={{ fontSize: 26 }}>👑</Text>
+          <GameIcon name="crown" size={26} color={C.gold} />
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2.5, color: C.goldDim, marginTop: 4 }}>{t("feel.fameUp").toUpperCase()}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 17, letterSpacing: 1, color: C.gold, marginTop: 2 }}>{t("soc.fame.t" + tierUp.tier)}</Text>
         </Animated.View>
@@ -141,7 +142,7 @@ export function StatDeltaOverlay() {
       {toasts.map((tt) => (
         <Animated.View key={tt.id} entering={FadeInUp.duration(220)} exiting={FadeOutUp.duration(260)} layout={Layout.springify().damping(18)}
           style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(13,10,6,0.94)", borderWidth: 1, borderColor: tt.color + "88", borderRadius: 20, paddingVertical: 5, paddingHorizontal: 12, marginBottom: 6, shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 6 }}>
-          <Text style={{ fontSize: 12 }}>{tt.icon}</Text>
+          <GameIcon name={tt.icon} size={12} color={tt.color} />
           <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 0.3, color: tt.color }}>{tt.text}</Text>
         </Animated.View>
       ))}
