@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
@@ -98,9 +98,21 @@ function RelativeTile({ role, name, age, gender, seed, has }: { role: string; na
   );
 }
 
-// Donanım yuvası karosu — ızgarada gösterilir. Boşsa kesik çerçeve.
-function GearTile({ icon, label, item, quality, bonus, statColor, onRemove, t }: { icon: string; label: string; item?: string | null; quality?: string; bonus?: number; statColor: string; onRemove?: () => void; t: (k: string) => string }) {
+// Donanım yuvası karosu — ızgarada gösterilir. Boşsa kesik çerçeve; çift elli silahta kalkan kilitli.
+function GearTile({ icon, label, item, quality, bonus, statColor, tag, locked, lockedText, onRemove, t }: { icon: string; label: string; item?: string | null; quality?: string; bonus?: number; statColor: string; tag?: string; locked?: boolean; lockedText?: string; onRemove?: () => void; t: (k: string) => string }) {
   const equipped = !!item;
+  if (locked) {
+    return (
+      <View style={{ width: "31.5%", backgroundColor: "transparent", borderWidth: 1, borderColor: C.border, borderRadius: 11, paddingVertical: 10, paddingHorizontal: 7, alignItems: "center", gap: 5, opacity: 0.6 }}>
+        <View style={{ width: 40, height: 40, borderRadius: 10, borderWidth: 1, borderColor: C.border, alignItems: "center", justifyContent: "center" }}>
+          <GameIcon name={icon} size={20} color={C.parchmentMuted} />
+        </View>
+        <Text style={{ fontFamily: F.display, fontSize: 7.5, letterSpacing: 0.5, color: C.parchmentMuted, textTransform: "uppercase" }} numberOfLines={1}>{label}</Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted, textAlign: "center" }}>{lockedText}</Text>
+        <View style={{ height: 14 }} />
+      </View>
+    );
+  }
   return (
     <View style={{ width: "31.5%", backgroundColor: C.bg, borderWidth: 1, borderColor: equipped ? GB : C.border, borderRadius: 11, paddingVertical: 10, paddingHorizontal: 7, alignItems: "center", gap: 5 }}>
       <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: equipped ? GBG : "transparent", borderWidth: 1, borderColor: equipped ? GB : C.border, alignItems: "center", justifyContent: "center" }}>
@@ -108,6 +120,7 @@ function GearTile({ icon, label, item, quality, bonus, statColor, onRemove, t }:
       </View>
       <Text style={{ fontFamily: F.display, fontSize: 7.5, letterSpacing: 0.5, color: C.parchmentMuted, textTransform: "uppercase" }} numberOfLines={1}>{label}</Text>
       <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 11.5, color: equipped ? C.parchment : C.parchmentMuted, textAlign: "center" }}>{equipped ? t("it." + item) : "—"}</Text>
+      {equipped && tag ? <Text style={{ fontFamily: F.display, fontSize: 7, letterSpacing: 0.8, color: C.ember, textTransform: "uppercase" }} numberOfLines={1}>{tag}</Text> : null}
       {equipped ? (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
           {bonus != null && bonus > 0 ? <Text style={{ fontFamily: F.display, fontSize: 11, color: statColor }}>+{bonus}</Text> : null}
@@ -165,6 +178,8 @@ export default function Karakter() {
   const xpInLevel = p.career_xp % 30;
   const crownLevel = Math.floor((p.fame || 0) / 20);
   const spouseGender: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
+  const weaponTwoHanded = isTwoHanded(p.equipped?.silah);
+  const weaponClassId = p.equipped?.silah ? ITEMS[p.equipped.silah]?.wclass : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -378,13 +393,19 @@ export default function Karakter() {
                   const it = id ? ITEMS[id] : null;
                   const raw = it ? (g.field === "power" ? (it.power || 0) : (it.defense || 0)) : 0;
                   const bonus = id ? Math.round(raw * equippedQualityMult(p, g.slot)) : undefined;
+                  // Silah → arketip etiketi; kalkan → çift elli silah varken kilitli.
+                  const tag = g.slot === "silah" && it?.wclass ? t("wc." + it.wclass) : undefined;
+                  const locked = g.slot === "kalkan" && weaponTwoHanded;
                   return (
                     <GearTile key={g.slot} icon={g.icon} label={t(g.labelKey)} item={id ?? undefined} quality={p.equipped_q?.[g.slot] ?? undefined}
-                      bonus={bonus} statColor={g.field === "power" ? C.ember : C.azure}
+                      bonus={bonus} statColor={g.field === "power" ? C.ember : C.azure} tag={tag} locked={locked} lockedText={t("char.twoHandTag")}
                       onRemove={id ? () => apply((s) => unequipItem(s, g.slot)) : undefined} t={t} />
                   );
                 })}
               </View>
+              {weaponClassId ? (
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 9, lineHeight: 16 }}>{t("wc." + weaponClassId + ".d")}</Text>
+              ) : null}
             </Card>
 
             {/* Kıyafet — sosyal görünüm (karizma + itibar) */}

@@ -1,7 +1,7 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import type { EvtParam } from "./i18n";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
-import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname, SPECIALTIES } from "./world";
+import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname, SPECIALTIES, Item, WClass } from "./world";
 import { Lang } from "./locale-data";
 import { converse, ConvResult, spontaneousLine, callbackLine } from "./dialogue";
 import { Memory, addMemory, decayMemories, effectiveRel, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS } from "./npc-mind";
@@ -2693,7 +2693,9 @@ export const ENCOUNTERS: Encounter[] = [
 export function combatPower(p: Player): number {
   let pw = effStat(p, "strength") * 2 + effStat(p, "stamina") + p.skills.combat;
   const wid = p.equipped?.silah; const w = wid ? ITEMS[wid] : null;
-  pw += Math.round((w?.power || 0) * equippedQualityMult(p, "silah")) || ((p.inventory["bicak"] || 0) > 0 ? 4 : 0); // kalite-ölçekli silah, yoksa elindeki bıçak
+  let weaponPw = Math.round((w?.power || 0) * equippedQualityMult(p, "silah"));
+  if (w?.twoHanded) weaponPw = Math.round(weaponPw * 1.25); // çift elli silah daha sert vurur (kalkan feda edilir)
+  pw += weaponPw || ((p.inventory["bicak"] || 0) > 0 ? 4 : 0); // kalite-ölçekli silah, yoksa elindeki bıçak
   if (p.faction === "asker") pw += 3;
   if (hasPerk(p, "cevik")) pw += 3;
   if (hasPerk(p, "nisanci")) pw += 5;
@@ -2708,12 +2710,35 @@ export function armorDefense(p: Player): number {
   }
   return d;
 }
-// Kuşanılı kıyafetin sosyal katkısı (karizma + itibar/prestij). Kalite kademesiyle ölçeklenir.
+// Kuşanılı silah (varsa) ve arketipi.
+export function equippedWeapon(p: Player): Item | null { const id = p.equipped?.silah; return id ? (ITEMS[id] || null) : null; }
+export function weaponClass(p: Player): WClass | null { return equippedWeapon(p)?.wclass || null; }
+export function hasShield(p: Player): boolean { return !!p.equipped?.kalkan; }
+// Kalkanla darbe savma ihtimali (savunmacı duruşta artar). Çift elli silahta kalkan olmaz → 0.
+export function shieldBlockChance(p: Player, defensive: boolean): number {
+  const id = p.equipped?.kalkan; if (!id) return 0;
+  const def = Math.round((ITEMS[id]?.defense || 0) * equippedQualityMult(p, "kalkan"));
+  return Math.min(0.55, 0.06 + def * 0.035 + (defensive ? 0.15 : 0));
+}
+export function isTwoHanded(id: string | null | undefined): boolean { return !!(id && ITEMS[id]?.twoHanded); }
+// "Cenk yükü" (0..1): ne kadar savaşa hazır görünüyorsun. Sosyal zarafeti bastırır
+// — ipek kaftanın zırhın altında görünmez, kalkanlı adam zarif değil heybetli durur.
+export function martialLoad(p: Player): number {
+  let m = 0;
+  if (p.equipped?.zirh) m += 0.5;
+  if (p.equipped?.kalkan) m += 0.25;
+  if (p.equipped?.baslik) m += 0.15;
+  if (isTwoHanded(p.equipped?.silah)) m += 0.3;
+  return Math.min(1, m);
+}
+// Kuşanılı kıyafetin sosyal katkısı (karizma + itibar/prestij). Kalite kademesiyle ölçeklenir,
+// cenk yükü (zırh/kalkan/miğfer) zarafeti gizlediği için kırpılır.
 export function attireScore(p: Player): { charisma: number; prestige: number } {
   const id = p.equipped?.kiyafet;
   if (!id) return { charisma: 0, prestige: 0 };
   const it = ITEMS[id]; const m = equippedQualityMult(p, "kiyafet");
-  return { charisma: Math.round((it?.charisma || 0) * m), prestige: Math.round((it?.prestige || 0) * m) };
+  const damp = 1 - 0.7 * martialLoad(p); // tam zırhta sosyal katkı %70 kırpılır
+  return { charisma: Math.round((it?.charisma || 0) * m * damp), prestige: Math.round((it?.prestige || 0) * m * damp) };
 }
 // Eşya kuşan (silah/zırh) — envanterden çıkarıp slota koyar, eskisini geri verir.
 export function equipItem(prev: GameState, id: string): GameState {
@@ -2721,6 +2746,11 @@ export function equipItem(prev: GameState, id: string): GameState {
   if (!it || !(p.inventory[id] > 0)) return s;
   const slot = slotOfKind(it.kind);
   if (!slot) return s;
+  // Çift elli silah ↔ kalkan birlikte taşınamaz: çakışan slotu envantere geri koy.
+  const stowSlot = (sl: EquipSlot) => { const cur = p.equipped[sl]; if (cur) { p.inventory[cur] = (p.inventory[cur] || 0) + 1; const cq = p.equipped_q?.[sl]; if (cq) addQuality(p, cur, cq); p.equipped[sl] = null; if (p.equipped_q) delete p.equipped_q[sl]; return cur; } return null; };
+  let bumped: string | null = null;
+  if (slot === "silah" && it.twoHanded) bumped = stowSlot("kalkan");               // çift elli silah → kalkanı bırak
+  else if (slot === "kalkan" && isTwoHanded(p.equipped?.silah)) bumped = stowSlot("silah"); // kalkan → çift elli silahı bırak
   // Eskisini (kalitesiyle) envantere geri koy.
   const old = p.equipped[slot];
   if (old) { p.inventory[old] = (p.inventory[old] || 0) + 1; const oq = p.equipped_q?.[slot]; if (oq) addQuality(p, old, oq); }
@@ -2731,7 +2761,8 @@ export function equipItem(prev: GameState, id: string): GameState {
   if (!p.equipped_q) p.equipped_q = {};
   p.equipped_q[slot] = tier;
   const qNote = tier !== "siradan" ? ` (${QUALITY_LABEL[tier]})` : "";
-  push(s, "kusanma", `${it.name}${qNote} kuşandın.`, "kişisel", false, tier !== "siradan" ? { k: "evj.equipQ", p: [{ i: id }, { q: tier }] } : { k: "evj.equip", p: [{ i: id }] });
+  const bumpNote = bumped ? ` ${ITEMS[bumped]?.name || ""} elden bırakıldı.` : "";
+  push(s, "kusanma", `${it.name}${qNote} kuşandın.${bumpNote}`, "kişisel", false, bumped ? { k: "evj.equipBump", p: [{ i: id }, { i: bumped }] } : (tier !== "siradan" ? { k: "evj.equipQ", p: [{ i: id }, { q: tier }] } : { k: "evj.equip", p: [{ i: id }] }));
   return s;
 }
 export function unequipItem(prev: GameState, slot: EquipSlot): GameState {

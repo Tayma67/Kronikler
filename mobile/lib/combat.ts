@@ -1,5 +1,6 @@
 // Tur-tabanlı taktik savaş motoru (saf). Sonuç savas ekranında GameState'e uygulanır.
-import { Player, Encounter, combatPower, armorDefense } from "./game";
+import { Player, Encounter, combatPower, armorDefense, weaponClass, shieldBlockChance } from "./game";
+import { WClass } from "./world";
 
 export type Move = "hamle" | "savustur" | "ozel";
 export const MOVES: { id: Move; label: string; icon: string; hint: string }[] = [
@@ -30,11 +31,19 @@ export interface BattleState {
 export function startBattle(p: Player, e: Encounter): BattleState {
   const pw = combatPower(p);
   const enemyMax = 30 + e.power * 4;
+  let enemyHp = enemyMax;
+  const log = [`${e.title} başladı. Gücün ${pw}, düşman gücü ${e.power}.`];
+  // Menzilli silah (yay): melee öncesi açılış oku.
+  if (weaponClass(p) === "menzilli") {
+    const volley = 6 + (p.skills?.combat || 0) + Math.round(pw * 0.18);
+    enemyHp = Math.max(1, enemyHp - volley);
+    log.push(`Açılış oku düşmanı buldu — düşmana ${volley} hasar!`);
+  }
   return {
     enemyName: e.title, enemyPower: e.power,
     playerHp: Math.max(20, Math.round(p.health)), playerMax: Math.max(20, Math.round(p.health)),
-    enemyHp: enemyMax, enemyMax,
-    round: 1, log: [`${e.title} başladı. Gücün ${pw}, düşman gücü ${e.power}.`], over: false, won: false,
+    enemyHp, enemyMax,
+    round: 1, log, over: enemyHp <= 0, won: enemyHp <= 0,
   };
 }
 
@@ -45,30 +54,53 @@ function enemyMove(bs: BattleState): Move {
   return r < 0.4 ? "hamle" : r < 0.75 ? "savustur" : "ozel";
 }
 
+// Silah arketipinin saldırı çarpanı (tur ve sonuca göre).
+function classAtkMult(wc: WClass | null, round: number, outcome: "tie" | "win", mv: Move): number {
+  switch (wc) {
+    case "ezici":    return 1.2;                                    // ezici: her vuruşta +%20 (zırh ezer)
+    case "kesici":   return outcome === "win" ? 1.12 : 1.0;         // kesici: net üstünlükte güvenilir +%12
+    case "delici":   return round <= 2 ? 1.25 : 1.0;                // delici: erişim — ilk turlarda +%25
+    case "hizli":    return outcome === "tie" ? 1.5 : 1.05;         // hızlı: denk anında inisiyatif
+    case "menzilli": return 0.9;                                    // menzilli: yakın dövüşte zayıf
+    default:         return 1.0;
+  }
+}
+
 export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stance = "dengeli"): BattleState {
   if (prev.over) return prev;
   const bs: BattleState = { ...prev, log: [...prev.log] };
   const em = enemyMove(bs);
   const pw = combatPower(p);
+  const wc = weaponClass(p);
   const st = stanceOf(stance);                              // duruş: atk/def çarpanı
   const baseP = 6 + Math.round(pw * 0.6);
   const baseE = 6 + Math.round(bs.enemyPower * 0.9);
   const mvName: Record<Move, string> = { hamle: "Hamle", savustur: "Savuştur", ozel: "Özel" };
-  const dealt = (d: number) => Math.round(d * st.atk);       // duruşun saldırı çarpanı
-  const taken = (d: number) => Math.round(d / st.def);       // savunmacı az, saldırgan çok hasar alır
+  const dealt = (d: number, outcome: "tie" | "win") => Math.round(d * st.atk * classAtkMult(wc, bs.round, outcome, mv));
+  // Hızlı silah: hafif kaçış (alınan hasarı biraz azaltır).
+  const evade = wc === "hizli" ? 0.85 : 1.0;
+  const taken = (d: number) => Math.round((d / st.def) * evade);
 
   let txt = `Tur ${bs.round}: Sen ${mvName[mv]}, düşman ${mvName[em]}. `;
   if (mv === em) {
-    const pd = dealt(Math.round(baseP * 0.4)), ed = taken(Math.round(baseE * 0.4));
-    bs.enemyHp -= pd; bs.playerHp -= ed; txt += `Denk geçti (−${pd}/−${ed}).`;
+    const pd = dealt(Math.round(baseP * 0.4), "tie"), edRaw = taken(Math.round(baseE * 0.4));
+    let ed = edRaw;
+    // Kalkan bloğu (denk anında da geçerli)
+    let blocked = false;
+    if (shieldBlockChance(p, stance === "savunmaci") > 0 && Math.random() < shieldBlockChance(p, stance === "savunmaci")) { ed = Math.round(ed * 0.4); blocked = true; }
+    bs.enemyHp -= pd; bs.playerHp -= ed; txt += `Denk geçti (−${pd}/−${ed})${blocked ? " — kalkanınla savdın!" : ""}.`;
   } else if (beats(mv, em)) {
-    const dmg = dealt(mv === "ozel" ? Math.round(baseP * 1.4) : baseP);
+    const dmg = dealt(mv === "ozel" ? Math.round(baseP * 1.4) : baseP, "win");
     bs.enemyHp -= dmg; txt += `Üstün geldin, düşmana ${dmg} hasar!`;
   } else {
     let dmg = em === "ozel" ? Math.round(baseE * 1.4) : baseE;
     if (mv === "savustur") dmg = Math.round(dmg * 0.5); // savuşturma kısmi korur
-    dmg = Math.max(1, taken(dmg) - armorDefense(p)); // duruş + zırh hasarı azaltır
-    bs.playerHp -= dmg; txt += `Açık verdin, ${dmg} hasar aldın.`;
+    dmg = Math.max(1, taken(dmg) - armorDefense(p)); // duruş + kaçış + zırh hasarı azaltır
+    // Kalkan bloğu: belli ihtimalle darbeyi yarıdan fazla emer.
+    let blocked = false;
+    const bc = shieldBlockChance(p, stance === "savunmaci");
+    if (bc > 0 && Math.random() < bc) { dmg = Math.max(1, Math.round(dmg * 0.4)); blocked = true; }
+    bs.playerHp -= dmg; txt += blocked ? `Kalkanınla savuştun, yalnız ${dmg} hasar aldın.` : `Açık verdin, ${dmg} hasar aldın.`;
   }
   bs.log.push(txt);
   bs.round += 1;

@@ -7,7 +7,8 @@ export const TRAITS = ["neşeli","ciddi","kibirli","cömert","dertli","yalnız",
 const QUIRKS = ["sürekli hava durumundan dert yanar","eski günleri anlatmayı sever","herkese lakap takar","az konuşur çok dinler","yüksek sesle güler","pazarlığa bayılır","komşularını çekiştirir","bir türküyü mırıldanır"];
 // NPC'nin peşinde olduğu hayat hedefi (söylenti ve sohbete renk katar).
 const GOALS = ["bir dükkân açmanın hayalini kuruyor","kızını/oğlunu evermek istiyor","borçlarından kurtulmaya çalışıyor","hacca gitmeyi diliyor","toprak satın almak için biriktiriyor","ustabaşı olmak istiyor","küs olduğu kardeşiyle barışmak istiyor","bir ev yaptırmanın derdinde","kervan ticaretine atılmak istiyor","adını duyurmak istiyor"];
-export interface Item { id: string; name: string; icon: string; buy: number; sell: number; kind: "yiyecek" | "esya" | "silah" | "zirh" | "kalkan" | "baslik" | "eldiven" | "ayakkabi" | "kiyafet"; heal?: number; feed?: number; power?: number; defense?: number; charisma?: number; prestige?: number; }
+export type WClass = "hizli" | "kesici" | "ezici" | "delici" | "menzilli";
+export interface Item { id: string; name: string; icon: string; buy: number; sell: number; kind: "yiyecek" | "esya" | "silah" | "zirh" | "kalkan" | "baslik" | "eldiven" | "ayakkabi" | "kiyafet"; heal?: number; feed?: number; power?: number; defense?: number; charisma?: number; prestige?: number; wclass?: WClass; twoHanded?: boolean; }
 
 const AD_E = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim","Osman","Yusuf","Murat","Kerem","Emre","Cihan","Barış","Tolga","Mert"];
 const AD_K = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif","Nur","Reyhan","Cansu","Derya","Sevda","Pınar","Gül","Nazlı","Hande"];
@@ -122,16 +123,16 @@ export const ITEMS: Record<string, Item> = {
   demir:   { id: "demir",   name: "Demir",      icon: "⛏",  buy: 14, sell: 6,  kind: "esya" },
   kereste: { id: "kereste", name: "Kereste",    icon: "🪵", buy: 7,  sell: 3,  kind: "esya" },
   deri:    { id: "deri",    name: "Deri",       icon: "🟫", buy: 9,  sell: 4,  kind: "esya" },
-  // Silahlar (power)
-  bicak:        { id: "bicak",        name: "Bıçak",        icon: "🗡", buy: 20,  sell: 8,   kind: "silah", power: 4 },
-  hancer:       { id: "hancer",       name: "Hançer",       icon: "🗡", buy: 32,  sell: 13,  kind: "silah", power: 5 },
-  yay:          { id: "yay",          name: "Av Yayı",      icon: "🏹", buy: 50,  sell: 20,  kind: "silah", power: 7 },
-  kilic:        { id: "kilic",        name: "Kılıç",        icon: "⚔", buy: 60,  sell: 24,  kind: "silah", power: 8 },
-  gurz:         { id: "gurz",         name: "Gürz",         icon: "🔨", buy: 88,  sell: 35,  kind: "silah", power: 9 },
-  mizrak:       { id: "mizrak",       name: "Mızrak",       icon: "🔱", buy: 100, sell: 40,  kind: "silah", power: 10 },
-  savas_balta:  { id: "savas_balta",  name: "Savaş Baltası",icon: "🪓", buy: 110, sell: 44,  kind: "silah", power: 11 },
-  celik_kilic:  { id: "celik_kilic",  name: "Çelik Kılıç",  icon: "⚔", buy: 140, sell: 56,  kind: "silah", power: 13 },
-  yatagan:      { id: "yatagan",      name: "Yatağan",      icon: "⚔", buy: 210, sell: 84,  kind: "silah", power: 15 },
+  // Silahlar (power). wclass = arketip (savaşta farklı davranır), twoHanded = kalkanla kullanılamaz.
+  bicak:        { id: "bicak",        name: "Bıçak",        icon: "🗡", buy: 20,  sell: 8,   kind: "silah", power: 4,  wclass: "hizli" },
+  hancer:       { id: "hancer",       name: "Hançer",       icon: "🗡", buy: 32,  sell: 13,  kind: "silah", power: 5,  wclass: "hizli" },
+  yay:          { id: "yay",          name: "Av Yayı",      icon: "🏹", buy: 50,  sell: 20,  kind: "silah", power: 7,  wclass: "menzilli", twoHanded: true },
+  kilic:        { id: "kilic",        name: "Kılıç",        icon: "⚔", buy: 60,  sell: 24,  kind: "silah", power: 8,  wclass: "kesici" },
+  gurz:         { id: "gurz",         name: "Gürz",         icon: "🔨", buy: 88,  sell: 35,  kind: "silah", power: 9,  wclass: "ezici" },
+  mizrak:       { id: "mizrak",       name: "Mızrak",       icon: "🔱", buy: 100, sell: 40,  kind: "silah", power: 10, wclass: "delici", twoHanded: true },
+  savas_balta:  { id: "savas_balta",  name: "Savaş Baltası",icon: "🪓", buy: 110, sell: 44,  kind: "silah", power: 11, wclass: "ezici", twoHanded: true },
+  celik_kilic:  { id: "celik_kilic",  name: "Çelik Kılıç",  icon: "⚔", buy: 140, sell: 56,  kind: "silah", power: 13, wclass: "kesici" },
+  yatagan:      { id: "yatagan",      name: "Yatağan",      icon: "⚔", buy: 210, sell: 84,  kind: "silah", power: 15, wclass: "kesici" },
   // Gövde zırhı (defense)
   deri_zirh:    { id: "deri_zirh",    name: "Deri Zırh",    icon: "🦺", buy: 45,  sell: 18,  kind: "zirh", defense: 4 },
   pamuk_zirh:   { id: "pamuk_zirh",   name: "Pamuklu Zırh", icon: "🦺", buy: 82,  sell: 33,  kind: "zirh", defense: 6 },
