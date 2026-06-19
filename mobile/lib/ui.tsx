@@ -88,16 +88,16 @@ export function Portre({ age, gender, size = 44, ring = true, seed }: { age: num
 
 // Dönüm noktası anı — sahne perdesi (kül & köz dokusu).
 const MILESTONE_LABEL: Record<string, { tag: string; icon: string }> = {
-  meslek_edinme: { tag: "Reşit Oldun", icon: "⚒" },
-  evlilik: { tag: "Yeni Bir Ocak", icon: "🕯" },
-  doğum: { tag: "Soyun Sürüyor", icon: "🍼" },
-  mülk_alım: { tag: "Adına Bir Tapu", icon: "🏰" },
-  örgüt_katılım: { tag: "Saflara Katıldın", icon: "⚜" },
-  savaş_zafer: { tag: "Zafer", icon: "⚔" },
-  görev_tamamlandı: { tag: "Görev Tamam", icon: "🎯" },
-  meslek_değişimi: { tag: "Yeni Bir Yol", icon: "🧭" },
-  ölüm: { tag: "Hayatın Sonu", icon: "🕊" },
-  nesil_devri: { tag: "Yeni Nesil", icon: "🏛" },
+  meslek_edinme: { tag: "Reşit Oldun", icon: "anvil" },
+  evlilik: { tag: "Yeni Bir Ocak", icon: "ring" },
+  doğum: { tag: "Soyun Sürüyor", icon: "baby" },
+  mülk_alım: { tag: "Adına Bir Tapu", icon: "castle" },
+  örgüt_katılım: { tag: "Saflara Katıldın", icon: "crown" },
+  savaş_zafer: { tag: "Zafer", icon: "crossed-swords" },
+  görev_tamamlandı: { tag: "Görev Tamam", icon: "medal" },
+  meslek_değişimi: { tag: "Yeni Bir Yol", icon: "compass" },
+  ölüm: { tag: "Hayatın Sonu", icon: "tombstone" },
+  nesil_devri: { tag: "Yeni Nesil", icon: "banner" },
 };
 
 const MS_ACCENT: Record<string, string> = {
@@ -123,15 +123,15 @@ function Burst({ color }: { color: string }) {
 }
 
 // İkonun nazikçe nabız atması.
-function IconPulse({ icon }: { icon: string }) {
+function IconPulse({ icon, color }: { icon: string; color: string }) {
   const s = useSharedValue(0.4);
   useEffect(() => { s.value = withSequence(withSpring(1.15, { damping: 6, stiffness: 140 }), withSpring(1, { damping: 10 })); }, []);
   const st = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
-  return <Animated.Text style={[{ fontSize: 38 }, st]}>{icon}</Animated.Text>;
+  return <Animated.View style={st}><GameIcon name={icon} size={42} color={color} /></Animated.View>;
 }
 
 export function MilestoneModal({ visible, type, text, onClose }: { visible: boolean; type: string; text: string; onClose: () => void }) {
-  const meta = MILESTONE_LABEL[type] || { tag: "Dönüm Noktası", icon: "✦" };
+  const meta = MILESTONE_LABEL[type] || { tag: "Dönüm Noktası", icon: "star" };
   const accent = MS_ACCENT[type] || C.gold;
   const celebratory = type !== "ölüm";
   return (
@@ -143,7 +143,7 @@ export function MilestoneModal({ visible, type, text, onClose }: { visible: bool
           <View style={{ width: 80, height: 80, alignItems: "center", justifyContent: "center", marginTop: 6 }}>
             {celebratory && <GlowPulse size={80} color={accent} />}
             {celebratory && <Burst color={accent} />}
-            <IconPulse icon={meta.icon} />
+            <IconPulse icon={meta.icon} color={accent} />
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 }}>
             <View style={{ height: 1, width: 24, backgroundColor: accent + "88" }} />
