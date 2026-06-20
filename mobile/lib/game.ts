@@ -34,6 +34,7 @@ export interface Player {
   inv_q?: Record<string, Partial<Record<QualityTier, number>>>; // eşya kalite kırılımı (quality.py portu; sıradan izlenmez)
   last_study_turn?: number; lesson_count?: number; // mektep: ayda 1 ders + sınav sayacı
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
+  club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
   hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
   governorships?: string[]; // valisi olunan şehirler
   legacy?: Record<string, boolean>; // kalıcı görkem eserleri (vakıf/anıt/imaret) — bir kez kurulur
@@ -1055,6 +1056,13 @@ export function advance(prev: GameState, n = 1): GameState {
     }
     // Mektep kulübü: okul çağında (7-17) her ay sessiz pasif beceri kazanımı (Vercel öğrenci topluluğu).
     if (s.player.club && s.player.age >= 7 && s.player.age < 18) { const cl = CLUBS.find((c) => c.id === s.player.club); if (cl) gainSkill(s, cl.skill, 2); }
+    // Mezuniyet: 18'inde kulüpten ayrılırken, yılların kulüp itibarı kalıcı bir hüner bırakır.
+    else if (s.player.club && s.player.age >= 18) {
+      const p2 = s.player; const cl = CLUBS.find((c) => c.id === p2.club);
+      if (cl) { gainSkill(s, cl.skill, 60 + (p2.club_standing || 0) * 6); p2.club_grad = p2.club;
+        push(s, "mektep", `${CLUB_TR[p2.club!] || "Kulüp"} kulübünden mezun oldun; yılların emeği kalıcı bir hüner bıraktı.`, "kişisel", true, { k: "club.grad." + p2.club }); }
+      p2.club = undefined;
+    }
     const child = s.player.age < 13;
     // Çocuğu ailesi besler: açlık daha yavaş düşer ve dipte aile karnını doyurur.
     const seasonMult = ({ "İlkbahar": 1.0, "Yaz": 1.1, "Sonbahar": 0.9, "Kış": 1.3 } as Record<string, number>)[cal.season] ?? 1; // 4 mevsim eğrisi (Vercel season_hunger_mult)
@@ -2079,6 +2087,7 @@ export function joinClub(prev: GameState, id: string | null): GameState {
   if (p.dead) return s;
   if (!id) { p.club = undefined; return s; }
   if (!CLUBS.find((c) => c.id === id)) return s;
+  if (p.club !== id) p.club_standing = 0; // başka kulübe geçince itibar sıfırdan
   p.club = id;
   push(s, "mektep", `${CLUB_TR[id]} kulübüne katıldın; her ay sessizce gelişeceksin.`, "kişisel", false, { k: "club.join." + id });
   return s;
@@ -2133,6 +2142,43 @@ export function studySubject(prev: GameState, id: string): StudyResult {
     if (passed) { p.stat_points += 1; chips.push({ label: "Sınav geçildi · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Sınava girdin ve geçtin — bir özellik puanı kazandın.", "kişisel", true, { k: "evj.examPass" }); }
     else { chips.push({ label: "Sınavda zorlandın", col: "#C0556B" }); push(s, "mektep", "Sınava girdin ama zorlandın; daha çok çalışmalısın.", "kişisel", false, { k: "evj.examFail" }); }
   }
+  return { state: s, key, chips };
+}
+
+// Kulüpte meşk et — ayda 1, kulüp çağında (7-17). Aktif çalışma: derse ek, kulübe özgü sonuç + kulüp itibarı.
+export function clubPractice(prev: GameState): StudyResult {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !p.club) return { state: s, key: "", chips: [] };
+  if (p.age < 7 || p.age >= 18) return { state: s, key: "", chips: [], blocked: true };
+  if (p.last_club_turn === s.turn) return { state: s, key: "", chips: [], blocked: true }; // bu ay meşk edildi
+  p.last_club_turn = s.turn;
+  p.hunger = Math.max(0, p.hunger - 4);
+  const chips: { label: string; col: string }[] = [];
+  let gain = 1; let key = "";
+  if (p.club === "gures") {
+    const win = Math.random() < Math.min(0.9, 0.4 + effStat(p, "strength") * 0.05);
+    if (win) { gainSkill(s, "combat", 10); addStatXp(s, "strength", 4); p.fame = Math.min(100, p.fame + 2); gain = 2;
+      chips.push({ label: "Dövüş +10", col: "#C9A84C" }, { label: "Şöhret +2", col: "#7B4FAF" }); key = "club.gures.win";
+      push(s, "mektep", "Güreş minderinde rakibini yendin; adın delikanlılar arasında anıldı.", "kişisel", true, { k: "club.gures.win" }); }
+    else { gainSkill(s, "combat", 4); p.health = Math.max(1, p.health - 3);
+      chips.push({ label: "Dövüş +4", col: "#C9A84C" }, { label: "Sağlık −3", col: "#C0556B" }); key = "club.gures.lose";
+      push(s, "mektep", "Güreşte sırtın yere geldi; ama mindere her düşüş bir ders.", "kişisel", false, { k: "club.gures.lose" }); }
+  } else if (p.club === "cirak") {
+    gainSkill(s, "crafting", 10); addStatXp(s, "intelligence", 2);
+    const pay = 5 + Math.floor(Math.random() * 12); p.money += pay;
+    chips.push({ label: "Zanaat +10", col: "#C9A84C" }, { label: `+${pay} akçe`, col: "#E0BC5A" }); key = "club.cirak.win";
+    push(s, "mektep", "Ustanın yanında bir işi bitirdin; emeğinin karşılığını cebine koydun.", "kişisel", true, { k: "club.cirak.win", p: [pay] });
+  } else { // koro
+    const win = Math.random() < Math.min(0.9, 0.4 + effStat(p, "charisma") * 0.05);
+    if (win) { gainSkill(s, "social", 10); addStatXp(s, "charisma", 4); p.reputation = Math.min(100, p.reputation + 1); gain = 2;
+      chips.push({ label: "Sosyal +10", col: "#C9A84C" }, { label: "İtibar +1", col: "#7FA66A" }); key = "club.koro.win";
+      push(s, "mektep", "Koroda sesin meclisi büyüledi; el üstünde tutuldun.", "kişisel", true, { k: "club.koro.win" }); }
+    else { gainSkill(s, "social", 4);
+      chips.push({ label: "Sosyal +4", col: "#C9A84C" }); key = "club.koro.lose";
+      push(s, "mektep", "Koroda biraz tutuldun ama gayretten geri durmadın.", "kişisel", false, { k: "club.koro.lose" }); }
+  }
+  p.club_standing = (p.club_standing || 0) + gain;
+  if (p.club_standing % 5 === 0) { p.stat_points += 1; chips.push({ label: "Kulüp ustalığı · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Kulüpte göze girdin; ustalığın bir özellik puanıyla taçlandı.", "kişisel", true, { k: "club.milestone" }); }
   return { state: s, key, chips };
 }
 

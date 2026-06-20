@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { SUBJECTS, studySubject, studiedThisTurn, lessonsToExam, CLUBS, joinClub } from "../../lib/game";
+import { SUBJECTS, studySubject, studiedThisTurn, lessonsToExam, CLUBS, joinClub, clubPractice } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { subjImage, MEKTEP_HERO } from "../../lib/assets";
 import { localFirstName, locSeed } from "../../lib/world";
@@ -40,6 +40,16 @@ export default function Mektep() {
     if (p.dead || done) return;
     hap("success"); playTap();
     const res = studySubject(state, id);
+    if (res.blocked) return;
+    apply(() => res.state);
+    setLast({ key: res.key, chips: res.chips, tick: Date.now() });
+  };
+
+  const clubDone = p.last_club_turn === state.turn;
+  const onPractice = () => {
+    if (p.dead || !p.club || clubDone) return;
+    hap("success"); playTap();
+    const res = clubPractice(state);
     if (res.blocked) return;
     apply(() => res.state);
     setLast({ key: res.key, chips: res.chips, tick: Date.now() });
@@ -161,6 +171,17 @@ export default function Mektep() {
                 );
               })}
             </View>
+            {p.club ? (
+              <View style={{ marginTop: 11, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(212,180,90,0.35)", borderRadius: 12, padding: 12 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("club.standing")}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>{p.club_standing || 0}</Text>
+                </View>
+                <Pressable onPress={onPractice} disabled={clubDone} style={{ alignItems: "center", paddingVertical: 11, borderRadius: 9, borderWidth: 1.5, borderColor: clubDone ? C.border : "rgba(212,180,90,0.6)", backgroundColor: clubDone ? C.bg : "rgba(212,180,90,0.14)" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 0.5, color: clubDone ? C.parchmentMuted : C.gold }}>{clubDone ? t("club.practiced") : t("club.practice")}</Text>
+                </Pressable>
+              </View>
+            ) : null}
             <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{t("club.hint")}</Text>
           </>
         )}
