@@ -2152,26 +2152,27 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   p.hunger = Math.max(0, p.hunger - 5);
   addStatXp(s, EXAM_STAT[id] || "intelligence", 5); // dersin özelliği tecrübeyle gelişir
   const lucky = hasPerk(p, "mucit") || chance(0.5);
+  const statBonus = hasPerk(p, "mucit") || chance(0.12); // serbest özellik puanı artık nadir (grind sömürüsü kapatıldı)
   const chips: { label: string; col: string }[] = [];
   let key = "";
   p.teacherBond = (p.teacherBond || 0) + 1; // hoca bağı çalıştıkça güçlenir
-  if (p.teacherBond % 8 === 0) { p.stat_points += 1; chips.push({ label: "Hoca takdiri · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Hocan emeğini gördü ve seni takdir etti (özellik puanı).", "kişisel", true, { k: "club.bond" }); }
+  if (p.teacherBond % 12 === 0) { p.stat_points += 1; chips.push({ label: "Hoca takdiri · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Hocan emeğini gördü ve seni takdir etti (özellik puanı).", "kişisel", true, { k: "club.bond" }); }
   if (id === "din") {
     bumpNam(p, "dindar", 4); chips.push({ label: "Dindar +4", col: "#9C7BC4" });
     if (lucky) { p.honor = Math.min(100, p.honor + 2); chips.push({ label: "Şeref +2", col: "#7FA66A" }); key = "ev.study.din.l"; push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu.", "kişisel", false, { k: key }); }
     else { key = "ev.study.din.p"; push(s, "mektep", "Mektepte dua ve hikmet dinledin.", "kişisel", false, { k: key }); }
   } else if (id === "matematik") {
     gainSkill(s, "trade", 5); chips.push({ label: "Ticaret +5", col: "#C9A84C" });
-    if (lucky) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); key = "ev.study.matematik.l"; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
-    else { key = "ev.study.matematik.p"; push(s, "mektep", "Rakamlarla boğuştun.", "kişisel", false, { k: key }); }
+    if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); key = "ev.study.matematik.l"; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
+    else { addStatXp(s, "intelligence", 6); key = "ev.study.matematik.p"; push(s, "mektep", "Rakamlarla boğuştun.", "kişisel", false, { k: key }); }
   } else if (id === "edebiyat") {
     gainSkill(s, "social", 5); chips.push({ label: "Sosyal +5", col: "#C9A84C" });
-    if (lucky) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); key = "ev.study.edebiyat.l"; push(s, "mektep", "Edebiyat çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
-    else { key = "ev.study.edebiyat.p"; push(s, "mektep", "Beyitler ezberledin.", "kişisel", false, { k: key }); }
+    if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); key = "ev.study.edebiyat.l"; push(s, "mektep", "Edebiyat çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
+    else { addStatXp(s, "charisma", 6); key = "ev.study.edebiyat.p"; push(s, "mektep", "Beyitler ezberledin.", "kişisel", false, { k: key }); }
   } else {
     gainSkill(s, "combat", 5); chips.push({ label: "Savaş +5", col: "#C9A84C" });
-    if (lucky) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); key = "ev.study.beden.l"; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
-    else { key = "ev.study.beden.p"; push(s, "mektep", "Ter döktün, güçlendin.", "kişisel", false, { k: key }); }
+    if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); key = "ev.study.beden.l"; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
+    else { addStatXp(s, "strength", 6); key = "ev.study.beden.p"; push(s, "mektep", "Ter döktün, güçlendin.", "kişisel", false, { k: key }); }
   }
   // ── Ders-içi olay (Vercel school.py ders olayları): %40, stat testli; "cesur" sonuç anlatılır ──
   if (chance(0.4)) {
@@ -2228,7 +2229,7 @@ export function clubPractice(prev: GameState): StudyResult {
       push(s, "mektep", "Koroda biraz tutuldun ama gayretten geri durmadın.", "kişisel", false, { k: "club.koro.lose" }); }
   }
   p.club_standing = (p.club_standing || 0) + gain;
-  if (p.club_standing % 8 === 0) { p.stat_points += 1; chips.push({ label: "Kulüp ustalığı · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Kulüpte göze girdin; ustalığın bir özellik puanıyla taçlandı.", "kişisel", true, { k: "club.milestone" }); }
+  if (p.club_standing % 12 === 0) { p.stat_points += 1; chips.push({ label: "Kulüp ustalığı · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Kulüpte göze girdin; ustalığın bir özellik puanıyla taçlandı.", "kişisel", true, { k: "club.milestone" }); }
   return { state: s, key, chips };
 }
 
