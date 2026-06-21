@@ -18,6 +18,54 @@ const LINK: Record<SkillKey, { stat: "strength" | "intelligence" | "charisma" | 
   social:   { stat: "charisma",     tone: "#6FA0C0" },
 };
 
+// ── Genel bakış: dört dal bir arada + hüner ilerlemesi (sayfayı dolu/haritalı gösterir) ──
+function Overview() {
+  const { state } = useGame();
+  const { t } = useI18n();
+  const p = state!.player;
+  const maxPerks = TIERS.length * SKILL_META.length; // her dalda 3 kademe
+  const chosen = PERKS.filter((pk) => hasPerk(p, pk.id)).length;
+  const pending = SKILL_META.reduce((n, m) => n + (pendingPerkTier(p, m.key) != null ? 1 : 0), 0);
+  return (
+    <View style={{ backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.borderHi, borderRadius: 14, padding: 14, marginBottom: 14 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 11 }}>
+        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.gold, textTransform: "uppercase" }}>{t("bec.overview")}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <GameIcon name="medal" size={12} color={C.gold} />
+          <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{chosen}/{maxPerks}</Text>
+        </View>
+      </View>
+      {SKILL_META.map((m) => {
+        const link = LINK[m.key];
+        const lvl = p.skills[m.key];
+        const pend = pendingPerkTier(p, m.key) != null;
+        return (
+          <View key={m.key} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 9 }}>
+            <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: link.tone + "1A", borderWidth: 1, borderColor: link.tone + "55", alignItems: "center", justifyContent: "center" }}>
+              <GameIcon name={m.icon} size={15} color={link.tone} />
+            </View>
+            <Text style={{ width: 64, fontFamily: F.display, fontSize: 10.5, color: C.parchment }}>{t("skill." + m.key)}</Text>
+            {/* 10 segmentli seviye şeridi */}
+            <View style={{ flex: 1, flexDirection: "row", gap: 2 }}>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <View key={i} style={{ flex: 1, height: 7, borderRadius: 2, backgroundColor: i < lvl ? link.tone : "rgba(255,255,255,0.07)" }} />
+              ))}
+            </View>
+            <Text style={{ width: 20, textAlign: "right", fontFamily: F.display, fontSize: 12, color: link.tone }}>{lvl}</Text>
+            {pend ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.gold }} /> : <View style={{ width: 7 }} />}
+          </View>
+        );
+      })}
+      {pending > 0 && (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3, paddingTop: 9, borderTopWidth: 1, borderTopColor: C.border }}>
+          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.gold }} />
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.gold }}>{applyParams(t("bec.pendingHint"), [pending])}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
 function Tree({ tree, icon }: { tree: SkillKey; icon: string }) {
   const { state, apply } = useGame();
   const { t } = useI18n();
@@ -124,6 +172,7 @@ export default function Beceriler() {
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 100 }}>
         <PageHeader kicker={t("scr.beceriler")} title={t("scr.beceriler")} sub={t("bec.intro")} />
+        <Overview />
         {SKILL_META.map((m) => <Tree key={m.key} tree={m.key} icon={m.icon} />)}
       </ScrollView>
     </View>
