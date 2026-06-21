@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { travelBy, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES, citySpecialtyIdx } from "../../../lib/game";
+import { travelBy, buyHorse, HORSE_COST, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES, citySpecialtyIdx } from "../../../lib/game";
 import { cityInfo, marketGoods, locSeed } from "../../../lib/world";
 import { useI18n, applyParams } from "../../../lib/i18n";
 import { placeName } from "../../../lib/locale-data";
@@ -172,15 +172,29 @@ export default function DiyarDetay() {
       ) : (
         <>
           <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("diyar.setOut")}</Text>
-          {TRAVEL_ROUTES.map((r) => (
-            <Pressable key={r.id} onPress={() => { apply((s) => travelBy(s, name, r.id)); router.back(); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: C.card, marginBottom: 8 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("route." + r.id + ".l")}</Text>
-                <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("route." + r.id + ".d")}</Text>
+          {TRAVEL_ROUTES.filter((r) => r.id !== "at" || state.player.horse).map((r) => (
+            <Pressable key={r.id} onPress={() => { apply((s) => travelBy(s, name, r.id)); router.back(); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: r.id === "at" ? "rgba(127,166,106,0.5)" : "rgba(201,168,76,0.4)", backgroundColor: C.card, marginBottom: 8 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                {r.id === "at" ? <GameIcon name="camel" size={18} color={C.sage} /> : null}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{t("route." + r.id + ".l")}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("route." + r.id + ".d")}</Text>
+                </View>
               </View>
               <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{t("diyar.go")}</Text>
             </Pressable>
           ))}
+          {!state.player.horse && (
+            <Pressable onPress={() => { if (state.player.money >= HORSE_COST) apply((s) => buyHorse(s)); }} disabled={state.player.money < HORSE_COST}
+              style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderStyle: "dashed", borderColor: state.player.money >= HORSE_COST ? "rgba(127,166,106,0.6)" : C.border, backgroundColor: "transparent", marginTop: 2 }}>
+              <GameIcon name="camel" size={18} color={state.player.money >= HORSE_COST ? C.sage : C.parchmentMuted} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 12, color: state.player.money >= HORSE_COST ? C.parchment : C.parchmentMuted }}>{t("horse.buy")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>{t("horse.buyHint")}</Text>
+              </View>
+              <Text style={{ fontFamily: F.display, fontSize: 12, color: state.player.money >= HORSE_COST ? C.gold : C.parchmentMuted }}>{HORSE_COST} ⚜</Text>
+            </Pressable>
+          )}
         </>
       )}
     </ScrollView>

@@ -35,6 +35,7 @@ export interface Player {
   last_study_turn?: number; lesson_count?: number; // mektep: ayda 1 ders + sınav sayacı
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
   club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
+  horse?: boolean; // bir atın var mı (hızlı/güvenli "at ile" yolculuğu açar)
   hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
   governorships?: string[]; // valisi olunan şehirler
   legacy?: Record<string, boolean>; // kalıcı görkem eserleri (vakıf/anıt/imaret) — bir kez kurulur
@@ -1944,13 +1945,23 @@ export function travelTo(prev: GameState, dest: string): GameState {
   return s;
 }
 
-// Çok rotalı seyahat: ana yol (güvenli), patika (hızlı/riskli), kervan (rahat, ücretli).
-export type TravelRoute = "anayol" | "patika" | "kervan";
+// Çok rotalı seyahat: ana yol (güvenli), patika (hızlı/riskli), kervan (rahat, ücretli), at (kendi atın: hızlı + güvenli + bedava).
+export type TravelRoute = "anayol" | "patika" | "kervan" | "at";
 export const TRAVEL_ROUTES: { id: TravelRoute; label: string; desc: string }[] = [
   { id: "anayol", label: "Ana Yol", desc: "Güvenli ama yorucu." },
   { id: "patika", label: "Patika", desc: "Kestirme — ama haydut riski var." },
   { id: "kervan", label: "Kervanla", desc: "Rahat ve güvenli (8 akçe)." },
+  { id: "at", label: "Atınla", desc: "Hızlı, güvenli ve bedava — atın varsa." },
 ];
+// At satın alma — bir kez; hızlı/güvenli "at ile" yolculuğunu açar.
+export const HORSE_COST = 120;
+export function buyHorse(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.horse || p.money < HORSE_COST) return s;
+  p.money -= HORSE_COST; p.horse = true; p.reputation = Math.min(100, p.reputation + 2);
+  push(s, "yolculuk", "Kendine sağlam bir at aldın; artık yollar daha kısa ve emniyetli.", "kişisel", true, { k: "horse.bought" });
+  return s;
+}
 // ── Yol olayları (Vercel travel_rework.py portu) — otomatik stat-testli, mevcut akışa additif ──
 // Rotaya göre yolda bir olay tetiklenebilir; sonuç oyuncunun istatistiğiyle çözülür ve günlüğe düşer.
 function rollTravelEvent(s: GameState, route: TravelRoute) {
@@ -1993,6 +2004,7 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
 export function travelBy(prev: GameState, dest: string, route: TravelRoute): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || dest === p.location_name) return s;
+  if (route === "at" && !p.horse) route = "anayol"; // at yoksa ana yola düş
   if (route === "kervan") {
     if (p.money < 8) { push(s, "yolculuk", "Kervana verecek akçen yok.", "kişisel", false, { k: "evj.noCar" }); return s; }
     p.money -= 8; p.hunger = Math.max(0, p.hunger - 3); p.location_name = dest;
@@ -2009,10 +2021,22 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
     } else {
       push(s, "yolculuk", `Patikadan kestirerek ${dest}'e vardın.`, "kişisel", false, { k: "evj.pathOk", p: [{ pl: dest }] });
     }
+  } else if (route === "at") {
+    p.hunger = Math.max(0, p.hunger - 4); p.location_name = dest;
+    // At hızlı: pusu nadir, baskına uğrasan da dörtnala sıyrılırsın.
+    const ambush = Math.random() < Math.max(0.03, 0.12 - combatPower(p) * 0.01);
+    if (ambush) {
+      const loss = Math.min(p.money, 4 + Math.floor(Math.random() * 8));
+      p.money -= loss; p.health = Math.max(1, p.health - (4 + Math.floor(Math.random() * 5)));
+      push(s, "yolculuk", `Atınla giderken haydutlar çıktı ama dörtnala sıyrıldın (−${loss} akçe).`, "kişisel", false, { k: "evj.rideAmbush", p: [{ pl: dest }, loss] });
+    } else {
+      push(s, "yolculuk", `Atına atlayıp ${dest} yerleşimine çabucak vardın.`, "kişisel", false, { k: "evj.rideOk", p: [{ pl: dest }] });
+    }
   } else {
     p.hunger = Math.max(0, p.hunger - 5); p.location_name = dest;
     push(s, "yolculuk", `Ana yoldan ${dest} yerleşimine gittin.`, "kişisel", false, { k: "evj.travel", p: [{ pl: dest }] });
   }
+  if (!p.dead) rollTravelEvent(s, route); // yol olayları (han/yolcu/tüccar/fırtına/geçit/kervan) — artık etkin
   return s;
 }
 
