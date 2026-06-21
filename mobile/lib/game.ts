@@ -1766,6 +1766,25 @@ export function sellItem(prev: GameState, id: string): GameState {
   else push(s, "ticaret", `${g.name} sattın (+${sell} akçe).`, "kişisel", false, { k: "evj.sell", p: [{ i: id }, sell] });
   return s;
 }
+// Pazarlıkta satış için taban fiyat (satıcı yükseltmeye direnir; tavan bunun üstünde).
+export function bargainSellBase(s: GameState, id: string): number {
+  const p = s.player;
+  const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return 0;
+  return Math.max(1, Math.round(marketPrice(g.sell, s.econ) * goodPriceMult(s, id)));
+}
+// Müzakereyle satış: anlaşılan fiyattan bir birim satar (kalite çarpanı korunur).
+export function negotiatedSell(prev: GameState, id: string, price: number): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!(p.inventory[id] > 0)) return s;
+  const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
+  const tier = QUALITY_GOODS.has(id) ? takeQualityUnit(p, id) : "siradan";
+  p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
+  let earn = Math.round(price * QUALITY_MULT[tier]);
+  if (hasPerk(p, "dilbaz")) earn = Math.round(earn * 1.25);
+  p.money += earn; addTradePressure(s, p.location_name, id, -0.045); gainSkill(s, "trade", 6);
+  push(s, "ticaret", `Pazarlıkla ${g.name} sattın (+${earn} akçe).`, "kişisel", false, { k: "evj.sellHaggle", p: [{ i: id }, earn] });
+  return s;
+}
 
 // İlişki: niyetli sohbet (bağlamlı), hediye ver.
 export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string = "tr"): { state: GameState; line: string } {
