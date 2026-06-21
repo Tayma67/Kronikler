@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { SUBJECTS, studySubject, studiedThisTurn, lessonsToExam, CLUBS, joinClub, clubPractice } from "../../lib/game";
+import { SUBJECTS, studySubject, studiedThisTurn, lessonsToExam, CLUBS, joinClub, clubPractice, studyEnergy, maxStudyEnergy, STUDY_COST } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { subjImage, MEKTEP_HERO } from "../../lib/assets";
 import { localFirstName, locSeed } from "../../lib/world";
@@ -45,7 +45,7 @@ export default function Mektep() {
     setLast({ key: res.key, chips: res.chips, tick: Date.now() });
   };
 
-  const clubDone = p.last_club_turn === state.turn;
+  const clubDone = studyEnergy(state) < STUDY_COST;
   const onPractice = () => {
     if (p.dead || !p.club || clubDone) return;
     hap("success"); playTap();
@@ -94,6 +94,17 @@ export default function Mektep() {
               </View>
             </View>
           </ImageBackground>
+        </View>
+
+        {/* Çalışma gücü (enerji) — bu ay kalan ders/meşk hakkı */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 9, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.28)", borderRadius: 11, paddingVertical: 10, paddingHorizontal: 13, marginBottom: 13 }}>
+          <GameIcon name="ilerle" size={15} color={C.gold} />
+          <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("mek.energy")}</Text>
+          <View style={{ flexDirection: "row", gap: 5 }}>
+            {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
+              <View key={i} style={{ width: 12, height: 12, borderRadius: 3, transform: [{ rotate: "45deg" }], backgroundColor: i < studyEnergy(state) ? C.gold : "transparent", borderWidth: 1, borderColor: i < studyEnergy(state) ? C.gold : C.border }} />
+            ))}
+          </View>
         </View>
 
         {/* Dağıtılmamış puan CTA */}

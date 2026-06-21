@@ -32,7 +32,8 @@ export interface Player {
   claimed?: string[]; // ödülü alınan başarımlar
   fq_claimed?: string[]; // tamamlanan aile/yaşam görevleri (family_quests portu)
   inv_q?: Record<string, Partial<Record<QualityTier, number>>>; // eşya kalite kırılımı (quality.py portu; sıradan izlenmez)
-  last_study_turn?: number; lesson_count?: number; // mektep: ayda 1 ders + sınav sayacı
+  last_study_turn?: number; lesson_count?: number; // mektep: sınav sayacı (eski gate; enerji sistemine taşındı)
+  study_energy?: number; // aylık çalışma gücü — ders + kulüp meşki bundan harcanır
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
   club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
   horse?: boolean; // bir atın var mı (hızlı/güvenli "at ile" yolculuğu açar)
@@ -1055,6 +1056,8 @@ export function advance(prev: GameState, n = 1): GameState {
         s.player.child_edu![cn].weeks += 1;
       }
     }
+    // Çalışma gücü: her ay yenilenir (ders + kulüp meşki bundan harcanır).
+    s.player.study_energy = maxStudyEnergy(s.player.age);
     // Mektep kulübü: okul çağında (7-17) her ay sessiz pasif beceri kazanımı (Vercel öğrenci topluluğu).
     if (s.player.club && s.player.age >= 7 && s.player.age < 18) { const cl = CLUBS.find((c) => c.id === s.player.club); if (cl) gainSkill(s, cl.skill, 2); }
     // Mezuniyet: 18'inde kulüpten ayrılırken, yılların kulüp itibarı kalıcı bir hüner bırakır.
@@ -2083,8 +2086,12 @@ export const SUBJECTS: Subject[] = [
   { id: "beden",    name: "Beden", icon: "fist", desc: "Güç ve savaş kabiliyeti." },
 ];
 export interface StudyResult { state: GameState; key: string; chips: { label: string; col: string }[]; blocked?: boolean; }
-// Bir derste bu ay çalışıldı mı? (Vercel: haftada 1 ders → mobilde ayda 1 ders.)
-export function studiedThisTurn(s: GameState): boolean { return s.player.last_study_turn === s.turn; }
+// ── Çalışma gücü (enerji sistemi) — her ay yenilenir; ders/kulüp meşki harcar ──
+export const STUDY_COST = 2; // ders / kulüp meşki başına enerji
+export function maxStudyEnergy(age: number): number { return age >= 7 && age < 18 ? 4 : 2; } // okul çağı 2 iş, yetişkin 1 iş/ay
+export function studyEnergy(s: GameState): number { return s.player.study_energy ?? maxStudyEnergy(s.player.age); }
+// Bu ay artık çalışılamıyor mu? (enerji ders maliyetinin altında).
+export function studiedThisTurn(s: GameState): boolean { return studyEnergy(s) < STUDY_COST; }
 // Sınava kaç ders kaldı (4 derste bir sınav).
 export function lessonsToExam(p: Player): number { return 4 - ((p.lesson_count || 0) % 4); }
 const EXAM_STAT: Record<string, keyof Stats> = { din: "intelligence", matematik: "intelligence", edebiyat: "charisma", beden: "strength" };
@@ -2120,8 +2127,8 @@ export function joinClub(prev: GameState, id: string | null): GameState {
 export function studySubject(prev: GameState, id: string): StudyResult {
   const s = clone(prev); const p = s.player;
   if (p.dead) return { state: s, key: "", chips: [] };
-  if (p.last_study_turn === s.turn) return { state: s, key: "", chips: [], blocked: true }; // bu ay ders işlendi
-  p.last_study_turn = s.turn;
+  if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true }; // çalışma gücü yetmiyor
+  p.study_energy = studyEnergy(s) - STUDY_COST;
   p.lesson_count = (p.lesson_count || 0) + 1;
   p.hunger = Math.max(0, p.hunger - 5);
   addStatXp(s, EXAM_STAT[id] || "intelligence", 5); // dersin özelliği tecrübeyle gelişir
@@ -2174,8 +2181,8 @@ export function clubPractice(prev: GameState): StudyResult {
   const s = clone(prev); const p = s.player;
   if (p.dead || !p.club) return { state: s, key: "", chips: [] };
   if (p.age < 7 || p.age >= 18) return { state: s, key: "", chips: [], blocked: true };
-  if (p.last_club_turn === s.turn) return { state: s, key: "", chips: [], blocked: true }; // bu ay meşk edildi
-  p.last_club_turn = s.turn;
+  if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true }; // çalışma gücü yetmiyor
+  p.study_energy = studyEnergy(s) - STUDY_COST;
   p.hunger = Math.max(0, p.hunger - 4);
   const chips: { label: string; col: string }[] = [];
   let gain = 1; let key = "";
