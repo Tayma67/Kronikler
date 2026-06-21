@@ -1976,7 +1976,7 @@ export const TRAVEL_ROUTES: { id: TravelRoute; label: string; desc: string }[] =
   { id: "at", label: "Atınla", desc: "Hızlı, güvenli ve bedava — atın varsa." },
 ];
 // At satın alma — bir kez; hızlı/güvenli "at ile" yolculuğunu açar.
-export const HORSE_COST = 120;
+export const HORSE_COST = 200;
 export function buyHorse(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.horse || p.money < HORSE_COST) return s;
@@ -2228,7 +2228,7 @@ export function clubPractice(prev: GameState): StudyResult {
       push(s, "mektep", "Koroda biraz tutuldun ama gayretten geri durmadın.", "kişisel", false, { k: "club.koro.lose" }); }
   }
   p.club_standing = (p.club_standing || 0) + gain;
-  if (p.club_standing % 5 === 0) { p.stat_points += 1; chips.push({ label: "Kulüp ustalığı · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Kulüpte göze girdin; ustalığın bir özellik puanıyla taçlandı.", "kişisel", true, { k: "club.milestone" }); }
+  if (p.club_standing % 8 === 0) { p.stat_points += 1; chips.push({ label: "Kulüp ustalığı · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Kulüpte göze girdin; ustalığın bir özellik puanıyla taçlandı.", "kişisel", true, { k: "club.milestone" }); }
   return { state: s, key, chips };
 }
 
@@ -2790,7 +2790,7 @@ export function combatPower(p: Player): number {
   let pw = effStat(p, "strength") * 2 + effStat(p, "stamina") + p.skills.combat;
   const wid = p.equipped?.silah; const w = wid ? ITEMS[wid] : null;
   let weaponPw = Math.round((w?.power || 0) * equippedQualityMult(p, "silah"));
-  if (w?.twoHanded) weaponPw = Math.round(weaponPw * 1.25); // çift elli silah daha sert vurur (kalkan feda edilir)
+  if (w?.twoHanded) weaponPw = Math.round(weaponPw * 1.32); // çift elli silah daha sert vurur (kalkan feda edilir)
   pw += weaponPw || ((p.inventory["bicak"] || 0) > 0 ? 4 : 0); // kalite-ölçekli silah, yoksa elindeki bıçak
   if (p.faction === "asker") pw += 3;
   if (hasPerk(p, "cevik")) pw += 3;
@@ -2814,7 +2814,7 @@ export function hasShield(p: Player): boolean { return !!p.equipped?.kalkan; }
 export function shieldBlockChance(p: Player, defensive: boolean): number {
   const id = p.equipped?.kalkan; if (!id) return 0;
   const def = Math.round((ITEMS[id]?.defense || 0) * equippedQualityMult(p, "kalkan"));
-  return Math.min(0.55, 0.06 + def * 0.035 + (defensive ? 0.15 : 0));
+  return Math.min(0.45, 0.05 + def * 0.025 + (defensive ? 0.12 : 0));
 }
 export function isTwoHanded(id: string | null | undefined): boolean { return !!(id && ITEMS[id]?.twoHanded); }
 // "Cenk yükü" (0..1): ne kadar savaşa hazır görünüyorsun. Sosyal zarafeti bastırır
