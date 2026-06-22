@@ -2233,6 +2233,38 @@ export function clubPractice(prev: GameState): StudyResult {
   return { state: s, key, chips };
 }
 
+// Çocukluk uğraşları (7-12): okul çağı öncesi/yanı sıra çocuğa hareket alanı. Çalışma gücünden harcar.
+export type ChildAct = "oyun" | "yardim" | "yaramazlik" | "kesif";
+export function childAction(prev: GameState, kind: ChildAct): StudyResult {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age >= 13) return { state: s, key: "", chips: [] };
+  if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true };
+  p.study_energy = studyEnergy(s) - STUDY_COST;
+  const chips: { label: string; col: string }[] = []; let key = "";
+  if (kind === "oyun") {
+    p.health = Math.min(100, p.health + 5); addStatXp(s, "stamina", 6); gainSkill(s, "social", 4);
+    chips.push({ label: "Sağlık +5", col: "#7FA66A" }, { label: "Dayanıklılık ↑", col: "#C9A84C" }); key = "child.oyun";
+    push(s, "cocukluk", "Sokakta akranlarınla oyun oynadın; soluk soluğa ama mutlu.", "kişisel", false, { k: "child.oyun" });
+  } else if (kind === "yardim") {
+    const earn = 3 + Math.floor(Math.random() * 6); p.money += earn; p.reputation = Math.min(100, p.reputation + 1); gainSkill(s, "crafting", 4);
+    chips.push({ label: `+${earn} akçe`, col: "#E0BC5A" }, { label: "İtibar +1", col: "#7FA66A" }); key = "child.yardim";
+    push(s, "cocukluk", "Ev işlerinde aileye el verdin; eline biraz harçlık geçti.", "kişisel", false, { k: "child.yardim", p: [earn] });
+  } else if (kind === "yaramazlik") {
+    if (Math.random() < 0.5) { bumpNam(p, "capkin", 2); gainSkill(s, "social", 5); p.health = Math.min(100, p.health + 2);
+      chips.push({ label: "Sosyal +5", col: "#C9A84C" }); key = "child.yaramazlik.win";
+      push(s, "cocukluk", "Bir yaramazlık çevirdin ve yakayı sıyırdın; akranların kıkırdadı.", "kişisel", false, { k: "child.yaramazlik.win" }); }
+    else { p.reputation = Math.max(-100, p.reputation - 2); p.honor = Math.max(0, p.honor - 1);
+      chips.push({ label: "İtibar −2", col: "#C0556B" }); key = "child.yaramazlik.lose";
+      push(s, "cocukluk", "Yaramazlığın elinde patladı; yakalanıp azar işittin.", "kişisel", false, { k: "child.yaramazlik.lose" }); }
+  } else { // kesif
+    const r = Math.random();
+    if (r < 0.4) { const coin = 2 + Math.floor(Math.random() * 8); p.money += coin; chips.push({ label: `+${coin} akçe`, col: "#E0BC5A" }); key = "child.kesif.coin"; push(s, "cocukluk", "Çarşıyı arşınlarken yerde birkaç akçe buldun.", "kişisel", false, { k: "child.kesif.coin", p: [coin] }); }
+    else if (r < 0.65) { const g = rnd(["ekmek", "bal", "sifa", "balik"]); p.inventory[g] = (p.inventory[g] || 0) + 1; chips.push({ label: `+${ITEMS[g]?.name || g}`, col: "#7FA66A" }); key = "child.kesif.item"; push(s, "cocukluk", "Keşfe çıktın; iyi kalpli biri eline bir şey tutuşturdu.", "kişisel", false, { k: "child.kesif.item", p: [{ i: g }] }); }
+    else { addStatXp(s, "intelligence", 6); chips.push({ label: "Zekâ ↑", col: "#6FA0C0" }); key = "child.kesif.none"; push(s, "cocukluk", "Diyarı merakla gezdin; gördüklerin aklına kazındı.", "kişisel", false, { k: "child.kesif.none" }); }
+  }
+  return { state: s, key, chips };
+}
+
 // ── Suç/Gölge: risk/ödül ──
 // Suç türleri (Vercel crime_rework.py portu): risk/ödül kademeleri + şiddet.
 export type CrimeKind = "yankesicilik" | "dukkan_soyma" | "soygun" | "konak_soygunu";
