@@ -97,6 +97,8 @@ export default function Dashboard() {
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
   const [tab, setTab] = useState<"gunluk" | "dunya">("gunluk");
   const [shoot, setShoot] = useState(0);
+  const [coinsOn, setCoinsOn] = useState(false);
+  const coinTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevMoney = useRef<number>(state?.player.money ?? 0);
   const seenLen = useRef<number>(state?.history.length ?? 0);
   const [showEulogy, setShowEulogy] = useState(false);
@@ -112,13 +114,19 @@ export default function Dashboard() {
     wasDead.current = d;
   }, [state?.player.dead]);
 
-  // Akçe arttığında altın sikke yağmuru.
+  // Akçe anlamlı arttığında altın sikke yağmuru — oynayınca sökülür (sürekli GPU yükü bırakmaz).
   useEffect(() => {
     if (!state) return;
     const m = state.player.money;
-    if (m > prevMoney.current + 0) setShoot((k) => k + 1);
+    if (m > prevMoney.current + 8) {
+      setShoot((k) => k + 1);
+      setCoinsOn(true);
+      if (coinTimer.current) clearTimeout(coinTimer.current);
+      coinTimer.current = setTimeout(() => setCoinsOn(false), 1700);
+    }
     prevMoney.current = m;
   }, [state?.player.money]);
+  useEffect(() => () => { if (coinTimer.current) clearTimeout(coinTimer.current); }, []);
   const seenAch = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -224,7 +232,7 @@ export default function Dashboard() {
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       {/* Akçe kazanınca sikke yağmuru */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: 60 }]}>
-        <CoinShower shoot={shoot} width={Dimensions.get("window").width} height={Dimensions.get("window").height} />
+        {coinsOn && <CoinShower shoot={shoot} width={Dimensions.get("window").width} height={Dimensions.get("window").height} />}
       </View>
       {milestone ? (
         <MilestoneModal visible={true} type={milestone.type} text={milestone.text} onClose={() => setMilestone(null)} />

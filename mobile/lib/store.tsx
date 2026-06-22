@@ -1,5 +1,6 @@
 // Oyun durumu deposu — React context + AsyncStorage (offline kalıcı kayıt).
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameState, newGame, advance, eat, work, achievementsOf, WorkStyle } from "./game";
 
@@ -69,17 +70,38 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  // Tek geçiş noktası: state'i dönüştür + kalıcılaştır.
+  // Kalıcılaştırmayı geciktir: bellekte anında, diske en çok ~1.2 sn'de bir yaz.
+  // (Her aksiyonda tüm state'i JSON'a çevirip diske yazmak CPU/pil yakıyordu.)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pending = useRef<GameState | null>(null);
+  const flush = useCallback(() => {
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+    const s = pending.current; pending.current = null;
+    if (s) AsyncStorage.setItem(KEY, JSON.stringify(s)).catch(() => {});
+  }, []);
+  const schedulePersist = useCallback((s: GameState) => {
+    pending.current = s;
+    if (saveTimer.current) return;
+    saveTimer.current = setTimeout(() => { saveTimer.current = null; const x = pending.current; pending.current = null; if (x) AsyncStorage.setItem(KEY, JSON.stringify(x)).catch(() => {}); }, 1200);
+  }, []);
+  // Uygulama arka plana alınınca / kapanırken bekleyen kaydı hemen diske yaz.
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (st) => { if (st !== "active") flush(); });
+    return () => { sub.remove(); flush(); };
+  }, [flush]);
+
+  // Tek geçiş noktası: state'i dönüştür (bellek anında) + kalıcılaştırmayı geciktir.
   const apply = useCallback((fn: (s: GameState) => GameState) => {
     setState((cur) => {
       if (!cur) return cur;
       const next = fn(cur);
-      AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {});
+      schedulePersist(next);
       return next;
     });
-  }, []);
+  }, [schedulePersist]);
 
   const startGame = useCallback(async (first: string, surname: string, gender: "erkek" | "kadın") => {
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null;
     const s = newGame(first, surname, gender);
     setState(s);
     try { await AsyncStorage.setItem(KEY, JSON.stringify(s)); } catch {}
@@ -88,7 +110,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const doAdvance = useCallback((n = 1) => apply((s) => advance(s, n)), [apply]);
   const doEat = useCallback(() => apply(eat), [apply]);
   const doWork = useCallback((style?: WorkStyle) => apply((s) => work(s, style)), [apply]);
-  const resetGame = useCallback(async () => { await AsyncStorage.removeItem(KEY); setState(null); }, []);
+  const resetGame = useCallback(async () => { if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null; await AsyncStorage.removeItem(KEY); setState(null); }, []);
 
   return (
     <GameContext.Provider value={{ state, loading, startGame, apply, doAdvance, doEat, doWork, resetGame }}>
