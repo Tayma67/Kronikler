@@ -645,7 +645,7 @@ const TR: Dict = {
   "settings.generation": "NESİL", "settings.newLife": "YENİ HAYAT BAŞLAT", "settings.reset": "Mevcut oyun silinsin mi?",
   "sec.livelihood": "Geçim", "sec.power": "Güç & Mevki", "sec.realm": "Diyar & Soy", "sec.records": "Kayıt & Anı",
   "dash.journal": "HAYAT GÜNLÜĞÜ", "dash.empty": "Günlüğün henüz boş. Ayı ilerlet, hikâyen başlasın.","dash.emptyTitle":"Boş bir sayfa","dash.worldEmptyTitle":"Sessiz diyar","dash.emptyHint":"Aşağıdaki “Ayı İlerle” ile başla",
-  "settings.haptics": "TİTREŞİM", "settings.hapticsDesc": "Önemli anlarda hafif dokunsal geri bildirim",
+  "settings.haptics": "TİTREŞİM", "settings.hapticsDesc": "Önemli anlarda hafif dokunsal geri bildirim", "settings.perf": "SADE MOD", "settings.perfDesc": "Süslü animasyonları kapatır — pil dostu, eski cihazlarda akıcı",
 };
 const EN: Dict = {
   "app.subtitle": "Ash & Ember · offline",
@@ -668,7 +668,7 @@ const EN: Dict = {
   "settings.generation": "GENERATION", "settings.newLife": "START A NEW LIFE", "settings.reset": "Delete the current game?",
   "sec.livelihood": "Livelihood", "sec.power": "Power & Status", "sec.realm": "Realm & Lineage", "sec.records": "Records",
   "dash.journal": "LIFE JOURNAL", "dash.empty": "Your journal is empty. Advance the month to begin your story.","dash.emptyTitle":"A blank page","dash.worldEmptyTitle":"A quiet realm","dash.emptyHint":"Begin with “Advance the Month” below",
-  "settings.haptics": "VIBRATION", "settings.hapticsDesc": "Subtle haptic feedback on key moments",
+  "settings.haptics": "VIBRATION", "settings.hapticsDesc": "Subtle haptic feedback on key moments", "settings.perf": "LITE MODE", "settings.perfDesc": "Turns off decorative animations — battery-friendly, smoother on older phones",
 };
 const ES: Dict = {
   "app.subtitle": "Ceniza y Brasa · sin conexión",
@@ -685,7 +685,7 @@ const ES: Dict = {
   "settings.generation": "GENERACIÓN", "settings.newLife": "EMPEZAR UNA NUEVA VIDA", "settings.reset": "¿Borrar la partida actual?",
   "sec.livelihood": "Sustento", "sec.power": "Poder y Estatus", "sec.realm": "Reino y Linaje", "sec.records": "Registros",
   "dash.journal": "DIARIO DE VIDA", "dash.empty": "Tu diario está vacío. Avanza el mes para empezar tu historia.","dash.emptyTitle":"Una página en blanco","dash.worldEmptyTitle":"Un reino en calma","dash.emptyHint":"Empieza con “Avanzar el mes” abajo",
-  "settings.haptics": "VIBRACIÓN", "settings.hapticsDesc": "Respuesta háptica sutil en momentos clave",
+  "settings.haptics": "VIBRACIÓN", "settings.hapticsDesc": "Respuesta háptica sutil en momentos clave", "settings.perf": "MODO LIGERO", "settings.perfDesc": "Desactiva animaciones decorativas — ahorra batería, más fluido en móviles antiguos",
 };
 const PT: Dict = {
   "app.subtitle": "Cinza e Brasa · offline",
@@ -702,7 +702,7 @@ const PT: Dict = {
   "settings.generation": "GERAÇÃO", "settings.newLife": "COMEÇAR UMA NOVA VIDA", "settings.reset": "Apagar o jogo atual?",
   "sec.livelihood": "Sustento", "sec.power": "Poder e Estatuto", "sec.realm": "Reino e Linhagem", "sec.records": "Registos",
   "dash.journal": "DIÁRIO DE VIDA", "dash.empty": "O teu diário está vazio. Avança o mês para começar a tua história.","dash.emptyTitle":"Uma página em branco","dash.worldEmptyTitle":"Um reino calmo","dash.emptyHint":"Começa com “Avançar o mês” abaixo",
-  "settings.haptics": "VIBRAÇÃO", "settings.hapticsDesc": "Resposta tátil subtil em momentos importantes",
+  "settings.haptics": "VIBRAÇÃO", "settings.hapticsDesc": "Resposta tátil subtil em momentos importantes", "settings.perf": "MODO LEVE", "settings.perfDesc": "Desliga animações decorativas — poupa bateria, mais fluido em telemóveis antigos",
 };
 const AR: Dict = {
   "app.subtitle": "رماد وجمر · بلا اتصال",
@@ -719,7 +719,7 @@ const AR: Dict = {
   "settings.generation": "الجيل", "settings.newLife": "ابدأ حياة جديدة", "settings.reset": "حذف اللعبة الحالية؟",
   "sec.livelihood": "المعيشة", "sec.power": "القوة والمكانة", "sec.realm": "الديار والنسل", "sec.records": "السجلّات",
   "dash.journal": "يوميات الحياة", "dash.empty": "يومياتك فارغة. تقدّم شهرًا لتبدأ حكايتك.","dash.emptyTitle":"صفحة فارغة","dash.worldEmptyTitle":"ديار هادئة","dash.emptyHint":"ابدأ بـ«تقدّم شهرًا» بالأسفل",
-  "settings.haptics": "الاهتزاز", "settings.hapticsDesc": "ارتجاع لمسي خفيف في اللحظات المهمة",
+  "settings.haptics": "الاهتزاز", "settings.hapticsDesc": "ارتجاع لمسي خفيف في اللحظات المهمة", "settings.perf": "الوضع المبسّط", "settings.perfDesc": "يوقف الرسوم الزخرفية — أوفر للبطارية وأسلس على الأجهزة القديمة",
 };
 const RU: Dict = {
   "app.subtitle": "Пепел и Жар · офлайн",
@@ -736,7 +736,7 @@ const RU: Dict = {
   "settings.generation": "ПОКОЛЕНИЕ", "settings.newLife": "НАЧАТЬ НОВУЮ ЖИЗНЬ", "settings.reset": "Удалить текущую игру?",
   "sec.livelihood": "Заработок", "sec.power": "Власть и статус", "sec.realm": "Край и род", "sec.records": "Записи",
   "dash.journal": "ДНЕВНИК ЖИЗНИ", "dash.empty": "Дневник пуст. Проживите месяц, чтобы начать историю.","dash.emptyTitle":"Чистая страница","dash.worldEmptyTitle":"Тихий край","dash.emptyHint":"Начни с «Прожить месяц» внизу",
-  "settings.haptics": "ВИБРАЦИЯ", "settings.hapticsDesc": "Лёгкая тактильная отдача в ключевые моменты",
+  "settings.haptics": "ВИБРАЦИЯ", "settings.hapticsDesc": "Лёгкая тактильная отдача в ключевые моменты", "settings.perf": "ЛЁГКИЙ РЕЖИМ", "settings.perfDesc": "Отключает декоративные анимации — бережёт батарею, плавнее на старых телефонах",
 };
 // Ekran/menü etiketleri (navigasyon).
 const CB: Record<Lang, Dict> = {

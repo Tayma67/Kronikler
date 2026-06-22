@@ -7,6 +7,7 @@ import { useI18n } from "../../lib/i18n";
 import { LANGS } from "../../lib/locale-data";
 import { isSoundEnabled, setSoundEnabled, playTap } from "../../lib/sound";
 import { isHapticsEnabled, setHapticsEnabled, hap } from "../../lib/haptics";
+import { isReduceMotion, setReduceMotion } from "../../lib/perf";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 
@@ -18,6 +19,8 @@ export default function Ayarlar() {
   const toggleSound = async (v: boolean) => { setSound(v); await setSoundEnabled(v); if (v) playTap(); };
   const [haptics, setHaptics] = useState(isHapticsEnabled());
   const toggleHaptics = async (v: boolean) => { setHaptics(v); await setHapticsEnabled(v); if (v) hap("selection"); };
+  const [reduceM, setReduceM] = useState(isReduceMotion());
+  const toggleReduceM = async (v: boolean) => { setReduceM(v); await setReduceMotion(v); };
   const reset = () => Alert.alert(t("settings.newLife"), t("settings.reset"), [
     { text: t("common.cancel"), style: "cancel" },
     { text: "✓", style: "destructive", onPress: async () => { await resetGame(); router.replace("/yeni-oyun"); } },
@@ -77,6 +80,13 @@ export default function Ayarlar() {
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.hapticsDesc")}</Text>
           </View>
           <Switch value={haptics} onValueChange={toggleHaptics} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={haptics ? C.gold : "#8a7a55"} />
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.perf")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.perfDesc")}</Text>
+          </View>
+          <Switch value={reduceM} onValueChange={toggleReduceM} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={reduceM ? C.gold : "#8a7a55"} />
         </View>
         <Pressable onPress={reset} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
           <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood }}>{t("settings.newLife")}</Text>

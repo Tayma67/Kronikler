@@ -11,6 +11,7 @@ import { useGame } from "../../lib/store";
 import { StatDeltaOverlay } from "../../lib/feel";
 import { Ambiance } from "../../lib/fx";
 import { hap } from "../../lib/haptics";
+import { isReduceMotion } from "../../lib/perf";
 import { playAdvance } from "../../lib/sound";
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
@@ -22,6 +23,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
   const { state, doAdvance } = useGame();
   const pulse = useSharedValue(1);
   useEffect(() => {
+    if (isReduceMotion()) return; // sade mod: düğme nabzı + tozu kapalı
     pulse.value = withRepeat(withSequence(
       withTiming(1.06, { duration: 1050, easing: Easing.inOut(Easing.quad) }),
       withTiming(1, { duration: 1050, easing: Easing.inOut(Easing.quad) }),

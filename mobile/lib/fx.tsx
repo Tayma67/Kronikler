@@ -3,6 +3,7 @@ import { useEffect, useMemo } from "react";
 import { View, Text, Image, StyleSheet, ImageSourcePropType } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withDelay, withTiming, withSequence, Easing } from "react-native-reanimated";
 import { C, F } from "./theme";
+import { isReduceMotion } from "./perf";
 
 const AnimImage = Animated.createAnimatedComponent(Image);
 
@@ -10,6 +11,7 @@ const AnimImage = Animated.createAnimatedComponent(Image);
 export function KenBurns({ source, children, style }: { source: ImageSourcePropType; children?: React.ReactNode; style?: any }) {
   const sc = useSharedValue(1); const tx = useSharedValue(0); const ty = useSharedValue(0);
   useEffect(() => {
+    if (isReduceMotion()) return; // sade mod: hero sabit kalır (sürekli GPU yok)
     sc.value = withRepeat(withTiming(1.12, { duration: 15000, easing: Easing.inOut(Easing.sin) }), -1, true);
     tx.value = withRepeat(withTiming(-16, { duration: 19000, easing: Easing.inOut(Easing.sin) }), -1, true);
     ty.value = withRepeat(withTiming(-10, { duration: 17000, easing: Easing.inOut(Easing.sin) }), -1, true);
@@ -117,15 +119,16 @@ function Flake({ x, size, dur, delay, color, fall, sway, radius }: { x: number; 
 
 // Hero ambiyansı — daima birkaç köz; mevsime göre kar/yaprak.
 export function Ambiance({ season, width = 360, height = 150, embers: showEmbers = true, flakes: showFlakes = true, count = 7 }: { season?: string; width?: number; height?: number; embers?: boolean; flakes?: boolean; count?: number }) {
-  const embers = useMemo(() => (showEmbers ? Array.from({ length: count }, () => ({ x: rnd(8, width - 8), size: rnd(2, 4), dur: rnd(2600, 4200), delay: rnd(0, 3000), rise: rnd(height * 0.6, height), color: Math.random() < 0.5 ? "#E0922E" : "#C9A84C" })) : []), [width, height, showEmbers, count]);
+  const reduced = isReduceMotion(); // sade mod: parçacıklar kapalı (sürekli GPU yok)
+  const embers = useMemo(() => (showEmbers && !reduced ? Array.from({ length: count }, () => ({ x: rnd(8, width - 8), size: rnd(2, 4), dur: rnd(2600, 4200), delay: rnd(0, 3000), rise: rnd(height * 0.6, height), color: Math.random() < 0.5 ? "#E0922E" : "#C9A84C" })) : []), [width, height, showEmbers, count, reduced]);
   const isWinter = showFlakes && season === "Kış"; const isAutumn = showFlakes && season === "Sonbahar";
   const flakes = useMemo(() => {
-    if (!isWinter && !isAutumn) return [];
+    if (reduced || (!isWinter && !isAutumn)) return [];
     return Array.from({ length: isWinter ? 14 : 9 }, () => ({
       x: rnd(0, width), size: isWinter ? rnd(2, 4) : rnd(4, 7), dur: rnd(4000, 7000), delay: rnd(0, 5000),
       fall: height + 10, sway: rnd(8, 20), radius: isWinter ? 3 : 1.5, color: isWinter ? "rgba(230,235,245,0.9)" : "#B5742A",
     }));
-  }, [isWinter, isAutumn, width, height]);
+  }, [isWinter, isAutumn, width, height, reduced]);
   return (
     <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, height, overflow: "hidden" }}>
       {embers.map((e, i) => <Ember key={"e" + i} {...e} />)}

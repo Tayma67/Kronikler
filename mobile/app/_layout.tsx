@@ -11,13 +11,14 @@ import { LanguageProvider } from "../lib/i18n";
 import { LoadingScreen } from "../lib/fx";
 import { loadSoundSetting } from "../lib/sound";
 import { loadHapticsSetting } from "../lib/haptics";
+import { loadReduceMotion } from "../lib/perf";
 import { C } from "../lib/theme";
 
 export default function RootLayout() {
   const [loaded] = useFonts({
     Cinzel_400Regular, Cinzel_700Bold, CrimsonText_400Regular, CrimsonText_400Regular_Italic,
   });
-  useEffect(() => { loadSoundSetting(); loadHapticsSetting(); }, []);
+  useEffect(() => { loadSoundSetting(); loadHapticsSetting(); loadReduceMotion(); }, []);
   if (!loaded) {
     return <LoadingScreen />;
   }
