@@ -2287,6 +2287,35 @@ function shapeChildhood(s: GameState) {
     push(s, "cocukluk", "Meraklı, gözü açık bir çocuk olarak büyüdün; her şeyi sorar, çabuk kaparsın.", "kişisel", true, { k: "child.grow.merakli" }); }
 }
 
+// İhtiyarlık uğraşları (55+): hayatın akşamına anlam — nasihat, hayır, dinlenme, anı. Çalışma gücünden harcar.
+export type ElderAct = "nasihat" | "hayir" | "dinlen" | "ani";
+export function elderAction(prev: GameState, kind: ElderAct): StudyResult {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 55) return { state: s, key: "", chips: [] };
+  if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true };
+  p.study_energy = studyEnergy(s) - STUDY_COST;
+  const chips: { label: string; col: string }[] = []; let key = "";
+  if (kind === "nasihat") {
+    p.reputation = Math.min(100, p.reputation + 2); p.honor = Math.min(100, p.honor + 1); gainSkill(s, "social", 6);
+    chips.push({ label: "İtibar +2", col: "#7FA66A" }, { label: "Şeref +1", col: "#6FA0C0" }); key = "elder.nasihat";
+    push(s, "ihtiyarlik", "Gençlere ve torunlara akıl verdin; sözün hürmetle dinlendi.", "kişisel", false, { k: "elder.nasihat" });
+  } else if (kind === "hayir") {
+    const cost = Math.min(p.money, 12 + Math.floor(Math.random() * 10));
+    p.money -= cost; p.reputation = Math.min(100, p.reputation + 2); p.honor = Math.min(100, p.honor + 1); bumpNam(p, "comert", 5);
+    chips.push({ label: `−${cost} akçe`, col: "#C0556B" }, { label: "İtibar +2", col: "#7FA66A" }, { label: "Cömert +5", col: "#7FA66A" }); key = "elder.hayir";
+    push(s, "ihtiyarlik", `Yoksula sadaka, yolcuya aş dağıttın (−${cost} akçe); hayır duası aldın.`, "kişisel", false, { k: "elder.hayir", p: [cost] });
+  } else if (kind === "dinlen") {
+    p.health = Math.min(100, p.health + 8); p.hunger = Math.min(100, p.hunger + 5);
+    chips.push({ label: "Sağlık +8", col: "#7FA66A" }); key = "elder.dinlen";
+    push(s, "ihtiyarlik", "Ocağın başında dinlenip biraz toparlandın; yaşlı beden mola ister.", "kişisel", false, { k: "elder.dinlen" });
+  } else {
+    p.fame = Math.min(100, p.fame + 2); addStatXp(s, "intelligence", 6); gainSkill(s, "social", 4);
+    chips.push({ label: "Şöhret +2", col: "#7B4FAF" }); key = "elder.ani";
+    push(s, "ihtiyarlik", "Ömrünün hikâyesini anlattın; adın dilden dile dolaşacak.", "kişisel", false, { k: "elder.ani" });
+  }
+  return { state: s, key, chips };
+}
+
 // ── Suç/Gölge: risk/ödül ──
 // Suç türleri (Vercel crime_rework.py portu): risk/ödül kademeleri + şiddet.
 export type CrimeKind = "yankesicilik" | "dukkan_soyma" | "soygun" | "konak_soygunu";
@@ -3332,7 +3361,8 @@ export function recognition(s: GameState): number {
 export function esteem(s: GameState): number {
   const p = s.player; const n = p.nam || ({} as Nam);
   const usluBonus = p.childhood === "uslu" ? 4 : 0; // uslu çocukluk: ömür boyu süren iyi nam
-  const ch = p.reputation + p.honor * 0.8 + (n.comert || 0) * 0.5 + (n.mert || 0) * 0.5 + (n.dindar || 0) * 0.3 - (n.zalim || 0) * 0.7 - p.fear * 0.4 + attireScore(p).prestige + usluBonus;
+  const elderBonus = p.age >= 55 ? Math.min(10, Math.round((p.age - 55) * 0.6)) : 0; // ihtiyara hürmet: yaş ilerledikçe saygınlık
+  const ch = p.reputation + p.honor * 0.8 + (n.comert || 0) * 0.5 + (n.mert || 0) * 0.5 + (n.dindar || 0) * 0.3 - (n.zalim || 0) * 0.7 - p.fear * 0.4 + attireScore(p).prestige + usluBonus + elderBonus;
   return Math.round(ch * recognition(s));
 }
 // "Ne kadar korkulan/çekinilen" (0..+) — tanınma ile kapılı; cömertlik/mertlik korkuyu yumuşatır.
