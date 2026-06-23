@@ -230,6 +230,15 @@ export default function Pazar() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment }}>{t("it." + g.id)}</Text>
+                        {(g.power || g.defense || g.charisma || g.prestige) ? (
+                          <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 7, marginTop: 1, marginBottom: 1 }}>
+                            {g.power ? <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}><GameIcon name="silah" size={9} color={C.ember} /><Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.ember }}>+{g.power}</Text></View> : null}
+                            {g.defense ? <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}><GameIcon name="shield" size={9} color={C.azure} /><Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.azure }}>+{g.defense}</Text></View> : null}
+                            {g.charisma ? <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}><GameIcon name="karizma" size={9} color={C.ember} /><Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.ember }}>+{g.charisma}</Text></View> : null}
+                            {g.prestige ? <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}><GameIcon name="orgutler" size={9} color={C.gold} /><Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.gold }}>+{g.prestige}</Text></View> : null}
+                            {g.wclass ? <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 0.5, color: C.parchmentDim, textTransform: "uppercase" }}>{t("wc." + g.wclass)}{g.twoHanded ? " · 2E" : ""}</Text> : null}
+                          </View>
+                        ) : null}
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                           <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("paz.have")} {have}</Text>
                           {(() => { const bq = have > 0 ? bestQualityTier(p, g.id) : "siradan"; return bq !== "siradan" ? (
