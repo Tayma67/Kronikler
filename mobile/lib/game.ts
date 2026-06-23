@@ -37,6 +37,7 @@ export interface Player {
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
   club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
   horse?: boolean; // bir atın var mı (hızlı/güvenli "at ile" yolculuğu açar)
+  child_acts?: Partial<Record<"oyun" | "yardim" | "yaramazlik" | "kesif", number>>; childhood?: string; // çocukluk eğilim sayacı + reşitlikte belirlenen çocukluk karakteri
   hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
   governorships?: string[]; // valisi olunan şehirler
   legacy?: Record<string, boolean>; // kalıcı görkem eserleri (vakıf/anıt/imaret) — bir kez kurulur
@@ -927,7 +928,7 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): string {
 
 function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const p = s.player;
-  if (p.age === 13 && p.profession === "işsiz") { p.profession = rnd(PROFS); p.stat_points += 3; push(s, "meslek_edinme", `Reşit oldun. ${cap(p.profession)} olarak hayata atıldın — dünya sana açıldı.`, "kişisel", true, { k: "evj.profGain", p: [{ pr: p.profession }] }); }
+  if (p.age === 13 && p.profession === "işsiz") { p.profession = rnd(PROFS); p.stat_points += 3; push(s, "meslek_edinme", `Reşit oldun. ${cap(p.profession)} olarak hayata atıldın — dünya sana açıldı.`, "kişisel", true, { k: "evj.profGain", p: [{ pr: p.profession }] }); shapeChildhood(s); }
   // ── Kader anları: hayatın belirli dönümlerinde kimliğe ayna tutan sahneler ──
   if (!p.fates) p.fates = [];
   const fate = (id: string) => { if (!p.fates!.includes(id)) { p.fates!.push(id); return true; } return false; };
@@ -2240,6 +2241,7 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
   if (p.dead || p.age >= 13) return { state: s, key: "", chips: [] };
   if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true };
   p.study_energy = studyEnergy(s) - STUDY_COST;
+  p.child_acts = p.child_acts || {}; p.child_acts[kind] = (p.child_acts[kind] || 0) + 1; // çocukluk eğilimi birikir
   const chips: { label: string; col: string }[] = []; let key = "";
   if (kind === "oyun") {
     p.health = Math.min(100, p.health + 5); addStatXp(s, "stamina", 6); gainSkill(s, "social", 4);
@@ -2263,6 +2265,26 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
     else { addStatXp(s, "intelligence", 6); chips.push({ label: "Zekâ ↑", col: "#6FA0C0" }); key = "child.kesif.none"; push(s, "cocukluk", "Diyarı merakla gezdin; gördüklerin aklına kazındı.", "kişisel", false, { k: "child.kesif.none" }); }
   }
   return { state: s, key, chips };
+}
+
+// Çocukluk karakteri etiketleri (reşitlikte belirlenir; karakter ekranında gösterilir).
+export const CHILDHOOD_LABEL: Record<string, string> = { hasari: "Haşarı", uslu: "Uslu", canli: "Canlı", merakli: "Meraklı" };
+// Reşit olurken çocukluk eğilimini değerlendir: baskın uğraş kalıcı bir başlangıç izi bırakır.
+function shapeChildhood(s: GameState) {
+  const p = s.player; const c = p.child_acts || {};
+  const total = (c.oyun || 0) + (c.yardim || 0) + (c.yaramazlik || 0) + (c.kesif || 0);
+  if (total < 4) return; // yeterince çocukluk geçirmedi → nötr başlar
+  const entries: [string, number][] = [["yaramazlik", c.yaramazlik || 0], ["yardim", c.yardim || 0], ["oyun", c.oyun || 0], ["kesif", c.kesif || 0]];
+  entries.sort((a, b) => b[1] - a[1]);
+  const dom = entries[0][0];
+  if (dom === "yaramazlik") { p.childhood = "hasari"; p.fear = Math.min(100, p.fear + 6); p.honor = Math.max(0, p.honor - 3); bumpNam(p, "capkin", 8); gainSkill(s, "social", 40);
+    push(s, "cocukluk", "Haşarı bir çocuk olarak büyüdün; sokağın diline çabuk düştün, kimse sana laf geçiremedi.", "kişisel", true, { k: "child.grow.hasari" }); }
+  else if (dom === "yardim") { p.childhood = "uslu"; p.reputation = Math.min(100, p.reputation + 6); p.honor = Math.min(100, p.honor + 4); bumpNam(p, "comert", 6); bumpNam(p, "mert", 4);
+    push(s, "cocukluk", "Uslu, eli işe yatkın bir çocuk olarak büyüdün; mahalle seni hayırla anar.", "kişisel", true, { k: "child.grow.uslu" }); }
+  else if (dom === "oyun") { p.childhood = "canli"; if (p.stats.stamina < 10) p.stats.stamina += 1; p.health = Math.min(100, p.health + 6); gainSkill(s, "social", 30);
+    push(s, "cocukluk", "Canlı, çevik bir çocuk olarak büyüdün; bedenin sağlam, dilin tatlı.", "kişisel", true, { k: "child.grow.canli" }); }
+  else { p.childhood = "merakli"; if (p.stats.intelligence < 10) p.stats.intelligence += 1; gainSkill(s, "trade", 25); gainSkill(s, "crafting", 25);
+    push(s, "cocukluk", "Meraklı, gözü açık bir çocuk olarak büyüdün; her şeyi sorar, çabuk kaparsın.", "kişisel", true, { k: "child.grow.merakli" }); }
 }
 
 // ── Suç/Gölge: risk/ödül ──

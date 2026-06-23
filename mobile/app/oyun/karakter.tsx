@@ -220,6 +220,7 @@ export default function Karakter() {
                 <Badge text={(p.gender === "kadın" ? t("misc.female") : t("misc.male")).toUpperCase()} />
                 <Badge name="sehir" text={placeName(p.location_name, lang).toUpperCase()} />
                 <Badge name="star" text={`${p.generation}. ${t("misc.generation").toUpperCase()}`} />
+                {p.childhood ? <Badge name="baby" text={t("childhood." + p.childhood).toUpperCase()} /> : null}
               </View>
             </View>
           </View>
