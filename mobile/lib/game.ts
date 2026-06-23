@@ -2301,7 +2301,8 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   if (p.dead || p.age < 13) return s;
   const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
   const golgeBonus = p.faction === "golge" ? 0.12 : 0;     // Gölge Kardeşliği avantajı
-  const success = Math.random() < ct.base + p.stats.charisma * 0.01 + golgeBonus + crimeSuccessMod(s);
+  const hasariBonus = p.childhood === "hasari" ? 0.07 : 0; // haşarı çocukluk: sokak kurnazlığı işe yarar
+  const success = Math.random() < ct.base + p.stats.charisma * 0.01 + golgeBonus + hasariBonus + crimeSuccessMod(s);
   gainSkill(s, "social", 4);
   if (success) {
     const loot = ct.lootMin + Math.floor(Math.random() * (ct.lootMax - ct.lootMin + 1));
@@ -2848,6 +2849,7 @@ export function combatPower(p: Player): number {
   if (w?.twoHanded) weaponPw = Math.round(weaponPw * 1.32); // çift elli silah daha sert vurur (kalkan feda edilir)
   pw += weaponPw || ((p.inventory["bicak"] || 0) > 0 ? 4 : 0); // kalite-ölçekli silah, yoksa elindeki bıçak
   if (p.faction === "asker") pw += 3;
+  if (p.childhood === "canli") pw += 2; // canlı çocukluk: ömür boyu dinç beden
   if (hasPerk(p, "cevik")) pw += 3;
   if (hasPerk(p, "nisanci")) pw += 5;
   return pw;
@@ -3224,6 +3226,7 @@ export function pendingPerkCount(p: Player): number {
 // XP ekle; seviye atlarsa günlüğe işle (saf — clone edilmiş state üstünde çağrılır).
 function gainSkill(s: GameState, key: SkillKey, xp: number) {
   const p = s.player;
+  if (p.childhood === "merakli") xp = Math.round(xp * 1.15); // meraklı çocukluk: ömür boyu daha hızlı öğrenir
   const before = p.skills[key];
   p.skill_xp[key] += xp;
   const after = skillLevel(p.skill_xp[key]);
@@ -3328,7 +3331,8 @@ export function recognition(s: GameState): number {
 // İmzalı "ne kadar olumlu tanınıyorsun" — tanınma ile kapılı.
 export function esteem(s: GameState): number {
   const p = s.player; const n = p.nam || ({} as Nam);
-  const ch = p.reputation + p.honor * 0.8 + (n.comert || 0) * 0.5 + (n.mert || 0) * 0.5 + (n.dindar || 0) * 0.3 - (n.zalim || 0) * 0.7 - p.fear * 0.4 + attireScore(p).prestige;
+  const usluBonus = p.childhood === "uslu" ? 4 : 0; // uslu çocukluk: ömür boyu süren iyi nam
+  const ch = p.reputation + p.honor * 0.8 + (n.comert || 0) * 0.5 + (n.mert || 0) * 0.5 + (n.dindar || 0) * 0.3 - (n.zalim || 0) * 0.7 - p.fear * 0.4 + attireScore(p).prestige + usluBonus;
   return Math.round(ch * recognition(s));
 }
 // "Ne kadar korkulan/çekinilen" (0..+) — tanınma ile kapılı; cömertlik/mertlik korkuyu yumuşatır.

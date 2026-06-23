@@ -222,6 +222,7 @@ export default function Karakter() {
                 <Badge name="star" text={`${p.generation}. ${t("misc.generation").toUpperCase()}`} />
                 {p.childhood ? <Badge name="baby" text={t("childhood." + p.childhood).toUpperCase()} /> : null}
               </View>
+              {p.childhood ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 4 }} numberOfLines={2}>{t("childhood." + p.childhood + ".d")}</Text> : null}
             </View>
           </View>
 
