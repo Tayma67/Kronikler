@@ -1024,6 +1024,19 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       else { p.reputation = Math.min(100, p.reputation + 2); push(s, "gunluk", "Çocukluk dostun seni mecliste övdü; sözü itibarına itibar kattı.", "kişisel", false, { k: "evj.oldFriendVouch", p: [{ fn: [cf.seed, cf.gender] }] }); }
     }
   }
+  // ── Evli hayat anları: eşinle ocak tüten yıllar; ara sıra sıcak ya da sınanan anlar (sadık-dost'a paralel) ──
+  if (!p.dead && p.married && p.spouse_seed != null && p.age >= 16 && chance(0.03)) {
+    const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
+    const sn: EvtParam = { fn: [p.spouse_seed, sg] };
+    if (p.health < 45) { p.health = Math.min(100, p.health + 6); push(s, "evlilik", `Hastalığında ${p.spouse_name} başucundan ayrılmadı; biraz toparlandın.`, "kişisel", false, { k: "evj.spouseCare", p: [sn] }); }
+    else if (p.money < 20 || (p.debt || 0) > 0) { const help = 15 + Math.floor(Math.random() * 20); p.money += help; push(s, "evlilik", `Sıkışınca ${p.spouse_name} çeyizinden bir şey bozdurdu; eve biraz akçe girdi.`, "kişisel", false, { k: "evj.spouseHelp", p: [sn, help] }); }
+    else { const r = Math.random();
+      if (r < 0.4) { p.health = Math.min(100, p.health + 3); p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 1); push(s, "evlilik", `${p.spouse_name} ile sessiz, huzurlu bir akşam geçirdiniz; "iyi ki varsın" dedin.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
+      else if (r < 0.7) { push(s, "evlilik", `${p.spouse_name} ile küçük bir atışma yaşandı ama akşama kalmadan barıştınız; ocak yeniden ısındı.`, "kişisel", false, { k: "evj.spouseQuarrel", p: [sn] }); }
+      else if (p.age >= 50) { p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 1); push(s, "evlilik", `${p.spouse_name} ile saçlarınız birlikte ağardı; bir ömrü paylaşmanın huzuru yüzüne vurdu.`, "kişisel", false, { k: "evj.spouseAge", p: [sn] }); }
+      else { p.health = Math.min(100, p.health + 2); push(s, "evlilik", `${p.spouse_name} ile geleceğe dair konuştunuz; küçük hayaller kurmak iyi geldi.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
+    }
+  }
   // ── Yaşam-evresi anıları: her döneme doku katan küçük anlar (ara sıra; bazıları aileyi isimle anar) ──
   if (!p.dead && chance(0.14)) {
     const child = p.children.length ? rnd(p.children) : null;
