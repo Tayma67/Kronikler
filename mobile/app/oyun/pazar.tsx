@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, sellItem, launchCaravan, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx } from "../../lib/game";
+import { buyItem, sellItem, launchCaravan, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -213,6 +213,57 @@ export default function Pazar() {
             </>
           )}
         </Panel>
+
+        {/* Sarraf (tefeci) paneli — ödünç al / borç öde */}
+        {p.age >= 16 && (() => {
+          const cap = loanCapacity(state);
+          const debt = Math.round(p.debt || 0);
+          const ratePct = Math.round(loanRate(state) * 1000) / 10;
+          const borrowAmts = [250, 1000].filter((a) => a <= cap);
+          const repayAmts = [250, 1000].filter((a) => a <= debt && a <= p.money);
+          return (
+            <Panel title={t("paz.sarrafTitle")} icon="coins" tone={C.gold}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted }}>{t("paz.sarrafRate").replace("%r", String(ratePct))}</Text>
+                {debt > 0 ? <Text style={{ fontFamily: F.display, fontSize: 12, color: C.blood }}>{t("paz.debt")}: {debt} ⚜</Text> : null}
+              </View>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentDim, textTransform: "uppercase", marginBottom: 6 }}>{t("paz.borrow")} · {t("paz.borrowCap").replace("%c", String(cap))}</Text>
+              {cap > 0 ? (
+                <View style={{ flexDirection: "row", gap: 8, marginBottom: debt > 0 ? 12 : 0 }}>
+                  {borrowAmts.map((amt) => (
+                    <Pressable key={amt} onPress={() => { hap("advance"); apply((s) => borrow(s, amt)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{amt}⚜</Text>
+                    </Pressable>
+                  ))}
+                  <Pressable onPress={() => { hap("advance"); apply((s) => borrow(s, cap)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{t("paz.max")}</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentDim, marginBottom: debt > 0 ? 12 : 0 }}>{t("paz.noCredit")}</Text>
+              )}
+              {debt > 0 ? (
+                <>
+                  <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentDim, textTransform: "uppercase", marginBottom: 6 }}>{t("paz.repay")}</Text>
+                  {p.money > 0 ? (
+                    <View style={{ flexDirection: "row", gap: 8 }}>
+                      {repayAmts.map((amt) => (
+                        <Pressable key={amt} onPress={() => { hap("tap"); apply((s) => repay(s, amt)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(127,166,106,0.5)", backgroundColor: "rgba(127,166,106,0.12)" }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.sage }}>{amt}⚜</Text>
+                        </Pressable>
+                      ))}
+                      <Pressable onPress={() => { hap("tap"); apply((s) => repay(s, Math.min(p.money, debt))); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(127,166,106,0.5)", backgroundColor: "rgba(127,166,106,0.12)" }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 11, color: C.sage }}>{t("paz.repayAll")}</Text>
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentDim }}>{t("paz.noCash")}</Text>
+                  )}
+                </>
+              ) : null}
+            </Panel>
+          );
+        })()}
 
         {/* ── Pazar: tezgâh tezgâh ayrılmış dükkânlar ── */}
         {STALLS.map((stall) => {

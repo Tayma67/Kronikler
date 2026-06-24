@@ -48,6 +48,7 @@ export interface Player {
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
   priceMem?: Record<string, number>; // fiyat hafızası: "loc|good" → geçen ay kaydedilen alış fiyatı (pazar 'geçen fiyat' göstergesi)
+  debt?: number; loan_turn?: number; // tefeci borcu (aylık faiz işler) + ilk ödünç alınan tur
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -134,6 +135,48 @@ export function lifestyleUpkeep(s: GameState): number {
   if (w > b3) annual += (w - b3) * 0.10;
   u += annual / 12;
   return Math.max(0, Math.round(u));
+}
+// ── Tefeci (sarraf) borç sistemi — gerçek ekonomi: nakit sıkışınca ödünç al, ama faiz acımasız işler ──
+// Aylık ~%2.5 (yıllık ~%34, dönem-gerçekçi tefecilik). Tüccar loncası/Tefeci pâyesi şartları yumuşatır.
+export const LOAN_MONTHLY_RATE = 0.025;
+export function loanRate(s: GameState): number {
+  let r = LOAN_MONTHLY_RATE;
+  if (s.player.faction === "tuccar") r -= 0.006;       // tüccar loncası → tefeciyle araları iyi
+  if (hasPerk(s.player, "tefeci")) r -= 0.005;          // tefecilik ağını bilirsin
+  return Math.max(0.012, Math.round(r * 1000) / 1000);
+}
+// Kredi tavanı: itibar + mülk teminatı (enflasyonla ölçekli). İtibarın dipteyse tefeci güvenmez, az verir.
+export function creditLimit(s: GameState): number {
+  const p = s.player;
+  const propVal = p.properties.reduce((a, pr) => a + (PROPERTY_TYPES[pr.type]?.cost || 0), 0);
+  const repFactor = Math.max(0.05, (p.reputation + 100) / 200); // -100..100 → 0.05..1
+  const base = (1000 + propVal * 0.4) * repFactor;
+  return Math.round(base * inflationFactor(s));
+}
+// O an alınabilecek azami ödünç (tavan − mevcut borç).
+export function loanCapacity(s: GameState): number { return Math.max(0, creditLimit(s) - Math.round(s.player.debt || 0)); }
+export function borrow(prev: GameState, amount: number): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 16) return s;                   // borç ehliyeti reşit yaşta
+  const amt = Math.min(Math.max(0, Math.round(amount)), loanCapacity(s));
+  if (amt <= 0) return s;
+  p.money += amt; p.debt = Math.round((p.debt || 0) + amt);
+  if (!p.loan_turn) p.loan_turn = s.turn;
+  push(s, "ticaret", `Sarraftan ${amt} akçe ödünç aldın; borcun ${p.debt} akçe oldu (aylık faiz işler).`, "kişisel", false, { k: "evj.borrow", p: [amt, p.debt] });
+  return s;
+}
+export function repay(prev: GameState, amount: number): GameState {
+  const s = clone(prev); const p = s.player;
+  const amt = Math.min(Math.max(0, Math.round(amount)), Math.min(p.money, p.debt || 0));
+  if (amt <= 0) return s;
+  p.money -= amt; p.debt = Math.round((p.debt || 0) - amt);
+  if (p.debt <= 0) {
+    p.debt = 0; p.loan_turn = undefined; p.reputation = Math.min(100, p.reputation + 2);
+    push(s, "ticaret", `Borcunu tümüyle kapattın; sarraf defterini sildi, sözün yeniden geçer oldu (+itibar).`, "kişisel", true, { k: "evj.repayFull" });
+  } else {
+    push(s, "ticaret", `Borcuna ${amt} akçe ödedin; kalan borç ${p.debt} akçe.`, "kişisel", false, { k: "evj.repay", p: [amt, p.debt] });
+  }
+  return s;
 }
 // ── Mülk-işçi (NPC istihdamı) ekonomisi — Vercel property_system.py portu ──
 // Bir mülkün işçi alabileceği yer sayısı: tip slotu + her kademe için +1.
@@ -1146,6 +1189,31 @@ export function advance(prev: GameState, n = 1): GameState {
     if (s.player.age >= 13 && s.player.money > 0) {
       const upkeep = Math.min(s.player.money, lifestyleUpkeep(s));
       s.player.money -= upkeep;
+    }
+    // Tefeci faizi: borç her ay büyür. Teminat eşiğini aşarsa sarraf alacağına karşılık mülke/nakde el koyar.
+    if ((s.player.debt || 0) > 0) {
+      s.player.debt = Math.round((s.player.debt || 0) * (1 + loanRate(s)));
+      const ceiling = Math.round(creditLimit(s) * 1.6) + 500; // borç bunu aşınca tefeci harekete geçer
+      if ((s.player.debt || 0) > ceiling) {
+        const props = s.player.properties;
+        if (props.length) { // önce en ucuz mülke el koy (teminat satışı)
+          let idx = 0, lo = Infinity;
+          props.forEach((pr, k) => { const v = PROPERTY_TYPES[pr.type]?.cost || 0; if (v < lo) { lo = v; idx = k; } });
+          const seized = props[idx];
+          const credit = Math.round((PROPERTY_TYPES[seized.type]?.cost || 0) * inflationFactor(s) * 0.6);
+          props.splice(idx, 1);
+          s.player.debt = Math.max(0, (s.player.debt || 0) - credit);
+          s.player.reputation = Math.max(-100, s.player.reputation - 6);
+          push(s, "mülk", `Borcunu ödeyemedin: sarraf ${PROPERTY_TYPES[seized.type]?.name || "mülküne"} (${seized.loc}) el koydu; itibarın sarsıldı. Kalan borç ${s.player.debt} akçe.`, "kişisel", true, { k: "evj.seizeProp", p: [{ pt2: seized.type }, { pl: seized.loc }, s.player.debt] });
+        } else { // mülk yok: nakdin bir kısmını zorla alır + itibar
+          const grab = Math.round(Math.min(s.player.money, (s.player.debt || 0) * 0.3));
+          s.player.money = Math.max(0, s.player.money - grab);
+          s.player.debt = Math.max(0, (s.player.debt || 0) - grab);
+          s.player.reputation = Math.max(-100, s.player.reputation - 5);
+          push(s, "ticaret", `Tefecinin adamları kapına dayandı; ${grab} akçene zorla el koydular, itibarın zedelendi.`, "kişisel", true, { k: "evj.seizeCash", p: [grab] });
+        }
+        if ((s.player.debt || 0) <= 0) { s.player.debt = 0; s.player.loan_turn = undefined; }
+      }
     }
     push(s, s.player.age < 13 ? "cocukluk" : "gunluk", monthlyFlavor(s, cal));
     rollLifeEvents(s, cal);
