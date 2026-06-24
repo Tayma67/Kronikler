@@ -223,6 +223,17 @@ export default function Karakter() {
                 {p.childhood ? <Badge name="baby" text={t("childhood." + p.childhood).toUpperCase()} /> : null}
               </View>
               {p.childhood ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 4 }} numberOfLines={2}>{t("childhood." + p.childhood + ".d")}</Text> : null}
+              {p.child_friend ? (() => {
+                const cf = p.child_friend; const nm = localFirstName(cf.seed, cf.gender, lang);
+                const rel = state.relationships[cf.id];
+                const status = p.age < 13 ? t("child.friend.label") : (rel != null && rel > 0 ? t("child.friend.lifelong") : t("child.friend.parted"));
+                return (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}>
+                    <GameIcon name="iliskiler" size={11} color="#C0556B" />
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("child.friend.of")}: <Text style={{ color: C.parchment }}>{nm}</Text> · {status}</Text>
+                  </View>
+                );
+              })() : null}
             </View>
           </View>
 
