@@ -78,8 +78,11 @@ export default function Savas() {
     return (
       <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
         {slashKey > 0 && <Slash key={slashKey} />}
-        <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 }}>
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1, textAlign: "center" }}>{bs.enemyName}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.blood, textAlign: "center", marginTop: 3 }}>
+            <Text style={{ fontFamily: F.display, letterSpacing: 0.5, textTransform: "uppercase" }}>{t("cb.arch." + bs.arch)}</Text> · {t("cb.archd." + bs.arch)}
+          </Text>
         </View>
         {/* Kuşam şeridi — silah arketipi · güç · zırh · kalkan bloğu */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12, paddingBottom: 8 }}>

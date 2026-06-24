@@ -22,27 +22,47 @@ export const STANCES: { id: Stance; label: string; icon: string; atk: number; de
 ];
 const stanceOf = (s: Stance) => STANCES.find((x) => x.id === s) || STANCES[1];
 
+// Düşman arketipleri (her biri farklı hamle dağılımı + okunabilirlik): dövüşler birbirine benzemesin.
+export type EArch = "kaba" | "vahsi" | "usta" | "asker";
+// w = [hamle, savustur, ozel] olasılık ağırlıkları · feint = okuma isabetine eklenen (artı = dürüst/okunur, eksi = kurnaz/fent)
+const ARCH: Record<EArch, { w: [number, number, number]; feint: number }> = {
+  kaba:  { w: [0.30, 0.10, 0.60], feint: +0.08 }, // ağır 'özel', savunmasız, dürüst → okunur ama sert vurur
+  vahsi: { w: [0.55, 0.05, 0.40], feint: +0.04 }, // amansız saldırı, neredeyse hiç savunmaz
+  usta:  { w: [0.30, 0.45, 0.25], feint: -0.10 }, // savunmacı düellocu, çok fent → kurnaz, zor okunur
+  asker: { w: [0.40, 0.35, 0.25], feint: -0.03 }, // disiplinli denge
+};
+// Karşılaşma → arketip eşlemesi (id'den; bilinmeyen 'asker').
+const ENCOUNTER_ARCH: Record<string, EArch> = {
+  haydut: "vahsi", ayi: "kaba", duello: "usta", turnuva: "usta", korsan: "vahsi",
+  sinir: "asker", reis: "kaba", akin: "vahsi", kusatma: "kaba", nemesis: "usta",
+};
+export function encounterArch(id: string): EArch { return ENCOUNTER_ARCH[id] || "asker"; }
+
 export interface BattleState {
   enemyName: string; enemyPower: number;
   playerHp: number; playerMax: number; enemyHp: number; enemyMax: number;
   round: number; log: string[]; over: boolean; won: boolean;
   enemyIntent: Move; // telegraf: düşmanın bir sonraki tahmini hamlesi (oyuncu sezer ve karşılar)
+  arch: EArch; // düşman arketipi (hamle eğilimi + okunabilirlik)
 }
 
-// Düşmanın hamle eğilimi (güçlü düşman daha agresif). Hem gerçek hamle hem telegraf için.
-function pickEnemyMove(power: number): Move {
-  const r = Math.random();
-  if (power >= 13) return r < 0.45 ? "ozel" : r < 0.8 ? "hamle" : "savustur";
-  return r < 0.4 ? "hamle" : r < 0.75 ? "savustur" : "ozel";
+// Düşmanın hamle eğilimi: arketip ağırlıkları + güçlü düşman biraz daha 'özel'e kayar.
+function pickEnemyMove(arch: EArch, power: number): Move {
+  let [wh, ws, wo] = ARCH[arch].w;
+  if (power >= 13) { const shift = Math.min(ws, 0.1); ws -= shift; wo += shift; } // güçlü düşman savunmayı bırakır
+  const r = Math.random() * (wh + ws + wo);
+  if (r < wh) return "hamle";
+  if (r < wh + ws) return "savustur";
+  return "ozel";
 }
-// Niyet okuma isabeti: dövüş becerisi + zekâ artırır, düşman gücü (kurnazlık → fent) azaltır.
+// Niyet okuma isabeti: dövüş becerisi + zekâ artırır, düşman gücü + arketip kurnazlığı azaltır.
 // Telegraf bu ihtimalle doğru çıkar; aksi halde düşman fent atıp niyetini gizler.
-export function readAccuracy(p: Player, enemyPower: number): number {
+export function readAccuracy(p: Player, enemyPower: number, arch: EArch = "asker"): number {
   const skill = p.skills?.combat || 0;
   const intel = p.stats?.intelligence || 0;
-  let a = 0.70 + skill * 0.018 + intel * 0.004 - Math.max(0, enemyPower - 6) * 0.012;
+  let a = 0.70 + skill * 0.018 + intel * 0.004 - Math.max(0, enemyPower - 6) * 0.012 + ARCH[arch].feint;
   if (weaponClass(p) === "hizli") a += 0.05; // çevik refleks düşmanı daha iyi okur
-  return Math.max(0.45, Math.min(0.92, a));
+  return Math.max(0.40, Math.min(0.93, a));
 }
 
 export function startBattle(p: Player, e: Encounter): BattleState {
@@ -61,7 +81,7 @@ export function startBattle(p: Player, e: Encounter): BattleState {
     playerHp: Math.max(20, Math.round(p.health)), playerMax: Math.max(20, Math.round(p.health)),
     enemyHp, enemyMax,
     round: 1, log, over: enemyHp <= 0, won: enemyHp <= 0,
-    enemyIntent: pickEnemyMove(e.power),
+    arch: encounterArch(e.id), enemyIntent: pickEnemyMove(encounterArch(e.id), e.power),
   };
 }
 
@@ -82,7 +102,7 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
   const bs: BattleState = { ...prev, log: [...prev.log] };
   // Telegraf: sezdiğin niyet (bs.enemyIntent) okuma isabetiyle doğru çıkar; aksi halde düşman fent atar.
   let em: Move; let feint = false;
-  if (Math.random() < readAccuracy(p, bs.enemyPower)) { em = bs.enemyIntent; }
+  if (Math.random() < readAccuracy(p, bs.enemyPower, bs.arch)) { em = bs.enemyIntent; }
   else { const others = (["hamle", "savustur", "ozel"] as Move[]).filter((m) => m !== bs.enemyIntent); em = others[Math.floor(Math.random() * others.length)]; feint = true; }
   const pw = combatPower(p);
   const wc = weaponClass(p);
@@ -118,7 +138,7 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
   }
   bs.log.push(txt);
   bs.round += 1;
-  bs.enemyIntent = pickEnemyMove(bs.enemyPower); // bir sonraki turun telegraf'ı
+  bs.enemyIntent = pickEnemyMove(bs.arch, bs.enemyPower); // bir sonraki turun telegraf'ı
 
   if (bs.enemyHp <= 0) { bs.enemyHp = 0; bs.over = true; bs.won = true; bs.log.push("Düşman yere serildi — zafer senin!"); }
   else if (bs.playerHp <= 0) { bs.playerHp = 0; bs.over = true; bs.won = false; bs.log.push("Dize geldin; çatışmayı kaybettin."); }
