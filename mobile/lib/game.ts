@@ -16,6 +16,7 @@ export interface Player {
   reputation: number; honor: number; fear: number; fame: number;
   stats: Stats; stat_points: number; dead: boolean; location_name: string; home_name: string;
   married: boolean; spouse_name: string | null; children: string[];
+  widowed?: boolean; // eşi vefat etmiş (dul); married=false olur ama anı/eulogy için iz kalır
   mother?: string; father?: string;
   mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
   inventory: Record<string, number>; properties: Property[]; generation: number;
@@ -1059,6 +1060,15 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       if (r < 0.4) { p.health = Math.min(100, p.health + 4); s.relationships[cf.id] = Math.min(100, (s.relationships[cf.id] || 0) + 2); push(s, "gunluk", "Çocukluk dostun çıkageldi; eski günleri yâd ettiniz, içine bir ferahlık doldu.", "kişisel", false, { k: "evj.oldFriendVisit", p: [{ fn: [cf.seed, cf.gender] }] }); }
       else if ((p.money < 30 || (p.debt || 0) > 0) && r < 0.7) { const help = 20 + Math.floor(Math.random() * 30); p.money += help; push(s, "gunluk", "Çocukluk dostun darda olduğunu duydu; sessizce kesene biraz akçe bıraktı.", "kişisel", false, { k: "evj.oldFriendHelp", p: [{ fn: [cf.seed, cf.gender] }, help] }); }
       else { p.reputation = Math.min(100, p.reputation + 2); push(s, "gunluk", "Çocukluk dostun seni mecliste övdü; sözü itibarına itibar kattı.", "kişisel", false, { k: "evj.oldFriendVouch", p: [{ fn: [cf.seed, cf.gender] }] }); }
+    }
+  }
+  // ── Dulluk: eş de fanidir; birlikte yaşlandıkça vefat ihtimali artar. Dul kalınca yas + (genç dulsa yeniden evlilik mümkün) ──
+  if (!p.dead && p.married && p.spouse_seed != null && p.age >= 45) {
+    const dc = p.age < 55 ? 0.008 : p.age < 65 ? 0.02 : p.age < 75 ? 0.04 : 0.07;
+    if (chance(dc)) {
+      const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
+      p.married = false; p.widowed = true; p.health = Math.max(1, p.health - 8); bumpNam(p, "dindar", 2);
+      push(s, "evlilik", `Ömür arkadaşın ${p.spouse_name} vefat etti; ocağın yarısı söndü. Diyar yasını paylaştı.`, "kişisel", true, { k: "evj.spouseDied", p: [{ fn: [p.spouse_seed, sg] }] });
     }
   }
   // ── Evli hayat anları: eşinle ocak tüten yıllar; ara sıra sıcak ya da sınanan anlar (sadık-dost'a paralel) ──
