@@ -51,6 +51,7 @@ export interface Player {
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
   priceMem?: Record<string, number>; // fiyat hafızası: "loc|good" → geçen ay kaydedilen alış fiyatı (pazar 'geçen fiyat' göstergesi)
   debt?: number; loan_turn?: number; // tefeci borcu (aylık faiz işler) + ilk ödünç alınan tur
+  deposit?: number; // sarraf emaneti (hırsızlık/yağma/haciz olaylarından korunur; yıllık küçük mudârabe getirisi)
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -130,7 +131,8 @@ export function lifestyleUpkeep(s: GameState): number {
   u += p.properties.length * 3 * inf;                            // mülk bakımı & tapu vergisi
   u += (s.settlements?.length || 0) * 8 * inf;                   // yerleşim idare gideri
   // Servete göre kademeli yaşam yükü (maiyet, ziyafet, sadaka beklentisi, divan vergisi) — zengini ısırır.
-  const w = p.money; const b1 = 5000 * inf, b2 = 20000 * inf, b3 = 100000 * inf;
+  // Emanet de servet sayılır → sarrafa yatırarak yaşam yükünden kaçılmaz.
+  const w = p.money + (p.deposit || 0); const b1 = 5000 * inf, b2 = 20000 * inf, b3 = 100000 * inf;
   let annual = 0;
   if (w > b1) annual += (Math.min(w, b2) - b1) * 0.03;
   if (w > b2) annual += (Math.min(w, b3) - b2) * 0.06;
@@ -178,6 +180,26 @@ export function repay(prev: GameState, amount: number): GameState {
   } else {
     push(s, "ticaret", `Borcuna ${amt} akçe ödedin; kalan borç ${p.debt} akçe.`, "kişisel", false, { k: "evj.repay", p: [amt, p.debt] });
   }
+  return s;
+}
+// ── Sarraf emaneti (safekeeping) — borcun karşıt kutbu: âtıl serveti sarrafa yatır.
+// Emanet hırsızlık/yağma/haciz olaylarından korunur; yıllık küçük mudârabe getirisi (~%2) işler.
+// Yaşam gideri ve mirasta yine servet sayılır (emanetle vergi/upkeep'ten kaçılmaz).
+export const DEPOSIT_ANNUAL_YIELD = 0.02;
+export function depositCoin(prev: GameState, amount: number): GameState {
+  const s = clone(prev); const p = s.player;
+  const amt = Math.min(Math.max(0, Math.round(amount)), p.money);
+  if (amt <= 0) return s;
+  p.money -= amt; p.deposit = Math.round((p.deposit || 0) + amt);
+  push(s, "ticaret", `Sarrafa ${amt} akçe emanet bıraktın; kesen yağmadan, hırsızdan emin (emanet ${p.deposit} akçe).`, "kişisel", false, { k: "evj.deposit", p: [amt, p.deposit] });
+  return s;
+}
+export function withdrawCoin(prev: GameState, amount: number): GameState {
+  const s = clone(prev); const p = s.player;
+  const amt = Math.min(Math.max(0, Math.round(amount)), p.deposit || 0);
+  if (amt <= 0) return s;
+  p.deposit = Math.round((p.deposit || 0) - amt); p.money += amt;
+  push(s, "ticaret", `Sarraftan ${amt} akçe emanetini geri aldın (emanet ${p.deposit} akçe).`, "kişisel", false, { k: "evj.withdraw", p: [amt, p.deposit || 0] });
   return s;
 }
 // ── Mülk-işçi (NPC istihdamı) ekonomisi — Vercel property_system.py portu ──
@@ -1246,6 +1268,11 @@ export function advance(prev: GameState, n = 1): GameState {
     if (s.player.age >= 13 && s.player.money > 0) {
       const upkeep = Math.min(s.player.money, lifestyleUpkeep(s));
       s.player.money -= upkeep;
+    }
+    // Sarraf emaneti: yılda bir küçük mudârabe getirisi (sarraf işletir, kârdan pay).
+    if ((s.player.deposit || 0) > 0 && s.turn > 0 && s.turn % 12 === 0) {
+      const gain = Math.round((s.player.deposit || 0) * DEPOSIT_ANNUAL_YIELD);
+      if (gain > 0) { s.player.deposit = (s.player.deposit || 0) + gain; if (i === n - 1) push(s, "ticaret", `Sarraf emanetini işletti; mudârabe payın ${gain} akçe (emanet ${s.player.deposit} akçe).`, "kişisel", false, { k: "evj.depositYield", p: [gain, s.player.deposit || 0] }); }
     }
     // Tefeci faizi: borç her ay büyür. Teminat eşiğini aşarsa sarraf alacağına karşılık mülke/nakde el koyar.
     if ((s.player.debt || 0) > 0) {
@@ -2740,7 +2767,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   if (!p.dead || p.children.length === 0) return s;
   const heir = heirName && p.children.includes(heirName) ? heirName : p.children[0];
   const will = WILL_STYLES.find((w) => w.id === willId) || WILL_STYLES[0];
-  const inheritMoney = Math.floor(p.money * will.frac) + 20;
+  const inheritMoney = Math.floor((p.money + (p.deposit || 0)) * will.frac) + 20; // emanet de mirasa dahil
   const props = [...p.properties];
   const gen = p.generation + 1;
   const surname = p.surname;
