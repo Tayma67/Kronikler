@@ -991,6 +991,21 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.age >= 40 && fate("40")) { const w = whoAmIId(); push(s, "kader", `Kırkına vardın. Aynaya baktığında ${WHOAMI_TR[w]} görüyorsun. Ömrün yarılandı; bundan sonrası bir miras meselesi.`, "kişisel", true, { k: "evj.fate40", p: [{ wai: w }] }); }
   if (p.age >= 60 && fate("60")) { const w = whoAmIId(); push(s, "kader", `Altmışını devirdin. Saçlar ağardı, geçmişin gölgesi uzadı. Ömrün akşamında ${WHOAMI_TR[w]} olarak anılıyorsun — geriye ne bırakacaksın?`, "kişisel", true, { k: "evj.fate60", p: [{ wai: w }] }); }
   if (p.age < 13 && chance(0.25)) { p.stat_points += 1; push(s, "cocukluk", "Yeni bir şeyler öğrendin (özellik puanı kazandın).", "kişisel", false, { k: "ev.cocukluk" }); }
+  // ── Çocukluk dönüm anıları: 8/10/12 yaşında bir kez tetiklenen, ize bırakan anlar (bazıları yoldaşı anar) ──
+  if (p.age >= 8 && p.age < 13 && fate("child8")) {
+    addStatXp(s, "intelligence", 8); p.health = Math.min(100, p.health + 4);
+    const cf = p.child_friend;
+    if (cf) push(s, "cocukluk", "Yoldaşınla ilk kez şehrin surlarına tırmandınız; diyar gözünüzde büyüdü.", "kişisel", true, { k: "evj.child8f", p: [{ fn: [cf.seed, cf.gender] }] });
+    else push(s, "cocukluk", "İlk kez şehrin surlarına tırmandın; diyar gözünde büyüdü.", "kişisel", true, { k: "evj.child8" });
+  }
+  if (p.age >= 10 && p.age < 13 && fate("child10")) {
+    gainSkill(s, "social", 12); gainSkill(s, "crafting", 8);
+    push(s, "cocukluk", "Çarşıda bir usta elinin marifetini izledin; parmakların kaşındı, aklın açıldı.", "kişisel", true, { k: "evj.child10" });
+  }
+  if (p.age >= 12 && p.age < 13 && fate("child12")) {
+    p.stat_points += 1;
+    push(s, "cocukluk", "Çocukluğun eşiğinde durdun; yarın büyüyeceksin, bugün son bir kez doyasıya oynadın (özellik puanı).", "kişisel", true, { k: "evj.child12" });
+  }
   if (p.dead) return;
   // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50);
