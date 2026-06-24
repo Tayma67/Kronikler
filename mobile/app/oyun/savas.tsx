@@ -112,6 +112,15 @@ export default function Savas() {
             </Pressable>
           ) : (
             <>
+              {/* Niyet telegraf'ı: düşmanın sezdiğin bir sonraki hamlesi (kurnaz düşman fent atabilir) */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 10, paddingVertical: 8, paddingHorizontal: 11, borderRadius: 9, borderWidth: 1, borderColor: "rgba(200,64,64,0.3)", backgroundColor: "rgba(200,64,64,0.07)" }}>
+                <GameIcon name="compass" size={13} color={C.blood} />
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted }}>{t("cb.intent")}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <GameIcon name={MOVES.find((m) => m.id === bs.enemyIntent)?.icon || "fist"} size={14} color={C.blood} />
+                  <Text style={{ fontFamily: F.display, fontSize: 12, color: C.blood }}>{t("cb." + bs.enemyIntent)}</Text>
+                </View>
+              </View>
               {/* Duruş seçimi (Vercel portu): saldırı/savunma dengesi */}
               <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1.5, color: C.parchmentMuted, marginBottom: 5 }}>{t("cb.stanceLabel")}</Text>
               <View style={{ flexDirection: "row", gap: 6, marginBottom: 10 }}>
