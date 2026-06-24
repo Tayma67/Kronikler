@@ -17,7 +17,7 @@ export interface Player {
   stats: Stats; stat_points: number; dead: boolean; location_name: string; home_name: string;
   married: boolean; spouse_name: string | null; children: string[];
   widowed?: boolean; // eşi vefat etmiş (dul); married=false olur ama anı/eulogy için iz kalır
-  mother?: string; father?: string;
+  mother?: string; father?: string; mother_dead?: boolean; father_dead?: boolean; // ebeveynler de fanidir; oyuncu yaşlandıkça birer kez vefat eder
   mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
   inventory: Record<string, number>; properties: Property[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
@@ -1069,6 +1069,17 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
       p.married = false; p.widowed = true; p.health = Math.max(1, p.health - 8); bumpNam(p, "dindar", 2);
       push(s, "evlilik", `Ömür arkadaşın ${p.spouse_name} vefat etti; ocağın yarısı söndü. Diyar yasını paylaştı.`, "kişisel", true, { k: "evj.spouseDied", p: [{ fn: [p.spouse_seed, sg] }] });
+    }
+  }
+  // ── Anne-baba da fanidir: çocukluğunun direkleri, sen olgunlaştıkça (onlar daha yaşlı) birer kez göçer. ──
+  if (!p.dead && p.age >= 28) {
+    const pdc = p.age < 40 ? 0.012 : p.age < 55 ? 0.03 : 0.06;
+    if (!p.mother_dead && p.mother && chance(pdc)) {
+      p.mother_dead = true; p.health = Math.max(1, p.health - 5); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1);
+      push(s, "kader", `Annen ${p.mother} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.motherDied", p: [{ fn: [p.mother_seed ?? 0, "kadın"] }] });
+    } else if (!p.father_dead && p.father && chance(pdc)) {
+      p.father_dead = true; p.health = Math.max(1, p.health - 5); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1);
+      push(s, "kader", `Baban ${p.father} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.fatherDied", p: [{ fn: [p.father_seed ?? 0, "erkek"] }] });
     }
   }
   // ── Evli hayat anları: eşinle ocak tüten yıllar; ara sıra sıcak ya da sınanan anlar (sadık-dost'a paralel) ──
