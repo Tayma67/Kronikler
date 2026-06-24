@@ -365,6 +365,12 @@ export default function Dashboard() {
                 </View>
               );
             })() : null}
+            {p.child_dream ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 9 }}>
+                <GameIcon name="star" size={11} color={C.gold} />
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("child.dream.label")}: <Text style={{ fontFamily: F.serif, color: C.gold }}>{t("dream." + p.child_dream)}</Text></Text>
+              </View>
+            ) : null}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {acts.map((a) => (
                 <Pressable key={a.k} onPress={() => onChild(a.k)} disabled={!can} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>

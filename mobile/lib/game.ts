@@ -39,6 +39,7 @@ export interface Player {
   horse?: boolean; // bir atın var mı (hızlı/güvenli "at ile" yolculuğu açar)
   child_acts?: Partial<Record<"oyun" | "yardim" | "yaramazlik" | "kesif", number>>; childhood?: string; // çocukluk eğilim sayacı + reşitlikte belirlenen çocukluk karakteri
   child_friend?: { id: string; seed: number; gender: "erkek" | "kadın"; bond: number }; // oyun yoldaşı: oyunla büyüyen bağ; bağ güçlüyse reşitlikte ömürlük dosta dönüşür
+  child_dream?: string; // çocukluk hayali (meslek domeni: combat/trade/crafting/social); reşitlikte meslek uyarsa ödül
   hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
   governorships?: string[]; // valisi olunan şehirler
   legacy?: Record<string, boolean>; // kalıcı görkem eserleri (vakıf/anıt/imaret) — bir kez kurulur
@@ -972,7 +973,12 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): string {
 
 function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const p = s.player;
-  if (p.age === 13 && p.profession === "işsiz") { p.profession = rnd(PROFS); p.stat_points += 3; push(s, "meslek_edinme", `Reşit oldun. ${cap(p.profession)} olarak hayata atıldın — dünya sana açıldı.`, "kişisel", true, { k: "evj.profGain", p: [{ pr: p.profession }] }); shapeChildhood(s); }
+  if (p.age === 13 && p.profession === "işsiz") {
+    // Çocukluk hayali meslek seçimini etkiler: %45 ihtimalle hayalinin yoluna düşersin.
+    if (p.child_dream && chance(0.45)) { const cands = PROFS.filter((id) => (PROF_SKILL[id] || "crafting") === p.child_dream); p.profession = cands.length ? rnd(cands) : rnd(PROFS); }
+    else p.profession = rnd(PROFS);
+    p.stat_points += 3; push(s, "meslek_edinme", `Reşit oldun. ${cap(p.profession)} olarak hayata atıldın — dünya sana açıldı.`, "kişisel", true, { k: "evj.profGain", p: [{ pr: p.profession }] }); shapeChildhood(s);
+  }
   // ── Kader anları: hayatın belirli dönümlerinde kimliğe ayna tutan sahneler ──
   if (!p.fates) p.fates = [];
   const fate = (id: string) => { if (!p.fates!.includes(id)) { p.fates!.push(id); return true; } return false; };
@@ -1003,6 +1009,15 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.age >= 10 && p.age < 13 && fate("child10")) {
     gainSkill(s, "social", 12); gainSkill(s, "crafting", 8);
     push(s, "cocukluk", "Çarşıda bir usta elinin marifetini izledin; parmakların kaşındı, aklın açıldı.", "kişisel", true, { k: "evj.child10" });
+  }
+  // Çocukluk hayali: 9 yaşında içinde bir tutku filizlenir — baskın eğilim hangi yola çekiyorsa o (yoksa rastgele).
+  if (p.age >= 9 && p.age < 13 && !p.child_dream && fate("dream")) {
+    const c = p.child_acts || {};
+    const domByAct: Record<string, string> = { oyun: "combat", yardim: "crafting", kesif: "trade", yaramazlik: "social" };
+    const top = (Object.entries(c) as [string, number][]).sort((a, b) => b[1] - a[1])[0];
+    const dom = top && top[1] > 0 ? domByAct[top[0]] : rnd(["combat", "trade", "crafting", "social"]);
+    p.child_dream = dom;
+    push(s, "cocukluk", "İçinde bir hayal filizlendi: büyüyünce ne olacağına dair bir tutku.", "kişisel", true, { k: "evj.dreamForm", p: [{ dreamk: dom }] });
   }
   if (p.age >= 12 && p.age < 13 && fate("child12")) {
     p.stat_points += 1;
@@ -2414,6 +2429,12 @@ function shapeChildhood(s: GameState) {
     push(s, "cocukluk", "Çocukluk yoldaşın seninle birlikte büyüdü; artık ömürlük bir dostun var.", "kişisel", true, { k: "child.friend.grown", p: [{ fn: [cf.seed, cf.gender] }] });
   } else if (cf) {
     push(s, "cocukluk", "Çocukluk yoldaşınla yollarınız ayrıldı; çocukluk işte, gelip geçti.", "kişisel", false, { k: "child.friend.lost", p: [{ fn: [cf.seed, cf.gender] }] });
+  }
+  // Çocukluk hayali: edindiğin meslek hayalinin domeniyle örtüşürse hayal gerçek olur (ödül); yoksa başka bahara kalır.
+  if (p.child_dream) {
+    const got = (PROF_SKILL[p.profession] || "crafting") === p.child_dream;
+    if (got) { p.stat_points += 1; p.reputation = Math.min(100, p.reputation + 4); push(s, "cocukluk", "Çocukluk hayalin gerçek oldu — hayalini kurduğun yola düştün (özellik puanı + itibar).", "kişisel", true, { k: "evj.dreamWin", p: [{ dreamk: p.child_dream }] }); }
+    else push(s, "cocukluk", "Çocukluk hayalin başka bahara kaldı; hayat seni başka bir yola çağırdı.", "kişisel", false, { k: "evj.dreamMiss", p: [{ dreamk: p.child_dream }] });
   }
   const total = (c.oyun || 0) + (c.yardim || 0) + (c.yaramazlik || 0) + (c.kesif || 0);
   if (total < 4) return; // yeterince çocukluk geçirmedi → nötr başlar
