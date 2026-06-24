@@ -38,6 +38,7 @@ export interface Player {
   club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
   horse?: boolean; // bir atın var mı (hızlı/güvenli "at ile" yolculuğu açar)
   child_acts?: Partial<Record<"oyun" | "yardim" | "yaramazlik" | "kesif", number>>; childhood?: string; // çocukluk eğilim sayacı + reşitlikte belirlenen çocukluk karakteri
+  child_friend?: { id: string; seed: number; gender: "erkek" | "kadın"; bond: number }; // oyun yoldaşı: oyunla büyüyen bağ; bağ güçlüyse reşitlikte ömürlük dosta dönüşür
   hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
   governorships?: string[]; // valisi olunan şehirler
   legacy?: Record<string, boolean>; // kalıcı görkem eserleri (vakıf/anıt/imaret) — bir kez kurulur
@@ -2313,8 +2314,20 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
   const chips: { label: string; col: string }[] = []; let key = "";
   if (kind === "oyun") {
     p.health = Math.min(100, p.health + 5); addStatXp(s, "stamina", 6); gainSkill(s, "social", 4);
-    chips.push({ label: "Sağlık +5", col: "#7FA66A" }, { label: "Dayanıklılık ↑", col: "#C9A84C" }); key = "child.oyun";
-    push(s, "cocukluk", "Sokakta akranlarınla oyun oynadın; soluk soluğa ama mutlu.", "kişisel", false, { k: "child.oyun" });
+    chips.push({ label: "Sağlık +5", col: "#7FA66A" }, { label: "Dayanıklılık ↑", col: "#C9A84C" });
+    if (!p.child_friend) { // ilk oyunda bir can yoldaşı belirir
+      const seed = (Math.floor(Math.random() * 1e9)) >>> 0;
+      const gender: "erkek" | "kadın" = Math.random() < 0.5 ? "erkek" : "kadın";
+      p.child_friend = { id: `cf_${s.turn}_${seed % 100000}`, seed, gender, bond: 14 };
+      chips.push({ label: "Yeni yoldaş", col: "#C0556B" }); key = "child.friend.new";
+      push(s, "cocukluk", "Oyun sırasında bir can yoldaşı edindin; günler artık daha şen.", "kişisel", true, { k: "child.friend.new", p: [{ fn: [seed, gender] }] });
+    } else { // her oyun bağı güçlendirir
+      const before = p.child_friend.bond;
+      p.child_friend.bond = Math.min(100, before + 8 + Math.floor(Math.random() * 5));
+      chips.push({ label: "Bağ ↑", col: "#C0556B" });
+      if (before < 50 && p.child_friend.bond >= 50) { key = "child.friend.close"; push(s, "cocukluk", "Yoldaşınla aranızdaki bağ pekişti; sırdaş oldunuz.", "kişisel", true, { k: "child.friend.close", p: [{ fn: [p.child_friend.seed, p.child_friend.gender] }] }); }
+      else { key = "child.oyun"; push(s, "cocukluk", "Yoldaşınla sokakta oyun oynadınız; soluk soluğa ama mutlu.", "kişisel", false, { k: "child.oyun" }); }
+    }
   } else if (kind === "yardim") {
     const earn = 3 + Math.floor(Math.random() * 6); p.money += earn; p.reputation = Math.min(100, p.reputation + 1); gainSkill(s, "crafting", 4);
     chips.push({ label: `+${earn} akçe`, col: "#E0BC5A" }, { label: "İtibar +1", col: "#7FA66A" }); key = "child.yardim";
@@ -2340,6 +2353,19 @@ export const CHILDHOOD_LABEL: Record<string, string> = { hasari: "Haşarı", usl
 // Reşit olurken çocukluk eğilimini değerlendir: baskın uğraş kalıcı bir başlangıç izi bırakır.
 function shapeChildhood(s: GameState) {
   const p = s.player; const c = p.child_acts || {};
+  // Oyun yoldaşı: bağ güçlüyse seninle birlikte büyür ve ömürlük gerçek bir dosta dönüşür (ilişki grafiğine girer).
+  const cf = p.child_friend;
+  if (cf && cf.bond >= 40) {
+    if (!s.world.npcBorn) s.world.npcBorn = [];
+    if (!s.world.npcBorn.some((n) => n.id === cf.id)) {
+      const tmpl = generateNPCs((cf.seed ^ 0x5bd1e995) >>> 0, 1, "tr", "cf")[0];
+      s.world.npcBorn.push({ ...tmpl, id: cf.id, gender: cf.gender, nameSeed: cf.seed, loc: p.location_name, alive: true, age: p.age, bornY: worldYears(s) });
+    }
+    s.relationships[cf.id] = Math.max(s.relationships[cf.id] || 0, Math.min(80, cf.bond));
+    push(s, "cocukluk", "Çocukluk yoldaşın seninle birlikte büyüdü; artık ömürlük bir dostun var.", "kişisel", true, { k: "child.friend.grown", p: [{ fn: [cf.seed, cf.gender] }] });
+  } else if (cf) {
+    push(s, "cocukluk", "Çocukluk yoldaşınla yollarınız ayrıldı; çocukluk işte, gelip geçti.", "kişisel", false, { k: "child.friend.lost", p: [{ fn: [cf.seed, cf.gender] }] });
+  }
   const total = (c.oyun || 0) + (c.yardim || 0) + (c.yaramazlik || 0) + (c.kesif || 0);
   if (total < 4) return; // yeterince çocukluk geçirmedi → nötr başlar
   const entries: [string, number][] = [["yaramazlik", c.yaramazlik || 0], ["yardim", c.yardim || 0], ["oyun", c.oyun || 0], ["kesif", c.kesif || 0]];

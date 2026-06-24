@@ -9,6 +9,7 @@ import { useGame } from "../../lib/store";
 import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, studyEnergy, maxStudyEnergy, STUDY_COST } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL, placeName } from "../../lib/locale-data";
+import { localFirstName } from "../../lib/world";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre } from "../../lib/ui";
@@ -351,6 +352,19 @@ export default function Dashboard() {
                 ))}
               </View>
             </View>
+            {p.child_friend ? (() => {
+              const cf = p.child_friend; const nm = localFirstName(cf.seed, cf.gender, lang);
+              return (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 9, paddingVertical: 7, paddingHorizontal: 9, borderRadius: 8, borderWidth: 1, borderColor: "rgba(192,85,107,0.35)", backgroundColor: "rgba(192,85,107,0.07)" }}>
+                  <GameIcon name="iliskiler" size={13} color="#C0556B" />
+                  <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchment }}>{nm}</Text>
+                  <View style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: "rgba(192,85,107,0.18)", overflow: "hidden" }}>
+                    <View style={{ width: `${Math.max(0, Math.min(100, cf.bond))}%`, height: "100%", backgroundColor: "#C0556B" }} />
+                  </View>
+                  <Text style={{ fontFamily: F.display, fontSize: 9, color: "#C0556B" }}>{t("child.friend.label")}</Text>
+                </View>
+              );
+            })() : null}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {acts.map((a) => (
                 <Pressable key={a.k} onPress={() => onChild(a.k)} disabled={!can} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
