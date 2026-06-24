@@ -1013,6 +1013,17 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50);
   if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.reputation += 5; push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: "evj.childBorn", p: [c] }); }
+  // ── Ömürlük çocukluk dostu: reşitlikte yanında kalan yoldaş, hayat boyu ara sıra ortaya çıkar (sadakat) ──
+  if (!p.dead && p.age >= 16 && p.child_friend && (s.relationships[p.child_friend.id] || 0) > 0 && chance(0.025)) {
+    const cf = p.child_friend;
+    const alive = !s.world.npcBorn || (s.world.npcBorn.find((n) => n.id === cf.id)?.alive !== false);
+    if (alive) {
+      const r = Math.random();
+      if (r < 0.4) { p.health = Math.min(100, p.health + 4); s.relationships[cf.id] = Math.min(100, (s.relationships[cf.id] || 0) + 2); push(s, "gunluk", "Çocukluk dostun çıkageldi; eski günleri yâd ettiniz, içine bir ferahlık doldu.", "kişisel", false, { k: "evj.oldFriendVisit", p: [{ fn: [cf.seed, cf.gender] }] }); }
+      else if ((p.money < 30 || (p.debt || 0) > 0) && r < 0.7) { const help = 20 + Math.floor(Math.random() * 30); p.money += help; push(s, "gunluk", "Çocukluk dostun darda olduğunu duydu; sessizce kesene biraz akçe bıraktı.", "kişisel", false, { k: "evj.oldFriendHelp", p: [{ fn: [cf.seed, cf.gender] }, help] }); }
+      else { p.reputation = Math.min(100, p.reputation + 2); push(s, "gunluk", "Çocukluk dostun seni mecliste övdü; sözü itibarına itibar kattı.", "kişisel", false, { k: "evj.oldFriendVouch", p: [{ fn: [cf.seed, cf.gender] }] }); }
+    }
+  }
   // ── Yaşam-evresi anıları: her döneme doku katan küçük anlar (ara sıra; bazıları aileyi isimle anar) ──
   if (!p.dead && chance(0.14)) {
     const child = p.children.length ? rnd(p.children) : null;
