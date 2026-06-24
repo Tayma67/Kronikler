@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, sellItem, launchCaravan, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD } from "../../lib/game";
+import { buyItem, sellItem, launchCaravan, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -284,6 +284,28 @@ export default function Pazar() {
               ) : (
                 <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentDim }}>{t("paz.noCash")}</Text>
               )}
+              {/* Zekât: serveti saygınlığa çevir (gönüllü, yılda bir) */}
+              {(() => {
+                const z = zekatDue(state); const can = zekatAvailable(state);
+                if (z <= 0 && !can) return null;
+                return (
+                  <>
+                    <View style={{ height: 1, backgroundColor: C.border, marginVertical: 11 }} />
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentDim, textTransform: "uppercase" }}>{t("paz.zekat")}</Text>
+                      {z > 0 ? <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{z} ⚜</Text> : null}
+                    </View>
+                    {can ? (
+                      <Pressable onPress={() => { hap("advance"); apply((s) => giveZekat(s)); }} style={{ alignItems: "center", paddingVertical: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)" }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>{t("paz.zekatGive")}</Text>
+                      </Pressable>
+                    ) : (
+                      <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentDim }}>{t("paz.zekatDone")}</Text>
+                    )}
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 6 }}>{t("paz.zekatHint")}</Text>
+                  </>
+                );
+              })()}
             </Panel>
           );
         })()}

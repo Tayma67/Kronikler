@@ -53,6 +53,7 @@ export interface Player {
   priceMem?: Record<string, number>; // fiyat hafızası: "loc|good" → geçen ay kaydedilen alış fiyatı (pazar 'geçen fiyat' göstergesi)
   debt?: number; loan_turn?: number; // tefeci borcu (aylık faiz işler) + ilk ödünç alınan tur
   deposit?: number; // sarraf emaneti (hırsızlık/yağma/haciz olaylarından korunur; yıllık küçük mudârabe getirisi)
+  last_zekat?: number; // son zekât verilen tur (yılda bir kapısı); serveti saygınlığa çevirir
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -201,6 +202,26 @@ export function withdrawCoin(prev: GameState, amount: number): GameState {
   if (amt <= 0) return s;
   p.deposit = Math.round((p.deposit || 0) - amt); p.money += amt;
   push(s, "ticaret", `Sarraftan ${amt} akçe emanetini geri aldın (emanet ${p.deposit} akçe).`, "kişisel", false, { k: "evj.withdraw", p: [amt, p.deposit || 0] });
+  return s;
+}
+// ── Zekât — serveti saygınlığa çevirir (gönüllü, yılda bir). Nisabı aşan servetin %2.5'i yoksula.
+// Para sırf gider değil: dindar/cömert nam + itibar + şöhrete dönüşür (zengine anlamlı, dönem-gerçekçi bir musluk).
+export function zekatNisab(s: GameState): number { return Math.round(800 * inflationFactor(s)); }
+export function zekatDue(s: GameState): number {
+  const p = s.player; const wealth = p.money + (p.deposit || 0);
+  return wealth > zekatNisab(s) ? Math.round((wealth - zekatNisab(s)) * 0.025) : 0;
+}
+export function zekatAvailable(s: GameState): boolean {
+  const p = s.player; const z = zekatDue(s);
+  return !p.dead && p.age >= 13 && z > 0 && p.money >= z && (p.last_zekat == null || s.turn - p.last_zekat >= 12);
+}
+export function giveZekat(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!zekatAvailable(s)) return s;
+  const z = zekatDue(s); p.money -= z; p.last_zekat = s.turn;
+  bumpNam(p, "dindar", 5); bumpNam(p, "comert", 5);
+  p.reputation = Math.min(100, p.reputation + 3); p.fame = Math.min(100, p.fame + 1);
+  push(s, "bagis", `Malının zekâtını verdin (${z} akçe yoksula); gönlün ferahladı, eli açık diye anıldın.`, "kişisel", true, { k: "evj.zekat", p: [z] });
   return s;
 }
 // ── Mülk-işçi (NPC istihdamı) ekonomisi — Vercel property_system.py portu ──
