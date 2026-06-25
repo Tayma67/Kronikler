@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { changeProfession, PROFESSIONS, professionById, careerTier } from "../../lib/game";
+import { changeProfession, PROFESSIONS, professionById, careerTier, hasProfAction, canProfAction, professionAction, profActionCooldownLeft } from "../../lib/game";
 import { professionNameL, careerTitleL, PROF_L10N } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -42,6 +42,20 @@ export default function Meslek() {
             </View>
           </Panel>
         )}
+
+        {hasProfAction(p) && (() => {
+          const can = canProfAction(state);
+          const cd = profActionCooldownLeft(p, state.turn);
+          return (
+            <Panel title={t("prof.actTitle")}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: can ? C.gold : C.parchmentMuted }}>{t("prof.act." + p.profession + ".n")}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, marginTop: 4, lineHeight: 18 }}>{t("prof.act." + p.profession + ".d")}</Text>
+              <Pressable onPress={() => { if (!can) return; hap("success"); apply((s) => professionAction(s)); }} disabled={!can} style={{ marginTop: 10, paddingVertical: 11, borderRadius: 9, alignItems: "center", borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: can ? "rgba(201,168,76,0.12)" : C.bg }}>
+                <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 0.5, color: can ? C.gold : C.parchmentMuted }}>{cd > 0 ? t("prof.actWait").replace("%1", String(cd)) : t("prof.act." + p.profession + ".n")}</Text>
+              </Pressable>
+            </Panel>
+          );
+        })()}
 
         <Panel title={t("scr.meslek")} noPad>
           {PROFESSIONS.map((pr, i) => {

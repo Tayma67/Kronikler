@@ -55,6 +55,7 @@ export interface Player {
   appointedGov?: Record<string, { seed: number; gender: "erkek" | "kadın"; loyalty: number }>; // hükümdarın atadığı valiler (şehir → vekil + sadakat) → haraç geliri
   crownConquests?: string[]; // sefere çıkıp ilhak edilen beylikler (haraç + güç + şöhret)
   campaignsWon?: number; // kazanılan sefer sayısı (şöhret/miras)
+  prof_action_turn?: number; // son meslek imza eylemi turu (bekleme süresi)
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
   priceMem?: Record<string, number>; // fiyat hafızası: "loc|good" → geçen ay kaydedilen alış fiyatı (pazar 'geçen fiyat' göstergesi)
@@ -1900,6 +1901,59 @@ function rollWorkEvent(s: GameState) {
     if (ev.lRep) p.reputation = Math.max(-100, p.reputation - ev.lRep);
     push(s, "çalışma", `${ev.text}: ${ev.lose}.`, "kişisel", false, { k: "evj.workLose", p: [{ wevt: wevKey }, { wevl: wevKey }] });
   }
+}
+
+// ── Meslek imza eylemi (work() dışında, mesleğe özgü, bekleme süreli, stat-testli) ──
+// Her meslek kendini gösteren büyük bir iş yapar: hasat şenliği, şaheser sipariş, salgınla mücadele, sınır akını…
+export const PROF_ACTION_COOLDOWN = 3; // ay
+export interface ProfAction { stat: keyof Stats; reward: number; fame: number; rep: number; honor: number; riskHealth: number; skill: SkillKey; nam?: keyof Nam; namAmt?: number; }
+export const PROF_ACTIONS: Record<string, ProfAction> = {
+  çiftçi:   { stat: "stamina",      reward: 40, fame: 1, rep: 3, honor: 0, riskHealth: 0, skill: "crafting" },
+  demirci:  { stat: "strength",     reward: 60, fame: 4, rep: 1, honor: 0, riskHealth: 4, skill: "crafting" },
+  tüccar:   { stat: "charisma",     reward: 80, fame: 2, rep: 2, honor: 0, riskHealth: 0, skill: "trade" },
+  balıkçı:  { stat: "stamina",      reward: 45, fame: 1, rep: 1, honor: 0, riskHealth: 5, skill: "trade" },
+  avcı:     { stat: "strength",     reward: 50, fame: 2, rep: 1, honor: 0, riskHealth: 5, skill: "combat" },
+  marangoz: { stat: "intelligence", reward: 50, fame: 2, rep: 2, honor: 0, riskHealth: 0, skill: "crafting" },
+  çoban:    { stat: "stamina",      reward: 38, fame: 1, rep: 1, honor: 0, riskHealth: 0, skill: "trade" },
+  fırıncı:  { stat: "intelligence", reward: 36, fame: 1, rep: 2, honor: 0, riskHealth: 0, skill: "crafting" },
+  asker:    { stat: "strength",     reward: 55, fame: 4, rep: 1, honor: 4, riskHealth: 7, skill: "combat", nam: "mert", namAmt: 3 },
+  müzisyen: { stat: "charisma",     reward: 60, fame: 5, rep: 2, honor: 0, riskHealth: 0, skill: "social" },
+  şifacı:   { stat: "intelligence", reward: 50, fame: 3, rep: 5, honor: 4, riskHealth: 6, skill: "social", nam: "dindar", namAmt: 3 },
+  katip:    { stat: "intelligence", reward: 45, fame: 2, rep: 3, honor: 0, riskHealth: 0, skill: "social" },
+  kuyumcu:  { stat: "intelligence", reward: 75, fame: 4, rep: 1, honor: 0, riskHealth: 0, skill: "crafting" },
+  dokumacı: { stat: "intelligence", reward: 48, fame: 2, rep: 2, honor: 0, riskHealth: 0, skill: "crafting" },
+  hancı:    { stat: "charisma",     reward: 50, fame: 2, rep: 2, honor: 0, riskHealth: 0, skill: "trade" },
+};
+export function hasProfAction(p: Player): boolean { return p.profession in PROF_ACTIONS; }
+export function profActionReady(p: Player, turn: number): boolean { const l = p.prof_action_turn; return l == null || turn - l >= PROF_ACTION_COOLDOWN; }
+export function profActionCooldownLeft(p: Player, turn: number): number { const l = p.prof_action_turn; return l == null ? 0 : Math.max(0, PROF_ACTION_COOLDOWN - (turn - l)); }
+export function canProfAction(s: GameState): boolean {
+  const p = s.player;
+  return !p.dead && p.age >= 13 && hasProfAction(p) && profActionReady(p, s.turn) && p.hunger >= 18;
+}
+export function professionAction(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!canProfAction(s)) return s;
+  const a = PROF_ACTIONS[p.profession]; const pr = professionById(p.profession);
+  const tier = pr ? careerTier(pr, p.career_xp) : 0; const titleMult = TITLE_MULT[tier] || 1;
+  p.prof_action_turn = s.turn; p.hunger = Math.max(0, p.hunger - 8);
+  const ok = Math.random() < 0.45 + effStat(p, a.stat) * 0.05;
+  if (ok) {
+    const reward = Math.round((a.reward + effStat(p, a.stat) * 3 + Math.floor(Math.random() * 12)) * titleMult * inflationFactor(s));
+    p.money += reward;
+    if (a.fame) p.fame = Math.min(100, p.fame + a.fame);
+    if (a.rep) p.reputation = Math.min(100, p.reputation + a.rep);
+    if (a.honor) p.honor = Math.min(100, p.honor + a.honor);
+    if (a.nam && a.namAmt) bumpNam(p, a.nam, a.namAmt);
+    gainSkill(s, a.skill, 10); addStatXp(s, a.stat, 5); p.career_xp += 1;
+    push(s, "çalışma", `Mesleğinde göz dolduran bir iş başardın (+${reward} akçe).`, "kişisel", true, { k: "prof.act." + p.profession + ".win", p: [reward] });
+  } else {
+    const small = Math.round(a.reward * 0.25 * inflationFactor(s)); p.money += small;
+    if (a.riskHealth) p.health = Math.max(1, p.health - a.riskHealth);
+    p.reputation = Math.max(-100, p.reputation - 1);
+    push(s, "çalışma", `Girişimin umduğun gibi gitmedi (+${small} akçe).`, "kişisel", false, { k: "prof.actLose", p: [small] });
+  }
+  return s;
 }
 
 export function eat(prev: GameState): GameState {
