@@ -701,12 +701,12 @@ function snapshotPrices(s: GameState) {
 // ── ARZ–TALEP: şehrin NPC meslekleri gerçek yerel arzı belirler (yaşayan dünyayla değişir) ──
 // Hangi meslek hangi malı üretir (ağırlıklı): çiftçi buğday yetiştirir, demirci demir/silah döver...
 const GOOD_PRODUCERS: Record<string, [string, number][]> = {
-  bugday: [["çiftçi", 1]], un: [["çiftçi", 0.5], ["fırıncı", 0.5]], ekmek: [["fırıncı", 1]], corba: [["fırıncı", 0.4], ["hancı", 0.6]],
-  peynir: [["çoban", 1]], et: [["avcı", 0.6], ["çoban", 0.5]], balik: [["balıkçı", 1]], yun: [["çoban", 0.7], ["dokumacı", 0.4]],
+  bugday: [["çiftçi", 1]], un: [["çiftçi", 0.5], ["fırıncı", 0.5]], ekmek: [["fırıncı", 1]], corba: [["fırıncı", 0.6], ["çiftçi", 0.4]],
+  peynir: [["çoban", 1]], et: [["avcı", 0.6], ["çoban", 0.5]], balik: [["balıkçı", 1]], yun: [["çoban", 1]],
   bal: [["çiftçi", 0.5]], sarap: [["çiftçi", 0.5]], sifa: [["şifacı", 1]], iksir: [["şifacı", 0.7]],
-  demir: [["demirci", 1]], kereste: [["marangoz", 1]], deri: [["avcı", 0.7]],
+  demir: [["demirci", 1]], kereste: [["avcı", 0.6], ["çiftçi", 0.4]], deri: [["avcı", 0.7]],
   bicak: [["demirci", 1]], kilic: [["demirci", 1]], celik_kilic: [["demirci", 1]], savas_balta: [["demirci", 1]], kalkan: [["demirci", 1]], zincir_zirh: [["demirci", 1]],
-  yay: [["marangoz", 0.6], ["avcı", 0.4]], deri_zirh: [["avcı", 0.5], ["demirci", 0.3]],
+  yay: [["avcı", 0.6], ["demirci", 0.4]], deri_zirh: [["avcı", 0.5], ["demirci", 0.3]],
 };
 // Malın talep yoğunluğu (nüfusa oranlı): yiyecek herkesçe tüketilir; silah/zırh azdır; hammadde zanaatkârlarca aranır.
 const DEMAND_COEF: Record<string, number> = {
@@ -2466,7 +2466,8 @@ const CLUB_TR: Record<string, string> = { koro: "Koro", gures: "Güreş", cirak:
 export function joinClub(prev: GameState, id: string | null): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead) return s;
-  if (!id) { p.club = undefined; return s; }
+  if (!id) { p.club = undefined; return s; }       // ayrılmak her yaşta serbest
+  if (p.age < 7 || p.age >= 18) return s;            // kulübe yalnız okul çağında (7-17) katılınır (yetişkin katılıp bedava mezuniyet XP'si farmlayamaz)
   if (!CLUBS.find((c) => c.id === id)) return s;
   if (p.club !== id) p.club_standing = 0; // başka kulübe geçince itibar sıfırdan
   p.club = id;
