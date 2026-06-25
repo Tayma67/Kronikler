@@ -3427,6 +3427,10 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "vali_a",   name: "Vali",            desc: "Bir şehre vali ol.",                icon: "crown",        done: (s) => (s.player.governorships?.length || 0) >= 1 },
   { id: "mezraci",  name: "Mezra Kurucusu",  desc: "Yeni bir yerleşim kur.",            icon: "castle",       done: (s) => (s.settlements?.length || 0) >= 1 },
   { id: "tacli_a",  name: "Taç Giydin",      desc: "Taht iddiasını kazan.",             icon: "crown",        done: (s) => !!s.player.crowned },
+  { id: "vezir_a",  name: "Vezir",           desc: "Sarayda Vezir rütbesine yüksel.",   icon: "scroll",       done: (s) => (s.player.courtRank ?? -1) >= 3 },
+  { id: "sadrazam_a",name: "Sadrazam",       desc: "Divanın en üst mevkiine eriş.",     icon: "scroll-open",  done: (s) => (s.player.courtRank ?? -1) >= 4 },
+  { id: "fatih_a",  name: "Fâtih",           desc: "Sefere çıkıp bir diyarı tâcına kat.",icon: "crossed-swords",done: (s) => (s.player.crownConquests?.length || 0) >= 1 },
+  { id: "bani_a",   name: "Bânî",            desc: "Bir şehre bayındırlık eseri yaptır.",icon: "castle",       done: (s) => Object.values(s.player.govWorks || {}).some((arr) => arr.length > 0) },
   { id: "ailereis", name: "Aile Reisi",      desc: "5 aile görevi tamamla.",            icon: "family",       done: (s) => (s.player.fq_claimed?.length || 0) >= 5 },
   { id: "demiryum", name: "Demir Yumruk",    desc: "Gücünü 10'a çıkar.",                icon: "anvil",        done: (s) => s.player.stats.strength >= 10 },
   { id: "asilsoy",  name: "Asîl Soy",        desc: "Altıncı nesle ulaş.",               icon: "scroll-open",  done: (s) => s.player.generation >= 6 },
@@ -3774,7 +3778,10 @@ export function publicPerception(s: GameState): { recog: number; key: string } {
 // Hanedanın toplam gücü (kişisel güç + irsî birikim + tahta + yerleşimler).
 export function dynastyPower(s: GameState): number {
   const p = s.player;
-  return playerHousePower(p) + (s.settlements?.length || 0) * 8 + (p.crowned ? 40 : 0);
+  const courtBonus = inCourt(p) ? ((p.courtRank ?? 0) + 1) * 6 : 0;          // saray mevkii haneyi yükseltir (Kâtip +6 … Sadrazam +30)
+  const conquestBonus = (p.crownConquests?.length || 0) * 10;                // ilhak edilen her diyar haneye güç katar
+  const worksBonusTotal = Object.values(p.govWorks || {}).reduce((a, arr) => a + arr.length, 0) * 3; // bayındırlık eserleri
+  return playerHousePower(p) + (s.settlements?.length || 0) * 8 + (p.crowned ? 40 : 0) + courtBonus + conquestBonus + worksBonusTotal;
 }
 // Mühür kademesi (0..4) — gerçekçi: köklü bir hane nesillerce inşa edilir.
 export function houseSeal(power: number): { tier: number; key: string } {
@@ -3799,7 +3806,8 @@ export function throneRequirements(s: GameState): ThroneReq[] {
     { key: "gold",  cur: p.money,                  need: THRONE_COST },
   ].map((r) => ({ ...r, ok: r.cur >= r.need }));
 }
-export function throneBacking(p: Player): boolean { return !!p.faction; }
+// Tahta iddia için arka: bir lonca DESTEĞİ ya da sarayda yüksek mevki (Vezir+) — devlet ricalinden güç tabanı.
+export function throneBacking(p: Player): boolean { return !!p.faction || (p.courtRank ?? -1) >= 3; }
 export function canClaimThrone(s: GameState): boolean {
   return !s.player.crowned && !s.player.dead && throneBacking(s.player) && throneRequirements(s).every((r) => r.ok);
 }
@@ -4276,7 +4284,7 @@ function crownTick(s: GameState) {
 // ── SARAY / DÎVÂN KARİYERİ (taht dışı hizmet yolu): rütbe basamakları, divan hizmeti, hükümdar itibarı, entrika ──
 // Oyuncu kendi tahtta değilken hükümdarın divanında hizmet eder; Kâtip'ten Sadrazam'a yükselir.
 export const COURT_RANKS = ["katip", "defterdar", "nisanci", "vezir", "sadrazam"] as const;
-export const COURT_RANK_XP = [0, 24, 55, 95, 150];   // o rütbeye ulaşmak için gereken hizmet puanı
+export const COURT_RANK_XP = [0, 30, 80, 155, 260];  // o rütbeye ulaşmak için gereken hizmet puanı (Sadrazam ömürlük tırmanış)
 export const COURT_SALARY = [6, 12, 22, 38, 60];     // rütbeye göre aylık maaş
 export const COURT_ACTION_COOLDOWN = 2;              // ay
 export const COURT_FAVOR_GIFT_COST = 40;             // pîşkeş (itibar hediyesi) bedeli
@@ -4322,7 +4330,7 @@ export function serveCourt(prev: GameState): GameState {
   const ok = Math.random() < 0.45 + skill * 0.05;
   const rank = p.courtRank ?? 0;
   if (ok) {
-    p.courtXp = (p.courtXp ?? 0) + 9 + Math.floor(Math.random() * 4);
+    p.courtXp = (p.courtXp ?? 0) + 6 + Math.floor(Math.random() * 3);
     p.courtFavor = Math.min(100, (p.courtFavor ?? 55) + 4);
     const bonus = Math.round((8 + rank * 4) * inflationFactor(s)); p.money += bonus;
     gainSkill(s, "social", 8); addStatXp(s, "intelligence", 4);
