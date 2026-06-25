@@ -61,6 +61,7 @@ export interface Player {
   courtFavor?: number; // hükümdar nezdinde itibar (0-100); düşerse azil
   court_action_turn?: number; // son divan hizmeti turu (bekleme süresi)
   harvestAccum?: number; wageAccum?: number; // pasif gelir/ücret yıllık birikimi (kronik yılda bir özetlenir; aylık spam önlenir)
+  grandchildren?: string[]; // torunlar (oyuncu yaşlanınca yetişkin evlattan doğar; torun anları)
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
   priceMem?: Record<string, number>; // fiyat hafızası: "loc|good" → geçen ay kaydedilen alış fiyatı (pazar 'geçen fiyat' göstergesi)
@@ -1096,6 +1097,18 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50);
   if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.reputation += 5; push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: "evj.childBorn", p: [c] }); }
+  // ── Torun anları: oyuncu yaşlanınca (52+) ve yetişkin evladı varken torun doğar; torunla anlar gönül ferahlatır (additive) ──
+  if (p.age >= 52 && p.children.length >= 1 && (p.grandchildren?.length || 0) < 8 && chance(0.06)) {
+    const gc = rnd(CHILD); if (!p.grandchildren) p.grandchildren = []; p.grandchildren.push(gc);
+    p.reputation = Math.min(100, p.reputation + 2);
+    push(s, "doğum", `Bir torunun dünyaya geldi: ${gc}. Soyun sürüyor.`, "kişisel", true, { k: "evj.grandchildBorn", p: [gc] });
+  }
+  if (p.age >= 54 && (p.grandchildren?.length || 0) > 0 && chance(0.05)) {
+    const gc = rnd(p.grandchildren!); const r = Math.random();
+    if (r < 0.34) { p.health = Math.min(100, p.health + 3); push(s, "ihtiyarlik", `Torunun ${gc} ile vakit geçirdin; kahkahası ömrüne ömür kattı.`, "kişisel", false, { k: "evj.gcJoy", p: [gc] }); }
+    else if (r < 0.67) { bumpNam(p, "mert", 2); p.honor = Math.min(100, p.honor + 2); push(s, "ihtiyarlik", `Torunun ${gc}'e bir hayat dersi verdin; gözünde bilge biri oldun.`, "kişisel", false, { k: "evj.gcWisdom", p: [gc] }); }
+    else { p.reputation = Math.min(100, p.reputation + 2); push(s, "ihtiyarlik", `Torunun ${gc} için bir armağan yaptırdın; ailen mutlu oldu.`, "kişisel", false, { k: "evj.gcGift", p: [gc] }); }
+  }
   // ── Ömürlük çocukluk dostu: reşitlikte yanında kalan yoldaş, hayat boyu ara sıra ortaya çıkar (sadakat) ──
   if (!p.dead && p.age >= 16 && p.child_friend && (s.relationships[p.child_friend.id] || 0) > 0 && chance(0.025)) {
     const cf = p.child_friend;
