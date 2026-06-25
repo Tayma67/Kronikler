@@ -60,6 +60,7 @@ export interface Player {
   courtXp?: number; // saray hizmet puanı (terfi eşiği)
   courtFavor?: number; // hükümdar nezdinde itibar (0-100); düşerse azil
   court_action_turn?: number; // son divan hizmeti turu (bekleme süresi)
+  harvestAccum?: number; wageAccum?: number; // pasif gelir/ücret yıllık birikimi (kronik yılda bir özetlenir; aylık spam önlenir)
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
   priceMem?: Record<string, number>; // fiyat hafızası: "loc|good" → geçen ay kaydedilen alış fiyatı (pazar 'geçen fiyat' göstergesi)
@@ -1326,7 +1327,15 @@ export function advance(prev: GameState, n = 1): GameState {
     wages = wages * inf;
     const wageCost = Math.round(wages);
     if (wageCost > 0) s.player.money -= wageCost; // işçi maaşları (her hâlükârda ödenir)
-    if (inc > 0) { s.player.money += inc; if (i === n - 1) push(s, "mülk_hasat", wageCost > 0 ? `Mülk ve yerleşimlerinden ${inc} akçe gelir geldi (${wageCost} akçe işçi ücreti ödendi).` : `Mülk ve yerleşimlerinden ${inc} akçe gelir geldi.`, "kişisel", false, wageCost > 0 ? { k: "evj.propHarvestW", p: [inc, wageCost] } : { k: "evj.propHarvest", p: [inc] }); }
+    if (inc > 0) s.player.money += inc;
+    // Pasif gelir/ücret kroniği: aylık spam yerine yılda bir konsolide özet (gelir her ay parana eklenir).
+    s.player.harvestAccum = (s.player.harvestAccum || 0) + inc;
+    s.player.wageAccum = (s.player.wageAccum || 0) + wageCost;
+    if (s.turn > 0 && s.turn % 12 === 0) {
+      const ya = Math.round(s.player.harvestAccum || 0), yw = Math.round(s.player.wageAccum || 0);
+      if (ya > 0) push(s, "mülk_hasat", yw > 0 ? `Bu yıl mülk ve yerleşimlerinden ${ya} akçe gelir geldi (${yw} akçe işçi ücreti ödendi).` : `Bu yıl mülk ve yerleşimlerinden ${ya} akçe gelir geldi.`, "kişisel", false, yw > 0 ? { k: "evj.propHarvestYW", p: [ya, yw] } : { k: "evj.propHarvestY", p: [ya] });
+      s.player.harvestAccum = 0; s.player.wageAccum = 0;
+    }
     // Üretim zinciri: işçilerin ürettiği hammadde envantere girer (tarla→buğday, değirmen→un) → zanaata/ticarete besler
     { const goods = Object.keys(produced).filter((g) => produced[g] > 0);
       if (goods.length) {
