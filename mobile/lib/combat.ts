@@ -129,7 +129,7 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
   const fp: CbLogParam = feint ? { lk: "cb.log.feint" } : "";
   let entry: CbLogEntry;
   if (mv === em) {
-    const pd = dealt(Math.round(baseP * 0.4), "tie"), edRaw = taken(Math.round(baseE * 0.4));
+    const pd = dealt(Math.round(baseP * 0.4), "tie"), edRaw = Math.max(1, taken(Math.round(baseE * 0.4)) - armorDefense(p)); // zırh denk anında da hasarı azaltır (kayıp dalıyla tutarlı)
     let ed = desperate ? Math.round(edRaw * 1.15) : edRaw; // enrage: çaresiz düşman daha sert vurur
     // Kalkan bloğu (denk anında da geçerli)
     let blocked = false;

@@ -1135,7 +1135,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     if (!p.mother_dead && p.mother && chance(pdc)) {
       p.mother_dead = true; p.health = Math.max(1, p.health - 5); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1);
       push(s, "kader", `Annen ${p.mother} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.motherDied", p: [{ fn: [p.mother_seed ?? 0, "kadın"] }] });
-    } else if (!p.father_dead && p.father && chance(pdc)) {
+    }
+    if (!p.father_dead && p.father && chance(pdc)) {
       p.father_dead = true; p.health = Math.max(1, p.health - 5); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1);
       push(s, "kader", `Baban ${p.father} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.fatherDied", p: [{ fn: [p.father_seed ?? 0, "erkek"] }] });
     }
@@ -1339,7 +1340,7 @@ export function advance(prev: GameState, n = 1): GameState {
     inc = Math.round(inc * inf);
     wages = wages * inf;
     const wageCost = Math.round(wages);
-    if (wageCost > 0) s.player.money -= wageCost; // işçi maaşları (her hâlükârda ödenir)
+    if (wageCost > 0) s.player.money = Math.max(0, s.player.money - wageCost); // işçi maaşları (her hâlükârda ödenir; para negatife düşmez)
     if (inc > 0) s.player.money += inc;
     // Pasif gelir/ücret kroniği: aylık spam yerine yılda bir konsolide özet (gelir her ay parana eklenir).
     s.player.harvestAccum = (s.player.harvestAccum || 0) + inc;
@@ -1380,9 +1381,12 @@ export function advance(prev: GameState, n = 1): GameState {
           s.player.debt = Math.max(0, (s.player.debt || 0) - credit);
           s.player.reputation = Math.max(-100, s.player.reputation - 6);
           push(s, "mülk", `Borcunu ödeyemedin: sarraf ${PROPERTY_TYPES[seized.type]?.name || "mülküne"} (${seized.loc}) el koydu; itibarın sarsıldı. Kalan borç ${s.player.debt} akçe.`, "kişisel", true, { k: "evj.seizeProp", p: [{ pt2: seized.type }, { pl: seized.loc }, s.player.debt] });
-        } else { // mülk yok: nakdin bir kısmını zorla alır + itibar
-          const grab = Math.round(Math.min(s.player.money, (s.player.debt || 0) * 0.3));
+        } else { // mülk yok: nakit + emanetten zorla alır + itibar (emanet hacizden muaf değil)
+          const want = Math.round((s.player.debt || 0) * 0.3);
+          let grab = Math.min(s.player.money, want);
           s.player.money = Math.max(0, s.player.money - grab);
+          const rem = want - grab;
+          if (rem > 0 && (s.player.deposit || 0) > 0) { const d = Math.min(s.player.deposit || 0, rem); s.player.deposit = (s.player.deposit || 0) - d; grab += d; }
           s.player.debt = Math.max(0, (s.player.debt || 0) - grab);
           s.player.reputation = Math.max(-100, s.player.reputation - 5);
           push(s, "ticaret", `Tefecinin adamları kapına dayandı; ${grab} akçene zorla el koydular, itibarın zedelendi.`, "kişisel", true, { k: "evj.seizeCash", p: [grab] });
@@ -2964,7 +2968,8 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   if (!p.dead || p.children.length === 0) return s;
   const heir = heirName && p.children.includes(heirName) ? heirName : p.children[0];
   const will = WILL_STYLES.find((w) => w.id === willId) || WILL_STYLES[0];
-  const inheritMoney = Math.floor((p.money + (p.deposit || 0)) * will.frac) + 20; // emanet de mirasa dahil
+  const netWealth = Math.max(0, (p.money + (p.deposit || 0)) - (p.debt || 0)); // ödenmemiş borç mirastan düşülür (borç ölümle silinmez)
+  const inheritMoney = Math.floor(netWealth * will.frac) + 20; // emanet de mirasa dahil
   const props = [...p.properties];
   const gen = p.generation + 1;
   const surname = p.surname;
@@ -4027,7 +4032,7 @@ export function govReqRep(kind: string): number { return kind === "şehir" ? 50 
 export function isGovernor(p: Player, name: string): boolean { return (p.governorships || []).includes(name); }
 export function canRunForGovernor(s: GameState, name: string): boolean {
   const p = s.player;
-  return !p.dead && p.age >= 18 && !isGovernor(p, name) && p.reputation >= govReqRep(placeKind(name));
+  return !p.dead && p.age >= 18 && !isGovernor(p, name) && !(p.appointedGov || {})[name] && p.reputation >= govReqRep(placeKind(name)); // atanmış vekil olan şehre tekrar vali olunmaz (çift gelir önlenir)
 }
 export function runForGovernor(prev: GameState, name: string): GameState {
   const s = clone(prev); const p = s.player;
@@ -4326,7 +4331,7 @@ function crownTick(s: GameState) {
     else { if (auth > 50) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); push(s, "taht", `Bir vezir entrikası açığa çıktı; vaktinde bastırdın, otoriten arttı.`, "kişisel", true, { k: "crown.ev.plotFoil" }); } else { p.crownAuthority = clamp100(crownAuthorityOf(p) - 6); p.fear = clamp100(p.fear + 4); push(s, "taht", `Sarayda bir entrika otoriteni hırpaladı; korku saçtın.`, "kişisel", true, { k: "crown.ev.plotHit" }); } }
   }
   // Otorite dibe vurursa: isyan — bastıramazsan tacını yitirirsin (nadir, çok düşük otoritede).
-  if (auth < 12 && Math.random() < 0.05) {
+  if (crownAuthorityOf(p) < 12 && Math.random() < 0.05) { // tur-içi olaylardan sonraki güncel otorite
     if (p.skills.combat + p.fame / 2 > 30 && Math.random() < 0.5) {
       p.crownAuthority = 30; push(s, "taht", `Büyük bir isyan patladı; güçbela bastırdın, tahtı korudun.`, "kişisel", true, { k: "crown.rebellionHold" });
     } else {
@@ -4354,8 +4359,7 @@ export function canEnterCourt(s: GameState): boolean {
 export function enterCourt(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (!canEnterCourt(s)) return s;
-  p.courtRank = 0; p.courtXp = 0; p.courtFavor = 55;
-  p.reputation = Math.min(100, p.reputation + 2);
+  p.courtRank = 0; p.courtXp = 0; p.courtFavor = 55; // not: girişte itibar verilmez (enter→leave→enter ile bedava itibar farmı önlenir)
   push(s, "saray", `Divan kapısından içeri alındın; artık sarayda kâtip olarak hizmettesin.`, "kişisel", true, { k: "court.enter" });
   return s;
 }
