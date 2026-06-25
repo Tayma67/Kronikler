@@ -2023,6 +2023,7 @@ export function eat(prev: GameState): GameState {
 export function useItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const it = ITEMS[id];
   if (!it || !(p.inventory[id] > 0)) return s;
+  if (QUALITY_GOODS.has(id)) takeQualityUnit(p, id); // kalite kademesini de düş — öksüz inv_q sızıntısı/exploit önlenir
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
   if (it.feed) p.hunger = Math.min(100, p.hunger + it.feed);
   if (it.heal) p.health = Math.min(100, p.health + it.heal);
@@ -2146,6 +2147,7 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
 export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!(p.inventory[itemId] > 0)) return s;
+  if (QUALITY_GOODS.has(itemId)) takeQualityUnit(p, itemId); // hediye verilen kaliteli mal inv_q'da öksüz kalmasın
   p.inventory[itemId] -= 1; if (p.inventory[itemId] <= 0) delete p.inventory[itemId];
   const ns = npcStateOf(s, npc.id);
   const generous = npc.trait === "cömert" ? 4 : 0;
