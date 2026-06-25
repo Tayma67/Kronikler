@@ -5,10 +5,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome } from "../../lib/game";
-import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance } from "../../lib/combat";
+import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { FloatingNumber, Slash } from "../../lib/fx";
 import { BackLabel, PageHeader, ProgressBar } from "../../lib/ui";
@@ -31,6 +31,12 @@ export default function Savas() {
   const { t } = useI18n();
   // i18n anahtarı yoksa encounter'ın kendi (TR) verisini kullan.
   const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
+  // Savaş log'u (combat.ts'ten dile bağımsız {k,p}) render anında çevrilir: { mv } → hamle adı, { lk } → alt-anahtar.
+  const renderCb = (e: CbLogEntry): string =>
+    applyParams(t(e.k), (e.p || []).map((x): string | number => {
+      if (x && typeof x === "object") return "mv" in x ? t("cb." + x.mv) : t(x.lk);
+      return x;
+    }));
   const [bs, setBs] = useState<BattleState | null>(null);
   const [stance, setStance] = useState<Stance>("dengeli");
   const [encId, setEncId] = useState<string>("");
@@ -105,7 +111,7 @@ export default function Savas() {
         </Animated.View>
         <ScrollView style={{ flex: 1, marginTop: 8 }} contentContainerStyle={{ paddingHorizontal: 16 }}>
           {[...bs.log].reverse().map((l, i) => (
-            <Text key={i} style={{ fontFamily: F.serif, fontSize: 13, color: i === 0 ? C.parchment : C.parchmentMuted, lineHeight: 20, marginBottom: 5 }}>{l}</Text>
+            <Text key={i} style={{ fontFamily: F.serif, fontSize: 13, color: i === 0 ? C.parchment : C.parchmentMuted, lineHeight: 20, marginBottom: 5 }}>{renderCb(l)}</Text>
           ))}
         </ScrollView>
         <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: C.border, paddingBottom: insets.bottom + 16 }}>

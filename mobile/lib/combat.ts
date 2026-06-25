@@ -38,10 +38,15 @@ const ENCOUNTER_ARCH: Record<string, EArch> = {
 };
 export function encounterArch(id: string): EArch { return ENCOUNTER_ARCH[id] || "asker"; }
 
+// Savaş log'u dile bağımsız tutulur: combat.ts saf kalır, savas.tsx render anında çevirir.
+// Param: düz string/sayı, { mv } = hamle adı (cb.<id>), { lk } = çevrilecek alt-anahtar (fent/blok eki).
+export type CbLogParam = string | number | { mv: Move } | { lk: string };
+export interface CbLogEntry { k: string; p?: CbLogParam[]; }
+
 export interface BattleState {
   enemyName: string; enemyPower: number;
   playerHp: number; playerMax: number; enemyHp: number; enemyMax: number;
-  round: number; log: string[]; over: boolean; won: boolean;
+  round: number; log: CbLogEntry[]; over: boolean; won: boolean;
   enemyIntent: Move; // telegraf: düşmanın bir sonraki tahmini hamlesi (oyuncu sezer ve karşılar)
   arch: EArch; // düşman arketipi (hamle eğilimi + okunabilirlik)
   desperate?: boolean; // düşman köşeye sıkıştı (HP < %30): çılgınca saldırır, okuması zorlaşır, sert vurur
@@ -72,12 +77,12 @@ export function startBattle(p: Player, e: Encounter): BattleState {
   const pw = combatPower(p);
   const enemyMax = 30 + e.power * 4;
   let enemyHp = enemyMax;
-  const log = [`${e.title} başladı. Gücün ${pw}, düşman gücü ${e.power}.`];
+  const log: CbLogEntry[] = [{ k: "cb.log.start", p: [e.title, pw, e.power] }];
   // Menzilli silah (yay): melee öncesi açılış oku.
   if (weaponClass(p) === "menzilli") {
     const volley = 6 + (p.skills?.combat || 0) + Math.round(pw * 0.18);
     enemyHp = Math.max(1, enemyHp - volley);
-    log.push(`Açılış oku düşmanı buldu — düşmana ${volley} hasar!`);
+    log.push({ k: "cb.log.volley", p: [volley] });
   }
   return {
     enemyName: e.title, enemyPower: e.power,
@@ -105,7 +110,7 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
   const bs: BattleState = { ...prev, log: [...prev.log] };
   // Çaresizlik (enrage): düşman HP'si %30 altındaysa köşeye sıkışmıştır.
   const desperate = bs.enemyHp > 0 && bs.enemyHp <= bs.enemyMax * 0.3;
-  if (desperate && !bs.desperate) { bs.desperate = true; bs.log.push("Düşman köşeye sıkıştı — gözünü karartıp çılgınca saldırıyor!"); }
+  if (desperate && !bs.desperate) { bs.desperate = true; bs.log.push({ k: "cb.log.desperate" }); }
   // Telegraf: sezdiğin niyet (bs.enemyIntent) okuma isabetiyle doğru çıkar; aksi halde düşman fent atar.
   let em: Move; let feint = false;
   if (Math.random() < readAccuracy(p, bs.enemyPower, bs.arch, desperate)) { em = bs.enemyIntent; }
@@ -115,23 +120,26 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
   const st = stanceOf(stance);                              // duruş: atk/def çarpanı
   const baseP = 6 + Math.round(pw * 0.6);
   const baseE = 6 + Math.round(bs.enemyPower * 0.9);
-  const mvName: Record<Move, string> = { hamle: "Hamle", savustur: "Savuştur", ozel: "Özel" };
   const dealt = (d: number, outcome: "tie" | "win") => Math.round(d * st.atk * classAtkMult(wc, bs.round, outcome, mv));
   // Hızlı silah: hafif kaçış (alınan hasarı biraz azaltır).
   const evade = wc === "hizli" ? 0.85 : 1.0;
   const taken = (d: number) => Math.round((d / st.def) * evade);
 
-  let txt = `Tur ${bs.round}: Sen ${mvName[mv]}, düşman ${mvName[em]}${feint ? " (niyetini gizledi!)" : ""}. `;
+  // Tur log'unun ortak başlık parametreleri: tur no, oyuncu hamlesi, düşman hamlesi, fent eki.
+  const fp: CbLogParam = feint ? { lk: "cb.log.feint" } : "";
+  let entry: CbLogEntry;
   if (mv === em) {
     const pd = dealt(Math.round(baseP * 0.4), "tie"), edRaw = taken(Math.round(baseE * 0.4));
     let ed = desperate ? Math.round(edRaw * 1.15) : edRaw; // enrage: çaresiz düşman daha sert vurur
     // Kalkan bloğu (denk anında da geçerli)
     let blocked = false;
     if (shieldBlockChance(p, stance === "savunmaci") > 0 && Math.random() < shieldBlockChance(p, stance === "savunmaci")) { ed = Math.round(ed * 0.4); blocked = true; }
-    bs.enemyHp -= pd; bs.playerHp -= ed; txt += `Denk geçti (−${pd}/−${ed})${blocked ? " — kalkanınla savdın!" : ""}.`;
+    bs.enemyHp -= pd; bs.playerHp -= ed;
+    entry = { k: "cb.log.tie", p: [bs.round, { mv }, { mv: em }, fp, pd, ed, blocked ? { lk: "cb.log.tieBlock" } : ""] };
   } else if (beats(mv, em)) {
     const dmg = dealt(mv === "ozel" ? Math.round(baseP * 1.4) : baseP, "win");
-    bs.enemyHp -= dmg; txt += `Üstün geldin, düşmana ${dmg} hasar!`;
+    bs.enemyHp -= dmg;
+    entry = { k: "cb.log.win", p: [bs.round, { mv }, { mv: em }, fp, dmg] };
   } else {
     let dmg = em === "ozel" ? Math.round(baseE * 1.4) : baseE;
     if (mv === "savustur") dmg = Math.round(dmg * 0.5); // savuşturma kısmi korur
@@ -141,13 +149,14 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
     let blocked = false;
     const bc = shieldBlockChance(p, stance === "savunmaci");
     if (bc > 0 && Math.random() < bc) { dmg = Math.max(1, Math.round(dmg * 0.4)); blocked = true; }
-    bs.playerHp -= dmg; txt += blocked ? `Kalkanınla savuştun, yalnız ${dmg} hasar aldın.` : `Açık verdin, ${dmg} hasar aldın.`;
+    bs.playerHp -= dmg;
+    entry = { k: blocked ? "cb.log.loseBlock" : "cb.log.loseOpen", p: [bs.round, { mv }, { mv: em }, fp, dmg] };
   }
-  bs.log.push(txt);
+  bs.log.push(entry);
   bs.round += 1;
   bs.enemyIntent = pickEnemyMove(bs.arch, bs.enemyPower, bs.enemyHp > 0 && bs.enemyHp <= bs.enemyMax * 0.3); // bir sonraki turun telegraf'ı (kalan HP'ye göre çaresizlik)
 
-  if (bs.enemyHp <= 0) { bs.enemyHp = 0; bs.over = true; bs.won = true; bs.log.push("Düşman yere serildi — zafer senin!"); }
-  else if (bs.playerHp <= 0) { bs.playerHp = 0; bs.over = true; bs.won = false; bs.log.push("Dize geldin; çatışmayı kaybettin."); }
+  if (bs.enemyHp <= 0) { bs.enemyHp = 0; bs.over = true; bs.won = true; bs.log.push({ k: "cb.log.victory" }); }
+  else if (bs.playerHp <= 0) { bs.playerHp = 0; bs.over = true; bs.won = false; bs.log.push({ k: "cb.log.defeat" }); }
   return bs;
 }
