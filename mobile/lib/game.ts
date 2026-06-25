@@ -2891,29 +2891,40 @@ export function deathEpithet(s: GameState): string {
   if (p.fame < 12) return "Meçhul";
   return "";
 }
-// Hayatı dokuyan 2-4 cümle (Türkçe anlatı, oyunun sesi).
-export function eulogy(s: GameState): Eulogy {
+// Hayatı dokuyan 2-4 cümle. Satırlar {k,p} olarak döner; index.tsx render anında 6 dile çevirir
+// (epithet/close kalıcı DynastyRecord'da saklandığından TR bırakılır).
+export interface EulLine { k: string; p?: (string | number)[]; }
+export function eulogy(s: GameState): { epithet: string; lines: EulLine[]; close: string } {
   const p = s.player; const n = p.nam || ({} as Nam);
-  const lines: string[] = [];
+  const lines: EulLine[] = [];
   // Tanınma / kimlik
-  if (p.fame >= 60) lines.push("Adı diyarın dört bir yanında bilinir, sofralarda anılırdı.");
-  else if (p.fame >= 30) lines.push("Çevresinde tanınan, sözü geçen biriydi.");
-  else lines.push("Sade, tanıdık bir hayat sürdü; adı kendi diyarında kaldı.");
+  if (p.fame >= 60) lines.push({ k: "eul.fameHigh" });
+  else if (p.fame >= 30) lines.push({ k: "eul.fameMid" });
+  else lines.push({ k: "eul.fameLow" });
   // En belirgin huy
-  if (p.fear >= 50 || (n.zalim || 0) >= 50) lines.push("Geçtiği yerde insanlar sesini alçaltırdı.");
-  else if (p.honor >= 50 || (n.mert || 0) >= 50) lines.push("Sözünün eri, adaletiyle anılan biriydi.");
-  else if ((n.comert || 0) >= 50) lines.push("Kapısı yoksula açık, eli bol bir gönül insanıydı.");
-  else if ((n.dindar || 0) >= 50) lines.push("Dindarlığı ve gönül huzuruyla bilinirdi.");
-  // Taht & mülk
-  if (p.crowned) lines.push("Bir gün tahta çıkıp diyara hükmetti; tacı soyuna emanet etti.");
-  const holds: string[] = [];
-  if (p.properties.length) holds.push(`${p.properties.length} mülk`);
+  if (p.fear >= 50 || (n.zalim || 0) >= 50) lines.push({ k: "eul.traitFear" });
+  else if (p.honor >= 50 || (n.mert || 0) >= 50) lines.push({ k: "eul.traitHonor" });
+  else if ((n.comert || 0) >= 50) lines.push({ k: "eul.traitComert" });
+  else if ((n.dindar || 0) >= 50) lines.push({ k: "eul.traitDindar" });
+  // Taht & devlet mevkii
+  if (p.crowned) lines.push({ k: "eul.crowned" });
+  else if ((p.courtRank ?? -1) >= 4) lines.push({ k: "eul.courtSadrazam" });
+  else if ((p.courtRank ?? -1) >= 3) lines.push({ k: "eul.courtVezir" });
+  // Sefer & bayındırlık (hükümdarlık mirası)
+  const conq = p.crownConquests?.length || 0;
+  if (conq > 0) lines.push({ k: "eul.conquest", p: [conq] });
+  const worksN = Object.values(p.govWorks || {}).reduce((a, arr) => a + arr.length, 0);
+  if (worksN > 0) lines.push({ k: "eul.works", p: [worksN] });
+  // Mülk & yerleşim
+  if (p.properties.length) lines.push({ k: "eul.holdProp", p: [p.properties.length] });
   const settleN = s.settlements?.length || 0;
-  if (settleN) holds.push(`${settleN} yerleşim`);
-  if (holds.length) lines.push(`Geride ${holds.join(" ve ")} bıraktı.`);
+  if (settleN) lines.push({ k: "eul.holdSettle", p: [settleN] });
   // Aile
-  if (p.children.length) lines.push(p.spouse_name ? `${p.spouse_name} ile bir ocak kurdu, ${p.children.length} evlat yetiştirdi.` : `${p.children.length} evlat yetiştirdi; soyu devam edecek.`);
-  else lines.push("Soyunu sürdürecek bir evlat bırakmadı; hikâyesi onunla kapandı.");
+  if (p.children.length) lines.push(p.spouse_name ? { k: "eul.familySpouse", p: [p.spouse_name, p.children.length] } : { k: "eul.familyChildren", p: [p.children.length] });
+  else lines.push({ k: "eul.noHeir" });
+  // Torunlar
+  const gcN = p.grandchildren?.length || 0;
+  if (gcN > 0) lines.push({ k: "eul.grandchildren", p: [gcN] });
   return { epithet: deathEpithet(s), lines, close: dynastyNote(p) };
 }
 
