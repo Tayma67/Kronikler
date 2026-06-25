@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex, BEYLIKS, beylikName, defaultRealm, factionHoldsHere, regionOf, factionBanLeft, canUseFactionPower, useFactionPower, FAC_POWER_COST } from "../../lib/game";
+import { FACTIONS, factionById, doFactionTask, joinFaction, leaveFaction, joinThreshold, playerWar, supportWar, FACTION_RANKS, factionRankIndex, BEYLIKS, beylikName, defaultRealm, factionHoldsHere, regionOf, factionBanLeft, canUseFactionPower, useFactionPower, FAC_POWER_COST, inCourt, canEnterCourt, enterCourt, leaveCourt, courtRankId, courtSalary, canServeCourt, serveCourt, courtActionCooldownLeft, canCurryFavor, curryFavor, COURT_FAVOR_GIFT_COST } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -92,6 +92,55 @@ export default function Orgutler() {
       )}
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
         <PageHeader kicker={t("scr.orgutler")} title={t("scr.orgutler")} />
+
+        {/* ── Saray / Dîvân kariyeri (taht dışı hizmet yolu) ── */}
+        {!p.crowned && (() => {
+          const ic = inCourt(p);
+          const cd = courtActionCooldownLeft(p, state.turn);
+          const fav = p.courtFavor ?? 55;
+          const favCol = fav > 55 ? C.sage : fav > 28 ? C.gold : C.blood;
+          return (
+            <View style={{ marginBottom: 12, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.06)" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                <GameIcon name="scroll" size={13} color={C.gold} />
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 1 }}>{t("court.title")}</Text>
+              </View>
+              {ic ? (
+                <>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                    <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{t("court.rankLabel")}: <Text style={{ color: C.gold }}>{t("court.rank." + courtRankId(p))}</Text></Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted }}>+{courtSalary(p)} {t("court.salary")}</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted }}>{t("court.favor").toUpperCase()}</Text>
+                    <Text style={{ fontFamily: F.display, fontSize: 9, color: favCol }}>{fav}/100</Text>
+                  </View>
+                  <View style={{ height: 7, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                    <View style={{ width: `${fav}%`, height: 7, borderRadius: 4, backgroundColor: favCol }} />
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+                    <Pressable disabled={!canServeCourt(state)} onPress={() => { hap("success"); apply(serveCourt); }} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1, borderColor: canServeCourt(state) ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: canServeCourt(state) ? "rgba(201,168,76,0.12)" : C.bg, alignItems: "center", opacity: canServeCourt(state) ? 1 : 0.55 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10.5, color: canServeCourt(state) ? C.gold : C.parchmentMuted }}>{cd > 0 ? t("court.serveWait").replace("%1", String(cd)) : t("court.serveBtn")}</Text>
+                    </Pressable>
+                    <Pressable disabled={!canCurryFavor(state)} onPress={() => { hap("tap"); apply(curryFavor); }} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1, borderColor: canCurryFavor(state) ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: canCurryFavor(state) ? "rgba(201,168,76,0.12)" : C.bg, alignItems: "center", opacity: canCurryFavor(state) ? 1 : 0.55 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10.5, color: canCurryFavor(state) ? C.gold : C.parchmentMuted }}>{t("court.curryBtn")}</Text>
+                      <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.parchmentMuted }}>−{COURT_FAVOR_GIFT_COST} ⚜</Text>
+                    </Pressable>
+                  </View>
+                  <Pressable onPress={() => { hap("tap"); apply(leaveCourt); }} style={{ alignSelf: "flex-start", marginTop: 8 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10, color: C.blood, letterSpacing: 1 }}>{t("court.leaveBtn")}</Text>
+                  </Pressable>
+                </>
+              ) : canEnterCourt(state) ? (
+                <Pressable onPress={() => { hap("success"); apply(enterCourt); }} style={{ paddingVertical: 11, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: "rgba(201,168,76,0.14)", alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>{t("court.enterBtn")}</Text>
+                </Pressable>
+              ) : (
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted }}>{t("court.enterHint")}</Text>
+              )}
+            </View>
+          );
+        })()}
 
         {/* ── Sancak hakimiyeti (emergent fraksiyon şehir-kontrolü) ── */}
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 12, marginBottom: 12 }}>

@@ -56,6 +56,10 @@ export interface Player {
   crownConquests?: string[]; // sefere çıkıp ilhak edilen beylikler (haraç + güç + şöhret)
   campaignsWon?: number; // kazanılan sefer sayısı (şöhret/miras)
   prof_action_turn?: number; // son meslek imza eylemi turu (bekleme süresi)
+  courtRank?: number; // saray/divan rütbesi (0..4 = Kâtip..Sadrazam; tanımsız = sarayda değil)
+  courtXp?: number; // saray hizmet puanı (terfi eşiği)
+  courtFavor?: number; // hükümdar nezdinde itibar (0-100); düşerse azil
+  court_action_turn?: number; // son divan hizmeti turu (bekleme süresi)
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
   priceMem?: Record<string, number>; // fiyat hafızası: "loc|good" → geçen ay kaydedilen alış fiyatı (pazar 'geçen fiyat' göstergesi)
@@ -1315,6 +1319,7 @@ export function advance(prev: GameState, n = 1): GameState {
     }
     if (s.player.crowned) inc += 15 + crownTribute(s); // hükümdar hazinesi + ilhak/atanan vali haracı
     inc += governorIncome(s); // valilik vergi payı
+    inc += courtSalary(s.player); // saray/divan maaşı (rütbeye göre)
     // Enflasyon nominal gelirleri de yükseltir (gerçek ekonomi): üretken servet değerini korur, biriken nakit erir.
     const inf = inflationFactor(s);
     inc = Math.round(inc * inf);
@@ -1389,6 +1394,7 @@ export function advance(prev: GameState, n = 1): GameState {
       epochTick(s);    // çağ olayları (her ~60-90 turda kalıcı dünya kırılması)
       governorTick(s); // valilik meşruiyeti + isyan/azil (yalnız vali ise)
       crownTick(s);    // hükümdarlık: otorite + atanan vali sadakati + saray olayları + isyan (yalnız tahttaysan)
+      courtTick(s);    // saray/divan kariyeri: hükümdar itibarı + entrika + azil (yalnız sarayda hizmetteyken)
     }
     // Proaktif hikâye: dünya ara sıra kendiliğinden bir yay açar (gerilim + durgunluk arttıkça daha olası; nefes/dorukta bastırılır).
     if (s.story && !s.story.active && (s.story.breath || 0) === 0 && i === n - 1 && !s.player.dead && s.player.age >= 14) {
@@ -4264,6 +4270,102 @@ function crownTick(s: GameState) {
       p.reputation = Math.max(-100, p.reputation - 20);
       push(s, "taht", `İsyan tahtını devirdi; tacını yitirdin.`, "kişisel", true, { k: "crown.dethroned" });
     }
+  }
+}
+
+// ── SARAY / DÎVÂN KARİYERİ (taht dışı hizmet yolu): rütbe basamakları, divan hizmeti, hükümdar itibarı, entrika ──
+// Oyuncu kendi tahtta değilken hükümdarın divanında hizmet eder; Kâtip'ten Sadrazam'a yükselir.
+export const COURT_RANKS = ["katip", "defterdar", "nisanci", "vezir", "sadrazam"] as const;
+export const COURT_RANK_XP = [0, 24, 55, 95, 150];   // o rütbeye ulaşmak için gereken hizmet puanı
+export const COURT_SALARY = [6, 12, 22, 38, 60];     // rütbeye göre aylık maaş
+export const COURT_ACTION_COOLDOWN = 2;              // ay
+export const COURT_FAVOR_GIFT_COST = 40;             // pîşkeş (itibar hediyesi) bedeli
+export function inCourt(p: Player): boolean { return p.courtRank != null; }
+export function courtRankId(p: Player): string { return COURT_RANKS[p.courtRank ?? 0]; }
+export function courtSalary(p: Player): number { return inCourt(p) ? (COURT_SALARY[p.courtRank ?? 0] || 0) : 0; }
+export function canEnterCourt(s: GameState): boolean {
+  const p = s.player;
+  return !p.dead && !p.crowned && !inCourt(p) && p.age >= 16 && p.reputation >= 20 && (effStat(p, "intelligence") >= 4 || p.profession === "katip");
+}
+export function enterCourt(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!canEnterCourt(s)) return s;
+  p.courtRank = 0; p.courtXp = 0; p.courtFavor = 55;
+  p.reputation = Math.min(100, p.reputation + 2);
+  push(s, "saray", `Divan kapısından içeri alındın; artık sarayda kâtip olarak hizmettesin.`, "kişisel", true, { k: "court.enter" });
+  return s;
+}
+export function leaveCourt(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!inCourt(p)) return s;
+  p.courtRank = undefined; p.courtXp = undefined; p.courtFavor = undefined; p.court_action_turn = undefined;
+  push(s, "saray", `Saray hizmetinden çekildin; divan defterinden adın silindi.`, "kişisel", false, { k: "court.leave" });
+  return s;
+}
+export function courtActionReady(p: Player, turn: number): boolean { const l = p.court_action_turn; return l == null || turn - l >= COURT_ACTION_COOLDOWN; }
+export function courtActionCooldownLeft(p: Player, turn: number): number { const l = p.court_action_turn; return l == null ? 0 : Math.max(0, COURT_ACTION_COOLDOWN - (turn - l)); }
+export function canServeCourt(s: GameState): boolean { const p = s.player; return inCourt(p) && !p.dead && courtActionReady(p, s.turn) && p.hunger >= 15; }
+function checkCourtPromotion(s: GameState) {
+  const p = s.player;
+  while ((p.courtRank ?? 0) < COURT_RANKS.length - 1 && (p.courtXp ?? 0) >= COURT_RANK_XP[(p.courtRank ?? 0) + 1] && (p.courtFavor ?? 0) >= 42) {
+    p.courtRank = (p.courtRank ?? 0) + 1;
+    p.fame = Math.min(100, p.fame + 4); p.reputation = Math.min(100, p.reputation + 3);
+    push(s, "saray", `Divanda yükseldin: artık ${courtRankId(p)} rütbesindesin.`, "kişisel", true, { k: "court.promote", p: [{ crk: courtRankId(p) }] });
+  }
+}
+// Divan hizmeti: dilekçe/ferman işle, hükümdara hizmet et. Zekâ+karizma testli; başarı itibar+hizmet puanı+maaş ikramiyesi.
+export function serveCourt(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!canServeCourt(s)) return s;
+  p.court_action_turn = s.turn; p.hunger = Math.max(0, p.hunger - 6);
+  const skill = (effStat(p, "intelligence") + effStat(p, "charisma")) / 2;
+  const ok = Math.random() < 0.45 + skill * 0.05;
+  const rank = p.courtRank ?? 0;
+  if (ok) {
+    p.courtXp = (p.courtXp ?? 0) + 9 + Math.floor(Math.random() * 4);
+    p.courtFavor = Math.min(100, (p.courtFavor ?? 55) + 4);
+    const bonus = Math.round((8 + rank * 4) * inflationFactor(s)); p.money += bonus;
+    gainSkill(s, "social", 8); addStatXp(s, "intelligence", 4);
+    push(s, "saray", `Divan işlerini ehlince gördün; hükümdarın gözüne girdin (+${bonus} akçe).`, "kişisel", false, { k: "court.serveWin", p: [bonus] });
+  } else {
+    p.courtXp = (p.courtXp ?? 0) + 3;
+    p.courtFavor = Math.max(0, (p.courtFavor ?? 55) - 5);
+    push(s, "saray", `Divan işinde bir pürüz çıktı; hükümdarın nezdinde itibarın azaldı.`, "kişisel", false, { k: "court.serveLose" });
+  }
+  checkCourtPromotion(s);
+  return s;
+}
+// Pîşkeş: hediye/ikramla hükümdarın gönlünü al (itibar satın al).
+export function canCurryFavor(s: GameState): boolean { return inCourt(s.player) && !s.player.dead && s.player.money >= COURT_FAVOR_GIFT_COST; }
+export function curryFavor(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!canCurryFavor(s)) return s;
+  p.money -= COURT_FAVOR_GIFT_COST; p.courtFavor = Math.min(100, (p.courtFavor ?? 55) + 12);
+  push(s, "saray", `Hükümdara pîşkeş sundun; gönlü hoş oldu, itibarın arttı.`, "kişisel", false, { k: "court.curry" });
+  checkCourtPromotion(s);
+  return s;
+}
+// Saray tiki (her tur, yalnız sarayda hizmetteyken): itibar kayması + entrika olayları + azil riski.
+const COURT_EVENTS = ["sultanLutuf", "rakip", "sinav", "dedikodu"] as const;
+function courtTick(s: GameState) {
+  const p = s.player; if (!inCourt(p) || p.dead) return;
+  let fav = p.courtFavor ?? 55;
+  const target = 45 + (p.reputation - 50) * 0.25 + p.honor * 0.1 - p.fear * 0.05;
+  fav = clamp100(fav + (target - fav) * 0.1 - 0.8); // hafif aşınma → ihmal edilirse düşer
+  p.courtFavor = Math.round(fav);
+  if (Math.random() < 0.08) { // saray entrikası / olayları
+    const ev = COURT_EVENTS[Math.floor(Math.random() * COURT_EVENTS.length)];
+    if (ev === "sultanLutuf") { p.courtFavor = clamp100((p.courtFavor ?? 55) + 5); const g = Math.round(10 * inflationFactor(s)); p.money += g; push(s, "saray", `Hükümdar bir lütufta bulundu; kesene ${g} akçe ve gönlüne sıcaklık düştü.`, "kişisel", false, { k: "court.ev.sultanLutuf", p: [g] }); }
+    else if (ev === "rakip") { if (effStat(p, "charisma") >= 6 || fav > 55) { p.courtFavor = clamp100((p.courtFavor ?? 55) + 3); push(s, "saray", `Bir rakip saraylı kuyunu kazmak istedi; diliyle alt ettin, itibarın arttı.`, "kişisel", false, { k: "court.ev.rakipFoil" }); } else { p.courtFavor = clamp100((p.courtFavor ?? 55) - 7); push(s, "saray", `Bir rakip saraylı seni hükümdara çekiştirdi; itibarın sarsıldı.`, "kişisel", true, { k: "court.ev.rakipHit" }); } }
+    else if (ev === "sinav") { if (Math.random() < 0.4 + effStat(p, "intelligence") * 0.05) { p.courtFavor = clamp100((p.courtFavor ?? 55) + 6); p.courtXp = (p.courtXp ?? 0) + 6; push(s, "saray", `Hükümdar bir mesele danıştı; isabetli görüşünle takdir topladın.`, "kişisel", false, { k: "court.ev.sinavWin" }); } else { p.courtFavor = clamp100((p.courtFavor ?? 55) - 4); push(s, "saray", `Hükümdarın danıştığı meselede şaşaladın; biraz gözden düştün.`, "kişisel", false, { k: "court.ev.sinavLose" }); } }
+    else { p.courtFavor = clamp100((p.courtFavor ?? 55) - 3); push(s, "saray", `Sarayda hakkında bir dedikodu dolaştı; gölgesi itibarına düştü.`, "kişisel", false, { k: "court.ev.dedikodu" }); }
+    checkCourtPromotion(s);
+  }
+  if ((p.courtFavor ?? 55) < 10 && Math.random() < 0.12) { // itibar dibe vurdu → azil
+    const lostRank = courtRankId(p);
+    p.courtRank = undefined; p.courtXp = undefined; p.courtFavor = undefined; p.court_action_turn = undefined;
+    p.reputation = Math.max(-100, p.reputation - 5);
+    push(s, "saray", `Hükümdarın gözünden tamamen düştün; divandan azledildin.`, "kişisel", true, { k: "court.dismissed", p: [{ crk: lostRank }] });
   }
 }
 
