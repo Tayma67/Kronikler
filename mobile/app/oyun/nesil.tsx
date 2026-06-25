@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { INVESTMENTS, WILL_STYLES, investInChild, continueAsHeir, EDU_TRACKS, eduLevel, setChildEducation } from "../../lib/game";
+import { INVESTMENTS, WILL_STYLES, investInChild, continueAsHeir, EDU_TRACKS, eduLevel, setChildEducation, childNature } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -43,7 +43,10 @@ export default function Nesil() {
             {p.children.map((c) => (
               <Pressable key={c} onPress={() => setHeir(c)} style={{ flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 9, borderWidth: 1, marginBottom: 7, borderColor: chosenHeir === c ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: chosenHeir === c ? "rgba(201,168,76,0.12)" : C.card }}>
                 <GameIcon name="baby" size={16} color={C.gold} />
-                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.parchment }}>{c}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{c}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.sage, marginTop: 1 }}>{t("nat." + childNature(c, p.generation))}</Text>
+                </View>
                 {(p.child_invests?.[c]?.length || 0) > 0 && <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim }}>{p.child_invests[c].length} {t("nes.invests")}</Text>}
                 {p.child_edu?.[c] && eduLevel(p.child_edu[c].weeks) > 0 && <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.gold }}>{t("edu.track." + p.child_edu[c].track)} {eduLevel(p.child_edu[c].weeks)}</Text>}
                 {chosenHeir === c && <Text style={{ color: C.gold }}>✓</Text>}

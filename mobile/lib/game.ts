@@ -227,6 +227,14 @@ export function giveZekat(prev: GameState): GameState {
 // Eş mizacı (tohumdan, deterministik): evli hayat anlarının sıklığını/etkisini renklendirir, eşi birey yapar.
 export const SPOUSE_MIZAC = ["sefkatli", "caliskan", "dikbasli", "dindar"] as const;
 export function spouseMizac(seed: number): string { return SPOUSE_MIZAC[(seed >>> 0) % SPOUSE_MIZAC.length]; }
+// Evlat tabiatı (isim+nesil tohumundan, deterministik): her çocuğun kendine özgü doğası;
+// vâris seçimini anlamlı kılar (vâris olunca küçük bir başlangıç eğilimi verir).
+export const CHILD_NATURE = ["cesur", "zeki", "hunerli", "sevecen", "hirsli"] as const;
+export function childNature(name: string, generation: number): string {
+  let h = (generation * 0x9e3779b1) >>> 0;
+  for (let i = 0; i < name.length; i++) h = ((h * 31) + name.charCodeAt(i)) >>> 0;
+  return CHILD_NATURE[h % CHILD_NATURE.length];
+}
 // ── Mülk-işçi (NPC istihdamı) ekonomisi — Vercel property_system.py portu ──
 // Bir mülkün işçi alabileceği yer sayısı: tip slotu + her kademe için +1.
 export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); }
@@ -2844,6 +2852,13 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     if (inv === "sosyal") { stats.charisma += 2; skills.social = 2; investNotes.push("terbiyeli"); }
     if (inv === "saglik") { startHealth = 100; startRep += 6; investNotes.push("dinç"); }
   }
+  // Vârisin doğuştan tabiatı küçük bir başlangıç eğilimi katar (yatırımlardan bağımsız).
+  const nat = childNature(heir, p.generation);
+  if (nat === "cesur") stats.strength += 1;
+  else if (nat === "zeki") stats.intelligence += 1;
+  else if (nat === "hunerli") skills.crafting += 1;
+  else if (nat === "sevecen") { stats.charisma += 1; startRep += 3; }
+  else if (nat === "hirsli") startPoints += 1;
   // Süregelen eğitim yolu: biriken aylara göre ölçekli bonus (Vercel apply_child_bonus portu).
   const edu = p.child_edu && p.child_edu[heir];
   if (edu) {
