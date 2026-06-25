@@ -1557,6 +1557,26 @@ function tickDynasties(s: GameState, announce: boolean) {
       push(s, "hanedan_haber", type === "evlilik" ? `${h.name} hanedanı sana evlilik ittifakı teklif etti.` : `${h.name} hanedanı sana ittifak teklif etti.`, "makro", true, { k: type === "evlilik" ? "evj.houseMarryOffer" : "evj.houseAllyOffer", p: [{ hn: h.nameIdx }] });
     }
   }
+  // Oyuncuyla doğrudan rakip hanedan ANI (olgun yaşta, otomatik çözümlü): husumette meydan okuma, dostlukta saygı, arada söz çekişmesi.
+  if (announce && p.age >= 25 && rivals.length && Math.random() < 0.07) {
+    const h = rivals[Math.floor(Math.random() * rivals.length)];
+    const tu = h.tutum ?? 0;
+    if (tu <= -20) {
+      if (p.fame >= 55 || effStat(p, "charisma") >= 7 || p.fear >= 40) { // namın onları sindirir
+        p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "mert", 2); h.tutum = Math.max(-100, tu - 2);
+        push(s, "hanedan_haber", `${h.name} hanedanı sana meydan okumaya kalktı; namın karşısında geri adım attılar.`, "makro", true, { k: "evj.houseTauntCowed", p: [{ hn: h.nameIdx }] });
+      } else {
+        p.fear = Math.min(100, p.fear + 4); p.reputation = Math.max(-100, p.reputation - 2);
+        push(s, "hanedan_haber", `${h.name} hanedanı seni açıkça aşağıladı; diyarda itibarın çizik aldı.`, "makro", true, { k: "evj.houseTaunt", p: [{ hn: h.nameIdx }] });
+      }
+    } else if (tu >= 25) {
+      p.reputation = Math.min(100, p.reputation + 3);
+      push(s, "hanedan_haber", `${h.name} hanedanı bir mecliste sana hürmet gösterdi; saygınlığın arttı.`, "makro", false, { k: "evj.houseHonor", p: [{ hn: h.nameIdx }] });
+    } else {
+      gainSkill(s, "social", 6);
+      push(s, "hanedan_haber", `${h.name} hanedanıyla bir mecliste söz dalaşına girdin; diller bilendi, bağlar gerildi.`, "makro", false, { k: "evj.houseFriction", p: [{ hn: h.nameIdx }] });
+    }
+  }
   if (!announce || rivals.length < 2 || Math.random() >= 0.14) return;
   const h = rivals[Math.floor(Math.random() * rivals.length)];
   const other = rivals[(rivals.indexOf(h) + 1 + Math.floor(Math.random() * (rivals.length - 1))) % rivals.length];
