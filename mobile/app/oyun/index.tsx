@@ -250,8 +250,10 @@ export default function Dashboard() {
         const eul = eulogy(state);
         const diedYear = cal.year;
         const profLine = p.profession !== "işsiz" ? applyParams(t("eul.lived"), [careerTitleL(p.profession, p.career_xp, lang)]) : "";
+        // Lakap: ep.<id>, kadınsa dişil varyant (ep.<id>.f) varsa onu kullan.
+        const epLabel = eul.epithet ? (() => { const fk = "ep." + eul.epithet + ".f"; const fv = t(fk); return p.gender === "kadın" && fv !== fk ? fv : t("ep." + eul.epithet); })() : "";
         return (
-          <EulogyModal visible={showEulogy} name={p.name} epithet={eul.epithet} bornYear={diedYear - p.age} diedYear={diedYear} age={p.age}
+          <EulogyModal visible={showEulogy} name={p.name} epithet={epLabel} bornYear={diedYear - p.age} diedYear={diedYear} age={p.age}
             professionLine={profLine} lines={eul.lines.map((l) => applyParams(t(l.k), l.p))} close={eul.close} hasHeir={p.children.length > 0}
             onChronicle={() => { setShowEulogy(false); router.push("/oyun/roman"); }}
             onContinue={() => { setShowEulogy(false); if (p.children.length > 0) router.push("/oyun/nesil"); else { resetGame(); router.replace("/yeni-oyun"); } }} />

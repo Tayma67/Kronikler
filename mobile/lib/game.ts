@@ -2876,19 +2876,22 @@ function dynastyNote(p: Player): string {
 // ── Mersiye: bir hayat biterken kişiye özel kapanış ──
 export interface Eulogy { epithet: string; lines: string[]; close: string; }
 // Lakap: kişiyi en çok tanımlayan tek vasıf.
+// Ölüm lakabı — id döner (gösterimde index.tsx ep.<id> ile 6 dile + cinsiyete çevrilir; kalıcı değil).
 export function deathEpithet(s: GameState): string {
   const p = s.player; const n = p.nam || ({} as Nam);
-  if (p.crowned) return "Hükümdar";
-  if (p.fame >= 80) return "Destan Olan";
-  if (p.fear >= 60) return "Korkulan";
-  if ((n.dindar || 0) >= 55) return "Hacı";
-  if (p.honor >= 60) return "Adil";
-  if ((n.comert || 0) >= 60) return "Eli Açık";
-  if ((n.zalim || 0) >= 60) return "Zalim";
-  if ((n.mert || 0) >= 55) return "Mert";
-  if ((n.capkin || 0) >= 60) return "Gönül Çelen";
-  if (p.reputation >= 45) return "Saygın";
-  if (p.fame < 12) return "Meçhul";
+  if (p.crowned) return "hukumdar";
+  if ((p.courtRank ?? -1) >= 4) return "sadrazam";
+  if ((p.courtRank ?? -1) >= 3) return "vezir";
+  if (p.fame >= 80) return "destan";
+  if (p.fear >= 60) return "korkulan";
+  if ((n.dindar || 0) >= 55) return "haci";
+  if (p.honor >= 60) return "adil";
+  if ((n.comert || 0) >= 60) return "acik";
+  if ((n.zalim || 0) >= 60) return "zalim";
+  if ((n.mert || 0) >= 55) return "mert";
+  if ((n.capkin || 0) >= 60) return "celen";
+  if (p.reputation >= 45) return "saygin";
+  if (p.fame < 12) return "mechul";
   return "";
 }
 // Hayatı dokuyan 2-4 cümle. Satırlar {k,p} olarak döner; index.tsx render anında 6 dile çevirir
