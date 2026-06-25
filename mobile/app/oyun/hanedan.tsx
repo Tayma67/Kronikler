@@ -12,6 +12,9 @@ import {
   nextSettleTier, canUpgradeSettleTier, upgradeSettleTier, propsInLoc,
   PRESTIGE, prestigeCost, fundPrestige, MARKET_LEVER_MIN, marketLeverCost, canManipulateMarket, manipulateMarket,
   acceptDynastyOffer, declineDynastyOffer,
+  crownAuthorityOf, CROWN_DECREES, canIssueDecree, issueDecree, decreeCooldownLeft,
+  campaignTargets, canLaunchCampaign, campaignOdds, launchCampaign, CAMPAIGN_COST,
+  appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
 } from "../../lib/game";
 import { generateDynasties, houseName as rivalHouseName, localFirstName } from "../../lib/world";
 import { professionNameL, placeName } from "../../lib/locale-data";
@@ -34,6 +37,7 @@ export default function Hanedan() {
   const { lang, t } = useI18n();
   const [settleName, setSettleName] = useState("");
   const [throneMsg, setThroneMsg] = useState<null | { ok: boolean; tick: number }>(null);
+  const [campMsg, setCampMsg] = useState<null | { ok: boolean; tick: number }>(null);
   const baseRivals = useMemo(() => (state ? (state.rivals ?? generateDynasties(state.seed)) : []), [state?.seed, state?.rivals]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
@@ -49,6 +53,7 @@ export default function Hanedan() {
   const settleChk = canFoundSettlement(state);
 
   const doClaim = () => { hap("success"); const r = claimThrone(state); apply(() => r.state); setThroneMsg({ ok: r.success, tick: Date.now() }); };
+  const doCampaign = (id: string) => { hap("success"); const r = launchCampaign(state, id); apply(() => r.state); setCampMsg({ ok: r.success, tick: Date.now() }); };
   const doFound = () => { if (!settleChk.ok || !settleName.trim()) return; hap("success"); apply((s) => foundSettlement(s, settleName)); setSettleName(""); };
   const setWill = (id: string) => { hap("tap"); apply((s) => { s.player.will_pref = id; return s; }); };
 
@@ -139,6 +144,98 @@ export default function Hanedan() {
             </Animated.View>
           )}
         </View>
+
+        {/* ── HÜKÜMDARLIK · DÎVÂN (yalnız tahttaysan) ── */}
+        {p.crowned && (() => {
+          const auth = crownAuthorityOf(p);
+          const authCol = auth > 55 ? C.sage : auth > 30 ? C.gold : C.blood;
+          const targets = campaignTargets(state);
+          const appointable = appointableCities(state).slice(0, 8);
+          const appointed = Object.entries(p.appointedGov || {});
+          const conquests = p.crownConquests || [];
+          const cd = decreeCooldownLeft(p, state.turn);
+          const sub = { fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted, marginTop: 14, marginBottom: 6 } as const;
+          return (
+            <>
+              <SecTitle>{t("crown.title")}</SecTitle>
+              <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 14 }}>
+                {/* Otorite + haraç */}
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted }}>{t("crown.authority").toUpperCase()}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 9, color: authCol }}>{auth}/100 · +{crownTribute(state)} {t("crown.tribute")}</Text>
+                </View>
+                <View style={{ height: 7, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                  <View style={{ width: `${auth}%`, height: 7, borderRadius: 4, backgroundColor: authCol }} />
+                </View>
+                {/* Dîvân fermanları */}
+                <Text style={sub}>{t("crown.decrees").toUpperCase()}{cd > 0 ? ` · ${t("crown.decreeWait").replace("%1", String(cd))}` : ""}</Text>
+                <View style={{ gap: 6 }}>
+                  {CROWN_DECREES.map((d) => {
+                    const can = canIssueDecree(state, d.id);
+                    const cost = d.gold < 0 ? `−${-d.gold} ⚜` : `+${d.gold} ⚜`;
+                    return (
+                      <Pressable key={d.id} disabled={!can} onPress={() => { hap("tap"); apply((s) => issueDecree(s, d.id)); }} style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: can ? "rgba(201,168,76,0.10)" : C.bg, opacity: can ? 1 : 0.5 }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 11, color: can ? C.gold : C.parchmentMuted }}>{t("crown.dn." + d.id)}</Text>
+                          <Text style={{ fontFamily: F.serif, fontSize: 10, color: d.gold < 0 ? C.parchmentMuted : C.sage }}>{cost}</Text>
+                        </View>
+                        <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{t("crown.dd." + d.id)}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                {/* Sefer */}
+                <Text style={sub}>{t("crown.campaign").toUpperCase()}{targets.length ? ` · ${t("crown.odds")} %${Math.round(campaignOdds(state) * 100)} · ${CAMPAIGN_COST} ⚜` : ""}</Text>
+                {targets.length ? (
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                    {targets.map((tg) => {
+                      const can = canLaunchCampaign(state);
+                      return (
+                        <Pressable key={tg.id} disabled={!can} onPress={() => doCampaign(tg.id)} style={{ paddingVertical: 8, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: can ? "rgba(200,64,64,0.5)" : C.border, backgroundColor: can ? "rgba(200,64,64,0.10)" : C.bg, opacity: can ? 1 : 0.5 }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 11, color: can ? C.ember : C.parchmentMuted }}>{t("crown.campaignBtn")}: {t("beylik." + tg.id)}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("crown.noTargets")}</Text>}
+                {campMsg && (
+                  <Animated.View key={campMsg.tick} entering={FadeInDown.duration(260)} style={{ marginTop: 8, padding: 10, borderRadius: 9, borderWidth: 1, borderColor: campMsg.ok ? "rgba(127,166,106,0.5)" : "rgba(200,64,64,0.5)", backgroundColor: campMsg.ok ? "rgba(127,166,106,0.12)" : "rgba(200,64,64,0.12)" }}>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: campMsg.ok ? C.sage : C.blood, lineHeight: 18 }}>{t(campMsg.ok ? "crown.campaignWonShort" : "crown.campaignLostShort")}</Text>
+                  </Animated.View>
+                )}
+                {conquests.length > 0 && <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.sage, marginTop: 8 }}>{t("crown.conquests")}: {conquests.map((b) => t("beylik." + b)).join(", ")}</Text>}
+                {/* Vali atama/azil */}
+                <Text style={sub}>{t("crown.appointTitle").toUpperCase()} · {APPOINT_FEE} ⚜</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                  {appointable.map((loc) => {
+                    const can = canAppointGovernor(state, loc);
+                    return (
+                      <Pressable key={loc} disabled={!can} onPress={() => { hap("tap"); apply((s) => appointGovernor(s, loc)); }} style={{ paddingVertical: 7, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.4)" : C.border, backgroundColor: can ? "rgba(201,168,76,0.08)" : C.bg, opacity: can ? 1 : 0.5 }}>
+                        <Text style={{ fontFamily: F.serif, fontSize: 11, color: can ? C.gold : C.parchmentMuted }}>{t("crown.appointBtn")}: {placeName(loc, lang)}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                {appointed.length > 0 && (
+                  <>
+                    <Text style={sub}>{t("crown.appointed").toUpperCase()}</Text>
+                    {appointed.map(([loc, g]) => (
+                      <View key={loc} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.border }}>
+                        <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchment }}>{localFirstName(g.seed, g.gender, lang)} · {placeName(loc, lang)}</Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 9, color: g.loyalty > 50 ? C.sage : g.loyalty > 28 ? C.gold : C.blood }}>{t("crown.loyalty")} {Math.round(g.loyalty)}</Text>
+                          <Pressable onPress={() => { hap("tap"); apply((s) => dismissGovernor(s, loc)); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)" }}>
+                            <Text style={{ fontFamily: F.display, fontSize: 9, color: C.blood }}>{t("crown.dismissBtn")}</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    ))}
+                  </>
+                )}
+              </View>
+            </>
+          );
+        })()}
 
         {/* ── KADEMELİ YERLEŞİM ── */}
         <SecTitle>{t("dyn.settle")}</SecTitle>
