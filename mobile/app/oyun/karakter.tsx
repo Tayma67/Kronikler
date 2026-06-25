@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, spouseMizac } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
@@ -231,6 +231,16 @@ export default function Karakter() {
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}>
                     <GameIcon name="iliskiler" size={11} color="#C0556B" />
                     <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("child.friend.of")}: <Text style={{ color: C.parchment }}>{nm}</Text> · {status}</Text>
+                  </View>
+                );
+              })() : null}
+              {p.married && p.spouse_seed != null ? (() => {
+                const sg = p.gender === "kadın" ? "erkek" : "kadın";
+                const nm = localFirstName(p.spouse_seed, sg, lang);
+                return (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}>
+                    <GameIcon name="ring" size={11} color={C.gold} />
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("misc.spouse")}: <Text style={{ color: C.parchment }}>{nm}</Text> · {t("mizac." + spouseMizac(p.spouse_seed))}</Text>
                   </View>
                 );
               })() : null}

@@ -224,6 +224,9 @@ export function giveZekat(prev: GameState): GameState {
   push(s, "bagis", `Malının zekâtını verdin (${z} akçe yoksula); gönlün ferahladı, eli açık diye anıldın.`, "kişisel", true, { k: "evj.zekat", p: [z] });
   return s;
 }
+// Eş mizacı (tohumdan, deterministik): evli hayat anlarının sıklığını/etkisini renklendirir, eşi birey yapar.
+export const SPOUSE_MIZAC = ["sefkatli", "caliskan", "dikbasli", "dindar"] as const;
+export function spouseMizac(seed: number): string { return SPOUSE_MIZAC[(seed >>> 0) % SPOUSE_MIZAC.length]; }
 // ── Mülk-işçi (NPC istihdamı) ekonomisi — Vercel property_system.py portu ──
 // Bir mülkün işçi alabileceği yer sayısı: tip slotu + her kademe için +1.
 export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); }
@@ -1107,11 +1110,14 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (!p.dead && p.married && p.spouse_seed != null && p.age >= 16 && chance(0.03)) {
     const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
     const sn: EvtParam = { fn: [p.spouse_seed, sg] };
-    if (p.health < 45) { p.health = Math.min(100, p.health + 6); push(s, "evlilik", `Hastalığında ${p.spouse_name} başucundan ayrılmadı; biraz toparlandın.`, "kişisel", false, { k: "evj.spouseCare", p: [sn] }); }
-    else if (p.money < 20 || (p.debt || 0) > 0) { const help = 15 + Math.floor(Math.random() * 20); p.money += help; push(s, "evlilik", `Sıkışınca ${p.spouse_name} çeyizinden bir şey bozdurdu; eve biraz akçe girdi.`, "kişisel", false, { k: "evj.spouseHelp", p: [sn, help] }); }
-    else { const r = Math.random();
-      if (r < 0.4) { p.health = Math.min(100, p.health + 3); p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 1); push(s, "evlilik", `${p.spouse_name} ile sessiz, huzurlu bir akşam geçirdiniz; "iyi ki varsın" dedin.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
-      else if (r < 0.7) { push(s, "evlilik", `${p.spouse_name} ile küçük bir atışma yaşandı ama akşama kalmadan barıştınız; ocak yeniden ısındı.`, "kişisel", false, { k: "evj.spouseQuarrel", p: [sn] }); }
+    const miz = spouseMizac(p.spouse_seed); // eş mizacı anların rengini belirler
+    if (p.health < 45) { p.health = Math.min(100, p.health + (miz === "sefkatli" ? 9 : 6)); push(s, "evlilik", `Hastalığında ${p.spouse_name} başucundan ayrılmadı; biraz toparlandın.`, "kişisel", false, { k: "evj.spouseCare", p: [sn] }); }
+    else if (p.money < 20 || (p.debt || 0) > 0) { const help = Math.round((15 + Math.floor(Math.random() * 20)) * (miz === "caliskan" ? 1.6 : 1)); p.money += help; push(s, "evlilik", `Sıkışınca ${p.spouse_name} çeyizinden bir şey bozdurdu; eve biraz akçe girdi.`, "kişisel", false, { k: "evj.spouseHelp", p: [sn, help] }); }
+    else { let r = Math.random();
+      if (miz === "sefkatli") r *= 0.7;              // şefkatli → daha çok huzurlu akşam
+      else if (miz === "dikbasli") r = 0.4 + r * 0.4; // dik başlı → daha çok atışma (sonra barışma)
+      if (r < 0.4) { p.health = Math.min(100, p.health + (miz === "sefkatli" ? 5 : 3)); p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 1); if (miz === "dindar") bumpNam(p, "dindar", 1); push(s, "evlilik", `${p.spouse_name} ile sessiz, huzurlu bir akşam geçirdiniz; "iyi ki varsın" dedin.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
+      else if (r < 0.7) { if (miz === "dikbasli") { bumpNam(p, "mert", 1); addStatXp(s, "strength", 3); } push(s, "evlilik", `${p.spouse_name} ile küçük bir atışma yaşandı ama akşama kalmadan barıştınız; ocak yeniden ısındı.`, "kişisel", false, { k: "evj.spouseQuarrel", p: [sn] }); }
       else if (p.age >= 50) { p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 1); push(s, "evlilik", `${p.spouse_name} ile saçlarınız birlikte ağardı; bir ömrü paylaşmanın huzuru yüzüne vurdu.`, "kişisel", false, { k: "evj.spouseAge", p: [sn] }); }
       else { p.health = Math.min(100, p.health + 2); push(s, "evlilik", `${p.spouse_name} ile geleceğe dair konuştunuz; küçük hayaller kurmak iyi geldi.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
     }
