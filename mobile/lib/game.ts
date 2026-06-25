@@ -1030,13 +1030,13 @@ function push(s: GameState, type: string, text: string, scope: "kişisel" | "mak
 function clone(s: GameState): GameState { return JSON.parse(JSON.stringify(s)); }
 function die(s: GameState, text: string, loc?: { k: string; p?: EvtParam[] }) { s.player.dead = true; push(s, "ölüm", text, "kişisel", true, loc); }
 
-function monthlyFlavor(s: GameState, cal: CalendarInfo): string {
-  const child = s.player.age < 13; const pool: string[] = [];
-  if (cal.season === "Kış") pool.push("Soğuk sert geçti; ocağın başında ısındın.","Kar yolları kapadı, evde kaldın.");
-  if (cal.season === "İlkbahar") pool.push("Tarlalar yeşerdi, içine umut düştü.","Kuşlar döndü; köy canlandı.");
-  if (cal.season === "Yaz") pool.push("Sıcak günlerde gölgede dinlendin.","Hasada yardım ettin.");
-  if (cal.season === "Sonbahar") pool.push("Yapraklar döküldü; kışa hazırlık başladı.","Pazarda son ürünler satıldı.");
-  pool.push(child ? "Sokakta oyun oynadın." : "Gününü işinle geçirdin.", child ? "Annen masal anlattı." : "Çarşıda dolaştın.");
+function monthlyFlavor(s: GameState, cal: CalendarInfo): { k: string; text: string } {
+  const child = s.player.age < 13; const pool: { k: string; text: string }[] = [];
+  if (cal.season === "Kış") pool.push({ k: "flav.kis1", text: "Soğuk sert geçti; ocağın başında ısındın." }, { k: "flav.kis2", text: "Kar yolları kapadı, evde kaldın." });
+  if (cal.season === "İlkbahar") pool.push({ k: "flav.ilk1", text: "Tarlalar yeşerdi, içine umut düştü." }, { k: "flav.ilk2", text: "Kuşlar döndü; köy canlandı." });
+  if (cal.season === "Yaz") pool.push({ k: "flav.yaz1", text: "Sıcak günlerde gölgede dinlendin." }, { k: "flav.yaz2", text: "Hasada yardım ettin." });
+  if (cal.season === "Sonbahar") pool.push({ k: "flav.son1", text: "Yapraklar döküldü; kışa hazırlık başladı." }, { k: "flav.son2", text: "Pazarda son ürünler satıldı." });
+  pool.push(child ? { k: "flav.cPlay", text: "Sokakta oyun oynadın." } : { k: "flav.aWork", text: "Gününü işinle geçirdin." }, child ? { k: "flav.cTale", text: "Annen masal anlattı." } : { k: "flav.aMarket", text: "Çarşıda dolaştın." });
   return rnd(pool);
 }
 
@@ -1159,34 +1159,34 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // ── Yaşam-evresi anıları: her döneme doku katan küçük anlar (ara sıra; bazıları aileyi isimle anar) ──
   if (!p.dead && chance(0.14)) {
     const child = p.children.length ? rnd(p.children) : null;
-    const mem: { text: string; fn?: () => void }[] = [];
+    const mem: { text: string; k: string; p?: (string | number)[]; fn?: () => void }[] = [];
     if (p.age < 13) {
       mem.push(
-        { text: "Annen bir masal anlattı; kahramanı sendin." },
-        { text: "Bir sokak köpeğiyle dost oldun, peşinden ayrılmadı." },
-        { text: "Bir büyüğün elini izleyip zanaatı merak ettin.", fn: () => { p.skill_xp.crafting += 8; p.skills.crafting = skillLevel(p.skill_xp.crafting); } },
+        { text: "Annen bir masal anlattı; kahramanı sendin.", k: "mem.tale" },
+        { text: "Bir sokak köpeğiyle dost oldun, peşinden ayrılmadı.", k: "mem.dog" },
+        { text: "Bir büyüğün elini izleyip zanaatı merak ettin.", k: "mem.craft", fn: () => { p.skill_xp.crafting += 8; p.skills.crafting = skillLevel(p.skill_xp.crafting); } },
       );
     } else if (p.age < 25) {
       mem.push(
-        { text: "İlk kez birine gönül kaptırdın; dilin tutuldu.", fn: () => bumpNam(p, "capkin", 2) },
-        { text: "Bir ihtiyardan iki çift söz dinledin, aklına kazıdın.", fn: () => { p.skill_xp.social += 8; p.skills.social = skillLevel(p.skill_xp.social); } },
-        { text: "Geç saatlere dek bir dostunla dertleştin." },
+        { text: "İlk kez birine gönül kaptırdın; dilin tutuldu.", k: "mem.love", fn: () => bumpNam(p, "capkin", 2) },
+        { text: "Bir ihtiyardan iki çift söz dinledin, aklına kazıdın.", k: "mem.elder", fn: () => { p.skill_xp.social += 8; p.skills.social = skillLevel(p.skill_xp.social); } },
+        { text: "Geç saatlere dek bir dostunla dertleştin.", k: "mem.friend" },
       );
     } else if (p.age < 46) {
       mem.push(
-        { text: "Aynada ilk ak telini gördün; zaman akıp gidiyor." },
-        { text: p.married && p.spouse_name ? `${p.spouse_name} ile sessiz bir akşam geçirdin; 'iyi ki varsın' dedin.` : "Yalnız bir akşam, geçmişini düşündün." },
-        { text: child ? `${child} masum bir soru sordu; cevabını ararken sen de düşündün.` : "Bir komşuyla eski günleri yâd ettin." },
+        { text: "Aynada ilk ak telini gördün; zaman akıp gidiyor.", k: "mem.graying" },
+        p.married && p.spouse_name ? { text: `${p.spouse_name} ile sessiz bir akşam geçirdin; 'iyi ki varsın' dedin.`, k: "mem.spouseEve", p: [p.spouse_name] } : { text: "Yalnız bir akşam, geçmişini düşündün.", k: "mem.aloneEve" },
+        child ? { text: `${child} masum bir soru sordu; cevabını ararken sen de düşündün.`, k: "mem.childAsk", p: [child] } : { text: "Bir komşuyla eski günleri yâd ettin.", k: "mem.neighbor" },
       );
     } else {
       mem.push(
-        { text: "Dizlerin sızlıyor ama hatıraların zengin." },
-        { text: child ? `${child}'a gençlik hikâyelerini anlattın; gözleri parladı.` : "Gençlere akıl verdin; dinlediler mi, bilinmez.", fn: () => bumpNam(p, "dindar", 1) },
-        { text: "Bir mezar taşı okudun; kendi faniliğini düşündün." },
+        { text: "Dizlerin sızlıyor ama hatıraların zengin.", k: "mem.aches" },
+        child ? { text: `${child}'a gençlik hikâyelerini anlattın; gözleri parladı.`, k: "mem.childStory", p: [child], fn: () => bumpNam(p, "dindar", 1) } : { text: "Gençlere akıl verdin; dinlediler mi, bilinmez.", k: "mem.adviseYouth", fn: () => bumpNam(p, "dindar", 1) },
+        { text: "Bir mezar taşı okudun; kendi faniliğini düşündün.", k: "mem.grave" },
       );
     }
     const m = rnd(mem); m.fn?.();
-    push(s, p.age < 13 ? "cocukluk" : "gunluk", m.text);
+    push(s, p.age < 13 ? "cocukluk" : "gunluk", m.text, "kişisel", false, { k: m.k, p: m.p });
   }
   if (chance(0.05)) { const g = 5 + Math.floor(Math.random() * 20); p.money += g; push(s, "gunluk", `Yolda ${g} akçe buldun.`, "kişisel", false, { k: "evj.foundCoin", p: [g] }); }
   if (chance(0.04)) { p.health = Math.max(0, p.health - 12); push(s, "hastalik", "Hastalandın, birkaç gün yatakta kaldın.", "kişisel", false, { k: "evj.sick" }); }
@@ -1390,7 +1390,7 @@ export function advance(prev: GameState, n = 1): GameState {
         if ((s.player.debt || 0) <= 0) { s.player.debt = 0; s.player.loan_turn = undefined; }
       }
     }
-    push(s, s.player.age < 13 ? "cocukluk" : "gunluk", monthlyFlavor(s, cal));
+    { const mf = monthlyFlavor(s, cal); push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k }); }
     rollLifeEvents(s, cal);
     tickFactions(s, i === n - 1);
     tickDynasties(s, i === n - 1);
