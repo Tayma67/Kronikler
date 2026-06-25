@@ -123,6 +123,12 @@ export default function Savas() {
                   <GameIcon name={MOVES.find((m) => m.id === bs.enemyIntent)?.icon || "fist"} size={14} color={C.blood} />
                   <Text style={{ fontFamily: F.display, fontSize: 12, color: C.blood }}>{t("cb." + bs.enemyIntent)}</Text>
                 </View>
+                {bs.desperate ? (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginLeft: "auto", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6, backgroundColor: "rgba(200,64,64,0.22)" }}>
+                    <GameIcon name="flame" size={11} color={C.ember} />
+                    <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: C.ember, textTransform: "uppercase" }}>{t("cb.desperate")}</Text>
+                  </View>
+                ) : null}
               </View>
               {/* Duruş seçimi (Vercel portu): saldırı/savunma dengesi */}
               <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1.5, color: C.parchmentMuted, marginBottom: 5 }}>{t("cb.stanceLabel")}</Text>

@@ -44,12 +44,14 @@ export interface BattleState {
   round: number; log: string[]; over: boolean; won: boolean;
   enemyIntent: Move; // telegraf: düşmanın bir sonraki tahmini hamlesi (oyuncu sezer ve karşılar)
   arch: EArch; // düşman arketipi (hamle eğilimi + okunabilirlik)
+  desperate?: boolean; // düşman köşeye sıkıştı (HP < %30): çılgınca saldırır, okuması zorlaşır, sert vurur
 }
 
-// Düşmanın hamle eğilimi: arketip ağırlıkları + güçlü düşman biraz daha 'özel'e kayar.
-function pickEnemyMove(arch: EArch, power: number): Move {
+// Düşmanın hamle eğilimi: arketip ağırlıkları + güçlü düşman 'özel'e kayar + çaresizse saldırganlaşır.
+function pickEnemyMove(arch: EArch, power: number, desperate = false): Move {
   let [wh, ws, wo] = ARCH[arch].w;
   if (power >= 13) { const shift = Math.min(ws, 0.1); ws -= shift; wo += shift; } // güçlü düşman savunmayı bırakır
+  if (desperate) { const d = ws * 0.7; ws -= d; wo += d * 0.6; wh += d * 0.4; } // köşeye sıkışınca savunmayı bırakıp saldırır
   const r = Math.random() * (wh + ws + wo);
   if (r < wh) return "hamle";
   if (r < wh + ws) return "savustur";
@@ -57,12 +59,13 @@ function pickEnemyMove(arch: EArch, power: number): Move {
 }
 // Niyet okuma isabeti: dövüş becerisi + zekâ artırır, düşman gücü + arketip kurnazlığı azaltır.
 // Telegraf bu ihtimalle doğru çıkar; aksi halde düşman fent atıp niyetini gizler.
-export function readAccuracy(p: Player, enemyPower: number, arch: EArch = "asker"): number {
+export function readAccuracy(p: Player, enemyPower: number, arch: EArch = "asker", desperate = false): number {
   const skill = p.skills?.combat || 0;
   const intel = p.stats?.intelligence || 0;
   let a = 0.70 + skill * 0.018 + intel * 0.004 - Math.max(0, enemyPower - 6) * 0.012 + ARCH[arch].feint;
   if (weaponClass(p) === "hizli") a += 0.05; // çevik refleks düşmanı daha iyi okur
-  return Math.max(0.40, Math.min(0.93, a));
+  if (desperate) a -= 0.12; // çaresiz düşman erratik → niyeti okuması zor
+  return Math.max(0.38, Math.min(0.93, a));
 }
 
 export function startBattle(p: Player, e: Encounter): BattleState {
@@ -100,9 +103,12 @@ function classAtkMult(wc: WClass | null, round: number, outcome: "tie" | "win", 
 export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stance = "dengeli"): BattleState {
   if (prev.over) return prev;
   const bs: BattleState = { ...prev, log: [...prev.log] };
+  // Çaresizlik (enrage): düşman HP'si %30 altındaysa köşeye sıkışmıştır.
+  const desperate = bs.enemyHp > 0 && bs.enemyHp <= bs.enemyMax * 0.3;
+  if (desperate && !bs.desperate) { bs.desperate = true; bs.log.push("Düşman köşeye sıkıştı — gözünü karartıp çılgınca saldırıyor!"); }
   // Telegraf: sezdiğin niyet (bs.enemyIntent) okuma isabetiyle doğru çıkar; aksi halde düşman fent atar.
   let em: Move; let feint = false;
-  if (Math.random() < readAccuracy(p, bs.enemyPower, bs.arch)) { em = bs.enemyIntent; }
+  if (Math.random() < readAccuracy(p, bs.enemyPower, bs.arch, desperate)) { em = bs.enemyIntent; }
   else { const others = (["hamle", "savustur", "ozel"] as Move[]).filter((m) => m !== bs.enemyIntent); em = others[Math.floor(Math.random() * others.length)]; feint = true; }
   const pw = combatPower(p);
   const wc = weaponClass(p);
@@ -118,7 +124,7 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
   let txt = `Tur ${bs.round}: Sen ${mvName[mv]}, düşman ${mvName[em]}${feint ? " (niyetini gizledi!)" : ""}. `;
   if (mv === em) {
     const pd = dealt(Math.round(baseP * 0.4), "tie"), edRaw = taken(Math.round(baseE * 0.4));
-    let ed = edRaw;
+    let ed = desperate ? Math.round(edRaw * 1.15) : edRaw; // enrage: çaresiz düşman daha sert vurur
     // Kalkan bloğu (denk anında da geçerli)
     let blocked = false;
     if (shieldBlockChance(p, stance === "savunmaci") > 0 && Math.random() < shieldBlockChance(p, stance === "savunmaci")) { ed = Math.round(ed * 0.4); blocked = true; }
@@ -130,6 +136,7 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
     let dmg = em === "ozel" ? Math.round(baseE * 1.4) : baseE;
     if (mv === "savustur") dmg = Math.round(dmg * 0.5); // savuşturma kısmi korur
     dmg = Math.max(1, taken(dmg) - armorDefense(p)); // duruş + kaçış + zırh hasarı azaltır
+    if (desperate) dmg = Math.max(1, Math.round(dmg * 1.15)); // enrage: çaresiz düşman daha sert vurur
     // Kalkan bloğu: belli ihtimalle darbeyi yarıdan fazla emer.
     let blocked = false;
     const bc = shieldBlockChance(p, stance === "savunmaci");
@@ -138,7 +145,7 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
   }
   bs.log.push(txt);
   bs.round += 1;
-  bs.enemyIntent = pickEnemyMove(bs.arch, bs.enemyPower); // bir sonraki turun telegraf'ı
+  bs.enemyIntent = pickEnemyMove(bs.arch, bs.enemyPower, bs.enemyHp > 0 && bs.enemyHp <= bs.enemyMax * 0.3); // bir sonraki turun telegraf'ı (kalan HP'ye göre çaresizlik)
 
   if (bs.enemyHp <= 0) { bs.enemyHp = 0; bs.over = true; bs.won = true; bs.log.push("Düşman yere serildi — zafer senin!"); }
   else if (bs.playerHp <= 0) { bs.playerHp = 0; bs.over = true; bs.won = false; bs.log.push("Dize geldin; çatışmayı kaybettin."); }
