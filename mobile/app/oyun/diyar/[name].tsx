@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { travelBy, buyHorse, HORSE_COST, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES, citySpecialtyIdx } from "../../../lib/game";
+import { travelBy, buyHorse, HORSE_COST, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES, citySpecialtyIdx, GOV_EDICTS, canIssueEdict, issueEdict, edictCooldownLeft, GOV_WORKS, canFundWork, fundWork, worksOf } from "../../../lib/game";
 import { cityInfo, marketGoods, locSeed } from "../../../lib/world";
 import { useI18n, applyParams } from "../../../lib/i18n";
 import { placeName } from "../../../lib/locale-data";
@@ -141,6 +141,51 @@ export default function DiyarDetay() {
                     );
                   })}
                 </View>
+              )}
+              {/* Ferman (vali kararnamesi) — bekleme süreli, tradeoff'lu */}
+              {here && (() => {
+                const cd = edictCooldownLeft(state.player, name, state.turn);
+                return (
+                  <>
+                    <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted, marginTop: 14, marginBottom: 5 }}>{t("gov.edicts").toUpperCase()}{cd > 0 ? ` · ${applyParams(t("gov.edictWait"), [cd])}` : ""}</Text>
+                    <View style={{ gap: 6 }}>
+                      {GOV_EDICTS.map((e) => {
+                        const can = canIssueEdict(state, name, e.id);
+                        const cost = e.costMoney ? `−${e.costMoney} ⚜` : e.costTreasury ? `−${e.costTreasury} ${t("gov.treasury")}` : e.treasury ? `+${e.treasury} ${t("gov.treasury")}` : "";
+                        return (
+                          <Pressable key={e.id} disabled={!can} onPress={() => apply((s) => issueEdict(s, name, e.id))} style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: can ? "rgba(201,168,76,0.10)" : C.bg, opacity: can ? 1 : 0.5 }}>
+                            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                              <Text style={{ fontFamily: F.display, fontSize: 11, color: can ? C.gold : C.parchmentMuted }}>{t("gov.edn." + e.id)}</Text>
+                              <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.parchmentMuted }}>{cost}</Text>
+                            </View>
+                            <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{t("gov.edd." + e.id)}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </>
+                );
+              })()}
+              {/* Bayındırlık eseri — kalıcı şehir yatırımı */}
+              {here && (
+                <>
+                  <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted, marginTop: 14, marginBottom: 5 }}>{t("gov.works").toUpperCase()}</Text>
+                  <View style={{ gap: 6 }}>
+                    {GOV_WORKS.map((w) => {
+                      const built = worksOf(state.player, name).includes(w.id);
+                      const can = canFundWork(state, name, w.id);
+                      return (
+                        <Pressable key={w.id} disabled={!can || built} onPress={() => apply((s) => fundWork(s, name, w.id))} style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: built ? "rgba(127,166,106,0.5)" : can ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: built ? "rgba(127,166,106,0.10)" : can ? "rgba(201,168,76,0.10)" : C.bg, opacity: built || can ? 1 : 0.5 }}>
+                          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                            <Text style={{ fontFamily: F.display, fontSize: 11, color: built ? C.sage : can ? C.gold : C.parchmentMuted }}>{t("gov.wkn." + w.id)}</Text>
+                            <Text style={{ fontFamily: F.serif, fontSize: 10, color: built ? C.sage : C.parchmentMuted }}>{built ? t("gov.wkBuilt") : `−${w.costMoney} ⚜ · −${w.costTreasury} ${t("gov.treasury")}`}</Text>
+                          </View>
+                          <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{t("gov.wkd." + w.id)}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </>
               )}
             </View>
           );
