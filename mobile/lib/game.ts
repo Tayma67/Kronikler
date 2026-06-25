@@ -3613,7 +3613,8 @@ export function esteem(s: GameState): number {
   const p = s.player; const n = p.nam || ({} as Nam);
   const usluBonus = p.childhood === "uslu" ? 4 : 0; // uslu çocukluk: ömür boyu süren iyi nam
   const elderBonus = p.age >= 55 ? Math.min(10, Math.round((p.age - 55) * 0.6)) : 0; // ihtiyara hürmet: yaş ilerledikçe saygınlık
-  const ch = p.reputation + p.honor * 0.8 + (n.comert || 0) * 0.5 + (n.mert || 0) * 0.5 + (n.dindar || 0) * 0.3 - (n.zalim || 0) * 0.7 - p.fear * 0.4 + attireScore(p).prestige + usluBonus + elderBonus;
+  const haciBonus = p.legacy?.hac ? 6 : 0; // Hacı pâyesi: ömür boyu süren sosyal saygınlık
+  const ch = p.reputation + p.honor * 0.8 + (n.comert || 0) * 0.5 + (n.mert || 0) * 0.5 + (n.dindar || 0) * 0.3 - (n.zalim || 0) * 0.7 - p.fear * 0.4 + attireScore(p).prestige + usluBonus + elderBonus + haciBonus;
   return Math.round(ch * recognition(s));
 }
 // "Ne kadar korkulan/çekinilen" (0..+) — tanınma ile kapılı; cömertlik/mertlik korkuyu yumuşatır.
@@ -3825,6 +3826,7 @@ export function settlementIncome(s: GameState): number {
 export const PRESTIGE: Record<string, { cost: number; repeat?: boolean; once?: boolean }> = {
   hekim:  { cost: 2500,  repeat: true },   // özel hekim → sağlık (ömrü uzatır)
   imaret: { cost: 9000 },                   // imaret/aşevi → itibar + halk desteği
+  hac:    { cost: 7000,  once: true },      // hac → Hacı pâyesi: büyük dindar/cömert nam + ömür boyu saygınlık
   vakif:  { cost: 28000, once: true },      // vakıf → büyük itibar/şöhret + miras
   anit:   { cost: 90000, once: true },      // anıt → kalıcı şöhret + başarım
 };
@@ -3836,6 +3838,7 @@ export function fundPrestige(prev: GameState, id: string): GameState {
   p.money -= cost; p.legacy = p.legacy || {};
   if (id === "hekim") { p.health = Math.min(100, p.health + 16); push(s, "saglik", `Usta bir hekim tuttun; sağlığın tazelendi (+16 sağlık).`, "kişisel", false, { k: "ev.prestige.hekim" }); }
   else if (id === "imaret") { p.reputation = Math.min(100, p.reputation + 9); p.fame = Math.min(100, p.fame + 3); p.legacy.imaret = true; push(s, "bagis", `Bir imaret açtın; yoksullar adını hayırla anıyor (+itibar).`, "kişisel", true, { k: "ev.prestige.imaret" }); }
+  else if (id === "hac") { bumpNam(p, "dindar", 16); bumpNam(p, "comert", 6); p.reputation = Math.min(100, p.reputation + 8); p.fame = Math.min(100, p.fame + 4); p.legacy.hac = true; push(s, "bagis", `Hacca gidip döndün; artık Hacı diye anılıyorsun, sözün diyarda ağırlık taşıyor (büyük dindar nam + ömür boyu saygınlık).`, "kişisel", true, { k: "ev.prestige.hac" }); }
   else if (id === "vakif") { p.reputation = Math.min(100, p.reputation + 12); p.fame = Math.min(100, p.fame + 9); p.legacy.vakif = true; push(s, "bagis", `Adına bir vakıf kurdun; hayrın nesiller boyu sürecek (+itibar +şöhret).`, "kişisel", true, { k: "ev.prestige.vakif" }); }
   else if (id === "anit") { p.fame = Math.min(100, p.fame + 16); p.legacy.anit = true; push(s, "bagis", `Görkemli bir anıt diktirdin; diyar bu eseri asırlarca konuşacak (+şöhret).`, "kişisel", true, { k: "ev.prestige.anit" }); }
   return s;
