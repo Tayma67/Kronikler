@@ -297,7 +297,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Bir tüccar, kervana ortak olursan kârı katlayacağını söylüyor. Ya da batarsın.",
     when: (p) => p.age >= 16 && p.money >= 40,
     choices: [
-      { label: "Yatırım yap (−40)", delta: { money: 50, reputation: 3 }, result: "Kervan sağ döndü; yatırımın katlanarak geri geldi." },
+      { label: "Yatırım yap (−40)", delta: { money: 10, reputation: 3 }, result: "Kervan sağ döndü; yatırdığın 40 akçe geri geldi, üstüne kâr ve itibar." },
       { label: "Riske girme", delta: {}, result: "Teklifi geri çevirdin. Belki de doğrusu buydu." },
     ],
   },
@@ -341,7 +341,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Hanın loş köşesinde zar atılıyor. Talihini denemek ister misin?",
     when: (p) => p.age >= 16 && p.money >= 20,
     choices: [
-      { label: "Oyna (−20 akçe)", delta: { money: 25 }, result: "Zar senden yana döndü; kasayı topladın." },
+      { label: "Oyna (−20 akçe)", delta: { money: 5 }, result: "Zar senden yana döndü; ortaya koyduğun parayı kurtardın, üstüne biraz kâr." },
       { label: "Uzak dur", delta: {}, result: "Kumarın sonu hüsran, dedin ve geçtin." },
     ],
   },
@@ -578,7 +578,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Bir kervanbaşı, ticaret aklına güvenip seni ortaklığa çağırıyor — büyük kâr, büyük risk.",
     when: (p) => p.age >= 18 && p.money >= 60 && (p.skills?.trade || 0) >= 2,
     choices: [
-      { label: "Ortak ol (−60)", delta: { money: 90, fame: 5, reputation: 4 }, result: "Kervan kârla döndü; payın katlanarak geldi." },
+      { label: "Ortak ol (−60)", delta: { money: 30, fame: 5, reputation: 4 }, result: "Kervan kârla döndü; koyduğun 60 akçe geri geldi, üstüne kâr, şöhret ve itibar." },
       { label: "Riske girme", delta: {}, result: "Temkinli davrandın; fırsat geçti ama kesen yerinde." },
     ],
   },
@@ -625,7 +625,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Bir tüccar, fiyatların yakında fırlayacağını fısıldıyor — şimdi alırsan vurur musun?",
     when: (p) => p.age >= 16 && p.money >= 40 && (p.skills?.trade || 0) >= 1,
     choices: [
-      { label: "Stok yap, riske gir (−35)", delta: { money: 60, reputation: 2 }, result: "Söylenti doğru çıktı; depoladığın malı kârla sattın." },
+      { label: "Stok yap, riske gir (−35)", delta: { money: 25, reputation: 2 }, result: "Söylenti doğru çıktı; harcadığın 35 akçe geri geldi, üstüne kâr." },
       { label: "Güvenme, geç", delta: {}, result: "Temkinli kaldın; söylenti bu kez boş çıktı, iyi ki girmedin." },
     ],
   },

@@ -42,6 +42,7 @@ export interface Player {
   child_friend?: { id: string; seed: number; gender: "erkek" | "kadın"; bond: number; feud?: number }; // oyun yoldaşı: oyunla büyüyen bağ; bağ güçlüyse ömürlük dost, dargınlık (feud) büyürse rakip olur
   child_dream?: string; // çocukluk hayali (meslek domeni: combat/trade/crafting/social); reşitlikte meslek uyarsa ödül
   hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
+  last_crime_turn?: number; // son suç denemesi turu (ay başına tek deneme; risksiz spam önlenir)
   governorships?: string[]; // valisi olunan şehirler
   legacy?: Record<string, boolean>; // kalıcı görkem eserleri (vakıf/anıt/imaret) — bir kez kurulur
   govLeg?: Record<string, number>; // valilik meşruiyeti (şehir → 0-100); düşerse isyan/azil
@@ -2066,6 +2067,7 @@ export function bargainChance(s: GameState): number {
 export function negotiatedBuy(prev: GameState, id: string, price: number): GameState {
   const s = clone(prev); const p = s.player;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
+  const bb = bargainBase(s, id); price = Math.max(Math.round(bb * 0.6), Math.min(bb, Math.round(price || 0))); // fiyat pazarlık aralığına sınırlanır (UI dışı keyfi/sıfır fiyat exploit'i önlenir)
   if (p.money < price) return s;
   p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
   addTradePressure(s, p.location_name, id, 0.05);
@@ -2080,7 +2082,7 @@ export function sellItem(prev: GameState, id: string): GameState {
   // Kalite kademeli malda en iyi birimi sat; fiyata kalite çarpanı uygula.
   const tier = QUALITY_GOODS.has(id) ? takeQualityUnit(p, id) : "siradan";
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
-  let sell = Math.round(marketPrice(g.sell, s.econ) * goodPriceMult(s, id) * QUALITY_MULT[tier]);
+  let sell = Math.max(1, Math.round(marketPrice(g.sell, s.econ) * goodPriceMult(s, id) * QUALITY_MULT[tier])); // 0 akçeye satış/envanter sızıntısı önlenir (diğer fiyat fonksiyonlarıyla tutarlı)
   if (hasPerk(p, "dilbaz")) sell = Math.round(sell * 1.25);
   p.money += sell; addTradePressure(s, p.location_name, id, -0.045); // satış yerel arzı artırır → fiyat düşer
   gainSkill(s, "trade", 5);
@@ -2100,9 +2102,10 @@ export function negotiatedSell(prev: GameState, id: string, price: number): Game
   const s = clone(prev); const p = s.player;
   if (!(p.inventory[id] > 0)) return s;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
+  const sb = bargainSellBase(s, id); price = Math.max(sb, Math.min(Math.round(sb * 1.4), Math.round(price || 0))); // fiyat pazarlık aralığına sınırlanır (keyfi yüksek satış exploit'i önlenir)
   const tier = QUALITY_GOODS.has(id) ? takeQualityUnit(p, id) : "siradan";
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
-  let earn = Math.round(price * QUALITY_MULT[tier]);
+  let earn = Math.max(1, Math.round(price * QUALITY_MULT[tier]));
   if (hasPerk(p, "dilbaz")) earn = Math.round(earn * 1.25);
   p.money += earn; addTradePressure(s, p.location_name, id, -0.045); gainSkill(s, "trade", 6);
   push(s, "ticaret", `Pazarlıkla ${g.name} sattın (+${earn} akçe).`, "kişisel", false, { k: "evj.sellHaggle", p: [{ i: id }, earn] });
@@ -2174,8 +2177,8 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   ns.memories.push(`Amacına omuz verdin: ${npc.goal}.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   remember(s, npc, "yardim"); // kalıcıya yakın +20 anı (Vercel: "sana borçlu")
-  // Velinimet tohumu: bu iyilik yıllar sonra keseyle ve itibarla döner (nesil aşabilir).
-  sowSeed(s, { kaynak: "velinimet", hmin: 24, hmax: 96, agirlik: "buyuk", nesil: true, etki: { money: 90, reputation: 6 }, npcName: npc.name });
+  // Velinimet tohumu: bu iyilik yıllar sonra keseyle ve itibarla döner (nesil aşabilir). Yalnız taze yardımda (azalan getiri; aynı NPC'ye spam ile tohum farmı önlenir).
+  if (fresh) sowSeed(s, { kaynak: "velinimet", hmin: 24, hmax: 96, agirlik: "buyuk", nesil: true, etki: { money: 90, reputation: 6 }, npcName: npc.name });
   push(s, "sohbet", `${npc.name}'in "${npc.goal}" derdine ${GOAL_HELP_COST} akçeyle omuz verdin; sana minnettar kaldı.`, "kişisel", true, { k: "evj.helpGoal", p: [npc.name, { goalk: npc.goal }, GOAL_HELP_COST] });
   return s;
 }
@@ -2706,6 +2709,9 @@ export const CRIME_TYPES: Record<CrimeKind, { base: number; lootMin: number; loo
 export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
+  if (s.pendingScene) return s;                       // bekleyen yakalanma sahnesini ezerek ceza atlanamaz
+  if (p.last_crime_turn === s.turn) return s;          // ay başına tek suç denemesi (risksiz spam ile para basma önlenir)
+  p.last_crime_turn = s.turn;
   const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
   const golgeBonus = p.faction === "golge" ? 0.12 : 0;     // Gölge Kardeşliği avantajı
   const hasariBonus = p.childhood === "hasari" ? 0.07 : 0; // haşarı çocukluk: sokak kurnazlığı işe yarar
@@ -2750,6 +2756,7 @@ export function fenceHotGoods(prev: GameState): GameState {
 // Suç kesinti sahnesinin sonucunu uygula (Saklan/Rüşvet/Kaç). UI s.pendingScene'i görünce çağırır.
 export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" | "kac"): GameState {
   const s = clone(prev); const p = s.player;
+  if (s.pendingScene?.kind !== "crime") return s;      // yalnız bekleyen suç sahnesi çözülür (yanlış çağrı koruması)
   const kind = (s.pendingScene?.ctx?.crime as CrimeKind) || "yankesicilik";
   s.pendingScene = null;
   const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
@@ -3147,7 +3154,7 @@ export function canUseFactionPower(p: Player): boolean {
 }
 export function useFactionPower(prev: GameState, kind: "himaye" | "kese"): GameState {
   const s = clone(prev); const p = s.player; const fid = p.faction;
-  if (!fid || !canUseFactionPower(p)) return s;
+  if (p.dead || p.age < 13 || !fid || !canUseFactionPower(p)) return s; // ölü/çocuk oyuncu lonca gücü kullanamaz (diğer eylemlerle tutarlı)
   const f = factionById(fid);
   p.faction_standing[fid] = (p.faction_standing[fid] || 0) - FAC_POWER_COST;
   if (kind === "himaye") { // örgüt himayesi: korku düşer, itibar artar, bir söylenti bastırılır
