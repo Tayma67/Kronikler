@@ -244,6 +244,12 @@ export default function Karakter() {
                   </View>
                 );
               })() : null}
+              {p.horse && p.horse_name ? (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}>
+                  <GameIcon name="compass" size={11} color={C.sage} />
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("misc.horse")}: <Text style={{ color: C.parchment }}>{p.horse_name}</Text></Text>
+                </View>
+              ) : null}
             </View>
           </View>
 

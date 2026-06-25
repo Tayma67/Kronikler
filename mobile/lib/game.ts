@@ -37,7 +37,7 @@ export interface Player {
   study_energy?: number; // aylık çalışma gücü — ders + kulüp meşki bundan harcanır
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
   club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
-  horse?: boolean; // bir atın var mı (hızlı/güvenli "at ile" yolculuğu açar)
+  horse?: boolean; horse_name?: string; // bir atın var mı + adı (hızlı/güvenli "at ile" yolculuğu açar; yolda kaybedilebilir)
   child_acts?: Partial<Record<"oyun" | "yardim" | "yaramazlik" | "kesif", number>>; childhood?: string; // çocukluk eğilim sayacı + reşitlikte belirlenen çocukluk karakteri
   child_friend?: { id: string; seed: number; gender: "erkek" | "kadın"; bond: number; feud?: number }; // oyun yoldaşı: oyunla büyüyen bağ; bağ güçlüyse ömürlük dost, dargınlık (feud) büyürse rakip olur
   child_dream?: string; // çocukluk hayali (meslek domeni: combat/trade/crafting/social); reşitlikte meslek uyarsa ödül
@@ -2186,11 +2186,12 @@ export const TRAVEL_ROUTES: { id: TravelRoute; label: string; desc: string }[] =
 ];
 // At satın alma — bir kez; hızlı/güvenli "at ile" yolculuğunu açar.
 export const HORSE_COST = 200;
+export const HORSE_NAMES = ["Doru", "Yağız", "Kır", "Al", "Boz", "Demir", "Rüzgâr", "Yıldız", "Şahin", "Karayel"];
 export function buyHorse(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.horse || p.money < HORSE_COST) return s;
-  p.money -= HORSE_COST; p.horse = true; p.reputation = Math.min(100, p.reputation + 2);
-  push(s, "yolculuk", "Kendine sağlam bir at aldın; artık yollar daha kısa ve emniyetli.", "kişisel", true, { k: "horse.bought" });
+  p.money -= HORSE_COST; p.horse = true; p.horse_name = rnd(HORSE_NAMES); p.reputation = Math.min(100, p.reputation + 2);
+  push(s, "yolculuk", `${p.horse_name} adında sağlam bir at aldın; artık yollar daha kısa ve emniyetli.`, "kişisel", true, { k: "horse.named", p: [p.horse_name] });
   return s;
 }
 // ── Yol olayları (Vercel travel_rework.py portu) — otomatik stat-testli, mevcut akışa additif ──
@@ -2256,7 +2257,11 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
     p.hunger = Math.max(0, p.hunger - 4); p.location_name = dest;
     // At hızlı: pusu nadir, baskına uğrasan da dörtnala sıyrılırsın.
     const ambush = Math.random() < Math.max(0.03, 0.12 - combatPower(p) * 0.01);
-    if (ambush) {
+    if (ambush && Math.random() < 0.18) { // nadiren atını kaybedersin — yoldaşını yitirmek gibi
+      const hn = p.horse_name || ""; p.horse = false; p.horse_name = undefined;
+      p.health = Math.max(1, p.health - (5 + Math.floor(Math.random() * 6)));
+      push(s, "yolculuk", `Haydutlar atın ${hn}'ı elinden aldı; ${dest}'e yaya, gönlün buruk vardın.`, "kişisel", true, { k: "horse.lost", p: [hn, { pl: dest }] });
+    } else if (ambush) {
       const loss = Math.min(p.money, 4 + Math.floor(Math.random() * 8));
       p.money -= loss; p.health = Math.max(1, p.health - (4 + Math.floor(Math.random() * 5)));
       push(s, "yolculuk", `Atınla giderken haydutlar çıktı ama dörtnala sıyrıldın (−${loss} akçe).`, "kişisel", false, { k: "evj.rideAmbush", p: [{ pl: dest }, loss] });
