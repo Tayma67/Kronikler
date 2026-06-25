@@ -15,6 +15,7 @@ import {
   crownAuthorityOf, CROWN_DECREES, canIssueDecree, issueDecree, decreeCooldownLeft,
   campaignTargets, canLaunchCampaign, campaignOdds, launchCampaign, CAMPAIGN_COST,
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
+  inCourt, courtRankId,
 } from "../../lib/game";
 import { generateDynasties, houseName as rivalHouseName, localFirstName } from "../../lib/world";
 import { professionNameL, placeName } from "../../lib/locale-data";
@@ -84,12 +85,21 @@ export default function Hanedan() {
                 <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: "#1a1206" }}>{t("dyn.headWord")}</Text>
               </View>
             )}
+            {!p.crowned && inCourt(p) && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(201,168,76,0.16)", borderRadius: 14, paddingVertical: 3, paddingHorizontal: 11 }}>
+                <GameIcon name="scroll" size={11} color={C.gold} />
+                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: C.gold }}>{t("court.rank." + courtRankId(p))}</Text>
+              </View>
+            )}
           </View>
           {/* Aile özeti */}
           <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 14, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border, alignSelf: "stretch" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="karakter" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{p.name}</Text></View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="ring" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{p.married ? (p.spouse_seed != null ? localFirstName(p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek", lang) : (p.spouse_name || t("dyn.unwed"))) : t("dyn.unwed")}</Text></View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="baby" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{p.children.length}</Text></View>
+            {(p.grandchildren?.length || 0) > 0 && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="family" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{p.grandchildren!.length}</Text></View>
+            )}
           </View>
           <Pressable onPress={() => { hap("tap"); router.push("/oyun/nesil"); }} style={{ marginTop: 10 }}>
             <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: C.gold }}>{t("dyn.manageHeirs")} ›</Text>
