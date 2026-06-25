@@ -79,6 +79,15 @@ const TR: FaqSection[] = [
       { q: "NPC'nin çevresi ve 'amaca yardım' ne işe yarar?", a: "Her NPC'nin bir ailesi, dostları ve rakipleri (çevresi) ile bir hayat hedefi vardır; bunları NPC ekranında görürsün. Amacına yardım edebilir (akçe karşılığı büyük yakınlık + cömert nam) ya da istismar edebilirsin (akçe koparır ama güvenini yakar, zalim nam)." },
     ],
   },
+  {
+    icon: "scroll", title: "Devlet, Saray & Meslek",
+    items: [
+      { q: "Vali olunca neler yapabilirim?", a: "Yeterli itibarla bir şehre vali olursun (Diyar ekranından). Vergi oranını ayarlar (gelir ↔ halk memnuniyeti), şehir hazinesini halka hizmet/asayiş için harcar, meşruiyetini hayır işiyle tazelersin. Ek olarak FERMAN çıkarabilirsin (adalet, vergi affı, angarya, pazar serbestisi — bekleme süreli, tradeoff'lu) ve kalıcı BAYINDIRLIK ESERİ yaptırabilirsin (çeşme/köprü/imarethane/burç — memnuniyet/gelir tabanını yükseltir + şöhret). Meşruiyetin düşerse azledilir, halk çok küserse isyan çıkar; ara sıra Divan-ı hümâyun hazineden pay ister." },
+      { q: "Tahta çıkınca (hükümdar) ne değişir?", a: "Yaş, hane gücü, itibar, şöhret ve akçe şartlarını karşılayıp bir lonca desteği (ya da sarayda Vezir+ mevki) ile tahta iddia edersin. Hükümdar olunca OTORİTE'n olur: Dîvân-ı hümâyunda fermanlar çıkarır (adaletnâme, imar, genel af, şenlik, ağır vergi), rakip beyliklere SEFER düzenler (zafer → ilhak + ganimet + şöhret), şehirlere sadık VALİ atar/azledersin (haraç geliri). Otorite ihmal edilirse aşınır; dibe vurursa isyan tahtını devirebilir. Saray olayları (elçi, kıtlık, vezir entrikası) otoriteni etkiler." },
+      { q: "Meslek Fırsatı (imza eylemi) nedir?", a: "Her mesleğin, normal çalışmanın ötesinde kendine özgü, bekleme süreli bir imza eylemi vardır (Meslek ekranında): demirci şaheser döver, tüccar uzak ticaret seferine çıkar, şifacı salgınla savaşır, asker sınır akınına katılır, çiftçi hasat şenliği düzenler… Mesleğin temel özelliğiyle test edilir; başarı kademene göre büyük kazanç + şöhret/itibar + beceri getirir. Tehlikeli olanlar (demirci/balıkçı/avcı/asker/şifacı) başarısızlıkta sağlık riski taşır." },
+      { q: "Saraya nasıl girerim, rütbeler nedir?", a: "Tahtta değilsen (16+ yaş, yeterli itibar ve zekâ — kâtipsen daha kolay) Örgütler ekranından saray/divan hizmetine girebilirsin. Kâtip olarak başlar, Divan Hizmeti vererek hizmet puanı + hükümdar itibarı (favor) + maaş kazanır, Defterdar → Nişancı → Vezir → Sadrazam'a yükselirsin. Pîşkeş sunarak favor satın alabilirsin. Favor ihmal edilirse aşınır, dibe vurursa azledilirsin; rakip saraylı entrikaları ve sultan lütufları olur. Vezir+ mevki tahta iddia için arka sağlar." },
+    ],
+  },
 ];
 
 const EN: FaqSection[] = [
@@ -155,6 +164,15 @@ const EN: FaqSection[] = [
       { q: "What do property workers do?", a: "You hire workers from the town's folk onto your properties (slot count by type and tier). Workers raise output but cost a monthly wage; at low condition/prosperity the wage can eat the profit. The worker panel shows the monthly net (green/red). Productivity comes from age + profession fit + temperament." },
       { q: "What is item quality?", a: "Durable goods (weapons, armor, elixirs) come in 4 tiers: faulty, ordinary, good, masterwork. Higher crafting skill yields better quality. Quality goods sell for more; the quality of your equipped weapon/armor also affects your combat power and defense." },
       { q: "What is an NPC's circle and 'help their goal'?", a: "Every NPC has a family, friends and rivals (their circle) and a life goal, shown on the NPC's screen. You can help their goal (coin for a big bond + generous repute) or exploit it (extort coin but burn their trust, cruel repute)." },
+    ],
+  },
+  {
+    icon: "scroll", title: "State, Court & Vocation",
+    items: [
+      { q: "What can I do as a governor?", a: "With enough standing you become governor of a city (from the Realm screen). You set the tax rate (income ↔ public contentment), spend the city treasury on services/security, and shore up your legitimacy with charity. You can also issue EDICTS (justice, tax amnesty, corvée, free market — cooldown-gated, with trade-offs) and raise lasting PUBLIC WORKS (fountain/bridge/soup kitchen/tower — they lift the contentment/income floor and grant fame). If legitimacy falls you are deposed; if the people sour, unrest erupts; now and then the imperial council demands a cut of the treasury." },
+      { q: "What changes when I take the throne?", a: "Meeting the age, dynasty power, standing, fame and gold thresholds — with a guild's backing (or a Vizier+ court office) — you claim the throne. As ruler you gain AUTHORITY: you issue council decrees (edict of justice, building drive, general amnesty, festival, heavy tax), launch CAMPAIGNS against rival realms (victory → annexation + spoils + fame), and appoint/dismiss loyal GOVERNORS (tribute income). Authority erodes if neglected; if it bottoms out, revolt can topple your throne. Court events (envoys, famine, vizier plots) sway your authority." },
+      { q: "What is a Signature Work (vocation action)?", a: "Beyond ordinary work, each profession has its own cooldown-gated signature action (on the Vocation screen): the smith forges a masterwork, the merchant sails a far trade venture, the healer fights a plague, the soldier joins a border raid, the farmer holds a harvest feast… It is tested against the profession's core attribute; success brings a large reward scaled by your rank, plus fame/standing and skill. The dangerous ones (smith/fisher/hunter/soldier/healer) risk your health on failure." },
+      { q: "How do I enter the court, and what are the ranks?", a: "If you are not on the throne (age 16+, enough standing and wit — easier as a scribe) you can enter court/council service from the Organizations screen. You start as Scribe, and by performing Council Duty you gain service points + the ruler's favor + a salary, rising Treasurer → Chancellor → Vizier → Grand Vizier. You can offer a gift to buy favor. Favor erodes if neglected and you are dismissed if it bottoms out; rival courtier plots and royal favors occur. A Vizier+ office gives you backing to claim the throne." },
     ],
   },
 ];
