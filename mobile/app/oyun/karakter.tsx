@@ -226,7 +226,7 @@ export default function Karakter() {
               {p.child_friend ? (() => {
                 const cf = p.child_friend; const nm = localFirstName(cf.seed, cf.gender, lang);
                 const rel = state.relationships[cf.id];
-                const status = p.age < 13 ? t("child.friend.label") : (rel != null && rel > 0 ? t("child.friend.lifelong") : t("child.friend.parted"));
+                const status = p.age < 13 ? t("child.friend.label") : (rel != null && rel > 0 ? t("child.friend.lifelong") : (rel != null && rel < 0 ? t("child.friend.rivalStatus") : t("child.friend.parted")));
                 return (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}>
                     <GameIcon name="iliskiler" size={11} color="#C0556B" />

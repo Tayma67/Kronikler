@@ -39,7 +39,7 @@ export interface Player {
   club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
   horse?: boolean; // bir atın var mı (hızlı/güvenli "at ile" yolculuğu açar)
   child_acts?: Partial<Record<"oyun" | "yardim" | "yaramazlik" | "kesif", number>>; childhood?: string; // çocukluk eğilim sayacı + reşitlikte belirlenen çocukluk karakteri
-  child_friend?: { id: string; seed: number; gender: "erkek" | "kadın"; bond: number }; // oyun yoldaşı: oyunla büyüyen bağ; bağ güçlüyse reşitlikte ömürlük dosta dönüşür
+  child_friend?: { id: string; seed: number; gender: "erkek" | "kadın"; bond: number; feud?: number }; // oyun yoldaşı: oyunla büyüyen bağ; bağ güçlüyse ömürlük dost, dargınlık (feud) büyürse rakip olur
   child_dream?: string; // çocukluk hayali (meslek domeni: combat/trade/crafting/social); reşitlikte meslek uyarsa ödül
   hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
   governorships?: string[]; // valisi olunan şehirler
@@ -2472,7 +2472,12 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
     chips.push({ label: `+${earn} akçe`, col: "#E0BC5A" }, { label: "İtibar +1", col: "#7FA66A" }); key = "child.yardim";
     push(s, "cocukluk", "Ev işlerinde aileye el verdin; eline biraz harçlık geçti.", "kişisel", false, { k: "child.yardim", p: [earn] });
   } else if (kind === "yaramazlik") {
-    if (Math.random() < 0.5) { bumpNam(p, "capkin", 2); gainSkill(s, "social", 5); p.health = Math.min(100, p.health + 2);
+    // Yoldaşın varsa bazen yaramazlık onu da sırtından vurur → dargınlık birikir (rakipliğe giden yol).
+    if (p.child_friend && Math.random() < 0.25) {
+      p.child_friend.bond = Math.max(0, p.child_friend.bond - 10); p.child_friend.feud = (p.child_friend.feud || 0) + 1;
+      chips.push({ label: "Dargınlık", col: "#C0556B" }); key = "child.feud";
+      push(s, "cocukluk", "Yaramazlığın yoldaşına patladı; aranıza bir soğukluk girdi.", "kişisel", false, { k: "child.feud", p: [{ fn: [p.child_friend.seed, p.child_friend.gender] }] });
+    } else if (Math.random() < 0.5) { bumpNam(p, "capkin", 2); gainSkill(s, "social", 5); p.health = Math.min(100, p.health + 2);
       chips.push({ label: "Sosyal +5", col: "#C9A84C" }); key = "child.yaramazlik.win";
       push(s, "cocukluk", "Bir yaramazlık çevirdin ve yakayı sıyırdın; akranların kıkırdadı.", "kişisel", false, { k: "child.yaramazlik.win" }); }
     else { p.reputation = Math.max(-100, p.reputation - 2); p.honor = Math.max(0, p.honor - 1);
@@ -2494,12 +2499,19 @@ function shapeChildhood(s: GameState) {
   const p = s.player; const c = p.child_acts || {};
   // Oyun yoldaşı: bağ güçlüyse seninle birlikte büyür ve ömürlük gerçek bir dosta dönüşür (ilişki grafiğine girer).
   const cf = p.child_friend;
-  if (cf && cf.bond >= 40) {
+  const bornFriend = () => { // yoldaşı gerçek bir doğmuş NPC olarak ilişki grafiğine al (dost ya da rakip)
     if (!s.world.npcBorn) s.world.npcBorn = [];
-    if (!s.world.npcBorn.some((n) => n.id === cf.id)) {
-      const tmpl = generateNPCs((cf.seed ^ 0x5bd1e995) >>> 0, 1, "tr", "cf")[0];
-      s.world.npcBorn.push({ ...tmpl, id: cf.id, gender: cf.gender, nameSeed: cf.seed, loc: p.location_name, alive: true, age: p.age, bornY: worldYears(s) });
+    if (!s.world.npcBorn.some((n) => n.id === cf!.id)) {
+      const tmpl = generateNPCs((cf!.seed ^ 0x5bd1e995) >>> 0, 1, "tr", "cf")[0];
+      s.world.npcBorn.push({ ...tmpl, id: cf!.id, gender: cf!.gender, nameSeed: cf!.seed, loc: p.location_name, alive: true, age: p.age, bornY: worldYears(s) });
     }
+  };
+  if (cf && (cf.feud || 0) >= 2 && cf.bond < 50) { // dargınlık büyüdü → çocukluk rakibi (nemesis'e giden yol)
+    bornFriend();
+    s.relationships[cf.id] = Math.min(s.relationships[cf.id] ?? 0, -45);
+    push(s, "cocukluk", "Çocukluk yoldaşınla aranıza kan girdi; o artık bir rakip — yolunuz hep kesişecek.", "kişisel", true, { k: "child.friend.rival", p: [{ fn: [cf.seed, cf.gender] }] });
+  } else if (cf && cf.bond >= 40) {
+    bornFriend();
     s.relationships[cf.id] = Math.max(s.relationships[cf.id] || 0, Math.min(80, cf.bond));
     push(s, "cocukluk", "Çocukluk yoldaşın seninle birlikte büyüdü; artık ömürlük bir dostun var.", "kişisel", true, { k: "child.friend.grown", p: [{ fn: [cf.seed, cf.gender] }] });
   } else if (cf) {
