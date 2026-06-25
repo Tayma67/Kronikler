@@ -78,7 +78,7 @@ export function npcSocialGraph(locationName: string, npcs: NPC[]): Record<string
   const pairs = Object.keys(spouseOf).filter((id) => id < spouseOf[id]).map((id) => [id, spouseOf[id]] as [string, string]);
   for (const c of npcs.filter((n) => n.age < 30)) {
     if (r() > 0.5) continue;
-    const pair = pairs.find(([x, y]) => !x.includes(c.id) && (byId(x)?.age ?? 0) >= c.age + 17 && (byId(y)?.age ?? 0) >= c.age + 17);
+    const pair = pairs.find(([x, y]) => x !== c.id && y !== c.id && (byId(x)?.age ?? 0) >= c.age + 17 && (byId(y)?.age ?? 0) >= c.age + 17);
     if (!pair || pair.includes(c.id)) continue;
     link(c.id, pair[0], "evlat", "ebeveyn", 65);
     link(c.id, pair[1], "evlat", "ebeveyn", 65);

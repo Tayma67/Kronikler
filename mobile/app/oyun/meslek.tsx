@@ -61,7 +61,7 @@ export default function Meslek() {
           {PROFESSIONS.map((pr, i) => {
             const cur = pr.id === p.profession;
             return (
-              <Pressable key={pr.id} onPress={() => { hap("tap"); apply((s) => changeProfession(s, pr.id)); }} disabled={cur} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: i === PROFESSIONS.length - 1 ? 0 : 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : cur ? "rgba(201,168,76,0.06)" : "transparent" })}>
+              <Pressable key={pr.id} onPress={() => { if (p.dead) return; hap("tap"); apply((s) => changeProfession(s, pr.id)); }} disabled={cur || p.dead} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: i === PROFESSIONS.length - 1 ? 0 : 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : cur ? "rgba(201,168,76,0.06)" : "transparent" })}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 14, color: cur ? C.gold : C.parchment }}>{professionNameL(pr.id, lang)}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("st." + pr.stat)} · {pr.tiers.length} {t("mes.tier")}</Text>
