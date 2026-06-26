@@ -3887,8 +3887,12 @@ export function throneOdds(s: GameState): number {
   const p = s.player;
   const rivals = generateDynasties(s.seed);
   const topRival = Math.max(100, ...rivals.map((h) => h.power));
-  const odds = 0.45 + (dynastyPower(s) - topRival) / 220 + p.fame / 400 + p.skills.combat / 40 + (esteem(s) / 400);
-  return Math.max(0.12, Math.min(0.9, odds));
+  // Hane gücünün rakibe ÜSTÜNLÜĞÜ asıl belirleyici olsun: kişisel paye terimleri (şöhret/savaş/
+  // saygınlık) beceri tavanı 10 ve sabit katkılarla 0.9 tavanını her nitelikli oyuncuda doldurup
+  // tahtı garanti %90'a çeviriyordu. Yeniden kalibre: sınırda iddia gerçek bir kumar (~%68),
+  // baskın hanedan hâlâ avantajlı (~%84).
+  const odds = 0.30 + (dynastyPower(s) - topRival) / 260 + p.fame / 600 + p.skills.combat / 90 + (esteem(s) / 650);
+  return Math.max(0.18, Math.min(0.84, odds));
 }
 // Tahta iddia — sefer parası her hâlükârda harcanır; başarısızlık ağır bedel.
 export function claimThrone(prev: GameState): { state: GameState; success: boolean } {
