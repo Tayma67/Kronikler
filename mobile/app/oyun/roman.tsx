@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable, Share } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -60,6 +60,19 @@ export default function Roman() {
     events: state.history.filter((e) => { const a = ageOf(e.day); return a >= b.lo && a <= b.hi && e.scope === "kişisel"; }),
   })).filter((c) => c.events.length > 0);
 
+  // Hayat romanı paylaşım kartı (metin): isim + kısa künye + kapanış + oyun adı. RN yerleşik Share (ek bağımlılık yok).
+  const onShare = () => {
+    const pl = state.player;
+    const tally = [
+      t("rom.t.lived").replace("%n", String(pl.age)),
+      pl.profession !== "işsiz" ? t("rom.t.recalled").replace("%s", professionNameL(pl.profession, lang)) : null,
+      pl.children.length ? t("rom.t.children").replace("%n", String(pl.children.length)) : null,
+      pl.fame >= 50 ? t("rom.t.famed") : null,
+    ].filter(Boolean).join(" · ");
+    const msg = `${pl.name} — ${tally}.\n${pl.dead ? t("rom.closeDead") : t("rom.closeAlive")}\n\nKronikler: Küllerin Mirası`;
+    Share.share({ message: msg }).catch(() => {});
+  };
+
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 60 }}>
       <Pressable onPress={() => router.back()} style={{ marginBottom: 10 }}><BackLabel /></Pressable>
@@ -67,6 +80,10 @@ export default function Roman() {
       <Text style={{ fontFamily: F.display, fontSize: 24, color: C.gold, textAlign: "center", marginTop: 8 }}>{state.player.name}</Text>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center", marginBottom: 4 }}>{t("rom.subtitle")}</Text>
       <Text style={{ color: C.gold, textAlign: "center", marginVertical: 14 }}>❧ ⚜ ❧</Text>
+
+      <Pressable onPress={onShare} style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 8, paddingHorizontal: 18, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.10)", marginBottom: 18 }}>
+        <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.gold }}>{t("rom.share")}</Text>
+      </Pressable>
 
       {chapters.length === 0 ? (
         <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, textAlign: "center", marginTop: 20 }}>{t("rom.empty")}</Text>
