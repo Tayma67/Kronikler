@@ -2998,7 +2998,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const invests = (p.child_invests && p.child_invests[heir]) || [];
   const stats = { strength: 1, intelligence: 1, charisma: 1, stamina: 2 };
   const skills = { combat: 0, trade: 0, crafting: 0, social: 0 };
-  let startPoints = gen; let startMoney = inheritMoney; let startHealth = 100; let startRep = Math.floor(p.reputation / 2) + will.repBonus;
+  let startPoints = Math.min(gen, 10); let startMoney = inheritMoney; let startHealth = 100; let startRep = Math.floor(p.reputation / 2) + will.repBonus; // nesil bonusu tavanlı: çok uzun hanedanda (gen>10) vâris doğuştan tüm statları maxlayamasın
   const investNotes: string[] = [];
   for (const inv of invests) {
     if (inv === "egitim") { stats.intelligence += 2; startPoints += 1; investNotes.push("eğitimli"); }
