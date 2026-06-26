@@ -4416,11 +4416,21 @@ export function serveCourt(prev: GameState): GameState {
   const ok = Math.random() < 0.45 + skill * 0.05;
   const rank = p.courtRank ?? 0;
   if (ok) {
+    // Üstün hizmet (büyük başarı): zekâ+karizma ve divan rütbesi yükseldikçe ihtimal artar (%5 → %30).
+    // Hükümdarın bizzat iltifatı: çift ikramiye, ekstra teveccüh/hizmet puanı ve şöhret → Vezir'e daha hızlı.
+    const crit = Math.random() < Math.min(0.30, 0.05 + skill * 0.025 + rank * 0.03);
     p.courtXp = (p.courtXp ?? 0) + 6 + Math.floor(Math.random() * 3);
     p.courtFavor = Math.min(100, (p.courtFavor ?? 55) + 4);
-    const bonus = Math.round((8 + rank * 4) * inflationFactor(s)); p.money += bonus;
+    let bonus = Math.round((8 + rank * 4) * inflationFactor(s));
     gainSkill(s, "social", 8); addStatXp(s, "intelligence", 4);
-    push(s, "saray", `Divan işlerini ehlince gördün; hükümdarın gözüne girdin (+${bonus} akçe).`, "kişisel", false, { k: "court.serveWin", p: [bonus] });
+    if (crit) {
+      bonus = Math.round(bonus * 2); p.money += bonus;
+      p.courtXp = (p.courtXp ?? 0) + 5; p.courtFavor = Math.min(100, (p.courtFavor ?? 55) + 6); p.fame = Math.min(100, p.fame + 3);
+      push(s, "saray", `Divanda öyle bir iş gördün ki hükümdar bizzat iltifat etti (+${bonus} akçe).`, "kişisel", true, { k: "court.serveCrit", p: [bonus] });
+    } else {
+      p.money += bonus;
+      push(s, "saray", `Divan işlerini ehlince gördün; hükümdarın gözüne girdin (+${bonus} akçe).`, "kişisel", false, { k: "court.serveWin", p: [bonus] });
+    }
   } else {
     p.courtXp = (p.courtXp ?? 0) + 3;
     p.courtFavor = Math.max(0, (p.courtFavor ?? 55) - 5);
