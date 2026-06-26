@@ -1909,7 +1909,7 @@ const CROWNX: Record<Lang, Dict> = {
 // Meslek imza eylemleri: her mesleğe özgü ad/açıklama/kazanç + ortak kayıp. ar/ru: pasif/cinsiyetsiz.
 const PROFX: Record<Lang, Dict> = {
   tr: {
-    "prof.actTitle": "Meslek Fırsatı", "prof.actWait": "%1 ay sonra", "prof.actLose": "Girişimin umduğun gibi gitmedi (+%1 akçe).",
+    "prof.actTitle": "Meslek Fırsatı", "prof.actWait": "%1 ay sonra", "prof.actLose": "Girişimin umduğun gibi gitmedi (+%1 akçe).", "prof.actCrit": "Mesleğinde bir ustalık eseri ortaya koydun; nâmın diyara yayıldı (+%1 akçe).",
     "prof.act.çiftçi.n": "Hasat Şenliği", "prof.act.çiftçi.d": "Bereketi kutla: köyü topla, kese dolar, sevilirsin.", "prof.act.çiftçi.win": "Hasat şenliği düzenlendi; harman doldu, köy seni bağrına bastı (+%1 akçe).",
     "prof.act.demirci.n": "Şaheser Sipariş", "prof.act.demirci.d": "Bir beye şaheser bir kılıç döv: usta el para ve şöhret getirir (zorlu).", "prof.act.demirci.win": "Örste bir şaheser çıktı; ustalığın diller destanı oldu (+%1 akçe).",
     "prof.act.tüccar.n": "Uzak Ticaret Seferi", "prof.act.tüccar.d": "Uzak pazara büyük parti mal götür: ikna ve sezgi büyük kâr getirir.", "prof.act.tüccar.win": "Uzak pazarda kervan kârla boşaldı; kese şişti (+%1 akçe).",
@@ -1927,7 +1927,7 @@ const PROFX: Record<Lang, Dict> = {
     "prof.act.hancı.n": "Kervan Konağı", "prof.act.hancı.d": "Büyük bir kervanı hanında ağırla: dolu han para ve duyum getirir.", "prof.act.hancı.win": "Kervan hanında ağırlandı; odalar doldu, kese şişti (+%1 akçe).",
   },
   en: {
-    "prof.actTitle": "Signature Work", "prof.actWait": "in %1 mo", "prof.actLose": "Your venture did not go as hoped (+%1 coins).",
+    "prof.actTitle": "Signature Work", "prof.actWait": "in %1 mo", "prof.actLose": "Your venture did not go as hoped (+%1 coins).", "prof.actCrit": "You produced a masterwork in your craft; your name spread across the realm (+%1 coins).",
     "prof.act.çiftçi.n": "Harvest Feast", "prof.act.çiftçi.d": "Celebrate the bounty: gather the village, fill your purse, win their love.", "prof.act.çiftçi.win": "A harvest feast was held; the threshing floor brimmed and the village embraced you (+%1 coins).",
     "prof.act.demirci.n": "Masterwork Commission", "prof.act.demirci.d": "Forge a masterwork blade for a lord: a master's hand brings coin and fame (hard).", "prof.act.demirci.win": "A masterwork came off the anvil; your craft became legend (+%1 coins).",
     "prof.act.tüccar.n": "Far Trade Venture", "prof.act.tüccar.d": "Haul a great lot to a distant market: wit and instinct bring big profit.", "prof.act.tüccar.win": "The caravan emptied at a profit in a far market; your purse swelled (+%1 coins).",
@@ -1945,7 +1945,7 @@ const PROFX: Record<Lang, Dict> = {
     "prof.act.hancı.n": "Caravan Lodging", "prof.act.hancı.d": "Host a great caravan at your inn: a full inn brings coin and word.", "prof.act.hancı.win": "The caravan was hosted at your inn; the rooms filled and your purse swelled (+%1 coins).",
   },
   es: {
-    "prof.actTitle": "Obra Distintiva", "prof.actWait": "en %1 m", "prof.actLose": "Tu empresa no salió como esperabas (+%1 monedas).",
+    "prof.actTitle": "Obra Distintiva", "prof.actWait": "en %1 m", "prof.actLose": "Tu empresa no salió como esperabas (+%1 monedas).", "prof.actCrit": "Realizaste una obra maestra en tu oficio; tu nombre se difundió por el reino (+%1 monedas).",
     "prof.act.çiftçi.n": "Fiesta de la Cosecha", "prof.act.çiftçi.d": "Celebra la abundancia: reúne al pueblo, llena tu bolsa, gánate su cariño.", "prof.act.çiftçi.win": "Se celebró una fiesta de la cosecha; la era rebosó y el pueblo te abrazó (+%1 monedas).",
     "prof.act.demirci.n": "Encargo Maestro", "prof.act.demirci.d": "Forja una espada maestra para un señor: la mano del maestro trae monedas y fama (difícil).", "prof.act.demirci.win": "Del yunque salió una obra maestra; tu arte se hizo leyenda (+%1 monedas).",
     "prof.act.tüccar.n": "Empresa de Comercio Lejano", "prof.act.tüccar.d": "Lleva un gran lote a un mercado lejano: ingenio e instinto traen gran ganancia.", "prof.act.tüccar.win": "La caravana se vació con ganancia en un mercado lejano; tu bolsa se hinchó (+%1 monedas).",
@@ -1963,7 +1963,7 @@ const PROFX: Record<Lang, Dict> = {
     "prof.act.hancı.n": "Posada de Caravana", "prof.act.hancı.d": "Hospeda una gran caravana en tu posada: una posada llena trae monedas y noticias.", "prof.act.hancı.win": "La caravana se hospedó en tu posada; los cuartos se llenaron y tu bolsa se hinchó (+%1 monedas).",
   },
   pt: {
-    "prof.actTitle": "Obra Distintiva", "prof.actWait": "em %1 m", "prof.actLose": "A tua empresa não correu como esperavas (+%1 moedas).",
+    "prof.actTitle": "Obra Distintiva", "prof.actWait": "em %1 m", "prof.actLose": "A tua empresa não correu como esperavas (+%1 moedas).", "prof.actCrit": "Realizaste uma obra-prima no teu ofício; o teu nome difundiu-se pelo reino (+%1 moedas).",
     "prof.act.çiftçi.n": "Festa da Colheita", "prof.act.çiftçi.d": "Celebra a fartura: reúne a aldeia, enche a bolsa, ganha o seu afeto.", "prof.act.çiftçi.win": "Realizou-se uma festa da colheita; a eira transbordou e a aldeia abraçou-te (+%1 moedas).",
     "prof.act.demirci.n": "Encomenda Magistral", "prof.act.demirci.d": "Forja uma espada magistral para um senhor: a mão do mestre traz moedas e fama (difícil).", "prof.act.demirci.win": "Da bigorna saiu uma obra-prima; a tua arte virou lenda (+%1 moedas).",
     "prof.act.tüccar.n": "Empreitada de Comércio Distante", "prof.act.tüccar.d": "Leva um grande lote a um mercado distante: argúcia e instinto trazem grande lucro.", "prof.act.tüccar.win": "A caravana esvaziou-se com lucro num mercado distante; a tua bolsa inchou (+%1 moedas).",
@@ -1981,7 +1981,7 @@ const PROFX: Record<Lang, Dict> = {
     "prof.act.hancı.n": "Pousada de Caravana", "prof.act.hancı.d": "Hospeda uma grande caravana na tua estalagem: uma estalagem cheia traz moedas e notícias.", "prof.act.hancı.win": "A caravana hospedou-se na tua estalagem; os quartos encheram e a tua bolsa inchou (+%1 moedas).",
   },
   ar: {
-    "prof.actTitle": "عمل مميّز", "prof.actWait": "بعد %1 شهر", "prof.actLose": "لم تمضِ مبادرتك كما رجوت (+%1 من العملات).",
+    "prof.actTitle": "عمل مميّز", "prof.actWait": "بعد %1 شهر", "prof.actLose": "لم تمضِ مبادرتك كما رجوت (+%1 من العملات).", "prof.actCrit": "أبدعت تحفة في حرفتك؛ فذاع اسمك في الديار (+%1 من العملات).",
     "prof.act.çiftçi.n": "احتفال الحصاد", "prof.act.çiftçi.d": "احتفِ بالبركة: اجمع القرية، تمتلئ الكِيس، وتُحبّ.", "prof.act.çiftçi.win": "أُقيم احتفال الحصاد؛ فامتلأ البيدر واحتضنتك القرية (+%1 من العملات).",
     "prof.act.demirci.n": "طلب التحفة", "prof.act.demirci.d": "اطرق سيفًا تحفة لأمير: يد المعلّم تجلب المال والشهرة (صعب).", "prof.act.demirci.win": "خرجت تحفة من السندان؛ فصارت صنعتك أسطورة (+%1 من العملات).",
     "prof.act.tüccar.n": "رحلة تجارة بعيدة", "prof.act.tüccar.d": "احمل بضاعة كبيرة إلى سوق بعيد: الفطنة والحدس يجلبان ربحًا كبيرًا.", "prof.act.tüccar.win": "فُرّغت القافلة بربح في سوق بعيد؛ فانتفخ كيسك (+%1 من العملات).",
@@ -1999,7 +1999,7 @@ const PROFX: Record<Lang, Dict> = {
     "prof.act.hancı.n": "نُزل القافلة", "prof.act.hancı.d": "استضِف قافلة كبيرة في نُزلك: النُّزل الملآن يجلب المال والأخبار.", "prof.act.hancı.win": "استُضيفت القافلة في نُزلك؛ فامتلأت الغرف وانتفخ كيسك (+%1 من العملات).",
   },
   ru: {
-    "prof.actTitle": "Особое дело", "prof.actWait": "через %1 мес", "prof.actLose": "Твоё начинание прошло не так, как ты надеялся (+%1 монет).",
+    "prof.actTitle": "Особое дело", "prof.actWait": "через %1 мес", "prof.actLose": "Твоё начинание прошло не так, как ты надеялся (+%1 монет).", "prof.actCrit": "Настоящий шедевр твоего ремесла прославил имя твоё по всей державе (+%1 монет).",
     "prof.act.çiftçi.n": "Праздник урожая", "prof.act.çiftçi.d": "Празднуй изобилие: собери село, наполни кошель, заслужи любовь.", "prof.act.çiftçi.win": "Устроен праздник урожая; гумно переполнилось, и село обняло тебя (+%1 монет).",
     "prof.act.demirci.n": "Заказ-шедевр", "prof.act.demirci.d": "Выкуй клинок-шедевр для вельможи: рука мастера несёт монеты и славу (трудно).", "prof.act.demirci.win": "С наковальни сошёл шедевр; твоё ремесло стало легендой (+%1 монет).",
     "prof.act.tüccar.n": "Дальний торговый поход", "prof.act.tüccar.d": "Свези большую партию на дальний рынок: смекалка и чутьё несут большую прибыль.", "prof.act.tüccar.win": "Караван распродан с прибылью на дальнем рынке; кошель раздулся (+%1 монет).",

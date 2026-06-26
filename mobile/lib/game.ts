@@ -1992,14 +1992,23 @@ export function professionAction(prev: GameState): GameState {
   p.prof_action_turn = s.turn; p.hunger = Math.max(0, p.hunger - 8);
   const ok = Math.random() < 0.45 + effStat(p, a.stat) * 0.05;
   if (ok) {
-    const reward = Math.round((a.reward + effStat(p, a.stat) * 3 + Math.floor(Math.random() * 12)) * titleMult * inflationFactor(s));
-    p.money += reward;
+    let reward = Math.round((a.reward + effStat(p, a.stat) * 3 + Math.floor(Math.random() * 12)) * titleMult * inflationFactor(s));
+    // Ustalık eseri (büyük başarı): beceri/özellik ve kariyer kademesi yükseldikçe ihtimal artar (%5 → %30).
+    // Her meslek için geçerli — efor ve ustalık ödüllendirilir: daha büyük kazanç, fazladan şöhret ve hızlı kariyer.
+    const crit = Math.random() < Math.min(0.30, 0.05 + effStat(p, a.stat) * 0.02 + tier * 0.04);
     if (a.fame) p.fame = Math.min(100, p.fame + a.fame);
     if (a.rep) p.reputation = Math.min(100, p.reputation + a.rep);
     if (a.honor) p.honor = Math.min(100, p.honor + a.honor);
     if (a.nam && a.namAmt) bumpNam(p, a.nam, a.namAmt);
     gainSkill(s, a.skill, 10); addStatXp(s, a.stat, 5); p.career_xp += 1;
-    push(s, "çalışma", `Mesleğinde göz dolduran bir iş başardın (+${reward} akçe).`, "kişisel", true, { k: "prof.act." + p.profession + ".win", p: [reward] });
+    if (crit) {
+      reward = Math.round(reward * 1.8); p.fame = Math.min(100, p.fame + 3); p.career_xp += 1;
+      p.money += reward;
+      push(s, "çalışma", `Mesleğinde bir ustalık eseri ortaya koydun; nâmın diyara yayıldı (+${reward} akçe).`, "kişisel", true, { k: "prof.actCrit", p: [reward] });
+    } else {
+      p.money += reward;
+      push(s, "çalışma", `Mesleğinde göz dolduran bir iş başardın (+${reward} akçe).`, "kişisel", true, { k: "prof.act." + p.profession + ".win", p: [reward] });
+    }
   } else {
     const small = Math.round(a.reward * 0.25 * inflationFactor(s)); p.money += small;
     if (a.riskHealth) p.health = Math.max(1, p.health - a.riskHealth);
