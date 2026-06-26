@@ -67,6 +67,8 @@ const EVT: Record<string, { c: string; col: string; gi: string }> = {
   cag: { c: "dunya", col: C.goldBright, gi: "crown" },
 };
 const DEFAULT_EVT = { c: "olay", col: C.gold, gi: "star" };
+// Panoda gösterilecek en yeni olay sayısı (tam geçmiş Tarih ekranında). Geç-oyun render kasması önlenir.
+const DASH_EVENTS = 40;
 
 function fameRepKey(fame: number) {
   if (fame >= 80) return "rep.legendary"; if (fame >= 60) return "rep.renowned";
@@ -185,8 +187,11 @@ export default function Dashboard() {
   };
 
   // Günlük: makro olmayanlar; Dünya: makro olanlar.
+  // Pano bir "bakış" görünümü: yalnız en yeni DASH_EVENTS olay çizilir (geç-oyunda
+  // geçmiş 250'ye dayanırken her aksiyonda 250 kartı yeniden çizip pano kasmasını önler;
+  // tam geçmiş "Tümünü gör" → Tarih ekranında). Render maliyeti geçmiş büyüse de sabit kalır.
   const reversed = [...state.history].reverse();
-  const events = reversed.filter((e) => (tab === "dunya" ? e.scope === "makro" : e.scope !== "makro"));
+  const events = reversed.filter((e) => (tab === "dunya" ? e.scope === "makro" : e.scope !== "makro")).slice(0, DASH_EVENTS);
 
   const EventCard = ({ e, last }: { e: GameEvent; last: boolean }) => {
     const cfg = EVT[e.type] || DEFAULT_EVT;
