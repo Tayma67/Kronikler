@@ -4221,6 +4221,9 @@ export const CROWN_DECREES: CrownDecree[] = [
   { id: "imar",        gold: -400, authority: 8,  fame: 8, rep: 3,  honor: 0, nam: "comert", namAmt: 5 }, // imar seferberliği: eserler
   { id: "genelaf",     gold: -100, authority: 12, fame: 2, rep: 5,  honor: 2 },                          // genel af: halk sevinir
   { id: "senlik",      gold: -250, authority: 6,  fame: 6, rep: 3,  honor: 0, nam: "comert", namAmt: 3 }, // şenlik & donanma
+  { id: "medrese",     gold: -350, authority: 6,  fame: 7, rep: 3,  honor: 6, nam: "dindar", namAmt: 5 }, // medrese kur: ilim & dindar nam
+  { id: "tahkimat",    gold: -500, authority: 15, fame: 6, rep: 2,  honor: 0 },                          // tahkimat: surlar güçlenir, otorite sağlamlaşır
+  { id: "iane",        gold: -300, authority: 9,  fame: 3, rep: 7,  honor: 4, nam: "comert", namAmt: 5 }, // iane/aş ocağı: halkı doyur, itibar yüksek
   { id: "vergiferman", gold: 500,  authority: -10,fame: 0, rep: -4, honor: 0, nam: "zalim",  namAmt: 4 }, // ağır vergi: hazine dolar, otorite düşer
 ];
 export function decreeById(id: string): CrownDecree | undefined { return CROWN_DECREES.find((d) => d.id === id); }
