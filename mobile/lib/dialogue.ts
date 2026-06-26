@@ -40,23 +40,23 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
   }
   if (intent === "iltifat") {
     const backfire = t === "kibirli" || t === "ciddi" || mt === "küs";
-    if (backfire) return { line: L("dlg.iltifat.bad"), moodDelta: -3, relDelta: -2, memory: L("dlg.iltifat.bad.m") };
+    if (backfire) return { line: pick("dlg.iltifat.bad", 2), moodDelta: -3, relDelta: -2, memory: L("dlg.iltifat.bad.m") };
     const gain = 5 + Math.floor(charisma);
     return { line: pick("dlg.iltifat.good", 2), moodDelta: 8, relDelta: gain, memory: L("dlg.iltifat.good.m") };
   }
   if (intent === "dert") {
     const opens = t === "dertli" || t === "yalnız" || t === "sıcakkanlı" || rt !== "yabancı";
-    if (!opens) return { line: L("dlg.dert.closed"), moodDelta: 1, relDelta: 2, memory: L("dlg.dert.closed.m") };
+    if (!opens) return { line: pick("dlg.dert.closed", 2), moodDelta: 1, relDelta: 2, memory: L("dlg.dert.closed.m") };
     return { line: pick("dlg.dert.open", 2), moodDelta: 10, relDelta: 8, memory: L("dlg.dert.open.m") };
   }
   if (intent === "is") {
     const pn = professionNameL(npc.profession, lang);
-    const line = (hitch ? L("dlg.is.cold") : pick("dlg.is.warm", 2)).replace("%p", pn);
+    const line = (hitch ? pick("dlg.is.cold", 2) : pick("dlg.is.warm", 2)).replace("%p", pn);
     return { line, moodDelta: hitch ? 1 : 4, relDelta: hitch ? 1 : 3, memory: L("dlg.is.m") };
   }
   if (intent === "aile") {
     const opens = rt !== "yabancı" || t === "sıcakkanlı" || t === "dertli";
-    if (!opens) return { line: L("dlg.aile.closed"), moodDelta: 1, relDelta: 1, memory: L("dlg.aile.closed.m") };
+    if (!opens) return { line: pick("dlg.aile.closed", 2), moodDelta: 1, relDelta: 1, memory: L("dlg.aile.closed.m") };
     return { line: pick("dlg.aile.open", 2), moodDelta: 6, relDelta: 5, memory: L("dlg.aile.open.m") };
   }
   if (intent === "dunya") {
@@ -69,9 +69,9 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
   // şaka
   const likes = t === "neşeli" || t === "sıcakkanlı";
   const dislikes = t === "ciddi" || t === "dindar" || t === "kibirli";
-  if (dislikes && mt !== "neşeli") return { line: L("dlg.saka.bad"), moodDelta: -4, relDelta: -3, memory: L("dlg.saka.bad.m") };
+  if (dislikes && mt !== "neşeli") return { line: pick("dlg.saka.bad", 2), moodDelta: -4, relDelta: -3, memory: L("dlg.saka.bad.m") };
   if (likes) return { line: pick("dlg.saka.good", 2), moodDelta: 12, relDelta: 7, memory: L("dlg.saka.good.m") };
-  return { line: L("dlg.saka.mild"), moodDelta: 5, relDelta: 4, memory: L("dlg.saka.mild.m") };
+  return { line: pick("dlg.saka.mild", 2), moodDelta: 5, relDelta: 4, memory: L("dlg.saka.mild.m") };
 }
 
 // NPC bazen kendi gündemini açar (Vercel _spontaneous_line). Ruh haline/hedefe göre; boş dönebilir.
