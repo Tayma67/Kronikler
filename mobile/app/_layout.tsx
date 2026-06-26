@@ -7,6 +7,7 @@ import { NavigationBar } from "expo-navigation-bar";
 import { View, ActivityIndicator } from "react-native";
 import { useEffect } from "react";
 import { GameProvider } from "../lib/store";
+import { MpProvider } from "../lib/mp/store";
 import { LanguageProvider } from "../lib/i18n";
 import { LoadingScreen } from "../lib/fx";
 import { loadSoundSetting } from "../lib/sound";
@@ -26,10 +27,12 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <LanguageProvider>
         <GameProvider>
-          <StatusBar style="light" />
-          {/* Android sistem gezinme çubuğunu gizle (tam ekran / immersive); yukarı kaydırınca geçici görünür */}
-          <NavigationBar hidden />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: "slide_from_right" }} />
+          <MpProvider>
+            <StatusBar style="light" />
+            {/* Android sistem gezinme çubuğunu gizle (tam ekran / immersive); yukarı kaydırınca geçici görünür */}
+            <NavigationBar hidden />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: "slide_from_right" }} />
+          </MpProvider>
         </GameProvider>
       </LanguageProvider>
     </SafeAreaProvider>
