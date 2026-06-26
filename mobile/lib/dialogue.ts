@@ -35,7 +35,7 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
   const pick = (base: string, n: number) => { const i = Math.floor(Math.random() * n); return L(i === 0 ? base : base + (i + 1)); };
 
   if (intent === "hosbes") {
-    const line = hitch ? L("dlg.hosbes.hitch") : rt === "yabancı" ? L("dlg.hosbes.stranger") : pick("dlg.hosbes.warm", 2);
+    const line = hitch ? L("dlg.hosbes.hitch") : rt === "yabancı" ? pick("dlg.hosbes.stranger", 2) : pick("dlg.hosbes.warm", 2);
     return { line, moodDelta: hitch ? 2 : 5, relDelta: hitch ? 2 : 4, memory: L("dlg.hosbes.m") };
   }
   if (intent === "iltifat") {
@@ -57,10 +57,10 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
   if (intent === "aile") {
     const opens = rt !== "yabancı" || t === "sıcakkanlı" || t === "dertli";
     if (!opens) return { line: L("dlg.aile.closed"), moodDelta: 1, relDelta: 1, memory: L("dlg.aile.closed.m") };
-    return { line: L("dlg.aile.open"), moodDelta: 6, relDelta: 5, memory: L("dlg.aile.open.m") };
+    return { line: pick("dlg.aile.open", 2), moodDelta: 6, relDelta: 5, memory: L("dlg.aile.open.m") };
   }
   if (intent === "dunya") {
-    return { line: L("dlg.dunya.line"), moodDelta: 3, relDelta: 3, memory: L("dlg.dunya.m") };
+    return { line: pick("dlg.dunya.line", 2), moodDelta: 3, relDelta: 3, memory: L("dlg.dunya.m") };
   }
   if (intent === "hedef") {
     const line = pick("dlg.hedef.line", 2).replace("%g", goalL(npc.goal, lang));
@@ -78,10 +78,11 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
 export function spontaneousLine(npc: NPC, mood: number, lang: Lang = "tr"): string {
   const fn = npc.name.split(" ")[0];
   const L = (k: string) => tFor(lang, k).replace("%n", fn).replace("%g", goalL(npc.goal, lang));
+  const pick = (base: string, n: number) => { const i = Math.floor(Math.random() * n); return L(i === 0 ? base : base + (i + 1)); };
   const mt = moodTier(mood);
-  if (mt === "neşeli") return L("dlg.spont.happy");
-  if (mt === "küs" || mt === "soğuk") return L("dlg.spont.sad");
-  return Math.random() < 0.5 ? L("dlg.spont.goal") : "";
+  if (mt === "neşeli") return pick("dlg.spont.happy", 2);
+  if (mt === "küs" || mt === "soğuk") return pick("dlg.spont.sad", 2);
+  return Math.random() < 0.5 ? pick("dlg.spont.goal", 2) : "";
 }
 // Yapısal anı türüne göre sohbette geçmişe gönderme (Vercel _memory_callback). Boş dönebilir.
 export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr"): string {
