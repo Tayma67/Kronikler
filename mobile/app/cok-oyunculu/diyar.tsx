@@ -37,7 +37,8 @@ export default function Diyar() {
 
   // Geri sayım için saat
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
-  useEffect(() => () => { leave(); }, []);
+  // NOT: bağlantı sağlayıcıda yaşar; diyara girince (oyun ekranı) kopmaması için
+  // burada otomatik leave YOK — yalnız "Ayrıl"/geri ile çıkılır.
 
   const players = snapshot?.players || [];
   const me = players.find((p) => p.id === guestId);
@@ -89,6 +90,14 @@ export default function Diyar() {
             {p.ready && <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: C.sage }}>{t("mp.ready").toUpperCase()}</Text>}
           </View>
         ))}
+
+        {/* Diyara gir (paylaşımlı oyun) */}
+        {snapshot && (
+          <Pressable onPress={() => { hap("advance"); router.push({ pathname: "/cok-oyunculu/oyun", params: { name: String(name || "Hanedan") } }); }}
+            style={{ marginTop: 18, paddingVertical: 14, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 2, color: "#2a1d08" }}>{t("mp.enterWorld")}</Text>
+          </Pressable>
+        )}
 
         {/* Sohbet */}
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 20, marginBottom: 8 }}>{t("mp.chat")}</Text>

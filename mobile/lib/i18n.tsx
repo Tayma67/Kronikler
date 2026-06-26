@@ -2585,7 +2585,7 @@ const FLAVX: Record<Lang, Dict> = {
 // ── Çok Oyuncu (multiplayer) metinleri ──
 const MPX: Record<Lang, Dict> = {
   tr: {
-    "mp.title": "Çok Oyuncu", "mp.subtitle": "Paylaşımlı diyarda yaşayan hanedanlar",
+    "mp.title": "Çok Oyuncu", "mp.stat": "Yaş %1 · Sağlık %2 · %3 akçe · Şöhret %4", "mp.eat": "Ye", "mp.work": "Çalış", "mp.claimThroneBtn": "Tahta İddia Et", "mp.subtitle": "Paylaşımlı diyarda yaşayan hanedanlar",
     "mp.serverNotSet": "Sunucu adresi henüz ayarlanmadı.", "mp.serverHint": "Sunucu adresi (wss://…)", "mp.serverSave": "Kaydet", "mp.serverSet": "Sunucu ayarlandı ✓",
     "mp.nameLabel": "Hanedan adın", "mp.namePlaceholder": "Adını yaz", "mp.createRealm": "Diyar Kur", "mp.joinRealm": "Diyara Katıl",
     "mp.realmCode": "Diyar kodu", "mp.realmCodePlaceholder": "Kodu gir", "mp.connecting": "Bağlanıyor…", "mp.connected": "Bağlı",
@@ -2604,7 +2604,7 @@ const MPX: Record<Lang, Dict> = {
     "mp.campaign.won": "Sefer zaferi: %1 diyara katıldı.", "mp.joined": "%1 diyara katıldı.", "mp.left": "%1 diyardan ayrıldı.", "mp.died": "%1 vefat etti; hanedanı vârisiyle sürüyor.",
   },
   en: {
-    "mp.title": "Multiplayer", "mp.subtitle": "Dynasties living in a shared realm",
+    "mp.title": "Multiplayer", "mp.stat": "Age %1 · Health %2 · %3 coins · Fame %4", "mp.eat": "Eat", "mp.work": "Work", "mp.claimThroneBtn": "Claim the Throne", "mp.subtitle": "Dynasties living in a shared realm",
     "mp.serverNotSet": "Server address is not set yet.", "mp.serverHint": "Server address (wss://…)", "mp.serverSave": "Save", "mp.serverSet": "Server set ✓",
     "mp.nameLabel": "Your dynasty name", "mp.namePlaceholder": "Enter a name", "mp.createRealm": "Create Realm", "mp.joinRealm": "Join Realm",
     "mp.realmCode": "Realm code", "mp.realmCodePlaceholder": "Enter code", "mp.connecting": "Connecting…", "mp.connected": "Connected",
@@ -2623,7 +2623,7 @@ const MPX: Record<Lang, Dict> = {
     "mp.campaign.won": "Campaign won: %1 joined the realm.", "mp.joined": "%1 joined the realm.", "mp.left": "%1 left the realm.", "mp.died": "%1 has died; their dynasty continues with the heir.",
   },
   es: {
-    "mp.title": "Multijugador", "mp.subtitle": "Dinastías viviendo en un reino compartido",
+    "mp.title": "Multijugador", "mp.stat": "Edad %1 · Salud %2 · %3 monedas · Fama %4", "mp.eat": "Comer", "mp.work": "Trabajar", "mp.claimThroneBtn": "Reclamar el Trono", "mp.subtitle": "Dinastías viviendo en un reino compartido",
     "mp.serverNotSet": "La dirección del servidor aún no está configurada.", "mp.serverHint": "Dirección del servidor (wss://…)", "mp.serverSave": "Guardar", "mp.serverSet": "Servidor configurado ✓",
     "mp.nameLabel": "Nombre de tu dinastía", "mp.namePlaceholder": "Escribe un nombre", "mp.createRealm": "Crear Reino", "mp.joinRealm": "Unirse al Reino",
     "mp.realmCode": "Código del reino", "mp.realmCodePlaceholder": "Introduce el código", "mp.connecting": "Conectando…", "mp.connected": "Conectado",
@@ -2642,7 +2642,7 @@ const MPX: Record<Lang, Dict> = {
     "mp.campaign.won": "Campaña ganada: %1 se unió al reino.", "mp.joined": "%1 se unió al reino.", "mp.left": "%1 salió del reino.", "mp.died": "%1 ha muerto; su dinastía continúa con el heredero.",
   },
   pt: {
-    "mp.title": "Multijogador", "mp.subtitle": "Dinastias vivendo num reino partilhado",
+    "mp.title": "Multijogador", "mp.stat": "Idade %1 · Saúde %2 · %3 moedas · Fama %4", "mp.eat": "Comer", "mp.work": "Trabalhar", "mp.claimThroneBtn": "Reivindicar o Trono", "mp.subtitle": "Dinastias vivendo num reino partilhado",
     "mp.serverNotSet": "O endereço do servidor ainda não está definido.", "mp.serverHint": "Endereço do servidor (wss://…)", "mp.serverSave": "Guardar", "mp.serverSet": "Servidor definido ✓",
     "mp.nameLabel": "Nome da tua dinastia", "mp.namePlaceholder": "Escreve um nome", "mp.createRealm": "Criar Reino", "mp.joinRealm": "Entrar no Reino",
     "mp.realmCode": "Código do reino", "mp.realmCodePlaceholder": "Introduz o código", "mp.connecting": "A ligar…", "mp.connected": "Ligado",
@@ -2661,7 +2661,7 @@ const MPX: Record<Lang, Dict> = {
     "mp.campaign.won": "Campanha vencida: %1 juntou-se ao reino.", "mp.joined": "%1 juntou-se ao reino.", "mp.left": "%1 saiu do reino.", "mp.died": "%1 morreu; a dinastia continua com o herdeiro.",
   },
   ar: {
-    "mp.title": "متعدد اللاعبين", "mp.subtitle": "سلالاتٌ تعيش في ديارٍ مشتركة",
+    "mp.title": "متعدد اللاعبين", "mp.stat": "العمر %1 · الصحة %2 · %3 عملة · الشهرة %4", "mp.eat": "كُل", "mp.work": "اعمل", "mp.claimThroneBtn": "طالب بالعرش", "mp.subtitle": "سلالاتٌ تعيش في ديارٍ مشتركة",
     "mp.serverNotSet": "عنوان الخادم لم يُضبط بعد.", "mp.serverHint": "عنوان الخادم (wss://…)", "mp.serverSave": "حفظ", "mp.serverSet": "ضُبط الخادم ✓",
     "mp.nameLabel": "اسم سلالتك", "mp.namePlaceholder": "اكتب اسمًا", "mp.createRealm": "أنشئ ديارًا", "mp.joinRealm": "انضمّ إلى ديار",
     "mp.realmCode": "رمز الديار", "mp.realmCodePlaceholder": "أدخل الرمز", "mp.connecting": "جارٍ الاتصال…", "mp.connected": "متصل",
@@ -2680,7 +2680,7 @@ const MPX: Record<Lang, Dict> = {
     "mp.campaign.won": "نُصرت الحملة: انضمّت %1 إلى الديار.", "mp.joined": "انضمّ %1 إلى الديار.", "mp.left": "غادر %1 الديار.", "mp.died": "توفّي %1؛ وتستمرّ سلالته بالوريث.",
   },
   ru: {
-    "mp.title": "Сетевая игра", "mp.subtitle": "Династии в общем краю",
+    "mp.title": "Сетевая игра", "mp.stat": "Возраст %1 · Здоровье %2 · %3 монет · Слава %4", "mp.eat": "Есть", "mp.work": "Работать", "mp.claimThroneBtn": "Притязать на трон", "mp.subtitle": "Династии в общем краю",
     "mp.serverNotSet": "Адрес сервера ещё не задан.", "mp.serverHint": "Адрес сервера (wss://…)", "mp.serverSave": "Сохранить", "mp.serverSet": "Сервер задан ✓",
     "mp.nameLabel": "Имя твоей династии", "mp.namePlaceholder": "Впиши имя", "mp.createRealm": "Создать край", "mp.joinRealm": "Войти в край",
     "mp.realmCode": "Код края", "mp.realmCodePlaceholder": "Введи код", "mp.connecting": "Подключение…", "mp.connected": "На связи",

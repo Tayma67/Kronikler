@@ -1,0 +1,158 @@
+import { useEffect, useRef, useState } from "react";
+import { View, Text, Pressable, ScrollView, ActivityIndicator } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useI18n } from "../../lib/i18n";
+import { useMp } from "../../lib/mp/store";
+import { mePublic, applyTickEvents, realmYearMonth } from "../../lib/mp/world";
+import { SharedIntent } from "../../lib/mp/protocol";
+import { newGame, advance, eat, work, GameState } from "../../lib/game";
+import { C, F } from "../../lib/theme";
+import { GameIcon } from "../../lib/icons";
+import { hap } from "../../lib/haptics";
+import { BackLabel } from "../../lib/ui";
+
+const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
+
+export default function MpOyun() {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { t } = useI18n();
+  const { name } = useLocalSearchParams<{ name: string }>();
+  const { guestId, snapshot, lastTick, setReady, sendIntent, syncPlayer } = useMp();
+
+  const [s, setS] = useState<GameState | null>(null);
+  const [ready, setReadyLocal] = useState(false);
+  const [evLines, setEvLines] = useState<string[]>([]);
+  const processedTurn = useRef(-1);
+  const synced = useRef(false);
+
+  // MP karakterini oluştur (yerel game.ts oturumu — SP kaydından ayrı)
+  useEffect(() => {
+    if (s || !guestId) return;
+    setS(newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"));
+  }, [guestId]);
+
+  // İlk kamu senkronu
+  useEffect(() => {
+    if (s && guestId && snapshot && !synced.current) { synced.current = true; syncPlayer(mePublic(guestId, s, ready)); }
+  }, [s, guestId, snapshot]);
+
+  // Sunucu tick'i: dünya ayı ilerledi → yerel karakteri 1 ay ilerlet + çapraz etkileri uygula + senkronla
+  useEffect(() => {
+    if (!lastTick || !s || !guestId) return;
+    if (lastTick.turn === processedTurn.current) return;
+    processedTurn.current = lastTick.turn;
+    let ns = advance(s, 1);
+    const mine = lastTick.results.find((r) => r.playerId === guestId);
+    if (mine && mine.events.length) {
+      ns = applyTickEvents(ns, mine.events);
+      setEvLines(mine.events.map((e) => pf(t(e.k), ...(e.p || []))));
+    } else setEvLines([]);
+    setS(ns);
+    setReadyLocal(false);
+    syncPlayer(mePublic(guestId, ns, false));
+  }, [lastTick]);
+
+  if (!s || !snapshot) {
+    return <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center" }}>
+      <ActivityIndicator color={C.gold} /><Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, marginTop: 12 }}>{t("mp.connecting")}</Text>
+    </View>;
+  }
+
+  const p = s.player;
+  const { year, month } = realmYearMonth(snapshot.turn);
+  const players = snapshot.players;
+  const liveCount = players.filter((x) => x.online && !x.dead).length;
+  const readyCount = players.filter((x) => x.online && !x.dead && x.ready).length;
+  const kingIsMe = snapshot.throne.holderId === guestId;
+  const myGuild = snapshot.guilds.find((g) => g.id === p.faction);
+  const intent = (i: SharedIntent) => { hap("tap"); sendIntent(i); };
+
+  const doReady = () => { hap("tap"); const v = !ready; setReadyLocal(v); setReady(v); if (guestId) syncPlayer(mePublic(guestId, s, v)); };
+  const doLocal = (fn: (st: GameState) => GameState) => { const ns = fn(s); setS(ns); if (guestId) syncPlayer(mePublic(guestId, ns, ready)); };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+      <View style={{ paddingHorizontal: 14, paddingVertical: 10 }}>
+        <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
+      </View>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 120 }}>
+        {/* Dünya saati */}
+        <View style={{ alignItems: "center", marginBottom: 8 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim }}>{t("mp.realm")} · {snapshot.realmId}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 17, color: C.gold, marginTop: 3 }}>{t("mp.year")} {year} · {t("mp.month")} {month}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 2 }}>
+            {snapshot.throne.holderName ? pf(t("mp.throneHolder"), snapshot.throne.holderName) : t("mp.throneEmpty")}
+          </Text>
+        </View>
+
+        {/* Karakter özeti */}
+        <View style={{ borderWidth: 1, borderColor: C.borderHi, borderRadius: 10, padding: 12, backgroundColor: C.card }}>
+          <Text style={{ fontFamily: F.display, fontSize: 15, color: C.gold }}>{p.name} {p.crowned ? "♔" : ""}</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, marginTop: 3 }}>
+            {pf(t("mp.stat"), p.age, p.health, p.money, p.fame)}
+          </Text>
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+            <Pressable onPress={() => doLocal(eat)} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: "center", borderWidth: 1, borderColor: C.border, backgroundColor: C.bg }}>
+              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment }}>{t("mp.eat")}</Text>
+            </Pressable>
+            <Pressable onPress={() => doLocal((st) => work(st, "normal"))} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: "center", borderWidth: 1, borderColor: C.border, backgroundColor: C.bg }}>
+              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment }}>{t("mp.work")}</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Çapraz-etki olayları (son tick) */}
+        {evLines.length > 0 && (
+          <View style={{ marginTop: 10, borderWidth: 1, borderColor: "rgba(111,160,192,0.4)", backgroundColor: "rgba(111,160,192,0.08)", borderRadius: 9, padding: 10 }}>
+            {evLines.map((l, i) => <Text key={i} style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment, lineHeight: 18 }}>• {l}</Text>)}
+          </View>
+        )}
+
+        {/* Paylaşımlı eylemler */}
+        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.realm").toUpperCase()}</Text>
+        <View style={{ gap: 8 }}>
+          {!kingIsMe && (
+            <Pressable onPress={() => intent({ k: "claimThrone" })} style={shareBtn}>
+              <GameIcon name="crown" size={14} color={C.gold} /><Text style={shareTxt}>{t("mp.claimThroneBtn")}</Text>
+            </Pressable>
+          )}
+          {myGuild && myGuild.leaderId === guestId && (
+            <Pressable onPress={() => intent({ k: "setGuildTax", guildId: myGuild.id, tax: Math.min(80, myGuild.tax + 10) })} style={shareBtn}>
+              <GameIcon name="pazar" size={14} color={C.gold} /><Text style={shareTxt}>{pf(t("mp.guild.taxSet"), myGuild.tax + 10)}</Text>
+            </Pressable>
+          )}
+          {p.faction && myGuild && myGuild.leaderId == null && (
+            <Pressable onPress={() => intent({ k: "claimGuildLead", guildId: p.faction! })} style={shareBtn}>
+              <GameIcon name="iliskiler" size={14} color={C.gold} /><Text style={shareTxt}>{pf(t("mp.guild.youLead"), p.faction)}</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {/* Diyardaki haneler (gerçek oyuncular = rakipler) */}
+        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.players")} · {liveCount}</Text>
+        {players.map((x) => (
+          <View key={x.id} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.border }}>
+            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: x.online ? C.sage : C.parchmentDim }} />
+            <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, color: x.id === guestId ? C.gold : C.parchment }}>{x.name}{x.crowned ? " ♔" : ""}{x.id === guestId ? " " + t("mp.you") : ""}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("misc.age")} {x.age}</Text>
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Alt: hazır oyu + senkron tick */}
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: insets.bottom + 10, paddingTop: 10, paddingHorizontal: 14, backgroundColor: "rgba(8,5,2,0.94)", borderTopWidth: 1, borderTopColor: C.borderHi, flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>
+          {snapshot.phase === "ticking" ? t("mp.ticking") : pf(t("mp.readyCount"), readyCount, liveCount)}
+        </Text>
+        <Pressable onPress={doReady} style={{ paddingVertical: 13, paddingHorizontal: 26, borderRadius: 9, borderWidth: 1, borderColor: ready ? "rgba(127,166,106,0.7)" : "rgba(201,168,76,0.6)", backgroundColor: ready ? "rgba(127,166,106,0.16)" : C.gold }}>
+          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: ready ? C.sage : "#2a1d08" }}>{ready ? t("mp.ready") + " ✓" : t("mp.ready")}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+const shareBtn = { flexDirection: "row" as const, alignItems: "center" as const, gap: 8, paddingVertical: 11, paddingHorizontal: 12, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.08)" };
+const shareTxt = { fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5 };
