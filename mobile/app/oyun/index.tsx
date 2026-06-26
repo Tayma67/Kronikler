@@ -99,6 +99,7 @@ export default function Dashboard() {
   const [opp, setOpp] = useState<Opportunity | null>(null);
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
   const [tab, setTab] = useState<"gunluk" | "dunya">("gunluk");
+  const [guideHidden, setGuideHidden] = useState(false);
   const [shoot, setShoot] = useState(0);
   const [coinsOn, setCoinsOn] = useState(false);
   const coinTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -336,6 +337,22 @@ export default function Dashboard() {
             <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim }} numberOfLines={1}>{t("percept." + pp.key)}</Text>
             <Text style={{ fontFamily: F.display, fontSize: 9, color: home ? C.sage : "#6FA0C0" }}>%{Math.round(pp.recog * 100)}</Text>
           </Pressable>
+        );
+      })()}
+
+      {/* Rehber ipucu — yalnız erken oyunda (oyuncu derin sistemlerde kaybolmasın); duruma göre tek satır, kapatılabilir */}
+      {!p.dead && !guideHidden && p.age < 16 && (() => {
+        const gk = p.hunger < 35 ? "eat"
+          : (p.age >= 13 && p.profession === "işsiz") ? "prof"
+          : p.age < 13 ? "child"
+          : (p.age >= 13 && !p.faction) ? "faction"
+          : "core";
+        return (
+          <View style={{ marginHorizontal: 12, marginTop: 8, paddingVertical: 8, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.32)", backgroundColor: "rgba(201,168,76,0.07)", flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <GameIcon name="star" size={13} color={C.gold} />
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchment, lineHeight: 16 }}>{t("guide." + gk)}</Text>
+            <Pressable hitSlop={8} onPress={() => { hap("tap"); setGuideHidden(true); }}><Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchmentMuted }}>×</Text></Pressable>
+          </View>
         );
       })()}
 
