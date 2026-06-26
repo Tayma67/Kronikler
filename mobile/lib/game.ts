@@ -1033,11 +1033,13 @@ function die(s: GameState, text: string, loc?: { k: string; p?: EvtParam[] }) { 
 
 function monthlyFlavor(s: GameState, cal: CalendarInfo): { k: string; text: string } {
   const child = s.player.age < 13; const pool: { k: string; text: string }[] = [];
-  if (cal.season === "Kış") pool.push({ k: "flav.kis1", text: "Soğuk sert geçti; ocağın başında ısındın." }, { k: "flav.kis2", text: "Kar yolları kapadı, evde kaldın." });
-  if (cal.season === "İlkbahar") pool.push({ k: "flav.ilk1", text: "Tarlalar yeşerdi, içine umut düştü." }, { k: "flav.ilk2", text: "Kuşlar döndü; köy canlandı." });
-  if (cal.season === "Yaz") pool.push({ k: "flav.yaz1", text: "Sıcak günlerde gölgede dinlendin." }, { k: "flav.yaz2", text: "Hasada yardım ettin." });
-  if (cal.season === "Sonbahar") pool.push({ k: "flav.son1", text: "Yapraklar döküldü; kışa hazırlık başladı." }, { k: "flav.son2", text: "Pazarda son ürünler satıldı." });
+  if (cal.season === "Kış") pool.push({ k: "flav.kis1", text: "Soğuk sert geçti; ocağın başında ısındın." }, { k: "flav.kis2", text: "Kar yolları kapadı, evde kaldın." }, { k: "flav.kis3", text: "Uzun kış gecesinde bir hikâye dinledin; soba çıtırdadı." });
+  if (cal.season === "İlkbahar") pool.push({ k: "flav.ilk1", text: "Tarlalar yeşerdi, içine umut düştü." }, { k: "flav.ilk2", text: "Kuşlar döndü; köy canlandı." }, { k: "flav.ilk3", text: "İlk yağmur toprağı uyandırdı; ıslak yollarda yürüdün." });
+  if (cal.season === "Yaz") pool.push({ k: "flav.yaz1", text: "Sıcak günlerde gölgede dinlendin." }, { k: "flav.yaz2", text: "Hasada yardım ettin." }, { k: "flav.yaz3", text: "Çeşme başında serinleyip komşularla hâl hatır sordun." });
+  if (cal.season === "Sonbahar") pool.push({ k: "flav.son1", text: "Yapraklar döküldü; kışa hazırlık başladı." }, { k: "flav.son2", text: "Pazarda son ürünler satıldı." }, { k: "flav.son3", text: "Bağ bozumu telaşı; sepetler üzümle doldu." });
   pool.push(child ? { k: "flav.cPlay", text: "Sokakta oyun oynadın." } : { k: "flav.aWork", text: "Gününü işinle geçirdin." }, child ? { k: "flav.cTale", text: "Annen masal anlattı." } : { k: "flav.aMarket", text: "Çarşıda dolaştın." });
+  if (child) pool.push({ k: "flav.cFriend", text: "Bir arkadaşınla dere boyunda taş attınız." });
+  else pool.push({ k: "flav.aChat", text: "Komşunla kapı önünde uzun uzun sohbet ettin." }, { k: "flav.aRest", text: "Bir gününü dinlenip dua ederek geçirdin." }, { k: "flav.aCoin", text: "Kesendeki akçeleri sayıp yarını düşündün." });
   return rnd(pool);
 }
 
