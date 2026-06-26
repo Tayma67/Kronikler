@@ -65,7 +65,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      try { const raw = await AsyncStorage.getItem(KEY); if (raw) setState(migrate(JSON.parse(raw))); } catch {}
+      try {
+        const raw = await AsyncStorage.getItem(KEY);
+        if (raw) {
+          const obj = JSON.parse(raw);
+          // Bozuk/eksik kayıt (sürüm geçişi, yarım yazım) "Devam Et"i gösterip /oyun'da
+          // çökmesin: yalnızca geçerli bir player nesnesi varsa kaydı kabul et.
+          if (obj && typeof obj === "object" && obj.player && typeof obj.player === "object") setState(migrate(obj));
+        }
+      } catch {}
       setLoading(false);
     })();
   }, []);
