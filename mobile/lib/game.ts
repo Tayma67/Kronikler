@@ -2748,7 +2748,7 @@ export function fenceHotGoods(prev: GameState): GameState {
   if (Math.random() < (golge ? 0.05 : 0.18)) {
     const fine = Math.round(hot * 0.4);
     p.money = Math.max(0, p.money - fine); p.fear = Math.min(100, p.fear + 3); p.reputation = Math.max(-100, p.reputation - 3);
-    push(s, "suç", `Sıcak malı eritirken yakalandın; ${fine} akçe ceza ve leke.`, "kişisel", true, { k: "crime.fenceCaught", p: [fine] });
+    push(s, "suç_yakalandı", `Sıcak malı eritirken yakalandın; ${fine} akçe ceza ve leke.`, "kişisel", true, { k: "crime.fenceCaught", p: [fine] });
   } else {
     const got = Math.round(hot * (golge ? 0.8 : 0.55));
     p.money += got; gainSkill(s, "trade", 4);
