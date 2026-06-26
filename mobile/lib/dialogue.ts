@@ -31,25 +31,27 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
   const fn = (npc.name.split(" ")[0]);
   const q = quirkL(npc.quirk, lang);
   const L = (k: string) => tFor(lang, k).replace("%n", fn).replace("%q", q);
+  // Tekrarı azalt: aynı niyetin sıcak/olumlu satırı birkaç çeşitten rastgele seçilir (base + base2…).
+  const pick = (base: string, n: number) => { const i = Math.floor(Math.random() * n); return L(i === 0 ? base : base + (i + 1)); };
 
   if (intent === "hosbes") {
-    const line = hitch ? L("dlg.hosbes.hitch") : rt === "yabancı" ? L("dlg.hosbes.stranger") : L("dlg.hosbes.warm");
+    const line = hitch ? L("dlg.hosbes.hitch") : rt === "yabancı" ? L("dlg.hosbes.stranger") : pick("dlg.hosbes.warm", 2);
     return { line, moodDelta: hitch ? 2 : 5, relDelta: hitch ? 2 : 4, memory: L("dlg.hosbes.m") };
   }
   if (intent === "iltifat") {
     const backfire = t === "kibirli" || t === "ciddi" || mt === "küs";
     if (backfire) return { line: L("dlg.iltifat.bad"), moodDelta: -3, relDelta: -2, memory: L("dlg.iltifat.bad.m") };
     const gain = 5 + Math.floor(charisma);
-    return { line: L("dlg.iltifat.good"), moodDelta: 8, relDelta: gain, memory: L("dlg.iltifat.good.m") };
+    return { line: pick("dlg.iltifat.good", 2), moodDelta: 8, relDelta: gain, memory: L("dlg.iltifat.good.m") };
   }
   if (intent === "dert") {
     const opens = t === "dertli" || t === "yalnız" || t === "sıcakkanlı" || rt !== "yabancı";
     if (!opens) return { line: L("dlg.dert.closed"), moodDelta: 1, relDelta: 2, memory: L("dlg.dert.closed.m") };
-    return { line: L("dlg.dert.open"), moodDelta: 10, relDelta: 8, memory: L("dlg.dert.open.m") };
+    return { line: pick("dlg.dert.open", 2), moodDelta: 10, relDelta: 8, memory: L("dlg.dert.open.m") };
   }
   if (intent === "is") {
     const pn = professionNameL(npc.profession, lang);
-    const line = (hitch ? L("dlg.is.cold") : L("dlg.is.warm")).replace("%p", pn);
+    const line = (hitch ? L("dlg.is.cold") : pick("dlg.is.warm", 2)).replace("%p", pn);
     return { line, moodDelta: hitch ? 1 : 4, relDelta: hitch ? 1 : 3, memory: L("dlg.is.m") };
   }
   if (intent === "aile") {
@@ -61,14 +63,14 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
     return { line: L("dlg.dunya.line"), moodDelta: 3, relDelta: 3, memory: L("dlg.dunya.m") };
   }
   if (intent === "hedef") {
-    const line = L("dlg.hedef.line").replace("%g", goalL(npc.goal, lang));
+    const line = pick("dlg.hedef.line", 2).replace("%g", goalL(npc.goal, lang));
     return { line, moodDelta: rt === "yabancı" ? 2 : 7, relDelta: rt === "yabancı" ? 2 : 6, memory: L("dlg.hedef.m") };
   }
   // şaka
   const likes = t === "neşeli" || t === "sıcakkanlı";
   const dislikes = t === "ciddi" || t === "dindar" || t === "kibirli";
   if (dislikes && mt !== "neşeli") return { line: L("dlg.saka.bad"), moodDelta: -4, relDelta: -3, memory: L("dlg.saka.bad.m") };
-  if (likes) return { line: L("dlg.saka.good"), moodDelta: 12, relDelta: 7, memory: L("dlg.saka.good.m") };
+  if (likes) return { line: pick("dlg.saka.good", 2), moodDelta: 12, relDelta: 7, memory: L("dlg.saka.good.m") };
   return { line: L("dlg.saka.mild"), moodDelta: 5, relDelta: 4, memory: L("dlg.saka.mild.m") };
 }
 
