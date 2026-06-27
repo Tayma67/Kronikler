@@ -49,6 +49,9 @@ export default function MpOyun() {
     let init: GameState | null = null;
     if (saved) { try { const r = JSON.parse(saved); if (r && r.player) init = { ...r, mpRealm: true }; } catch {} }
     if (!init) init = { ...newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"), mpRealm: true };
+    // Yoklukta NPC-vekil yaşlandıysa/öldüyse dönüşte karaktere yansıt (sunucu otoritesi).
+    const meP = snapshot?.players.find((x) => x.id === guestId);
+    if (meP) { if (meP.dead) init.player.dead = true; if (typeof meP.age === "number" && meP.age > init.player.age) init.player.age = meP.age; }
     enterMp(init);
   }, [guestId, mpMode, saved]);
 

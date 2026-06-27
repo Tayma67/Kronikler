@@ -68,6 +68,7 @@ export interface PlayerPublic {
   beylikId: string | null;    // bağlı olduğu beylik (grup/takım) — SUNUCU sahibi
   honor: number;              // şeref/sadakat ekseni (−100..100); ihanet düşürür, yardım yükseltir — SUNUCU sahibi
   traveling: boolean;         // "Seyahate Çık": kişi dokunulmaz (kişisel saldırı engellenir), diyarı etkileşime açık kalır — SUNUCU sahibi
+  npcMonths?: number;         // çevrimdışı NPC-vekil: yaş ilerletme sayacı (sunucu içi)
   online: boolean;
   ready: boolean;        // bu ay için "ay atla" oyu
   dead: boolean;

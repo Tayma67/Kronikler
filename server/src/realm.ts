@@ -480,7 +480,11 @@ export class RealmDO {
           const foe = playerById(it.on);
           if (!aliveOther(pid, it.on) || !foe || foe.age < ASSASSINATE_MIN_AGE) break;
           const odds = Math.max(0.1, Math.min(0.6, 0.35 - foe.power / 600 - Math.max(0, foe.honor) / 400));
-          if (chance(odds)) { ev(it.on, "mp.soc.assassinated", [pname(pid)]); this.adjustBond(pid, it.on, -40); this.adjustHonor(pid, -15); }
+          if (chance(odds)) {
+            // Çevrimdışı vekili sunucu doğrudan öldürür (istemcisi yok); çevrimiçide olay istemcide işler.
+            if (foe && !foe.online) foe.dead = true;
+            ev(it.on, "mp.soc.assassinated", [pname(pid)]); this.adjustBond(pid, it.on, -40); this.adjustHonor(pid, -15);
+          }
           else { ev(it.on, "mp.soc.assassinFoiled", [pname(pid)]); ev(pid, "mp.soc.plotFoiled", []); this.setPact(pid, it.on, "war"); this.adjustBond(pid, it.on, -50); this.adjustHonor(pid, -20); }
           break;
         }
@@ -500,6 +504,16 @@ export class RealmDO {
         }
       }
     }
+    // ── 6) ÇEVRİMDIŞI NPC-VEKİL: seyahatte DEĞİL kopan oyuncu vekile düşer → yaşlanır + ölüm riski.
+    // (Holdings'i zaten etkileşime açık; suikast de işler.) Vekil ölürse oyuncu dönüşte ölü bulur.
+    for (const p of this.snap.players) {
+      if (p.online || p.traveling || p.dead) continue;
+      p.npcMonths = (p.npcMonths || 0) + 1;
+      if (p.npcMonths >= 12) { p.npcMonths = 0; p.age += 1; }
+      const risk = 0.004 + Math.max(0, p.age - 50) * 0.004; // yaşlı vekil daha kırılgan
+      if (Math.random() < risk) p.dead = true;
+    }
+
     // Ölen oyuncunun bağ/teklifleri temizlenir (sonraki tur makam boşaltmayı zaten yapıyor).
     this.snap.offers = this.snap.offers.filter((o) => isAlive(o.from) && isAlive(o.to));
 
