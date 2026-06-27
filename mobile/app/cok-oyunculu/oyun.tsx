@@ -196,17 +196,40 @@ export default function MpOyun() {
               </View>
             </Pressable>
           )}
-          {myGuild && myGuild.leaderId === guestId && (
-            <Pressable onPress={() => intent({ k: "setGuildTax", guildId: myGuild.id, tax: Math.min(80, myGuild.tax + 10) })} style={shareBtn}>
-              <GameIcon name="pazar" size={14} color={C.gold} /><Text style={shareTxt}>{pf(t("mp.guild.taxSet"), myGuild.tax + 10)}</Text>
-            </Pressable>
-          )}
-          {p.faction && myGuild && myGuild.leaderId == null && (
-            <Pressable onPress={() => intent({ k: "claimGuildLead", guildId: p.faction! })} style={shareBtn}>
-              <GameIcon name="iliskiler" size={14} color={C.gold} /><Text style={shareTxt}>{pf(t("mp.guild.youLead"), p.faction)}</Text>
-            </Pressable>
-          )}
         </View>
+
+        {/* LONCAN — bey-olmayan güç yolu: mesleğinde yüksel, loncanı yönet, diyar siyasetinde söz sahibi ol */}
+        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.guild.panelTitle")}</Text>
+        {myGuild ? (() => {
+          const isLead = myGuild.leaderId === guestId;
+          const inf = Math.round(players.filter((x) => x.guildId === myGuild.id && x.online && !x.dead).reduce((sum, x) => sum + (x.fame + x.power) * 0.15, 0));
+          return (
+            <View style={{ borderWidth: 1, borderColor: isLead ? "rgba(201,168,76,0.6)" : C.border, borderRadius: 9, padding: 11, backgroundColor: C.card }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: isLead ? C.gold : C.parchment }}>{myGuild.id}{isLead ? " ♔" : ""}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>
+                {pf(t("mp.guild.leaderLine"), myGuild.leaderName || t("mp.guild.npcLed"))} · {pf(t("mp.guild.influenceLine"), inf)}{myGuild.backing ? " · " + pf(t("mp.guild.backingLine"), beylikName(myGuild.backing)) : ""}
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                {!isLead && <Pressable onPress={() => intent({ k: "claimGuildLead", guildId: myGuild.id })} style={miniBtnGold}><Text style={miniTxtGold}>{t("mp.guild.leadBtn")}</Text></Pressable>}
+                {isLead && <Pressable onPress={() => intent({ k: "setGuildTax", guildId: myGuild.id, tax: Math.min(80, myGuild.tax + 10) })} style={miniBtnGold}><Text style={miniTxtGold}>{pf(t("mp.guild.duesBtn"), Math.min(80, myGuild.tax + 10))}</Text></Pressable>}
+              </View>
+              {isLead && (
+                <>
+                  <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1, color: C.goldDim, marginTop: 10, marginBottom: 5 }}>{t("mp.guild.backBtn")}</Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+                    {snapshot.beyliks.map((b) => (
+                      <Pressable key={b.id} onPress={() => intent({ k: "setGuildBacking", guildId: myGuild.id, beylikId: myGuild.backing === b.id ? null : b.id })}
+                        style={[miniBtn, myGuild.backing === b.id && { borderColor: "rgba(201,168,76,0.6)", backgroundColor: "rgba(201,168,76,0.12)" }]}>
+                        <Text style={[miniTxt, myGuild.backing === b.id && { color: C.gold }]}>{b.name}</Text></Pressable>
+                    ))}
+                  </View>
+                </>
+              )}
+            </View>
+          );
+        })() : (
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted }}>{t("mp.guild.noneLine")}</Text>
+        )}
 
         {/* BEYLİKLER — Mount & Blade toprak/grup katmanı */}
         <View style={{ flexDirection: "row", alignItems: "center", marginTop: 18, marginBottom: 4 }}>

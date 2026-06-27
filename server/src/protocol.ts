@@ -82,8 +82,10 @@ export interface PlayerPublic {
 export interface GuildState {
   id: string;            // "tuccar" | "asker" | ... (faction id)
   leaderId: string | null;   // lonca başkanı olan oyuncu (yoksa NPC/boş)
-  tax: number;           // başkanın koyduğu vergi/aidat (gelir paylaşımını etkiler)
+  leaderName: string | null;
+  tax: number;           // başkanın koyduğu aylık aidat (üyeler öder, başkan toplar)
   closed: boolean;       // başkan loncayı kapattıysa yeni katılım durur
+  backing: string | null;// loncanın desteklediği beylik (kingmaker: nüfuzu o beyliğe katılır)
 }
 export interface ProvinceState {
   name: string;          // sancak/şehir adı (LOCATIONS'tan)
@@ -173,6 +175,7 @@ export type SharedIntent =
   | { k: "leaveBeylik" }
   | { k: "setBeylikTax"; beylikId: string; tax: number } // bey üyelere vergi koyar
   | { k: "beylikCampaign"; target: string }   // bey olarak başka beyliğe sefer/savaş
+  | { k: "setGuildBacking"; guildId: string; beylikId: string | null } // lonca başkanı: loncayı bir beyliğe destekçi yap (kingmaker)
   // ── Sosyal doku ── (altın bedelleri istemcide kesilir; sunucu çekişme/riski çözer)
   // Destek & dostluk
   | { k: "gift"; to: string; amount: number }      // bağış (anlık altın) — düşene el uzat

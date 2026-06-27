@@ -36,7 +36,11 @@ export function applyTickEvents(prev: GameState, events: TickEvent[]): GameState
       case "mp.guild.closedByKing":
         p.faction = null; p.reputation = Math.max(-100, p.reputation - 4); break;
       case "mp.guild.youLead":
+      case "mp.guild.unseated":
         p.fame = clamp100(p.fame + 4); break;
+      case "mp.guild.duesPaid": p.money = Math.max(0, p.money - (Number(e.p?.[1]) || 0)); break; // lonca aidatı (üye öder)
+      case "mp.guild.duesIncome": p.money += Number(e.p?.[0]) || 0; break;                       // lonca aidatı (başkan toplar)
+      case "mp.guild.lostLead": p.fame = clamp100(p.fame - 4); break;
       case "mp.gov.appointed": {
         const loc = String(e.p?.[0] || "");
         if (loc) { if (!p.governorships) p.governorships = []; if (!p.governorships.includes(loc)) p.governorships.push(loc); }

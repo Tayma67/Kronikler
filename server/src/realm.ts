@@ -82,6 +82,7 @@ export class RealmDO {
       if (!this.snap.bonds) this.snap.bonds = [];
       if (!this.snap.npcs) this.snap.npcs = generateNpcs(this.snap.seed);
       if (!this.snap.npcBonds) this.snap.npcBonds = [];
+      this.snap.guilds.forEach((g) => { if (g.leaderName === undefined) g.leaderName = null; if (g.backing === undefined) g.backing = null; });
       if (!this.snap.news) this.snap.news = [];
       if (!this.snap.offers) this.snap.offers = [];
       this.snap.players.forEach((p) => { if (p.beylikId === undefined) p.beylikId = null; if (p.honor === undefined) p.honor = 0; if (p.traveling === undefined) p.traveling = false; if (p.married === undefined) p.married = false; });
@@ -94,7 +95,7 @@ export class RealmDO {
         seed: seedVal, turn: 0, phase: "open",
         tickDeadline: now + TICK_TIMEOUT_MS, players: [],
         throne: { holderId: null, holderName: null, claimedTurn: 0 },
-        guilds: GUILD_IDS.map((id) => ({ id, leaderId: null, tax: 10, closed: false } as GuildState)),
+        guilds: GUILD_IDS.map((id) => ({ id, leaderId: null, leaderName: null, tax: 10, closed: false, backing: null } as GuildState)),
         provinces: [], beyliks: defaultBeyliks(), bonds: [],
         npcs: generateNpcs(seedVal), npcBonds: [], news: [], offers: [], econ: 1, createdAt: now,
       };
@@ -289,12 +290,36 @@ export class RealmDO {
       }
     }
 
-    // 2) LONCA: liderlik talebi, vergi, kapatma
+    // Ölen lonca başkanı boşalır (yeni iddiaya açık).
+    for (const g of this.snap.guilds) if (g.leaderId && !isAlive(g.leaderId)) { g.leaderId = null; g.leaderName = null; }
+
+    // 2a) LONCA LİDERLİĞİ — çekişmeli: en GÜÇLÜ üye kazanır (mevcut başkan da yarışır).
+    // Bey olmayan güç yolu: mesleğinde yükselen oyuncu loncasının başına geçer.
+    const guildClaims: Record<string, string[]> = {};
+    for (const pid of order) for (const it of this.intents[pid]) if (it.k === "claimGuildLead") (guildClaims[it.guildId] ||= []).push(pid);
+    for (const gid of Object.keys(guildClaims)) {
+      const g = this.snap.guilds.find((x) => x.id === gid); if (!g) continue;
+      const challengers = guildClaims[gid].map((pid) => this.snap.players.find((p) => p.id === pid)).filter((p): p is PlayerPublic => !!p && !p.dead && (p.guildId === gid));
+      if (!challengers.length) { guildClaims[gid].forEach((pid) => ev(pid, "mp.guild.mustJoin", [gid])); continue; }
+      const cur = g.leaderId ? this.snap.players.find((p) => p.id === g.leaderId) : null;
+      const pool = [...challengers]; if (cur && !pool.some((p) => p.id === cur.id)) pool.push(cur);
+      pool.sort((a, b) => b.power - a.power);
+      const winner = pool[0];
+      if (g.leaderId === winner.id) { ev(winner.id, "mp.guild.held", [gid]); continue; }
+      const prev = g.leaderId;
+      g.leaderId = winner.id; g.leaderName = winner.name;
+      ev(winner.id, prev ? "mp.guild.unseated" : "mp.guild.youLead", [gid]);
+      if (prev) ev(prev, "mp.guild.lostLead", [gid, winner.name]);
+      challengers.filter((c) => c.id !== winner.id).forEach((c) => ev(c.id, "mp.guild.claimFailed", [gid]));
+    }
+
+    // 2b) Vergi / kapatma / katıl-ayrıl / destekçilik
     for (const pid of order) {
       for (const it of this.intents[pid]) {
-        if (it.k === "claimGuildLead") {
+        if (it.k === "setGuildBacking") {
           const g = this.snap.guilds.find((x) => x.id === it.guildId);
-          if (g && !g.leaderId) { g.leaderId = pid; ev(pid, "mp.guild.youLead", [it.guildId]); }
+          if (g && g.leaderId === pid) { g.backing = it.beylikId && this.snap.beyliks.some((b) => b.id === it.beylikId) ? it.beylikId : null;
+            ev(pid, "mp.guild.backed", [g.backing ? (this.snap.beyliks.find((b) => b.id === g.backing)?.name || g.backing) : "—"]); }
         } else if (it.k === "setGuildTax") {
           const g = this.snap.guilds.find((x) => x.id === it.guildId);
           if (g && g.leaderId === pid) { g.tax = Math.max(0, Math.min(80, it.tax)); ev(pid, "mp.guild.taxSet", [g.tax]);
@@ -411,8 +436,10 @@ export class RealmDO {
       const attackerB = this.snap.beyliks.find((x) => x.beyId === pid);
       const target = this.snap.beyliks.find((x) => x.id === it.target);
       if (!attackerB || !target || target.id === attackerB.id) continue;
-      // NPC desteği seferi etkiler: hedef beyin düşmanı olan + bizi seven NPC'ler ağırlık katar.
-      const atk = liveBeylikMuster(attackerB) + this.npcSupport(pid, target.beyId), def = liveBeylikMuster(target);
+      // NPC desteği + LONCA destekçiliği seferi etkiler (loncalar kingmaker olur).
+      const guildAtk = this.snap.guilds.filter((g) => g.backing === attackerB.id).reduce((s, g) => s + this.guildInfluence(g.id), 0);
+      const guildDef = this.snap.guilds.filter((g) => g.backing === target.id).reduce((s, g) => s + this.guildInfluence(g.id), 0);
+      const atk = liveBeylikMuster(attackerB) + this.npcSupport(pid, target.beyId) + guildAtk, def = liveBeylikMuster(target) + guildDef;
       // Gerçekçi: kesin sonuç değil, güç oranıyla OLASILIK. Maliyet (altın) istemcide kesildi.
       const win = (Math.random() * (atk + def)) < atk;
       if (win) {
@@ -439,6 +466,14 @@ export class RealmDO {
       const due = b.tax * 2;
       members.forEach((m) => ev(m.id, "mp.beylik.taxDue", [b.name, due]));
       ev(b.beyId, "mp.beylik.taxIncome", [members.length * due, b.name]);
+    }
+    // Aylık LONCA aidatı — başkan çevrimiçi üyelerden toplar (bey olmadan ekonomik güç).
+    for (const g of this.snap.guilds) {
+      if (!g.leaderId || !isAlive(g.leaderId) || g.tax <= 0) continue;
+      const members = this.snap.players.filter((p) => p.guildId === g.id && !p.dead && p.online && p.id !== g.leaderId);
+      if (!members.length) continue;
+      members.forEach((m) => ev(m.id, "mp.guild.duesPaid", [g.id, g.tax]));
+      ev(g.leaderId, "mp.guild.duesIncome", [members.length * g.tax, g.id]);
     }
 
     // ── 5) SOSYAL DOKU: destek / rekabet / entrika / yardım (oyuncular arası) ──
@@ -666,6 +701,10 @@ export class RealmDO {
   adjustNpcBond(npc: string, player: string, delta: number) { const b = this.npcBondOf(npc, player); b.standing = Math.max(-100, Math.min(100, b.standing + delta)); }
   // Salt-okur NPC↔oyuncu standing (bağ oluşturmaz).
   npcStanding(npc: string, player: string): number { return this.snap.npcBonds.find((b) => b.npc === npc && b.player === player)?.standing || 0; }
+  // Lonca nüfuzu: çevrimiçi üyelerin kolektif ağırlığı (şöhret+güç). Bey-olmayan güç bloku.
+  guildInfluence(gid: string): number {
+    return this.snap.players.filter((p) => p.guildId === gid && !p.dead && p.online).reduce((s, p) => s + (p.fame + p.power) * 0.15, 0);
+  }
   // NPC desteği: bir oyuncunun (me) bir hedefe (against) karşı topladığı NPC nüfuzu.
   // Seni seven + hedefi sevmeyen NPC'ler, nüfuzları oranında sana ağırlık katar.
   npcSupport(me: string, against: string | null): number {
