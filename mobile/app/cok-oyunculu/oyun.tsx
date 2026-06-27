@@ -44,7 +44,7 @@ export default function MpOyun() {
 
   // MP karakterini ortak depoya koy (tüm /oyun alt-ekranları bunun üstünde çalışır)
   useEffect(() => {
-    if (!mpMode && guestId) enterMp(newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"));
+    if (!mpMode && guestId) enterMp({ ...newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"), mpRealm: true });
   }, [guestId, mpMode]);
 
   // İlk kamu senkronu
@@ -107,12 +107,12 @@ export default function MpOyun() {
           <View style={{ marginBottom: 12, borderWidth: 1, borderColor: "rgba(200,64,64,0.5)", backgroundColor: "rgba(200,64,64,0.08)", borderRadius: 10, padding: 14 }}>
             <Text style={{ fontFamily: F.display, fontSize: 14, color: C.blood, textAlign: "center" }}>{p.name} †</Text>
             {p.children && p.children.length > 0 ? (
-              <Pressable onPress={() => { hap("advance"); const ns = continueAsHeir(s, "esit"); apply(() => ns); if (guestId) syncPlayer(mePublic(guestId, ns, false)); }}
+              <Pressable onPress={() => { hap("advance"); const ns = { ...continueAsHeir(s, "esit"), mpRealm: true }; apply(() => ns); if (guestId) syncPlayer(mePublic(guestId, ns, false)); }}
                 style={{ marginTop: 12, paddingVertical: 13, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold }}>
                 <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: "#2a1d08" }}>{t("dash.continueHeir")}</Text>
               </Pressable>
             ) : (
-              <Pressable onPress={() => { hap("advance"); const ns = newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"); apply(() => ns); if (guestId) syncPlayer(mePublic(guestId, ns, false)); }}
+              <Pressable onPress={() => { hap("advance"); const ns = { ...newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"), mpRealm: true }; apply(() => ns); if (guestId) syncPlayer(mePublic(guestId, ns, false)); }}
                 style={{ marginTop: 12, paddingVertical: 13, borderRadius: 9, alignItems: "center", borderWidth: 1, borderColor: "rgba(201,168,76,0.6)", backgroundColor: "rgba(201,168,76,0.12)" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>{t("menu.newGame")}</Text>
               </Pressable>

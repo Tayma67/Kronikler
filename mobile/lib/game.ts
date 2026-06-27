@@ -624,6 +624,7 @@ export interface GameState {
   wars: FactionWar[];
   warCooldowns?: Record<string, number>; // iki lonca arası ateşkes: pair → bu tura kadar yeni savaş yok
   realm?: SancakHold[]; // 4 sancağın fraksiyon hakimiyeti (emergent şehir-kontrolü)
+  mpRealm?: boolean; // çok oyuncu: beylik hakimiyeti SUNUCUDA → yerel ocak-beylik savaşı bastırılır (paralel gerçeklik olmaz)
   rivals?: RivalHouse[]; // rakip hanedanların yaşayan gücü (zamanla değişir + hamle yapar)
   caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number; good?: string; spread?: number } | null;
   econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
@@ -1473,6 +1474,9 @@ export function ensureRealm(s: GameState): SancakHold[] {
 // Fraksiyon şehir-kontrolü tikİ (Vercel faction_system gain/lose_influence + _should_attack portu):
 // her sancakta gerilim birikir, rakip fraksiyon yükselir, gerilim dorukta ödüllü savaş patlar.
 function tickFactions(s: GameState, announce: boolean) {
+  // Çok oyuncuda beylik hakimiyeti sunucunun otoritesindedir — yerel ocak-beylik
+  // savaşı çalışmaz (yoksa aynı beylik hem "NPC savaşıyor" hem "oyuncu bey" görünür).
+  if (s.mpRealm) return;
   const realm = ensureRealm(s);
   const ids = FACTIONS.map((f) => f.id);
   for (const sn of realm) {
@@ -3126,6 +3130,8 @@ function factionAITick(s: GameState) {
   if (Math.random() >= 0.14) return;
   const f = FACTIONS[Math.floor(Math.random() * FACTIONS.length)];
   const act = rnd(factionTrait(f.id).acts); // eylem fraksiyonun karakterine göre (şifacı asla sabotaj/suikast/darbe yapmaz)
+  // Çok oyuncuda beylik hakimiyeti sunucuda → yerel "nüfuz/darbe" beyliği oynatamaz (paralel gerçeklik olmaz).
+  if (s.mpRealm && (act === "nufuz" || act === "darbe")) return;
   if (act === "bagis") {
     if (s.player.faction === f.id) { s.player.faction_standing[f.id] = (s.player.faction_standing[f.id] || 0) + 4; const g = 6 + Math.floor(Math.random() * 10); s.player.money += g; push(s, "örgüt", `${f.name} kasasını açtı; üyelerine pay dağıttı (+${g} akçe).`, "makro", false, { k: "fai.bagis.member", p: [{ fc: f.id }, g] }); }
     else push(s, "örgüt", `${f.name} yoksullara sadaka dağıttı; halkın gözünde itibar kazandı.`, "makro", false, { k: "fai.bagis", p: [{ fc: f.id }] });
