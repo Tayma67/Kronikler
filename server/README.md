@@ -40,3 +40,5 @@ küçük/orta ölçek için ücretsiz yeter. Oyun büyürse ücretli katman gere
 ## Önemli
 - `src/protocol.ts` değişirse, mobil `mobile/lib/mp/protocol.ts`'i de aynı yap.
 - Diyar durumu DO storage'da kalıcıdır; oyuncular girip çıkar, dünya sürer.
+
+<!-- deploy tetikleyici: 20260627T100010Z -->
