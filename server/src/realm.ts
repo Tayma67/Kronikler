@@ -10,7 +10,8 @@
 // ──────────────────────────────────────────────────────────────────────────
 import {
   RealmSnapshot, PlayerPublic, ClientMsg, ServerMsg, SharedIntent, TickResult, TickEvent,
-  GuildState, ProvinceState, BeylikState, ChatScope, BEYLIK_DEFS, BEY_MIN_POWER,
+  GuildState, ProvinceState, BeylikState, ChatScope, BEYLIK_DEFS, BEY_MIN_POWER, BEY_MIN_AGE,
+  THRONE_MIN_AGE, THRONE_MIN_POWER, THRONE_MIN_FAME,
   PROTOCOL_VERSION, MAX_PLAYERS, TICK_TIMEOUT_MS, readyToTick,
 } from "./protocol";
 
@@ -198,8 +199,12 @@ export class RealmDO {
     }
 
     // 1) TAHT: boş ya da çekişmeli ise en yüksek güçlü iddiacı kazanır.
-    const claimants = order.filter((pid) => this.intents[pid].some((i) => i.k === "claimThrone"))
-      .map((pid) => this.snap.players.find((p) => p.id === pid)).filter((p) => p && !p.dead) as PlayerPublic[];
+    // Meşruiyet şartı (SP throneRequirements ile aynı): yaş + güç + şöhret. Altın istemcide kesilir.
+    const throneEligible = (p: PlayerPublic) => !p.dead && p.age >= THRONE_MIN_AGE && p.power >= THRONE_MIN_POWER && p.fame >= THRONE_MIN_FAME;
+    const throneClaimers = order.filter((pid) => this.intents[pid].some((i) => i.k === "claimThrone"))
+      .map((pid) => this.snap.players.find((p) => p.id === pid)).filter((p): p is PlayerPublic => !!p && !p.dead);
+    throneClaimers.filter((p) => !throneEligible(p)).forEach((p) => ev(p.id, "mp.throne.notEligible"));
+    const claimants = throneClaimers.filter(throneEligible);
     if (claimants.length) {
       claimants.sort((a, b) => b.power - a.power);
       const winner = claimants[0];
@@ -307,7 +312,8 @@ export class RealmDO {
     for (const pid of order) for (const it of this.intents[pid]) if (it.k === "claimBey") (beyClaims[it.beylikId] ||= []).push(pid);
     for (const bid of Object.keys(beyClaims)) {
       const b = this.snap.beyliks.find((x) => x.id === bid); if (!b) continue;
-      const challengers = beyClaims[bid].map(playerById).filter((p) => p && !p.dead && p.power >= BEY_MIN_POWER) as PlayerPublic[];
+      // Meşruiyet: reşit (yaş≥18) + güç eşiği. Altın istemcide kesilir.
+      const challengers = beyClaims[bid].map(playerById).filter((p) => p && !p.dead && p.age >= BEY_MIN_AGE && p.power >= BEY_MIN_POWER) as PlayerPublic[];
       if (!challengers.length) { beyClaims[bid].forEach((pid) => ev(pid, "mp.beylik.tooWeak", [b.name])); continue; }
       const curBey = beyById(b.beyId);
       const pool = [...challengers]; if (curBey && !pool.some((p) => p.id === curBey.id)) pool.push(curBey);
@@ -327,10 +333,8 @@ export class RealmDO {
     for (const pid of order) for (const it of this.intents[pid]) {
       if (it.k === "setBeylikTax") {
         const b = this.snap.beyliks.find((x) => x.id === it.beylikId);
-        if (b && b.beyId === pid) {
-          b.tax = Math.max(0, Math.min(70, it.tax)); ev(pid, "mp.beylik.taxSet", [b.tax]);
-          this.snap.players.filter((p) => p.beylikId === b.id && p.id !== pid && !p.dead).forEach((p) => ev(p.id, "mp.beylik.taxFelt", [b.name, b.tax]));
-        }
+        if (b && b.beyId === pid) { b.tax = Math.max(0, Math.min(70, it.tax)); ev(pid, "mp.beylik.taxSet", [b.tax]); }
+        // Para akışı her ay aşağıdaki "aylık vergi" adımında çözülür (bey toplar, üye öder).
       }
     }
 
@@ -341,7 +345,9 @@ export class RealmDO {
       const target = this.snap.beyliks.find((x) => x.id === it.target);
       if (!attackerB || !target || target.id === attackerB.id) continue;
       const atk = liveBeylikMuster(attackerB), def = liveBeylikMuster(target);
-      if (atk > def * 0.9) {
+      // Gerçekçi: kesin sonuç değil, güç oranıyla OLASILIK. Maliyet (altın) istemcide kesildi.
+      const win = (Math.random() * (atk + def)) < atk;
+      if (win) {
         const prevBey = target.beyId;
         target.beyId = pid; target.beyName = playerById(pid)?.name || target.beyName; target.claimedTurn = this.snap.turn;
         target.power = Math.max(NPC_BEYLIK_POWER, Math.round(def * 0.6)); // ilhak sonrası sarsılmış
@@ -353,6 +359,18 @@ export class RealmDO {
         target.power = Math.round(target.power + 6); // savunma güçlendi
         ev(pid, "mp.beylik.campaignLost", [target.name]);
       }
+    }
+
+    // 4e) AYLIK BEYLİK VERGİSİ — bey bağlı üyelerden alır (gelir), üyeler öder (gider).
+    // Düz kelle vergisi (vergi×2/üye) → toplam birebir beye akar, para buharlaşmaz.
+    for (const b of this.snap.beyliks) {
+      if (!b.beyId || !isAlive(b.beyId) || b.tax <= 0) continue;
+      // YALNIZ çevrimiçi üyeler öder → bey tam ödeneni toplar (çevrimdışıdan hayalî gelir olmaz).
+      const members = this.snap.players.filter((p) => p.beylikId === b.id && !p.dead && p.online && p.id !== b.beyId);
+      if (!members.length) continue;
+      const due = b.tax * 2;
+      members.forEach((m) => ev(m.id, "mp.beylik.taxDue", [b.name, due]));
+      ev(b.beyId, "mp.beylik.taxIncome", [members.length * due, b.name]);
     }
 
     // saat ilerle + pencere/alarm sıfırla

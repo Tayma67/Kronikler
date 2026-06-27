@@ -63,11 +63,15 @@ export function applyTickEvents(prev: GameState, events: TickEvent[]): GameState
         p.reputation = Math.max(-100, p.reputation - 14); p.fame = clamp100(p.fame - 8); break;
       case "mp.beylik.campaignLost": // seferin bozguna uğradı
         p.health = clamp100(p.health - 8); p.reputation = Math.max(-100, p.reputation - 5); break;
-      case "mp.beylik.taxFelt": { // beyin sana vergi koydu
+      case "mp.beylik.taxFelt": { // (eski tek-seferlik; artık kullanılmıyor — geriye dönük güvenli)
         const beyTax = Number(e.p?.[1]) || 0;
         const fine = 20 + Math.round((p.money || 0) * (beyTax / 200));
         p.money = Math.max(0, p.money - fine); break;
       }
+      case "mp.beylik.taxDue": // aylık beylik vergisi (üye öder)
+        p.money = Math.max(0, p.money - (Number(e.p?.[1]) || 0)); break;
+      case "mp.beylik.taxIncome": // beyin topladığı aylık vergi (gelir)
+        p.money += Number(e.p?.[0]) || 0; break;
       case "mp.beylik.conquered": // beyliğin başkasınca fethedildi (moral)
         p.reputation = Math.max(-100, p.reputation - 3); break;
       case "mp.beylik.beyDied": // bağlı olduğun beyin öldü

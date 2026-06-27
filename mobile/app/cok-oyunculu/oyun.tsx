@@ -6,7 +6,7 @@ import { useI18n } from "../../lib/i18n";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { mePublic, applyTickEvents, realmYearMonth } from "../../lib/mp/world";
-import { SharedIntent, BEY_MIN_POWER } from "../../lib/mp/protocol";
+import { SharedIntent, BEY_MIN_POWER, BEY_MIN_AGE, BEY_COST, MP_CAMPAIGN_COST, THRONE_MIN_AGE, THRONE_MIN_POWER, THRONE_MIN_FAME, THRONE_COST } from "../../lib/mp/protocol";
 import { newGame, advance, continueAsHeir, GameState } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
@@ -86,9 +86,14 @@ export default function MpOyun() {
   const me = players.find((x) => x.id === guestId);
   const myPower = me?.power ?? 0;
   const myBeylikId = me?.beylikId ?? null;
-  const canBey = myPower >= BEY_MIN_POWER;          // beye oynamak için güç eşiği
+  // Gerçekçi meşruiyet: bey = reşit + güç + hazine; taht = SP eşikleri; sefer = hazine.
+  const beyEligible = p.age >= BEY_MIN_AGE && myPower >= BEY_MIN_POWER && p.money >= BEY_COST;
+  const throneEligible = p.age >= THRONE_MIN_AGE && myPower >= THRONE_MIN_POWER && p.fame >= THRONE_MIN_FAME && p.money >= THRONE_COST;
+  const canCampaign = p.money >= MP_CAMPAIGN_COST;
   const iAmBey = snapshot.beyliks.some((b) => b.beyId === guestId);
   const intent = (i: SharedIntent) => { hap("tap"); sendIntent(i); };
+  // Paylaşımlı siyasi eylemin kişisel maliyetini (altın) yerelde kes — sunucu çekişmeyi çözer.
+  const spend = (cost: number) => apply((prev) => { const ns: GameState = JSON.parse(JSON.stringify(prev)); ns.player.money = Math.max(0, ns.player.money - cost); return ns; });
   const doReady = () => { hap("tap"); const v = !ready; setReadyLocal(v); setReady(v); if (guestId) syncPlayer(mePublic(guestId, s, v)); };
 
   return (
@@ -152,8 +157,12 @@ export default function MpOyun() {
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.realm").toUpperCase()}</Text>
         <View style={{ gap: 8 }}>
           {!kingIsMe && (
-            <Pressable onPress={() => intent({ k: "claimThrone" })} style={shareBtn}>
-              <GameIcon name="crown" size={14} color={C.gold} /><Text style={shareTxt}>{t("mp.claimThroneBtn")}</Text>
+            <Pressable disabled={!throneEligible} onPress={() => { spend(THRONE_COST); intent({ k: "claimThrone" }); }} style={[shareBtn, !throneEligible && { opacity: 0.45 }]}>
+              <GameIcon name="crown" size={14} color={C.gold} />
+              <View style={{ flex: 1 }}>
+                <Text style={shareTxt}>{t("mp.claimThroneBtn")}</Text>
+                {!throneEligible && <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted }}>{pf(t("mp.throneReq"), THRONE_MIN_AGE, THRONE_MIN_POWER, THRONE_MIN_FAME, THRONE_COST)}</Text>}
+              </View>
             </Pressable>
           )}
           {myGuild && myGuild.leaderId === guestId && (
@@ -171,7 +180,7 @@ export default function MpOyun() {
         {/* BEYLİKLER — Mount & Blade toprak/grup katmanı */}
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 4 }}>{t("mp.beylik.title")}</Text>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginBottom: 8 }}>
-          {canBey ? t("mp.beylik.canBeyHint") : pf(t("mp.beylik.needPowerHint"), myPower, BEY_MIN_POWER)}
+          {beyEligible ? pf(t("mp.beylik.canBeyHint"), BEY_COST) : pf(t("mp.beylik.needPowerHint"), myPower, BEY_MIN_POWER, BEY_MIN_AGE, BEY_COST)}
         </Text>
         {snapshot.beyliks.map((b) => {
           const isBey = b.beyId === guestId;
@@ -196,7 +205,7 @@ export default function MpOyun() {
                     <Text style={miniTxt}>{t("mp.beylik.leaveBtn")}</Text></Pressable>
                 )}
                 {!isBey && (
-                  <Pressable disabled={!canBey} onPress={() => intent({ k: "claimBey", beylikId: b.id })} style={[miniBtnGold, !canBey && { opacity: 0.4 }]}>
+                  <Pressable disabled={!beyEligible} onPress={() => { spend(BEY_COST); intent({ k: "claimBey", beylikId: b.id }); }} style={[miniBtnGold, !beyEligible && { opacity: 0.4 }]}>
                     <Text style={miniTxtGold}>{b.beyId ? t("mp.beylik.seizeBtn") : t("mp.beylik.foundBtn")}</Text></Pressable>
                 )}
                 {isBey && (
@@ -204,8 +213,8 @@ export default function MpOyun() {
                     <Text style={miniTxtGold}>{pf(t("mp.beylik.taxBtn"), Math.min(70, b.tax + 10))}</Text></Pressable>
                 )}
                 {iAmBey && !isBey && (
-                  <Pressable onPress={() => intent({ k: "beylikCampaign", target: b.id })} style={miniBtnBlood}>
-                    <GameIcon name="crossed-swords" size={12} color={C.blood} /><Text style={miniTxtBlood}>{t("mp.beylik.campaignBtn")}</Text></Pressable>
+                  <Pressable disabled={!canCampaign} onPress={() => { spend(MP_CAMPAIGN_COST); intent({ k: "beylikCampaign", target: b.id }); }} style={[miniBtnBlood, !canCampaign && { opacity: 0.4 }]}>
+                    <GameIcon name="crossed-swords" size={12} color={C.blood} /><Text style={miniTxtBlood}>{pf(t("mp.beylik.campaignBtn"), MP_CAMPAIGN_COST)}</Text></Pressable>
                 )}
               </View>
             </View>

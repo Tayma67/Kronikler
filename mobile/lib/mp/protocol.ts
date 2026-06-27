@@ -22,6 +22,15 @@ export const READY_MAJORITY = 0.5;       // > yarısı hazır → tick
 // Mount & Blade muhabbeti: bir beyliğe bey olmak/kurmak için gereken asgari hane gücü
 // (dynastyPower). Bunun altındaki "sıradan" oyuncu önce güç biriktirmeli.
 export const BEY_MIN_POWER = 80;
+// Gerçekçi meşruiyet eşikleri — tek oyuncudaki taht/sefer kurallarıyla uyumlu.
+export const BEY_MIN_AGE = 18;        // beyliğe bey olmak için reşit (çocuk bey olamaz)
+export const BEY_COST = 1500;         // sancak bayrağı kaldırmak/maiyet toplamak için hazine (altın)
+export const MP_CAMPAIGN_COST = 800;  // beylikler arası sefer maliyeti (SP CAMPAIGN_COST ile aynı)
+// Taht (hükümdarlık) — SP throneRequirements ile birebir eşik.
+export const THRONE_MIN_AGE = 35;
+export const THRONE_MIN_POWER = 140;
+export const THRONE_MIN_FAME = 60;
+export const THRONE_COST = 5000;
 // Diyarın 5 beyliği — game.ts BEYLIKS ile BİREBİR aynı (id'ler eşleşmeli). Hem istemci
 // hem sunucu buradan okur → kayma olmaz. NPC ocaklar boş beylikleri tutar.
 export const BEYLIK_DEFS: { id: string; name: string }[] = [
