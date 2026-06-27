@@ -77,6 +77,22 @@ export function applyTickEvents(prev: GameState, events: TickEvent[]): GameState
       case "mp.beylik.beyDied": // bağlı olduğun beyin öldü
         p.reputation = Math.max(-100, p.reputation - 2); break;
       // joined/left/claimFailed/tooWeak/taxSet → yalnız bilgilendirme (kişisel istat etkisi yok)
+
+      // ── SOSYAL DOKU olayları ──
+      case "mp.soc.giftGot": p.money += Number(e.p?.[1]) || 0; break;       // bağış aldın
+      case "mp.soc.loanGot": p.money += Number(e.p?.[1]) || 0; break;       // borç aldın
+      case "mp.soc.loanGave": p.money = Math.max(0, p.money - (Number(e.p?.[1]) || 0)); break; // borç verdin
+      case "mp.soc.vouched": p.fame = clamp100(p.fame + 6); break;          // biri seni övdü
+      case "mp.soc.married": p.fame = clamp100(p.fame + 5); break;          // dünürlük kuruldu
+      case "mp.soc.allied": p.reputation = Math.min(100, p.reputation + 3); break;
+      case "mp.soc.duelWon": p.fame = clamp100(p.fame + 8); break;
+      case "mp.soc.duelLost": p.fame = clamp100(p.fame - 6); break;
+      case "mp.soc.youBetrayed": p.reputation = Math.max(-100, p.reputation - 10); break; // ihanet ettin: yerel itibar da düşer
+      case "mp.soc.sabotaged": p.money = Math.max(0, p.money - 300); p.reputation = Math.max(-100, p.reputation - 4); break;
+      case "mp.soc.slandered": p.fame = clamp100(p.fame - 8); p.reputation = Math.max(-100, p.reputation - 8); break;
+      case "mp.soc.assassinated": p.health = 0; p.dead = true; break;       // suikast başarılı → ölüm (vârisle sürer)
+      // giftSent/vouchDone/offerSent/offerDeclined/asylum*/betrayed/spy*/sabotageCaught/
+      // plotFoiled/assassinFoiled/bribe*/poached/slanderCaught → yalnız bilgilendirme
     }
   }
   return s;

@@ -142,6 +142,17 @@ export default function MpOyun() {
           </View>
         )}
 
+        {/* Diplomasi — oyuncular arası destek/rekabet/entrika/yardım */}
+        <Pressable onPress={() => { hap("tap"); router.push("/cok-oyunculu/diplomasi"); }}
+          style={{ marginTop: 14, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(111,160,192,0.55)", backgroundColor: "rgba(111,160,192,0.1)" }}>
+          <GameIcon name="iliskiler" size={16} color="#6FA0C0" />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: "#6FA0C0" }}>{t("mp.soc.title")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("mp.soc.subtitle")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
+        </Pressable>
+
         {/* Hayatını yönet — tüm kişisel ekranlar MP karakteri üstünde */}
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.subtitle")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>

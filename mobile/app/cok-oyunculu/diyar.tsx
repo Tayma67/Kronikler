@@ -32,7 +32,7 @@ export default function Diyar() {
     const me: PlayerPublic = {
       id: guestId, name: String(name || "Hanedan"), surname: "", gender: "erkek",
       age: 7, generation: 1, profession: "işsiz", fame: 0, power: 10,
-      crowned: false, guildId: null, provinceName: null, beylikId: null, online: true, ready: false, dead: false,
+      crowned: false, guildId: null, provinceName: null, beylikId: null, honor: 0, online: true, ready: false, dead: false,
     };
     joinRealm(String(realmId), String(realmId), me);
   }, [guestId, realmId]);

@@ -31,6 +31,16 @@ export const THRONE_MIN_AGE = 35;
 export const THRONE_MIN_POWER = 140;
 export const THRONE_MIN_FAME = 60;
 export const THRONE_COST = 5000;
+
+// ── Sosyal doku (oyuncular arası): destek / rekabet / entrika / yardım maliyetleri ──
+export const GIFT_MAX = 100000;       // tek bağışta üst sınır (akılsız transfer engeli)
+export const SPY_COST = 300;          // casusluk
+export const SABOTAGE_COST = 500;     // sabotaj
+export const ASSASSINATE_COST = 2500; // suikast tertibi (pahalı + riskli)
+export const BRIBE_COST = 1200;       // ayartma/rüşvet (üye çalma)
+export const SLANDER_COST = 400;      // iftira/dedikodu
+export const LOAN_DEFAULT = 1000;     // varsayılan borç tutarı
+export const ASSASSINATE_MIN_AGE = 18;
 // Diyarın 5 beyliği — game.ts BEYLIKS ile BİREBİR aynı (id'ler eşleşmeli). Hem istemci
 // hem sunucu buradan okur → kayma olmaz. NPC ocaklar boş beylikleri tutar.
 export const BEYLIK_DEFS: { id: string; name: string }[] = [
@@ -56,6 +66,7 @@ export interface PlayerPublic {
   guildId: string | null;     // üye olduğu lonca/ocak
   provinceName: string | null;// vali olduğu sancak
   beylikId: string | null;    // bağlı olduğu beylik (grup/takım) — SUNUCU sahibi
+  honor: number;              // şeref/sadakat ekseni (−100..100); ihanet düşürür, yardım yükseltir — SUNUCU sahibi
   online: boolean;
   ready: boolean;        // bu ay için "ay atla" oyu
   dead: boolean;
@@ -92,6 +103,14 @@ export interface BeylikState {
   claimedTurn: number;
 }
 
+// ── Oyuncular arası sosyal doku ──
+// Pakt: müttefiklik / dünürlük (kan bağı) / ilan edilmiş savaş.
+export type PactType = "alliance" | "marriage" | "war";
+// İki oyuncu arasındaki bağ — standing simetrik (a<b kanonik sıra), pakt karşılıklı.
+export interface Bond { a: string; b: string; standing: number; pact: PactType | null; since: number; }
+// El sıkışma gerektiren teklif (ittifak/dünür/borç/sığınma) — hedef kabul/ret eder.
+export interface Offer { id: string; from: string; fromName: string; to: string; kind: "alliance" | "marriage" | "loan" | "asylum"; amount?: number; turn: number; }
+
 // ── Diyarın tam anlık görüntüsü (sunucu → istemci) ──
 export interface RealmSnapshot {
   v: number;             // PROTOCOL_VERSION
@@ -106,6 +125,8 @@ export interface RealmSnapshot {
   guilds: GuildState[];
   provinces: ProvinceState[];
   beyliks: BeylikState[]; // 5 beylik — Mount & Blade toprak/grup katmanı
+  bonds: Bond[];         // oyuncular arası bağlar (standing + pakt) — yarı-açık (ittifaklar bilinir)
+  offers: Offer[];       // bekleyen el-sıkışma teklifleri (ittifak/dünür/borç/sığınma)
   econ: number;          // paylaşımlı ekonomi/enflasyon indeksi
   createdAt: number;
 }
@@ -128,7 +149,25 @@ export type SharedIntent =
   | { k: "joinBeylik"; beylikId: string }      // beyliğe bağlan (gruba katıl, bey olmadan)
   | { k: "leaveBeylik" }
   | { k: "setBeylikTax"; beylikId: string; tax: number } // bey üyelere vergi koyar
-  | { k: "beylikCampaign"; target: string };   // bey olarak başka beyliğe sefer/savaş
+  | { k: "beylikCampaign"; target: string }   // bey olarak başka beyliğe sefer/savaş
+  // ── Sosyal doku ── (altın bedelleri istemcide kesilir; sunucu çekişme/riski çözer)
+  // Destek & dostluk
+  | { k: "gift"; to: string; amount: number }      // bağış (anlık altın) — düşene el uzat
+  | { k: "vouch"; to: string }                      // kefillik/övgü: itibarından harcayıp onu yücelt
+  | { k: "proposeAlliance"; to: string }            // ittifak teklifi
+  | { k: "proposeMarriage"; to: string }            // dünürlük (kan bağı) teklifi
+  | { k: "proposeLoan"; to: string; amount: number }// borç teklifi
+  | { k: "offerAsylum"; to: string }                // sığınma davet (devrik bey/öksüz vâris)
+  | { k: "respondOffer"; offerId: string; accept: boolean }
+  | { k: "breakPact"; with: string }                // paktı boz — ihanet (ağır şeref bedeli)
+  // Rekabet
+  | { k: "duel"; to: string }                       // düello daveti
+  // Entrika & ihanet (gizli, tick'te riskle çözülür)
+  | { k: "spy"; on: string }                        // casusluk
+  | { k: "sabotage"; on: string }                   // sabotaj
+  | { k: "assassinate"; on: string }                // suikast tertibi
+  | { k: "bribe"; on: string }                      // ayartma: rakip beyin üyesini kendi beyliğine çek
+  | { k: "slander"; on: string };                   // iftira/dedikodu
 
 // ── İstemci → Sunucu mesajları ──
 export type ClientMsg =
@@ -185,7 +224,7 @@ export function toPublic(
     generation: p.generation, profession: p.profession, fame: Math.round(p.fame), power: Math.round(power),
     crowned: !!p.crowned, guildId: p.faction || null,
     provinceName: (p.governorships && p.governorships[0]) || null,
-    beylikId: null, // sunucu sahibi; sync'te korunur, istemci ezmez
+    beylikId: null, honor: 0, // sunucu sahibi; sync'te korunur, istemci ezmez
     online, ready, dead: !!p.dead,
   };
 }

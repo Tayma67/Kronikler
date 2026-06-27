@@ -12,6 +12,7 @@ import {
   RealmSnapshot, PlayerPublic, ClientMsg, ServerMsg, SharedIntent, TickResult, TickEvent,
   GuildState, ProvinceState, BeylikState, ChatScope, BEYLIK_DEFS, BEY_MIN_POWER, BEY_MIN_AGE,
   THRONE_MIN_AGE, THRONE_MIN_POWER, THRONE_MIN_FAME,
+  Bond, Offer, PactType, GIFT_MAX, ASSASSINATE_MIN_AGE,
   PROTOCOL_VERSION, MAX_PLAYERS, TICK_TIMEOUT_MS, readyToTick,
 } from "./protocol";
 
@@ -37,6 +38,7 @@ export class RealmDO {
   env: Env;
   snap!: RealmSnapshot;
   intents: Record<string, SharedIntent[]> = {}; // playerId → bu ay kuyruğa giren paylaşımlı eylemler
+  offerSeq = 0; // teklif kimliği üreteci
   loaded = false;
 
   constructor(state: DurableObjectState, env: Env) {
@@ -50,7 +52,9 @@ export class RealmDO {
       this.snap = stored;
       // Eski (v1) diyar göçü: beylik katmanı yoksa kur, oyunculara beylikId ekle.
       if (!this.snap.beyliks) this.snap.beyliks = defaultBeyliks();
-      this.snap.players.forEach((p) => { if (p.beylikId === undefined) p.beylikId = null; });
+      if (!this.snap.bonds) this.snap.bonds = [];
+      if (!this.snap.offers) this.snap.offers = [];
+      this.snap.players.forEach((p) => { if (p.beylikId === undefined) p.beylikId = null; if (p.honor === undefined) p.honor = 0; });
       this.snap.v = PROTOCOL_VERSION;
     } else {
       const now = Date.now();
@@ -60,7 +64,7 @@ export class RealmDO {
         tickDeadline: now + TICK_TIMEOUT_MS, players: [],
         throne: { holderId: null, holderName: null, claimedTurn: 0 },
         guilds: GUILD_IDS.map((id) => ({ id, leaderId: null, tax: 10, closed: false } as GuildState)),
-        provinces: [], beyliks: defaultBeyliks(), econ: 1, createdAt: now,
+        provinces: [], beyliks: defaultBeyliks(), bonds: [], offers: [], econ: 1, createdAt: now,
       };
       await this.persist();
     }
@@ -94,11 +98,11 @@ export class RealmDO {
         const p = m.player; if (!p?.id) return;
         ws.serializeAttachment({ playerId: p.id });
         const existing = this.snap.players.find((x) => x.id === p.id);
-        // Yeniden katılımda beylikId SUNUCU otoritesinde kalmalı (istemci null gönderir) → koru.
-        if (existing) { Object.assign(existing, p, { online: true, beylikId: existing.beylikId }); }
+        // Yeniden katılımda beylikId + honor SUNUCU otoritesinde kalmalı (istemci sıfır gönderir) → koru.
+        if (existing) { Object.assign(existing, p, { online: true, beylikId: existing.beylikId, honor: existing.honor ?? 0 }); }
         else {
           if (this.snap.players.filter((x) => x.online).length >= MAX_PLAYERS) { this.sendTo(ws, { t: "error", code: "FULL", msg: "Diyar dolu" }); return; }
-          this.snap.players.push({ ...p, online: true, ready: false });
+          this.snap.players.push({ ...p, online: true, ready: false, beylikId: null, honor: typeof p.honor === "number" ? p.honor : 0 });
           this.broadcastChatSys(`mp.joined`, p.name);
         }
         await this.persist();
@@ -109,8 +113,8 @@ export class RealmDO {
       }
       case "sync": {
         const p = this.snap.players.find((x) => x.id === att.playerId);
-        // beylikId SUNUCU otoritesindedir (istemcinin game.ts'inde karşılığı yok) → sync ezmez.
-        if (p && m.player) { Object.assign(p, m.player, { id: p.id, online: true, beylikId: p.beylikId }); await this.persist(); this.broadcastPresence(); }
+        // beylikId + honor SUNUCU otoritesindedir (istemcinin game.ts'inde karşılığı yok) → sync ezmez.
+        if (p && m.player) { Object.assign(p, m.player, { id: p.id, online: true, beylikId: p.beylikId, honor: p.honor ?? 0 }); await this.persist(); this.broadcastPresence(); }
         break;
       }
       case "ready": {
@@ -373,6 +377,105 @@ export class RealmDO {
       ev(b.beyId, "mp.beylik.taxIncome", [members.length * due, b.name]);
     }
 
+    // ── 5) SOSYAL DOKU: destek / rekabet / entrika / yardım (oyuncular arası) ──
+    const pname = (id: string) => playerById(id)?.name || "?";
+    const aliveOther = (pid: string, other: string) => pid !== other && isAlive(pid) && isAlive(other);
+    const chance = (p: number) => Math.random() < p;
+
+    for (const pid of order) for (const it of this.intents[pid]) {
+      switch (it.k) {
+        // — Destek & dostluk —
+        case "gift": { // altın gönderen istemcide kesildi; alıcıya kredi olayı
+          if (!aliveOther(pid, it.to) || !(it.amount > 0)) break;
+          const amt = Math.min(GIFT_MAX, Math.floor(it.amount));
+          ev(it.to, "mp.soc.giftGot", [pname(pid), amt]); ev(pid, "mp.soc.giftSent", [pname(it.to), amt]);
+          this.adjustBond(pid, it.to, 8); this.adjustHonor(pid, 2);
+          break;
+        }
+        case "vouch": {
+          if (!aliveOther(pid, it.to)) break;
+          ev(it.to, "mp.soc.vouched", [pname(pid)]); ev(pid, "mp.soc.vouchDone", [pname(it.to)]);
+          this.adjustBond(pid, it.to, 5); this.adjustHonor(pid, 1);
+          break;
+        }
+        case "proposeAlliance": case "proposeMarriage": case "proposeLoan": case "offerAsylum": {
+          if (!aliveOther(pid, it.to)) break;
+          const kind = it.k === "proposeAlliance" ? "alliance" : it.k === "proposeMarriage" ? "marriage" : it.k === "proposeLoan" ? "loan" : "asylum";
+          this.snap.offers = this.snap.offers.filter((o) => !(o.from === pid && o.to === it.to && o.kind === kind)); // aynı teklifi tazele
+          const amount = it.k === "proposeLoan" ? Math.max(1, Math.floor((it as { amount: number }).amount)) : undefined;
+          this.snap.offers.push({ id: `o${this.snap.turn}_${this.offerSeq++}`, from: pid, fromName: pname(pid), to: it.to, kind: kind as Offer["kind"], amount, turn: this.snap.turn });
+          ev(pid, "mp.soc.offerSent", [pname(it.to)]);
+          break;
+        }
+        case "respondOffer": {
+          const o = this.snap.offers.find((x) => x.id === it.offerId && x.to === pid);
+          if (!o) break;
+          this.snap.offers = this.snap.offers.filter((x) => x.id !== o.id);
+          if (!it.accept) { ev(o.from, "mp.soc.offerDeclined", [pname(pid)]); break; }
+          if (o.kind === "alliance") { this.setPact(o.from, pid, "alliance"); this.adjustBond(o.from, pid, 20); ev(o.from, "mp.soc.allied", [pname(pid)]); ev(pid, "mp.soc.allied", [pname(o.from)]); }
+          else if (o.kind === "marriage") { this.setPact(o.from, pid, "marriage"); this.adjustBond(o.from, pid, 30); this.adjustHonor(o.from, 3); this.adjustHonor(pid, 3); ev(o.from, "mp.soc.married", [pname(pid)]); ev(pid, "mp.soc.married", [pname(o.from)]); }
+          else if (o.kind === "loan") { const amt = o.amount || 0; ev(pid, "mp.soc.loanGot", [pname(o.from), amt]); ev(o.from, "mp.soc.loanGave", [pname(pid), amt]); this.adjustBond(o.from, pid, 10); this.adjustHonor(o.from, 2); }
+          else if (o.kind === "asylum") { const host = this.snap.beyliks.find((b) => b.beyId === o.from); const bid = host ? host.id : this.snap.players.find((x) => x.id === o.from)?.beylikId || null; const t = playerById(pid); if (t) t.beylikId = bid; this.adjustBond(o.from, pid, 15); this.adjustHonor(o.from, 4); ev(o.from, "mp.soc.asylumGave", [pname(pid)]); ev(pid, "mp.soc.asylumGot", [pname(o.from)]); }
+          break;
+        }
+        case "breakPact": { // İHANET — paktı boz: ağır şeref bedeli + açık düşmanlık
+          if (!aliveOther(pid, it.with)) break;
+          const bd = this.bondOf(pid, it.with);
+          if (!bd.pact) break;
+          this.setPact(pid, it.with, "war"); this.adjustBond(pid, it.with, -50); this.adjustHonor(pid, -25);
+          ev(it.with, "mp.soc.betrayed", [pname(pid)]); ev(pid, "mp.soc.youBetrayed", [pname(it.with)]);
+          break;
+        }
+        // — Rekabet —
+        case "duel": {
+          if (!aliveOther(pid, it.to)) break;
+          const me = playerById(pid)!, foe = playerById(it.to)!;
+          const iWin = Math.random() * (me.power + foe.power + 1) < me.power + 1;
+          const w = iWin ? pid : it.to, l = iWin ? it.to : pid;
+          ev(w, "mp.soc.duelWon", [pname(l)]); ev(l, "mp.soc.duelLost", [pname(w)]);
+          this.adjustHonor(w, 4); this.adjustBond(pid, it.to, -6);
+          break;
+        }
+        // — Entrika & ihanet (gizli, riskli; altın istemcide kesildi) —
+        case "spy": {
+          if (!aliveOther(pid, it.on)) break;
+          if (chance(0.7)) { const acts = (this.intents[it.on] || []).map((x) => x.k).slice(0, 4); ev(pid, "mp.soc.spyResult", [pname(it.on), acts.length ? acts.join(", ") : "—"]); }
+          else { ev(it.on, "mp.soc.spyCaught", [pname(pid)]); this.adjustBond(pid, it.on, -10); this.adjustHonor(pid, -3); }
+          break;
+        }
+        case "sabotage": {
+          if (!aliveOther(pid, it.on)) break;
+          if (chance(0.6)) { ev(it.on, "mp.soc.sabotaged", [pname(pid)]); this.adjustBond(pid, it.on, -15); }
+          else { ev(it.on, "mp.soc.sabotageCaught", [pname(pid)]); ev(pid, "mp.soc.plotFoiled", []); this.adjustBond(pid, it.on, -20); this.adjustHonor(pid, -8); }
+          break;
+        }
+        case "assassinate": {
+          const foe = playerById(it.on);
+          if (!aliveOther(pid, it.on) || !foe || foe.age < ASSASSINATE_MIN_AGE) break;
+          const odds = Math.max(0.1, Math.min(0.6, 0.35 - foe.power / 600 - Math.max(0, foe.honor) / 400));
+          if (chance(odds)) { ev(it.on, "mp.soc.assassinated", [pname(pid)]); this.adjustBond(pid, it.on, -40); this.adjustHonor(pid, -15); }
+          else { ev(it.on, "mp.soc.assassinFoiled", [pname(pid)]); ev(pid, "mp.soc.plotFoiled", []); this.setPact(pid, it.on, "war"); this.adjustBond(pid, it.on, -50); this.adjustHonor(pid, -20); }
+          break;
+        }
+        case "bribe": { // ayartma: rakip beyin bağlı üyesini kendi beyliğine çek
+          const myBeylik = this.snap.beyliks.find((b) => b.beyId === pid);
+          const tgt = playerById(it.on);
+          if (!myBeylik || !tgt || !aliveOther(pid, it.on) || tgt.beylikId === myBeylik.id || this.snap.beyliks.some((b) => b.beyId === it.on)) break;
+          if (chance(0.5)) { const old = tgt.beylikId; tgt.beylikId = myBeylik.id; ev(pid, "mp.soc.bribeWon", [pname(it.on)]); ev(it.on, "mp.soc.bribed", [pname(pid)]); const oldBey = old ? this.snap.beyliks.find((b) => b.id === old)?.beyId : null; if (oldBey) ev(oldBey, "mp.soc.poached", [pname(it.on), pname(pid)]); }
+          else { ev(it.on, "mp.soc.bribeRefused", [pname(pid)]); this.adjustHonor(pid, -4); }
+          break;
+        }
+        case "slander": {
+          if (!aliveOther(pid, it.on)) break;
+          if (chance(0.7)) { ev(it.on, "mp.soc.slandered", [pname(pid)]); this.adjustBond(pid, it.on, -12); }
+          else { ev(it.on, "mp.soc.slanderCaught", [pname(pid)]); this.adjustHonor(pid, -6); }
+          break;
+        }
+      }
+    }
+    // Ölen oyuncunun bağ/teklifleri temizlenir (sonraki tur makam boşaltmayı zaten yapıyor).
+    this.snap.offers = this.snap.offers.filter((o) => isAlive(o.from) && isAlive(o.to));
+
     // saat ilerle + pencere/alarm sıfırla
     this.snap.turn += 1;
     this.snap.players.forEach((p) => { p.ready = false; });
@@ -393,6 +496,17 @@ export class RealmDO {
     const set = new Set(ids.filter(Boolean));
     return this.sockets().filter((ws) => { const a = (ws.deserializeAttachment() || {}) as { playerId?: string }; return !!a.playerId && set.has(a.playerId); });
   }
+  // ── Sosyal doku yardımcıları ──
+  // Bağ kanonik (a<b) saklanır; yoksa oluşturulur.
+  bondOf(x: string, y: string): Bond {
+    const [a, b] = x < y ? [x, y] : [y, x];
+    let bd = this.snap.bonds.find((d) => d.a === a && d.b === b);
+    if (!bd) { bd = { a, b, standing: 0, pact: null, since: this.snap.turn }; this.snap.bonds.push(bd); }
+    return bd;
+  }
+  adjustBond(x: string, y: string, delta: number) { const bd = this.bondOf(x, y); bd.standing = Math.max(-100, Math.min(100, bd.standing + delta)); }
+  setPact(x: string, y: string, pact: PactType | null) { const bd = this.bondOf(x, y); bd.pact = pact; bd.since = this.snap.turn; }
+  adjustHonor(pid: string, delta: number) { const p = this.snap.players.find((x) => x.id === pid); if (p) p.honor = Math.max(-100, Math.min(100, (p.honor || 0) + delta)); }
   sendTo(ws: WebSocket, m: ServerMsg) { try { ws.send(JSON.stringify(m)); } catch {} }
   broadcast(m: ServerMsg) { const s = JSON.stringify(m); for (const ws of this.sockets()) { try { ws.send(s); } catch {} } }
   broadcastPresence() {
