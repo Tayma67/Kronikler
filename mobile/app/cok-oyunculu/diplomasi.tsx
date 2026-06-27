@@ -121,7 +121,7 @@ export default function Diplomasi() {
                   {/* Rekabet */}
                   <Text style={cap}>{t("mp.soc.capRivalry")}</Text>
                   <View style={rowWrap}>
-                    <Btn label={t("mp.soc.duelBtn")} onPress={() => act({ k: "duel", to: x.id })} />
+                    <Btn label={t("mp.soc.duelBtn")} disabled={x.traveling} onPress={() => act({ k: "duel", to: x.id })} />
                   </View>
 
                   {/* Yardım */}
@@ -133,13 +133,13 @@ export default function Diplomasi() {
                   {/* Entrika & ihanet */}
                   <Text style={[cap, { color: C.blood }]}>{t("mp.soc.capIntrigue")}</Text>
                   <View style={rowWrap}>
-                    <Btn label={pf(t("mp.soc.spyBtn"), SPY_COST)} tone="dim" disabled={money < SPY_COST} onPress={() => act({ k: "spy", on: x.id }, SPY_COST)} />
-                    <Btn label={pf(t("mp.soc.sabotageBtn"), SABOTAGE_COST)} tone="dim" disabled={money < SABOTAGE_COST} onPress={() => act({ k: "sabotage", on: x.id }, SABOTAGE_COST)} />
-                    <Btn label={pf(t("mp.soc.slanderBtn"), SLANDER_COST)} tone="dim" disabled={money < SLANDER_COST} onPress={() => act({ k: "slander", on: x.id }, SLANDER_COST)} />
-                    {iAmBey && targetInOtherBeylik && <Btn label={pf(t("mp.soc.bribeBtn"), BRIBE_COST)} tone="dim" disabled={money < BRIBE_COST} onPress={() => act({ k: "bribe", on: x.id }, BRIBE_COST)} />}
-                    <Btn label={pf(t("mp.soc.assassinBtn"), ASSASSINATE_COST)} tone="blood" disabled={money < ASSASSINATE_COST || x.age < ASSASSINATE_MIN_AGE} onPress={() => act({ k: "assassinate", on: x.id }, ASSASSINATE_COST)} />
+                    <Btn label={pf(t("mp.soc.spyBtn"), SPY_COST)} tone="dim" disabled={x.traveling || money < SPY_COST} onPress={() => act({ k: "spy", on: x.id }, SPY_COST)} />
+                    <Btn label={pf(t("mp.soc.sabotageBtn"), SABOTAGE_COST)} tone="dim" disabled={x.traveling || money < SABOTAGE_COST} onPress={() => act({ k: "sabotage", on: x.id }, SABOTAGE_COST)} />
+                    <Btn label={pf(t("mp.soc.slanderBtn"), SLANDER_COST)} tone="dim" disabled={x.traveling || money < SLANDER_COST} onPress={() => act({ k: "slander", on: x.id }, SLANDER_COST)} />
+                    {iAmBey && targetInOtherBeylik && <Btn label={pf(t("mp.soc.bribeBtn"), BRIBE_COST)} tone="dim" disabled={x.traveling || money < BRIBE_COST} onPress={() => act({ k: "bribe", on: x.id }, BRIBE_COST)} />}
+                    <Btn label={pf(t("mp.soc.assassinBtn"), ASSASSINATE_COST)} tone="blood" disabled={x.traveling || money < ASSASSINATE_COST || x.age < ASSASSINATE_MIN_AGE} onPress={() => act({ k: "assassinate", on: x.id }, ASSASSINATE_COST)} />
                   </View>
-                  <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentDim, marginTop: 6 }}>{t("mp.soc.intrigueWarn")}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentDim, marginTop: 6 }}>{x.traveling ? t("mp.soc.travelingNote") : t("mp.soc.intrigueWarn")}</Text>
                 </View>
               )}
             </View>

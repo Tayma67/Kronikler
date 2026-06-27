@@ -18,6 +18,9 @@ interface MpCtx {
   setReady: (ready: boolean) => void;
   sendIntent: (intent: SharedIntent) => void;
   sendChat: (text: string, scope?: ChatScope, to?: string) => void;
+  saved: string | null;                    // sunucudan dönen yedek karakter (varsa) → aynı karaktere devam
+  saveState: (blob: string) => void;       // kişisel karakteri sunucuya yedekle
+  setTravel: (traveling: boolean) => void; // "Seyahate Çık" / "Dön"
   leave: () => void;
 }
 
@@ -32,13 +35,14 @@ export function MpProvider({ children }: { children: React.ReactNode }) {
   const [chat, setChat] = useState<ChatLine[]>([]);
   const [lastTick, setLastTick] = useState<{ turn: number; results: TickResult[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
 
   useEffect(() => { getGuestId().then(setGuestId); }, []);
   useEffect(() => () => { clientRef.current?.close(); }, []);
 
   const onMessage = useCallback((m: ServerMsg) => {
     switch (m.t) {
-      case "welcome": setSnapshot(m.snapshot); setError(null); break;
+      case "welcome": setSnapshot(m.snapshot); setSaved(m.saved ?? null); setError(null); break;
       case "snapshot": setSnapshot(m.snapshot); break;
       case "presence":
         setSnapshot((s) => s ? { ...s, players: m.players, phase: m.phase, tickDeadline: m.tickDeadline } : s);
@@ -84,10 +88,12 @@ export function MpProvider({ children }: { children: React.ReactNode }) {
   const setReady = useCallback((ready: boolean) => send({ t: "ready", ready }), [send]);
   const sendIntent = useCallback((intent: SharedIntent) => send({ t: "intent", intent }), [send]);
   const sendChat = useCallback((text: string, scope: ChatScope = "all", to?: string) => { if (text.trim()) send({ t: "chat", text: text.slice(0, 240), scope, to }); }, [send]);
-  const leave = useCallback(() => { lastJoinRef.current = null; send({ t: "leave" }); clientRef.current?.close(); setSnapshot(null); setChat([]); setLastTick(null); }, [send]);
+  const saveState = useCallback((blob: string) => send({ t: "saveState", blob }), [send]);
+  const setTravel = useCallback((traveling: boolean) => send({ t: "setTravel", traveling }), [send]);
+  const leave = useCallback(() => { lastJoinRef.current = null; send({ t: "leave" }); clientRef.current?.close(); setSnapshot(null); setChat([]); setLastTick(null); setSaved(null); }, [send]);
 
   return (
-    <Ctx.Provider value={{ status, guestId, snapshot, chat, lastTick, error, joinRealm, syncPlayer, setReady, sendIntent, sendChat, leave }}>
+    <Ctx.Provider value={{ status, guestId, snapshot, chat, lastTick, error, joinRealm, syncPlayer, setReady, sendIntent, sendChat, saved, saveState, setTravel, leave }}>
       {children}
     </Ctx.Provider>
   );

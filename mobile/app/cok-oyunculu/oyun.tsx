@@ -33,7 +33,7 @@ export default function MpOyun() {
   const { t } = useI18n();
   const { name } = useLocalSearchParams<{ name: string }>();
   const { state: s, apply, mpMode, enterMp, exitMp } = useGame();
-  const { guestId, snapshot, lastTick, setReady, sendIntent, syncPlayer } = useMp();
+  const { guestId, snapshot, lastTick, setReady, sendIntent, syncPlayer, saved, saveState, setTravel } = useMp();
 
   const [ready, setReadyLocal] = useState(false);
   const [evLines, setEvLines] = useState<string[]>([]);
@@ -42,14 +42,19 @@ export default function MpOyun() {
   const sRef = useRef<GameState | null>(s);
   useEffect(() => { sRef.current = s; }, [s]);
 
-  // MP karakterini ortak depoya koy (tüm /oyun alt-ekranları bunun üstünde çalışır)
+  // MP karakterini ortak depoya koy (tüm /oyun alt-ekranları bunun üstünde çalışır).
+  // Sunucuda yedek varsa AYNI KARAKTERE DEVAM (çıkıp girince kaldığın yer); yoksa yeni hayat.
   useEffect(() => {
-    if (!mpMode && guestId) enterMp({ ...newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"), mpRealm: true });
-  }, [guestId, mpMode]);
+    if (mpMode || !guestId) return;
+    let init: GameState | null = null;
+    if (saved) { try { const r = JSON.parse(saved); if (r && r.player) init = { ...r, mpRealm: true }; } catch {} }
+    if (!init) init = { ...newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"), mpRealm: true };
+    enterMp(init);
+  }, [guestId, mpMode, saved]);
 
-  // İlk kamu senkronu
+  // İlk kamu senkronu + ilk yedek
   useEffect(() => {
-    if (mpMode && s && guestId && snapshot && !synced.current) { synced.current = true; syncPlayer(mePublic(guestId, s, ready)); }
+    if (mpMode && s && guestId && snapshot && !synced.current) { synced.current = true; syncPlayer(mePublic(guestId, s, ready)); saveState(JSON.stringify(s)); }
   }, [mpMode, s, guestId, snapshot]);
 
   // Sunucu tick'i → dünya ayı ilerledi: yerel karakteri 1 ay ilerlet + çapraz etkiler + senkron
@@ -64,6 +69,7 @@ export default function MpOyun() {
     apply(() => ns);
     setReadyLocal(false);
     syncPlayer(mePublic(guestId, ns, false));
+    saveState(JSON.stringify(ns)); // her ay sonunda sunucuya yedekle → çıkıp girince aynı karaktere devam
   }, [lastTick]);
 
   // Çıkışta MP modundan çık (SP kaydı geri yüklenir)
@@ -152,6 +158,17 @@ export default function MpOyun() {
           </View>
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
         </Pressable>
+
+        {/* Seyahate Çık — güvenli yokluk: kişin dokunulmaz, diyarın etkileşime açık kalır */}
+        {(() => { const traveling = !!me?.traveling; return (
+          <Pressable onPress={() => { hap("tap"); setTravel(!traveling); }}
+            style={{ marginTop: 12, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: traveling ? "rgba(127,166,106,0.6)" : C.border, backgroundColor: traveling ? "rgba(127,166,106,0.12)" : C.card }}>
+            <GameIcon name="firsatlar" size={15} color={traveling ? C.sage : C.parchmentMuted} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: traveling ? C.sage : C.parchment }}>{traveling ? t("mp.travel.on") : t("mp.travel.off")}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{traveling ? t("mp.travel.onHint") : t("mp.travel.offHint")}</Text>
+            </View>
+          </Pressable>); })()}
 
         {/* Hayatını yönet — tüm kişisel ekranlar MP karakteri üstünde */}
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.subtitle")}</Text>

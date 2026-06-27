@@ -54,7 +54,7 @@ export class RealmDO {
       if (!this.snap.beyliks) this.snap.beyliks = defaultBeyliks();
       if (!this.snap.bonds) this.snap.bonds = [];
       if (!this.snap.offers) this.snap.offers = [];
-      this.snap.players.forEach((p) => { if (p.beylikId === undefined) p.beylikId = null; if (p.honor === undefined) p.honor = 0; });
+      this.snap.players.forEach((p) => { if (p.beylikId === undefined) p.beylikId = null; if (p.honor === undefined) p.honor = 0; if (p.traveling === undefined) p.traveling = false; });
       this.snap.v = PROTOCOL_VERSION;
     } else {
       const now = Date.now();
@@ -98,15 +98,18 @@ export class RealmDO {
         const p = m.player; if (!p?.id) return;
         ws.serializeAttachment({ playerId: p.id });
         const existing = this.snap.players.find((x) => x.id === p.id);
-        // Yeniden katılımda beylikId + honor SUNUCU otoritesinde kalmalı (istemci sıfır gönderir) → koru.
-        if (existing) { Object.assign(existing, p, { online: true, beylikId: existing.beylikId, honor: existing.honor ?? 0 }); }
+        // Yeniden katılımda beylikId + honor + traveling SUNUCU otoritesinde kalmalı (istemci sıfır gönderir) → koru.
+        // Dönüşte: tekrar çevrimiçi, seyahat biter (oyuncu geri döndü).
+        if (existing) { Object.assign(existing, p, { online: true, beylikId: existing.beylikId, honor: existing.honor ?? 0, traveling: false }); }
         else {
           if (this.snap.players.filter((x) => x.online).length >= MAX_PLAYERS) { this.sendTo(ws, { t: "error", code: "FULL", msg: "Diyar dolu" }); return; }
-          this.snap.players.push({ ...p, online: true, ready: false, beylikId: null, honor: typeof p.honor === "number" ? p.honor : 0 });
+          this.snap.players.push({ ...p, online: true, ready: false, beylikId: null, honor: typeof p.honor === "number" ? p.honor : 0, traveling: false });
           this.broadcastChatSys(`mp.joined`, p.name);
         }
+        // Aynı karaktere devam: bu oyuncunun yedeklenmiş kişisel durumunu geri ver.
+        const saved = (await this.state.storage.get<string>("save:" + p.id)) || null;
         await this.persist();
-        this.sendTo(ws, { t: "welcome", you: p.id, snapshot: this.snap });
+        this.sendTo(ws, { t: "welcome", you: p.id, snapshot: this.snap, saved });
         this.broadcastPresence();
         await this.ensureAlarm();
         break;
@@ -114,7 +117,17 @@ export class RealmDO {
       case "sync": {
         const p = this.snap.players.find((x) => x.id === att.playerId);
         // beylikId + honor SUNUCU otoritesindedir (istemcinin game.ts'inde karşılığı yok) → sync ezmez.
-        if (p && m.player) { Object.assign(p, m.player, { id: p.id, online: true, beylikId: p.beylikId, honor: p.honor ?? 0 }); await this.persist(); this.broadcastPresence(); }
+        if (p && m.player) { Object.assign(p, m.player, { id: p.id, online: true, beylikId: p.beylikId, honor: p.honor ?? 0, traveling: p.traveling ?? false }); await this.persist(); this.broadcastPresence(); }
+        break;
+      }
+      case "saveState": {
+        // Kişisel karakteri sunucuya yedekle (boyut sınırlı). Tekrar girişte welcome ile geri verilir.
+        if (att.playerId && typeof m.blob === "string" && m.blob.length < 300000) { await this.state.storage.put("save:" + att.playerId, m.blob); }
+        break;
+      }
+      case "setTravel": {
+        const p = this.snap.players.find((x) => x.id === att.playerId);
+        if (p) { p.traveling = !!m.traveling; await this.persist(); this.broadcastPresence(); }
         break;
       }
       case "ready": {
@@ -386,8 +399,13 @@ export class RealmDO {
     // için onlar dedupe edilmez (kesilen altın boşa gitmesin).
     const socOnce = new Set<string>();
     const once = (key: string) => { if (socOnce.has(key)) return false; socOnce.add(key); return true; };
+    // "Seyahate Çık": seyahatteki kişiye DÜŞMANCA eylem (düello/casus/sabotaj/iftira/ayartma/suikast)
+    // engellenir — kişi dokunulmaz. Beyliğine sefer (holdings) bundan etkilenmez.
+    const HOSTILE = new Set(["duel", "spy", "sabotage", "slander", "bribe", "assassinate"]);
 
     for (const pid of order) for (const it of this.intents[pid]) {
+      const tgtId = (it as { to?: string; on?: string }).to || (it as { to?: string; on?: string }).on;
+      if (HOSTILE.has(it.k) && tgtId && playerById(tgtId)?.traveling) { ev(pid, "mp.soc.targetTraveling", [pname(tgtId)]); continue; }
       switch (it.k) {
         // — Destek & dostluk —
         case "gift": { // altın gönderen istemcide kesildi; alıcıya kredi olayı

@@ -67,6 +67,7 @@ export interface PlayerPublic {
   provinceName: string | null;// vali olduğu sancak
   beylikId: string | null;    // bağlı olduğu beylik (grup/takım) — SUNUCU sahibi
   honor: number;              // şeref/sadakat ekseni (−100..100); ihanet düşürür, yardım yükseltir — SUNUCU sahibi
+  traveling: boolean;         // "Seyahate Çık": kişi dokunulmaz (kişisel saldırı engellenir), diyarı etkileşime açık kalır — SUNUCU sahibi
   online: boolean;
   ready: boolean;        // bu ay için "ay atla" oyu
   dead: boolean;
@@ -176,6 +177,8 @@ export type ClientMsg =
   | { t: "ready"; ready: boolean }         // ay-atla oyu
   | { t: "intent"; intent: SharedIntent }  // paylaşımlı eylem
   | { t: "chat"; text: string; scope?: ChatScope; to?: string } // scope: genel/beylik/fısıltı; to: fısıltı hedef oyuncu id
+  | { t: "saveState"; blob: string }       // kişisel game.ts durumunu sunucuya yedekle (tekrar girişte aynı karakter)
+  | { t: "setTravel"; traveling: boolean }  // "Seyahate Çık" / "Dön"
   | { t: "leave" }
   | { t: "ping" };
 
@@ -192,7 +195,7 @@ export interface TickEvent {
 
 // ── Sunucu → İstemci mesajları ──
 export type ServerMsg =
-  | { t: "welcome"; you: string; snapshot: RealmSnapshot }
+  | { t: "welcome"; you: string; snapshot: RealmSnapshot; saved?: string | null } // saved: bu oyuncunun yedeklenmiş karakteri (varsa) → aynı karaktere devam
   | { t: "snapshot"; snapshot: RealmSnapshot }       // tam durum (katılış + tick sonrası)
   | { t: "presence"; players: PlayerPublic[]; phase: RealmSnapshot["phase"]; tickDeadline: number }
   | { t: "tick"; turn: number; results: TickResult[]; snapshot: RealmSnapshot }
@@ -224,7 +227,7 @@ export function toPublic(
     generation: p.generation, profession: p.profession, fame: Math.round(p.fame), power: Math.round(power),
     crowned: !!p.crowned, guildId: p.faction || null,
     provinceName: (p.governorships && p.governorships[0]) || null,
-    beylikId: null, honor: 0, // sunucu sahibi; sync'te korunur, istemci ezmez
+    beylikId: null, honor: 0, traveling: false, // sunucu sahibi; sync'te korunur, istemci ezmez
     online, ready, dead: !!p.dead,
   };
 }

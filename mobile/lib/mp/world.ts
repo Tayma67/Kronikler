@@ -91,6 +91,7 @@ export function applyTickEvents(prev: GameState, events: TickEvent[]): GameState
       case "mp.soc.sabotaged": p.money = Math.max(0, p.money - 300); p.reputation = Math.max(-100, p.reputation - 4); break;
       case "mp.soc.slandered": p.fame = clamp100(p.fame - 8); p.reputation = Math.max(-100, p.reputation - 8); break;
       case "mp.soc.assassinated": p.health = 0; p.dead = true; break;       // suikast başarılı → ölüm (vârisle sürer)
+      // targetTraveling → yalnız bilgilendirme (hedef seyahatte, eylem işlemedi)
       // giftSent/vouchDone/offerSent/offerDeclined/asylum*/betrayed/spy*/sabotageCaught/
       // plotFoiled/assassinFoiled/bribe*/poached/slanderCaught → yalnız bilgilendirme
     }
