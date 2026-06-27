@@ -209,7 +209,13 @@ export default function MpOyun() {
         </View>
 
         {/* BEYLİKLER — Mount & Blade toprak/grup katmanı */}
-        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 4 }}>{t("mp.beylik.title")}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 18, marginBottom: 4 }}>
+          <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim }}>{t("mp.beylik.title")}</Text>
+          <Pressable onPress={() => { hap("tap"); router.push("/cok-oyunculu/harita"); }} style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 4, paddingHorizontal: 9, borderRadius: 7, borderWidth: 1, borderColor: C.border }}>
+            <GameIcon name="sehir" size={12} color={C.goldDim} />
+            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("mp.map.title")}</Text>
+          </Pressable>
+        </View>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginBottom: 8 }}>
           {beyEligible ? pf(t("mp.beylik.canBeyHint"), BEY_COST) : pf(t("mp.beylik.needPowerHint"), myPower, BEY_MIN_POWER, BEY_MIN_AGE, BEY_COST)}
         </Text>
