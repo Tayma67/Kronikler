@@ -21,16 +21,21 @@ function pub(id,o){o=o||{};return{id,name:o.name||id,surname:"T",gender:"erkek",
   await waitFor(B,m=>m.t==="welcome");
   B.send({t:"sync",player:pub("pB",{name:"Bora",power:150})}); await sleep(300);
 
-  let aDead=false, driftSeen=false;
+  let aDead=false, driftSeen=false, turn=0;
+  // Önce SUİKASTSIZ 2 tur: vekil yaşlanma sayacı gözlemlensin. (Ölü vekil yaşlanmaz —
+  // bu yüzden drift'i ölümden ÖNCE ölçeriz; ilk-tur ölümünde drift atlanması beklenen davranış.)
+  // NOT: beklenen tur waitFor'dan ÖNCE artırılır (predicate'te mutasyon yok — predicate defalarca çağrılır).
+  for(let i=0;i<2;i++){ turn++; B.send({t:"ready",ready:true}); const tk=await waitFor(B,m=>m.t==="tick"&&m.turn===turn,8000); if(tk){const a=tk.snapshot.players.find(p=>p.id==="pA"); if(a&&(a.npcMonths||0)>0)driftSeen=true;} }
+  ok(driftSeen,"çevrimdışı vekil yaşlanma sayacı işledi (drift)");
   for(let i=0;i<18 && !aDead;i++){
+    turn++;
     B.send({t:"intent",intent:{k:"assassinate",on:"pA"}});
     B.send({t:"ready",ready:true});
-    const tk=await waitFor(B,m=>m.t==="tick"&&m.turn===i+1,8000);
+    const tk=await waitFor(B,m=>m.t==="tick"&&m.turn===turn,8000);
     if(!tk) break;
     const a=tk.snapshot.players.find(p=>p.id==="pA");
-    if(a){ if((a.npcMonths||0)>0||a.age>60) driftSeen=true; if(a.dead) aDead=true; }
+    if(a&&a.dead) aDead=true;
   }
-  ok(driftSeen,"çevrimdışı vekil yaşlanma sayacı işledi (drift)");
   ok(aDead,"çevrimdışı vekil suikastla öldürülebildi (sunucu dead set etti)");
 
   // Dönüş: A tekrar girer → saved geri gelir + sunucu hanesi ölü
