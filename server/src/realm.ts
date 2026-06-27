@@ -13,6 +13,7 @@ import {
   GuildState, ProvinceState, BeylikState, ChatScope, BEYLIK_DEFS, BEY_MIN_POWER, BEY_MIN_AGE,
   THRONE_MIN_AGE, THRONE_MIN_POWER, THRONE_MIN_FAME,
   Bond, Offer, PactType, GIFT_MAX, ASSASSINATE_MIN_AGE,
+  NpcPublic, NpcBond,
   PROTOCOL_VERSION, MAX_PLAYERS, TICK_TIMEOUT_MS, readyToTick,
 } from "./protocol";
 
@@ -24,6 +25,29 @@ const NPC_BEYLIK_POWER = 60;
 const NPC_OCAK_BY_BEYLIK: Record<string, string> = {
   demirhan: "demirci", yenisehir: "tuccar", gumushisar: "ulema", aksehir: "esnaf", karahisar: "asker",
 };
+
+// ── Paylaşımlı NPC kütüğü: seed'den DETERMİNİSTİK üretim (tüm istemciler aynısını alır) ──
+// game.ts'e bağımlı değil; küçük seeded PRNG + ad/rol havuzları. Cloudflare Worker'da çalışır.
+function mulberry32(seed: number) {
+  let a = seed >>> 0;
+  return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+const NPC_NAMES = ["Yusuf", "Davud", "Ömer", "Bayram", "Kâzım", "Turgut", "Nedim", "Sinan", "Kerem", "Tahir", "Bedir", "Vefa", "Lütfi", "Sadık", "Cüneyd", "Hızır", "Doğan", "Ünal", "Server", "Necip", "Ayperi", "Gülbahar", "Nurbanu", "Hafsa", "Mihrimah", "Dilşad", "Servinaz", "Ferahnaz"];
+const NPC_ROLES = ["vezir", "lonca", "rakip", "tuccar", "alim", "komutan", "kadi"];
+// Diyarın ileri gelenleri: her beyliğe ~3 notable (toplam ~15) — etkileşime değer kişiler.
+function generateNpcs(seed: number): NpcPublic[] {
+  const rnd = mulberry32(seed ^ 0x9e3779b9);
+  const out: NpcPublic[] = []; const used = new Set<number>(); let nid = 0;
+  const pickName = () => { let i = Math.floor(rnd() * NPC_NAMES.length); let g = 0; while (used.has(i) && g++ < NPC_NAMES.length) i = (i + 1) % NPC_NAMES.length; used.add(i); return NPC_NAMES[i]; };
+  for (const b of BEYLIK_DEFS) {
+    const count = 3;
+    for (let i = 0; i < count; i++) {
+      const role = NPC_ROLES[Math.floor(rnd() * NPC_ROLES.length)];
+      out.push({ id: "npc_" + (nid++), name: pickName(), role, beylikId: b.id, influence: 20 + Math.floor(rnd() * 41) });
+    }
+  }
+  return out;
+}
 
 // 5 beyliği başlangıçta NPC ocakların elinde kur (oyuncu bey olunca devralır).
 function defaultBeyliks(): BeylikState[] {
@@ -53,18 +77,22 @@ export class RealmDO {
       // Eski (v1) diyar göçü: beylik katmanı yoksa kur, oyunculara beylikId ekle.
       if (!this.snap.beyliks) this.snap.beyliks = defaultBeyliks();
       if (!this.snap.bonds) this.snap.bonds = [];
+      if (!this.snap.npcs) this.snap.npcs = generateNpcs(this.snap.seed);
+      if (!this.snap.npcBonds) this.snap.npcBonds = [];
       if (!this.snap.offers) this.snap.offers = [];
       this.snap.players.forEach((p) => { if (p.beylikId === undefined) p.beylikId = null; if (p.honor === undefined) p.honor = 0; if (p.traveling === undefined) p.traveling = false; });
       this.snap.v = PROTOCOL_VERSION;
     } else {
       const now = Date.now();
+      const seedVal = Math.floor(Math.random() * 1e9);
       this.snap = {
         v: PROTOCOL_VERSION, realmId, name: realmName || realmId,
-        seed: Math.floor(Math.random() * 1e9), turn: 0, phase: "open",
+        seed: seedVal, turn: 0, phase: "open",
         tickDeadline: now + TICK_TIMEOUT_MS, players: [],
         throne: { holderId: null, holderName: null, claimedTurn: 0 },
         guilds: GUILD_IDS.map((id) => ({ id, leaderId: null, tax: 10, closed: false } as GuildState)),
-        provinces: [], beyliks: defaultBeyliks(), bonds: [], offers: [], econ: 1, createdAt: now,
+        provinces: [], beyliks: defaultBeyliks(), bonds: [],
+        npcs: generateNpcs(seedVal), npcBonds: [], offers: [], econ: 1, createdAt: now,
       };
       await this.persist();
     }
@@ -363,7 +391,8 @@ export class RealmDO {
       const attackerB = this.snap.beyliks.find((x) => x.beyId === pid);
       const target = this.snap.beyliks.find((x) => x.id === it.target);
       if (!attackerB || !target || target.id === attackerB.id) continue;
-      const atk = liveBeylikMuster(attackerB), def = liveBeylikMuster(target);
+      // NPC desteği seferi etkiler: hedef beyin düşmanı olan + bizi seven NPC'ler ağırlık katar.
+      const atk = liveBeylikMuster(attackerB) + this.npcSupport(pid, target.beyId), def = liveBeylikMuster(target);
       // Gerçekçi: kesin sonuç değil, güç oranıyla OLASILIK. Maliyet (altın) istemcide kesildi.
       const win = (Math.random() * (atk + def)) < atk;
       if (win) {
@@ -481,7 +510,8 @@ export class RealmDO {
         case "assassinate": {
           const foe = playerById(it.on);
           if (!aliveOther(pid, it.on) || !foe || foe.age < ASSASSINATE_MIN_AGE) break;
-          const odds = Math.max(0.1, Math.min(0.6, 0.35 - foe.power / 600 - Math.max(0, foe.honor) / 400));
+          // Bizi tutan + hedefi sevmeyen NPC'ler suikast şansını az da olsa artırır.
+          const odds = Math.max(0.1, Math.min(0.7, 0.35 - foe.power / 600 - Math.max(0, foe.honor) / 400 + this.npcSupport(pid, it.on) / 600));
           if (chance(odds)) {
             // Çevrimdışı vekili sunucu doğrudan öldürür (istemcisi yok); çevrimiçide olay istemcide işler.
             if (foe && !foe.online) foe.dead = true;
@@ -502,6 +532,32 @@ export class RealmDO {
           if (!aliveOther(pid, it.on)) break;
           if (chance(0.7)) { ev(it.on, "mp.soc.slandered", [pname(pid)]); this.adjustBond(pid, it.on, -12); }
           else { ev(it.on, "mp.soc.slanderCaught", [pname(pid)]); this.adjustHonor(pid, -6); }
+          break;
+        }
+        // ── Paylaşımlı NPC ilişkileri (Faz B) — maliyet istemcide kesildi ──
+        case "courtNpc": { // NPC'yi yanına çek (ziyafet/hediye) → standing↑ (azalan getiri)
+          const npc = this.snap.npcs.find((n) => n.id === it.npcId); if (!npc) break;
+          const cur = this.npcBondOf(it.npcId, pid).standing;
+          this.adjustNpcBond(it.npcId, pid, Math.max(2, Math.round(10 * (1 - Math.max(0, cur) / 100))));
+          ev(pid, "mp.npc.courted", [npc.name]);
+          break;
+        }
+        case "turnNpc": { // NPC'yi bir oyuncuya karşı kışkırt — etki SENİN NPC ile yakınlığına bağlı
+          const npc = this.snap.npcs.find((n) => n.id === it.npcId); if (!npc || !it.against) break;
+          const myStand = this.npcBondOf(it.npcId, pid).standing;
+          if (myStand < 10) { ev(pid, "mp.npc.tooDistant", [npc.name]); break; } // NPC seni yeterince sevmiyor
+          this.adjustNpcBond(it.npcId, it.against, -Math.round(12 * (myStand / 100)));
+          ev(pid, "mp.npc.turned", [npc.name, pname(it.against)]);
+          if (isAlive(it.against)) ev(it.against, "mp.npc.turnedYou", [npc.name, pname(pid)]);
+          break;
+        }
+        case "mediateNpc": { // NPC ile bir oyuncunun arasını düzelt
+          const npc = this.snap.npcs.find((n) => n.id === it.npcId); if (!npc || !it.player) break;
+          const myStand = this.npcBondOf(it.npcId, pid).standing;
+          if (myStand < 10) { ev(pid, "mp.npc.tooDistant", [npc.name]); break; }
+          this.adjustNpcBond(it.npcId, it.player, Math.round(10 * (myStand / 100)));
+          ev(pid, "mp.npc.mediated", [npc.name, pname(it.player)]);
+          if (isAlive(it.player)) ev(it.player, "mp.npc.mediatedYou", [npc.name, pname(pid)]);
           break;
         }
       }
@@ -550,6 +606,26 @@ export class RealmDO {
   adjustBond(x: string, y: string, delta: number) { const bd = this.bondOf(x, y); bd.standing = Math.max(-100, Math.min(100, bd.standing + delta)); }
   setPact(x: string, y: string, pact: PactType | null) { const bd = this.bondOf(x, y); bd.pact = pact; bd.since = this.snap.turn; }
   // Şeref: ARTIŞ azalan getirili (yükseldikçe zorlaşır) → farmlanamaz; CEZA tam uygulanır (ihanet hep yaralar).
+  // NPC↔oyuncu ilişkisi (kişiye özel) — yoksa oluştur.
+  npcBondOf(npc: string, player: string): NpcBond {
+    let b = this.snap.npcBonds.find((x) => x.npc === npc && x.player === player);
+    if (!b) { b = { npc, player, standing: 0 }; this.snap.npcBonds.push(b); }
+    return b;
+  }
+  adjustNpcBond(npc: string, player: string, delta: number) { const b = this.npcBondOf(npc, player); b.standing = Math.max(-100, Math.min(100, b.standing + delta)); }
+  // Salt-okur NPC↔oyuncu standing (bağ oluşturmaz).
+  npcStanding(npc: string, player: string): number { return this.snap.npcBonds.find((b) => b.npc === npc && b.player === player)?.standing || 0; }
+  // NPC desteği: bir oyuncunun (me) bir hedefe (against) karşı topladığı NPC nüfuzu.
+  // Seni seven + hedefi sevmeyen NPC'ler, nüfuzları oranında sana ağırlık katar.
+  npcSupport(me: string, against: string | null): number {
+    let s = 0;
+    for (const n of this.snap.npcs) {
+      const mine = this.npcStanding(n.id, me); if (mine <= 20) continue;
+      const tgt = against ? this.npcStanding(n.id, against) : 0;
+      if (mine > tgt) s += (n.influence * (mine - tgt)) / 200;
+    }
+    return s;
+  }
   adjustHonor(pid: string, delta: number) {
     const p = this.snap.players.find((x) => x.id === pid); if (!p) return;
     const cur = p.honor || 0;

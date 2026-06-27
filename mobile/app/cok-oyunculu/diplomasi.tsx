@@ -6,7 +6,7 @@ import { useI18n } from "../../lib/i18n";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { GameState } from "../../lib/game";
-import { SharedIntent, Bond, PlayerPublic, SPY_COST, SABOTAGE_COST, ASSASSINATE_COST, BRIBE_COST, SLANDER_COST, LOAN_DEFAULT, ASSASSINATE_MIN_AGE } from "../../lib/mp/protocol";
+import { SharedIntent, Bond, PlayerPublic, SPY_COST, SABOTAGE_COST, ASSASSINATE_COST, BRIBE_COST, SLANDER_COST, LOAN_DEFAULT, ASSASSINATE_MIN_AGE, COURT_NPC_COST, TURN_NPC_COST, MEDIATE_NPC_COST } from "../../lib/mp/protocol";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
@@ -27,6 +27,8 @@ export default function Diplomasi() {
   const { state: s, apply, mpMode } = useGame();
   const { guestId, snapshot, sendIntent } = useMp();
   const [sel, setSel] = useState<string | null>(null);
+  const [selNpc, setSelNpc] = useState<string | null>(null);
+  const [npcTarget, setNpcTarget] = useState<string | null>(null);
 
   if (!mpMode || !s || !snapshot || !guestId) {
     return <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center" }}>
@@ -140,6 +142,49 @@ export default function Diplomasi() {
                     <Btn label={pf(t("mp.soc.assassinBtn"), ASSASSINATE_COST)} tone="blood" disabled={x.traveling || money < ASSASSINATE_COST || x.age < ASSASSINATE_MIN_AGE} onPress={() => act({ k: "assassinate", on: x.id }, ASSASSINATE_COST)} />
                   </View>
                   <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentDim, marginTop: 6 }}>{x.traveling ? t("mp.soc.travelingNote") : t("mp.soc.intrigueWarn")}</Text>
+                </View>
+              )}
+            </View>
+          );
+        })}
+
+        {/* Diyar İleri Gelenleri — paylaşımlı NPC'ler (herkes aynısını görür) */}
+        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.npc.title")}</Text>
+        {(snapshot.npcs || []).map((n) => {
+          const open = selNpc === n.id;
+          const myStand = (snapshot.npcBonds || []).find((b) => b.npc === n.id && b.player === guestId)?.standing ?? 0;
+          const standCol = myStand >= 25 ? C.sage : myStand <= -25 ? C.blood : C.parchmentMuted;
+          return (
+            <View key={n.id} style={{ borderWidth: 1, borderColor: open ? "rgba(201,168,76,0.6)" : C.border, borderRadius: 9, marginBottom: 8, backgroundColor: C.card, overflow: "hidden" }}>
+              <Pressable onPress={() => { hap("tap"); setSelNpc(open ? null : n.id); setNpcTarget(null); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 11 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: open ? C.gold : C.parchment }}>{n.name}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>{t("mp.npc.role." + n.role)} · {n.beylikId} · {pf(t("mp.npc.influence"), n.influence)}</Text>
+                </View>
+                <Text style={{ fontFamily: F.display, fontSize: 10, color: standCol }}>{pf(t("mp.npc.standing"), myStand)}</Text>
+              </Pressable>
+              {open && (
+                <View style={{ paddingHorizontal: 11, paddingBottom: 11, borderTopWidth: 1, borderTopColor: C.border }}>
+                  <View style={[rowWrap, { marginTop: 8 }]}>
+                    <Btn label={pf(t("mp.npc.courtBtn"), COURT_NPC_COST)} disabled={money < COURT_NPC_COST} onPress={() => act({ k: "courtNpc", npcId: n.id }, COURT_NPC_COST)} />
+                  </View>
+                  {others.length > 0 && (
+                    <>
+                      <Text style={cap}>{t("mp.npc.pickTarget")}</Text>
+                      <View style={rowWrap}>
+                        {others.map((o) => (
+                          <Pressable key={o.id} onPress={() => { hap("tap"); setNpcTarget(o.id); }} style={[mb, { borderColor: npcTarget === o.id ? "rgba(111,160,192,0.7)" : C.border, backgroundColor: npcTarget === o.id ? "rgba(111,160,192,0.14)" : "transparent" }]}>
+                            <Text style={[mt, { color: npcTarget === o.id ? "#6FA0C0" : C.parchmentMuted }]}>{o.name}</Text></Pressable>
+                        ))}
+                      </View>
+                      {npcTarget && (
+                        <View style={[rowWrap, { marginTop: 6 }]}>
+                          <Btn label={pf(t("mp.npc.turnBtn"), TURN_NPC_COST)} tone="blood" disabled={money < TURN_NPC_COST} onPress={() => act({ k: "turnNpc", npcId: n.id, against: npcTarget! }, TURN_NPC_COST)} />
+                          <Btn label={pf(t("mp.npc.mediateBtn"), MEDIATE_NPC_COST)} disabled={money < MEDIATE_NPC_COST} onPress={() => act({ k: "mediateNpc", npcId: n.id, player: npcTarget! }, MEDIATE_NPC_COST)} />
+                        </View>
+                      )}
+                    </>
+                  )}
                 </View>
               )}
             </View>

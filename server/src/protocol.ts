@@ -41,6 +41,9 @@ export const BRIBE_COST = 1200;       // ayartma/rüşvet (üye çalma)
 export const SLANDER_COST = 400;      // iftira/dedikodu
 export const LOAN_DEFAULT = 1000;     // varsayılan borç tutarı
 export const ASSASSINATE_MIN_AGE = 18;
+export const COURT_NPC_COST = 250;    // NPC'yi yanına çekme (ziyafet/hediye)
+export const TURN_NPC_COST = 400;     // NPC'yi bir oyuncuya karşı kışkırtma
+export const MEDIATE_NPC_COST = 300;  // NPC ile oyuncu arasını düzeltme
 // Diyarın 5 beyliği — game.ts BEYLIKS ile BİREBİR aynı (id'ler eşleşmeli). Hem istemci
 // hem sunucu buradan okur → kayma olmaz. NPC ocaklar boş beylikleri tutar.
 export const BEYLIK_DEFS: { id: string; name: string }[] = [
@@ -105,11 +108,23 @@ export interface BeylikState {
   claimedTurn: number;
 }
 
+// ── Paylaşımlı NPC katmanı (diyar ileri gelenleri) ──
+// Seed'den deterministik üretilir → tüm oyuncular AYNI NPC'leri görür. Sunucu otoritesi.
+export interface NpcPublic {
+  id: string;
+  name: string;
+  role: string;       // vezir | lonca | rakip | tuccar | alim | komutan | kadi
+  beylikId: string;   // bulunduğu beylik
+  influence: number;  // nüfuz — sosyal/siyasi ağırlık (NPC desteği bunu katar)
+}
+
 // ── Oyuncular arası sosyal doku ──
 // Pakt: müttefiklik / dünürlük (kan bağı) / ilan edilmiş savaş.
 export type PactType = "alliance" | "marriage" | "war";
 // İki oyuncu arasındaki bağ — standing simetrik (a<b kanonik sıra), pakt karşılıklı.
 export interface Bond { a: string; b: string; standing: number; pact: PactType | null; since: number; }
+// NPC↔oyuncu ilişkisi (kişiye özel): aynı NPC bir oyuncuya dost, başkasına düşman olabilir.
+export interface NpcBond { npc: string; player: string; standing: number; }
 // El sıkışma gerektiren teklif (ittifak/dünür/borç/sığınma) — hedef kabul/ret eder.
 export interface Offer { id: string; from: string; fromName: string; to: string; kind: "alliance" | "marriage" | "loan" | "asylum"; amount?: number; turn: number; }
 
@@ -128,6 +143,8 @@ export interface RealmSnapshot {
   provinces: ProvinceState[];
   beyliks: BeylikState[]; // 5 beylik — Mount & Blade toprak/grup katmanı
   bonds: Bond[];         // oyuncular arası bağlar (standing + pakt) — yarı-açık (ittifaklar bilinir)
+  npcs: NpcPublic[];     // PAYLAŞIMLI NPC kütüğü (diyar ileri gelenleri) — herkes aynısını görür
+  npcBonds: NpcBond[];   // NPC↔oyuncu ilişkileri (kişiye göre değişir)
   offers: Offer[];       // bekleyen el-sıkışma teklifleri (ittifak/dünür/borç/sığınma)
   econ: number;          // paylaşımlı ekonomi/enflasyon indeksi
   createdAt: number;
@@ -169,7 +186,11 @@ export type SharedIntent =
   | { k: "sabotage"; on: string }                   // sabotaj
   | { k: "assassinate"; on: string }                // suikast tertibi
   | { k: "bribe"; on: string }                      // ayartma: rakip beyin üyesini kendi beyliğine çek
-  | { k: "slander"; on: string };                   // iftira/dedikodu
+  | { k: "slander"; on: string }                    // iftira/dedikodu
+  // ── Paylaşımlı NPC ilişkileri (Faz B) ──
+  | { k: "courtNpc"; npcId: string }                // NPC'yi yanına çek (standing↑)
+  | { k: "turnNpc"; npcId: string; against: string }// NPC'yi bir oyuncuya karşı kışkırt
+  | { k: "mediateNpc"; npcId: string; player: string }; // NPC ile bir oyuncunun arasını düzelt
 
 // ── İstemci → Sunucu mesajları ──
 export type ClientMsg =
