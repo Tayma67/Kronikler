@@ -32,18 +32,18 @@ jobs:
         working-directory: mobile/android
         run: ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon --stacktrace
       - name: APK'yi temiz isimle kopyala
-        run: cp mobile/android/app/build/outputs/apk/debug/app-debug.apk kronikler.apk
+        run: cp mobile/android/app/build/outputs/apk/debug/app-debug.apk Kronikler.apk
       - name: APK'yi yukle (artefakt)
         uses: actions/upload-artifact@v4
         with:
           name: kronikler-apk
-          path: kronikler.apk
+          path: Kronikler.apk
           if-no-files-found: error
       - name: Release'e yukle (dogrudan indirme linki)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-latest
           name: "Kronikler APK (guncel)"
-          body: "En guncel derleme. Dogrudan indirme: kronikler.apk (girissiz, herkese acik)."
-          files: kronikler.apk
+          body: "En guncel derleme. Dogrudan indirme: Kronikler.apk (girissiz, herkese acik)."
+          files: Kronikler.apk
           fail_on_unmatched_files: true
