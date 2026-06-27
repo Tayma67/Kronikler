@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Dağıtımdan sonra buraya Worker adresini yaz (örn "wss://kronikler-mp.<hesap>.workers.dev").
 // Boş bırakılırsa istemci "sunucu ayarlanmadı" der; uygulama-içi ayardan da girilebilir.
-export const DEFAULT_SERVER_URL = "";
+export const DEFAULT_SERVER_URL = "wss://kronikler-mp.tayma.workers.dev";
 
 const URL_KEY = "kronikler_mp_server_url";
 const ID_KEY = "kronikler_guest_id";
