@@ -84,7 +84,7 @@ export class RealmDO {
       if (!this.snap.npcBonds) this.snap.npcBonds = [];
       if (!this.snap.news) this.snap.news = [];
       if (!this.snap.offers) this.snap.offers = [];
-      this.snap.players.forEach((p) => { if (p.beylikId === undefined) p.beylikId = null; if (p.honor === undefined) p.honor = 0; if (p.traveling === undefined) p.traveling = false; });
+      this.snap.players.forEach((p) => { if (p.beylikId === undefined) p.beylikId = null; if (p.honor === undefined) p.honor = 0; if (p.traveling === undefined) p.traveling = false; if (p.married === undefined) p.married = false; });
       this.snap.v = PROTOCOL_VERSION;
     } else {
       const now = Date.now();
@@ -146,7 +146,7 @@ export class RealmDO {
         if (existing) { Object.assign(existing, p, { online: true, beylikId: existing.beylikId, honor: existing.honor ?? 0, traveling: false, dead: !!existing.dead || !!p.dead }); }
         else {
           if (this.snap.players.filter((x) => x.online).length >= MAX_PLAYERS) { this.sendTo(ws, { t: "error", code: "FULL", msg: "Diyar dolu" }); return; }
-          this.snap.players.push({ ...p, online: true, ready: false, beylikId: null, honor: typeof p.honor === "number" ? p.honor : 0, traveling: false });
+          this.snap.players.push({ ...p, online: true, ready: false, beylikId: null, honor: typeof p.honor === "number" ? p.honor : 0, traveling: false, married: !!p.married });
           this.broadcastChatSys(`mp.joined`, p.name);
         }
         // Aynı karaktere devam: bu oyuncunun yedeklenmiş kişisel durumunu geri ver.
@@ -491,7 +491,17 @@ export class RealmDO {
           this.snap.offers = this.snap.offers.filter((x) => x.id !== o.id);
           if (!it.accept) { ev(o.from, "mp.soc.offerDeclined", [pname(pid)]); break; }
           if (o.kind === "alliance") { this.setPact(o.from, pid, "alliance"); this.adjustBond(o.from, pid, 20); ev(o.from, "mp.soc.allied", [pname(pid)]); ev(pid, "mp.soc.allied", [pname(o.from)]); }
-          else if (o.kind === "marriage") { this.setPact(o.from, pid, "marriage"); this.adjustBond(o.from, pid, 30); this.adjustHonor(o.from, 3); this.adjustHonor(pid, 3); ev(o.from, "mp.soc.married", [pname(pid)]); ev(pid, "mp.soc.married", [pname(o.from)]); }
+          else if (o.kind === "marriage") {
+            // GERÇEK EVLİLİK: karşı cinsiyet + ikisi de bekâr şartı (SP kuralıyla uyumlu).
+            const a = playerById(o.from), b = playerById(pid);
+            if (!a || !b) break;
+            if (a.gender === b.gender) { ev(o.from, "mp.soc.wedSameGender", [pname(pid)]); break; }
+            if (a.married || b.married) { ev(o.from, "mp.soc.wedAlready", [pname(pid)]); break; }
+            a.married = true; b.married = true;
+            this.setPact(o.from, pid, "marriage"); this.adjustBond(o.from, pid, 45); this.adjustHonor(o.from, 4); this.adjustHonor(pid, 4);
+            // Her iki karaktere gerçek eşi kur (isim + cinsiyet → game.ts evlilik sistemine bağlanır).
+            ev(o.from, "mp.soc.wed", [b.name, b.gender]); ev(pid, "mp.soc.wed", [a.name, a.gender]);
+          }
           else if (o.kind === "loan") { const amt = o.amount || 0; ev(pid, "mp.soc.loanGot", [pname(o.from), amt]); ev(o.from, "mp.soc.loanGave", [pname(pid), amt]); this.adjustBond(o.from, pid, 10); this.adjustHonor(o.from, 2); }
           else if (o.kind === "asylum") { const host = this.snap.beyliks.find((b) => b.beyId === o.from); const bid = host ? host.id : this.snap.players.find((x) => x.id === o.from)?.beylikId || null; const t = playerById(pid); if (t) t.beylikId = bid; this.adjustBond(o.from, pid, 15); this.adjustHonor(o.from, 4); ev(o.from, "mp.soc.asylumGave", [pname(pid)]); ev(pid, "mp.soc.asylumGot", [pname(o.from)]); }
           break;
@@ -500,8 +510,14 @@ export class RealmDO {
           if (!aliveOther(pid, it.with)) break;
           const bd = this.bondOf(pid, it.with);
           if (!bd.pact) break;
+          const wasMarriage = bd.pact === "marriage";
           this.setPact(pid, it.with, "war"); this.adjustBond(pid, it.with, -50); this.adjustHonor(pid, -25);
-          ev(it.with, "mp.soc.betrayed", [pname(pid)]); ev(pid, "mp.soc.youBetrayed", [pname(it.with)]);
+          if (wasMarriage) { // boşanma: iki taraf da bekâr olur, daha ağır rezalet
+            const a = playerById(pid), b = playerById(it.with);
+            if (a) a.married = false; if (b) b.married = false;
+            this.adjustHonor(pid, -15);
+            ev(it.with, "mp.soc.divorced", [pname(pid)]); ev(pid, "mp.soc.divorcedYou", [pname(it.with)]);
+          } else { ev(it.with, "mp.soc.betrayed", [pname(pid)]); ev(pid, "mp.soc.youBetrayed", [pname(it.with)]); }
           break;
         }
         // — Rekabet —

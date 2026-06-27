@@ -70,6 +70,7 @@ export interface PlayerPublic {
   provinceName: string | null;// vali olduğu sancak
   beylikId: string | null;    // bağlı olduğu beylik (grup/takım) — SUNUCU sahibi
   honor: number;              // şeref/sadakat ekseni (−100..100); ihanet düşürür, yardım yükseltir — SUNUCU sahibi
+  married: boolean;           // evli mi (game.ts'ten senkron) — oyuncular arası evlilik kontrolü için
   traveling: boolean;         // "Seyahate Çık": kişi dokunulmaz (kişisel saldırı engellenir), diyarı etkileşime açık kalır — SUNUCU sahibi
   npcMonths?: number;         // çevrimdışı NPC-vekil: yaş ilerletme sayacı (sunucu içi)
   online: boolean;
@@ -177,7 +178,7 @@ export type SharedIntent =
   | { k: "gift"; to: string; amount: number }      // bağış (anlık altın) — düşene el uzat
   | { k: "vouch"; to: string }                      // kefillik/övgü: itibarından harcayıp onu yücelt
   | { k: "proposeAlliance"; to: string }            // ittifak teklifi
-  | { k: "proposeMarriage"; to: string }            // dünürlük (kan bağı) teklifi
+  | { k: "proposeMarriage"; to: string }            // EVLİLİK teklifi (iki oyuncu karakteri evlenir — karşı cinsiyet)
   | { k: "proposeLoan"; to: string; amount: number }// borç teklifi
   | { k: "offerAsylum"; to: string }                // sığınma davet (devrik bey/öksüz vâris)
   | { k: "respondOffer"; offerId: string; accept: boolean }
@@ -242,7 +243,7 @@ export function readyToTick(players: PlayerPublic[]): boolean {
 // Bir oyuncunun game.ts player'ından kamu hanesini türet (istemcide kullanılır).
 export function toPublic(
   id: string,
-  p: { name: string; surname?: string; gender: "erkek" | "kadın"; age: number; generation: number; profession: string; fame: number; crowned?: boolean; faction?: string | null; governorships?: string[]; dead?: boolean },
+  p: { name: string; surname?: string; gender: "erkek" | "kadın"; age: number; generation: number; profession: string; fame: number; crowned?: boolean; faction?: string | null; governorships?: string[]; dead?: boolean; married?: boolean },
   power: number,
   online = true,
   ready = false,
@@ -253,6 +254,7 @@ export function toPublic(
     crowned: !!p.crowned, guildId: p.faction || null,
     provinceName: (p.governorships && p.governorships[0]) || null,
     beylikId: null, honor: 0, traveling: false, // sunucu sahibi; sync'te korunur, istemci ezmez
+    married: !!p.married,
     online, ready, dead: !!p.dead,
   };
 }

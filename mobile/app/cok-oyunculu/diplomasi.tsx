@@ -115,7 +115,7 @@ export default function Diplomasi() {
                     <Btn label={pf(t("mp.soc.giftBtn"), 2000)} disabled={!x.online || money < 2000} onPress={() => act({ k: "gift", to: x.id, amount: 2000 }, 2000)} />
                     <Btn label={t("mp.soc.vouchBtn")} onPress={() => act({ k: "vouch", to: x.id })} />
                     {!hasPact && <Btn label={t("mp.soc.allyBtn")} onPress={() => act({ k: "proposeAlliance", to: x.id })} />}
-                    {!hasPact && <Btn label={t("mp.soc.kinBtn")} onPress={() => act({ k: "proposeMarriage", to: x.id })} />}
+                    {!hasPact && x.gender !== p.gender && !x.married && !p.married && <Btn label={t("mp.soc.kinBtn")} onPress={() => act({ k: "proposeMarriage", to: x.id })} />}
                     {iAmBey && <Btn label={t("mp.soc.asylumBtn")} onPress={() => act({ k: "offerAsylum", to: x.id })} />}
                     {hasPact && <Btn label={t("mp.soc.breakBtn")} tone="blood" onPress={() => act({ k: "breakPact", with: x.id })} />}
                   </View>
