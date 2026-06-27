@@ -49,15 +49,19 @@ Bağlanınca **şunlar uçtan uca çalışır:** lobi, diyar kurma/katılma, can
 sohbet, dünya saati, çoğunluk/5dk senkron tick, paylaşımlı taht/lonca/valilik,
 çapraz etkiler (kral lonca vergisi vb.), gerçek game.ts karakteri.
 
-## Kalan tek dikiş — "tam oyun" parıtesi
-Şu an MP oyun ekranı gerçek bir `game.ts` karakterini çalıştırır ve çekirdek
-aksiyonları (ye/çalış) + tüm paylaşımlı-dünya etkileşimini sunar. **Her tek-oyuncu
-alt-ekranını** (meslek, mektep, ilişkiler, savaş, hanedan, pazar…) MP karakteri
-üstünde de açmak için tek iş kalır: **oyun deposunu (GameProvider) birleştirmek** —
-yani `/oyun` alt-ekranlarının MP modunda MP karakteri üzerinde çalışması. Dikiş
-nettir: `app/oyun/*` ekranları `useGame()` yerine MP modunda `useMp()` karakterini
-okuyacak şekilde bir "aktif oyun kaynağı" soyutlaması. Bu, SP'yi bozmamak için
-bilinçli olarak ayrı bırakıldı; sunucu bağlandıktan sonra güvenle yapılır.
+## "Tam oyun" parıtesi — TAMAM ✓
+MP karakteri artık ortak `GameProvider` deposunda yaşıyor (`enterMp`/`exitMp`,
+`mpMode`). Bu sayede **tüm `/oyun` alt-ekranları** (meslek, mektep, beceriler,
+ilişkiler, pazar, mülkler, savaş, örgütler…) MP karakteri üstünde **hiç
+değiştirilmeden** çalışıyor — tek-oyuncudaki tüm derinlik MP'de de var. MP hub
+ekranı (`app/cok-oyunculu/oyun.tsx`) bu ekranlara bağlanır; dünya-saati ilerleme
+"Hazırım" oyuyla sunucu tick'inden sürülür (kişisel aksiyonlar zaman ilerletmez).
+`mpMode`'da SP kaydına yazılmaz (çevrimdışı kayıt korunur); çıkışta SP kaydı geri
+yüklenir. Tek-oyuncu yolu `mpMode=false` ile birebir aynıdır.
+
+> Geriye yalnız **canlı doğrulama** kalıyor: sunucu deploy edilip iki cihazla
+> senkron-tick döngüsünün uçtan uca akışı (özellikle aynı anda çok oyuncu hazır
+> olunca ve 5 dk dolunca) test edilmeli. Kod hazır; bu, canlı ortamda yapılır.
 
 ## Notlar
 - **Güvenlik:** sunucu otoriteli; istemci paylaşımlı durumu uyduramaz.
