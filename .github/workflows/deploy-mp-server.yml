@@ -1,0 +1,31 @@
+# Çok oyuncu sunucusunu (server/) Cloudflare'a otomatik deploy eder.
+# Terminal GEREKMEZ — GitHub'da "Actions" sekmesinden elle çalıştırılır (Run workflow).
+# Önce iki GitHub secret eklenmeli: CLOUDFLARE_API_TOKEN (zorunlu), CLOUDFLARE_ACCOUNT_ID (önerilir).
+name: Deploy MP Server
+
+on:
+  workflow_dispatch:        # GitHub > Actions > bu iş > "Run workflow" düğmesi
+  push:
+    branches: [apk]
+    paths: ["server/**"]    # server/ değişince otomatik deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install deps
+        run: npm install
+      - name: Deploy to Cloudflare
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Adres
+        run: echo "Deploy bitti. Adresin Cloudflare panelinde Workers & Pages altında ve yukarıdaki 'Deploy to Cloudflare' adımının çıktısında görünür (https://kronikler-mp.<alt-alan>.workers.dev). Uygulamaya wss:// olarak gir."
