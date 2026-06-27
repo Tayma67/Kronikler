@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, Modal } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../lib/i18n";
 import { useMp } from "../../lib/mp/store";
-import { getServerUrl, setServerUrl, getSavedName, setSavedName, getHttpBase } from "../../lib/mp/config";
+import { getServerUrl, setServerUrl, getSavedName, setSavedName, getHttpBase, getTutorialSeen, setTutorialSeen } from "../../lib/mp/config";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
@@ -30,8 +30,10 @@ export default function MpLobby() {
   const [joinCode, setJoinCode] = useState("");
   const [rooms, setRooms] = useState<{ realmId: string; name: string; count: number }[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
+  const [showTut, setShowTut] = useState(false);
 
-  useEffect(() => { getServerUrl().then((u) => { setUrl(u); setServerDraft(u); }); getSavedName().then(setName); }, []);
+  useEffect(() => { getServerUrl().then((u) => { setUrl(u); setServerDraft(u); }); getSavedName().then(setName); getTutorialSeen().then((seen) => { if (!seen) setShowTut(true); }); }, []);
+  const dismissTut = () => { setShowTut(false); setTutorialSeen(); };
 
   // Açık diyarları çek (kod paylaşmadan tıkla-katıl).
   const refreshRooms = async () => {
@@ -129,6 +131,24 @@ export default function MpLobby() {
         {status === "connecting" && <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 18 }}><ActivityIndicator color={C.gold} /><Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted }}>{t("mp.connecting")}</Text></View>}
         {error && <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.blood, marginTop: 16 }}>{error}</Text>}
       </ScrollView>
+
+      {/* İlk-giriş tanıtımı (bir kez) */}
+      <Modal visible={showTut} transparent animationType="fade" onRequestClose={dismissTut}>
+        <Pressable onPress={dismissTut} style={{ flex: 1, backgroundColor: "rgba(4,3,1,0.82)", justifyContent: "center", paddingHorizontal: 22 }}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: C.bg, borderWidth: 1, borderColor: C.borderHi, borderRadius: 14, padding: 20 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 15, letterSpacing: 1, color: C.gold, textAlign: "center", marginBottom: 14 }}>{t("mp.tut.title")}</Text>
+            {["mp.tut.b1", "mp.tut.b2", "mp.tut.b3", "mp.tut.b4", "mp.tut.b5"].map((k) => (
+              <View key={k} style={{ flexDirection: "row", gap: 8, marginBottom: 9 }}>
+                <Text style={{ color: C.goldDim, fontFamily: F.display, fontSize: 12 }}>❧</Text>
+                <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment, lineHeight: 19 }}>{t(k)}</Text>
+              </View>
+            ))}
+            <Pressable onPress={dismissTut} style={{ marginTop: 8, paddingVertical: 13, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: "#2a1d08" }}>{t("mp.tut.got")}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

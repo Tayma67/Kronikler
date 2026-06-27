@@ -47,6 +47,15 @@ export async function setSavedName(n: string): Promise<void> {
   try { await AsyncStorage.setItem(NAME_KEY, n); } catch {}
 }
 
+// İlk-giriş tanıtımı görüldü mü (bir kez gösterilir).
+const TUT_KEY = "kronikler_mp_tut_seen";
+export async function getTutorialSeen(): Promise<boolean> {
+  try { return (await AsyncStorage.getItem(TUT_KEY)) === "1"; } catch { return false; }
+}
+export async function setTutorialSeen(): Promise<void> {
+  try { await AsyncStorage.setItem(TUT_KEY, "1"); } catch {}
+}
+
 // AsyncStorage tabanlı; Math.random kullanır (kimlik üretimi, deterministik olması gerekmez).
 function randomId(): string {
   const a = "abcdefghijklmnopqrstuvwxyz0123456789";
