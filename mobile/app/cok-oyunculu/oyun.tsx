@@ -7,7 +7,7 @@ import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { mePublic, applyTickEvents, realmYearMonth } from "../../lib/mp/world";
 import { SharedIntent, BEY_MIN_POWER, BEY_MIN_AGE, BEY_COST, MP_CAMPAIGN_COST, THRONE_MIN_AGE, THRONE_MIN_POWER, THRONE_MIN_FAME, THRONE_COST } from "../../lib/mp/protocol";
-import { newGame, advance, continueAsHeir, GameState } from "../../lib/game";
+import { newGame, advance, continueAsHeir, GameState, beylikName } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
@@ -267,6 +267,18 @@ export default function MpOyun() {
             <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("misc.age")} {x.age}</Text>
           </View>
         ))}
+
+        {/* Diyar Haberleri — paylaşımlı NPC'lerden kozmetik akış */}
+        {snapshot.news && snapshot.news.length > 0 && (
+          <>
+            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.news.title")}</Text>
+            {snapshot.news.slice(-6).reverse().map((nw, i) => (
+              <Text key={i} style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 5, lineHeight: 17 }}>
+                • {pf(t(nw.k), String(nw.p?.[0] ?? ""), beylikName(String(nw.p?.[1] ?? "")))}
+              </Text>
+            ))}
+          </>
+        )}
       </ScrollView>
 
       {/* Alt: hazır oyu + senkron tick (Yaşa = ay-atla oyu) */}

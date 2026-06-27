@@ -125,6 +125,8 @@ export type PactType = "alliance" | "marriage" | "war";
 export interface Bond { a: string; b: string; standing: number; pact: PactType | null; since: number; }
 // NPC↔oyuncu ilişkisi (kişiye özel): aynı NPC bir oyuncuya dost, başkasına düşman olabilir.
 export interface NpcBond { npc: string; player: string; standing: number; }
+// Diyar haberi (kozmetik akış): i18n anahtarı + parametreler. Oyuna/dengeye etkisi yoktur.
+export interface RealmNews { k: string; p: (string | number)[]; turn: number; }
 // El sıkışma gerektiren teklif (ittifak/dünür/borç/sığınma) — hedef kabul/ret eder.
 export interface Offer { id: string; from: string; fromName: string; to: string; kind: "alliance" | "marriage" | "loan" | "asylum"; amount?: number; turn: number; }
 
@@ -145,6 +147,7 @@ export interface RealmSnapshot {
   bonds: Bond[];         // oyuncular arası bağlar (standing + pakt) — yarı-açık (ittifaklar bilinir)
   npcs: NpcPublic[];     // PAYLAŞIMLI NPC kütüğü (diyar ileri gelenleri) — herkes aynısını görür
   npcBonds: NpcBond[];   // NPC↔oyuncu ilişkileri (kişiye göre değişir)
+  news: RealmNews[];     // diyar haberleri (NPC'lerden kozmetik akış — oyuna etkisi YOK)
   offers: Offer[];       // bekleyen el-sıkışma teklifleri (ittifak/dünür/borç/sığınma)
   econ: number;          // paylaşımlı ekonomi/enflasyon indeksi
   createdAt: number;

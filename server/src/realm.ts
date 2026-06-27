@@ -13,7 +13,7 @@ import {
   GuildState, ProvinceState, BeylikState, ChatScope, BEYLIK_DEFS, BEY_MIN_POWER, BEY_MIN_AGE,
   THRONE_MIN_AGE, THRONE_MIN_POWER, THRONE_MIN_FAME,
   Bond, Offer, PactType, GIFT_MAX, ASSASSINATE_MIN_AGE,
-  NpcPublic, NpcBond,
+  NpcPublic, NpcBond, RealmNews,
   PROTOCOL_VERSION, MAX_PLAYERS, TICK_TIMEOUT_MS, readyToTick,
 } from "./protocol";
 
@@ -25,6 +25,8 @@ const NPC_BEYLIK_POWER = 60;
 const NPC_OCAK_BY_BEYLIK: Record<string, string> = {
   demirhan: "demirci", yenisehir: "tuccar", gumushisar: "ulema", aksehir: "esnaf", karahisar: "asker",
 };
+// Diyar haberi şablonları (kozmetik — oyuna etkisi yok). İstemci i18n ile metne çevirir.
+const NEWS_KEYS = ["influence", "feud", "decree", "caravan", "feast", "pilgrim", "rumor", "harvest"];
 
 // ── Paylaşımlı NPC kütüğü: seed'den DETERMİNİSTİK üretim (tüm istemciler aynısını alır) ──
 // game.ts'e bağımlı değil; küçük seeded PRNG + ad/rol havuzları. Cloudflare Worker'da çalışır.
@@ -80,6 +82,7 @@ export class RealmDO {
       if (!this.snap.bonds) this.snap.bonds = [];
       if (!this.snap.npcs) this.snap.npcs = generateNpcs(this.snap.seed);
       if (!this.snap.npcBonds) this.snap.npcBonds = [];
+      if (!this.snap.news) this.snap.news = [];
       if (!this.snap.offers) this.snap.offers = [];
       this.snap.players.forEach((p) => { if (p.beylikId === undefined) p.beylikId = null; if (p.honor === undefined) p.honor = 0; if (p.traveling === undefined) p.traveling = false; });
       this.snap.v = PROTOCOL_VERSION;
@@ -93,7 +96,7 @@ export class RealmDO {
         throne: { holderId: null, holderName: null, claimedTurn: 0 },
         guilds: GUILD_IDS.map((id) => ({ id, leaderId: null, tax: 10, closed: false } as GuildState)),
         provinces: [], beyliks: defaultBeyliks(), bonds: [],
-        npcs: generateNpcs(seedVal), npcBonds: [], offers: [], econ: 1, createdAt: now,
+        npcs: generateNpcs(seedVal), npcBonds: [], news: [], offers: [], econ: 1, createdAt: now,
       };
       await this.persist();
     }
@@ -593,6 +596,18 @@ export class RealmDO {
 
     // Ölen oyuncunun bağ/teklifleri temizlenir (sonraki tur makam boşaltmayı zaten yapıyor).
     this.snap.offers = this.snap.offers.filter((o) => isAlive(o.from) && isAlive(o.to));
+
+    // 7) DİYAR HABERLERİ (kozmetik): NPC'lerden akış — dünya canlı görünür, OYUNA/DENGEYE ETKİSİ YOK.
+    if (this.snap.npcs.length) {
+      const picks = 1 + (this.snap.turn % 2);
+      const fresh: RealmNews[] = [];
+      for (let i = 0; i < picks; i++) {
+        const n = this.snap.npcs[(this.snap.turn * 7 + i * 13) % this.snap.npcs.length];
+        const k = NEWS_KEYS[(this.snap.turn + i * 3) % NEWS_KEYS.length];
+        fresh.push({ k: "mp.news." + k, p: [n.name, n.beylikId], turn: this.snap.turn });
+      }
+      this.snap.news = [...this.snap.news.slice(-8), ...fresh];
+    }
 
     // saat ilerle + pencere/alarm sıfırla
     this.snap.turn += 1;
