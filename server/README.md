@@ -42,3 +42,5 @@ küçük/orta ölçek için ücretsiz yeter. Oyun büyürse ücretli katman gere
 - Diyar durumu DO storage'da kalıcıdır; oyuncular girip çıkar, dünya sürer.
 
 <!-- deploy tetikleyici: 20260627T100010Z -->
+
+<!-- redeploy: 100215Z -->
