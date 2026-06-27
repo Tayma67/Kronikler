@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from "react";
-import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator, AppState } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../lib/i18n";
@@ -22,7 +22,6 @@ export default function Diyar() {
   const [chatText, setChatText] = useState("");
   const [chatScope, setChatScope] = useState<ChatScope>("all");
   const [whisperTo, setWhisperTo] = useState<string | null>(null);
-  const [now, setNow] = useState(Date.now());
   const joined = useRef(false);
 
   // Katıl (bir kez)
@@ -37,10 +36,9 @@ export default function Diyar() {
     joinRealm(String(realmId), String(realmId), me);
   }, [guestId, realmId]);
 
-  // Geri sayım için saat
-  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
-  // NOT: bağlantı sağlayıcıda yaşar; diyara girince (oyun ekranı) kopmaması için
-  // burada otomatik leave YOK — yalnız "Ayrıl"/geri ile çıkılır.
+  // NOT: geri sayım artık izole <CountdownSecs> bileşeninde (saniyede bir yalnız o
+  // küçük yazı render olur, tüm oda DEĞİL → pil/CPU dostu). Arka planda timer durur.
+  // Bağlantı sağlayıcıda yaşar; diyara girince kopmasın diye burada otomatik leave YOK.
 
   const players = snapshot?.players || [];
   const me = players.find((p) => p.id === guestId);
@@ -49,7 +47,6 @@ export default function Diyar() {
   const turn = snapshot?.turn ?? 0;
   const year = REALM_BASE_YEAR + Math.floor(turn / 12);
   const month = (turn % 12) + 1;
-  const secsLeft = snapshot ? Math.max(0, Math.round((snapshot.tickDeadline - now) / 1000)) : 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
@@ -158,10 +155,12 @@ export default function Diyar() {
               setChatText("");
             }} returnKeyType="send" />
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>
-            {pf(t("mp.readyCount"), readyCount, liveCount)} · {pf(t("mp.tickIn"), secsLeft)}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>
+            {pf(t("mp.readyCount"), readyCount, liveCount)} ·{" "}
           </Text>
+          <CountdownSecs deadline={snapshot?.tickDeadline ?? 0} fmt={(s) => pf(t("mp.tickIn"), s)}
+            style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }} />
           <Pressable onPress={() => { hap("tap"); setReady(!me?.ready); }} style={{ paddingVertical: 11, paddingHorizontal: 22, borderRadius: 9, borderWidth: 1, borderColor: me?.ready ? "rgba(127,166,106,0.7)" : "rgba(201,168,76,0.6)", backgroundColor: me?.ready ? "rgba(127,166,106,0.15)" : "rgba(201,168,76,0.12)" }}>
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: me?.ready ? C.sage : C.gold }}>{me?.ready ? t("mp.ready") + " ✓" : t("mp.ready")}</Text>
           </Pressable>
@@ -170,3 +169,19 @@ export default function Diyar() {
     </View>
   );
 }
+
+// İzole geri sayım: yalnız bu küçük yazı saniyede bir render olur (tüm oda değil).
+// Arka plana geçilince timer durur → pil/CPU tasarrufu. React.memo ile dış render'lardan korunur.
+const CountdownSecs = React.memo(function CountdownSecs({ deadline, fmt, style }: { deadline: number; fmt: (s: number) => string; style: object }) {
+  const [secs, setSecs] = useState(() => Math.max(0, Math.round((deadline - Date.now()) / 1000)));
+  useEffect(() => {
+    let id: ReturnType<typeof setInterval> | null = null;
+    const tick = () => setSecs(Math.max(0, Math.round((deadline - Date.now()) / 1000)));
+    const start = () => { if (!id) { tick(); id = setInterval(tick, 1000); } };
+    const stop = () => { if (id) { clearInterval(id); id = null; } };
+    start();
+    const sub = AppState.addEventListener("change", (s) => { if (s === "active") start(); else stop(); });
+    return () => { stop(); sub.remove(); };
+  }, [deadline]);
+  return <Text style={style} numberOfLines={1}>{fmt(secs)}</Text>;
+});
