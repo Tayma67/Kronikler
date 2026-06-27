@@ -43,6 +43,12 @@ başı, rakip bey, tüccar, âlim, komutan, kadı) → **herkes aynı NPC'leri g
 Eylemler: **yanına çek / bir oyuncuya karşı kışkırt / araları düzelt**. NPC nüfuzu
 sefere ve suikasta ağırlık katar (seni tutan + hedefi sevmeyen NPC destek olur).
 
+### 5. Erişim & güvenlik & onboarding
+- **Açık Diyar Listesi** (DirectoryDO + `/realms`): kod paylaşmadan tıkla-katıl.
+- **Sohbet flood koruması**: oyuncu başına 8 sn'de en çok 6 mesaj.
+- **İlk-giriş tanıtımı**: lobide bir kez gösterilen kısa onboarding (6 dil).
+- **Cihaz dostu**: geri sayım izole + arka planda timer durur; ping 25 sn.
+
 ## Kod haritası
 **Mobil (`mobile/`):** `app/cok-oyunculu/{index,diyar,oyun,diplomasi}.tsx`,
 `lib/mp/{protocol,config,net,store,world}.ts`, `lib/i18n.tsx` (MPX/MSOC/MTRV/MNPC
@@ -55,10 +61,11 @@ beylik/sosyal/NPC çözümü, kalıcılık, NPC-vekil), `src/index.ts`, `src/pro
 - Oyna: bir cihaz **Diyar Kur** (5 harf kod), diğeri o kodla **Diyara Katıl**.
   Sunucu adresi APK'ye gömülü (`DEFAULT_SERVER_URL`) — ayar gerekmez.
 
-## Doğrulama (headless entegrasyon testleri, canlı sunucu)
-- Beylik/sosyal/sohbet: 14/14 · Kalıcılık/seyahat: 7/7 · NPC-vekil/ölüm: 4/4 ·
-  Paylaşımlı NPC: 5/5 → **toplam 30/30**.
-- SP regresyon: smoke HATA:0; i18n 6 dil eksik:0.
+## Doğrulama (headless entegrasyon testleri, canlı sunucu — `server/test/`)
+- Beylik/sosyal/sohbet: 14 · Kalıcılık/seyahat: 7 · NPC-vekil/ölüm: 4 ·
+  Paylaşımlı NPC: 5 · İttifak/ihanet/sefer: 7 · Açık diyar dizini: 3 →
+  **toplam 40/40** (5/5 kararlı). Çalıştır: `bash server/test/run-all.sh`.
+- SP regresyon: smoke HATA:0; i18n 6 dil eksik:0; client+server tsc 0.
 
 ## Notlar & kısıtlar
 - **Protokol paritesi:** `mobile/lib/mp/protocol.ts` ↔ `server/src/protocol.ts`
@@ -66,5 +73,6 @@ beylik/sosyal/NPC çözümü, kalıcılık, NPC-vekil), `src/index.ts`, `src/pro
 - **Dürüst kısıt:** sunucu `game.ts`'i koşturamaz → çevrimdışı vekil hafiftir
   (yaşlanır + ölür + holdings), tam hayat-sim'i yoklukta donar.
 - **Ücretsiz:** Cloudflare free tier (Workers + DO + WS hibernation).
-- **Sonraki olası işler:** açık oda listesi, MP tutorial/onboarding, sohbet
-  moderasyonu, NPC günlük-hayat senkronu (derinleştirme).
+- **Sonraki olası işler:** NPC günlük-hayat senkronu (derinleştirme), beylik
+  harita görseli, gelişmiş sohbet moderasyonu (küfür filtresi). [Açık oda listesi,
+  onboarding ve temel sohbet flood koruması TAMAMLANDI.]
