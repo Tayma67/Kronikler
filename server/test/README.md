@@ -10,3 +10,5 @@ global `WebSocket`'ini kullanır (Node 18+). Her test rastgele bir diyar kodu a�
 - `mp_itest5.cjs` — ittifak el-sıkışma + ihanet (pakt-bozma) + beylik seferi-ilhak (7)
 
 Çalıştır: `bash server/test/run-all.sh`  ·  Başka sunucu: `MP_URL=wss://... bash server/test/run-all.sh`
+
+- `mp_itest6.cjs` — açık diyar dizini: katıl→/realms görün→ayrıl→düş (3)
