@@ -28,11 +28,11 @@ jobs:
       - name: Expo prebuild (android native uret)
         working-directory: mobile
         run: npx expo prebuild --platform android --no-install --non-interactive
-      - name: Gradle assembleDebug (arm64-v8a)
+      - name: Gradle assembleRelease (arm64-v8a) — JS paketi gomulu, tek basina calisir
         working-directory: mobile/android
-        run: ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon --stacktrace
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon --stacktrace
       - name: APK'yi temiz isimle kopyala
-        run: cp mobile/android/app/build/outputs/apk/debug/app-debug.apk Kronikler.apk
+        run: cp mobile/android/app/build/outputs/apk/release/app-release.apk Kronikler.apk
       - name: APK'yi yukle (artefakt)
         uses: actions/upload-artifact@v4
         with:
