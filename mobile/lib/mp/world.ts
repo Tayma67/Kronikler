@@ -49,6 +49,30 @@ export function applyTickEvents(prev: GameState, events: TickEvent[]): GameState
       }
       case "mp.campaign.won":
         p.fame = clamp100(p.fame + 6); break;
+      // ── Beylik (Mount & Blade) olayları ──
+      case "mp.beylik.founded": // boş beyliğe bey oldun
+        p.fame = clamp100(p.fame + 16); p.reputation = Math.min(100, p.reputation + 12); break;
+      case "mp.beylik.seized": // mevcut beyi devirip ele geçirdin
+        p.fame = clamp100(p.fame + 20); p.reputation = Math.min(100, p.reputation + 8); break;
+      case "mp.beylik.held": // bey ünvanını savundun
+        p.fame = clamp100(p.fame + 5); break;
+      case "mp.beylik.campaignWon": // başka beyliği ilhak ettin
+        p.fame = clamp100(p.fame + 14); p.money += 200; break;
+      case "mp.beylik.deposed": // beyliğini bir meydan okuyana kaptırdın
+      case "mp.beylik.lostToCampaign": // beyliğin sefere kaptırıldı
+        p.reputation = Math.max(-100, p.reputation - 14); p.fame = clamp100(p.fame - 8); break;
+      case "mp.beylik.campaignLost": // seferin bozguna uğradı
+        p.health = clamp100(p.health - 8); p.reputation = Math.max(-100, p.reputation - 5); break;
+      case "mp.beylik.taxFelt": { // beyin sana vergi koydu
+        const beyTax = Number(e.p?.[1]) || 0;
+        const fine = 20 + Math.round((p.money || 0) * (beyTax / 200));
+        p.money = Math.max(0, p.money - fine); break;
+      }
+      case "mp.beylik.conquered": // beyliğin başkasınca fethedildi (moral)
+        p.reputation = Math.max(-100, p.reputation - 3); break;
+      case "mp.beylik.beyDied": // bağlı olduğun beyin öldü
+        p.reputation = Math.max(-100, p.reputation - 2); break;
+      // joined/left/claimFailed/tooWeak/taxSet → yalnız bilgilendirme (kişisel istat etkisi yok)
     }
   }
   return s;

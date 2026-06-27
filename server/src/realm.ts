@@ -10,12 +10,26 @@
 // ──────────────────────────────────────────────────────────────────────────
 import {
   RealmSnapshot, PlayerPublic, ClientMsg, ServerMsg, SharedIntent, TickResult, TickEvent,
-  GuildState, ProvinceState, PROTOCOL_VERSION, MAX_PLAYERS, TICK_TIMEOUT_MS, readyToTick,
+  GuildState, ProvinceState, BeylikState, ChatScope, BEYLIK_DEFS, BEY_MIN_POWER,
+  PROTOCOL_VERSION, MAX_PLAYERS, TICK_TIMEOUT_MS, readyToTick,
 } from "./protocol";
 
 interface Env { REALM: DurableObjectNamespace }
 
 const GUILD_IDS = ["tuccar", "demirci", "asker", "sifaci", "golge", "ulema", "esnaf"];
+// Boş (NPC) beyliklerin taban gücü ve bunları tutan ocaklar (deterministik dağıtım).
+const NPC_BEYLIK_POWER = 60;
+const NPC_OCAK_BY_BEYLIK: Record<string, string> = {
+  demirhan: "demirci", yenisehir: "tuccar", gumushisar: "ulema", aksehir: "esnaf", karahisar: "asker",
+};
+
+// 5 beyliği başlangıçta NPC ocakların elinde kur (oyuncu bey olunca devralır).
+function defaultBeyliks(): BeylikState[] {
+  return BEYLIK_DEFS.map((b) => ({
+    id: b.id, name: b.name, beyId: null, beyName: null,
+    ocak: NPC_OCAK_BY_BEYLIK[b.id] || null, tax: 10, power: NPC_BEYLIK_POWER, claimedTurn: 0,
+  }));
+}
 
 export class RealmDO {
   state: DurableObjectState;
@@ -31,8 +45,13 @@ export class RealmDO {
   async load(realmId: string, realmName?: string) {
     if (this.loaded) return;
     const stored = await this.state.storage.get<RealmSnapshot>("snap");
-    if (stored) this.snap = stored;
-    else {
+    if (stored) {
+      this.snap = stored;
+      // Eski (v1) diyar göçü: beylik katmanı yoksa kur, oyunculara beylikId ekle.
+      if (!this.snap.beyliks) this.snap.beyliks = defaultBeyliks();
+      this.snap.players.forEach((p) => { if (p.beylikId === undefined) p.beylikId = null; });
+      this.snap.v = PROTOCOL_VERSION;
+    } else {
       const now = Date.now();
       this.snap = {
         v: PROTOCOL_VERSION, realmId, name: realmName || realmId,
@@ -40,7 +59,7 @@ export class RealmDO {
         tickDeadline: now + TICK_TIMEOUT_MS, players: [],
         throne: { holderId: null, holderName: null, claimedTurn: 0 },
         guilds: GUILD_IDS.map((id) => ({ id, leaderId: null, tax: 10, closed: false } as GuildState)),
-        provinces: [], econ: 1, createdAt: now,
+        provinces: [], beyliks: defaultBeyliks(), econ: 1, createdAt: now,
       };
       await this.persist();
     }
@@ -74,7 +93,8 @@ export class RealmDO {
         const p = m.player; if (!p?.id) return;
         ws.serializeAttachment({ playerId: p.id });
         const existing = this.snap.players.find((x) => x.id === p.id);
-        if (existing) { Object.assign(existing, p, { online: true }); }
+        // Yeniden katılımda beylikId SUNUCU otoritesinde kalmalı (istemci null gönderir) → koru.
+        if (existing) { Object.assign(existing, p, { online: true, beylikId: existing.beylikId }); }
         else {
           if (this.snap.players.filter((x) => x.online).length >= MAX_PLAYERS) { this.sendTo(ws, { t: "error", code: "FULL", msg: "Diyar dolu" }); return; }
           this.snap.players.push({ ...p, online: true, ready: false });
@@ -88,7 +108,8 @@ export class RealmDO {
       }
       case "sync": {
         const p = this.snap.players.find((x) => x.id === att.playerId);
-        if (p && m.player) { Object.assign(p, m.player, { id: p.id, online: true }); await this.persist(); this.broadcastPresence(); }
+        // beylikId SUNUCU otoritesindedir (istemcinin game.ts'inde karşılığı yok) → sync ezmez.
+        if (p && m.player) { Object.assign(p, m.player, { id: p.id, online: true, beylikId: p.beylikId }); await this.persist(); this.broadcastPresence(); }
         break;
       }
       case "ready": {
@@ -102,7 +123,20 @@ export class RealmDO {
       }
       case "chat": {
         const p = this.snap.players.find((x) => x.id === att.playerId);
-        if (p && m.text?.trim()) this.broadcast({ t: "chat", from: p.id, fromName: p.name, text: m.text.slice(0, 240), at: Date.now() });
+        if (!p || !m.text?.trim()) break;
+        const text = m.text.slice(0, 240);
+        const scope: ChatScope = m.scope === "whisper" || m.scope === "beylik" ? m.scope : "all";
+        const out: ServerMsg = { t: "chat", from: p.id, fromName: p.name, text, at: Date.now(), scope, to: m.to };
+        if (scope === "all") {
+          this.broadcast(out);
+        } else if (scope === "whisper" && m.to) {
+          // yalnız gönderen + hedef görür
+          for (const ws2 of this.socketsOf([p.id, m.to])) this.sendTo(ws2, out);
+        } else if (scope === "beylik" && p.beylikId) {
+          // yalnız aynı beyliktekiler görür (düşmana sızmaz)
+          const ids = this.snap.players.filter((x) => x.beylikId === p.beylikId).map((x) => x.id);
+          for (const ws2 of this.socketsOf(ids)) this.sendTo(ws2, out);
+        }
         break;
       }
       case "leave": { this.markOffline(att.playerId); await this.persist(); this.broadcastPresence(); break; }
@@ -156,6 +190,12 @@ export class RealmDO {
     }
     for (const g of this.snap.guilds) if (g.leaderId && !isAlive(g.leaderId)) g.leaderId = null;
     for (const pr of this.snap.provinces) if (pr.governorId && !isAlive(pr.governorId)) pr.governorId = null;
+    // Ölen bey: beylik boşalır (NPC ocağa döner), iddiaya yeniden açılır.
+    for (const b of this.snap.beyliks) if (b.beyId && !isAlive(b.beyId)) {
+      const heirless = this.snap.players.filter((p) => p.beylikId === b.id && !p.dead);
+      b.beyId = null; b.beyName = null; b.power = NPC_BEYLIK_POWER; b.ocak = NPC_OCAK_BY_BEYLIK[b.id] || null;
+      heirless.forEach((p) => ev(p.id, "mp.beylik.beyDied", [b.name]));
+    }
 
     // 1) TAHT: boş ya da çekişmeli ise en yüksek güçlü iddiacı kazanır.
     const claimants = order.filter((pid) => this.intents[pid].some((i) => i.k === "claimThrone"))
@@ -235,6 +275,86 @@ export class RealmDO {
       }
     }
 
+    // 4) BEYLİK (Mount & Blade): bağlan / beye oyna-devir / vergi / sefer
+    const playerById = (id: string) => this.snap.players.find((p) => p.id === id) || null;
+    const beyById = (id: string | null) => (id ? playerById(id) : null);
+    // Beyliğin canlı muster gücü: taban + beyin yarı gücü + üyelerin çeyrek gücü + ocak desteği.
+    const liveBeylikMuster = (b: BeylikState): number => {
+      const bey = beyById(b.beyId);
+      const memberPow = this.snap.players
+        .filter((p) => p.beylikId === b.id && !p.dead && p.id !== b.beyId)
+        .reduce((a, p) => a + p.power * 0.25, 0);
+      return b.power + (bey ? bey.power * 0.5 : 0) + memberPow + (b.ocak ? 15 : 0);
+    };
+
+    // 4a) Bağlan / ayrıl (önce: bey iddiaları doğru üyelikle tartılsın)
+    for (const pid of order) for (const it of this.intents[pid]) {
+      if (it.k === "joinBeylik") {
+        const b = this.snap.beyliks.find((x) => x.id === it.beylikId); const p = playerById(pid);
+        if (b && p) { p.beylikId = b.id; ev(pid, "mp.beylik.joined", [b.name]); }
+      } else if (it.k === "leaveBeylik") {
+        const p = playerById(pid);
+        if (p && p.beylikId) {
+          const b = this.snap.beyliks.find((x) => x.id === p.beylikId);
+          if (b && b.beyId === pid) { b.beyId = null; b.beyName = null; b.power = NPC_BEYLIK_POWER; b.ocak = NPC_OCAK_BY_BEYLIK[b.id] || null; }
+          ev(pid, "mp.beylik.left", [b?.name || ""]); p.beylikId = null;
+        }
+      }
+    }
+
+    // 4b) Beye oyna — beylik başına EN YÜKSEK GÜÇLÜ kazanır (mevcut bey de yarışır).
+    const beyClaims: Record<string, string[]> = {};
+    for (const pid of order) for (const it of this.intents[pid]) if (it.k === "claimBey") (beyClaims[it.beylikId] ||= []).push(pid);
+    for (const bid of Object.keys(beyClaims)) {
+      const b = this.snap.beyliks.find((x) => x.id === bid); if (!b) continue;
+      const challengers = beyClaims[bid].map(playerById).filter((p) => p && !p.dead && p.power >= BEY_MIN_POWER) as PlayerPublic[];
+      if (!challengers.length) { beyClaims[bid].forEach((pid) => ev(pid, "mp.beylik.tooWeak", [b.name])); continue; }
+      const curBey = beyById(b.beyId);
+      const pool = [...challengers]; if (curBey && !pool.some((p) => p.id === curBey.id)) pool.push(curBey);
+      pool.sort((a, c) => c.power - a.power);
+      const winner = pool[0];
+      if (b.beyId === winner.id) { ev(winner.id, "mp.beylik.held", [b.name]); continue; }
+      const prev = b.beyId;
+      b.beyId = winner.id; b.beyName = winner.name; b.claimedTurn = this.snap.turn;
+      b.ocak = winner.guildId || b.ocak; b.power = Math.max(b.power, Math.round(winner.power));
+      winner.beylikId = b.id;
+      if (prev) { ev(prev, "mp.beylik.deposed", [b.name, winner.name]); ev(winner.id, "mp.beylik.seized", [b.name]); }
+      else ev(winner.id, "mp.beylik.founded", [b.name]);
+      challengers.filter((c) => c.id !== winner.id).forEach((c) => ev(c.id, "mp.beylik.claimFailed", [b.name]));
+    }
+
+    // 4c) Beylik vergisi — bey bağlı oyuncuları sıkar (onlar hisseder)
+    for (const pid of order) for (const it of this.intents[pid]) {
+      if (it.k === "setBeylikTax") {
+        const b = this.snap.beyliks.find((x) => x.id === it.beylikId);
+        if (b && b.beyId === pid) {
+          b.tax = Math.max(0, Math.min(70, it.tax)); ev(pid, "mp.beylik.taxSet", [b.tax]);
+          this.snap.players.filter((p) => p.beylikId === b.id && p.id !== pid && !p.dead).forEach((p) => ev(p.id, "mp.beylik.taxFelt", [b.name, b.tax]));
+        }
+      }
+    }
+
+    // 4d) Beylikler arası sefer/savaş — bey hedef beyliğe yürür; muster (bey+üye+ocak) tartılır.
+    for (const pid of order) for (const it of this.intents[pid]) {
+      if (it.k !== "beylikCampaign") continue;
+      const attackerB = this.snap.beyliks.find((x) => x.beyId === pid);
+      const target = this.snap.beyliks.find((x) => x.id === it.target);
+      if (!attackerB || !target || target.id === attackerB.id) continue;
+      const atk = liveBeylikMuster(attackerB), def = liveBeylikMuster(target);
+      if (atk > def * 0.9) {
+        const prevBey = target.beyId;
+        target.beyId = pid; target.beyName = playerById(pid)?.name || target.beyName; target.claimedTurn = this.snap.turn;
+        target.power = Math.max(NPC_BEYLIK_POWER, Math.round(def * 0.6)); // ilhak sonrası sarsılmış
+        ev(pid, "mp.beylik.campaignWon", [target.name]);
+        if (prevBey && prevBey !== pid) ev(prevBey, "mp.beylik.lostToCampaign", [target.name, playerById(pid)?.name || ""]);
+        this.snap.players.filter((p) => p.beylikId === target.id && p.id !== pid && !p.dead).forEach((p) => ev(p.id, "mp.beylik.conquered", [target.name]));
+        attackerB.power += 8;
+      } else {
+        target.power = Math.round(target.power + 6); // savunma güçlendi
+        ev(pid, "mp.beylik.campaignLost", [target.name]);
+      }
+    }
+
     // saat ilerle + pencere/alarm sıfırla
     this.snap.turn += 1;
     this.snap.players.forEach((p) => { p.ready = false; });
@@ -250,6 +370,11 @@ export class RealmDO {
 
   // ── Yayın yardımcıları ──
   sockets(): WebSocket[] { return this.state.getWebSockets(); }
+  // Verilen oyuncu kimliklerine ait açık soketler (fısıltı/beylik kanalı yönlendirmesi).
+  socketsOf(ids: string[]): WebSocket[] {
+    const set = new Set(ids.filter(Boolean));
+    return this.sockets().filter((ws) => { const a = (ws.deserializeAttachment() || {}) as { playerId?: string }; return !!a.playerId && set.has(a.playerId); });
+  }
   sendTo(ws: WebSocket, m: ServerMsg) { try { ws.send(JSON.stringify(m)); } catch {} }
   broadcast(m: ServerMsg) { const s = JSON.stringify(m); for (const ws of this.sockets()) { try { ws.send(s); } catch {} } }
   broadcastPresence() {

@@ -2,9 +2,9 @@
 import React, { createContext, useContext, useRef, useState, useCallback, useEffect } from "react";
 import { MpClient, NetStatus } from "./net";
 import { getServerUrl, getGuestId } from "./config";
-import { ClientMsg, ServerMsg, RealmSnapshot, PlayerPublic, SharedIntent, TickResult } from "./protocol";
+import { ClientMsg, ServerMsg, RealmSnapshot, PlayerPublic, SharedIntent, TickResult, ChatScope } from "./protocol";
 
-export interface ChatLine { from: string; fromName: string; text: string; at: number }
+export interface ChatLine { from: string; fromName: string; text: string; at: number; scope?: ChatScope; to?: string }
 
 interface MpCtx {
   status: NetStatus;
@@ -17,7 +17,7 @@ interface MpCtx {
   syncPlayer: (player: PlayerPublic) => void;
   setReady: (ready: boolean) => void;
   sendIntent: (intent: SharedIntent) => void;
-  sendChat: (text: string) => void;
+  sendChat: (text: string, scope?: ChatScope, to?: string) => void;
   leave: () => void;
 }
 
@@ -48,7 +48,7 @@ export function MpProvider({ children }: { children: React.ReactNode }) {
         setLastTick({ turn: m.turn, results: m.results });
         break;
       case "chat":
-        setChat((c) => [...c.slice(-80), { from: m.from, fromName: m.fromName, text: m.text, at: m.at }]);
+        setChat((c) => [...c.slice(-80), { from: m.from, fromName: m.fromName, text: m.text, at: m.at, scope: m.scope, to: m.to }]);
         break;
       case "error": setError(`${m.code}: ${m.msg}`); break;
     }
@@ -83,7 +83,7 @@ export function MpProvider({ children }: { children: React.ReactNode }) {
   const syncPlayer = useCallback((player: PlayerPublic) => { if (lastJoinRef.current) lastJoinRef.current.player = player; send({ t: "sync", player }); }, [send]);
   const setReady = useCallback((ready: boolean) => send({ t: "ready", ready }), [send]);
   const sendIntent = useCallback((intent: SharedIntent) => send({ t: "intent", intent }), [send]);
-  const sendChat = useCallback((text: string) => { if (text.trim()) send({ t: "chat", text: text.slice(0, 240) }); }, [send]);
+  const sendChat = useCallback((text: string, scope: ChatScope = "all", to?: string) => { if (text.trim()) send({ t: "chat", text: text.slice(0, 240), scope, to }); }, [send]);
   const leave = useCallback(() => { lastJoinRef.current = null; send({ t: "leave" }); clientRef.current?.close(); setSnapshot(null); setChat([]); setLastTick(null); }, [send]);
 
   return (

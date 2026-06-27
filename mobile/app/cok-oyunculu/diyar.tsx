@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../lib/i18n";
 import { useMp } from "../../lib/mp/store";
-import { PlayerPublic } from "../../lib/mp/protocol";
+import { PlayerPublic, ChatScope } from "../../lib/mp/protocol";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
@@ -20,6 +20,8 @@ export default function Diyar() {
   const { realmId, name } = useLocalSearchParams<{ realmId: string; name: string }>();
   const { status, guestId, snapshot, chat, error, joinRealm, setReady, sendChat, leave } = useMp();
   const [chatText, setChatText] = useState("");
+  const [chatScope, setChatScope] = useState<ChatScope>("all");
+  const [whisperTo, setWhisperTo] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
   const joined = useRef(false);
 
@@ -30,7 +32,7 @@ export default function Diyar() {
     const me: PlayerPublic = {
       id: guestId, name: String(name || "Hanedan"), surname: "", gender: "erkek",
       age: 7, generation: 1, profession: "işsiz", fame: 0, power: 10,
-      crowned: false, guildId: null, provinceName: null, online: true, ready: false, dead: false,
+      crowned: false, guildId: null, provinceName: null, beylikId: null, online: true, ready: false, dead: false,
     };
     joinRealm(String(realmId), String(realmId), me);
   }, [guestId, realmId]);
@@ -105,6 +107,8 @@ export default function Diyar() {
           {chat.length === 0 ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim }}>—</Text> :
             chat.map((c, i) => (
               <Text key={i} style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginBottom: 3 }}>
+                {c.scope === "whisper" && <Text style={{ color: "#C4A24C" }}>[{t("mp.chat.whisper")}] </Text>}
+                {c.scope === "beylik" && <Text style={{ color: C.sage }}>[{t("mp.chat.beylik")}] </Text>}
                 <Text style={{ color: c.from === guestId ? C.gold : "#6FA0C0" }}>{c.fromName}: </Text>{c.text}
               </Text>
             ))}
@@ -113,10 +117,46 @@ export default function Diyar() {
 
       {/* Alt çubuk: hazır oyu + tick geri sayım + sohbet girişi */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: insets.bottom + 8, paddingTop: 8, paddingHorizontal: 12, backgroundColor: "rgba(8,5,2,0.92)", borderTopWidth: 1, borderTopColor: C.borderHi }}>
+        {/* Kanal seçici: genel / beylik / fısıltı */}
+        <View style={{ flexDirection: "row", gap: 6, marginBottom: 6 }}>
+          {(["all", "beylik", "whisper"] as ChatScope[]).map((sc) => {
+            const on = chatScope === sc;
+            const disabled = sc === "beylik" && !me?.beylikId;
+            const label = sc === "all" ? t("mp.chat.all") : sc === "beylik" ? t("mp.chat.beylik") : t("mp.chat.whisper");
+            return (
+              <Pressable key={sc} disabled={disabled} onPress={() => { hap("tap"); setChatScope(sc); if (sc !== "whisper") setWhisperTo(null); }}
+                style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: on ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.12)" : "transparent", opacity: disabled ? 0.4 : 1 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: on ? C.gold : C.parchmentMuted }}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {/* Fısıltı hedefi seçimi */}
+        {chatScope === "whisper" && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 6 }}>
+            {players.filter((x) => x.id !== guestId && x.online).map((x) => {
+              const on = whisperTo === x.id;
+              return (
+                <Pressable key={x.id} onPress={() => { hap("tap"); setWhisperTo(x.id); }}
+                  style={{ paddingVertical: 5, paddingHorizontal: 11, borderRadius: 7, marginRight: 6, borderWidth: 1, borderColor: on ? "rgba(111,160,192,0.7)" : C.border, backgroundColor: on ? "rgba(111,160,192,0.14)" : "transparent" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 9.5, color: on ? "#6FA0C0" : C.parchmentMuted }}>{x.name}</Text>
+                </Pressable>
+              );
+            })}
+            {players.filter((x) => x.id !== guestId && x.online).length === 0 && (
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentDim, paddingVertical: 6 }}>{t("mp.chat.noTarget")}</Text>
+            )}
+          </ScrollView>
+        )}
         <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
-          <TextInput value={chatText} onChangeText={setChatText} placeholder={t("mp.chatPlaceholder")} placeholderTextColor={C.parchmentDim}
+          <TextInput value={chatText} onChangeText={setChatText} placeholder={chatScope === "whisper" ? t("mp.chat.whisperPh") : chatScope === "beylik" ? t("mp.chat.beylikPh") : t("mp.chatPlaceholder")} placeholderTextColor={C.parchmentDim}
             style={{ flex: 1, fontFamily: F.serif, fontSize: 13, color: C.parchment, borderWidth: 1, borderColor: C.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: C.card }}
-            onSubmitEditing={() => { if (chatText.trim()) { sendChat(chatText); setChatText(""); } }} returnKeyType="send" />
+            onSubmitEditing={() => {
+              if (!chatText.trim()) return;
+              if (chatScope === "whisper" && !whisperTo) return;
+              sendChat(chatText, chatScope, chatScope === "whisper" ? whisperTo! : undefined);
+              setChatText("");
+            }} returnKeyType="send" />
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>

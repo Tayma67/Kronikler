@@ -6,7 +6,7 @@ import { useI18n } from "../../lib/i18n";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { mePublic, applyTickEvents, realmYearMonth } from "../../lib/mp/world";
-import { SharedIntent } from "../../lib/mp/protocol";
+import { SharedIntent, BEY_MIN_POWER } from "../../lib/mp/protocol";
 import { newGame, advance, continueAsHeir, GameState } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
@@ -82,6 +82,12 @@ export default function MpOyun() {
   const readyCount = players.filter((x) => x.online && !x.dead && x.ready).length;
   const kingIsMe = snapshot.throne.holderId === guestId;
   const myGuild = snapshot.guilds.find((g) => g.id === p.faction);
+  // Beylik (Mount & Blade) durumu
+  const me = players.find((x) => x.id === guestId);
+  const myPower = me?.power ?? 0;
+  const myBeylikId = me?.beylikId ?? null;
+  const canBey = myPower >= BEY_MIN_POWER;          // beye oynamak için güç eşiği
+  const iAmBey = snapshot.beyliks.some((b) => b.beyId === guestId);
   const intent = (i: SharedIntent) => { hap("tap"); sendIntent(i); };
   const doReady = () => { hap("tap"); const v = !ready; setReadyLocal(v); setReady(v); if (guestId) syncPlayer(mePublic(guestId, s, v)); };
 
@@ -162,6 +168,50 @@ export default function MpOyun() {
           )}
         </View>
 
+        {/* BEYLİKLER — Mount & Blade toprak/grup katmanı */}
+        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 4 }}>{t("mp.beylik.title")}</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginBottom: 8 }}>
+          {canBey ? t("mp.beylik.canBeyHint") : pf(t("mp.beylik.needPowerHint"), myPower, BEY_MIN_POWER)}
+        </Text>
+        {snapshot.beyliks.map((b) => {
+          const isBey = b.beyId === guestId;
+          const inThis = myBeylikId === b.id;
+          const beyLabel = b.beyName || t("mp.beylik.npcHeld");
+          return (
+            <View key={b.id} style={{ borderWidth: 1, borderColor: isBey ? "rgba(201,168,76,0.6)" : C.border, borderRadius: 9, padding: 10, marginBottom: 8, backgroundColor: C.card }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: isBey ? C.gold : C.parchment }}>{b.name}{isBey ? " ♔" : ""}{inThis && !isBey ? " ·" : ""}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>{pf(t("mp.beylik.powerLine"), b.power)}</Text>
+              </View>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>
+                {pf(t("mp.beylik.beyLine"), beyLabel)}{b.ocak ? " · " + pf(t("mp.beylik.ocakLine"), b.ocak) : ""}
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                {!inThis && !isBey && (
+                  <Pressable onPress={() => intent({ k: "joinBeylik", beylikId: b.id })} style={miniBtn}>
+                    <Text style={miniTxt}>{t("mp.beylik.joinBtn")}</Text></Pressable>
+                )}
+                {inThis && !isBey && (
+                  <Pressable onPress={() => intent({ k: "leaveBeylik" })} style={miniBtn}>
+                    <Text style={miniTxt}>{t("mp.beylik.leaveBtn")}</Text></Pressable>
+                )}
+                {!isBey && (
+                  <Pressable disabled={!canBey} onPress={() => intent({ k: "claimBey", beylikId: b.id })} style={[miniBtnGold, !canBey && { opacity: 0.4 }]}>
+                    <Text style={miniTxtGold}>{b.beyId ? t("mp.beylik.seizeBtn") : t("mp.beylik.foundBtn")}</Text></Pressable>
+                )}
+                {isBey && (
+                  <Pressable onPress={() => intent({ k: "setBeylikTax", beylikId: b.id, tax: Math.min(70, b.tax + 10) })} style={miniBtnGold}>
+                    <Text style={miniTxtGold}>{pf(t("mp.beylik.taxBtn"), Math.min(70, b.tax + 10))}</Text></Pressable>
+                )}
+                {iAmBey && !isBey && (
+                  <Pressable onPress={() => intent({ k: "beylikCampaign", target: b.id })} style={miniBtnBlood}>
+                    <GameIcon name="crossed-swords" size={12} color={C.blood} /><Text style={miniTxtBlood}>{t("mp.beylik.campaignBtn")}</Text></Pressable>
+                )}
+              </View>
+            </View>
+          );
+        })}
+
         {/* Diyardaki haneler */}
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.players")} · {liveCount}</Text>
         {players.map((x) => (
@@ -188,3 +238,10 @@ export default function MpOyun() {
 
 const shareBtn = { flexDirection: "row" as const, alignItems: "center" as const, gap: 8, paddingVertical: 11, paddingHorizontal: 12, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.08)" };
 const shareTxt = { fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5 };
+// Beylik kart butonları
+const miniBtn = { paddingVertical: 7, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: C.border, backgroundColor: "rgba(255,255,255,0.03)" };
+const miniTxt = { fontFamily: F.display, fontSize: 10.5, color: C.parchment, letterSpacing: 0.5 };
+const miniBtnGold = { paddingVertical: 7, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.1)" };
+const miniTxtGold = { fontFamily: F.display, fontSize: 10.5, color: C.gold, letterSpacing: 0.5 };
+const miniBtnBlood = { flexDirection: "row" as const, alignItems: "center" as const, gap: 5, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: "rgba(200,64,64,0.5)", backgroundColor: "rgba(200,64,64,0.08)" };
+const miniTxtBlood = { fontFamily: F.display, fontSize: 10.5, color: C.blood, letterSpacing: 0.5 };

@@ -14,10 +14,23 @@
 //     sunucuya gönderir.
 // ──────────────────────────────────────────────────────────────────────────
 
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 export const MAX_PLAYERS = 10;           // bir diyardaki insan slotu (kalanı NPC doldurur)
 export const TICK_TIMEOUT_MS = 5 * 60 * 1000; // çoğunluk olmazsa otomatik ay atlama tavanı
 export const READY_MAJORITY = 0.5;       // > yarısı hazır → tick
+
+// Mount & Blade muhabbeti: bir beyliğe bey olmak/kurmak için gereken asgari hane gücü
+// (dynastyPower). Bunun altındaki "sıradan" oyuncu önce güç biriktirmeli.
+export const BEY_MIN_POWER = 80;
+// Diyarın 5 beyliği — game.ts BEYLIKS ile BİREBİR aynı (id'ler eşleşmeli). Hem istemci
+// hem sunucu buradan okur → kayma olmaz. NPC ocaklar boş beylikleri tutar.
+export const BEYLIK_DEFS: { id: string; name: string }[] = [
+  { id: "demirhan",   name: "Demirhan Beyliği" },
+  { id: "yenisehir",  name: "Yenişehir Sancağı" },
+  { id: "gumushisar", name: "Gümüşhisar Beyliği" },
+  { id: "aksehir",    name: "Akşehir Sancağı" },
+  { id: "karahisar",  name: "Karahisar Beyliği" },
+];
 
 // ── Oyuncunun kamuya açık "hane"si (diğer oyunculara görünen) ──
 export interface PlayerPublic {
@@ -31,8 +44,9 @@ export interface PlayerPublic {
   fame: number;
   power: number;         // dynastyPower — taht/lonca çekişmelerinde tartı
   crowned: boolean;
-  guildId: string | null;     // üye olduğu lonca
+  guildId: string | null;     // üye olduğu lonca/ocak
   provinceName: string | null;// vali olduğu sancak
+  beylikId: string | null;    // bağlı olduğu beylik (grup/takım) — SUNUCU sahibi
   online: boolean;
   ready: boolean;        // bu ay için "ay atla" oyu
   dead: boolean;
@@ -55,6 +69,19 @@ export interface ThroneState {
   holderName: string | null;
   claimedTurn: number;
 }
+// ── Beylik (Mount & Blade toprağı): kendi beyi olan, içinde şehir/köy barındıran
+//    yarı-bağımsız diyar. Bir oyuncu boş/zayıf beyliğe bey olur, güçlüyse mevcut beyi
+//    devirir, başka beyliğe sefer açıp ilhak eder. Boş beylikleri NPC ocaklar tutar. ──
+export interface BeylikState {
+  id: string;                 // BEYLIK_DEFS id (demirhan, yenisehir, …)
+  name: string;
+  beyId: string | null;       // bey olan oyuncu (null → NPC/ocak elinde)
+  beyName: string | null;
+  ocak: string | null;        // beyliği destekleyen ocak (fraksiyon) — gücü etkiler
+  tax: number;                // beyin bağlı oyunculara koyduğu vergi
+  power: number;              // beyliğin askerî/savunma gücü (sefer dengesinde tartı)
+  claimedTurn: number;
+}
 
 // ── Diyarın tam anlık görüntüsü (sunucu → istemci) ──
 export interface RealmSnapshot {
@@ -69,6 +96,7 @@ export interface RealmSnapshot {
   throne: ThroneState;
   guilds: GuildState[];
   provinces: ProvinceState[];
+  beyliks: BeylikState[]; // 5 beylik — Mount & Blade toprak/grup katmanı
   econ: number;          // paylaşımlı ekonomi/enflasyon indeksi
   createdAt: number;
 }
@@ -85,7 +113,13 @@ export type SharedIntent =
   | { k: "appointGovernor"; province: string }
   | { k: "setProvinceTax"; province: string; tax: number }
   | { k: "campaign"; target: string }
-  | { k: "decree"; id: string };
+  | { k: "decree"; id: string }
+  // ── Beylik (Mount & Blade) eylemleri ──
+  | { k: "claimBey"; beylikId: string }       // beye oyna: boşsa kur, doluysa devir (en yüksek güç)
+  | { k: "joinBeylik"; beylikId: string }      // beyliğe bağlan (gruba katıl, bey olmadan)
+  | { k: "leaveBeylik" }
+  | { k: "setBeylikTax"; beylikId: string; tax: number } // bey üyelere vergi koyar
+  | { k: "beylikCampaign"; target: string };   // bey olarak başka beyliğe sefer/savaş
 
 // ── İstemci → Sunucu mesajları ──
 export type ClientMsg =
@@ -93,7 +127,7 @@ export type ClientMsg =
   | { t: "sync"; player: PlayerPublic }   // her ay kişisel kamu durumunu güncelle
   | { t: "ready"; ready: boolean }         // ay-atla oyu
   | { t: "intent"; intent: SharedIntent }  // paylaşımlı eylem
-  | { t: "chat"; text: string }
+  | { t: "chat"; text: string; scope?: ChatScope; to?: string } // scope: genel/beylik/fısıltı; to: fısıltı hedef oyuncu id
   | { t: "leave" }
   | { t: "ping" };
 
@@ -114,9 +148,12 @@ export type ServerMsg =
   | { t: "snapshot"; snapshot: RealmSnapshot }       // tam durum (katılış + tick sonrası)
   | { t: "presence"; players: PlayerPublic[]; phase: RealmSnapshot["phase"]; tickDeadline: number }
   | { t: "tick"; turn: number; results: TickResult[]; snapshot: RealmSnapshot }
-  | { t: "chat"; from: string; fromName: string; text: string; at: number }
+  | { t: "chat"; from: string; fromName: string; text: string; at: number; scope?: ChatScope; to?: string }
   | { t: "error"; code: string; msg: string }
   | { t: "pong" };
+
+// Sohbet kanalı: genel (diyar), beylik (yalnız aynı beyliktekiler), fısıltı (1↔1).
+export type ChatScope = "all" | "beylik" | "whisper";
 
 // ── Yardımcılar ──
 export function readyToTick(players: PlayerPublic[]): boolean {
@@ -139,6 +176,7 @@ export function toPublic(
     generation: p.generation, profession: p.profession, fame: Math.round(p.fame), power: Math.round(power),
     crowned: !!p.crowned, guildId: p.faction || null,
     provinceName: (p.governorships && p.governorships[0]) || null,
+    beylikId: null, // sunucu sahibi; sync'te korunur, istemci ezmez
     online, ready, dead: !!p.dead,
   };
 }
