@@ -381,6 +381,11 @@ export class RealmDO {
     const pname = (id: string) => playerById(id)?.name || "?";
     const aliveOther = (pid: string, other: string) => pid !== other && isAlive(pid) && isAlive(other);
     const chance = (p: number) => Math.random() < p;
+    // ÜCRETSİZ aksiyonlar (vouch/duel) ayda bir kez/hedef ile sınırlı — buton spam'i ile
+    // şöhret/şeref farmlanmasını önler. Bedelli aksiyonlarda altın istemcide zaten kesildiği
+    // için onlar dedupe edilmez (kesilen altın boşa gitmesin).
+    const socOnce = new Set<string>();
+    const once = (key: string) => { if (socOnce.has(key)) return false; socOnce.add(key); return true; };
 
     for (const pid of order) for (const it of this.intents[pid]) {
       switch (it.k) {
@@ -393,8 +398,12 @@ export class RealmDO {
           break;
         }
         case "vouch": {
-          if (!aliveOther(pid, it.to)) break;
-          ev(it.to, "mp.soc.vouched", [pname(pid)]); ev(pid, "mp.soc.vouchDone", [pname(it.to)]);
+          if (!aliveOther(pid, it.to) || !once(pid + "|vouch|" + it.to)) break;
+          // Şöhret kazancı: kefilin kendi şöhretiyle ÖLÇEKLİ + hedefin tavana yakınlığıyla azalır.
+          // Böylece iki "kimsesiz" oyuncu birbirini överek şöhret farmlayamaz (taht şartı korunur).
+          const voucher = playerById(pid)!, tgt = playerById(it.to)!;
+          const gain = Math.max(0, Math.round(6 * (voucher.fame / 100) * (1 - tgt.fame / 100)));
+          ev(it.to, "mp.soc.vouched", [pname(pid), gain]); ev(pid, "mp.soc.vouchDone", [pname(it.to)]);
           this.adjustBond(pid, it.to, 5); this.adjustHonor(pid, 1);
           break;
         }
@@ -428,7 +437,7 @@ export class RealmDO {
         }
         // — Rekabet —
         case "duel": {
-          if (!aliveOther(pid, it.to)) break;
+          if (!aliveOther(pid, it.to) || !once(pid + "|duel|" + it.to)) break;
           const me = playerById(pid)!, foe = playerById(it.to)!;
           const iWin = Math.random() * (me.power + foe.power + 1) < me.power + 1;
           const w = iWin ? pid : it.to, l = iWin ? it.to : pid;
@@ -506,7 +515,13 @@ export class RealmDO {
   }
   adjustBond(x: string, y: string, delta: number) { const bd = this.bondOf(x, y); bd.standing = Math.max(-100, Math.min(100, bd.standing + delta)); }
   setPact(x: string, y: string, pact: PactType | null) { const bd = this.bondOf(x, y); bd.pact = pact; bd.since = this.snap.turn; }
-  adjustHonor(pid: string, delta: number) { const p = this.snap.players.find((x) => x.id === pid); if (p) p.honor = Math.max(-100, Math.min(100, (p.honor || 0) + delta)); }
+  // Şeref: ARTIŞ azalan getirili (yükseldikçe zorlaşır) → farmlanamaz; CEZA tam uygulanır (ihanet hep yaralar).
+  adjustHonor(pid: string, delta: number) {
+    const p = this.snap.players.find((x) => x.id === pid); if (!p) return;
+    const cur = p.honor || 0;
+    const eff = delta > 0 ? delta * (1 - Math.max(0, cur) / 100) : delta;
+    p.honor = Math.max(-100, Math.min(100, Math.round(cur + eff)));
+  }
   sendTo(ws: WebSocket, m: ServerMsg) { try { ws.send(JSON.stringify(m)); } catch {} }
   broadcast(m: ServerMsg) { const s = JSON.stringify(m); for (const ws of this.sockets()) { try { ws.send(s); } catch {} } }
   broadcastPresence() {

@@ -82,7 +82,7 @@ export function applyTickEvents(prev: GameState, events: TickEvent[]): GameState
       case "mp.soc.giftGot": p.money += Number(e.p?.[1]) || 0; break;       // bağış aldın
       case "mp.soc.loanGot": p.money += Number(e.p?.[1]) || 0; break;       // borç aldın
       case "mp.soc.loanGave": p.money = Math.max(0, p.money - (Number(e.p?.[1]) || 0)); break; // borç verdin
-      case "mp.soc.vouched": p.fame = clamp100(p.fame + 6); break;          // biri seni övdü
+      case "mp.soc.vouched": p.fame = clamp100(p.fame + (Number(e.p?.[1]) || 0)); break; // biri seni övdü (ölçekli)
       case "mp.soc.married": p.fame = clamp100(p.fame + 5); break;          // dünürlük kuruldu
       case "mp.soc.allied": p.reputation = Math.min(100, p.reputation + 3); break;
       case "mp.soc.duelWon": p.fame = clamp100(p.fame + 8); break;

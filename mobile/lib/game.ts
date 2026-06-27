@@ -57,6 +57,7 @@ export interface Player {
   crownConquests?: string[]; // sefere çıkıp ilhak edilen beylikler (haraç + güç + şöhret)
   campaignsWon?: number; // kazanılan sefer sayısı (şöhret/miras)
   prof_action_turn?: number; // son meslek imza eylemi turu (bekleme süresi)
+  work_turn?: number; // bu ay çalışıldı mı (tur başına tek maaşlı iş — para/kariyer farmı önlenir)
   courtRank?: number; // saray/divan rütbesi (0..4 = Kâtip..Sadrazam; tanımsız = sarayda değil)
   courtXp?: number; // saray hizmet puanı (terfi eşiği)
   courtFavor?: number; // hükümdar nezdinde itibar (0-100); düşerse azil
@@ -1887,9 +1888,15 @@ export const WORK_STYLES: { id: WorkStyle; mult: number; fail: number }[] = [
   { id: "hirsli",    mult: 1.4, fail: 0.15 },
   { id: "kaytarici", mult: 0.4, fail: 0.20 },
 ];
+export function canWork(s: GameState): boolean {
+  const p = s.player;
+  return !p.dead && p.age >= 13 && p.profession !== "işsiz" && p.work_turn !== s.turn;
+}
 export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.profession === "işsiz") return s;
+  if (p.work_turn === s.turn) return s; // bu ay zaten çalıştın → tur başına tek maaşlı iş (farm önlenir)
+  p.work_turn = s.turn;
   const ws = WORK_STYLES.find((w) => w.id === style) || WORK_STYLES[1];
   const pr = professionById(p.profession);
   const stat = effStat(p, PROF_STAT[p.profession] || "stamina");
