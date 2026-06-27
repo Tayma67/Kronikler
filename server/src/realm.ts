@@ -17,7 +17,7 @@ import {
   PROTOCOL_VERSION, MAX_PLAYERS, TICK_TIMEOUT_MS, readyToTick,
 } from "./protocol";
 
-interface Env { REALM: DurableObjectNamespace }
+interface Env { REALM: DurableObjectNamespace; DIRECTORY: DurableObjectNamespace }
 
 const GUILD_IDS = ["tuccar", "demirci", "asker", "sifaci", "golge", "ulema", "esnaf"];
 // Boş (NPC) beyliklerin taban gücü ve bunları tutan ocaklar (deterministik dağıtım).
@@ -101,6 +101,15 @@ export class RealmDO {
 
   async persist() { await this.state.storage.put("snap", this.snap); }
 
+  // Açık diyar dizinine rapor ver (kod paylaşmadan tıkla-katıl). Hata yutulur (kritik değil).
+  async reportDirectory() {
+    try {
+      const count = this.snap.players.filter((p) => p.online && !p.dead).length;
+      const dir = this.env.DIRECTORY.get(this.env.DIRECTORY.idFromName("global"));
+      await dir.fetch("https://d/report", { method: "POST", body: JSON.stringify({ realmId: this.snap.realmId, name: this.snap.name, count }) });
+    } catch {}
+  }
+
   // ── WebSocket yükseltme ──
   async fetch(req: Request): Promise<Response> {
     const url = new URL(req.url);
@@ -142,6 +151,7 @@ export class RealmDO {
         this.sendTo(ws, { t: "welcome", you: p.id, snapshot: this.snap, saved });
         this.broadcastPresence();
         await this.ensureAlarm();
+        await this.reportDirectory();
         break;
       }
       case "sync": {
@@ -187,7 +197,7 @@ export class RealmDO {
         }
         break;
       }
-      case "leave": { this.markOffline(att.playerId); await this.persist(); this.broadcastPresence(); break; }
+      case "leave": { this.markOffline(att.playerId); await this.persist(); this.broadcastPresence(); await this.reportDirectory(); break; }
       case "ping": { this.sendTo(ws, { t: "pong" }); break; }
     }
   }
@@ -197,6 +207,7 @@ export class RealmDO {
     this.markOffline(att.playerId);
     await this.persist();
     this.broadcastPresence();
+    await this.reportDirectory();
   }
   async webSocketError(ws: WebSocket) { await this.webSocketClose(ws); }
 
@@ -588,6 +599,7 @@ export class RealmDO {
     await this.state.storage.setAlarm(this.snap.tickDeadline);
 
     this.broadcast({ t: "tick", turn: this.snap.turn, results: Object.values(results), snapshot: this.snap });
+    await this.reportDirectory();
   }
 
   // ── Yayın yardımcıları ──

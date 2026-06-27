@@ -24,6 +24,12 @@ export async function setServerUrl(url: string): Promise<void> {
   try { await AsyncStorage.setItem(URL_KEY, _serverUrl); } catch {}
 }
 
+// Açık diyar listesi gibi HTTP istekleri için temel adres (wss→https, ws→http).
+export async function getHttpBase(): Promise<string> {
+  const u = await getServerUrl();
+  return u.replace(/^wss:/i, "https:").replace(/^ws:/i, "http:").replace(/\/$/, "");
+}
+
 // Kalıcı misafir kimliği — hesapsız oynanış (cihaz başına bir hanedan kimliği).
 export async function getGuestId(): Promise<string> {
   if (_guestId) return _guestId;

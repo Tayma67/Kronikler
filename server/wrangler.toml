@@ -10,9 +10,18 @@ account_id = "9f3fe2d30c25f18f37c267b8f12c3055"
 name = "REALM"
 class_name = "RealmDO"
 
-# DO sınıfını taşıyan migration. ÜCRETSİZ planda DO'lar SQLite-tabanlı olmalı → new_sqlite_classes.
+# DirectoryDO — TEK küresel örnek: açık diyar listesi (kod paylaşmadan tıkla-katıl).
+[[durable_objects.bindings]]
+name = "DIRECTORY"
+class_name = "DirectoryDO"
+
+# DO sınıflarını taşıyan migration'lar. ÜCRETSİZ planda DO'lar SQLite-tabanlı olmalı.
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["RealmDO"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["DirectoryDO"]
 
 # Ücretsiz katmanda WebSocket hibernation desteklenir; ek ayar gerekmez.
