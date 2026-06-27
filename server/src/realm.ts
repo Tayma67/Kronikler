@@ -63,6 +63,7 @@ export class RealmDO {
   snap!: RealmSnapshot;
   intents: Record<string, SharedIntent[]> = {}; // playerId → bu ay kuyruğa giren paylaşımlı eylemler
   offerSeq = 0; // teklif kimliği üreteci
+  chatTimes: Record<string, number[]> = {}; // sohbet flood koruması (oyuncu → son gönderim zamanları)
   loaded = false;
 
   constructor(state: DurableObjectState, env: Env) {
@@ -182,6 +183,11 @@ export class RealmDO {
       case "chat": {
         const p = this.snap.players.find((x) => x.id === att.playerId);
         if (!p || !m.text?.trim()) break;
+        // Flood koruması: 8 sn'de en çok 6 mesaj (insan için bol; sel/spam'i keser, herkese yayını korur).
+        const nowC = Date.now();
+        const recent = (this.chatTimes[p.id] || []).filter((ts) => nowC - ts < 8000);
+        if (recent.length >= 6) { this.chatTimes[p.id] = recent; break; }
+        recent.push(nowC); this.chatTimes[p.id] = recent;
         const text = m.text.slice(0, 240);
         const scope: ChatScope = m.scope === "whisper" || m.scope === "beylik" ? m.scope : "all";
         const out: ServerMsg = { t: "chat", from: p.id, fromName: p.name, text, at: Date.now(), scope, to: m.to };
