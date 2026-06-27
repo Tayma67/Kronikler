@@ -3,10 +3,11 @@ import { View, Text, Pressable, ScrollView, ActivityIndicator } from "react-nati
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../lib/i18n";
+import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { mePublic, applyTickEvents, realmYearMonth } from "../../lib/mp/world";
 import { SharedIntent } from "../../lib/mp/protocol";
-import { newGame, advance, eat, work, GameState } from "../../lib/game";
+import { newGame, advance, GameState } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
@@ -14,47 +15,61 @@ import { BackLabel } from "../../lib/ui";
 
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 
+// MP'de oynanabilen kişisel ekranlar (hepsi useGame() = MP karakteri üstünde çalışır)
+const LIFE_SCREENS: { path: string; icon: string; key: string }[] = [
+  { path: "/oyun/meslek", icon: "anvil", key: "scr.meslek" },
+  { path: "/oyun/mektep", icon: "scroll", key: "scr.mektep" },
+  { path: "/oyun/beceriler", icon: "star", key: "scr.beceriler" },
+  { path: "/oyun/iliskiler", icon: "iliskiler", key: "tab.relations" },
+  { path: "/oyun/pazar", icon: "pazar", key: "scr.pazar" },
+  { path: "/oyun/mulkler", icon: "sehir", key: "scr.mulkler" },
+  { path: "/oyun/savas", icon: "crossed-swords", key: "scr.savas" },
+  { path: "/oyun/orgutler", icon: "hood", key: "scr.orgutler" },
+];
+
 export default function MpOyun() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useI18n();
   const { name } = useLocalSearchParams<{ name: string }>();
+  const { state: s, apply, mpMode, enterMp, exitMp } = useGame();
   const { guestId, snapshot, lastTick, setReady, sendIntent, syncPlayer } = useMp();
 
-  const [s, setS] = useState<GameState | null>(null);
   const [ready, setReadyLocal] = useState(false);
   const [evLines, setEvLines] = useState<string[]>([]);
   const processedTurn = useRef(-1);
   const synced = useRef(false);
+  const sRef = useRef<GameState | null>(s);
+  useEffect(() => { sRef.current = s; }, [s]);
 
-  // MP karakterini oluştur (yerel game.ts oturumu — SP kaydından ayrı)
+  // MP karakterini ortak depoya koy (tüm /oyun alt-ekranları bunun üstünde çalışır)
   useEffect(() => {
-    if (s || !guestId) return;
-    setS(newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"));
-  }, [guestId]);
+    if (!mpMode && guestId) enterMp(newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"));
+  }, [guestId, mpMode]);
 
   // İlk kamu senkronu
   useEffect(() => {
-    if (s && guestId && snapshot && !synced.current) { synced.current = true; syncPlayer(mePublic(guestId, s, ready)); }
-  }, [s, guestId, snapshot]);
+    if (mpMode && s && guestId && snapshot && !synced.current) { synced.current = true; syncPlayer(mePublic(guestId, s, ready)); }
+  }, [mpMode, s, guestId, snapshot]);
 
-  // Sunucu tick'i: dünya ayı ilerledi → yerel karakteri 1 ay ilerlet + çapraz etkileri uygula + senkronla
+  // Sunucu tick'i → dünya ayı ilerledi: yerel karakteri 1 ay ilerlet + çapraz etkiler + senkron
   useEffect(() => {
-    if (!lastTick || !s || !guestId) return;
+    if (!lastTick || !guestId || !sRef.current) return;
     if (lastTick.turn === processedTurn.current) return;
     processedTurn.current = lastTick.turn;
-    let ns = advance(s, 1);
+    let ns = advance(sRef.current, 1);
     const mine = lastTick.results.find((r) => r.playerId === guestId);
-    if (mine && mine.events.length) {
-      ns = applyTickEvents(ns, mine.events);
-      setEvLines(mine.events.map((e) => pf(t(e.k), ...(e.p || []))));
-    } else setEvLines([]);
-    setS(ns);
+    if (mine && mine.events.length) { ns = applyTickEvents(ns, mine.events); setEvLines(mine.events.map((e) => pf(t(e.k), ...(e.p || [])))); }
+    else setEvLines([]);
+    apply(() => ns);
     setReadyLocal(false);
     syncPlayer(mePublic(guestId, ns, false));
   }, [lastTick]);
 
-  if (!s || !snapshot) {
+  // Çıkışta MP modundan çık (SP kaydı geri yüklenir)
+  useEffect(() => () => { exitMp(); }, []);
+
+  if (!mpMode || !s || !snapshot) {
     return <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center" }}>
       <ActivityIndicator color={C.gold} /><Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, marginTop: 12 }}>{t("mp.connecting")}</Text>
     </View>;
@@ -68,16 +83,14 @@ export default function MpOyun() {
   const kingIsMe = snapshot.throne.holderId === guestId;
   const myGuild = snapshot.guilds.find((g) => g.id === p.faction);
   const intent = (i: SharedIntent) => { hap("tap"); sendIntent(i); };
-
   const doReady = () => { hap("tap"); const v = !ready; setReadyLocal(v); setReady(v); if (guestId) syncPlayer(mePublic(guestId, s, v)); };
-  const doLocal = (fn: (st: GameState) => GameState) => { const ns = fn(s); setS(ns); if (guestId) syncPlayer(mePublic(guestId, ns, ready)); };
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 10 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 120 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 110 }}>
         {/* Dünya saati */}
         <View style={{ alignItems: "center", marginBottom: 8 }}>
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim }}>{t("mp.realm")} · {snapshot.realmId}</Text>
@@ -90,25 +103,26 @@ export default function MpOyun() {
         {/* Karakter özeti */}
         <View style={{ borderWidth: 1, borderColor: C.borderHi, borderRadius: 10, padding: 12, backgroundColor: C.card }}>
           <Text style={{ fontFamily: F.display, fontSize: 15, color: C.gold }}>{p.name} {p.crowned ? "♔" : ""}</Text>
-          <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, marginTop: 3 }}>
-            {pf(t("mp.stat"), p.age, p.health, p.money, p.fame)}
-          </Text>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
-            <Pressable onPress={() => doLocal(eat)} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: "center", borderWidth: 1, borderColor: C.border, backgroundColor: C.bg }}>
-              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment }}>{t("mp.eat")}</Text>
-            </Pressable>
-            <Pressable onPress={() => doLocal((st) => work(st, "normal"))} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: "center", borderWidth: 1, borderColor: C.border, backgroundColor: C.bg }}>
-              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment }}>{t("mp.work")}</Text>
-            </Pressable>
-          </View>
+          <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, marginTop: 3 }}>{pf(t("mp.stat"), p.age, p.health, p.money, p.fame)}</Text>
         </View>
 
-        {/* Çapraz-etki olayları (son tick) */}
+        {/* Çapraz-etki olayları */}
         {evLines.length > 0 && (
           <View style={{ marginTop: 10, borderWidth: 1, borderColor: "rgba(111,160,192,0.4)", backgroundColor: "rgba(111,160,192,0.08)", borderRadius: 9, padding: 10 }}>
             {evLines.map((l, i) => <Text key={i} style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment, lineHeight: 18 }}>• {l}</Text>)}
           </View>
         )}
+
+        {/* Hayatını yönet — tüm kişisel ekranlar MP karakteri üstünde */}
+        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.subtitle")}</Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {LIFE_SCREENS.map((sc) => (
+            <Pressable key={sc.path} onPress={() => { hap("tap"); router.push(sc.path as never); }} style={{ width: "31%", alignItems: "center", paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: C.border, backgroundColor: C.card }}>
+              <GameIcon name={sc.icon} size={18} color={C.gold} />
+              <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: C.parchment, marginTop: 5, textAlign: "center" }}>{t(sc.key)}</Text>
+            </Pressable>
+          ))}
+        </View>
 
         {/* Paylaşımlı eylemler */}
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.realm").toUpperCase()}</Text>
@@ -130,7 +144,7 @@ export default function MpOyun() {
           )}
         </View>
 
-        {/* Diyardaki haneler (gerçek oyuncular = rakipler) */}
+        {/* Diyardaki haneler */}
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.players")} · {liveCount}</Text>
         {players.map((x) => (
           <View key={x.id} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.border }}>
@@ -141,7 +155,7 @@ export default function MpOyun() {
         ))}
       </ScrollView>
 
-      {/* Alt: hazır oyu + senkron tick */}
+      {/* Alt: hazır oyu + senkron tick (Yaşa = ay-atla oyu) */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: insets.bottom + 10, paddingTop: 10, paddingHorizontal: 14, backgroundColor: "rgba(8,5,2,0.94)", borderTopWidth: 1, borderTopColor: C.borderHi, flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>
           {snapshot.phase === "ticking" ? t("mp.ticking") : pf(t("mp.readyCount"), readyCount, liveCount)}

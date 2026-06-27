@@ -55,6 +55,12 @@ interface Ctx {
   doEat: () => void;
   doWork: (style?: WorkStyle) => void;
   resetGame: () => Promise<void>;
+  // ── Çok oyuncu köprüsü ── MP karakterini aynı depoya koyar; böylece TÜM /oyun
+  // alt-ekranları (meslek/mektep/savaş…) MP karakteri üstünde de değişiklik yapmadan çalışır.
+  // mpMode true iken SP kaydına (AsyncStorage) YAZILMAZ → çevrimdışı kayıt korunur.
+  mpMode: boolean;
+  enterMp: (s: GameState) => void;
+  exitMp: () => Promise<void>;
 }
 
 const GameContext = createContext<Ctx | null>(null);
@@ -62,6 +68,8 @@ const GameContext = createContext<Ctx | null>(null);
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<GameState | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mpMode, setMpMode] = useState(false);
+  const mpRef = useRef(false); // persist gating senkron okuma için
 
   useEffect(() => {
     (async () => {
@@ -85,9 +93,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const flush = useCallback(() => {
     if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
     const s = pending.current; pending.current = null;
+    if (mpRef.current) return; // MP modunda SP kaydına yazma
     if (s) AsyncStorage.setItem(KEY, JSON.stringify(s)).catch(() => {});
   }, []);
   const schedulePersist = useCallback((s: GameState) => {
+    if (mpRef.current) return; // MP modunda SP kaydına yazma (çevrimdışı kayıt korunur)
     pending.current = s;
     if (saveTimer.current) return;
     saveTimer.current = setTimeout(() => { saveTimer.current = null; const x = pending.current; pending.current = null; if (x) AsyncStorage.setItem(KEY, JSON.stringify(x)).catch(() => {}); }, 1200);
@@ -118,10 +128,25 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const doAdvance = useCallback((n = 1) => apply((s) => advance(s, n)), [apply]);
   const doEat = useCallback(() => apply(eat), [apply]);
   const doWork = useCallback((style?: WorkStyle) => apply((s) => work(s, style)), [apply]);
-  const resetGame = useCallback(async () => { if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null; await AsyncStorage.removeItem(KEY); setState(null); }, []);
+  const resetGame = useCallback(async () => { if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null; if (mpRef.current) return; await AsyncStorage.removeItem(KEY); setState(null); }, []);
+
+  // ── Çok oyuncu köprüsü ──
+  const enterMp = useCallback((s: GameState) => {
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null; // bekleyen SP yazımını iptal et
+    mpRef.current = true; setMpMode(true); setState(s);
+  }, []);
+  const exitMp = useCallback(async () => {
+    mpRef.current = false; setMpMode(false);
+    // SP kaydını diskten geri yükle (Devam Et için); yoksa null
+    try {
+      const raw = await AsyncStorage.getItem(KEY);
+      if (raw) { const obj = JSON.parse(raw); if (obj && typeof obj === "object" && obj.player) { setState(migrate(obj)); return; } }
+    } catch {}
+    setState(null);
+  }, []);
 
   return (
-    <GameContext.Provider value={{ state, loading, startGame, apply, doAdvance, doEat, doWork, resetGame }}>
+    <GameContext.Provider value={{ state, loading, startGame, apply, doAdvance, doEat, doWork, resetGame, mpMode, enterMp, exitMp }}>
       {children}
     </GameContext.Provider>
   );
