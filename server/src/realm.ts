@@ -162,7 +162,13 @@ export class RealmDO {
       case "sync": {
         const p = this.snap.players.find((x) => x.id === att.playerId);
         // beylikId + honor SUNUCU otoritesindedir (istemcinin game.ts'inde karşılığı yok) → sync ezmez.
-        if (p && m.player) { Object.assign(p, m.player, { id: p.id, online: true, beylikId: p.beylikId, honor: p.honor ?? 0, traveling: p.traveling ?? false }); await this.persist(); this.broadcastPresence(); }
+        if (p && m.player) {
+          Object.assign(p, m.player, { id: p.id, online: true, beylikId: p.beylikId, honor: p.honor ?? 0, traveling: p.traveling ?? false });
+          // Yerel NPC ile evlendiyse (married→true), bekleyen evlilik tekliflerini düşür:
+          // bayat bir teklif kabul edilip çifte evlilik (NPC + oyuncu) doğmasın.
+          if (p.married) this.snap.offers = this.snap.offers.filter((o) => o.kind !== "marriage" || (o.from !== p.id && o.to !== p.id));
+          await this.persist(); this.broadcastPresence();
+        }
         break;
       }
       case "saveState": {
