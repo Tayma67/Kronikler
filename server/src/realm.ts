@@ -99,8 +99,10 @@ export class RealmDO {
         ws.serializeAttachment({ playerId: p.id });
         const existing = this.snap.players.find((x) => x.id === p.id);
         // Yeniden katılımda beylikId + honor + traveling SUNUCU otoritesinde kalmalı (istemci sıfır gönderir) → koru.
+        // dead de korunur: yoklukta NPC-vekil öldüyse istemcinin dead:false'ı bunu EZMEMELİ → oyuncu dönünce
+        // ölü bulur (welcome snapshot dead:true → istemci vâris akışını tetikler, sonra heir alive olarak sync'ler).
         // Dönüşte: tekrar çevrimiçi, seyahat biter (oyuncu geri döndü).
-        if (existing) { Object.assign(existing, p, { online: true, beylikId: existing.beylikId, honor: existing.honor ?? 0, traveling: false }); }
+        if (existing) { Object.assign(existing, p, { online: true, beylikId: existing.beylikId, honor: existing.honor ?? 0, traveling: false, dead: !!existing.dead || !!p.dead }); }
         else {
           if (this.snap.players.filter((x) => x.online).length >= MAX_PLAYERS) { this.sendTo(ws, { t: "error", code: "FULL", msg: "Diyar dolu" }); return; }
           this.snap.players.push({ ...p, online: true, ready: false, beylikId: null, honor: typeof p.honor === "number" ? p.honor : 0, traveling: false });
