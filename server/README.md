@@ -44,3 +44,5 @@ küçük/orta ölçek için ücretsiz yeter. Oyun büyürse ücretli katman gere
 <!-- deploy tetikleyici: 20260627T100010Z -->
 
 <!-- redeploy: 100215Z -->
+
+<!-- redeploy2: 100348Z -->

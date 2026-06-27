@@ -1,15 +1,18 @@
 name = "kronikler-mp"
 main = "src/index.ts"
 compatibility_date = "2024-09-23"
+# Hesap kimliği (gizli değildir) — Account-scoped API token ile /memberships çağrısını
+# atlamak ve doğru hesaba deploy etmek için doğrudan burada.
+account_id = "9f3fe2d30c25f18f37c267b8f12c3055"
 
 # Durable Objects — her diyar bir RealmDO örneği (otoriteli paylaşımlı durum + WebSocket).
 [[durable_objects.bindings]]
 name = "REALM"
 class_name = "RealmDO"
 
-# DO sınıfını taşıyan migration (ilk deploy'da gerekli).
+# DO sınıfını taşıyan migration. ÜCRETSİZ planda DO'lar SQLite-tabanlı olmalı → new_sqlite_classes.
 [[migrations]]
 tag = "v1"
-new_classes = ["RealmDO"]
+new_sqlite_classes = ["RealmDO"]
 
 # Ücretsiz katmanda WebSocket hibernation desteklenir; ek ayar gerekmez.
