@@ -125,7 +125,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     try { await AsyncStorage.setItem(KEY, JSON.stringify(s)); } catch {}
   }, []);
 
-  const doAdvance = useCallback((n = 1) => apply((s) => advance(s, n)), [apply]);
+  // MP modunda zaman yalnız sunucu tick'iyle ilerler → yerel doAdvance no-op (desenkron önlenir).
+  const doAdvance = useCallback((n = 1) => { if (mpRef.current) return; apply((s) => advance(s, n)); }, [apply]);
   const doEat = useCallback(() => apply(eat), [apply]);
   const doWork = useCallback((style?: WorkStyle) => apply((s) => work(s, style)), [apply]);
   const resetGame = useCallback(async () => { if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null; if (mpRef.current) return; await AsyncStorage.removeItem(KEY); setState(null); }, []);

@@ -145,11 +145,21 @@ export class RealmDO {
     };
 
     // Eylemleri deterministik sırada işle (playerId'ye göre) — çakışmada güç belirleyici.
-    const order = Object.keys(this.intents).sort();
+    // Yalnız YAŞAYAN oyuncuların eylemleri geçerli (ölü taht iddia edemez/lonca yönetemez).
+    const isAlive = (pid: string) => { const p = this.snap.players.find((x) => x.id === pid); return !!p && !p.dead; };
+    const order = Object.keys(this.intents).filter(isAlive).sort();
+
+    // Boşalan makamlar: ölen hükümdar/lonca başı/vali koltuğu serbest kalır (yeni iddiaya açılır).
+    if (this.snap.throne.holderId && !isAlive(this.snap.throne.holderId)) {
+      this.snap.throne = { holderId: null, holderName: null, claimedTurn: this.snap.turn };
+      this.snap.players.forEach((p) => { p.crowned = false; });
+    }
+    for (const g of this.snap.guilds) if (g.leaderId && !isAlive(g.leaderId)) g.leaderId = null;
+    for (const pr of this.snap.provinces) if (pr.governorId && !isAlive(pr.governorId)) pr.governorId = null;
 
     // 1) TAHT: boş ya da çekişmeli ise en yüksek güçlü iddiacı kazanır.
     const claimants = order.filter((pid) => this.intents[pid].some((i) => i.k === "claimThrone"))
-      .map((pid) => this.snap.players.find((p) => p.id === pid)).filter(Boolean) as PlayerPublic[];
+      .map((pid) => this.snap.players.find((p) => p.id === pid)).filter((p) => p && !p.dead) as PlayerPublic[];
     if (claimants.length) {
       claimants.sort((a, b) => b.power - a.power);
       const winner = claimants[0];

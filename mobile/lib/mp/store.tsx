@@ -25,6 +25,7 @@ const Ctx = createContext<MpCtx | null>(null);
 
 export function MpProvider({ children }: { children: React.ReactNode }) {
   const clientRef = useRef<MpClient | null>(null);
+  const lastJoinRef = useRef<{ realmId: string; realmName: string; player: PlayerPublic } | null>(null); // reconnect'te tekrar katılım için
   const [status, setStatus] = useState<NetStatus>("idle");
   const [guestId, setGuestId] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<RealmSnapshot | null>(null);
@@ -55,24 +56,35 @@ export function MpProvider({ children }: { children: React.ReactNode }) {
 
   const send = useCallback((msg: ClientMsg) => { clientRef.current?.send(msg); }, []);
 
+  // Bağlantı açıldığında (ilk VEYA reconnect) son katılım bilgisini tekrar gönder → DO'da
+  // yeniden kaydol (sunucu idempotent: var olan oyuncuyu online yapar).
+  const onStatus = useCallback((st: NetStatus) => {
+    setStatus(st);
+    if (st === "open" && lastJoinRef.current) {
+      const j = lastJoinRef.current;
+      clientRef.current?.send({ t: "join", realmId: j.realmId, realmName: j.realmName, player: j.player });
+    }
+  }, []);
+
   const joinRealm = useCallback(async (realmId: string, realmName: string, player: PlayerPublic) => {
     setError(null);
     const url = await getServerUrl();
     if (!url) { setError("NO_SERVER: sunucu adresi ayarlanmadı"); setStatus("error"); return; }
     // diyar adresi: <wss base>/realm/<realmId>
     const full = url.replace(/\/$/, "") + "/realm/" + encodeURIComponent(realmId);
+    lastJoinRef.current = { realmId, realmName, player };
     clientRef.current?.close();
-    const c = new MpClient(full, { onStatus: setStatus, onMessage });
+    const c = new MpClient(full, { onStatus, onMessage });
     clientRef.current = c;
-    c.connect();
-    c.send({ t: "join", realmId, realmName, player });
-  }, [onMessage]);
+    c.connect(); // join, onStatus("open") içinde gönderilir (ilk bağlantı + her reconnect)
+  }, [onMessage, onStatus]);
 
-  const syncPlayer = useCallback((player: PlayerPublic) => send({ t: "sync", player }), [send]);
+  // Kamu durumunu hem sunucuya gönder hem reconnect payload'ını güncel tut.
+  const syncPlayer = useCallback((player: PlayerPublic) => { if (lastJoinRef.current) lastJoinRef.current.player = player; send({ t: "sync", player }); }, [send]);
   const setReady = useCallback((ready: boolean) => send({ t: "ready", ready }), [send]);
   const sendIntent = useCallback((intent: SharedIntent) => send({ t: "intent", intent }), [send]);
   const sendChat = useCallback((text: string) => { if (text.trim()) send({ t: "chat", text: text.slice(0, 240) }); }, [send]);
-  const leave = useCallback(() => { send({ t: "leave" }); clientRef.current?.close(); setSnapshot(null); setChat([]); setLastTick(null); }, [send]);
+  const leave = useCallback(() => { lastJoinRef.current = null; send({ t: "leave" }); clientRef.current?.close(); setSnapshot(null); setChat([]); setLastTick(null); }, [send]);
 
   return (
     <Ctx.Provider value={{ status, guestId, snapshot, chat, lastTick, error, joinRealm, syncPlayer, setReady, sendIntent, sendChat, leave }}>

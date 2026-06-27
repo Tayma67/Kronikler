@@ -7,7 +7,7 @@ import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { mePublic, applyTickEvents, realmYearMonth } from "../../lib/mp/world";
 import { SharedIntent } from "../../lib/mp/protocol";
-import { newGame, advance, GameState } from "../../lib/game";
+import { newGame, advance, continueAsHeir, GameState } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
@@ -91,6 +91,24 @@ export default function MpOyun() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 110 }}>
+        {/* Ölüm → vâris (hayat döngüsü diyarda sürer) */}
+        {p.dead && (
+          <View style={{ marginBottom: 12, borderWidth: 1, borderColor: "rgba(200,64,64,0.5)", backgroundColor: "rgba(200,64,64,0.08)", borderRadius: 10, padding: 14 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 14, color: C.blood, textAlign: "center" }}>{p.name} †</Text>
+            {p.children && p.children.length > 0 ? (
+              <Pressable onPress={() => { hap("advance"); const ns = continueAsHeir(s, "esit"); apply(() => ns); if (guestId) syncPlayer(mePublic(guestId, ns, false)); }}
+                style={{ marginTop: 12, paddingVertical: 13, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: "#2a1d08" }}>{t("dash.continueHeir")}</Text>
+              </Pressable>
+            ) : (
+              <Pressable onPress={() => { hap("advance"); const ns = newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"); apply(() => ns); if (guestId) syncPlayer(mePublic(guestId, ns, false)); }}
+                style={{ marginTop: 12, paddingVertical: 13, borderRadius: 9, alignItems: "center", borderWidth: 1, borderColor: "rgba(201,168,76,0.6)", backgroundColor: "rgba(201,168,76,0.12)" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>{t("menu.newGame")}</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+
         {/* Dünya saati */}
         <View style={{ alignItems: "center", marginBottom: 8 }}>
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim }}>{t("mp.realm")} · {snapshot.realmId}</Text>
