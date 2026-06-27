@@ -436,6 +436,8 @@ export class RealmDO {
       const attackerB = this.snap.beyliks.find((x) => x.beyId === pid);
       const target = this.snap.beyliks.find((x) => x.id === it.target);
       if (!attackerB || !target || target.id === attackerB.id) continue;
+      // Pakt koruması: müttefik/eş olduğun beyin beyliğine sefer açamazsın (önce paktı boz).
+      if (target.beyId) { const pc = this.pactOf(pid, target.beyId); if (pc === "alliance" || pc === "marriage") { ev(pid, "mp.soc.pactProtected", [target.beyName || target.name]); continue; } }
       // NPC desteği + LONCA destekçiliği seferi etkiler (loncalar kingmaker olur).
       const guildAtk = this.snap.guilds.filter((g) => g.backing === attackerB.id).reduce((s, g) => s + this.guildInfluence(g.id), 0);
       const guildDef = this.snap.guilds.filter((g) => g.backing === target.id).reduce((s, g) => s + this.guildInfluence(g.id), 0);
@@ -491,7 +493,12 @@ export class RealmDO {
 
     for (const pid of order) for (const it of this.intents[pid]) {
       const tgtId = (it as { to?: string; on?: string }).to || (it as { to?: string; on?: string }).on;
-      if (HOSTILE.has(it.k) && tgtId && playerById(tgtId)?.traveling) { ev(pid, "mp.soc.targetTraveling", [pname(tgtId)]); continue; }
+      if (HOSTILE.has(it.k) && tgtId) {
+        if (playerById(tgtId)?.traveling) { ev(pid, "mp.soc.targetTraveling", [pname(tgtId)]); continue; }
+        // Pakt koruması: müttefik/eşine saldıramazsın — önce paktı bozmalısın (bilinçli ihanet).
+        const pc = this.pactOf(pid, tgtId);
+        if (pc === "alliance" || pc === "marriage") { ev(pid, "mp.soc.pactProtected", [pname(tgtId)]); continue; }
+      }
       switch (it.k) {
         // — Destek & dostluk —
         case "gift": { // altın gönderen istemcide kesildi; alıcıya kredi olayı
@@ -690,6 +697,8 @@ export class RealmDO {
     return bd;
   }
   adjustBond(x: string, y: string, delta: number) { const bd = this.bondOf(x, y); bd.standing = Math.max(-100, Math.min(100, bd.standing + delta)); }
+  // Salt-okur pakt (bağ oluşturmaz): iki oyuncu arası ittifak/evlilik/savaş.
+  pactOf(x: string, y: string): PactType | null { const [a, b] = x < y ? [x, y] : [y, x]; return this.snap.bonds.find((d) => d.a === a && d.b === b)?.pact || null; }
   setPact(x: string, y: string, pact: PactType | null) { const bd = this.bondOf(x, y); bd.pact = pact; bd.since = this.snap.turn; }
   // Şeref: ARTIŞ azalan getirili (yükseldikçe zorlaşır) → farmlanamaz; CEZA tam uygulanır (ihanet hep yaralar).
   // NPC↔oyuncu ilişkisi (kişiye özel) — yoksa oluştur.

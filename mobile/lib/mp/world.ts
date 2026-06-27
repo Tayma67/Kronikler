@@ -89,14 +89,14 @@ export function applyTickEvents(prev: GameState, events: TickEvent[]): GameState
       case "mp.soc.vouched": p.fame = clamp100(p.fame + (Number(e.p?.[1]) || 0)); break; // biri seni övdü (ölçekli)
       case "mp.soc.wed": {                                                   // gerçek evlilik: eşin artık o oyuncu
         const sn = String(e.p?.[0] || "");
-        p.married = true; p.spouse_name = sn;
+        p.married = true; p.spouse_name = sn; p.spouse_is_player = true; p.widowed = false;
         let h = 0; for (let i = 0; i < sn.length; i++) h = (h * 31 + sn.charCodeAt(i)) >>> 0;
         p.spouse_seed = h || 1;
         p.fame = clamp100(p.fame + 6); p.reputation = Math.min(100, p.reputation + 6);
         break;
       }
       case "mp.soc.divorced": case "mp.soc.divorcedYou": {                   // boşanma: eş kalkar
-        p.married = false; p.spouse_name = null; p.spouse_seed = undefined;
+        p.married = false; p.spouse_name = null; p.spouse_seed = undefined; p.spouse_is_player = false;
         p.reputation = Math.max(-100, p.reputation - 8);
         break;
       }

@@ -16,6 +16,7 @@ export interface Player {
   reputation: number; honor: number; fear: number; fame: number;
   stats: Stats; stat_points: number; dead: boolean; location_name: string; home_name: string;
   married: boolean; spouse_name: string | null; children: string[];
+  spouse_is_player?: boolean; // çok oyuncu: eş başka bir GERÇEK oyuncu → yerel sim onu öldüremez (desync önlenir)
   widowed?: boolean; // eşi vefat etmiş (dul); married=false olur ama anı/eulogy için iz kalır
   mother?: string; father?: string; mother_dead?: boolean; father_dead?: boolean; // ebeveynler de fanidir; oyuncu yaşlandıkça birer kez vefat eder
   mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
@@ -1126,7 +1127,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     }
   }
   // ── Dulluk: eş de fanidir; birlikte yaşlandıkça vefat ihtimali artar. Dul kalınca yas + (genç dulsa yeniden evlilik mümkün) ──
-  if (!p.dead && p.married && p.spouse_seed != null && p.age >= 45) {
+  if (!p.dead && p.married && p.spouse_seed != null && p.age >= 45 && !p.spouse_is_player) {
+    // NOT: eş gerçek bir oyuncuysa (spouse_is_player) yerel sim onu öldürmez — ölümü kendi oynanışından/sunucudan gelir.
     const dc = p.age < 55 ? 0.008 : p.age < 65 ? 0.02 : p.age < 75 ? 0.04 : 0.07;
     if (chance(dc)) {
       const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
