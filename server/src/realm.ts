@@ -543,7 +543,8 @@ export class RealmDO {
           break;
         }
         case "turnNpc": { // NPC'yi bir oyuncuya karşı kışkırt — etki SENİN NPC ile yakınlığına bağlı
-          const npc = this.snap.npcs.find((n) => n.id === it.npcId); if (!npc || !it.against) break;
+          const npc = this.snap.npcs.find((n) => n.id === it.npcId);
+          if (!npc || !it.against || it.against === pid || !playerById(it.against)) break; // hedef GERÇEK oyuncu olmalı
           const myStand = this.npcBondOf(it.npcId, pid).standing;
           if (myStand < 10) { ev(pid, "mp.npc.tooDistant", [npc.name]); break; } // NPC seni yeterince sevmiyor
           this.adjustNpcBond(it.npcId, it.against, -Math.round(12 * (myStand / 100)));
@@ -552,7 +553,8 @@ export class RealmDO {
           break;
         }
         case "mediateNpc": { // NPC ile bir oyuncunun arasını düzelt
-          const npc = this.snap.npcs.find((n) => n.id === it.npcId); if (!npc || !it.player) break;
+          const npc = this.snap.npcs.find((n) => n.id === it.npcId);
+          if (!npc || !it.player || !playerById(it.player)) break; // hedef GERÇEK oyuncu olmalı
           const myStand = this.npcBondOf(it.npcId, pid).standing;
           if (myStand < 10) { ev(pid, "mp.npc.tooDistant", [npc.name]); break; }
           this.adjustNpcBond(it.npcId, it.player, Math.round(10 * (myStand / 100)));
