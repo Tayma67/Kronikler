@@ -2453,6 +2453,16 @@ export function allocateStat(prev: GameState, key: keyof Stats): GameState {
 // ── Stat-XP (Vercel skills.add_stat_xp portu): özellikler kullanımla yavaşça büyür (stat_points'e EK) ──
 const STAT_LABEL: Record<keyof Stats, string> = { strength: "Güç", intelligence: "Zekâ", charisma: "Karizma", stamina: "Dayanıklılık" };
 export function statXpForNext(level: number): number { return 25 + level * 15; } // bir üst seviye için gereken tecrübe
+// Özellik niteliği: 1–10 ölçeğinde değerin kıyas etiketini verir (oyuncu 21 zeka iyi mi kötü mü görsün diye).
+// Tavan 10'dur (addStatXp 10'da durur); 5–6 ortalama, 10 olağanüstü.
+export function statTierKey(v: number): string {
+  if (v <= 2) return "st.tier.veryweak";
+  if (v <= 4) return "st.tier.weak";
+  if (v <= 6) return "st.tier.average";
+  if (v <= 8) return "st.tier.good";
+  if (v <= 9) return "st.tier.veryGood";
+  return "st.tier.exceptional";
+}
 export function statXpOf(p: Player, key: keyof Stats): number { return p.stat_xp?.[key] ?? 0; }
 function addStatXp(s: GameState, key: keyof Stats, amt: number) {
   const p = s.player;

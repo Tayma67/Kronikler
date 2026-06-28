@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, spouseMizac } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
@@ -44,13 +44,14 @@ function StatTop({ icon, value, max, color, showBar = true, flex = 1 }: { icon: 
 }
 
 // Temel özellik kartı — ikon, ad, değer, bar.
-function StatCard({ icon, name, value, color, canAdd, onAdd, xp, xpNext }: { icon: string; name: string; value: number; color: string; canAdd: boolean; onAdd: () => void; xp?: number; xpNext?: number }) {
+function StatCard({ icon, name, value, color, canAdd, onAdd, xp, xpNext, tier }: { icon: string; name: string; value: number; color: string; canAdd: boolean; onAdd: () => void; xp?: number; xpNext?: number; tier?: string }) {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 9, paddingVertical: 10, paddingHorizontal: 6, alignItems: "center", gap: 4 }}>
       <GameIcon name={icon} size={17} color={color} />
       <Text style={{ fontFamily: F.display, fontSize: 7.5, letterSpacing: 0.5, color: C.parchmentMuted }} numberOfLines={1}>{name}</Text>
       <Text style={{ fontFamily: F.display, fontSize: 18, color: C.goldBright }}>{value}</Text>
-      <View style={{ width: "100%" }}><ProgressBar value={value} max={20} color={color} h={3} /></View>
+      {tier ? <Text style={{ fontFamily: F.serifItalic, fontSize: 8.5, color: color }} numberOfLines={1}>{tier}</Text> : null}
+      <View style={{ width: "100%" }}><ProgressBar value={value} max={10} color={color} h={3} /></View>
       {xpNext ? <View style={{ width: "100%", marginTop: 1 }}><ProgressBar value={xp || 0} max={xpNext} color={C.goldDim} h={2} /></View> : null}
       {canAdd && (
         <Pressable onPress={onAdd} style={{ marginTop: 2, width: 22, height: 22, borderRadius: 5, borderWidth: 1, borderColor: C.gold, alignItems: "center", justifyContent: "center" }}>
@@ -298,10 +299,10 @@ export default function Karakter() {
             <Card>
               <SectionHead title={t("char.attrs")} right={canAdd ? <Text style={{ fontFamily: F.display, fontSize: 9, color: C.gold, letterSpacing: 1 }}>{p.stat_points} {t("char.points").toUpperCase()}</Text> : undefined} />
               <View style={{ flexDirection: "row", gap: 7 }}>
-                <StatCard icon="guc" name={t("st.strength").toUpperCase()} value={p.stats.strength} color={C.ember} canAdd={canAdd} onAdd={() => add("strength")} xp={statXpOf(p, "strength")} xpNext={p.stats.strength < 10 ? statXpForNext(p.stats.strength) : 0} />
-                <StatCard icon="zeka" name={t("st.intelligence").toUpperCase()} value={p.stats.intelligence} color={C.azure} canAdd={canAdd} onAdd={() => add("intelligence")} xp={statXpOf(p, "intelligence")} xpNext={p.stats.intelligence < 10 ? statXpForNext(p.stats.intelligence) : 0} />
-                <StatCard icon="karizma" name={t("st.charisma").toUpperCase()} value={p.stats.charisma} color={C.ember} canAdd={canAdd} onAdd={() => add("charisma")} xp={statXpOf(p, "charisma")} xpNext={p.stats.charisma < 10 ? statXpForNext(p.stats.charisma) : 0} />
-                <StatCard icon="dayaniklilik" name={t("st.stamina").toUpperCase()} value={p.stats.stamina} color={C.sage} canAdd={canAdd} onAdd={() => add("stamina")} xp={statXpOf(p, "stamina")} xpNext={p.stats.stamina < 10 ? statXpForNext(p.stats.stamina) : 0} />
+                <StatCard icon="guc" name={t("st.strength").toUpperCase()} value={p.stats.strength} tier={t(statTierKey(p.stats.strength))} color={C.ember} canAdd={canAdd} onAdd={() => add("strength")} xp={statXpOf(p, "strength")} xpNext={p.stats.strength < 10 ? statXpForNext(p.stats.strength) : 0} />
+                <StatCard icon="zeka" name={t("st.intelligence").toUpperCase()} value={p.stats.intelligence} tier={t(statTierKey(p.stats.intelligence))} color={C.azure} canAdd={canAdd} onAdd={() => add("intelligence")} xp={statXpOf(p, "intelligence")} xpNext={p.stats.intelligence < 10 ? statXpForNext(p.stats.intelligence) : 0} />
+                <StatCard icon="karizma" name={t("st.charisma").toUpperCase()} value={p.stats.charisma} tier={t(statTierKey(p.stats.charisma))} color={C.ember} canAdd={canAdd} onAdd={() => add("charisma")} xp={statXpOf(p, "charisma")} xpNext={p.stats.charisma < 10 ? statXpForNext(p.stats.charisma) : 0} />
+                <StatCard icon="dayaniklilik" name={t("st.stamina").toUpperCase()} value={p.stats.stamina} tier={t(statTierKey(p.stats.stamina))} color={C.sage} canAdd={canAdd} onAdd={() => add("stamina")} xp={statXpOf(p, "stamina")} xpNext={p.stats.stamina < 10 ? statXpForNext(p.stats.stamina) : 0} />
               </View>
             </Card>
 
