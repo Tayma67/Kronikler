@@ -3130,7 +3130,9 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     // Hanedan hafızası vârise geçer: ataların tamamladığı yaylar bayrak olarak kalır, az da olsa anlatı momentumu verir.
     story: { active: null, completed: [], tension: Math.min(20, Object.keys(prev.story?.flags || {}).length * 3), nemesis: null, flags: { ...(prev.story?.flags || {}) }, lull: 0 }, wars: [], caravan: null, econ: 1,
     settlements: prev.settlements || [], // dynastinin kurduğu yerleşimler vârise kalır
-    seeds: (prev.seeds || []).filter((t) => t.nesil), // sadece nesil aşabilen tohumlar vârise geçer
+    // Sadece nesil aşabilen tohumlar vârise geçer. Vârisin turu 0'dan başladığı için ekim'i yeniden
+    // tabanla (ekim -= prev.turn): birikmiş yaş korunur, yoksa yas=turn-ekim negatif kalıp tohum hiç olgunlaşmaz.
+    seeds: (prev.seeds || []).filter((t) => t.nesil).map((t) => ({ ...t, ekim: t.ekim - prev.turn })),
     player_rumors: [],
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
