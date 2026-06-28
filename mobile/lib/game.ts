@@ -66,6 +66,7 @@ export interface Player {
   favor_turn?: number; // bu ay pîşkeş/iltifat yapıldı mı (tur başına tek)
   craft_turn?: number; // bu ay zanaat işlendi mi (tur başına tek — beceri/kalite-satış farmı önlenir)
   last_travel_turn?: number; // bu ay yol olayı tetiklendi mi (tur başına tek — git-gel beceri/eşya farmı önlenir)
+  gov_action_turn?: number; // bu ay valilik tedbiri (meşruiyet/hazine) yapıldı mı (tur başına tek)
   courtRank?: number; // saray/divan rütbesi (0..4 = Kâtip..Sadrazam; tanımsız = sarayda değil)
   courtXp?: number; // saray hizmet puanı (terfi eşiği)
   courtFavor?: number; // hükümdar nezdinde itibar (0-100); düşerse azil
@@ -321,9 +322,9 @@ function npcLifeTick(s: GameState) {
     const f = r.find((n) => n.gender === "kadın" && n.age >= 18 && n.age < 55);
     if (m && f) push(s, "dunya_olayi", `${loc}'de ${m.name} ile ${f.name} dünyaevi kurdu.`, "makro", false, { k: "npclife.marry", p: [m.name, f.name] });
   }
-  // Bellek sınırı: YALNIZ ölü doğanları ele (yaşayanları asla atma). Geniş kadro (≈600 NPC) ile
-  // eski 260 sınırı yaşayan NPC'leri de siliyor → nüfus zamanla azalıyordu. Yaşayan tavan doğal (~600).
-  if (s.world.npcBorn.length > 900) s.world.npcBorn = s.world.npcBorn.filter((n) => n.alive !== false);
+  // Her yıl ölü doğanları ele (yaşayanlar asla silinmez). Böylece npcBorn ≈ yaşayan sayısı (~600) kalır:
+  // nüfus korunur (eski 260 sınırı yaşayanı siliyordu) + dizi şişmez (rosterAt ucuz kalır).
+  s.world.npcBorn = s.world.npcBorn.filter((n) => n.alive !== false);
 }
 // Mesleğe göre üretkenlik uyumu (çiftçi tarlada, demirci değirmende daha verimli).
 const PROP_PROF_FIT: Record<string, string[]> = {
@@ -4164,10 +4165,13 @@ export const GOV_SHORE_COST = 30;
 export function shoreUpLegitimacy(prev: GameState, name: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!p.governorships?.includes(name) || p.money < GOV_SHORE_COST) return s;
+  // Tur başına tek valilik tedbiri — yoksa aynı turda meşruiyet/itibar tavana farm'lanır.
+  if (p.gov_action_turn === s.turn) { push(s, "yonetim", `Bu ay valilik işlerine yeterince zaman ayırdın; gerisi gelecek aya.`, "kişisel", false, { k: "evj.govWait" }); return s; }
+  p.gov_action_turn = s.turn;
   p.money -= GOV_SHORE_COST;
   if (!p.govLeg) p.govLeg = {};
   p.govLeg[name] = Math.min(100, (p.govLeg[name] ?? 60) + 14);
-  p.reputation = Math.min(100, p.reputation + 1);
+  // (Global itibar bumpı kaldırıldı — akçeyle itibar satın alma farmıydı; meşruiyet şehre özel + zamanla aşınır.)
   push(s, "yonetim", `${name}'de hayır işleri ve hizmet götürdün; halkın gözünde meşruiyetin arttı.`, "kişisel", false, { k: "gov.shoreDone", p: [{ pl: name }] });
   return s;
 }
@@ -4193,6 +4197,9 @@ export const GOV_INVEST_COST = 40;
 export function investTreasury(prev: GameState, name: string, kind: "hizmet" | "asayis"): GameState {
   const s = clone(prev); const p = s.player;
   if (!p.governorships?.includes(name) || govTreasuryOf(p, name) < GOV_INVEST_COST) return s;
+  // Tur başına tek valilik tedbiri — yoksa hazine aynı turda boşaltılıp memnuniyet/meşruiyet tavana farm'lanır.
+  if (p.gov_action_turn === s.turn) { push(s, "yonetim", `Bu ay valilik işlerine yeterince zaman ayırdın; gerisi gelecek aya.`, "kişisel", false, { k: "evj.govWait" }); return s; }
+  p.gov_action_turn = s.turn;
   if (!p.govTreasury) p.govTreasury = {}; if (!p.govHappy) p.govHappy = {}; if (!p.govLeg) p.govLeg = {};
   p.govTreasury[name] = govTreasuryOf(p, name) - GOV_INVEST_COST;
   if (kind === "hizmet") { p.govHappy[name] = Math.min(100, govHappyOf(p, name) + 10); p.govLeg[name] = Math.min(100, govLegOf(p, name) + 3); }
@@ -4410,7 +4417,8 @@ export function dismissGovernor(prev: GameState, loc: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!p.appointedGov || !p.appointedGov[loc]) return s;
   const g = p.appointedGov[loc]; delete p.appointedGov[loc];
-  p.crownAuthority = clamp100(crownAuthorityOf(p) - 2);
+  // Azil, atamanın verdiği otoriteyi (+3) tam geri alır → ata-azlet döngüsüyle otorite farm'lanamaz.
+  p.crownAuthority = clamp100(crownAuthorityOf(p) - 3);
   push(s, "taht", `${loc} valisini azlettin.`, "kişisel", false, { k: "crown.dismiss", p: [{ fn: [g.seed, g.gender] }, { pl: loc }] });
   return s;
 }
