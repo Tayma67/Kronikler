@@ -144,7 +144,7 @@ export default function Dashboard() {
 
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
   const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; if (dilemma) { const k = "dil." + dilemma.id + ".r" + i; const v = t(k); res = v === k ? c.result : v; } apply((s) => applyDilemma(s, c.delta, res, sk)); setDilemma(null); };
-  const onTakeOpp = () => { if (!opp) return; hap("advance"); apply((s) => resolveOpportunity(s, opp)); setOpp(null); };
+  const onResolveOpp = (success: boolean) => { if (!opp) return; hap("advance"); apply((s) => resolveOpportunity(s, opp, success)); setOpp(null); };
 
   useEffect(() => {
     if (!state) return;
@@ -246,7 +246,7 @@ export default function Dashboard() {
       ) : dilemma ? (
         <DilemmaModal dilemma={dilemma} onChoose={onChoose} />
       ) : opp ? (
-        <OpportunityModal opp={opp} onTake={onTakeOpp} onPass={() => { hap("tap"); setOpp(null); }} />
+        <OpportunityModal opp={opp} statVal={opp ? state.player.stats[opp.stat] : 5} onResolve={onResolveOpp} onPass={() => { hap("tap"); setOpp(null); }} />
       ) : ach ? (
         <AchievementToast name={ach.name} icon={ach.icon} onClose={() => setAch(null)} />
       ) : null}

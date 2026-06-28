@@ -2860,10 +2860,11 @@ function crimeCaught(s: GameState, kind: CrimeKind) {
 
 // ── Fırsat: kabul edilince stat'a göre çözülür ──
 export interface Opportunity { id: string; key: string; title: string; desc: string; reward: number; risk: number; stat: keyof Stats; }
-export function resolveOpportunity(prev: GameState, opp: Opportunity): GameState {
+// forced: mini-oyunun belirlediği sonuç (verilmezse stat'a bağlı rastgele — geriye dönük güvenli).
+export function resolveOpportunity(prev: GameState, opp: Opportunity, forced?: boolean): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead) return s;
-  const success = Math.random() > opp.risk - p.stats[opp.stat] * 0.03;
+  const success = forced !== undefined ? forced : Math.random() > opp.risk - p.stats[opp.stat] * 0.03;
   p.hunger = Math.max(0, p.hunger - 5);
   if (success) {
     let reward = opp.reward;

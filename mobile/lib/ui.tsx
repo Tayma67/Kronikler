@@ -1,5 +1,5 @@
 import { View, Image, Modal, Text, Pressable, TextInput, ViewStyle, StyleProp, TextStyle, Share } from "react-native";
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, useDerivedValue, withTiming, withSpring, withRepeat, withSequence, ZoomIn, FadeIn, FadeInUp, FadeInDown } from "react-native-reanimated";
 import { portreImage } from "./assets";
 import { GameIcon } from "./icons";
@@ -246,21 +246,41 @@ export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, p
   );
 }
 
-// Anlık fırsat pop-up'ı (eski Fırsatlar sayfasının yerine).
-export function OpportunityModal({ opp, onTake, onPass }: { opp: Opportunity | null; onTake: () => void; onPass: () => void }) {
+// Anlık fırsat pop-up'ı + hüner sınavı mini-oyunu + sonuç ekranı.
+// onResolve(success): mini-oyunun sonucunu üst bileşene verir (resolveOpportunity'ye iletilir).
+// statVal: ilgili özelliğin değeri (1–10) — başarı bölgesini büyütür (hüner işe yarar).
+export function OpportunityModal({ opp, statVal = 5, onResolve, onPass }: { opp: Opportunity | null; statVal?: number; onResolve: (success: boolean) => void; onPass: () => void }) {
   const { t } = useI18n();
   const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
   const rk = opp ? (opp.risk >= 0.55 ? { k: "high", c: C.blood } : opp.risk >= 0.35 ? { k: "mid", c: C.ember } : { k: "low", c: C.sage }) : { k: "low", c: C.sage };
+  const [phase, setPhase] = useState<"intro" | "play" | "result">("intro");
+  const [pos, setPos] = useState(0);
+  const [success, setSuccess] = useState(false);
+  const dir = useRef(1);
+  const stopped = useRef(false);
+  // Başarı bölgesi: hüner büyütür, risk daraltır (orta noktada). Genişlik %12–%64.
+  const zoneW = Math.max(12, Math.min(64, 16 + statVal * 4 - (opp ? opp.risk * 12 : 0)));
+  const zoneStart = 50 - zoneW / 2, zoneEnd = 50 + zoneW / 2;
+  // Fırsat değişince başa dön.
+  useEffect(() => { if (opp) { setPhase("intro"); setPos(0); dir.current = 1; stopped.current = false; } }, [opp?.id]);
+  // Oyun fazında işaretçiyi 0↔100 gezdir (saf JS — durdurunca değer kesin bilinir).
+  useEffect(() => {
+    if (phase !== "play") return;
+    stopped.current = false; dir.current = 1; setPos(0);
+    const id = setInterval(() => setPos((p) => { let n = p + dir.current * 3.4; if (n >= 100) { n = 100; dir.current = -1; } else if (n <= 0) { n = 0; dir.current = 1; } return n; }), 24);
+    return () => clearInterval(id);
+  }, [phase]);
+  const onStop = () => { if (stopped.current) return; stopped.current = true; const ok = pos >= zoneStart && pos <= zoneEnd; setSuccess(ok); setPhase("result"); hap(ok ? "success" : "error"); };
+  const reward = opp ? opp.reward : 0;
   return (
     <Modal visible={!!opp} transparent animationType="fade" onRequestClose={onPass}>
       <View style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.9)", alignItems: "center", justifyContent: "center", padding: 26 }}>
-        {opp && (
+        {opp && phase === "intro" && (
           <Animated.View entering={FadeInUp.springify().damping(16)} style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 14, padding: 22 }}>
             <View style={{ alignItems: "center", marginBottom: 4 }}><GameIcon name="compass" size={28} color={C.gold} /></View>
             <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, textAlign: "center", marginTop: 4 }}>{t("frs.popTitle").toUpperCase()}</Text>
             <Text style={{ fontFamily: F.display, fontSize: 17, color: C.gold, textAlign: "center", letterSpacing: 0.5, marginTop: 4 }}>{gt("opp." + opp.key + ".t", opp.title)}</Text>
             <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, textAlign: "center", lineHeight: 21, marginTop: 10, marginBottom: 14 }}>{gt("opp." + opp.key + ".d", opp.desc)}</Text>
-
             <View style={{ flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
               <View style={{ backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingVertical: 4, paddingHorizontal: 11 }}>
                 <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold }}>{t("frs.reward")} {opp.reward} ⚜</Text>
@@ -272,15 +292,38 @@ export function OpportunityModal({ opp, onTake, onPass }: { opp: Opportunity | n
                 <Text style={{ fontFamily: F.display, fontSize: 10, color: C.parchmentMuted }}>{t("frs.needStat")}: {t("st." + opp.stat)}</Text>
               </View>
             </View>
-
             <View style={{ flexDirection: "row", gap: 10 }}>
               <Pressable onPress={onPass} style={{ flex: 1, paddingVertical: 13, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, alignItems: "center" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentMuted, letterSpacing: 1 }}>{t("frs.pass")}</Text>
               </Pressable>
-              <Pressable onPress={onTake} style={{ flex: 2, paddingVertical: 13, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold, alignItems: "center" }}>
+              <Pressable onPress={() => { hap("tap"); setPhase("play"); }} style={{ flex: 2, paddingVertical: 13, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold, alignItems: "center" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 12, color: "#1a1206", letterSpacing: 1 }}>{t("frs.take")}</Text>
               </Pressable>
             </View>
+          </Animated.View>
+        )}
+        {opp && phase === "play" && (
+          <Animated.View entering={FadeIn.duration(160)} style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 14, padding: 22 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold, textAlign: "center" }}>{t("frs.skillTitle")}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchmentMuted, textAlign: "center", marginTop: 8, marginBottom: 16, lineHeight: 18 }}>{t("frs.skillHint")}</Text>
+            {/* Sınav çubuğu: yeşil başarı bölgesi + gezen işaretçi */}
+            <View style={{ height: 26, borderRadius: 8, backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: C.border, overflow: "hidden", justifyContent: "center" }}>
+              <View style={{ position: "absolute", left: `${zoneStart}%`, width: `${zoneW}%`, top: 0, bottom: 0, backgroundColor: "rgba(74,154,90,0.32)", borderLeftWidth: 1, borderRightWidth: 1, borderColor: C.sage }} />
+              <View style={{ position: "absolute", left: `${pos}%`, width: 3, top: -2, bottom: -2, backgroundColor: C.goldBright, marginLeft: -1.5 }} />
+            </View>
+            <Pressable onPress={onStop} style={{ marginTop: 18, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: "#1a1206" }}>{t("frs.stop")}</Text>
+            </Pressable>
+          </Animated.View>
+        )}
+        {opp && phase === "result" && (
+          <Animated.View entering={ZoomIn.springify().damping(15)} style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: success ? "rgba(74,154,90,0.6)" : "rgba(168,52,52,0.6)", borderRadius: 14, padding: 24, alignItems: "center" }}>
+            <GameIcon name={success ? "medal" : "crossed-swords"} size={30} color={success ? C.sage : C.blood} />
+            <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 1, color: success ? C.sage : C.blood, marginTop: 8 }}>{success ? t("frs.win") : t("frs.lose")}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment, textAlign: "center", marginTop: 8, lineHeight: 20 }}>{success ? gt("opp." + opp.key + ".t", opp.title) + " — " + t("frs.gain").replace("%1", String(reward)) : t("frs.loseNote")}</Text>
+            <Pressable onPress={() => onResolve(success)} style={{ marginTop: 18, paddingVertical: 12, paddingHorizontal: 40, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.bg, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.gold }}>{t("frs.ok")}</Text>
+            </Pressable>
           </Animated.View>
         )}
       </View>
