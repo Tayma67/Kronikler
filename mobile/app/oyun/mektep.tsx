@@ -97,14 +97,18 @@ export default function Mektep() {
         </View>
 
         {/* Çalışma gücü (enerji) — bu ay kalan ders/meşk hakkı */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 9, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.28)", borderRadius: 11, paddingVertical: 10, paddingHorizontal: 13, marginBottom: 13 }}>
-          <GameIcon name="ilerle" size={15} color={C.gold} />
-          <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("mek.energy")}</Text>
-          <View style={{ flexDirection: "row", gap: 5 }}>
-            {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
-              <View key={i} style={{ width: 12, height: 12, borderRadius: 3, transform: [{ rotate: "45deg" }], backgroundColor: i < studyEnergy(state) ? C.gold : "transparent", borderWidth: 1, borderColor: i < studyEnergy(state) ? C.gold : C.border }} />
-            ))}
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.28)", borderRadius: 11, paddingVertical: 10, paddingHorizontal: 13, marginBottom: 13 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
+            <GameIcon name="ilerle" size={15} color={C.gold} />
+            <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("mek.energy")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{Math.floor(studyEnergy(state) / STUDY_COST)}/{Math.floor(maxStudyEnergy(p.age) / STUDY_COST)}</Text>
+            <View style={{ flexDirection: "row", gap: 5, marginLeft: 4 }}>
+              {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
+                <View key={i} style={{ width: 12, height: 12, borderRadius: 3, transform: [{ rotate: "45deg" }], backgroundColor: i < studyEnergy(state) ? C.gold : "transparent", borderWidth: 1, borderColor: i < studyEnergy(state) ? C.gold : C.border }} />
+              ))}
+            </View>
           </View>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 6, lineHeight: 15 }}>{t("mek.energyHint")}</Text>
         </View>
 
         {/* Dağıtılmamış puan CTA */}
