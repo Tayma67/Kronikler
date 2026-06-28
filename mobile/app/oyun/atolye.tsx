@@ -47,7 +47,8 @@ export default function Atolye() {
   const RecipeCard = ({ r }: { r: Recipe }) => {
     const tone = CAT_TONE[CAT[r.id]];
     const locked = skill < r.minSkill;
-    const able = canCraft(p, r);
+    const crafted = p.craft_turn === state.turn; // bu ay üretildi → tur dolana dek kapalı
+    const able = canCraft(p, r) && !crafted;
     const inputs = Object.entries(r.inputs);
     return (
       <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: able ? tone + "55" : C.border, borderRadius: 13, padding: 13, marginBottom: 10 }}>
@@ -88,7 +89,7 @@ export default function Atolye() {
           style={{ marginTop: 12, paddingVertical: 11, borderRadius: 9, borderWidth: 1, alignItems: "center",
             borderColor: able ? tone + "88" : C.border, backgroundColor: able ? tone + "1F" : C.bg }}>
           <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: able ? tone : C.parchmentMuted }}>
-            {able ? t("misc.craft") : locked ? applyParams(t("wsp.locked"), [r.minSkill]) : t("wsp.noMat")}
+            {able ? t("misc.craft") : crafted ? t("wsp.craftedTurn") : locked ? applyParams(t("wsp.locked"), [r.minSkill]) : t("wsp.noMat")}
           </Text>
         </Pressable>
       </View>

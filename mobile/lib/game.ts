@@ -64,6 +64,8 @@ export interface Player {
   faction_power_turn?: number; // bu ay ocak nüfuzu kullanıldı mı (tur başına tek)
   war_support_turn?: number; // bu ay cepheye destek verildi mi (tur başına tek)
   favor_turn?: number; // bu ay pîşkeş/iltifat yapıldı mı (tur başına tek)
+  craft_turn?: number; // bu ay zanaat işlendi mi (tur başına tek — beceri/kalite-satış farmı önlenir)
+  last_travel_turn?: number; // bu ay yol olayı tetiklendi mi (tur başına tek — git-gel beceri/eşya farmı önlenir)
   courtRank?: number; // saray/divan rütbesi (0..4 = Kâtip..Sadrazam; tanımsız = sarayda değil)
   courtXp?: number; // saray hizmet puanı (terfi eşiği)
   courtFavor?: number; // hükümdar nezdinde itibar (0-100); düşerse azil
@@ -319,7 +321,9 @@ function npcLifeTick(s: GameState) {
     const f = r.find((n) => n.gender === "kadın" && n.age >= 18 && n.age < 55);
     if (m && f) push(s, "dunya_olayi", `${loc}'de ${m.name} ile ${f.name} dünyaevi kurdu.`, "makro", false, { k: "npclife.marry", p: [m.name, f.name] });
   }
-  if (s.world.npcBorn.length > 260) s.world.npcBorn = s.world.npcBorn.filter((n) => n.alive !== false).slice(-260);
+  // Bellek sınırı: YALNIZ ölü doğanları ele (yaşayanları asla atma). Geniş kadro (≈600 NPC) ile
+  // eski 260 sınırı yaşayan NPC'leri de siliyor → nüfus zamanla azalıyordu. Yaşayan tavan doğal (~600).
+  if (s.world.npcBorn.length > 900) s.world.npcBorn = s.world.npcBorn.filter((n) => n.alive !== false);
 }
 // Mesleğe göre üretkenlik uyumu (çiftçi tarlada, demirci değirmende daha verimli).
 const PROP_PROF_FIT: Record<string, string[]> = {
@@ -2390,6 +2394,9 @@ export function buyHorse(prev: GameState): GameState {
 function rollTravelEvent(s: GameState, route: TravelRoute) {
   const p = s.player;
   if (p.dead || p.age < 13) return;
+  // Tur başına tek yol olayı — yoksa A→B→A gidip gelerek beceri/eşya/akçe farm'lanır (work ile aynı kural).
+  if (p.last_travel_turn === s.turn) return;
+  p.last_travel_turn = s.turn;
   const insec = Math.max(0, -cityFx(s, p.location_name).sec); // eşkıya/yangın olayı varış şehrini tehlikeli yapar
   const chance = (route === "patika" ? 0.42 : route === "kervan" ? 0.5 : 0.34) + insec * 0.012;
   if (Math.random() >= chance) return;
@@ -4636,6 +4643,9 @@ function takeQualityUnit(p: Player, id: string): QualityTier {
 export function craft(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const r = RECIPES.find((x) => x.id === id);
   if (!r || p.dead || !canCraft(p, r)) return s;
+  // Tur başına tek üretim — yoksa aynı turda sınırsız zanaat becerisi + kalite-satış kârı farm'lanır (work/suç ile aynı kural).
+  if (p.craft_turn === s.turn) { push(s, "zanaat", `Bu ay tezgâh başında yeterince çalıştın; usta eli dinlenmek de ister.`, "kişisel", false, { k: "evj.craftWait" }); return s; }
+  p.craft_turn = s.turn;
   for (const [iid, q] of Object.entries(r.inputs)) { p.inventory[iid] -= q; if (p.inventory[iid] <= 0) delete p.inventory[iid]; }
   p.inventory[r.out] = (p.inventory[r.out] || 0) + r.outQty;
   gainSkill(s, "crafting", 6);
