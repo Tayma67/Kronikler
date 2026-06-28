@@ -1,7 +1,7 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import type { EvtParam } from "./i18n";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
-import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname, SPECIALTIES, Item, WClass } from "./world";
+import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname, SPECIALTIES, Item, WClass, applyFamilySurnames, npcAgeProfession } from "./world";
 import { Lang } from "./locale-data";
 import { converse, ConvResult, spontaneousLine, callbackLine } from "./dialogue";
 import { Memory, addMemory, decayMemories, effectiveRel, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS } from "./npc-mind";
@@ -257,7 +257,7 @@ export function childNature(name: string, generation: number): string {
 export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); }
 // Yaşayan dünya kadrosu: deterministik temel (isim dile göre çözülür) + kalıcı evrim katmanı (ölüm/yaş/doğum).
 // Kadro büyüklüğü yerleşim tipine göre: şehir kalabalık, köy tenha (canlı dünya hissi).
-export function rosterSize(loc: string): number { const k = placeKind(loc); return k === "şehir" ? 18 : k === "kale" ? 12 : 8; }
+export function rosterSize(loc: string): number { const k = placeKind(loc); return k === "şehir" ? 24 : k === "kale" ? 16 : 10; }
 // Dünya saati: nesiller boyu biriken yıl (NPC'ler bununla yaşlanır).
 export function worldYears(s: GameState): number { return (s.world?.npcYears || 0) + Math.floor(s.turn / 12); }
 // Deterministik temel kadro önbelleği: generateNPCs(loc,lang) saf ve değişmez → sonsuza dek memo'lanır.
@@ -266,16 +266,18 @@ const _rosterBaseCache: Record<string, NPC[]> = {};
 function rosterBase(loc: string, lang: Lang): NPC[] {
   const key = loc + "|" + lang;
   let b = _rosterBaseCache[key];
-  if (!b) { b = generateNPCs(locSeed(loc), rosterSize(loc), lang, loc); _rosterBaseCache[key] = b; }
+  if (!b) { b = generateNPCs(locSeed(loc), rosterSize(loc), lang, loc); applyFamilySurnames(loc, b); _rosterBaseCache[key] = b; }
   return b;
 }
 export function rosterAt(s: GameState, loc: string, lang: Lang = "tr"): NPC[] {
   const wy = worldYears(s); const evo = s.world?.npcEvo;
+  // Yaşa göre normalize: meslek (çocuk/çırak) + 14 altı hedef gütmez (2 yaşında tüccar/borç olmaz).
+  const norm = (n: NPC, age: number): NPC => ({ ...n, age, profession: npcAgeProfession(n.profession, age), goal: age < 14 ? "" : n.goal });
   const base = rosterBase(loc, lang)
-    .map((n) => ({ ...n, age: Math.min(95, n.age + wy), alive: evo?.[n.id]?.dead ? false : true }))
+    .map((n) => norm({ ...n, alive: evo?.[n.id]?.dead ? false : true } as NPC, Math.min(95, n.age + wy)))
     .filter((n) => n.alive !== false);
   const born = (s.world?.npcBorn || []).filter((n) => n.loc === loc && n.alive !== false)
-    .map((n) => ({ ...n, age: Math.min(95, n.age + Math.max(0, wy - (n.bornY ?? wy))), name: n.nameSeed != null ? `${localFirstName(n.nameSeed, n.gender, lang)} ${localSurname(n.nameSeed * 2 + 1, lang)}` : n.name }));
+    .map((n) => norm({ ...n, name: n.nameSeed != null ? `${localFirstName(n.nameSeed, n.gender, lang)} ${localSurname(n.nameSeed * 2 + 1, lang)}` : n.name } as NPC, Math.min(95, n.age + Math.max(0, wy - (n.bornY ?? wy)))));
   return born.length ? [...base, ...born] : base;
 }
 // Bir mülkün şehrinin işçi havuzu (yaşayan kadrodan).
@@ -284,6 +286,7 @@ export function townNpcsOf(s: GameState, loc: string, lang: Lang = "tr"): NPC[] 
 function npcBaby(s: GameState, loc: string): NPC {
   const n = generateNPCs((locSeed(loc) ^ s.turn ^ Math.floor(Math.random() * 1e6)) >>> 0, 1, "tr", "born")[0];
   n.id = `born_${loc}_${s.turn}_${Math.floor(Math.random() * 1e6)}`; n.loc = loc; n.alive = true; n.age = 0; n.bornY = worldYears(s);
+  // profession/goal saklı kalır (yetişkin değeri); gösterimde rosterAt yaşa göre çocuk/çırak'a indirger.
   n.nameSeed = (Math.floor(Math.random() * 1e9)) >>> 0; // isim dile göre çözülsün
   return n;
 }

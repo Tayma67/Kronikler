@@ -72,6 +72,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     şifacı:{name:"Şifacı",tiers:["Otacı","Şifacı","Hekim"]}, katip:{name:"Kâtip",tiers:["Çömez","Kâtip","Divan Kâtibi"]},
     kuyumcu:{name:"Kuyumcu",tiers:["Çırak","Kuyumcu","Usta Kuyumcu"]}, dokumacı:{name:"Dokumacı",tiers:["Çırak","Dokumacı","Usta Dokumacı"]},
     hancı:{name:"Hancı",tiers:["Hizmetkâr","Hancı","Han Sahibi"]},
+    çocuk:{name:"Çocuk",tiers:["Çocuk"]}, çırak:{name:"Çırak",tiers:["Çırak"]}, işsiz:{name:"İşsiz",tiers:["İşsiz"]},
   },
   en: {
     çiftçi:{name:"Farmer",tiers:["Farmhand","Farmer","Landowner"]}, demirci:{name:"Smith",tiers:["Smith's Apprentice","Smith","Master Smith"]},
@@ -82,6 +83,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     şifacı:{name:"Healer",tiers:["Herbalist","Healer","Physician"]}, katip:{name:"Scribe",tiers:["Novice","Scribe","Court Scribe"]},
     kuyumcu:{name:"Jeweler",tiers:["Apprentice","Jeweler","Master Jeweler"]}, dokumacı:{name:"Weaver",tiers:["Apprentice","Weaver","Master Weaver"]},
     hancı:{name:"Innkeeper",tiers:["Servant","Innkeeper","Inn Owner"]},
+    çocuk:{name:"Child",tiers:["Child"]}, çırak:{name:"Apprentice",tiers:["Apprentice"]}, işsiz:{name:"Unemployed",tiers:["Unemployed"]},
   },
   es: {
     çiftçi:{name:"Granjero",tiers:["Peón","Granjero","Terrateniente"]}, demirci:{name:"Herrero",tiers:["Aprendiz de herrero","Herrero","Maestro herrero"]},
@@ -92,6 +94,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     şifacı:{name:"Sanador",tiers:["Herbolario","Sanador","Médico"]}, katip:{name:"Escriba",tiers:["Novicio","Escriba","Escriba de la corte"]},
     kuyumcu:{name:"Joyero",tiers:["Aprendiz","Joyero","Maestro joyero"]}, dokumacı:{name:"Tejedor",tiers:["Aprendiz","Tejedor","Maestro tejedor"]},
     hancı:{name:"Posadero",tiers:["Sirviente","Posadero","Dueño de posada"]},
+    çocuk:{name:"Niño",tiers:["Niño"]}, çırak:{name:"Aprendiz",tiers:["Aprendiz"]}, işsiz:{name:"Desempleado",tiers:["Desempleado"]},
   },
   pt: {
     çiftçi:{name:"Agricultor",tiers:["Jornaleiro","Agricultor","Proprietário"]}, demirci:{name:"Ferreiro",tiers:["Aprendiz de ferreiro","Ferreiro","Mestre ferreiro"]},
@@ -102,6 +105,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     şifacı:{name:"Curandeiro",tiers:["Ervanário","Curandeiro","Médico"]}, katip:{name:"Escrivão",tiers:["Noviço","Escrivão","Escrivão da corte"]},
     kuyumcu:{name:"Joalheiro",tiers:["Aprendiz","Joalheiro","Mestre joalheiro"]}, dokumacı:{name:"Tecelão",tiers:["Aprendiz","Tecelão","Mestre tecelão"]},
     hancı:{name:"Estalajadeiro",tiers:["Servo","Estalajadeiro","Dono da estalagem"]},
+    çocuk:{name:"Criança",tiers:["Criança"]}, çırak:{name:"Aprendiz",tiers:["Aprendiz"]}, işsiz:{name:"Desempregado",tiers:["Desempregado"]},
   },
   ar: {
     çiftçi:{name:"مزارع",tiers:["أجير","مزارع","مالك أرض"]}, demirci:{name:"حدّاد",tiers:["صبي الحدّاد","حدّاد","حدّاد ماهر"]},
@@ -112,6 +116,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     şifacı:{name:"معالج",tiers:["عشّاب","معالج","طبيب"]}, katip:{name:"كاتب",tiers:["مبتدئ","كاتب","كاتب الديوان"]},
     kuyumcu:{name:"صائغ",tiers:["صبي","صائغ","صائغ ماهر"]}, dokumacı:{name:"نسّاج",tiers:["صبي","نسّاج","نسّاج ماهر"]},
     hancı:{name:"صاحب خان",tiers:["خادم","صاحب خان","مالك الخان"]},
+    çocuk:{name:"طفل",tiers:["طفل"]}, çırak:{name:"صبي",tiers:["صبي"]}, işsiz:{name:"عاطل",tiers:["عاطل"]},
   },
   ru: {
     çiftçi:{name:"Земледелец",tiers:["Батрак","Земледелец","Землевладелец"]}, demirci:{name:"Кузнец",tiers:["Подмастерье кузнеца","Кузнец","Мастер-кузнец"]},
@@ -122,6 +127,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     şifacı:{name:"Лекарь",tiers:["Травник","Лекарь","Врач"]}, katip:{name:"Писарь",tiers:["Новичок","Писарь","Придворный писарь"]},
     kuyumcu:{name:"Ювелир",tiers:["Подмастерье","Ювелир","Мастер-ювелир"]}, dokumacı:{name:"Ткач",tiers:["Подмастерье","Ткач","Мастер-ткач"]},
     hancı:{name:"Трактирщик",tiers:["Слуга","Трактирщик","Хозяин трактира"]},
+    çocuk:{name:"Ребёнок",tiers:["Ребёнок"]}, çırak:{name:"Подмастерье",tiers:["Подмастерье"]}, işsiz:{name:"Безработный",tiers:["Безработный"]},
   },
 };
 export function professionNameL(id: string, lang: Lang): string {

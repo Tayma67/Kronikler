@@ -34,6 +34,12 @@ export function localSurname(seed: number, lang: Lang = "tr"): string {
   const pool = NAME_POOLS[lang] || NAME_POOLS.tr;
   return pool.s[(seed >>> 0) % pool.s.length];
 }
+// Yaşa göre meslek gösterimi: küçük çocuk "çocuk", ergen "çırak", aksi halde saklı yetişkin mesleği.
+export function npcAgeProfession(profession: string, age: number): string {
+  if (age < 7) return "çocuk";
+  if (age < 14) return "çırak";
+  return profession;
+}
 export function generateNPCs(seed: number, n = 30, lang: Lang = "tr", prefix = "npc"): NPC[] {
   const r = mkRng(seed);
   const pool = NAME_POOLS[lang] || NAME_POOLS.tr;
@@ -41,11 +47,15 @@ export function generateNPCs(seed: number, n = 30, lang: Lang = "tr", prefix = "
   for (let i = 0; i < n; i++) {
     const gender: "erkek" | "kadın" = r() < 0.5 ? "erkek" : "kadın";
     const ad = gender === "erkek" ? pick(pool.m, r) : pick(pool.f, r);
-    out.push({
-      id: `${prefix}_${i}`, name: `${ad} ${pick(pool.s, r)}`,
-      age: 14 + Math.floor(r() * 55), gender, profession: pick(NPC_PROFS, r),
-      trait: pick(TRAITS, r), quirk: pick(QUIRKS, r), goal: pick(GOALS, r),
-    });
+    // r() tüketim sırası korunur (soyad, yaş, meslek, huy, tuhaflık, hedef) → deterministik.
+    const surname = pick(pool.s, r);
+    const age = 5 + Math.floor(r() * 68); // 5–72: yaşıt/çocuk da bulunsun (oyuncu 7'de başlar)
+    // profession = "yetişkin mesleği" olarak saklanır; gösterimde yaşa göre çocuk/çırak'a indirgenir (npcByAge).
+    const profession = pick(NPC_PROFS, r);
+    const trait = pick(TRAITS, r);
+    const quirk = pick(QUIRKS, r);
+    const goal = pick(GOALS, r);
+    out.push({ id: `${prefix}_${i}`, name: `${ad} ${surname}`, age, gender, profession, trait, quirk, goal });
   }
   return out;
 }
@@ -80,8 +90,10 @@ export function npcSocialGraph(locationName: string, npcs: NPC[]): Record<string
     if (r() > 0.5) continue;
     const pair = pairs.find(([x, y]) => x !== c.id && y !== c.id && (byId(x)?.age ?? 0) >= c.age + 17 && (byId(y)?.age ?? 0) >= c.age + 17);
     if (!pair || pair.includes(c.id)) continue;
-    link(c.id, pair[0], "evlat", "ebeveyn", 65);
-    link(c.id, pair[1], "evlat", "ebeveyn", 65);
+    // c = çocuk, pair = ebeveynler. c'nin listesinde ebeveyne doğru "ebeveyn",
+    // ebeveynin listesinde c'ye doğru "evlat" görünmeli (etiketler düzeltildi).
+    link(c.id, pair[0], "ebeveyn", "evlat", 65);
+    link(c.id, pair[1], "ebeveyn", "evlat", 65);
     for (const sib of npcs) {
       if (sib.id === c.id) continue;
       const sp = adj[sib.id].filter((t) => t.kind === "ebeveyn").map((t) => t.otherId);
@@ -103,6 +115,31 @@ export function npcSocialGraph(locationName: string, npcs: NPC[]): Record<string
     }
   }
   return adj;
+}
+
+// Aile soyadı paylaşımı: aynı aileye (eş/ebeveyn/evlat/kardeş bağı) mensup NPC'ler
+// tek bir soyadı paylaşsın ki "aile" oldukları belli olsun. NPC dizisini yerinde günceller.
+// Sosyal grafik deterministik olduğundan sonuç da deterministik ve kararlıdır.
+const FAMILY_KINDS: TieKind[] = ["es", "ebeveyn", "evlat", "kardes"];
+export function applyFamilySurnames(locationName: string, npcs: NPC[]): void {
+  const graph = npcSocialGraph(locationName, npcs);
+  const root: Record<string, string> = {};
+  for (const n of npcs) root[n.id] = n.id;
+  const find = (x: string): string => { while (root[x] !== x) { root[x] = root[root[x]]; x = root[x]; } return x; };
+  const union = (a: string, b: string) => { const ra = find(a), rb = find(b); if (ra !== rb) root[ra] = rb; };
+  for (const n of npcs) for (const t of graph[n.id] || []) if (FAMILY_KINDS.includes(t.kind)) union(n.id, t.otherId);
+  const fams: Record<string, NPC[]> = {};
+  for (const n of npcs) { const r = find(n.id); (fams[r] = fams[r] || []).push(n); }
+  for (const id in fams) {
+    const members = fams[id];
+    if (members.length < 2) continue; // tek kişilik "aile" kendi soyadını korur
+    // Soyadı kaynağı: ailenin en yaşlı erkeği (ataerkil), yoksa en yaşlı üye — deterministik.
+    const males = members.filter((m) => m.gender === "erkek");
+    const src = (males.length ? males : members).slice().sort((a, b) => b.age - a.age || (a.id < b.id ? -1 : 1))[0];
+    const surname = src.name.split(" ").slice(1).join(" ");
+    if (!surname) continue;
+    for (const m of members) { const fn = m.name.split(" ")[0]; m.name = `${fn} ${surname}`; }
+  }
 }
 
 export const ITEMS: Record<string, Item> = {

@@ -132,7 +132,7 @@ export default function NpcDetail() {
           <Text style={{ fontFamily: F.display, fontSize: 11, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted }}>{t("npc.rel")} {v > 0 ? "+" + v : v}</Text>
         </View>
         <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted, marginTop: 6, lineHeight: 17 }}>{(() => { const q = quirkL(npc.quirk, lang); return q[0].toUpperCase() + q.slice(1); })()}.</Text>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.goldDim, marginTop: 2 }}>{t("npc.dream")} {goalL(npc.goal, lang)}.</Text>
+        {npc.goal ? <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.goldDim, marginTop: 2 }}>{t("npc.dream")} {goalL(npc.goal, lang)}.</Text> : null}
       </View>
 
       {/* ── Çevresi (NPC↔NPC ilişki ağı) ── */}
