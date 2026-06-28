@@ -373,8 +373,9 @@ export function hireWorker(prev: GameState, index: number, npcId: string): GameS
   if (!pr) return s;
   pr.workers = pr.workers || [];
   if (pr.workers.includes(npcId) || pr.workers.length >= propWorkerSlots(pr)) return s;
-  pr.workers.push(npcId);
   const npc = townNpcsOf(s, pr.loc).find((x) => x.id === npcId);
+  if (!npc || npc.age < 14) return s; // çocuk işçi olmaz (çırak yaşı altı işe alınamaz)
+  pr.workers.push(npcId);
   push(s, "mülk", `${npc?.name || "Bir işçi"}, ${PROPERTY_TYPES[pr.type]?.name || "mülkünde"} (${pr.loc}) işe alındı.`, "kişisel", true, { k: "evj.workerHired", p: [npc?.name || "Bir işçi", { pt2: pr.type }, { pl: pr.loc }] });
   return s;
 }
@@ -1114,7 +1115,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.dead) return;
   // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50);
-  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.reputation = Math.min(100, p.reputation + 5); push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
+  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: "evj.childBorn", p: [c] }); }
   // ── Torun anları: oyuncu yaşlanınca (52+) ve yetişkin evladı varken torun doğar; torunla anlar gönül ferahlatır (additive) ──
   if (p.age >= 52 && p.children.length >= 1 && (p.grandchildren?.length || 0) < 8 && chance(0.06)) {
@@ -2071,12 +2072,18 @@ export function useItem(prev: GameState, id: string): GameState {
   return s;
 }
 
+// Bir malın oyuncuya GERÇEK alış fiyatı (tüccar/pazarlıkçı indirimi dahil) — UI ile tek kaynak.
+export function buyPrice(s: GameState, id: string): number {
+  const p = s.player;
+  const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return 0;
+  let disc = p.faction === "tuccar" ? 0.85 : 1;
+  if (hasPerk(p, "pazarlikci")) disc -= 0.10;
+  return Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id)));
+}
 export function buyItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
-  let disc = p.faction === "tuccar" ? 0.85 : 1;
-  if (hasPerk(p, "pazarlikci")) disc -= 0.10;
-  const price = Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id)));
+  const price = buyPrice(s, id);
   if (p.money < price) return s;
   p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
   addTradePressure(s, p.location_name, id, 0.05); // alım yerel arzı azaltır → fiyat tırmanır
@@ -2261,7 +2268,7 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   const karizmaBonus = hasPerk(p, "karizmatik") ? 0.2 : 0;
   const ok = Math.random() < Math.min(0.97, 0.25 + (rel - 50) * 0.012 + socialPresence(p) * 0.03 + karizmaBonus + courtBonus(s));
   if (ok) {
-    p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.reputation = Math.min(100, p.reputation + 5);
+    p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
     bumpNam(p, "capkin", 5);
     push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
   } else {
@@ -2297,7 +2304,7 @@ export function proposeArranged(prev: GameState, npc: NPC): GameState {
   p.money -= MATCHMAKER_FEE;
   const ok = Math.random() < Math.min(0.92, 0.42 + socialPresence(p) * 0.04 + p.fame / 320 + (hasPerk(p, "karizmatik") ? 0.15 : 0));
   if (ok) {
-    p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.reputation = Math.min(100, p.reputation + 5);
+    p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
     push(s, "evlilik", `${npc.name} ile görücü usulü evlendin — iki aile görüştü, yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
   } else {
     push(s, "sohbet", `${npc.name}'in ailesi teklifi şimdilik geri çevirdi; çöpçatan başka kapı çalacak.`, "kişisel", false, { k: "evj.proposeNo", p: [npc.name] });
@@ -2320,7 +2327,8 @@ export function insultNpc(prev: GameState, npc: NPC): GameState {
   return s;
 }
 export function canFlirt(p: Player, npc: NPC, rel: number): boolean {
-  return !p.dead && !p.married && p.age >= 16 && npc.age >= 16 && npc.gender !== p.gender && rel >= 15;
+  // Hem oyuncu hem NPC reşit (18+) olmalı — evlilik/kur kapısıyla tutarlı; çocuklarla gönül işi olmaz.
+  return !p.dead && !p.married && p.age >= 18 && npc.age >= 18 && npc.gender !== p.gender && rel >= 15;
 }
 export function flirtWith(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; const rel = s.relationships[npc.id] || 0;

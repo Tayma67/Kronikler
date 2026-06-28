@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, sellItem, launchCaravan, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
+import { buyItem, buyPrice, sellItem, launchCaravan, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -63,7 +63,8 @@ export default function Pazar() {
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const econ = state.econ || 1;
-  const goods = marketGoods(locSeed(p.location_name)).map((g) => { const m = goodPriceMult(state, g.id); return { ...g, buy: Math.max(1, Math.round(marketPrice(g.buy, econ) * m)), sell: Math.max(1, Math.round(marketPrice(g.sell, econ) * m)), pm: m }; });
+  // buy = GERÇEK alış fiyatı (tüccar/pazarlıkçı indirimi dahil) → gösterim + "yeterli akçe" kontrolü buyItem ile aynı.
+  const goods = marketGoods(locSeed(p.location_name)).map((g) => { const m = goodPriceMult(state, g.id); return { ...g, buy: buyPrice(state, g.id), sell: Math.max(1, Math.round(marketPrice(g.sell, econ) * m)), pm: m }; });
   const mev = state.marketEvent && state.marketEvent.until > state.turn ? MARKET_EVENTS.find((e) => e.key === state.marketEvent!.key) : null;
   const econColor = econ >= 1.06 ? C.blood : econ <= 0.94 ? C.sage : C.parchmentMuted;
 
@@ -366,8 +367,9 @@ export default function Pazar() {
                       <Pressable onPress={() => { hap('tap'); apply((s) => buyItem(s, g.id)); }} disabled={p.money < g.buy} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < g.buy ? C.bg : "rgba(201,168,76,0.12)" }}>
                         <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < g.buy ? C.parchmentMuted : C.gold }}>{t("misc.buy")} {g.buy}⚜</Text>
                       </Pressable>
-                      <Pressable onPress={() => openBarg(g)} disabled={p.money < g.buy} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: C.bg }}>
-                        <Text style={{ fontFamily: F.display, fontSize: 10.5, color: p.money < g.buy ? C.parchmentMuted : C.goldDim }}>{t("misc.bargain")}</Text>
+                      {/* Pazarlık daha DÜŞÜK fiyata inebilir → tam fiyatı karşılayamasan da aç (modal kendi 'yeterli akçe'sini kontrol eder). */}
+                      <Pressable onPress={() => openBarg(g)} disabled={p.money < Math.round(g.buy * 0.6)} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: C.bg }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 10.5, color: p.money < Math.round(g.buy * 0.6) ? C.parchmentMuted : C.goldDim }}>{t("misc.bargain")}</Text>
                       </Pressable>
                     </View>
                     {have > 0 && (

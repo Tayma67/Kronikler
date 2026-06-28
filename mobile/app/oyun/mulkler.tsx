@@ -160,7 +160,7 @@ export default function Mulkler() {
                   const uc = propUpgradeCost(pr);
                   const town = townNpcsOf(state, pr.loc, lang);
                   const hired = (pr.workers || []).map((id) => town.find((nn) => nn.id === id)).filter(Boolean) as NonNullable<ReturnType<typeof town.find>>[];
-                  const avail = town.filter((nn) => !(pr.workers || []).includes(nn.id));
+                  const avail = town.filter((nn) => nn.age >= 14 && !(pr.workers || []).includes(nn.id)); // çocuk işçi listelenmez
                   const ho = hireOpen === i;
                   return (
                     <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10, gap: 9 }}>

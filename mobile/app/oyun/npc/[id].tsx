@@ -179,7 +179,8 @@ export default function NpcDetail() {
             <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11, color: C.ember, lineHeight: 15 }}>{t("npca.martialWarn")}</Text>
           </View>
         ) : null}
-        {INTENTS.map((it) => (
+        {/* 14 yaş altı NPC'ye iş/hayal sorma — çocuğun mesleği/hedefi yok (boş tırnak saçmalığı önlenir). */}
+        {INTENTS.filter((it) => npc.age >= 14 || (it.id !== "is" && it.id !== "hedef")).map((it) => (
           <Pressable key={it.id} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
             <GameIcon name={it.icon} size={17} color={C.gold} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("dlg.intent." + it.id)}</Text>
@@ -232,11 +233,11 @@ export default function NpcDetail() {
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t("npca.flirtBtn")}</Text>
           </Pressable>
         )}
-        <Pressable onPress={() => { hap("tap"); apply((s) => gossipAbout(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+        <Pressable disabled={state.player.dead || state.player.age < 13} onPress={() => { hap("tap"); apply((s) => gossipAbout(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: state.player.age < 13 ? 0.45 : 1 })}>
           <GameIcon name="speaker" size={16} color={C.parchment} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npca.gossipBtn")}</Text>
         </Pressable>
-        <Pressable onPress={() => { hap("tap"); apply((s) => insultNpc(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+        <Pressable disabled={state.player.dead || state.player.age < 13} onPress={() => { hap("tap"); apply((s) => insultNpc(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: state.player.age < 13 ? 0.45 : 1 })}>
           <GameIcon name="skull" size={16} color={C.blood} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.blood }}>{t("npca.insultBtn")}</Text>
         </Pressable>
