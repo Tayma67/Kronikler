@@ -54,7 +54,7 @@ export default function Orgutler() {
           {/* Örgütün gücünü kullan (Güvenilir rütbe+) */}
           <View style={{ marginTop: 9, paddingTop: 9, borderTopWidth: 1, borderTopColor: "rgba(201,168,76,0.25)" }}>
             <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.goldDim, marginBottom: 6 }}>{t("fac.power").toUpperCase()}</Text>
-            {canUseFactionPower(p) ? (
+            {canUseFactionPower(p) && p.faction_power_turn !== state.turn ? (
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <Pressable onPress={() => { hap("success"); apply((s) => useFactionPower(s, "himaye")); }} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
                   <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.gold }}>{t("fac.himaye")}</Text>
@@ -65,6 +65,8 @@ export default function Orgutler() {
                   <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.parchmentMuted }}>−{FAC_POWER_COST} {t("fac.repute").toLowerCase()}</Text>
                 </Pressable>
               </View>
+            ) : p.faction_power_turn === state.turn ? (
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("fac.powerUsedTurn")}</Text>
             ) : (
               <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{applyParams(t("fac.powHint"), [FAC_POWER_COST])}</Text>
             )}
@@ -83,11 +85,11 @@ export default function Orgutler() {
               <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 12, color: C.parchment }}>{t("fac."+w.a+".n")} × {t("fac."+w.b+".n")}{w.prize ? ` · ${beylikName(w.prize)} ${t("realm.forControl")}` : ""} · {w.turnsLeft} {t("realm.month")}</Text>
             </View>
           ))}
-          {myWar && (
-            <Pressable onPress={() => { hap("advance"); apply(supportWar); }} style={{ marginTop: 6, alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: "rgba(168,52,52,0.55)", backgroundColor: "rgba(168,52,52,0.16)" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood, letterSpacing: 1 }}>{t("fac.front")}</Text>
+          {myWar && (() => { const fought = p.war_support_turn === state.turn; return (
+            <Pressable disabled={fought} onPress={() => { hap("advance"); apply(supportWar); }} style={{ marginTop: 6, alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: "rgba(168,52,52,0.55)", backgroundColor: "rgba(168,52,52,0.16)", opacity: fought ? 0.5 : 1 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood, letterSpacing: 1 }}>{fought ? t("fac.frontDone") : t("fac.front")}</Text>
             </Pressable>
-          )}
+          ); })()}
         </View>
       )}
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
@@ -178,12 +180,14 @@ export default function Orgutler() {
           })}
         </View>
 
-        {FACTIONS.map((f) => {
+        {/* Bir ocağa bağlıysan yalnız KENDİ ocağını görürsün (ayrılmadan başka ocakla iş yok). */}
+        {(p.faction ? FACTIONS.filter((f) => f.id === p.faction) : FACTIONS).map((f) => {
           const standing = p.faction_standing[f.id] || 0;
           const isMember = p.faction === f.id;
           const need = joinThreshold(p, f);
           const banLeft = factionBanLeft(p, f.id, state.turn);
           const canJoin = !isMember && standing >= need && banLeft <= 0;
+          const taskDone = p.faction_task_turn === state.turn;
           const canAct = p.age >= 13 && !p.dead;
           return (
             <View key={f.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: isMember ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 10, padding: 14, marginBottom: 10 }}>
@@ -213,8 +217,8 @@ export default function Orgutler() {
               })()}
 
               <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-                <Pressable disabled={!canAct} onPress={() => { hap("tap"); apply((s) => doFactionTask(s, f.id)); }} style={{ flex: 1, paddingVertical: 10, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 11, color: canAct ? C.parchment : C.parchmentMuted }}>{t("fac."+f.id+".tl").toUpperCase()}</Text>
+                <Pressable disabled={!canAct || taskDone} onPress={() => { hap("tap"); apply((s) => doFactionTask(s, f.id)); }} style={{ flex: 1, paddingVertical: 10, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.bg, alignItems: "center", opacity: taskDone ? 0.5 : 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: (canAct && !taskDone) ? C.parchment : C.parchmentMuted }}>{taskDone ? t("fac.taskDone") : t("fac."+f.id+".tl").toUpperCase()}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.goldDim, marginTop: 2 }}>+{f.task.reward}⚜ · +{f.task.standing} {t("fac.repute").toLowerCase()}</Text>
                 </Pressable>
                 {!isMember && banLeft > 0 ? (

@@ -59,6 +59,11 @@ export interface Player {
   campaignsWon?: number; // kazanılan sefer sayısı (şöhret/miras)
   prof_action_turn?: number; // son meslek imza eylemi turu (bekleme süresi)
   work_turn?: number; // bu ay çalışıldı mı (tur başına tek maaşlı iş — para/kariyer farmı önlenir)
+  exploit_turn?: number; // bu ay NPC istismarı yapıldı mı (tur başına tek — çapraz-NPC para farmı önlenir)
+  faction_task_turn?: number; // bu ay ocak görevi yapıldı mı (tur başına tek — itibar/para farmı önlenir)
+  faction_power_turn?: number; // bu ay ocak nüfuzu kullanıldı mı (tur başına tek)
+  war_support_turn?: number; // bu ay cepheye destek verildi mi (tur başına tek)
+  favor_turn?: number; // bu ay pîşkeş/iltifat yapıldı mı (tur başına tek)
   courtRank?: number; // saray/divan rütbesi (0..4 = Kâtip..Sadrazam; tanımsız = sarayda değil)
   courtXp?: number; // saray hizmet puanı (terfi eşiği)
   courtFavor?: number; // hükümdar nezdinde itibar (0-100); düşerse azil
@@ -1863,6 +1868,9 @@ export function playerWar(s: GameState): FactionWar | null {
 export function supportWar(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   const w = playerWar(s); if (!w || p.dead || p.age < 13) return s;
+  // Tur başına tek cephe çıkışı — yoksa aynı turda üst üste ganimet/itibar farm'lanır.
+  if (p.war_support_turn === s.turn) { push(s, "ocak_savasi", `Bu ay cephede yeterince savaştın; biraz soluklan.`, "kişisel", false, { k: "evj.frontWait" }); return s; }
+  p.war_support_turn = s.turn;
   const mine = w.a === p.faction ? "a" : "b";
   const pw = combatPower(p);
   const win = Math.random() < Math.max(0.2, Math.min(0.9, 0.4 + pw * 0.02));
@@ -2214,9 +2222,12 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
 export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
+  // Tur başına tek istismar — yoksa farklı NPC'ler üstünden aynı turda sınırsız para farm'lanır.
+  if (p.exploit_turn === s.turn) { push(s, "sohbet", `Bu ay birini daha kandırmaya kalkışmak nam yapar; biraz beklemelisin.`, "kişisel", false, { k: "evj.exploitWait" }); return s; }
   const rel = s.relationships[npc.id] || 0;
   // Sana güvenmeyen kanmaz — bu, istismarın tekrar tekrar farm'lanmasını engeller.
   if (rel <= -25) { push(s, "sohbet", `${npc.name} sana zaten güvenmiyor; oyununa gelmez.`, "kişisel", false, { k: "evj.distrust", p: [npc.name] }); return s; }
+  p.exploit_turn = s.turn;
   // Kazanç güvene bağlı: ne kadar çok güveniyorsa o kadar koparırsın (ve o güveni yakarsın).
   const gain = Math.round(8 + Math.max(0, rel) * 0.4 + Math.random() * 10);
   p.money += gain;
@@ -3108,6 +3119,11 @@ export function factionLocalFavor(s: GameState): number {
 export function doFactionTask(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const f = factionById(id);
   if (!f || p.dead || p.age < 13) return s;
+  // Bir ocağa bağlıysan yalnız KENDİ ocağına hizmet edebilirsin (rakip ocaktan para/itibar farmı yok).
+  if (p.faction && p.faction !== id) { push(s, "örgüt_görev", `${f.name} senin ocağın değil; önce kendi ocağından ayrılmalısın.`, "kişisel", false, { k: "evj.factionNotYours", p: [{ fc: id }] }); return s; }
+  // Tur başına tek görev — yoksa aynı turda sınırsız itibar/para farm'lanır.
+  if (p.faction_task_turn === s.turn) { push(s, "örgüt_görev", `Bu ay ocak için hizmetini gördün; yenisi gelecek aya.`, "kişisel", false, { k: "evj.factionTaskWait" }); return s; }
+  p.faction_task_turn = s.turn;
   const rank = factionRank(p.faction_standing[id] || 0);            // rütbe ödülü ölçekler
   const statBonus = p.stats[f.stat] * 2;
   // Loncan bu sancağa hâkimse burada daha güçlüsün: görev daha çok kazandırır.
@@ -3187,6 +3203,9 @@ export function canUseFactionPower(p: Player): boolean {
 export function useFactionPower(prev: GameState, kind: "himaye" | "kese"): GameState {
   const s = clone(prev); const p = s.player; const fid = p.faction;
   if (p.dead || p.age < 13 || !fid || !canUseFactionPower(p)) return s; // ölü/çocuk oyuncu lonca gücü kullanamaz (diğer eylemlerle tutarlı)
+  // Tur başına tek nüfuz kullanımı — yoksa itibar→para aynı turda boşaltılıp farm'lanır.
+  if (p.faction_power_turn === s.turn) { push(s, "örgüt", `Ocağın nüfuzunu bu ay zaten kullandın; sık başvurmak yıpratır.`, "kişisel", false, { k: "evj.facPowerWait" }); return s; }
+  p.faction_power_turn = s.turn;
   const f = factionById(fid);
   p.faction_standing[fid] = (p.faction_standing[fid] || 0) - FAC_POWER_COST;
   if (kind === "himaye") { // örgüt himayesi: korku düşer, itibar artar, bir söylenti bastırılır
@@ -4464,6 +4483,9 @@ export function canCurryFavor(s: GameState): boolean { return inCourt(s.player) 
 export function curryFavor(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (!canCurryFavor(s)) return s;
+  // Tur başına tek pîşkeş — yoksa aynı turda akçeyle itibar toptan satın alınıp farm'lanır.
+  if (p.favor_turn === s.turn) { push(s, "saray", `Hükümdara bu ay zaten pîşkeş sundun; her gün ikram yapmacık kaçar.`, "kişisel", false, { k: "evj.favorWait" }); return s; }
+  p.favor_turn = s.turn;
   p.money -= COURT_FAVOR_GIFT_COST; p.courtFavor = Math.min(100, (p.courtFavor ?? 55) + 12);
   push(s, "saray", `Hükümdara pîşkeş sundun; gönlü hoş oldu, itibarın arttı.`, "kişisel", false, { k: "court.curry" });
   checkCourtPromotion(s);
