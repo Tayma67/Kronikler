@@ -7,7 +7,9 @@ import { useGame } from "../../lib/store";
 import { npcsOf, relWith } from "../../lib/game";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { professionNameL, placeName } from "../../lib/locale-data";
+import { localFirstName } from "../../lib/world";
 import { Portre } from "../../lib/ui";
+import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 
 // İlişki bantları (Vercel): eşik + ikon + ton rengi + motto.
@@ -79,6 +81,28 @@ export default function Iliskiler() {
             <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
           </View>
         </View>
+
+        {/* Çocukluk yoldaşı ("can dostu") — panodan buraya taşındı; ömürlük dost ya da rakip olabilir */}
+        {state.player.child_friend ? (() => {
+          const cf = state.player.child_friend!; const nm = localFirstName(cf.seed, cf.gender, lang);
+          const rival = (cf.feud || 0) > cf.bond; const tone = rival ? C.blood : "#C0556B";
+          const statusKey = rival ? "child.friend.rivalStatus" : cf.bond >= 70 ? "child.friend.lifelong" : "child.friend.label";
+          return (
+            <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: tone + "44", borderRadius: 12, marginBottom: 12, padding: 12 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <Portre age={Math.max(7, state.player.age)} gender={cf.gender} size={37} ring={false} seed={"cf_" + cf.seed} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{nm}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("child.friend.of")}</Text>
+                  <View style={{ height: 5, borderRadius: 3, backgroundColor: tone + "22", overflow: "hidden", marginTop: 5 }}>
+                    <View style={{ width: `${Math.max(0, Math.min(100, cf.bond))}%`, height: "100%", backgroundColor: tone }} />
+                  </View>
+                </View>
+                <Pill text={t(statusKey)} tone={tone} />
+              </View>
+            </View>
+          );
+        })() : null}
 
         {total === 0 ? (
           <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 24, alignItems: "center" }}>

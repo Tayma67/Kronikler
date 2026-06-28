@@ -331,6 +331,29 @@ export function OpportunityModal({ opp, statVal = 5, onResolve, onPass }: { opp:
   );
 }
 
+// Bilgilendirici tutorial — ilk oyunda bir kez (madde madde temel oynanış). Genel; SP ve başka yerde de kullanılabilir.
+export function TutorialModal({ visible, title, bullets, gotLabel, onClose }: { visible: boolean; title: string; bullets: string[]; gotLabel: string; onClose: () => void }) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.92)", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <Animated.View entering={FadeInUp.springify().damping(16)} style={{ width: "100%", maxWidth: 400, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", borderRadius: 16, padding: 22 }}>
+          <View style={{ alignItems: "center", marginBottom: 6 }}><GameIcon name="scroll" size={28} color={C.gold} /></View>
+          <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 0.5, color: C.gold, textAlign: "center", marginBottom: 14 }}>{title}</Text>
+          {bullets.map((b, i) => (
+            <View key={i} style={{ flexDirection: "row", gap: 9, marginBottom: 10, alignItems: "flex-start" }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.gold, marginTop: 6 }} />
+              <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 13.5, color: C.parchment, lineHeight: 19 }}>{b}</Text>
+            </View>
+          ))}
+          <Pressable onPress={onClose} style={{ marginTop: 8, paddingVertical: 13, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold, alignItems: "center" }}>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: "#1a1206" }}>{gotLabel}</Text>
+          </Pressable>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
 // ── Ortak tasarım bileşenleri (Vercel hizası) ──
 // Altın çizgi + elmas ayraç.
 export function GoldDivider({ mt = 16, mb = 12 }: { mt?: number; mb?: number }) {

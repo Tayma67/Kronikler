@@ -9,10 +9,10 @@ import { useGame } from "../../lib/store";
 import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, studyEnergy, maxStudyEnergy, STUDY_COST, canWork } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL, placeName } from "../../lib/locale-data";
-import { localFirstName } from "../../lib/world";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
-import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre } from "../../lib/ui";
+import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre, TutorialModal } from "../../lib/ui";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
 import { playTap } from "../../lib/sound";
@@ -100,6 +100,7 @@ export default function Dashboard() {
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
   const [tab, setTab] = useState<"gunluk" | "dunya">("gunluk");
   const [guideHidden, setGuideHidden] = useState(false);
+  const [showTut, setShowTut] = useState(false);
   const [shoot, setShoot] = useState(0);
   const [coinsOn, setCoinsOn] = useState(false);
   const coinTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -141,6 +142,14 @@ export default function Dashboard() {
       if (!seenAch.current.has(x.a.id)) { seenAch.current.add(x.a.id); setAch({ name: t("ach." + x.a.id + ".l"), icon: x.a.icon }); hap("success"); }
     }
   }, [state]);
+
+  // İlk oyunda bir kez bilgilendirici tutorial (kalıcı bayrak ile tekrar açılmaz).
+  useEffect(() => {
+    let on = true;
+    AsyncStorage.getItem("kronikler_sp_tut").then((v) => { if (on && v !== "1") setShowTut(true); }).catch(() => {});
+    return () => { on = false; };
+  }, []);
+  const closeTut = () => { setShowTut(false); AsyncStorage.setItem("kronikler_sp_tut", "1").catch(() => {}); };
 
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
   const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; if (dilemma) { const k = "dil." + dilemma.id + ".r" + i; const v = t(k); res = v === k ? c.result : v; } apply((s) => applyDilemma(s, c.delta, res, sk)); setDilemma(null); };
@@ -250,6 +259,7 @@ export default function Dashboard() {
       ) : ach ? (
         <AchievementToast name={ach.name} icon={ach.icon} onClose={() => setAch(null)} />
       ) : null}
+      <TutorialModal visible={showTut} title={t("sp.tut.title")} bullets={[t("sp.tut.b1"), t("sp.tut.b2"), t("sp.tut.b3"), t("sp.tut.b4"), t("sp.tut.b5"), t("sp.tut.b6")]} gotLabel={t("sp.tut.got")} onClose={closeTut} />
 
       {/* Mersiye — hayatın duygusal kapanışı */}
       {p.dead && (() => {
@@ -376,19 +386,7 @@ export default function Dashboard() {
                 ))}
               </View>
             </View>
-            {p.child_friend ? (() => {
-              const cf = p.child_friend; const nm = localFirstName(cf.seed, cf.gender, lang);
-              return (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 9, paddingVertical: 7, paddingHorizontal: 9, borderRadius: 8, borderWidth: 1, borderColor: "rgba(192,85,107,0.35)", backgroundColor: "rgba(192,85,107,0.07)" }}>
-                  <GameIcon name="iliskiler" size={13} color="#C0556B" />
-                  <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchment }}>{nm}</Text>
-                  <View style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: "rgba(192,85,107,0.18)", overflow: "hidden" }}>
-                    <View style={{ width: `${Math.max(0, Math.min(100, cf.bond))}%`, height: "100%", backgroundColor: "#C0556B" }} />
-                  </View>
-                  <Text style={{ fontFamily: F.display, fontSize: 9, color: "#C0556B" }}>{t("child.friend.label")}</Text>
-                </View>
-              );
-            })() : null}
+            {/* Çocukluk yoldaşı ("can dostu") artık İlişkiler ekranında gösteriliyor (pano kalabalığı azaldı). */}
             {p.child_dream ? (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 9 }}>
                 <GameIcon name="star" size={11} color={C.gold} />
