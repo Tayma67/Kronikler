@@ -2266,6 +2266,40 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   return s;
 }
 
+// ── Görücü usulü / çöpçatan: yakınlık şartı olmadan, ücret + karizmayla talip ol ──
+// NPC serveti (deterministik, mesleğe bağlı): 0 yoksul, 1 orta, 2 varlıklı.
+export function npcWealthTier(npc: NPC): number {
+  const rich = ["tüccar", "kuyumcu", "hancı", "katip", "şifacı"];
+  const poor = ["çoban", "balıkçı", "işsiz", "çırak", "çocuk"];
+  if (rich.includes(npc.profession)) return 2;
+  if (poor.includes(npc.profession)) return 0;
+  return 1;
+}
+export const MATCHMAKER_FEE = 60;
+export function canArrange(s: GameState): boolean {
+  const p = s.player; return !p.dead && !p.married && p.age >= 18 && p.money >= MATCHMAKER_FEE;
+}
+// Görücü usulü evlenilebilecek adaylar: karşı cinsiyet, 18–59, bulunduğun diyardan.
+export function arrangedSuitors(s: GameState, lang: Lang = "tr"): NPC[] {
+  const p = s.player; if (p.married || p.age < 18) return [];
+  return npcsOf(s, lang).filter((n) => n.gender !== p.gender && n.age >= 18 && n.age < 60);
+}
+// Görücü usulü talip ol: ücret peşin; kabul karizma + şöhrete bağlı (yakınlık şartı YOK).
+export function proposeArranged(prev: GameState, npc: NPC): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.married || p.age < 18 || npc.gender === p.gender || npc.age < 18) return s;
+  if (p.money < MATCHMAKER_FEE) { push(s, "sohbet", `Çöpçatana verecek akçen yok.`, "kişisel", false, { k: "evj.matchNoFee" }); return s; }
+  p.money -= MATCHMAKER_FEE;
+  const ok = Math.random() < Math.min(0.92, 0.42 + socialPresence(p) * 0.04 + p.fame / 320 + (hasPerk(p, "karizmatik") ? 0.15 : 0));
+  if (ok) {
+    p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.reputation = Math.min(100, p.reputation + 5);
+    push(s, "evlilik", `${npc.name} ile görücü usulü evlendin — iki aile görüştü, yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
+  } else {
+    push(s, "sohbet", `${npc.name}'in ailesi teklifi şimdilik geri çevirdi; çöpçatan başka kapı çalacak.`, "kişisel", false, { k: "evj.proposeNo", p: [npc.name] });
+  }
+  return s;
+}
+
 // ── Ek NPC etkileşim eylemleri (Vercel npc_interactions.py portu): hakaret / flört / dedikodu / para ──
 export function insultNpc(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; if (p.dead || p.age < 13) return s;

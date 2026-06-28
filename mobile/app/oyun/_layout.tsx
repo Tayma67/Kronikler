@@ -140,6 +140,7 @@ export default function OyunLayout() {
         <Tabs.Screen name="ayarlar" options={{ href: null }} />
         <Tabs.Screen name="roman" options={{ href: null }} />
         <Tabs.Screen name="npc/[id]" options={{ href: null }} />
+        <Tabs.Screen name="copcatan" options={{ href: null }} />
       </Tabs>
       <GlobalBackdrop bottom={60 + insets.bottom} />
       <NavOrnament bottom={60 + insets.bottom} />
