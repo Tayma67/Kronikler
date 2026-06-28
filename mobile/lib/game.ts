@@ -67,6 +67,7 @@ export interface Player {
   craft_turn?: number; // bu ay zanaat işlendi mi (tur başına tek — beceri/kalite-satış farmı önlenir)
   last_travel_turn?: number; // bu ay yol olayı tetiklendi mi (tur başına tek — git-gel beceri/eşya farmı önlenir)
   gov_action_turn?: number; // bu ay valilik tedbiri (meşruiyet/hazine) yapıldı mı (tur başına tek)
+  opp_turn?: number; // bu ay fırsat çözüldü mü (tur başına tek — çoklu fırsat gelir farmı önlenir)
   courtRank?: number; // saray/divan rütbesi (0..4 = Kâtip..Sadrazam; tanımsız = sarayda değil)
   courtXp?: number; // saray hizmet puanı (terfi eşiği)
   courtFavor?: number; // hükümdar nezdinde itibar (0-100); düşerse azil
@@ -2914,6 +2915,9 @@ export interface Opportunity { id: string; key: string; title: string; desc: str
 export function resolveOpportunity(prev: GameState, opp: Opportunity, forced?: boolean): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead) return s;
+  // Tur başına tek fırsat çözümü (diğer gelir eylemleriyle tutarlı; çoklu-çözüm farmı kapatılır).
+  if (p.opp_turn === s.turn) return s;
+  p.opp_turn = s.turn;
   const success = forced !== undefined ? forced : Math.random() > opp.risk - p.stats[opp.stat] * 0.03;
   p.hunger = Math.max(0, p.hunger - 5);
   if (success) {
