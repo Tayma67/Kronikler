@@ -65,6 +65,7 @@ export interface Player {
   war_support_turn?: number; // bu ay cepheye destek verildi mi (tur başına tek)
   favor_turn?: number; // bu ay pîşkeş/iltifat yapıldı mı (tur başına tek)
   craft_turn?: number; // bu ay zanaat işlendi mi (tur başına tek — beceri/kalite-satış farmı önlenir)
+  battle_turn?: number; // bu ay taktik savaşa/düelloya girildi mi (tur başına tek — para/beceri/itibar farmı önlenir; work/war ile aynı desen)
   last_travel_turn?: number; // bu ay yol olayı tetiklendi mi (tur başına tek — git-gel beceri/eşya farmı önlenir)
   gov_action_turn?: number; // bu ay valilik tedbiri (meşruiyet/hazine) yapıldı mı (tur başına tek)
   opp_turn?: number; // bu ay fırsat çözüldü mü (tur başına tek — çoklu fırsat gelir farmı önlenir)
@@ -2832,6 +2833,11 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   const success = Math.random() < ct.base + p.stats.charisma * 0.01 + golgeBonus + hasariBonus + crimeSuccessMod(s);
   gainSkill(s, "social", 4);
   if (success) {
+    // Marifetli kaçış bile tümüyle risksiz değil: ağır suç + korkulan/çok tanınan ad daha çok dikkat çeker.
+    // Böylece korku/zalim hem başarıyı hem yakalanma ihtimalini artırır — suç "risksiz kazanç" olmaktan çıkar (dread iki tarafı da keser).
+    const golgeGizli = p.faction === "golge" ? 0.5 : 1; // Gölge Kardeşliği iz bırakmaz — sıcaklık yarıya düşer
+    const heat = Math.min(0.5, (ct.sev * 0.05 + dread(s) / 100 * 0.15) * golgeGizli);
+    if (Math.random() < heat) { s.pendingScene = { kind: "crime", ctx: { crime: kind } }; return s; } // ganimeti güvene almadan enselendin — kaçış sahnesine düş
     const loot = ct.lootMin + Math.floor(Math.random() * (ct.lootMax - ct.lootMin + 1));
     // Büyük soygunlarda ganimetin bir kısmı SICAK MAL: nakde çevrilmesi (eritme) riskli.
     const hot = ct.sev >= 3 ? Math.round(loot * 0.45) : 0;
@@ -2930,7 +2936,7 @@ export function resolveOpportunity(prev: GameState, opp: Opportunity, forced?: b
   // Tur başına tek fırsat çözümü (diğer gelir eylemleriyle tutarlı; çoklu-çözüm farmı kapatılır).
   if (p.opp_turn === s.turn) return s;
   p.opp_turn = s.turn;
-  const success = forced !== undefined ? forced : Math.random() > opp.risk - p.stats[opp.stat] * 0.03;
+  const success = forced !== undefined ? forced : Math.random() < Math.min(0.9, Math.max(0.1, (1 - opp.risk) + effStat(p, opp.stat) * 0.03)); // yedek yol (forced verilmezse): olasılık 0.1–0.9 kıskaçlı + effStat — hep-kazan/hep-kaybet kapatıldı
   p.hunger = Math.max(0, p.hunger - 5);
   if (success) {
     let reward = opp.reward;
@@ -3521,6 +3527,7 @@ function maybeInjure(s: GameState, heavy: boolean) {
 export function applyBattleOutcome(prev: GameState, id: string, won: boolean, finalHp: number): GameState {
   const s = clone(prev); const p = s.player; const e = ENCOUNTERS.find((x) => x.id === id);
   if (!e) return s;
+  p.battle_turn = s.turn; // bu ay dövüşüldü — kazanç da kayıp da turu tüketir (yenilip tekrar deneyip farmlanamaz)
   gainSkill(s, "combat", won ? 14 : 7);
   if (won) {
     let reward = e.reward;
@@ -3554,6 +3561,7 @@ export function nemesisEncounter(s: GameState): Encounter | null {
 }
 export function applyNemesisOutcome(prev: GameState, won: boolean, finalHp: number): GameState {
   const s = clone(prev); const p = s.player; const n = s.story?.nemesis; if (!n) return s;
+  p.battle_turn = s.turn; // nemesis hesaplaşması da tur başına tek dövüş kapısına dahil
   gainSkill(s, "combat", won ? 16 : 8);
   if (won) {
     p.money += 90; p.fame = Math.min(100, p.fame + 16); p.honor = Math.min(100, p.honor + 8);

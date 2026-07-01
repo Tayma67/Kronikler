@@ -50,7 +50,8 @@ export default function Savas() {
   const p = state.player;
   const pw = combatPower(p);
   const tooWeak = p.health < 15; // ağır yaralıyken dövüşe girilemez (1 canla 20 canlıymış gibi savaşma tutarsızlığı)
-  const canFight = p.age >= 13 && !p.dead && !tooWeak;
+  const foughtThisMonth = p.battle_turn === state.turn; // bu ay bir kez dövüşüldü — para/beceri/itibar farmı önlenir (work/war ile aynı kapı)
+  const canFight = p.age >= 13 && !p.dead && !tooWeak && !foughtThisMonth;
 
   const nemEnc = nemesisEncounter(state);
   const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); setBs(startBattle(p, { ...e, title: gt("enc." + e.id + ".t", e.title) })); setApplied(false); setFloats([]); };
@@ -191,6 +192,12 @@ export default function Savas() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(168,52,52,0.1)", borderWidth: 1, borderColor: "rgba(168,52,52,0.45)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
             <GameIcon name="saglik" size={15} color={C.blood} />
             <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, lineHeight: 17 }}>{t("cb.tooWeak")}</Text>
+          </View>
+        )}
+        {foughtThisMonth && !tooWeak && !p.dead && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(168,52,52,0.1)", borderWidth: 1, borderColor: "rgba(168,52,52,0.45)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+            <GameIcon name="savas" size={15} color={C.blood} />
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, lineHeight: 17 }}>{t("cb.foughtMonth")}</Text>
           </View>
         )}
         {nemEnc && (
