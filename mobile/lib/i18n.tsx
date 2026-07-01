@@ -65,12 +65,12 @@ const RELPG: Record<Lang, Dict> = {
 };
 // NPC detay (Vercel hizası).
 const NPCPG: Record<Lang, Dict> = {
-  tr: { "npc.interaction":"ETKİLEŞİM", "npc.mind":"Onun Zihninde", "npc.quick":"Mizaç" },
-  en: { "npc.interaction":"INTERACTION", "npc.mind":"In Their Mind", "npc.quick":"Temperament" },
-  es: { "npc.interaction":"INTERACCIÓN", "npc.mind":"En su mente", "npc.quick":"Carácter" },
-  pt: { "npc.interaction":"INTERAÇÃO", "npc.mind":"Na mente dele", "npc.quick":"Índole" },
-  ar: { "npc.interaction":"تفاعل", "npc.mind":"في ذهنه", "npc.quick":"المزاج" },
-  ru: { "npc.interaction":"ВЗАИМОДЕЙСТВИЕ", "npc.mind":"В его памяти", "npc.quick":"Нрав" },
+  tr: { "npc.interaction":"ETKİLEŞİM","npc.mingled":"Bu ay bu kişiyle görüştün; yeniden konuşmak için ayı ilerlet.", "npc.mind":"Onun Zihninde", "npc.quick":"Mizaç" },
+  en: { "npc.interaction":"INTERACTION","npc.mingled":"You've mingled with this person this month; advance the month to speak again.", "npc.mind":"In Their Mind", "npc.quick":"Temperament" },
+  es: { "npc.interaction":"INTERACCIÓN","npc.mingled":"Ya te relacionaste con esta persona este mes; avanza el mes para hablar de nuevo.", "npc.mind":"En su mente", "npc.quick":"Carácter" },
+  pt: { "npc.interaction":"INTERAÇÃO","npc.mingled":"Já conviveste com esta pessoa este mês; avança o mês para falar de novo.", "npc.mind":"Na mente dele", "npc.quick":"Índole" },
+  ar: { "npc.interaction":"تفاعل","npc.mingled":"التقيت بهذا الشخص هذا الشهر؛ تقدّم بالشهر لتتحدّث ثانيةً.", "npc.mind":"في ذهنه", "npc.quick":"المزاج" },
+  ru: { "npc.interaction":"ВЗАИМОДЕЙСТВИЕ","npc.mingled":"Ты уже общался с этим человеком в этом месяце; перейди к следующему, чтобы поговорить снова.", "npc.mind":"В его памяти", "npc.quick":"Нрав" },
 };
 const PAZPG: Record<Lang, Dict> = {
   tr: { "paz.marketSuffix":"Pazarı" },

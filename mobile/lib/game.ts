@@ -433,7 +433,7 @@ export function joinThreshold(p: Player, f: Faction): number { return p.perks.in
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; }
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; }
-export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; }
+export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; } // int_turn: bu kişiyle bu ay anlamlı bir etkileşim (sohbet/flört/hediye/hakaret/dedikodu) yapıldı mı — tur başına tek, ilişki/beceri farmı önlenir
 // İlişkinin etkin değeri: kalıcı taban + yapısal anıların toplam yükü (Vercel effective_rel).
 export function relWith(s: GameState, id: string): number {
   return effectiveRel(s.relationships[id] || 0, s.npc_state?.[id]?.anilar);
@@ -2172,6 +2172,8 @@ export function negotiatedSell(prev: GameState, id: string, price: number): Game
 export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string = "tr"): { state: GameState; line: string } {
   const s = clone(prev); const p = s.player;
   const ns = npcStateOf(s, npc.id);
+  if (ns.int_turn === s.turn) return { state: s, line: "" }; // bu ay bu kişiyle görüşüldü — aynı turda tekrar konuşup ilişki/sosyal beceri farmlanamaz
+  ns.int_turn = s.turn;
   const rel = s.relationships[npc.id] || 0;
   // NPC, sohbette etkin ilişkiye (taban + anılar) göre davranır — hatırladıkları konuşmasına yansır.
   const r: ConvResult = converse(npc, ns.mood, effectiveRel(rel, ns.anilar), socialPresence(p), intent, lang as any);
@@ -2202,9 +2204,10 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
 export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!(p.inventory[itemId] > 0)) return s;
+  const ns = npcStateOf(s, npc.id);
+  if (ns.int_turn === s.turn) return s; ns.int_turn = s.turn; // tur başına tek etkileşim — ucuz eşya yığınıyla ilişki farmlanamaz (mal da tüketilmez)
   if (QUALITY_GOODS.has(itemId)) takeQualityUnit(p, itemId); // hediye verilen kaliteli mal inv_q'da öksüz kalmasın
   p.inventory[itemId] -= 1; if (p.inventory[itemId] <= 0) delete p.inventory[itemId];
-  const ns = npcStateOf(s, npc.id);
   const generous = npc.trait === "cömert" ? 4 : 0;
   s.relationships[npc.id] = Math.min(100, (s.relationships[npc.id] || 0) + 12 + generous);
   ns.mood = Math.max(-100, Math.min(100, ns.mood + 14));
@@ -2324,6 +2327,7 @@ export function proposeArranged(prev: GameState, npc: NPC): GameState {
 export function insultNpc(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; if (p.dead || p.age < 13) return s;
   const ns = npcStateOf(s, npc.id); const rel = s.relationships[npc.id] || 0;
+  if (ns.int_turn === s.turn) return s; ns.int_turn = s.turn; // tur başına tek etkileşim
   let drop = 8 + Math.floor(Math.random() * 8);
   if (npc.trait === "öfkeli") { drop += 5; p.fear = Math.min(100, p.fear + 2); } // öfkeli sert karşılık verir
   s.relationships[npc.id] = Math.max(-100, rel - drop);
@@ -2342,6 +2346,7 @@ export function flirtWith(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; const rel = s.relationships[npc.id] || 0;
   if (!canFlirt(p, npc, rel)) return s;
   const ns = npcStateOf(s, npc.id);
+  if (ns.int_turn === s.turn) return s; ns.int_turn = s.turn; // tur başına tek etkileşim — flört spam'iyle ilişki +100'e çıkarılamaz
   const ok = Math.random() < Math.min(0.9, 0.35 + (rel - 15) * 0.01 + socialPresence(p) * 0.04 + allureBonus(s));
   if (ok) {
     const up = 6 + Math.floor(Math.random() * 8);
@@ -2357,6 +2362,7 @@ export function flirtWith(prev: GameState, npc: NPC): GameState {
 export function gossipAbout(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; if (p.dead || p.age < 13) return s;
   const ns = npcStateOf(s, npc.id); const rel = s.relationships[npc.id] || 0;
+  if (ns.int_turn === s.turn) return s; ns.int_turn = s.turn; // tur başına tek etkileşim
   const ok = Math.random() < Math.min(0.85, 0.4 + (p.skills?.social || 0) * 0.05 + p.stats.charisma * 0.02);
   if (ok) {
     s.relationships[npc.id] = Math.max(-100, rel - 4); ns.mood = Math.max(-100, ns.mood - 4); bumpNam(p, "zalim", 2);
@@ -4305,7 +4311,7 @@ export function worksBonus(p: Player, loc: string): number { return worksOf(p, l
 
 // Valilik döngüsü (her tur, yalnız vali ise): vergi → hazine, vergi → memnuniyet, memnuniyet+rep → meşruiyet; düşerse isyan/azil.
 function governorTick(s: GameState) {
-  const p = s.player; const list = p.governorships; if (!list?.length) return;
+  const p = s.player; if (p.dead) return; const list = p.governorships; if (!list?.length) return; // öldüğün ay valilik/azil olayı çıkmasın (crownTick/courtTick ile tutarlı)
   if (!p.govLeg) p.govLeg = {}; if (!p.govHappy) p.govHappy = {}; if (!p.govTreasury) p.govTreasury = {};
   for (const loc of [...list]) {
     const tax = govTaxOf(p, loc);
