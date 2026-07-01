@@ -2068,6 +2068,9 @@ export function eat(prev: GameState): GameState {
 export function useItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const it = ITEMS[id];
   if (!it || !(p.inventory[id] > 0)) return s;
+  // Etkisi zaten dolu olan eşyayı harcama (tokken ekmek / tam canken iksir → boşa gitmesin).
+  const wouldHelp = (!!it.feed && p.hunger < 100) || (!!it.heal && p.health < 100);
+  if (!wouldHelp) return s;
   if (QUALITY_GOODS.has(id)) takeQualityUnit(p, id); // kalite kademesini de düş — öksüz inv_q sızıntısı/exploit önlenir
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
   if (it.feed) p.hunger = Math.min(100, p.hunger + it.feed);

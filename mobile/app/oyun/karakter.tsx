@@ -489,6 +489,7 @@ export default function Karakter() {
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                   {inv.map((k) => {
                     const it = ITEMS[k]; const usable = it && (it.feed || it.heal); const equipable = it && ["silah", "kalkan", "zirh", "baslik", "eldiven", "ayakkabi", "kiyafet"].includes(it.kind);
+                    const useHelps = !!it && ((!!it.feed && p.hunger < 100) || (!!it.heal && p.health < 100)); // doluyken kullan butonu pasif
                     return (
                       <View key={k} style={{ width: "48%", backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 10, gap: 8 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
@@ -506,7 +507,7 @@ export default function Karakter() {
                           </Pressable>
                         )}
                         {usable && (
-                          <Pressable onPress={() => { hap("tap"); apply((s) => useItem(s, k)); }} style={{ alignItems: "center", paddingVertical: 6, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: GBG }}>
+                          <Pressable disabled={!useHelps} onPress={() => { hap("tap"); apply((s) => useItem(s, k)); }} style={{ alignItems: "center", paddingVertical: 6, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: GBG, opacity: useHelps ? 1 : 0.45 }}>
                             <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{t("misc.use")}</Text>
                           </Pressable>
                         )}

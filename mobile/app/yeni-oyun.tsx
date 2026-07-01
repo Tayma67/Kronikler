@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, ImageBackground, ActivityIndicator, ScrollView } from "react-native";
+import { View, Text, TextInput, Pressable, ImageBackground, ActivityIndicator, ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useGame } from "../lib/store";
 import { useI18n } from "../lib/i18n";
@@ -8,7 +8,7 @@ import { C, F } from "../lib/theme";
 
 export default function YeniOyun() {
   const router = useRouter();
-  const { startGame, apply } = useGame();
+  const { startGame, apply, state } = useGame();
   const { t } = useI18n();
   const [fullName, setFullName] = useState("");
   const [gender, setGender] = useState<"erkek" | "kadın" | "">("");
@@ -19,17 +19,10 @@ export default function YeniOyun() {
   const [cinematic, setCinematic] = useState<string[] | null>(null);
   const [beat, setBeat] = useState(0);
 
-  const start = async () => {
-    setError("");
-    const parts = fullName.trim().split(/\s+/).filter(Boolean);
-    const first = parts[0] || "";
-    const surname = parts.slice(1).join(" ");
-    if (first.length < 2) { setError(t("new.errName")); return; }
-    if (!gender) { setError(t("new.errGender")); return; }
-    if (!temp) { setError(t("new.errTemp")); return; }
+  const runStart = async (first: string, surname: string, g: "erkek" | "kadın") => {
     setBusy(true);
     try {
-      await startGame(first, surname, gender);
+      await startGame(first, surname, g);
       apply((s) => applyTemperament(s, temp));
       const cocuk = gender === "kadın" ? t("ng.childGirl") : t("ng.childBoy");
       setCinematic([
@@ -39,6 +32,25 @@ export default function YeniOyun() {
       ]);
       setBeat(0);
     } finally { setBusy(false); }
+  };
+
+  const start = () => {
+    setError("");
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    const first = parts[0] || "";
+    const surname = parts.slice(1).join(" ");
+    if (first.length < 2) { setError(t("new.errName")); return; }
+    if (!gender) { setError(t("new.errGender")); return; }
+    if (!temp) { setError(t("new.errTemp")); return; }
+    // Mevcut (yaşayan) kayıt varsa üzerine yazmadan önce onayla — kaza ile silinmesin.
+    if (state && !state.player.dead) {
+      Alert.alert(t("new.owTitle"), t("new.owBody"), [
+        { text: t("new.owCancel"), style: "cancel" },
+        { text: t("new.owConfirm"), style: "destructive", onPress: () => runStart(first, surname, gender as "erkek" | "kadın") },
+      ]);
+      return;
+    }
+    runStart(first, surname, gender as "erkek" | "kadın");
   };
 
   const nextBeat = () => {
