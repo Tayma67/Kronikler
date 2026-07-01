@@ -2503,7 +2503,7 @@ export function changeProfession(prev: GameState, prof: string): GameState {
 // Özellik puanı harca.
 export function allocateStat(prev: GameState, key: keyof Stats): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.stat_points <= 0) return s;
+  if (p.stat_points <= 0 || p.stats[key] >= 10) return s; // tavan 10 (addStatXp ile aynı sınır) — elle dağıtım da 10'u aşamaz
   p.stat_points -= 1; p.stats[key] += 1;
   return s;
 }
@@ -2585,6 +2585,7 @@ export function joinClub(prev: GameState, id: string | null): GameState {
 export function studySubject(prev: GameState, id: string): StudyResult {
   const s = clone(prev); const p = s.player;
   if (p.dead) return { state: s, key: "", chips: [] };
+  if (p.age < 7 || p.age >= 18) return { state: s, key: "", chips: [], blocked: true }; // mektep yalnız okul çağında (7-17) — yetişkin bedava puan/sınav farmlayamaz (joinClub/clubPractice ile aynı kapı)
   if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true }; // çalışma gücü yetmiyor
   p.study_energy = studyEnergy(s) - STUDY_COST;
   p.lesson_count = (p.lesson_count || 0) + 1;

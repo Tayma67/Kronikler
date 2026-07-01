@@ -96,7 +96,8 @@ export default function Mektep() {
           </ImageBackground>
         </View>
 
-        {/* Çalışma gücü (enerji) — bu ay kalan ders/meşk hakkı */}
+        {/* Çalışma gücü (enerji) — bu ay kalan ders/meşk hakkı (yalnız okul çağı) */}
+        {p.age < 18 && (
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.28)", borderRadius: 11, paddingVertical: 10, paddingHorizontal: 13, marginBottom: 13 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
             <GameIcon name="ilerle" size={15} color={C.gold} />
@@ -110,6 +111,7 @@ export default function Mektep() {
           </View>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 6, lineHeight: 15 }}>{t("mek.energyHint")}</Text>
         </View>
+        )}
 
         {/* Dağıtılmamış puan CTA */}
         {p.stat_points > 0 && (
@@ -138,7 +140,8 @@ export default function Mektep() {
           </Animated.View>
         )}
 
-        {/* Bu Ay Dersleri — dairesel amblemler */}
+        {/* Bu Ay Dersleri — dairesel amblemler (yalnız okul çağı 7-17; yetişkin çalışamaz) */}
+        {p.age < 18 && (<>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 11 }}>
           <View style={{ width: 7, height: 7, backgroundColor: C.gold, transform: [{ rotate: "45deg" }] }} />
           <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 2, color: C.gold, textTransform: "uppercase" }}>{t("mek.lessonsHead")}</Text>
@@ -163,6 +166,7 @@ export default function Mektep() {
         <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8, marginBottom: 4 }}>
           {done ? t("mek.doneMonth") : applyParams(t("mek.exam"), [toExam])}
         </Text>
+        </>)}
 
         {/* Öğrenci toplulukları (okul çağı) */}
         {p.age < 18 && (
@@ -201,7 +205,8 @@ export default function Mektep() {
           </>
         )}
 
-        {/* Hocan — bağ */}
+        {/* Hocan — bağ (yalnız okul çağı) */}
+        {p.age < 18 && (<>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginTop: 13, marginBottom: 11 }}>
           <View style={{ width: 7, height: 7, backgroundColor: C.gold, transform: [{ rotate: "45deg" }] }} />
           <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 2, color: C.gold, textTransform: "uppercase" }}>{t("mek.teacher")}</Text>
@@ -222,6 +227,7 @@ export default function Mektep() {
           </View>
           <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{bondCycle}/12</Text>
         </View>
+        </>)}
 
       </ScrollView>
     </View>
