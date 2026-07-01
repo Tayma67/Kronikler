@@ -1651,6 +1651,9 @@ export function declineDynastyOffer(prev: GameState, offerId: string): GameState
   return s;
 }
 function tickWars(s: GameState, announce: boolean) {
+  // Çok oyuncuda ocak savaşları SUNUCUDA yürür → yerel jenerik savaş + cephe ödülleri bastırılır
+  // (tickFactions ile tutarlı; "paralel gerçeklik" cephesi açılmasın).
+  if (s.mpRealm) { s.wars = []; return; }
   if (!s.wars) s.wars = [];
   // Yeni jenerik savaş (ödülsüz arka plan; en fazla bağımsız 1 tane, %6 şans) — KARAKTERE UYGUN
   if (s.wars.filter((w) => !w.prize).length === 0 && Math.random() < 0.06) {
@@ -2740,7 +2743,7 @@ function shapeChildhood(s: GameState) {
   };
   if (cf && (cf.feud || 0) >= 2 && cf.bond < 50) { // dargınlık büyüdü → çocukluk rakibi (nemesis'e giden yol)
     bornFriend();
-    s.relationships[cf.id] = Math.min(s.relationships[cf.id] ?? 0, -45);
+    s.relationships[cf.id] = Math.min(s.relationships[cf.id] ?? 0, -60); // nemesis eşiğinin (−55) altına in — "nemesis'e giden yol" gerçekten işlesin
     push(s, "cocukluk", "Çocukluk yoldaşınla aranıza kan girdi; o artık bir rakip — yolunuz hep kesişecek.", "kişisel", true, { k: "child.friend.rival", p: [{ fn: [cf.seed, cf.gender] }] });
   } else if (cf && cf.bond >= 40) {
     bornFriend();
@@ -2784,9 +2787,14 @@ export function elderAction(prev: GameState, kind: ElderAct): StudyResult {
     push(s, "ihtiyarlik", "Gençlere ve torunlara akıl verdin; sözün hürmetle dinlendi.", "kişisel", false, { k: "elder.nasihat" });
   } else if (kind === "hayir") {
     const cost = Math.min(p.money, 12 + Math.floor(Math.random() * 10));
-    p.money -= cost; p.reputation = Math.min(100, p.reputation + 2); p.honor = Math.min(100, p.honor + 1); bumpNam(p, "comert", 5);
-    chips.push({ label: `−${cost} akçe`, col: "#C0556B" }, { label: "İtibar +2", col: "#7FA66A" }, { label: "Cömert +5", col: "#7FA66A" }); key = "elder.hayir";
-    push(s, "ihtiyarlik", `Yoksula sadaka, yolcuya aş dağıttın (−${cost} akçe); hayır duası aldın.`, "kişisel", false, { k: "elder.hayir", p: [cost] });
+    if (cost <= 0) { // verecek akçe yoksa itibar/comert kazanılmaz (bedava "−0 akçe" hayır saçmalığı önlenir)
+      chips.push({ label: "Akçe yok", col: "#C0556B" }); key = "evj.noAlms";
+      push(s, "ihtiyarlik", `Hayır dağıtmak istedin ama kesen boştu.`, "kişisel", false, { k: "evj.noAlms" });
+    } else {
+      p.money -= cost; p.reputation = Math.min(100, p.reputation + 2); p.honor = Math.min(100, p.honor + 1); bumpNam(p, "comert", 5);
+      chips.push({ label: `−${cost} akçe`, col: "#C0556B" }, { label: "İtibar +2", col: "#7FA66A" }, { label: "Cömert +5", col: "#7FA66A" }); key = "elder.hayir";
+      push(s, "ihtiyarlik", `Yoksula sadaka, yolcuya aş dağıttın (−${cost} akçe); hayır duası aldın.`, "kişisel", false, { k: "elder.hayir", p: [cost] });
+    }
   } else if (kind === "dinlen") {
     p.health = Math.min(100, p.health + 8); p.hunger = Math.min(100, p.hunger + 5);
     chips.push({ label: "Sağlık +8", col: "#7FA66A" }); key = "elder.dinlen";

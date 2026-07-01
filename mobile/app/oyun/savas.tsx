@@ -49,7 +49,8 @@ export default function Savas() {
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const pw = combatPower(p);
-  const canFight = p.age >= 13 && !p.dead;
+  const tooWeak = p.health < 15; // ağır yaralıyken dövüşe girilemez (1 canla 20 canlıymış gibi savaşma tutarsızlığı)
+  const canFight = p.age >= 13 && !p.dead && !tooWeak;
 
   const nemEnc = nemesisEncounter(state);
   const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); setBs(startBattle(p, { ...e, title: gt("enc." + e.id + ".t", e.title) })); setApplied(false); setFloats([]); };
@@ -186,6 +187,12 @@ export default function Savas() {
       </Text>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
         <PageHeader kicker={t("scr.savas")} title={t("scr.savas")} />
+        {tooWeak && !p.dead && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(168,52,52,0.1)", borderWidth: 1, borderColor: "rgba(168,52,52,0.45)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+            <GameIcon name="saglik" size={15} color={C.blood} />
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, lineHeight: 17 }}>{t("cb.tooWeak")}</Text>
+          </View>
+        )}
         {nemEnc && (
           <View style={{ backgroundColor: "rgba(120,20,20,0.15)", borderWidth: 1, borderColor: "rgba(200,60,60,0.6)", borderRadius: 10, padding: 14, marginBottom: 12 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>

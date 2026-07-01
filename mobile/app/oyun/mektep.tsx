@@ -32,7 +32,7 @@ export default function Mektep() {
   const done = studiedThisTurn(state);
   const toExam = lessonsToExam(p);
   const bond = p.teacherBond || 0;
-  const bondCycle = bond % 8;
+  const bondCycle = bond % 12; // ödül bond%12===0'da geliyor (studySubject) — ibre onunla aynı olmalı
   // Mektebin hocası — bulunduğun yere göre deterministik (isimli gerçek hoca).
   const teacherName = `${t("mek.teacherTitle")} ${localFirstName(locSeed(p.location_name) + 7, "erkek", lang)}`;
 
@@ -215,12 +215,12 @@ export default function Mektep() {
             <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{teacherName}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 1 }}>{t("mek.bondNote")}</Text>
             <View style={{ flexDirection: "row", gap: 3, marginTop: 7 }}>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <View key={i} style={{ width: 15, height: 6, borderRadius: 2, backgroundColor: i < bondCycle ? C.gold : "rgba(255,255,255,0.10)" }} />
+              {Array.from({ length: 12 }).map((_, i) => (
+                <View key={i} style={{ width: 9, height: 6, borderRadius: 2, backgroundColor: i < bondCycle ? C.gold : "rgba(255,255,255,0.10)" }} />
               ))}
             </View>
           </View>
-          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{bondCycle}/8</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{bondCycle}/12</Text>
         </View>
 
       </ScrollView>
