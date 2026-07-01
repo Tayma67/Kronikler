@@ -96,14 +96,15 @@ export default function MpOyun() {
   const myPower = me?.power ?? 0;
   const myBeylikId = me?.beylikId ?? null;
   // Gerçekçi meşruiyet: bey = reşit + güç + hazine; taht = SP eşikleri; sefer = hazine.
-  const beyEligible = p.age >= BEY_MIN_AGE && myPower >= BEY_MIN_POWER && p.money >= BEY_COST;
-  const throneEligible = p.age >= THRONE_MIN_AGE && myPower >= THRONE_MIN_POWER && p.fame >= THRONE_MIN_FAME && p.money >= THRONE_COST;
-  const canCampaign = p.money >= MP_CAMPAIGN_COST;
+  // Ölü oyuncu eylem yapamaz/harcayamaz (önce vârisle devam etmeli) — "ceset gibi oynama" tutarsızlığı önlenir.
+  const beyEligible = !p.dead && p.age >= BEY_MIN_AGE && myPower >= BEY_MIN_POWER && p.money >= BEY_COST;
+  const throneEligible = !p.dead && p.age >= THRONE_MIN_AGE && myPower >= THRONE_MIN_POWER && p.fame >= THRONE_MIN_FAME && p.money >= THRONE_COST;
+  const canCampaign = !p.dead && p.money >= MP_CAMPAIGN_COST;
   const iAmBey = snapshot.beyliks.some((b) => b.beyId === guestId);
   const intent = (i: SharedIntent) => { hap("tap"); sendIntent(i); };
   // Paylaşımlı siyasi eylemin kişisel maliyetini (altın) yerelde kes — sunucu çekişmeyi çözer.
   const spend = (cost: number) => apply((prev) => { const ns: GameState = JSON.parse(JSON.stringify(prev)); ns.player.money = Math.max(0, ns.player.money - cost); return ns; });
-  const doReady = () => { hap("tap"); const v = !ready; setReadyLocal(v); setReady(v); if (guestId) syncPlayer(mePublic(guestId, s, v)); };
+  const doReady = () => { if (p.dead) return; hap("tap"); const v = !ready; setReadyLocal(v); setReady(v); if (guestId) syncPlayer(mePublic(guestId, s, v)); };
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
@@ -309,7 +310,7 @@ export default function MpOyun() {
         <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>
           {snapshot.phase === "ticking" ? t("mp.ticking") : pf(t("mp.readyCount"), readyCount, liveCount)}
         </Text>
-        <Pressable onPress={doReady} style={{ paddingVertical: 13, paddingHorizontal: 26, borderRadius: 9, borderWidth: 1, borderColor: ready ? "rgba(127,166,106,0.7)" : "rgba(201,168,76,0.6)", backgroundColor: ready ? "rgba(127,166,106,0.16)" : C.gold }}>
+        <Pressable disabled={p.dead} onPress={doReady} style={{ paddingVertical: 13, paddingHorizontal: 26, borderRadius: 9, borderWidth: 1, borderColor: ready ? "rgba(127,166,106,0.7)" : "rgba(201,168,76,0.6)", backgroundColor: ready ? "rgba(127,166,106,0.16)" : C.gold, opacity: p.dead ? 0.4 : 1 }}>
           <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: ready ? C.sage : "#2a1d08" }}>{ready ? t("mp.ready") + " ✓" : t("mp.ready")}</Text>
         </Pressable>
       </View>

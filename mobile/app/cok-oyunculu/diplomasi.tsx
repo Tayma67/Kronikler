@@ -45,7 +45,7 @@ export default function Diplomasi() {
 
   // Paylaşımlı eylemin altın bedelini yerelde kes (sunucu riski/çekişmeyi çözer).
   const spend = (cost: number) => apply((prev) => { const ns: GameState = JSON.parse(JSON.stringify(prev)); ns.player.money = Math.max(0, ns.player.money - cost); return ns; });
-  const act = (i: SharedIntent, cost = 0) => { if (cost > money) return; if (cost) spend(cost); hap("tap"); sendIntent(i); };
+  const act = (i: SharedIntent, cost = 0) => { if (p.dead) return; if (cost > money) return; if (cost) spend(cost); hap("tap"); sendIntent(i); };
 
   const honorTag = (h: number) => h <= -25 ? t("mp.soc.traitor") : h >= 40 ? t("mp.soc.honored") : null;
   const pactTag = (pact: Bond["pact"]) => pact === "alliance" ? t("mp.soc.pactAlly") : pact === "marriage" ? t("mp.soc.pactKin") : pact === "war" ? t("mp.soc.pactWar") : null;
@@ -123,7 +123,7 @@ export default function Diplomasi() {
                   {/* Rekabet */}
                   <Text style={cap}>{t("mp.soc.capRivalry")}</Text>
                   <View style={rowWrap}>
-                    <Btn label={t("mp.soc.duelBtn")} disabled={x.traveling} onPress={() => act({ k: "duel", to: x.id })} />
+                    <Btn label={t("mp.soc.duelBtn")} disabled={x.traveling || !x.online} onPress={() => act({ k: "duel", to: x.id })} />
                   </View>
 
                   {/* Yardım */}
