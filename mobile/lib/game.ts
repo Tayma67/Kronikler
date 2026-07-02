@@ -76,6 +76,7 @@ export interface Player {
   estate?: number; // aile konağı kademesi (0-6) — nesillere kalan görkem merdiveni (avlu→saray yavrusu)
   vakif_fon?: number; // vakıf fonuna ömür boyu akıtılan toplam (SINIRSIZ) — servetin anlama dönüşen tek sayacı
   vakif_turn?: number; // bu ay vakfa bağış yapıldı mı (tur başına tek — itibar damlası farmlanamaz)
+  exam_wins?: number; // geçilen sınav sayısı — ilk 3'ü serbest puan verir, sonrası tecrübeye döner (okul musluğu inceltildi)
   last_travel_turn?: number; // bu ay yol olayı tetiklendi mi (tur başına tek — git-gel beceri/eşya farmı önlenir)
   gov_action_turn?: number; // bu ay valilik tedbiri (meşruiyet/hazine) yapıldı mı (tur başına tek)
   opp_turn?: number; // bu ay fırsat çözüldü mü (tur başına tek — çoklu fırsat gelir farmı önlenir)
@@ -1108,7 +1109,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.age >= 60 && fate("60")) { const w = whoAmIId(); push(s, "kader", `Altmışını devirdin. Saçlar ağardı, geçmişin gölgesi uzadı. Ömrün akşamında ${WHOAMI_TR[w]} olarak anılıyorsun — geriye ne bırakacaksın?`, "kişisel", true, { k: "evj.fate60", p: [{ wai: w }] }); }
   if (p.age >= 70 && fate("70")) { const w = whoAmIId(); p.reputation = Math.min(100, p.reputation + 6); push(s, "kader", `Yetmişine vardın — az kimseye nasip olan bir ömür. Torunlar dizinin dibinde, diyar seni ${WHOAMI_TR[w]} olarak biliyor; yaşın sana hürmet getiriyor.`, "kişisel", true, { k: "evj.fate70", p: [{ wai: w }] }); }
   if (p.age >= 80 && fate("80")) { const w = whoAmIId(); p.fame = Math.min(100, p.fame + 8); push(s, "kader", `Sekseni devirdin. Çağın canlı tanığısın; senin gördüklerini gören kalmadı. Adın ${WHOAMI_TR[w]} olmanın ötesinde, bir efsane gibi anılıyor.`, "kişisel", true, { k: "evj.fate80", p: [{ wai: w }] }); }
-  if (p.age < 13 && chance(0.25)) { p.stat_points += 1; push(s, "cocukluk", "Yeni bir şeyler öğrendin (özellik puanı kazandın).", "kişisel", false, { k: "ev.cocukluk" }); }
+  if (p.age < 13 && chance(0.10)) { p.stat_points += 1; push(s, "cocukluk", "Yeni bir şeyler öğrendin (özellik puanı kazandın).", "kişisel", false, { k: "ev.cocukluk" }); } // %25→%10: mektep grinderi 18'inden önce dört statı da maxlayamasın (ihtiyaç ~34 puan, eski musluk 100+ veriyordu)
   // ── Çocukluk dönüm anıları: 8/10/12 yaşında bir kez tetiklenen, ize bırakan anlar (bazıları yoldaşı anar) ──
   if (p.age >= 8 && p.age < 13 && fate("child8")) {
     addStatXp(s, "intelligence", 8); p.health = Math.min(100, p.health + 4);
@@ -2665,23 +2666,27 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   const statBonus = chance(hasPerk(p, "mucit") ? 0.35 : 0.12); // mucit şansı ~3 katlar ama GARANTİLEMEZ (garanti = yılda 24 puan, ekonomi kırılıyordu)
   const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = [];
   let key = "";
+  const seasoned = (p.exam_wins || 0) >= 3; // yerleşik öğrenci: bundan sonra okul puan değil ustalık (statXp) verir — tavan ezilmez, okul değerli kalır
   p.teacherBond = (p.teacherBond || 0) + 1; // hoca bağı çalıştıkça güçlenir
-  if (p.teacherBond % 12 === 0) { p.stat_points += 1; chips.push({ label: "Hoca takdiri · Puan +1", col: "#E0BC5A", k: "chip.bond" }); push(s, "mektep", "Hocan emeğini gördü ve seni takdir etti (özellik puanı).", "kişisel", true, { k: "club.bond" }); }
+  if (p.teacherBond % 12 === 0) {
+    if (!seasoned) { p.stat_points += 1; chips.push({ label: "Hoca takdiri · Puan +1", col: "#E0BC5A", k: "chip.bond" }); push(s, "mektep", "Hocan emeğini gördü ve seni takdir etti (özellik puanı).", "kişisel", true, { k: "club.bond" }); }
+    else { addStatXp(s, "intelligence", 10); chips.push({ label: "Hoca takdiri · Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); }
+  }
   if (id === "din") {
     bumpNam(p, "dindar", 4); chips.push({ label: "Dindar +4", col: "#9C7BC4", k: "chip.dindar", p: ["+4"] });
     if (lucky) { p.honor = Math.min(100, p.honor + 2); chips.push({ label: "Şeref +2", col: "#7FA66A", k: "chip.honor", p: ["+2"] }); key = "ev.study.din.l"; push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu.", "kişisel", false, { k: key }); }
     else { key = "ev.study.din.p"; push(s, "mektep", "Mektepte dua ve hikmet dinledin.", "kişisel", false, { k: key }); }
   } else if (id === "matematik") {
     if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 5); } // al-sat XP: tur başına tek (buğday al-sat döngüsüyle beceri farmı kapatıldı); chips.push({ label: "Ticaret +5", col: "#C9A84C", k: "chip.trade", p: ["+5"] });
-    if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.matematik.l"; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
+    if (statBonus && !seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.matematik.l"; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
     else { addStatXp(s, "intelligence", 6); key = "ev.study.matematik.p"; push(s, "mektep", "Rakamlarla boğuştun.", "kişisel", false, { k: key }); }
   } else if (id === "edebiyat") {
     gainSkill(s, "social", 5); chips.push({ label: "Sosyal +5", col: "#C9A84C", k: "chip.social", p: ["+5"] });
-    if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.edebiyat.l"; push(s, "mektep", "Edebiyat çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
+    if (statBonus && !seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.edebiyat.l"; push(s, "mektep", "Edebiyat çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
     else { addStatXp(s, "charisma", 6); key = "ev.study.edebiyat.p"; push(s, "mektep", "Beyitler ezberledin.", "kişisel", false, { k: key }); }
   } else {
     gainSkill(s, "combat", 5); chips.push({ label: "Savaş +5", col: "#C9A84C", k: "chip.combat", p: ["+5"] });
-    if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.beden.l"; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
+    if (statBonus && !seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.beden.l"; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
     else { addStatXp(s, "strength", 6); key = "ev.study.beden.p"; push(s, "mektep", "Ter döktün, güçlendin.", "kişisel", false, { k: key }); }
   }
   // ── Ders-içi olay (Vercel school.py ders olayları): %40, stat testli; "cesur" sonuç anlatılır ──
@@ -2692,7 +2697,7 @@ export function studySubject(prev: GameState, id: string): StudyResult {
     if (ev.id === "kopya") { if (pass) { p.honor = Math.min(100, p.honor + 4); chips.push({ label: "Şeref +4", col: "#7FA66A", k: "chip.honor", p: ["+4"] }); } else { p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); chips.push({ label: "Şeref −3", col: "#C0556B", k: "chip.honor", p: ["−3"] }); } }
     else if (ev.id === "kavga") { if (pass) { p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 2); p.health = Math.max(1, p.health - 3); chips.push({ label: "Şeref +5", col: "#7FA66A", k: "chip.honor", p: ["+5"] }); } else { p.health = Math.max(1, p.health - 5); chips.push({ label: "Sağlık −5", col: "#C0556B", k: "chip.health", p: ["−5"] }); } }
     else if (ev.id === "siir") { if (pass) { gainSkill(s, "social", 8); p.fame = Math.min(100, p.fame + 1); chips.push({ label: "Sosyal +8", col: "#C9A84C", k: "chip.social", p: ["+8"] }); } else { p.honor = Math.max(0, p.honor - 1); } }
-    else if (ev.id === "soru") { if (pass) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); } }
+    else if (ev.id === "soru") { if (pass) { if (!seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); } else { addStatXp(s, EXAM_STAT[id] || "intelligence", 10); chips.push({ label: "Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); } } }
     else if (ev.id === "yaramazlik") { if (pass) { bumpNam(p, "capkin", 2); } else { p.honor = Math.max(0, p.honor - 2); chips.push({ label: "Şeref −2", col: "#C0556B", k: "chip.honor", p: ["−2"] }); } }
     else { if (pass) { p.honor = Math.min(100, p.honor + 3); gainSkill(s, "social", 6); chips.push({ label: "Sosyal +6", col: "#C9A84C", k: "chip.social", p: ["+6"] }); } }
     push(s, "mektep", `Mektep: ${SCHOOL_EV_TR[ev.id + "." + w]}`, "kişisel", false, { k: "sch." + ev.id + "." + w });
@@ -2700,7 +2705,11 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   // ── Sınav: her 4 derste bir (ilgili statla test) ──
   if (p.lesson_count % 4 === 0) {
     const passed = Math.random() < Math.min(0.9, 0.35 + effStat(p, EXAM_STAT[id] || "intelligence") * 0.12);
-    if (passed) { p.stat_points += 1; chips.push({ label: "Sınav geçildi · Puan +1", col: "#E0BC5A", k: "chip.exam" }); push(s, "mektep", "Sınava girdin ve geçtin — bir özellik puanı kazandın.", "kişisel", true, { k: "evj.examPass" }); }
+    if (passed) {
+      p.exam_wins = (p.exam_wins || 0) + 1;
+      if (p.exam_wins <= 3) { p.stat_points += 1; chips.push({ label: "Sınav geçildi · Puan +1", col: "#E0BC5A", k: "chip.exam" }); push(s, "mektep", "Sınava girdin ve geçtin — bir özellik puanı kazandın.", "kişisel", true, { k: "evj.examPass" }); }
+      else { addStatXp(s, EXAM_STAT[id] || "intelligence", 15); chips.push({ label: "Sınav geçildi · Tecrübe", col: "#E0BC5A", k: "chip.examXp" }); push(s, "mektep", "Sınavı yine geçtin; artık puandan çok ustalık birikiyor.", "kişisel", false, { k: "evj.examPassXp" }); }
+    }
     else { chips.push({ label: "Sınavda zorlandın", col: "#C0556B", k: "chip.examFail" }); push(s, "mektep", "Sınava girdin ama zorlandın; daha çok çalışmalısın.", "kişisel", false, { k: "evj.examFail" }); }
   }
   return { state: s, key, chips };
@@ -2849,6 +2858,44 @@ function shapeChildhood(s: GameState) {
 
 // İhtiyarlık uğraşları (55+): hayatın akşamına anlam — nasihat, hayır, dinlenme, anı. Çalışma gücünden harcar.
 export type ElderAct = "nasihat" | "hayir" | "dinlen" | "ani";
+// ── Olgunluk uğraşları (18-54): "ölü bölge" doldu — atıl duran aylık çalışma gücü artık işliyor.
+// Yetişkinde enerji 2 = ayda TEK uğraş (yapısal farm engeli). Karizma/dayanıklılığın yetişkinlikte
+// hiç büyüyememe deliği de burada kapanır: dört uğraş dört statı besler.
+export type AdultAct = "talim" | "meclis" | "tefekkur" | "yuruyus";
+export const ADULT_TRAINER_COST = 10;
+export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 18 || p.age >= 55) return { state: s, key: "", chips: [] };
+  if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true };
+  const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = []; let key = "";
+  if (kind === "talim") {
+    if (p.money < ADULT_TRAINER_COST) { chips.push({ label: "Akçe yok", col: "#C0556B" }); return { state: s, key: "evj.noCoin", chips, blocked: true };
+    }
+    p.study_energy = studyEnergy(s) - STUDY_COST;
+    p.money -= ADULT_TRAINER_COST; p.hunger = Math.max(0, p.hunger - 6);
+    addStatXp(s, "strength", 5); gainSkill(s, "combat", 4);
+    key = "adult.talim";
+    push(s, "olgunluk", "Talim meydanında ter döktün; kollar hatırlar.", "kişisel", false, { k: "adult.talim" });
+  } else if (kind === "meclis") {
+    p.study_energy = studyEnergy(s) - STUDY_COST;
+    p.hunger = Math.max(0, p.hunger - 4);
+    addStatXp(s, "charisma", 5); gainSkill(s, "social", 4); p.reputation = Math.min(100, p.reputation + 1);
+    key = "adult.meclis";
+    push(s, "olgunluk", "Sohbet meclisinde söz aldın; lafın dinlenir oldu.", "kişisel", false, { k: "adult.meclis" });
+  } else if (kind === "tefekkur") {
+    p.study_energy = studyEnergy(s) - STUDY_COST;
+    addStatXp(s, "intelligence", 5); gainSkill(s, "trade", 3);
+    key = "adult.tefekkur";
+    push(s, "olgunluk", "Kitap ve hesap başında bir akşam; zihin bilenmeden durmaz.", "kişisel", false, { k: "adult.tefekkur" });
+  } else {
+    p.study_energy = studyEnergy(s) - STUDY_COST;
+    addStatXp(s, "stamina", 5); p.health = Math.min(100, p.health + 2);
+    key = "adult.yuruyus";
+    push(s, "olgunluk", "Şehrin dışına uzun bir yürüyüş; beden dinç, kafa berrak.", "kişisel", false, { k: "adult.yuruyus" });
+  }
+  return { state: s, key, chips };
+}
+
 export function elderAction(prev: GameState, kind: ElderAct): StudyResult {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 55) return { state: s, key: "", chips: [] };

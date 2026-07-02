@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, studyEnergy, maxStudyEnergy, STUDY_COST, canWork } from "../../lib/game";
+import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, canWork } from "../../lib/game";
 import { pickDilemma, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
@@ -425,6 +425,41 @@ export default function Dashboard() {
               ))}
             </View>
             {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{t("child.spent")}</Text>}
+          </View>
+        );
+      })()}
+
+      {/* Olgunluk uğraşları (18-54) — atıl aylık çalışma gücü işlesin: dört uğraş dört statı besler */}
+      {!p.dead && p.age >= 18 && p.age < 55 && (() => {
+        const en = studyEnergy(state); const can = en >= STUDY_COST;
+        const acts: { k: AdultAct; icon: string; label: string; cost?: number }[] = [
+          { k: "talim", icon: "crossed-swords", label: t("adult.act.talim"), cost: ADULT_TRAINER_COST },
+          { k: "meclis", icon: "iliskiler", label: t("adult.act.meclis") },
+          { k: "tefekkur", icon: "scroll", label: t("adult.act.tefekkur") },
+          { k: "yuruyus", icon: "firsatlar", label: t("adult.act.yuruyus") },
+        ];
+        const onAdult = (k: AdultAct) => { if (!can) return; hap("tap"); const r = adultAction(state, k); if (!r.blocked) apply(() => r.state); };
+        return (
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(111,160,192,0.3)", backgroundColor: "rgba(111,160,192,0.05)" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: "#6FA0C0", textTransform: "uppercase" }}>{t("adult.title")}</Text>
+              <View style={{ flexDirection: "row", gap: 4 }}>
+                {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
+                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? "#6FA0C0" : "transparent", borderWidth: 1, borderColor: i < en ? "#6FA0C0" : C.border }} />
+                ))}
+              </View>
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {acts.map((a) => {
+                const dis = !can || (a.cost != null && p.money < a.cost);
+                return (
+                  <Pressable key={a.k} onPress={() => { if (!dis) onAdult(a.k); }} disabled={dis} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: dis ? C.border : "rgba(111,160,192,0.4)", backgroundColor: dis ? C.bg : C.card, opacity: dis ? 0.5 : 1 }}>
+                    <GameIcon name={a.icon} size={16} color={dis ? C.parchmentMuted : "#6FA0C0"} />
+                    <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, color: dis ? C.parchmentMuted : C.parchment }} numberOfLines={1}>{a.label}{a.cost != null ? ` · ${a.cost}⚜` : ""}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
         );
       })()}
