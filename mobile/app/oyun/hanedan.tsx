@@ -16,7 +16,8 @@ import {
   campaignTargets, canLaunchCampaign, campaignOdds, launchCampaign, CAMPAIGN_COST,
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
   inCourt, courtRankId,
-  suppressPretender, reconcilePretender, PRETENDER_SUPPRESS_COST, PRETENDER_RECONCILE_COST } from "../../lib/game";
+  suppressPretender, reconcilePretender, PRETENDER_SUPPRESS_COST, PRETENDER_RECONCILE_COST,
+  ESTATE_TIERS, estateCost, upgradeEstate, VAKIF_DONATE_AMOUNTS, donateVakif } from "../../lib/game";
 import { generateDynasties, houseName as rivalHouseName, localFirstName } from "../../lib/world";
 import { professionNameL, placeName } from "../../lib/locale-data";
 import { GameIcon } from "../../lib/icons";
@@ -366,6 +367,59 @@ export default function Hanedan() {
             </View>
           );
         })}
+
+        {/* ── AİLE KONAĞI: nesillere kalan görkem merdiveni ── */}
+        {(() => {
+          const tier = p.estate || 0; const full = tier >= ESTATE_TIERS.length;
+          const cost = estateCost(state); const afford = !full && p.money >= cost;
+          return (
+            <View style={{ backgroundColor: C.card, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.4)", borderRadius: 12, padding: 13, marginBottom: 8 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <GameIcon name="castle" size={15} color={C.gold} />
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold, textTransform: "uppercase" }}>{t("est.title")}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchmentMuted }}>{tier}/{ESTATE_TIERS.length}</Text>
+              </View>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchment, marginTop: 5 }}>
+                {tier === 0 ? t("est.none") : t("est.t." + ESTATE_TIERS[tier - 1].id)}
+              </Text>
+              <View style={{ flexDirection: "row", gap: 4, marginTop: 8 }}>
+                {ESTATE_TIERS.map((et, i) => (
+                  <View key={et.id} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: i < tier ? C.gold : "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: i < tier ? C.gold : C.border }} />
+                ))}
+              </View>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 7, lineHeight: 14 }}>{t("est.hint")}</Text>
+              {!full && (
+                <Pressable disabled={!afford} onPress={() => { hap("success"); apply((x) => upgradeEstate(x)); }} style={{ marginTop: 9, paddingVertical: 10, borderRadius: 8, alignItems: "center", borderWidth: 1, borderColor: afford ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: afford ? "rgba(201,168,76,0.14)" : C.bg }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: afford ? C.gold : C.parchmentMuted }}>{t("est.t." + ESTATE_TIERS[tier].id)} · {cost}⚜</Text>
+                </Pressable>
+              )}
+              {full && <Text style={{ fontFamily: F.display, fontSize: 10, color: C.sage, marginTop: 8, textAlign: "center" }}>✓ {t("est.full")}</Text>}
+            </View>
+          );
+        })()}
+
+        {/* ── VAKIF KAZANI: sınırsız hayrat — servet anlama dönüşür ── */}
+        {p.legacy?.vakif && (() => {
+          const donated = p.vakif_turn === state.turn;
+          return (
+            <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(127,166,106,0.4)", borderRadius: 12, padding: 13, marginBottom: 8 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <GameIcon name="prayer-beads" size={14} color={C.sage} />
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.sage, textTransform: "uppercase" }}>{t("est.vakif.title")}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.sage }}>{(p.vakif_fon || 0).toLocaleString()} ⚜</Text>
+              </View>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 5, lineHeight: 15 }}>{t("est.vakif.hint")}</Text>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 9 }}>
+                {VAKIF_DONATE_AMOUNTS.map((amt) => (
+                  <Pressable key={amt} disabled={donated || p.money < amt} onPress={() => { hap("success"); apply((x) => donateVakif(x, amt)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 8, borderWidth: 1, borderColor: (donated || p.money < amt) ? C.border : "rgba(127,166,106,0.55)", backgroundColor: (donated || p.money < amt) ? C.bg : "rgba(127,166,106,0.12)", opacity: (donated || p.money < amt) ? 0.5 : 1 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: (donated || p.money < amt) ? C.parchmentMuted : C.sage }}>{amt.toLocaleString()}⚜</Text>
+                  </Pressable>
+                ))}
+              </View>
+              {donated && <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted, marginTop: 6, textAlign: "center" }}>{t("est.vakif.done")}</Text>}
+            </View>
+          );
+        })()}
 
         {/* ── PİYASAYI OYNAT (yalnızca çok zengin) ── */}
         {p.money >= MARKET_LEVER_MIN && (() => {

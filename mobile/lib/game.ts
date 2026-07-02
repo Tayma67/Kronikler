@@ -73,6 +73,9 @@ export interface Player {
   yr_money?: number; // geçen yaş gününde kese ne kadardı (yıl dönümü özeti farkı için)
   temperament?: string; // yaratılışta seçilen mizaç (yigit/kurnaz/merhametli/hirsli) — ömürlük küçük etkiler
   crown_action_turn?: number; // bu ay taht eylemi (iddiacıyı bastır/uzlaş) yapıldı mı — tur başına tek
+  estate?: number; // aile konağı kademesi (0-6) — nesillere kalan görkem merdiveni (avlu→saray yavrusu)
+  vakif_fon?: number; // vakıf fonuna ömür boyu akıtılan toplam (SINIRSIZ) — servetin anlama dönüşen tek sayacı
+  vakif_turn?: number; // bu ay vakfa bağış yapıldı mı (tur başına tek — itibar damlası farmlanamaz)
   last_travel_turn?: number; // bu ay yol olayı tetiklendi mi (tur başına tek — git-gel beceri/eşya farmı önlenir)
   gov_action_turn?: number; // bu ay valilik tedbiri (meşruiyet/hazine) yapıldı mı (tur başına tek)
   opp_turn?: number; // bu ay fırsat çözüldü mü (tur başına tek — çoklu fırsat gelir farmı önlenir)
@@ -3174,13 +3177,16 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const surname = p.surname;
   // Kalıcı görkem eserleri vârise geçer (oyunun kendi vaadi: "nesiller boyu sürecek") — hekim ve hac kişiseldir, kalmaz.
   const heirLegacy: Record<string, boolean> = { ...(p.legacy || {}) }; delete heirLegacy.hekim; delete heirLegacy.hac;
-  const legacyRep = (heirLegacy.imaret ? 5 : 0) + (heirLegacy.vakif ? 8 : 0); // atanın hayratı vârisin adını önden yürütür
+  const legacyRep = (heirLegacy.imaret ? 5 : 0) + (heirLegacy.vakif ? 8 : 0) + Math.min(12, Math.floor((p.vakif_fon || 0) / 5000)); // atanın hayratı (+fonun büyüklüğü) vârisin adını önden yürütür
   const legacyFameFloor = heirLegacy.anit ? 15 : 0; // anıt: aile adı unutulmaz — vârisin şöhret tabanı
+  const estateTier = p.estate || 0; // konak taşınmazdır: vâris aynı çatının altında doğar
   // Vârise yapılan yatırımların başlangıç avantajları
   const invests = (p.child_invests && p.child_invests[heir]) || [];
   const stats = { strength: 1, intelligence: 1, charisma: 1, stamina: 2 };
   const skills = { combat: 0, trade: 0, crafting: 0, social: 0 };
   let startPoints = Math.min(gen, 10); let startMoney = inheritMoney; let startHealth = 100; let startRep = Math.floor(p.reputation / 2) + will.repBonus; // nesil bonusu tavanlı: çok uzun hanedanda (gen>10) vâris doğuştan tüm statları maxlayamasın
+  if (estateTier >= 3) startPoints += 1; // kütüphaneli konakta büyüyen çocuk: +1 özellik puanı
+  if (estateTier >= 5) startMoney += 80; // saray yavrusunun kileri: vârise çeyiz akçesi
   const investNotes: string[] = [];
   for (const inv of invests) {
     if (inv === "egitim") { stats.intelligence += 2; startPoints += 1; investNotes.push("eğitimli"); }
@@ -3227,7 +3233,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
       base_age: 7, age: 7, money: startMoney, profession: "işsiz", health: startHealth, hunger: 100,
-      reputation: Math.max(-100, Math.min(100, startRep + legacyRep)), honor: 0, fear: 0, fame: Math.max(Math.floor(p.fame / 3), legacyFameFloor), legacy: heirLegacy,
+      reputation: Math.max(-100, Math.min(100, startRep + legacyRep)), honor: 0, fear: 0, fame: Math.max(Math.floor(p.fame / 3), legacyFameFloor), legacy: heirLegacy, estate: estateTier, vakif_fon: p.vakif_fon,
       stats, stat_points: startPoints,
       dead: false, location_name: p.location_name, home_name: p.home_name || p.location_name, married: false, spouse_name: null, children: [],
       mother: p.gender === "erkek" ? (p.spouse_name || rnd(SPOUSE_K)) : p.name, father: p.gender === "erkek" ? p.name : (p.spouse_name || rnd(SPOUSE_E)),
@@ -4070,7 +4076,7 @@ export function dynastyPower(s: GameState): number {
   const courtBonus = inCourt(p) ? ((p.courtRank ?? 0) + 1) * 6 : 0;          // saray mevkii haneyi yükseltir (Kâtip +6 … Sadrazam +30)
   const conquestBonus = (p.crownConquests?.length || 0) * 10;                // ilhak edilen her diyar haneye güç katar
   const worksBonusTotal = Object.values(p.govWorks || {}).reduce((a, arr) => a + arr.length, 0) * 3; // bayındırlık eserleri
-  return playerHousePower(p) + (s.settlements?.length || 0) * 8 + (p.crowned ? 40 : 0) + courtBonus + conquestBonus + worksBonusTotal;
+  return playerHousePower(p) + (s.settlements?.length || 0) * 8 + (p.crowned ? 40 : 0) + courtBonus + conquestBonus + worksBonusTotal + (p.estate || 0) * 5; // aile konağı: taşa yazılmış güç
 }
 // Mühür kademesi (0..4) — gerçekçi: köklü bir hane nesillerce inşa edilir.
 export function houseSeal(power: number): { tier: number; key: string } {
@@ -4213,6 +4219,40 @@ export function settlementIncome(s: GameState): number {
 // ── GÖRKEM & BAĞIŞ (geç-oyun servetine anlamlı musluklar; gerçek hayat filtresi) ──
 // Soylular vakıf kurar, imaret açar, anıt diktirir, hekim tutar. Para harcanacak yer bulur,
 // servet itibara/şöhrete/sağlığa/mirasa dönüşür. Bedeller enflasyonla güncellenir.
+// ── AİLE KONAĞI: hanedanın taş kütüğü — kademe kademe yükselen, NESİLLERE KALAN görkem merdiveni.
+// "Zengin 50'liğin parasını harcayacağı şey" sorusunun cevabı: her kademe hanedan gücü + vârise çeyiz.
+export const ESTATE_TIERS = [
+  { id: "avlu", cost: 5000 }, { id: "selamlik", cost: 15000 }, { id: "hamam", cost: 40000 },
+  { id: "kutuphane", cost: 90000 }, { id: "bahce", cost: 200000 }, { id: "saray", cost: 450000 },
+] as const;
+export function estateCost(s: GameState): number {
+  const t = s.player.estate || 0;
+  return t >= ESTATE_TIERS.length ? 0 : Math.round(ESTATE_TIERS[t].cost * inflationFactor(s));
+}
+export function upgradeEstate(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  const t = p.estate || 0;
+  if (p.dead || t >= ESTATE_TIERS.length) return s;
+  const cost = estateCost(s); if (p.money < cost) return s;
+  p.money -= cost; p.estate = t + 1;
+  const id = ESTATE_TIERS[t].id;
+  p.fame = Math.min(100, p.fame + 2 + t);
+  push(s, "konak", `Aile konağına yeni bir bölüm eklendi; hanedanın taş kütüğü büyüyor.`, "kişisel", true, { k: "est.up." + id });
+  return s;
+}
+// ── VAKIF FONU: vakıf kurulduysa (legacy.vakif) sınırsız beslenebilir — servet "anlam"a dönüşür.
+// Toplam fon hiç budanmaz; mersiyeye, hanedan kütüğüne ve vârisin başlangıç itibarına akar.
+export const VAKIF_DONATE_AMOUNTS = [1000, 5000, 25000] as const;
+export function donateVakif(prev: GameState, amount: number): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !p.legacy?.vakif || amount <= 0 || p.money < amount) return s;
+  if (p.vakif_turn === s.turn) return s; // ayda tek bağış — itibar damlası farmlanamaz
+  p.vakif_turn = s.turn; p.money -= amount;
+  p.vakif_fon = (p.vakif_fon || 0) + amount;
+  p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "comert", 3);
+  push(s, "bagis", `Vakfına ${amount} akçe akıttın; kazanın altında yanan ateş büyüdü.`, "kişisel", false, { k: "est.vakifFund", p: [amount] });
+  return s;
+}
 export const PRESTIGE: Record<string, { cost: number; repeat?: boolean; once?: boolean }> = {
   hekim:  { cost: 2500,  repeat: true },   // özel hekim → sağlık (ömrü uzatır)
   imaret: { cost: 9000 },                   // imaret/aşevi → itibar + halk desteği
