@@ -87,6 +87,7 @@ export interface Player {
   court_action_turn?: number; // son divan hizmeti turu (bekleme süresi)
   harvestAccum?: number; wageAccum?: number; // pasif gelir/ücret yıllık birikimi (kronik yılda bir özetlenir; aylık spam önlenir)
   grandchildren?: string[]; // torunlar (oyuncu yaşlanınca yetişkin evlattan doğar; torun anları)
+  child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
   priceMem?: Record<string, number>; // fiyat hafızası: "loc|good" → geçen ay kaydedilen alış fiyatı (pazar 'geçen fiyat' göstergesi)
@@ -1157,7 +1158,21 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50);
   if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
-  if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: "evj.childBorn", p: [c] }); }
+  if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: "evj.childBorn", p: [c] }); }
+  // ── Evlat kilometre taşları: doğumu kayıtlı evlatlar büyürken birer kez anılır — soy sadece isim listesi değil, büyüyen hayatlar ──
+  if (!p.dead && p.child_meta?.length) {
+    const MS_AGES = [1, 7, 13, 18]; // ilk adım · mektep · çıraklık · yetişkinlik
+    for (const cm of p.child_meta) {
+      const next = cm.ms || 0;
+      if (next >= MS_AGES.length || Math.floor((s.turn - cm.born) / 12) < MS_AGES[next]) continue;
+      cm.ms = next + 1;
+      if (next === 0) { p.health = Math.min(100, p.health + 2); push(s, "doğum", `${cm.n} ilk adımlarını attı; evin içi cıvıltıyla doldu.`, "kişisel", false, { k: "evj.kidStep", p: [cm.n] }); }
+      else if (next === 1) push(s, "cocukluk", `${cm.n} mektebe başladı; heybesinde ekmek, gözlerinde merak.`, "kişisel", false, { k: "evj.kidSchool", p: [cm.n] });
+      else if (next === 2) { const tip = Math.round(10 * inflationFactor(s)); p.money += tip; push(s, "cocukluk", `${cm.n} bir ustanın yanına çırak girdi; ilk kazancını eve getirdi (+${tip} akçe).`, "kişisel", false, { k: "evj.kidApprentice", p: [cm.n, tip] }); }
+      else { p.reputation = Math.min(100, p.reputation + 2); push(s, "doğum", `${cm.n} yetişkin oldu; artık kendi yolunu yürüyor. Soyun dallanıyor.`, "kişisel", true, { k: "evj.kidGrown", p: [cm.n] }); }
+      break; // ayda en fazla bir kilometre taşı (olay seli olmasın)
+    }
+  }
   // ── Torun anları: oyuncu yaşlanınca (52+) ve yetişkin evladı varken torun doğar; torunla anlar gönül ferahlatır (additive) ──
   if (p.age >= 52 && p.children.length >= 1 && (p.grandchildren?.length || 0) < 8 && chance(0.06)) {
     const gc = rnd(CHILD); if (!p.grandchildren) p.grandchildren = []; p.grandchildren.push(gc);
@@ -1179,6 +1194,26 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       if (r < 0.4) { p.health = Math.min(100, p.health + 4); s.relationships[cf.id] = Math.min(100, (s.relationships[cf.id] || 0) + 2); push(s, "gunluk", "Çocukluk dostun çıkageldi; eski günleri yâd ettiniz, içine bir ferahlık doldu.", "kişisel", false, { k: "evj.oldFriendVisit", p: [{ fn: [cf.seed, cf.gender] }] }); }
       else if ((p.money < 30 || (p.debt || 0) > 0) && r < 0.7) { const help = 20 + Math.floor(Math.random() * 30); p.money += help; push(s, "gunluk", "Çocukluk dostun darda olduğunu duydu; sessizce kesene biraz akçe bıraktı.", "kişisel", false, { k: "evj.oldFriendHelp", p: [{ fn: [cf.seed, cf.gender] }, help] }); }
       else { p.reputation = Math.min(100, p.reputation + 2); push(s, "gunluk", "Çocukluk dostun seni mecliste övdü; sözü itibarına itibar kattı.", "kişisel", false, { k: "evj.oldFriendVouch", p: [{ fn: [cf.seed, cf.gender] }] }); }
+    }
+  }
+  // ── NPC'nin başlattığı anlar: dünya sana da gelir — dost sofraya çağırır, husumet dile düşer (oyuncu tetiklemez, farm edilemez) ──
+  if (!p.dead && p.age >= 13 && chance(0.05)) {
+    const ids = Object.keys(s.relationships || {}).filter((id) => Math.abs(s.relationships[id] || 0) >= 30);
+    const id = ids.length ? rnd(ids) : null;
+    const who = id ? rosterAt(s, p.location_name).find((n) => n.id === id) : null; // yalnız aynı yerleşimdekiler kapına gelir
+    if (id && who) {
+      const rel = s.relationships[id] || 0; const wns = npcStateOf(s, id);
+      if (rel >= 30) {
+        wns.mood = Math.min(100, wns.mood + 4);
+        if (p.health < 50) { p.health = Math.min(100, p.health + 4); push(s, "sohbet", `${who.name} hâlini sormaya geldi, bir tas sıcak çorba bıraktı; için ısındı.`, "kişisel", false, { k: "npci.soup", p: [who.name] }); }
+        else { s.relationships[id] = Math.min(100, rel + 2); p.health = Math.min(100, p.health + 2); push(s, "sohbet", `${who.name} seni sofrasına çağırdı; gülüşüp dertleştiniz.`, "kişisel", false, { k: "npci.meal", p: [who.name] }); }
+      } else if (Math.random() < 0.5) {
+        p.reputation = Math.max(-100, p.reputation - 1);
+        push(s, "sohbet", `${who.name} çarşıda aleyhinde konuşmuş; lafı kulağına geldi.`, "kişisel", false, { k: "npci.badmouth", p: [who.name] });
+      } else {
+        s.relationships[id] = Math.max(-100, rel - 3); wns.mood = Math.max(-100, wns.mood - 5);
+        push(s, "sohbet", `${who.name} yolda önünü kesip laf soktu; dişini sıkıp geçtin.`, "kişisel", false, { k: "npci.taunt", p: [who.name] });
+      }
     }
   }
   // ── Dulluk: eş de fanidir; birlikte yaşlandıkça vefat ihtimali artar. Dul kalınca yas + (genç dulsa yeniden evlilik mümkün) ──
