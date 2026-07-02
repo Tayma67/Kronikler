@@ -167,7 +167,6 @@ export type SharedIntent =
   | { k: "claimGuildLead"; guildId: string }
   | { k: "appointGovernor"; province: string }
   | { k: "setProvinceTax"; province: string; tax: number }
-  | { k: "campaign"; target: string }
   | { k: "decree"; id: string }
   // ── Beylik (Mount & Blade) eylemleri ──
   | { k: "claimBey"; beylikId: string }       // beye oyna: boşsa kur, doluysa devir (en yüksek güç)

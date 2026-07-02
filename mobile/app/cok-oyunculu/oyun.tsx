@@ -101,6 +101,12 @@ export default function MpOyun() {
   const throneEligible = !p.dead && p.age >= THRONE_MIN_AGE && myPower >= THRONE_MIN_POWER && p.fame >= THRONE_MIN_FAME && p.money >= THRONE_COST;
   const canCampaign = !p.dead && p.money >= MP_CAMPAIGN_COST;
   const iAmBey = snapshot.beyliks.some((b) => b.beyId === guestId);
+  // Hedef beyle ittifak/dünürlük paktı varsa sunucu seferi reddeder (pactProtected) ve peşin kesilen altın yanar — tuşu baştan kapat.
+  const pactWith = (otherId: string | null) => {
+    if (!otherId || !guestId) return null;
+    const [a, b] = guestId < otherId ? [guestId, otherId] : [otherId, guestId];
+    return snapshot.bonds.find((d) => d.a === a && d.b === b)?.pact ?? null;
+  };
   const intent = (i: SharedIntent) => { hap("tap"); sendIntent(i); };
   // Paylaşımlı siyasi eylemin kişisel maliyetini (altın) yerelde kes — sunucu çekişmeyi çözer.
   const spend = (cost: number) => apply((prev) => { const ns: GameState = JSON.parse(JSON.stringify(prev)); ns.player.money = Math.max(0, ns.player.money - cost); return ns; });
@@ -273,10 +279,10 @@ export default function MpOyun() {
                   <Pressable onPress={() => intent({ k: "setBeylikTax", beylikId: b.id, tax: Math.min(70, b.tax + 10) })} style={miniBtnGold}>
                     <Text style={miniTxtGold}>{pf(t("mp.beylik.taxBtn"), Math.min(70, b.tax + 10))}</Text></Pressable>
                 )}
-                {iAmBey && !isBey && (
-                  <Pressable disabled={!canCampaign} onPress={() => { spend(MP_CAMPAIGN_COST); intent({ k: "beylikCampaign", target: b.id }); }} style={[miniBtnBlood, !canCampaign && { opacity: 0.4 }]}>
+                {iAmBey && !isBey && (() => { const pc = pactWith(b.beyId); const shielded = pc === "alliance" || pc === "marriage"; const ok = canCampaign && !shielded; return (
+                  <Pressable disabled={!ok} onPress={() => { spend(MP_CAMPAIGN_COST); intent({ k: "beylikCampaign", target: b.id }); }} style={[miniBtnBlood, !ok && { opacity: 0.4 }]}>
                     <GameIcon name="crossed-swords" size={12} color={C.blood} /><Text style={miniTxtBlood}>{pf(t("mp.beylik.campaignBtn"), MP_CAMPAIGN_COST)}</Text></Pressable>
-                )}
+                ); })()}
               </View>
             </View>
           );

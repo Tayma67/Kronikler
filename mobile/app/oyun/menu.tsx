@@ -46,7 +46,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
 export default function Menu() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { state, resetGame } = useGame();
+  const { state, resetGame, mpMode } = useGame();
   const { t } = useI18n();
   const p = state?.player;
   // Ekran başına eylem-bekleyen durum rozeti: {n: sayı, urgent: kırmızı mı}.
@@ -116,9 +116,12 @@ export default function Menu() {
       ))}
 
       <View style={{ height: 18 }} />
+      {/* MP'de "Yeni Hayat" gizli: resetGame no-op ama navigasyon yeni-oyun ekranına düşürüp SP kaydını ezdirebilirdi. */}
+      {!mpMode && (
       <Pressable onPress={confirmReset} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
         <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood }}>{t("settings.newLife")}</Text>
       </Pressable>
+      )}
     </ScrollView>
   );
 }

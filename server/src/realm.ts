@@ -372,9 +372,6 @@ export class RealmDO {
       } else if (it.k === "setProvinceTax") {
         const prov = this.snap.provinces.find((x) => x.name === it.province);
         if (prov && prov.governorId === pid) prov.tax = Math.max(0, Math.min(60, it.tax));
-      } else if (it.k === "campaign") {
-        ev(pid, "mp.campaign.won", [it.target]);
-        const p = this.snap.players.find((x) => x.id === pid); if (p) p.power += 10;
       }
     }
 

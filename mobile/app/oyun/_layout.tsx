@@ -20,7 +20,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 
 // Nav ortasında yükseltilmiş yuvarlak "Ayı İlerle" düğmesi (Karakter ↔ İlişkiler arası).
 function AdvanceFab({ bottom }: { bottom: number }) {
-  const { state, doAdvance } = useGame();
+  const { state, doAdvance, mpMode } = useGame();
   const pulse = useSharedValue(1);
   useEffect(() => {
     if (isReduceMotion()) return; // sade mod: düğme nabzı + tozu kapalı
@@ -30,7 +30,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
     ), -1, false);
   }, []);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
-  if (!state || state.player.dead) return null;
+  if (!state || state.player.dead || mpMode) return null; // MP'de zamanı sunucu ilerletir — sahte tuş gösterme (doAdvance no-op)
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: bottom + 16, alignItems: "center" }}>
       <View style={{ width: 100, height: 92, alignItems: "center", justifyContent: "flex-end" }}>

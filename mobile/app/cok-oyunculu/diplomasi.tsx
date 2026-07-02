@@ -53,13 +53,18 @@ export default function Diplomasi() {
   const target = sel ? others.find((x) => x.id === sel) : null;
   const bond = target ? bondOf(snapshot.bonds, guestId, target.id) : undefined;
   const hasPact = !!bond?.pact;
+  // Sunucu, müttefik/eşe düşmanca eylemi reddeder (pactProtected) ama altın istemcide peşin kesildiği için
+  // iade yok — aynı kuralı tuşta uygula ki oyuncu boşuna para yakmasın. (savaş paktı korumaz.)
+  const pactShield = bond?.pact === "alliance" || bond?.pact === "marriage";
+  // Sunucudaki MP onuru (adjustHonor) yereldeki tek-oyunculu onurdan ayrıdır — başlıkta herkesle aynı gerçeği göster.
+  const myHonor = snapshot.players.find((x) => x.id === guestId)?.honor ?? p.honor ?? 0;
   const targetInOtherBeylik = target && target.beylikId && target.beylikId !== myBeylikId && !snapshot.beyliks.some((b) => b.beyId === target.id);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
-        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>{pf(t("mp.soc.myHonor"), Math.round(p.honor ?? 0))} · {money} {t("mp.soc.coin")}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>{pf(t("mp.soc.myHonor"), Math.round(myHonor))} · {money} {t("mp.soc.coin")}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 40 }}>
@@ -123,7 +128,7 @@ export default function Diplomasi() {
                   {/* Rekabet */}
                   <Text style={cap}>{t("mp.soc.capRivalry")}</Text>
                   <View style={rowWrap}>
-                    <Btn label={t("mp.soc.duelBtn")} disabled={x.traveling || !x.online} onPress={() => act({ k: "duel", to: x.id })} />
+                    <Btn label={t("mp.soc.duelBtn")} disabled={x.traveling || !x.online || pactShield} onPress={() => act({ k: "duel", to: x.id })} />
                   </View>
 
                   {/* Yardım */}
@@ -135,11 +140,11 @@ export default function Diplomasi() {
                   {/* Entrika & ihanet */}
                   <Text style={[cap, { color: C.blood }]}>{t("mp.soc.capIntrigue")}</Text>
                   <View style={rowWrap}>
-                    <Btn label={pf(t("mp.soc.spyBtn"), SPY_COST)} tone="dim" disabled={x.traveling || !x.online || money < SPY_COST} onPress={() => act({ k: "spy", on: x.id }, SPY_COST)} />
-                    <Btn label={pf(t("mp.soc.sabotageBtn"), SABOTAGE_COST)} tone="dim" disabled={x.traveling || !x.online || money < SABOTAGE_COST} onPress={() => act({ k: "sabotage", on: x.id }, SABOTAGE_COST)} />
-                    <Btn label={pf(t("mp.soc.slanderBtn"), SLANDER_COST)} tone="dim" disabled={x.traveling || !x.online || money < SLANDER_COST} onPress={() => act({ k: "slander", on: x.id }, SLANDER_COST)} />
-                    {iAmBey && targetInOtherBeylik && <Btn label={pf(t("mp.soc.bribeBtn"), BRIBE_COST)} tone="dim" disabled={x.traveling || money < BRIBE_COST} onPress={() => act({ k: "bribe", on: x.id }, BRIBE_COST)} />}
-                    <Btn label={pf(t("mp.soc.assassinBtn"), ASSASSINATE_COST)} tone="blood" disabled={x.traveling || money < ASSASSINATE_COST || x.age < ASSASSINATE_MIN_AGE} onPress={() => act({ k: "assassinate", on: x.id }, ASSASSINATE_COST)} />
+                    <Btn label={pf(t("mp.soc.spyBtn"), SPY_COST)} tone="dim" disabled={x.traveling || !x.online || pactShield || money < SPY_COST} onPress={() => act({ k: "spy", on: x.id }, SPY_COST)} />
+                    <Btn label={pf(t("mp.soc.sabotageBtn"), SABOTAGE_COST)} tone="dim" disabled={x.traveling || !x.online || pactShield || money < SABOTAGE_COST} onPress={() => act({ k: "sabotage", on: x.id }, SABOTAGE_COST)} />
+                    <Btn label={pf(t("mp.soc.slanderBtn"), SLANDER_COST)} tone="dim" disabled={x.traveling || !x.online || pactShield || money < SLANDER_COST} onPress={() => act({ k: "slander", on: x.id }, SLANDER_COST)} />
+                    {iAmBey && targetInOtherBeylik && <Btn label={pf(t("mp.soc.bribeBtn"), BRIBE_COST)} tone="dim" disabled={x.traveling || pactShield || money < BRIBE_COST} onPress={() => act({ k: "bribe", on: x.id }, BRIBE_COST)} />}
+                    <Btn label={pf(t("mp.soc.assassinBtn"), ASSASSINATE_COST)} tone="blood" disabled={x.traveling || pactShield || money < ASSASSINATE_COST || x.age < ASSASSINATE_MIN_AGE} onPress={() => act({ k: "assassinate", on: x.id }, ASSASSINATE_COST)} />
                   </View>
                   <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentDim, marginTop: 6 }}>{x.traveling ? t("mp.soc.travelingNote") : t("mp.soc.intrigueWarn")}</Text>
                 </View>
@@ -179,8 +184,9 @@ export default function Diplomasi() {
                       </View>
                       {npcTarget && (
                         <View style={[rowWrap, { marginTop: 6 }]}>
-                          <Btn label={pf(t("mp.npc.turnBtn"), TURN_NPC_COST)} tone="blood" disabled={money < TURN_NPC_COST} onPress={() => act({ k: "turnNpc", npcId: n.id, against: npcTarget! }, TURN_NPC_COST)} />
-                          <Btn label={pf(t("mp.npc.mediateBtn"), MEDIATE_NPC_COST)} disabled={money < MEDIATE_NPC_COST} onPress={() => act({ k: "mediateNpc", npcId: n.id, player: npcTarget! }, MEDIATE_NPC_COST)} />
+                          {/* Sunucu, hatır < 10 iken tooDistant ile reddeder ve altın iade edilmez — aynı eşiği tuşta uygula. */}
+                          <Btn label={pf(t("mp.npc.turnBtn"), TURN_NPC_COST)} tone="blood" disabled={myStand < 10 || money < TURN_NPC_COST} onPress={() => act({ k: "turnNpc", npcId: n.id, against: npcTarget! }, TURN_NPC_COST)} />
+                          <Btn label={pf(t("mp.npc.mediateBtn"), MEDIATE_NPC_COST)} disabled={myStand < 10 || money < MEDIATE_NPC_COST} onPress={() => act({ k: "mediateNpc", npcId: n.id, player: npcTarget! }, MEDIATE_NPC_COST)} />
                         </View>
                       )}
                     </>
