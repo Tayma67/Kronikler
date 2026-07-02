@@ -71,6 +71,7 @@ export interface Player {
   alms_turn?: number; // bu ay sadaka dağıtıldı mı (tur başına tek — şeref farmı önlenir)
   trade_xp_turn?: number; // bu ay pazar işleminden ticaret tecrübesi alındı mı (tur başına tek — al-sat XP farmı önlenir)
   yr_money?: number; // geçen yaş gününde kese ne kadardı (yıl dönümü özeti farkı için)
+  temperament?: string; // yaratılışta seçilen mizaç (yigit/kurnaz/merhametli/hirsli) — ömürlük küçük etkiler
   last_travel_turn?: number; // bu ay yol olayı tetiklendi mi (tur başına tek — git-gel beceri/eşya farmı önlenir)
   gov_action_turn?: number; // bu ay valilik tedbiri (meşruiyet/hazine) yapıldı mı (tur başına tek)
   opp_turn?: number; // bu ay fırsat çözüldü mü (tur başına tek — çoklu fırsat gelir farmı önlenir)
@@ -1046,6 +1047,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
 export const TEMPERAMENTS = ["yigit", "kurnaz", "merhametli", "hirsli"] as const;
 export function applyTemperament(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player;
+  p.temperament = id; // mizaç ömür boyu iz bırakır (çocukluk şekillenmesi gibi) — tek seferlik delta değil
   if (id === "yigit") { p.stats.strength += 1; p.skill_xp.combat += 60; bumpNam(p, "mert", 10); }
   else if (id === "kurnaz") { p.stats.charisma += 1; p.skill_xp.social += 60; bumpNam(p, "capkin", 6); }
   else if (id === "merhametli") { p.honor = clampStat(p.honor + 8); bumpNam(p, "comert", 12); }
@@ -1326,7 +1328,8 @@ export function advance(prev: GameState, n = 1): GameState {
     // Çocuğu ailesi besler: açlık daha yavaş düşer ve dipte aile karnını doyurur.
     const seasonMult = ({ "İlkbahar": 1.0, "Yaz": 1.1, "Sonbahar": 0.9, "Kış": 1.3 } as Record<string, number>)[cal.season] ?? 1; // 4 mevsim eğrisi (Vercel season_hunger_mult)
     const stamReduce = child ? 0 : Math.min(0.3, effStat(s.player, "stamina") * 0.03); // dayanıklılık açlığı yavaşlatır (Vercel stamina_hunger_reduction)
-    const drop = Math.max(child ? 2 : 3, Math.round((child ? 4 : 8) * seasonMult * (1 - stamReduce)));
+    const tutumluReduce = !child && hasPerk(s.player, "tutumlu") ? 0.15 : 0; // tutumlu: kıt kanaat geçinir — açlık daha yavaş düşer
+    const drop = Math.max(child ? 2 : 3, Math.round((child ? 4 : 8) * seasonMult * (1 - Math.min(0.45, stamReduce + tutumluReduce))));
     s.player.hunger = Math.max(0, s.player.hunger - drop);
     if (child && s.player.hunger < 30) s.player.hunger = Math.min(100, s.player.hunger + 20); // anne-baba sofrası
     if (s.player.hunger < 20 && !child) s.player.health = Math.max(0, s.player.health - 6);
@@ -2046,8 +2049,9 @@ export const PROF_ACTIONS: Record<string, ProfAction> = {
   hancı:    { stat: "charisma",     reward: 50, fame: 2, rep: 2, honor: 0, riskHealth: 0, skill: "trade" },
 };
 export function hasProfAction(p: Player): boolean { return p.profession in PROF_ACTIONS; }
-export function profActionReady(p: Player, turn: number): boolean { const l = p.prof_action_turn; return l == null || turn - l >= PROF_ACTION_COOLDOWN; }
-export function profActionCooldownLeft(p: Player, turn: number): number { const l = p.prof_action_turn; return l == null ? 0 : Math.max(0, PROF_ACTION_COOLDOWN - (turn - l)); }
+function profCooldownOf(p: Player): number { return p.temperament === "hirsli" ? PROF_ACTION_COOLDOWN - 1 : PROF_ACTION_COOLDOWN; } // hırslı mizaç: işine dört elle sarılır
+export function profActionReady(p: Player, turn: number): boolean { const l = p.prof_action_turn; return l == null || turn - l >= profCooldownOf(p); }
+export function profActionCooldownLeft(p: Player, turn: number): number { const l = p.prof_action_turn; return l == null ? 0 : Math.max(0, profCooldownOf(p) - (turn - l)); }
 export function canProfAction(s: GameState): boolean {
   const p = s.player;
   return !p.dead && p.age >= 13 && hasProfAction(p) && profActionReady(p, s.turn) && p.hunger >= 18;
@@ -2112,12 +2116,22 @@ export function useItem(prev: GameState, id: string): GameState {
 }
 
 // Bir malın oyuncuya GERÇEK alış fiyatı (tüccar/pazarlıkçı indirimi dahil) — UI ile tek kaynak.
+// Bulunduğun yerdeki esnafla (tüccar/fırıncı/terzi/demirci) en iyi ilişkinin fiyat çarpanı:
+// dost esnaf indirim yapar (0.90-0.95), düşman esnaf zam (1.08-1.20) — npc-mind behaviorTier tablosu nihayet ekonomiye bağlı.
+const ESNAF = new Set(["tüccar", "fırıncı", "terzi", "demirci"]);
+export function merchantPriceMult(s: GameState): number {
+  const roster = rosterAt(s, s.player.location_name);
+  let best = -Infinity;
+  for (const n of roster) if (ESNAF.has(n.profession)) { const r = relWith(s, n.id); if (r > best) best = r; }
+  if (best === -Infinity) return 1;
+  return behaviorTier(best).al_carpan;
+}
 export function buyPrice(s: GameState, id: string): number {
   const p = s.player;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return 0;
   let disc = p.faction === "tuccar" ? 0.85 : 1;
   if (hasPerk(p, "pazarlikci")) disc -= 0.10;
-  return Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id)));
+  return Math.max(1, Math.round(marketPrice(g.buy, s.econ) * disc * goodPriceMult(s, id) * merchantPriceMult(s)));
 }
 export function buyItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player;
@@ -2149,7 +2163,7 @@ export function sellerPersonaOf(s: GameState): { id: string; mult: number } { re
 export function bargainChance(s: GameState): number {
   const p = s.player;
   const favor = 1 + factionLocalFavor(s) * 0.08; // loncanın hâkim olduğu sancakta pazarlık kolay, düşmanın elinde zor
-  return Math.max(0.1, Math.min(0.95, (0.42 + effStat(p, "charisma") * 0.035 + p.skills.trade * 0.025 + bargainBonus(s)) * sellerPersona(p.location_name).mult * favor));
+  return Math.max(0.1, Math.min(0.95, (0.42 + (p.temperament === "kurnaz" ? 0.03 : 0) + effStat(p, "charisma") * 0.035 + p.skills.trade * 0.025 + bargainBonus(s)) * sellerPersona(p.location_name).mult * favor));
 }
 // Müzakere sonunda anlaşılan fiyattan alım.
 export function negotiatedBuy(prev: GameState, id: string, price: number): GameState {
@@ -2265,7 +2279,8 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   const rel = s.relationships[npc.id] || 0;
   // Azalan getiri: zaten yakın birine yardım daha az yakınlık/itibar getirir (farm engeli).
   const fresh = rel < 70;
-  s.relationships[npc.id] = Math.min(100, rel + (fresh ? 18 : 6));
+  const mrh = p.temperament === "merhametli" ? 1.25 : 1; // merhametli: içten yardım daha derin bağ kurar
+  s.relationships[npc.id] = Math.min(100, rel + Math.round((fresh ? 18 : 6) * mrh));
   ns.mood = Math.max(-100, Math.min(100, ns.mood + (fresh ? 18 : 8)));
   if (fresh) { p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "comert", 4); }
   gainSkill(s, "social", 6);
@@ -3147,6 +3162,10 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const props = [...p.properties];
   const gen = p.generation + 1;
   const surname = p.surname;
+  // Kalıcı görkem eserleri vârise geçer (oyunun kendi vaadi: "nesiller boyu sürecek") — hekim ve hac kişiseldir, kalmaz.
+  const heirLegacy: Record<string, boolean> = { ...(p.legacy || {}) }; delete heirLegacy.hekim; delete heirLegacy.hac;
+  const legacyRep = (heirLegacy.imaret ? 5 : 0) + (heirLegacy.vakif ? 8 : 0); // atanın hayratı vârisin adını önden yürütür
+  const legacyFameFloor = heirLegacy.anit ? 15 : 0; // anıt: aile adı unutulmaz — vârisin şöhret tabanı
   // Vârise yapılan yatırımların başlangıç avantajları
   const invests = (p.child_invests && p.child_invests[heir]) || [];
   const stats = { strength: 1, intelligence: 1, charisma: 1, stamina: 2 };
@@ -3187,7 +3206,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, relationships: {}, dynasty, npc_state: {},
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, relationships: {}, dynasty, npc_state: {}, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Hanedan hafızası vârise geçer: ataların tamamladığı yaylar bayrak olarak kalır, az da olsa anlatı momentumu verir.
     story: { active: null, completed: [], tension: Math.min(20, Object.keys(prev.story?.flags || {}).length * 3), nemesis: null, flags: { ...(prev.story?.flags || {}) }, lull: 0 }, wars: [], caravan: null, econ: 1,
     settlements: prev.settlements || [], // dynastinin kurduğu yerleşimler vârise kalır
@@ -3198,7 +3217,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     player: {
       name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
       base_age: 7, age: 7, money: startMoney, profession: "işsiz", health: startHealth, hunger: 100,
-      reputation: Math.max(-100, Math.min(100, startRep)), honor: 0, fear: 0, fame: Math.floor(p.fame / 3),
+      reputation: Math.max(-100, Math.min(100, startRep + legacyRep)), honor: 0, fear: 0, fame: Math.max(Math.floor(p.fame / 3), legacyFameFloor), legacy: heirLegacy,
       stats, stat_points: startPoints,
       dead: false, location_name: p.location_name, home_name: p.home_name || p.location_name, married: false, spouse_name: null, children: [],
       mother: p.gender === "erkek" ? (p.spouse_name || rnd(SPOUSE_K)) : p.name, father: p.gender === "erkek" ? p.name : (p.spouse_name || rnd(SPOUSE_E)),
@@ -3427,6 +3446,7 @@ export function giveAlms(prev: GameState): GameState {
   const cost = 15;
   if (p.money < cost) { push(s, "sosyal", "Sadaka verecek akçen yok.", "kişisel", false, { k: "evj.noAlms" }); return s; }
   let honor = 7, rep = 3;
+  if (p.temperament === "merhametli") honor += 3; // merhametli mizaç: hayrın gönülden gelir, adı da öyle anılır
   if (hasPerk(p, "hosgoru")) honor += 5;
   if (hasPerk(p, "diplomat")) { honor = Math.round(honor * 1.5); rep = Math.round(rep * 1.5); }
   p.money -= cost; p.alms_turn = s.turn; p.honor = Math.min(100, p.honor + honor); p.reputation = Math.min(100, p.reputation + rep);
@@ -3470,6 +3490,7 @@ export function combatPower(p: Player): number {
   pw += weaponPw || ((p.inventory["bicak"] || 0) > 0 ? 4 : 0); // kalite-ölçekli silah, yoksa elindeki bıçak
   if (p.faction === "asker") pw += 3;
   if (p.childhood === "canli") pw += 2; // canlı çocukluk: ömür boyu dinç beden
+  if (p.temperament === "yigit") pw += 1; // yiğit mizaç: doğuştan cenkçi damar
   if (hasPerk(p, "cevik")) pw += 3;
   if (hasPerk(p, "nisanci")) pw += 5;
   return pw;
@@ -3563,6 +3584,7 @@ const INJURY_POOL: { label: string; stat: keyof Stats; delta: number; weeks: num
 ];
 function maybeInjure(s: GameState, heavy: boolean) {
   const p = s.player;
+  if (hasPerk(p, "yilmaz") && Math.random() < 0.5) return; // yılmaz: darbeye alışkın beden — yaralanma ihtimali yarıya iner
   if (!Math.random || Math.random() > (heavy ? 0.5 : 0.18)) return;
   const wIdx = Math.floor(Math.random() * INJURY_POOL.length);
   const t = INJURY_POOL[wIdx];

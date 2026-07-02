@@ -13,8 +13,8 @@ const TIERS = [3, 6, 9];
 // Her beceri dalının ilgili özelliği (stat) + tonu.
 const LINK: Record<SkillKey, { stat: "strength" | "intelligence" | "charisma" | "stamina"; tone: string }> = {
   combat:   { stat: "strength",     tone: "#E0922E" },
-  trade:    { stat: "intelligence", tone: "#C9A84C" },
-  crafting: { stat: "stamina",      tone: "#7FA66A" },
+  trade:    { stat: "charisma",     tone: "#C9A84C" }, // pazarlık formülü karizma okur (0.42 + cha*0.035 + trade*0.025)
+  crafting: { stat: "intelligence", tone: "#7FA66A" }, // zanaat meslekleri ağırlıkla zekâ stat'ı çalıştırır
   social:   { stat: "charisma",     tone: "#6FA0C0" },
 };
 

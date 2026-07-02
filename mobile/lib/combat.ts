@@ -123,7 +123,8 @@ export function stepBattle(prev: BattleState, p: Player, mv: Move, stance: Stanc
   const dealt = (d: number, outcome: "tie" | "win") => Math.round(d * st.atk * classAtkMult(wc, bs.round, outcome, mv));
   // Hızlı silah: hafif kaçış (alınan hasarı biraz azaltır).
   const evade = wc === "hizli" ? 0.85 : 1.0;
-  const taken = (d: number) => Math.round((d / st.def) * evade);
+  const kalkanli = p.perks?.includes("kalkanli") ? 0.75 : 1.0; // kalkanlı hüneri: alınan hasar %25 azalır (vaat edilen etki artık gerçek)
+  const taken = (d: number) => Math.round((d / st.def) * evade * kalkanli);
 
   // Tur log'unun ortak başlık parametreleri: tur no, oyuncu hamlesi, düşman hamlesi, fent eki.
   const fp: CbLogParam = feint ? { lk: "cb.log.feint" } : "";
