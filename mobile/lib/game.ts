@@ -70,6 +70,7 @@ export interface Player {
   feast_turn?: number; // bu ay ziyafet verildi mi (tur başına tek — para→şöhret/itibar çeviricisi farmlanamaz)
   alms_turn?: number; // bu ay sadaka dağıtıldı mı (tur başına tek — şeref farmı önlenir)
   trade_xp_turn?: number; // bu ay pazar işleminden ticaret tecrübesi alındı mı (tur başına tek — al-sat XP farmı önlenir)
+  yr_money?: number; // geçen yaş gününde kese ne kadardı (yıl dönümü özeti farkı için)
   last_travel_turn?: number; // bu ay yol olayı tetiklendi mi (tur başına tek — git-gel beceri/eşya farmı önlenir)
   gov_action_turn?: number; // bu ay valilik tedbiri (meşruiyet/hazine) yapıldı mı (tur başına tek)
   opp_turn?: number; // bu ay fırsat çözüldü mü (tur başına tek — çoklu fırsat gelir farmı önlenir)
@@ -1281,6 +1282,17 @@ export function advance(prev: GameState, n = 1): GameState {
     snapshotPrices(s); // ayrılan ayın pazar fiyatlarını hafızaya al (R3.3 'geçen fiyat')
     s.turn += 1; const cal = currentCalendar(s.turn);
     s.player.age = playerAge(s.player.base_age, s.turn);
+    // Yıl dönümü: yaş günün geldi — yılın kısa muhasebesi kroniğe (landmark) düşer; hayat "yaşanmış" hissettirir.
+    if (s.turn % 12 === 0 && !s.player.dead) {
+      const pl = s.player;
+      if (pl.yr_money === undefined) pl.yr_money = pl.money;
+      else {
+        const d = pl.money - pl.yr_money;
+        const key = d > 20 ? "evj.yearUp" : d < -20 ? "evj.yearDown" : "evj.yearFlat";
+        push(s, "yıl_dönümü", `${pl.age} yaşına bastın. Bu yıl kesen ${d >= 0 ? "+" : "−"}${Math.abs(d)} akçe değişti.`, "kişisel", true, { k: key, p: [pl.age, Math.abs(d)] });
+        pl.yr_money = pl.money;
+      }
+    }
     // NPC anıları haftalık söner (travmalar kalıcı); anlamsız geçici girdiler budanır (perf + temizlik).
     if (s.npc_state) for (const id in s.npc_state) {
       const ns = s.npc_state[id];

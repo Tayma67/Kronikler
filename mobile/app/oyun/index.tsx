@@ -100,6 +100,8 @@ export default function Dashboard() {
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
   const [tab, setTab] = useState<"gunluk" | "dunya">("gunluk");
   const [guideHidden, setGuideHidden] = useState(false);
+  useEffect(() => { AsyncStorage.getItem("kronikler_fs_hidden").then((v) => { if (v === "1") setGuideHidden(true); }).catch(() => {}); }, []);
+  const hideGuide = () => { setGuideHidden(true); AsyncStorage.setItem("kronikler_fs_hidden", "1").catch(() => {}); };
   const [showTut, setShowTut] = useState(false);
   const [shoot, setShoot] = useState(0);
   const [coinsOn, setCoinsOn] = useState(false);
@@ -350,18 +352,39 @@ export default function Dashboard() {
         );
       })()}
 
-      {/* Rehber ipucu — yalnız erken oyunda (oyuncu derin sistemlerde kaybolmasın); duruma göre tek satır, kapatılabilir */}
-      {!p.dead && !guideHidden && p.age < 16 && (() => {
-        const gk = p.hunger < 35 ? "eat"
-          : (p.age >= 13 && p.profession === "işsiz") ? "prof"
-          : p.age < 13 ? "child"
-          : (p.age >= 13 && !p.faction) ? "faction"
-          : "core";
+      {/* İlk Adımlar — yeni oyuncunun yol haritası: gerçek durumu izler, tıklayınca ilgili ekrana götürür.
+          Tümü bitince ya da yaş 22'yi geçince kendiliğinden kaybolur; × ile kalıcı kapatılır. */}
+      {!p.dead && !guideHidden && p.age < 22 && (() => {
+        const steps: { id: string; done: boolean; route?: string; show: boolean }[] = [
+          { id: "eat",    done: p.hunger >= 55, route: undefined, show: true },
+          { id: "study",  done: (p.lesson_count || 0) >= 1, route: "/oyun/mektep", show: p.age < 18 },
+          { id: "club",   done: !!p.club || p.age >= 18, route: "/oyun/mektep", show: p.age < 18 },
+          { id: "friend", done: Object.values(state.relationships || {}).some((v) => v >= 10), route: "/oyun/sosyal", show: true },
+          { id: "prof",   done: p.profession !== "işsiz", route: "/oyun/meslek", show: p.age >= 13 },
+          { id: "work",   done: (p.career_xp || 0) >= 1, route: "/oyun/meslek", show: p.age >= 13 && p.profession !== "işsiz" },
+          { id: "market", done: Object.keys(p.inventory || {}).length > 0, route: "/oyun/pazar", show: p.age >= 13 },
+          { id: "guild",  done: !!p.faction || Object.values(p.faction_standing || {}).some((v) => v > 0), route: "/oyun/orgutler", show: p.age >= 13 },
+          { id: "marry",  done: p.married, route: "/oyun/iliskiler", show: p.age >= 18 },
+          { id: "estate", done: (p.properties || []).length >= 1, route: "/oyun/mulkler", show: p.age >= 16 },
+        ].filter((x) => x.show);
+        const doneN = steps.filter((x) => x.done).length;
+        if (doneN >= steps.length) return null; // yol haritası tamam — kart kaybolur
+        const next = steps.filter((x) => !x.done).slice(0, 3);
         return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, paddingVertical: 8, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.32)", backgroundColor: "rgba(201,168,76,0.07)", flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <GameIcon name="star" size={13} color={C.gold} />
-            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchment, lineHeight: 16 }}>{t("guide." + gk)}</Text>
-            <Pressable hitSlop={8} onPress={() => { hap("tap"); setGuideHidden(true); }}><Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchmentMuted }}>×</Text></Pressable>
+          <View style={{ marginHorizontal: 12, marginTop: 8, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.32)", backgroundColor: "rgba(201,168,76,0.06)", overflow: "hidden" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 11, paddingTop: 9, paddingBottom: 6 }}>
+              <GameIcon name="star" size={13} color={C.gold} />
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("fs.title")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 10, color: C.parchmentMuted }}>{doneN}/{steps.length}</Text>
+              <Pressable hitSlop={8} onPress={() => { hap("tap"); hideGuide(); }}><Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchmentMuted }}>×</Text></Pressable>
+            </View>
+            {next.map((st) => (
+              <Pressable key={st.id} disabled={!st.route} onPress={() => { if (st.route) { hap("tap"); router.push(st.route as never); } }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 11, paddingVertical: 7, borderTopWidth: 1, borderTopColor: "rgba(201,168,76,0.14)", backgroundColor: pressed ? "rgba(201,168,76,0.08)" : "transparent" })}>
+                <View style={{ width: 14, height: 14, borderRadius: 7, borderWidth: 1.5, borderColor: C.goldDim }} />
+                <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchment, lineHeight: 15 }}>{t("fs." + st.id)}</Text>
+                {st.route ? <Text style={{ color: C.goldDim, fontSize: 13 }}>›</Text> : null}
+              </Pressable>
+            ))}
           </View>
         );
       })()}
