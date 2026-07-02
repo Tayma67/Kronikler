@@ -4,7 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome } from "../../lib/game";
+import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, inflationFactor } from "../../lib/game";
 import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -228,7 +228,7 @@ export default function Savas() {
               </View>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5, lineHeight: 18 }}>{gt("enc." + e.id + ".d", e.desc)}</Text>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-                <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.goldDim }}>{t("cb.reward")} +{e.reward}⚜ · {t("cb.fame")} +{e.fame}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.goldDim }}>{t("cb.reward")} +{Math.round(e.reward * inflationFactor(state))}⚜ · {t("cb.fame")} +{e.fame}</Text>
                 <Pressable disabled={!canFight} onPress={() => begin(e.id)} style={{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: "rgba(168,52,52,0.55)", backgroundColor: canFight ? "rgba(168,52,52,0.14)" : C.card }}>
                   <Text style={{ fontFamily: F.display, fontSize: 11, color: canFight ? C.blood : C.parchmentMuted, letterSpacing: 1 }}>{t("cb.fight")}</Text>
                 </Pressable>

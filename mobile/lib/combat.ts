@@ -70,7 +70,8 @@ export function readAccuracy(p: Player, enemyPower: number, arch: EArch = "asker
   let a = 0.70 + skill * 0.018 + intel * 0.004 - Math.max(0, enemyPower - 6) * 0.012 + ARCH[arch].feint;
   if (weaponClass(p) === "hizli") a += 0.05; // çevik refleks düşmanı daha iyi okur
   if (desperate) a -= 0.12; // çaresiz düşman erratik → niyeti okuması zor
-  return Math.max(0.38, Math.min(0.93, a));
+  // Elit düşman (güç 14+) asla tam kitap gibi okunmaz — geç oyunda dövüş otomatiğe bağlanmasın.
+  return Math.max(0.38, Math.min(enemyPower >= 14 ? 0.85 : 0.93, a));
 }
 
 export function startBattle(p: Player, e: Encounter): BattleState {

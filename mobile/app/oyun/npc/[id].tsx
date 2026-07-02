@@ -95,7 +95,7 @@ export default function NpcDetail() {
     .filter((tt) => tt.who)
     .sort((a, z) => TIE_ORDER.indexOf(a.kind) - TIE_ORDER.indexOf(z.kind));
   const couldMarry = !state.player.dead && !state.player.married && state.player.age >= 18 && npc.age >= 18 && npc.gender !== state.player.gender;
-  const canGoal = !state.player.dead && state.player.age >= 13;
+  const canGoal = !state.player.dead && state.player.age >= 13 && !!npc.goal; // muradına ermiş NPC'nin hedefi kalmaz — yardım/istismar kapanır
   // Bu ay bu kişiyle anlamlı bir etkileşim (sohbet/flört/hediye/dedikodu/hakaret) yapıldı mı — tur başına tek (farm önlenir).
   const mingled = state.npc_state?.[npc.id]?.int_turn === state.turn;
 
@@ -189,7 +189,7 @@ export default function NpcDetail() {
           </View>
         ) : null}
         {/* 14 yaş altı NPC'ye iş/hayal sorma — çocuğun mesleği/hedefi yok (boş tırnak saçmalığı önlenir). */}
-        {INTENTS.filter((it) => npc.age >= 14 || (it.id !== "is" && it.id !== "hedef")).map((it) => (
+        {INTENTS.filter((it) => (npc.age >= 14 || it.id !== "is") && (it.id !== "hedef" || !!npc.goal)).map((it) => (
           <Pressable key={it.id} disabled={mingled} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: mingled ? 0.4 : 1 })}>
             <GameIcon name={it.icon} size={17} color={C.gold} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("dlg.intent." + it.id)}</Text>

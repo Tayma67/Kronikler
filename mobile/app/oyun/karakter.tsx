@@ -241,7 +241,7 @@ export default function Karakter() {
                 return (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}>
                     <GameIcon name="ring" size={11} color={C.gold} />
-                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("misc.spouse")}: <Text style={{ color: C.parchment }}>{nm}</Text> · {t("mizac." + spouseMizac(p.spouse_seed))}</Text>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("misc.spouse")}: <Text style={{ color: C.parchment }}>{nm}</Text> · {t("mizac." + (p.spouse_mizac || spouseMizac(p.spouse_seed)))}</Text>
                   </View>
                 );
               })() : null}

@@ -20,6 +20,7 @@ export interface Player {
   widowed?: boolean; // eşi vefat etmiş (dul); married=false olur ama anı/eulogy için iz kalır
   mother?: string; father?: string; mother_dead?: boolean; father_dead?: boolean; // ebeveynler de fanidir; oyuncu yaşlandıkça birer kez vefat eder
   mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
+  spouse_mizac?: string; // kur yaptığın NPC'nin karakterinden gelen eş mizacı (tanıdığın kişi evlenince başkalaşmaz)
   inventory: Record<string, number>; properties: Property[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
@@ -272,6 +273,14 @@ export function giveZekat(prev: GameState): GameState {
 // Eş mizacı (tohumdan, deterministik): evli hayat anlarının sıklığını/etkisini renklendirir, eşi birey yapar.
 export const SPOUSE_MIZAC = ["sefkatli", "caliskan", "dikbasli", "dindar"] as const;
 export function spouseMizac(seed: number): string { return SPOUSE_MIZAC[(seed >>> 0) % SPOUSE_MIZAC.length]; }
+// Tanıdığın bir NPC ile evlenince eş mizacı onun karakterinden gelir (kişi evlenince başkalaşmaz).
+const TRAIT_TO_MIZAC: Record<string, string> = {
+  "sıcakkanlı": "sefkatli", "cömert": "sefkatli", "neşeli": "sefkatli", "utangaç": "sefkatli",
+  "hırslı": "caliskan", "ciddi": "caliskan", "kurnaz": "caliskan",
+  "kibirli": "dikbasli", "dertli": "dikbasli", "yalnız": "dikbasli",
+  "dindar": "dindar", "mert": "dindar",
+};
+export function mizacFromTrait(trait: string, seed: number): string { return TRAIT_TO_MIZAC[trait] || spouseMizac(seed); }
 // Evlat tabiatı (isim+nesil tohumundan, deterministik): her çocuğun kendine özgü doğası;
 // vâris seçimini anlamlı kılar (vâris olunca küçük bir başlangıç eğilimi verir).
 export const CHILD_NATURE = ["cesur", "zeki", "hunerli", "sevecen", "hirsli"] as const;
@@ -300,7 +309,7 @@ function rosterBase(loc: string, lang: Lang): NPC[] {
 export function rosterAt(s: GameState, loc: string, lang: Lang = "tr"): NPC[] {
   const wy = worldYears(s); const evo = s.world?.npcEvo;
   // Yaşa göre normalize: meslek (çocuk/çırak) + 14 altı hedef gütmez (2 yaşında tüccar/borç olmaz).
-  const norm = (n: NPC, age: number): NPC => ({ ...n, age, profession: npcAgeProfession(n.profession, age), goal: age < 14 ? "" : n.goal });
+  const norm = (n: NPC, age: number): NPC => ({ ...n, age, profession: npcAgeProfession(n.profession, age), goal: age < 14 || evo?.[n.id]?.goalDone ? "" : n.goal });
   const base = rosterBase(loc, lang)
     .map((n) => norm({ ...n, alive: evo?.[n.id]?.dead ? false : true } as NPC, Math.min(95, n.age + wy)))
     .filter((n) => n.alive !== false);
@@ -341,6 +350,16 @@ function npcLifeTick(s: GameState) {
     const m = r.find((n) => n.gender === "erkek" && n.age >= 18 && n.age < 55);
     const f = r.find((n) => n.gender === "kadın" && n.age >= 18 && n.age < 55);
     if (m && f) push(s, "dunya_olayi", `${loc}'de ${m.name} ile ${f.name} dünyaevi kurdu.`, "makro", false, { k: "npclife.marry", p: [m.name, f.name] });
+  }
+  // Omuz verilen hayaller boşa gitmez: yılda bir, yardım görmüş NPC'lerden biri muradına erebilir (dünya dokunuşunla değişir).
+  for (const id of Object.keys(s.world.npcEvo)) {
+    const e = s.world.npcEvo[id];
+    if (!e.goalHelped || e.goalDone || e.dead || Math.random() >= 0.35) continue;
+    e.goalDone = true;
+    s.relationships[id] = Math.min(100, (s.relationships[id] || 0) + 10);
+    s.player.reputation = Math.min(100, s.player.reputation + 2);
+    push(s, "dunya_olayi", `${e.gname || "Bir dost"} yıllardır kovaladığı hayaline kavuştu — senin desteğinle. Adın hayır duayla anılıyor.`, "kişisel", true, { k: "npclife.goalDone", p: [e.gname || "?", { goalk: e.goalk || "" }] });
+    break; // yılda en çok bir murat haberi (olay seli olmasın)
   }
   // Her yıl ölü doğanları ele (yaşayanlar asla silinmez). Böylece npcBorn ≈ yaşayan sayısı (~600) kalır:
   // nüfus korunur (eski 260 sınırı yaşayanı siliyordu) + dizi şişmez (rosterAt ucuz kalır).
@@ -653,7 +672,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; breath?: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
-  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
+  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean; goalHelped?: boolean; goalDone?: boolean; gname?: string; goalk?: string }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
@@ -1168,7 +1187,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     const dc = p.age < 55 ? 0.008 : p.age < 65 ? 0.02 : p.age < 75 ? 0.04 : 0.07;
     if (chance(dc)) {
       const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
-      p.married = false; p.widowed = true; p.health = Math.max(1, p.health - 8); bumpNam(p, "dindar", 2);
+      p.married = false; p.widowed = true; p.spouse_mizac = undefined; p.health = Math.max(1, p.health - 8); bumpNam(p, "dindar", 2);
       push(s, "evlilik", `Ömür arkadaşın ${p.spouse_name} vefat etti; ocağın yarısı söndü. Diyar yasını paylaştı.`, "kişisel", true, { k: "evj.spouseDied", p: [{ fn: [p.spouse_seed, sg] }] });
     }
   }
@@ -1188,7 +1207,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (!p.dead && p.married && p.spouse_seed != null && p.age >= 16 && chance(0.03)) {
     const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
     const sn: EvtParam = { fn: [p.spouse_seed, sg] };
-    const miz = spouseMizac(p.spouse_seed); // eş mizacı anların rengini belirler
+    const miz = p.spouse_mizac || spouseMizac(p.spouse_seed); // eş mizacı anların rengini belirler (kur yapılan NPC'nin karakteri öncelikli)
     if (p.health < 45) { p.health = Math.min(100, p.health + (miz === "sefkatli" ? 9 : 6)); push(s, "evlilik", `Hastalığında ${p.spouse_name} başucundan ayrılmadı; biraz toparlandın.`, "kişisel", false, { k: "evj.spouseCare", p: [sn] }); }
     else if (p.money < 20 || (p.debt || 0) > 0) { const help = Math.round((15 + Math.floor(Math.random() * 20)) * (miz === "caliskan" ? 1.6 : 1)); p.money += help; push(s, "evlilik", `Sıkışınca ${p.spouse_name} çeyizinden bir şey bozdurdu; eve biraz akçe girdi.`, "kişisel", false, { k: "evj.spouseHelp", p: [sn, help] }); }
     else { let r = Math.random();
@@ -2287,9 +2306,10 @@ export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
 export const GOAL_HELP_COST = 25;
 export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.age < 13 || p.money < GOAL_HELP_COST) return s;
-  p.money -= GOAL_HELP_COST;
+  if (p.dead || p.age < 13 || p.money < GOAL_HELP_COST || !npc.goal) return s; // hedefi kalmayana (muradına ermiş/çocuk) yardım anlamsız
   const ns = npcStateOf(s, npc.id);
+  if (ns.int_turn === s.turn) return s; ns.int_turn = s.turn; // tur başına tek etkileşim (sohbet/hediye ailesiyle tutarlı)
+  p.money -= GOAL_HELP_COST;
   const rel = s.relationships[npc.id] || 0;
   // Azalan getiri: zaten yakın birine yardım daha az yakınlık/itibar getirir (farm engeli).
   const fresh = rel < 70;
@@ -2301,6 +2321,9 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   ns.memories.push(`Amacına omuz verdin: ${npc.goal}.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   remember(s, npc, "yardim"); // kalıcıya yakın +20 anı (Vercel: "sana borçlu")
+  // Hayal tohumu: omuz verilen hedef yıllar içinde gerçekleşebilir (npcLifeTick çözer) — dünya senin dokunuşunla değişir.
+  if (!s.world.npcEvo) s.world.npcEvo = {};
+  s.world.npcEvo[npc.id] = { ...(s.world.npcEvo[npc.id] || {}), goalHelped: true, gname: npc.name, goalk: npc.goal };
   // Velinimet tohumu: bu iyilik yıllar sonra keseyle ve itibarla döner (nesil aşabilir). Yalnız taze yardımda (azalan getiri; aynı NPC'ye spam ile tohum farmı önlenir).
   if (fresh) sowSeed(s, { kaynak: "velinimet", hmin: 24, hmax: 96, agirlik: "buyuk", nesil: true, etki: { money: 90, reputation: 6 }, npcName: npc.name });
   push(s, "sohbet", `${npc.name}'in "${npc.goal}" derdine ${GOAL_HELP_COST} akçeyle omuz verdin; sana minnettar kaldı.`, "kişisel", true, { k: "evj.helpGoal", p: [npc.name, { goalk: npc.goal }, GOAL_HELP_COST] });
@@ -2308,7 +2331,7 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
 }
 export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.age < 13) return s;
+  if (p.dead || p.age < 13 || !npc.goal) return s; // hedefi kalmayanın umudu da istismar edilemez
   // Tur başına tek istismar — yoksa farklı NPC'ler üstünden aynı turda sınırsız para farm'lanır.
   if (p.exploit_turn === s.turn) { push(s, "sohbet", `Bu ay birini daha kandırmaya kalkışmak nam yapar; biraz beklemelisin.`, "kişisel", false, { k: "evj.exploitWait" }); return s; }
   const rel = s.relationships[npc.id] || 0;
@@ -2343,7 +2366,7 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   const karizmaBonus = hasPerk(p, "karizmatik") ? 0.2 : 0;
   const ok = Math.random() < Math.min(0.97, 0.25 + (rel - 50) * 0.012 + socialPresence(p) * 0.03 + karizmaBonus + courtBonus(s));
   if (ok) {
-    p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
+    p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
     bumpNam(p, "capkin", 5);
     push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
   } else {
@@ -2379,7 +2402,7 @@ export function proposeArranged(prev: GameState, npc: NPC): GameState {
   p.money -= MATCHMAKER_FEE;
   const ok = Math.random() < Math.min(0.92, 0.42 + socialPresence(p) * 0.04 + p.fame / 320 + (hasPerk(p, "karizmatik") ? 0.15 : 0));
   if (ok) {
-    p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
+    p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
     push(s, "evlilik", `${npc.name} ile görücü usulü evlendin — iki aile görüştü, yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
   } else {
     push(s, "sohbet", `${npc.name}'in ailesi teklifi şimdilik geri çevirdi; çöpçatan başka kapı çalacak.`, "kişisel", false, { k: "evj.proposeNo", p: [npc.name] });
@@ -2440,8 +2463,9 @@ export function gossipAbout(prev: GameState, npc: NPC): GameState {
 export const GIVE_MONEY_AMT = 10;
 export function giveMoneyTo(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; if (p.dead || p.money < GIVE_MONEY_AMT) return s;
-  p.money -= GIVE_MONEY_AMT;
   const ns = npcStateOf(s, npc.id); const rel = s.relationships[npc.id] || 0;
+  if (ns.int_turn === s.turn) return s; ns.int_turn = s.turn; // tur başına tek etkileşim — sadaka spam'iyle ilişki farm'lanamaz
+  p.money -= GIVE_MONEY_AMT;
   const up = rel < 70 ? 9 : 3; // azalan getiri
   s.relationships[npc.id] = Math.min(100, rel + up); ns.mood = Math.max(-100, Math.min(100, ns.mood + 10));
   p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 3); remember(s, npc, "hediye");
@@ -3664,7 +3688,7 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
   p.battle_turn = s.turn; // bu ay dövüşüldü — kazanç da kayıp da turu tüketir (yenilip tekrar deneyip farmlanamaz)
   gainSkill(s, "combat", won ? 14 : 7);
   if (won) {
-    let reward = e.reward;
+    let reward = Math.round(e.reward * inflationFactor(s)); // ödül çağın parasıyla — geç oyunda dövüş anlamsız kalmasın
     if (hasPerk(p, "savas_ustasi")) reward = Math.round(reward * 1.5);
     p.money += reward; p.fame = Math.min(100, p.fame + e.fame); p.honor = Math.min(100, p.honor + e.honor);
     p.fear = Math.min(100, p.fear + Math.round(e.fame / 2));
@@ -3691,7 +3715,7 @@ const NEMESIS_NAMES = ["Kara Yusuf", "Çolak Murat", "Deli Hasan", "Topal Bekir"
 // Nemesis'le hesaplaşma çatışması (sentetik, ENCOUNTERS'ta değil).
 export function nemesisEncounter(s: GameState): Encounter | null {
   const n = s.story?.nemesis; if (!n) return null;
-  return { id: "nemesis", title: `Nemesis: ${n.name}`, desc: `${n.name} ile son hesaplaşma.`, power: n.power, reward: 90, fame: 16, honor: 8, danger: 30 };
+  return { id: "nemesis", title: `Nemesis: ${n.name}`, desc: `${n.name} ile son hesaplaşma.`, power: n.power, reward: Math.round(90 * inflationFactor(s)), fame: 16, honor: 8, danger: 30 };
 }
 export function applyNemesisOutcome(prev: GameState, won: boolean, finalHp: number): GameState {
   const s = clone(prev); const p = s.player; const n = s.story?.nemesis; if (!n) return s;
@@ -3699,7 +3723,7 @@ export function applyNemesisOutcome(prev: GameState, won: boolean, finalHp: numb
   p.battle_turn = s.turn; // nemesis hesaplaşması da tur başına tek dövüş kapısına dahil
   gainSkill(s, "combat", won ? 16 : 8);
   if (won) {
-    p.money += 90; p.fame = Math.min(100, p.fame + 16); p.honor = Math.min(100, p.honor + 8);
+    p.money += Math.round(90 * inflationFactor(s)); p.fame = Math.min(100, p.fame + 16); p.honor = Math.min(100, p.honor + 8); // ödül çağın parasıyla (nemesisEncounter göstergesiyle aynı)
     bumpNam(p, "mert", 8);
     const floor = hasPerk(p, "yilmaz") ? 5 : 1; p.health = Math.max(floor, Math.round(finalHp));
     s.story.nemesis = null;
