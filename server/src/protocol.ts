@@ -14,7 +14,7 @@
 //     sunucuya gönderir.
 // ──────────────────────────────────────────────────────────────────────────
 
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 export const MAX_PLAYERS = 10;           // bir diyardaki insan slotu (kalanı NPC doldurur)
 export const TICK_TIMEOUT_MS = 5 * 60 * 1000; // çoğunluk olmazsa otomatik ay atlama tavanı
 export const TICK_SOFT_MS = 90 * 1000;         // en az bir oyuncu hazırsa bekleme bu kadara iner (2 kişilik diyarda 5 dk çile bitti)
@@ -45,6 +45,11 @@ export const ASSASSINATE_MIN_AGE = 18;
 export const COURT_NPC_COST = 250;    // NPC'yi yanına çekme (ziyafet/hediye)
 export const TURN_NPC_COST = 400;     // NPC'yi bir oyuncuya karşı kışkırtma
 export const MEDIATE_NPC_COST = 300;  // NPC ile oyuncu arasını düzeltme
+// ── Ortak girişim (kervan ortaklığı): oyuncular hisse koyar, kervan 3 ayda döner ──
+// Tek ortak zarar eder, ortak sayısı arttıkça kâr artar → MP'nin "birlikte kazan" ekonomisi.
+export const VENTURE_MIN_STAKE = 50;   // asgari hisse
+export const VENTURE_MAX_STAKE = 500;  // oyuncu başına hisse tavanı (balina + ortak = sınırsız kâr kapısı olmasın)
+export const VENTURE_TICKS = 3;        // kervanın dönüş süresi (ay/tick)
 // Diyarın 5 beyliği — game.ts BEYLIKS ile BİREBİR aynı (id'ler eşleşmeli). Hem istemci
 // hem sunucu buradan okur → kayma olmaz. NPC ocaklar boş beylikleri tutar.
 export const BEYLIK_DEFS: { id: string; name: string }[] = [
@@ -133,6 +138,8 @@ export interface NpcBond { npc: string; player: string; standing: number; }
 export interface RealmNews { k: string; p: (string | number)[]; turn: number; }
 // El sıkışma gerektiren teklif (ittifak/dünür/borç/sığınma) — hedef kabul/ret eder.
 export interface Offer { id: string; from: string; fromName: string; to: string; kind: "alliance" | "marriage" | "loan" | "asylum"; amount?: number; turn: number; }
+// Ortak girişim (kervan ortaklığı) — hisseler + vade. resolveTurn geldiğinde sunucu çözer.
+export interface VentureState { backers: { id: string; name: string; amount: number }[]; startedTurn: number; resolveTurn: number; }
 
 // ── Diyarın tam anlık görüntüsü (sunucu → istemci) ──
 export interface RealmSnapshot {
@@ -153,6 +160,7 @@ export interface RealmSnapshot {
   npcBonds: NpcBond[];   // NPC↔oyuncu ilişkileri (kişiye göre değişir)
   news: RealmNews[];     // diyar haberleri (NPC'lerden kozmetik akış — oyuna etkisi YOK)
   offers: Offer[];       // bekleyen el-sıkışma teklifleri (ittifak/dünür/borç/sığınma)
+  venture?: VentureState | null; // aktif ortak girişim (v3+; eski sunucu göndermez → istemci UI'ı gizler)
   econ: number;          // paylaşımlı ekonomi/enflasyon indeksi
   createdAt: number;
 }
@@ -197,7 +205,9 @@ export type SharedIntent =
   // ── Paylaşımlı NPC ilişkileri (Faz B) ──
   | { k: "courtNpc"; npcId: string }                // NPC'yi yanına çek (standing↑)
   | { k: "turnNpc"; npcId: string; against: string }// NPC'yi bir oyuncuya karşı kışkırt
-  | { k: "mediateNpc"; npcId: string; player: string }; // NPC ile bir oyuncunun arasını düzelt
+  | { k: "mediateNpc"; npcId: string; player: string } // NPC ile bir oyuncunun arasını düzelt
+  // ── Ortak girişim ──
+  | { k: "ventureBack"; amount: number };           // kervan ortaklığına hisse koy (altın istemcide kesilir)
 
 // ── İstemci → Sunucu mesajları ──
 export type ClientMsg =

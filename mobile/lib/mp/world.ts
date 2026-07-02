@@ -84,6 +84,11 @@ export function applyTickEvents(prev: GameState, events: TickEvent[]): GameState
 
       // ── SOSYAL DOKU olayları ──
       case "mp.beylik.spoils": p.money += Number(e.p?.[1]) || 0; p.fame = clamp100(p.fame + 2); break; // sefer ganimetinden üye payı
+      // ── ORTAK GİRİŞİM: kervan ortaklığı (hisse istemcide kesildi; dönüş burada işlenir) ──
+      case "mp.venture.win": p.money += Number(e.p?.[0]) || 0; p.fame = clamp100(p.fame + 1); break;  // kervan döndü, hissen kâr getirdi
+      case "mp.venture.fail": p.money += Number(e.p?.[0]) || 0; break;                                 // kervan soyuldu: yarı iade
+      case "mp.venture.refund": p.money += Number(e.p?.[0]) || 0; break;                               // hisse tavanını aşan kısım iade
+      // mp.venture.backed → yalnız bilgilendirme (altın gönderilirken kesildi)
       case "mp.soc.giftGot": p.money += Number(e.p?.[1]) || 0; break;       // bağış aldın
       case "mp.soc.loanGot": p.money += Number(e.p?.[1]) || 0; break;       // borç aldın
       case "mp.soc.loanGave": p.money = Math.max(0, p.money - (Number(e.p?.[1]) || 0)); break; // borç verdin

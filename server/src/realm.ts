@@ -15,6 +15,7 @@ import {
   Bond, Offer, PactType, GIFT_MAX, ASSASSINATE_MIN_AGE,
   NpcPublic, NpcBond, RealmNews,
   PROTOCOL_VERSION, MAX_PLAYERS, TICK_TIMEOUT_MS, TICK_SOFT_MS, readyToTick,
+  VENTURE_MIN_STAKE, VENTURE_MAX_STAKE, VENTURE_TICKS,
 } from "./protocol";
 
 interface Env { REALM: DurableObjectNamespace; DIRECTORY: DurableObjectNamespace }
@@ -85,6 +86,7 @@ export class RealmDO {
       this.snap.guilds.forEach((g) => { if (g.leaderName === undefined) g.leaderName = null; if (g.backing === undefined) g.backing = null; });
       if (!this.snap.news) this.snap.news = [];
       if (!this.snap.offers) this.snap.offers = [];
+      if (this.snap.venture === undefined) this.snap.venture = null;
       this.snap.players.forEach((p) => { if (p.beylikId === undefined) p.beylikId = null; if (p.honor === undefined) p.honor = 0; if (p.traveling === undefined) p.traveling = false; if (p.married === undefined) p.married = false; });
       this.snap.v = PROTOCOL_VERSION;
     } else {
@@ -97,7 +99,7 @@ export class RealmDO {
         throne: { holderId: null, holderName: null, claimedTurn: 0 },
         guilds: GUILD_IDS.map((id) => ({ id, leaderId: null, leaderName: null, tax: 10, closed: false, backing: null } as GuildState)),
         provinces: [], beyliks: defaultBeyliks(), bonds: [],
-        npcs: generateNpcs(seedVal), npcBonds: [], news: [], offers: [], econ: 1, createdAt: now,
+        npcs: generateNpcs(seedVal), npcBonds: [], news: [], offers: [], venture: null, econ: 1, createdAt: now,
       };
       await this.persist();
     }
@@ -502,6 +504,37 @@ export class RealmDO {
       if (!members.length) continue;
       members.forEach((m) => ev(m.id, "mp.guild.duesPaid", [g.id, g.tax]));
       ev(g.leaderId, "mp.guild.duesIncome", [members.length * g.tax, g.id]);
+    }
+
+    // 4f) ORTAK GİRİŞİM (kervan ortaklığı): hisseler birleşir, kervan 3 ayda döner.
+    // Tek ortak zarar eder (EV<1), ortak sayısı arttıkça kâr artar — "birlikte kazan" ekonomisi.
+    // Önce vadesi dolan girişim çözülür (geç kalan hisse bir SONRAKİ kervana yazılır), sonra yeni hisseler işlenir.
+    if (this.snap.venture && this.snap.turn >= this.snap.venture.resolveTurn) {
+      const v = this.snap.venture; this.snap.venture = null;
+      const n = v.backers.length;
+      if (n) {
+        const win = Math.random() < 0.8;
+        const coop = 1.05 + 0.10 * Math.min(4, n - 1); // 1 ortak ×1.05 … 5+ ortak ×1.45
+        for (const b of v.backers) {
+          if (win) ev(b.id, "mp.venture.win", [Math.round(b.amount * coop), n]);
+          else ev(b.id, "mp.venture.fail", [Math.round(b.amount * 0.5)]); // soyulan kervandan yarı iade
+        }
+      }
+    }
+    for (const pid of order) for (const it of this.intents[pid]) {
+      if (it.k !== "ventureBack") continue;
+      const want = Math.max(VENTURE_MIN_STAKE, Math.min(VENTURE_MAX_STAKE, Math.floor(it.amount || 0)));
+      if (!(want > 0)) continue;
+      if (!this.snap.venture) this.snap.venture = { backers: [], startedTurn: this.snap.turn, resolveTurn: this.snap.turn + VENTURE_TICKS };
+      const v = this.snap.venture;
+      const mine = v.backers.find((b) => b.id === pid);
+      const room = VENTURE_MAX_STAKE - (mine?.amount || 0);
+      const add = Math.min(want, room);
+      if (add < want) ev(pid, "mp.venture.refund", [want - add]); // tavanı aşan kısım iade (istemcide kesilen altın yanmaz)
+      if (add <= 0) continue;
+      if (mine) mine.amount += add;
+      else v.backers.push({ id: pid, name: playerById(pid)?.name || "?", amount: add });
+      ev(pid, "mp.venture.backed", [add, v.resolveTurn - this.snap.turn]);
     }
 
     // ── 5) SOSYAL DOKU: destek / rekabet / entrika / yardım (oyuncular arası) ──

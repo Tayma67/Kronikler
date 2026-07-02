@@ -6,7 +6,7 @@ import { useI18n } from "../../lib/i18n";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { mePublic, applyTickEvents, realmYearMonth } from "../../lib/mp/world";
-import { SharedIntent, BEY_MIN_POWER, BEY_MIN_AGE, BEY_COST, MP_CAMPAIGN_COST, THRONE_MIN_AGE, THRONE_MIN_POWER, THRONE_MIN_FAME, THRONE_COST } from "../../lib/mp/protocol";
+import { SharedIntent, BEY_MIN_POWER, BEY_MIN_AGE, BEY_COST, MP_CAMPAIGN_COST, THRONE_MIN_AGE, THRONE_MIN_POWER, THRONE_MIN_FAME, THRONE_COST, VENTURE_MAX_STAKE } from "../../lib/mp/protocol";
 import { newGame, advance, continueAsHeir, GameState, beylikName } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
@@ -298,6 +298,33 @@ export default function MpOyun() {
             </View>
           );
         })}
+
+        {/* ORTAK GİRİŞİM — kervan ortaklığı (v3+ sunucu; eski sunucuda gizli kalır, altın yanmaz) */}
+        {(snapshot.v || 0) >= 3 && (() => {
+          const v = snapshot.venture;
+          const mine = v?.backers.find((b) => b.id === guestId)?.amount || 0;
+          const pool = v ? v.backers.reduce((sum, b) => sum + b.amount, 0) : 0;
+          const left = v ? Math.max(0, v.resolveTurn - snapshot.turn) : 0;
+          return (
+            <View style={{ borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 9, padding: 10, marginTop: 18, backgroundColor: C.card }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <GameIcon name="camel" size={14} color={C.gold} />
+                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim }}>{t("mp.venture.title").toUpperCase()}</Text>
+              </View>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 5, lineHeight: 16 }}>
+                {v ? pf(t("mp.venture.pool"), pool, v.backers.length, left) : t("mp.venture.none")}
+              </Text>
+              {mine > 0 && <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.gold, marginTop: 3 }}>{pf(t("mp.venture.mine"), mine)}</Text>}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                {[100, 250, 500].map((amt) => { const ok = !p.dead && p.money >= amt && mine + amt <= VENTURE_MAX_STAKE; return (
+                  <Pressable key={amt} disabled={!ok} onPress={() => { spend(amt); intent({ k: "ventureBack", amount: amt }); }} style={[miniBtnGold, !ok && { opacity: 0.4 }]}>
+                    <Text style={miniTxtGold}>{pf(t("mp.venture.backBtn"), amt)}</Text></Pressable>
+                ); })}
+              </View>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 6, lineHeight: 14 }}>{t("mp.venture.hint")}</Text>
+            </View>
+          );
+        })()}
 
         {/* Diyardaki haneler */}
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.players")} · {liveCount}</Text>
