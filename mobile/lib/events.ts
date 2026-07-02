@@ -48,7 +48,7 @@ export const DILEMMAS: Dilemma[] = [
     ],
   },
   {
-    id: "yasli_miras", icon: "scroll-open", title: "Miras Kavgası",
+    id: "orta_miras", icon: "scroll-open", title: "Miras Kavgası",
     text: "Bir akrabanın ardından miras paylaşımı kızıştı. Hakkını istersen aile dağılabilir.",
     when: (p) => p.age >= 45,
     choices: [
@@ -518,7 +518,7 @@ export const DILEMMAS: Dilemma[] = [
 
   // ── YAŞLILIK (yaşam evresi: 58+) ──
   {
-    id: "yasli_torun", icon: "family", title: "Ocak Başında Hikâye",
+    id: "yasli_ocakbasi", icon: "family", title: "Ocak Başında Hikâye",
     text: "Soğuk bir gece; gençler etrafına toplanmış, bir hikâye bekliyor.",
     when: (p) => p.age >= 58,
     choices: [
@@ -673,6 +673,115 @@ export const DILEMMAS: Dilemma[] = [
     choices: [
       { label: "Dostuna sadık kal", delta: { honor: 6, reputation: 3, nam: { mert: 3 } }, result: "Sözünden dönmedin; sadakatin dostunun gönlünde taht kurdu." },
       { label: "Çıkarına bak", delta: { money: 12, honor: -5, reputation: -2 }, result: "Cebin doldu ama vefasızlığın el altından konuşuldu." },
+    ],
+  },
+  // ── Yeni yaşam dilimleri: evlilik, ebeveynlik, at/yol, ihtiyarlık, lonca, çocukluk, valilik ──
+  {
+    id: "es_kusluk", icon: "family", title: "Ocakta Soğukluk",
+    text: "Eşinle küçük bir mesele büyüdü; iki gündür evde sözler kısa, bakışlar uzak.",
+    when: (p) => p.married,
+    choices: [
+      { label: "İlk adımı at", delta: { honor: 3, nam: { mert: 2 } }, result: "Gururu bir yana koydun; sofra yeniden ısındı, evin içi aydınlandı." },
+      { label: "İnat et", delta: { fear: 2, honor: -2 }, result: "Sen sustun, o sustu; soğukluk günlerce evin içinde dolaştı." },
+    ],
+  },
+  {
+    id: "es_hediye", icon: "gems", title: "Unutulan Gün",
+    text: "Evlendiğiniz günün yıl dönümü yaklaşıyor. Kesende bir hediyelik akçe var ama ay sonu da yakın.",
+    when: (p) => p.married && p.money >= 25,
+    choices: [
+      { label: "Hediye al", delta: { money: -20, reputation: 3, nam: { comert: 3 } }, result: "Küçük bir armağan, büyük bir tebessüm; komşular bile bahsetti." },
+      { label: "Bu yıl olmasın", delta: { honor: -2 }, result: "Gün sessiz geçti; kimse bir şey demedi ama bir şey eksikti." },
+    ],
+  },
+  {
+    id: "evlat_yalan", icon: "baby", title: "Küçük Yalan",
+    text: "Evladının komşunun bahçesinden meyve aşırdığını öğrendin; üstelik sorulunca inkâr etti.",
+    when: (p) => p.children.length >= 1,
+    choices: [
+      { label: "Karşısına otur, konuş", delta: { honor: 4, nam: { dindar: 2 } }, result: "Bağırmadan anlattın; çocuk hem utandı hem anladı. Komşuya da helallik dilendi." },
+      { label: "Üstünü ört", delta: { honor: -3, fear: 1 }, result: "Meseleyi kapattın; ama çocuk yanlışın bedelsiz olduğunu da öğrendi." },
+    ],
+  },
+  {
+    id: "cocuk_hayal", icon: "star", title: "Evladının Hayali",
+    text: "Evladın gözleri parlayarak bir hayalini açtı; hevesini beslemek biraz akçe ister.",
+    when: (p) => p.children.length >= 1 && p.money >= 20,
+    choices: [
+      { label: "Hevesini destekle", delta: { money: -15, reputation: 2, nam: { comert: 2 } }, result: "Küçük bir masrafla büyük bir sevinç aldın; evladın bunu hiç unutmayacak." },
+      { label: "Ayakları yere bassın", delta: { honor: 1 }, result: "Hayal başka, hayat başka dedin; çocuk sustu ama gözlerindeki ışık biraz söndü." },
+    ],
+  },
+  {
+    id: "at_nal", icon: "camel", title: "Nalsız Yol",
+    text: "Atın nalını attı; nalbant ücret istiyor ama yol da seni bekliyor.",
+    when: (p) => !!p.horse && p.money >= 15,
+    choices: [
+      { label: "Nalbanta uğra", delta: { money: -12 }, result: "Atın sağlam nallarla yola koyuldu; yol boyu içinden 'iyi ki' dedin." },
+      { label: "Böyle de gider", delta: { health: -5 }, result: "Yarı yolda at aksadı; düşe kalka vardın, her yanın ağrıyor." },
+    ],
+  },
+  {
+    id: "yasli_nasihat", icon: "prayer-beads", title: "Nasihat İsteyen Genç",
+    text: "Mahalleden bir genç, hayat yolunu sormak için kapına geldi; gözünde saygı, elinde küçük bir armağan.",
+    when: (p) => p.age >= 55,
+    choices: [
+      { label: "Bildiğini paylaş", delta: { reputation: 4, nam: { dindar: 2 } }, result: "Bir ömrün dersini bir akşamda anlattın; genç, elini öpüp ayrıldı." },
+      { label: "Bedava akıl olmaz", delta: { money: 10, reputation: -3 }, result: "Nasihatin ücretini aldın; genç teşekkür etti ama mahallede tuhaf karşılandı." },
+    ],
+  },
+  {
+    id: "yasli_eskidost", icon: "coins", title: "Eski Defter",
+    text: "Yıllar önce borç verdiğin eski bir dost kapına geldi; unuttuğun alacağı ödemeye gelmiş.",
+    when: (p) => p.age >= 60,
+    choices: [
+      { label: "Helal olsun de", delta: { honor: 8, nam: { comert: 4 } }, result: "Defteri gönlünle kapattın; dostun gözleri doldu, hakkını helal etti." },
+      { label: "Faiziyle al", delta: { money: 30, reputation: -4, nam: { zalim: 3 } }, result: "Eski hesabı diniyle günüyle tahsil ettin; dostluk defteri de kapandı." },
+    ],
+  },
+  {
+    id: "lonca_oy", icon: "crown", title: "Loncada Oylama",
+    text: "Loncanda başa kimin geçeceği oylanıyor: yaşlı usta mı, ateşli genç mi? Sözün geçiyor.",
+    when: (p) => !!p.faction,
+    choices: [
+      { label: "Ustadan yana dur", delta: { standing: 8, honor: 2 }, result: "Tecrübeye oy verdin; ocakta ağırbaşlılığınla anıldın." },
+      { label: "Genci destekle", delta: { standing: -4, fear: 3, fame: 2 }, result: "Değişimden yana durdun; kimi alkışladı, eskiler ise not aldı." },
+    ],
+  },
+  {
+    id: "cirak_hata", icon: "anvil", title: "Çırağın Hatası",
+    text: "Yanında çalışan çırak pahalı bir malzemeyi ziyan etti; suçu üstlenmekten korkup titriyor.",
+    when: (p) => p.skills.crafting >= 3 && p.money >= 20,
+    choices: [
+      { label: "Zararı sen üstlen", delta: { money: -15, honor: 5, nam: { comert: 3 } }, result: "Zarar senin kesenden çıktı ama çırağın gözünde bir dağ kadar büyüdün." },
+      { label: "Çıraktan kes", delta: { fear: 3, reputation: -2, nam: { zalim: 2 } }, result: "Bedelini ona ödettin; iş öğrendi belki ama sevgi öğrenmedi." },
+    ],
+  },
+  {
+    id: "cocukluk_kus", icon: "leaf", title: "Kanadı Kırık Kuş",
+    text: "Dere kenarında kanadı kırık bir kuş buldun; arkadaşların sapan taşı için toplanmış bakıyor.",
+    when: (p) => p.age < 13,
+    choices: [
+      { label: "Kuşa bak", delta: { honor: 2, nam: { comert: 2 } }, result: "Kuşu sarıp sarmaladın; günler sonra pencereden uçup gitti, içinde tatlı bir sızı kaldı." },
+      { label: "Sapanı kap", delta: { fear: 1, nam: { zalim: 2 } }, result: "Taş attın, kuş kaçtı; arkadaşlar güldü ama içinde bir yer buruştu." },
+    ],
+  },
+  {
+    id: "cocukluk_kese", icon: "coins", title: "Düşen Kese",
+    text: "Pazar kalabalığında bir tüccarın kesesi düştü; kimse görmedi, sen gördün.",
+    when: (p) => p.age < 13,
+    choices: [
+      { label: "Koş, yetiştir", delta: { money: 2, honor: 4, reputation: 2 }, result: "Keseyi sahibine ulaştırdın; tüccar başını okşayıp eline birkaç akçe sıkıştırdı." },
+      { label: "Cebe at", delta: { money: 8, honor: -4 }, result: "Kese cebinde eridi; kimse görmedi ama sen biliyorsun." },
+    ],
+  },
+  {
+    id: "vali_dilek", icon: "scroll", title: "Kapıdaki Köylü",
+    text: "Yönettiğin şehirden yaşlı bir köylü, koca bir yol tepip derdini anlatmaya kapına gelmiş.",
+    when: (p) => (p.governorships || []).length >= 1,
+    choices: [
+      { label: "İçeri al, dinle", delta: { money: -10, reputation: 4, honor: 3 }, result: "Derdini dinleyip elinden tuttun; köyüne 'vali bizi görüyor' diye döndü." },
+      { label: "Kapıdan çevir", delta: { fear: 2, reputation: -3 }, result: "Vaktin yok dedin; köylü boynu bükük döndü, kapındaki nöbetçi bile üzüldü." },
     ],
   },
 ];
