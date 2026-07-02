@@ -206,7 +206,7 @@ export default function Pazar() {
               <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginBottom: 9 }}>{t("paz.caravanHint")}</Text>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {CARAVAN_AMOUNTS.map((amt) => (
-                  <Pressable key={amt} disabled={p.money < amt} onPress={() => { hap('advance'); apply((s) => launchCaravan(s, amt)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: p.money < amt ? C.border : "rgba(224,90,48,0.5)", backgroundColor: p.money < amt ? C.bg : "rgba(224,90,48,0.12)" }}>
+                  <Pressable key={amt} disabled={p.money < amt || p.age < 13} onPress={() => { hap('advance'); apply((s) => launchCaravan(s, amt)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: (p.money < amt || p.age < 13) ? C.border : "rgba(224,90,48,0.5)", backgroundColor: (p.money < amt || p.age < 13) ? C.bg : "rgba(224,90,48,0.12)" }}>
                     <Text style={{ fontFamily: F.display, fontSize: 12, color: p.money < amt ? C.parchmentMuted : C.ember }}>{amt}⚜</Text>
                   </Pressable>
                 ))}

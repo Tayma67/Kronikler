@@ -32,8 +32,10 @@ export default function Suc() {
 
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
 
+  // Ay başına tek suç denemesi (doCrime last_crime_turn) — çekirdek sessizce reddediyor; tuşu kilitle + sebep göster.
+  const crimeDone = state.player.last_crime_turn === state.turn || state.player.dead;
   const Crime = ({ kind, title, desc }: { kind: CrimeKind; title: string; desc: string }) => (
-    <Pressable onPress={() => { hap("advance"); apply((s) => doCrime(s, kind)); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 11, padding: 14, marginBottom: 10 }}>
+    <Pressable disabled={crimeDone} onPress={() => { hap("advance"); apply((s) => doCrime(s, kind)); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 11, padding: 14, marginBottom: 10, opacity: crimeDone ? 0.45 : 1 }}>
       <View style={{ width: 38, height: 38, borderRadius: 9, backgroundColor: "rgba(123,79,175,0.12)", borderWidth: 1, borderColor: "rgba(123,79,175,0.35)", alignItems: "center", justifyContent: "center" }}>
         <GameIcon name="hood" size={18} color={C.ink} />
       </View>
@@ -73,6 +75,12 @@ export default function Suc() {
           <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, textAlign: "center", marginTop: 10 }}>{t("suc.tooYoung")}</Text>
         ) : (
           <>
+            {crimeDone && !state.player.dead && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+                <GameIcon name="hood" size={15} color={C.ink} />
+                <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, lineHeight: 17 }}>{t("suc.doneMonth")}</Text>
+              </View>
+            )}
             <Crime kind="yankesicilik" title={t("crime.yankesicilik.l")} desc={t("crime.yankesicilik.d")} />
             <Crime kind="dukkan_soyma" title={t("crime.dukkan_soyma.l")} desc={t("crime.dukkan_soyma.d")} />
             <Crime kind="soygun" title={t("crime.soygun.l")} desc={t("crime.soygun.d")} />

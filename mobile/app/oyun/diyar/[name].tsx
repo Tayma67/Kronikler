@@ -218,7 +218,7 @@ export default function DiyarDetay() {
         <>
           <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("diyar.setOut")}</Text>
           {TRAVEL_ROUTES.filter((r) => r.id !== "at" || state.player.horse).map((r) => (
-            <Pressable key={r.id} onPress={() => { apply((s) => travelBy(s, name, r.id)); router.back(); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: r.id === "at" ? "rgba(127,166,106,0.5)" : "rgba(201,168,76,0.4)", backgroundColor: C.card, marginBottom: 8 }}>
+            <Pressable key={r.id} onPress={() => { if (state.player.dead) return; apply((s) => travelBy(s, name, r.id)); router.back(); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: r.id === "at" ? "rgba(127,166,106,0.5)" : "rgba(201,168,76,0.4)", backgroundColor: C.card, marginBottom: 8 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
                 {r.id === "at" ? <GameIcon name="camel" size={18} color={C.sage} /> : null}
                 <View style={{ flex: 1 }}>

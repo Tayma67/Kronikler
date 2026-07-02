@@ -51,7 +51,7 @@ export default function Meslek() {
               <Text style={{ fontFamily: F.display, fontSize: 13, color: can ? C.gold : C.parchmentMuted }}>{t("prof.act." + p.profession + ".n")}</Text>
               <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, marginTop: 4, lineHeight: 18 }}>{t("prof.act." + p.profession + ".d")}</Text>
               <Pressable onPress={() => { if (!can) return; hap("success"); apply((s) => professionAction(s)); }} disabled={!can} style={{ marginTop: 10, paddingVertical: 11, borderRadius: 9, alignItems: "center", borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: can ? "rgba(201,168,76,0.12)" : C.bg }}>
-                <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 0.5, color: can ? C.gold : C.parchmentMuted }}>{cd > 0 ? t("prof.actWait").replace("%1", String(cd)) : t("prof.act." + p.profession + ".n")}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 0.5, color: can ? C.gold : C.parchmentMuted }}>{cd > 0 ? t("prof.actWait").replace("%1", String(cd)) : (!can && p.hunger < 18) ? t("mek.hungry") : t("prof.act." + p.profession + ".n")}</Text>
               </Pressable>
             </Panel>
           );

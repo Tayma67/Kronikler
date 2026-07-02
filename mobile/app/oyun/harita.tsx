@@ -66,7 +66,7 @@ export default function Harita() {
       <View style={{ width: 7, height: 7, backgroundColor: C.gold, transform: [{ rotate: "45deg" }] }} />
       <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 2, color: C.gold, textTransform: "uppercase" }}>{title}</Text>
       <View style={{ flex: 1, height: 1.5, backgroundColor: C.goldDim, opacity: 0.6 }} />
-      {oneri && <View style={{ borderWidth: 1, borderColor: "rgba(94,134,168,0.55)", backgroundColor: "rgba(94,134,168,0.14)", borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1 }}><Text style={{ fontFamily: F.display, fontSize: 7, letterSpacing: 1, color: C.azure }}>ÖNERİ</Text></View>}
+      {oneri && <View style={{ borderWidth: 1, borderColor: "rgba(94,134,168,0.55)", backgroundColor: "rgba(94,134,168,0.14)", borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1 }}><Text style={{ fontFamily: F.display, fontSize: 7, letterSpacing: 1, color: C.azure }}>{t("map.suggest")}</Text></View>}
     </View>
   );
 

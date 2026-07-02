@@ -200,6 +200,7 @@ export function borrow(prev: GameState, amount: number): GameState {
 }
 export function repay(prev: GameState, amount: number): GameState {
   const s = clone(prev); const p = s.player;
+  if (p.dead) return s;
   const amt = Math.min(Math.max(0, Math.round(amount)), Math.min(p.money, p.debt || 0));
   if (amt <= 0) return s;
   p.money -= amt; p.debt = Math.round((p.debt || 0) - amt);
@@ -217,6 +218,7 @@ export function repay(prev: GameState, amount: number): GameState {
 export const DEPOSIT_ANNUAL_YIELD = 0.02;
 export function depositCoin(prev: GameState, amount: number): GameState {
   const s = clone(prev); const p = s.player;
+  if (p.dead) return s;
   const amt = Math.min(Math.max(0, Math.round(amount)), p.money);
   if (amt <= 0) return s;
   p.money -= amt; p.deposit = Math.round((p.deposit || 0) + amt);
@@ -225,6 +227,7 @@ export function depositCoin(prev: GameState, amount: number): GameState {
 }
 export function withdrawCoin(prev: GameState, amount: number): GameState {
   const s = clone(prev); const p = s.player;
+  if (p.dead) return s;
   const amt = Math.min(Math.max(0, Math.round(amount)), p.deposit || 0);
   if (amt <= 0) return s;
   p.deposit = Math.round((p.deposit || 0) - amt); p.money += amt;
@@ -371,7 +374,7 @@ export function propYield(s: GameState, pr: Property, lang: Lang = "tr"): { good
 }
 // İşçi işe al (mülkün bulunduğu şehrin NPC'lerinden, boş slot varsa).
 export function hireWorker(prev: GameState, index: number, npcId: string): GameState {
-  const s = clone(prev); const pr = s.player.properties[index];
+  const s = clone(prev); if (s.player.dead) return s; const pr = s.player.properties[index];
   if (!pr) return s;
   pr.workers = pr.workers || [];
   if (pr.workers.includes(npcId) || pr.workers.length >= propWorkerSlots(pr)) return s;
@@ -383,7 +386,7 @@ export function hireWorker(prev: GameState, index: number, npcId: string): GameS
 }
 // İşçi çıkar.
 export function fireWorker(prev: GameState, index: number, npcId: string): GameState {
-  const s = clone(prev); const pr = s.player.properties[index];
+  const s = clone(prev); if (s.player.dead) return s; const pr = s.player.properties[index];
   if (!pr || !pr.workers) return s;
   pr.workers = pr.workers.filter((id) => id !== npcId);
   return s;
@@ -2090,6 +2093,7 @@ export function buyPrice(s: GameState, id: string): number {
 }
 export function buyItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player;
+  if (p.dead) return s;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   const price = buyPrice(s, id);
   if (p.money < price) return s;
@@ -2122,6 +2126,7 @@ export function bargainChance(s: GameState): number {
 // Müzakere sonunda anlaşılan fiyattan alım.
 export function negotiatedBuy(prev: GameState, id: string, price: number): GameState {
   const s = clone(prev); const p = s.player;
+  if (p.dead) return s;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   const bb = bargainBase(s, id); price = Math.max(Math.round(bb * 0.6), Math.min(bb, Math.round(price || 0))); // fiyat pazarlık aralığına sınırlanır (UI dışı keyfi/sıfır fiyat exploit'i önlenir)
   if (p.money < price) return s;
@@ -2133,6 +2138,7 @@ export function negotiatedBuy(prev: GameState, id: string, price: number): GameS
 }
 export function sellItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player;
+  if (p.dead) return s;
   if (!(p.inventory[id] > 0)) return s;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   // Kalite kademeli malda en iyi birimi sat; fiyata kalite çarpanı uygula.
@@ -2156,6 +2162,7 @@ export function bargainSellBase(s: GameState, id: string): number {
 // Müzakereyle satış: anlaşılan fiyattan bir birim satar (kalite çarpanı korunur).
 export function negotiatedSell(prev: GameState, id: string, price: number): GameState {
   const s = clone(prev); const p = s.player;
+  if (p.dead) return s;
   if (!(p.inventory[id] > 0)) return s;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   const sb = bargainSellBase(s, id); price = Math.max(sb, Math.min(Math.round(sb * 1.4), Math.round(price || 0))); // fiyat pazarlık aralığına sınırlanır (keyfi yüksek satış exploit'i önlenir)
@@ -2549,7 +2556,7 @@ export const SUBJECTS: Subject[] = [
   { id: "edebiyat", name: "Edebiyat", icon: "book", desc: "Karizma ve hitabet." },
   { id: "beden",    name: "Beden", icon: "fist", desc: "Güç ve savaş kabiliyeti." },
 ];
-export interface StudyResult { state: GameState; key: string; chips: { label: string; col: string }[]; blocked?: boolean; }
+export interface StudyResult { state: GameState; key: string; chips: { label: string; col: string; k?: string; p?: (string | number)[] }[]; blocked?: boolean; }
 // ── Çalışma gücü (enerji sistemi) — her ay yenilenir; ders/kulüp meşki harcar ──
 export const STUDY_COST = 2; // ders / kulüp meşki başına enerji
 export function maxStudyEnergy(age: number): number { return age >= 7 && age < 18 ? 4 : 2; } // okul çağı 2 iş, yetişkin 1 iş/ay
@@ -2600,25 +2607,25 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   addStatXp(s, EXAM_STAT[id] || "intelligence", 5); // dersin özelliği tecrübeyle gelişir
   const lucky = hasPerk(p, "mucit") || chance(0.5);
   const statBonus = hasPerk(p, "mucit") || chance(0.12); // serbest özellik puanı artık nadir (grind sömürüsü kapatıldı)
-  const chips: { label: string; col: string }[] = [];
+  const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = [];
   let key = "";
   p.teacherBond = (p.teacherBond || 0) + 1; // hoca bağı çalıştıkça güçlenir
-  if (p.teacherBond % 12 === 0) { p.stat_points += 1; chips.push({ label: "Hoca takdiri · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Hocan emeğini gördü ve seni takdir etti (özellik puanı).", "kişisel", true, { k: "club.bond" }); }
+  if (p.teacherBond % 12 === 0) { p.stat_points += 1; chips.push({ label: "Hoca takdiri · Puan +1", col: "#E0BC5A", k: "chip.bond" }); push(s, "mektep", "Hocan emeğini gördü ve seni takdir etti (özellik puanı).", "kişisel", true, { k: "club.bond" }); }
   if (id === "din") {
-    bumpNam(p, "dindar", 4); chips.push({ label: "Dindar +4", col: "#9C7BC4" });
-    if (lucky) { p.honor = Math.min(100, p.honor + 2); chips.push({ label: "Şeref +2", col: "#7FA66A" }); key = "ev.study.din.l"; push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu.", "kişisel", false, { k: key }); }
+    bumpNam(p, "dindar", 4); chips.push({ label: "Dindar +4", col: "#9C7BC4", k: "chip.dindar", p: ["+4"] });
+    if (lucky) { p.honor = Math.min(100, p.honor + 2); chips.push({ label: "Şeref +2", col: "#7FA66A", k: "chip.honor", p: ["+2"] }); key = "ev.study.din.l"; push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu.", "kişisel", false, { k: key }); }
     else { key = "ev.study.din.p"; push(s, "mektep", "Mektepte dua ve hikmet dinledin.", "kişisel", false, { k: key }); }
   } else if (id === "matematik") {
-    gainSkill(s, "trade", 5); chips.push({ label: "Ticaret +5", col: "#C9A84C" });
-    if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); key = "ev.study.matematik.l"; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
+    gainSkill(s, "trade", 5); chips.push({ label: "Ticaret +5", col: "#C9A84C", k: "chip.trade", p: ["+5"] });
+    if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.matematik.l"; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
     else { addStatXp(s, "intelligence", 6); key = "ev.study.matematik.p"; push(s, "mektep", "Rakamlarla boğuştun.", "kişisel", false, { k: key }); }
   } else if (id === "edebiyat") {
-    gainSkill(s, "social", 5); chips.push({ label: "Sosyal +5", col: "#C9A84C" });
-    if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); key = "ev.study.edebiyat.l"; push(s, "mektep", "Edebiyat çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
+    gainSkill(s, "social", 5); chips.push({ label: "Sosyal +5", col: "#C9A84C", k: "chip.social", p: ["+5"] });
+    if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.edebiyat.l"; push(s, "mektep", "Edebiyat çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
     else { addStatXp(s, "charisma", 6); key = "ev.study.edebiyat.p"; push(s, "mektep", "Beyitler ezberledin.", "kişisel", false, { k: key }); }
   } else {
-    gainSkill(s, "combat", 5); chips.push({ label: "Savaş +5", col: "#C9A84C" });
-    if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); key = "ev.study.beden.l"; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
+    gainSkill(s, "combat", 5); chips.push({ label: "Savaş +5", col: "#C9A84C", k: "chip.combat", p: ["+5"] });
+    if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.beden.l"; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
     else { addStatXp(s, "strength", 6); key = "ev.study.beden.p"; push(s, "mektep", "Ter döktün, güçlendin.", "kişisel", false, { k: key }); }
   }
   // ── Ders-içi olay (Vercel school.py ders olayları): %40, stat testli; "cesur" sonuç anlatılır ──
@@ -2626,19 +2633,19 @@ export function studySubject(prev: GameState, id: string): StudyResult {
     const ev = rnd(SCHOOL_EVENTS);
     const pass = Math.random() < Math.min(0.9, 0.4 + effStat(p, ev.stat) * 0.06);
     const w = pass ? "win" : "lose";
-    if (ev.id === "kopya") { if (pass) { p.honor = Math.min(100, p.honor + 4); chips.push({ label: "Şeref +4", col: "#7FA66A" }); } else { p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); chips.push({ label: "Şeref −3", col: "#C0556B" }); } }
-    else if (ev.id === "kavga") { if (pass) { p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 2); p.health = Math.max(1, p.health - 3); chips.push({ label: "Şeref +5", col: "#7FA66A" }); } else { p.health = Math.max(1, p.health - 5); chips.push({ label: "Sağlık −5", col: "#C0556B" }); } }
-    else if (ev.id === "siir") { if (pass) { gainSkill(s, "social", 8); p.fame = Math.min(100, p.fame + 1); chips.push({ label: "Sosyal +8", col: "#C9A84C" }); } else { p.honor = Math.max(0, p.honor - 1); } }
-    else if (ev.id === "soru") { if (pass) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A" }); } }
-    else if (ev.id === "yaramazlik") { if (pass) { bumpNam(p, "capkin", 2); } else { p.honor = Math.max(0, p.honor - 2); chips.push({ label: "Şeref −2", col: "#C0556B" }); } }
-    else { if (pass) { p.honor = Math.min(100, p.honor + 3); gainSkill(s, "social", 6); chips.push({ label: "Sosyal +6", col: "#C9A84C" }); } }
+    if (ev.id === "kopya") { if (pass) { p.honor = Math.min(100, p.honor + 4); chips.push({ label: "Şeref +4", col: "#7FA66A", k: "chip.honor", p: ["+4"] }); } else { p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); chips.push({ label: "Şeref −3", col: "#C0556B", k: "chip.honor", p: ["−3"] }); } }
+    else if (ev.id === "kavga") { if (pass) { p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 2); p.health = Math.max(1, p.health - 3); chips.push({ label: "Şeref +5", col: "#7FA66A", k: "chip.honor", p: ["+5"] }); } else { p.health = Math.max(1, p.health - 5); chips.push({ label: "Sağlık −5", col: "#C0556B", k: "chip.health", p: ["−5"] }); } }
+    else if (ev.id === "siir") { if (pass) { gainSkill(s, "social", 8); p.fame = Math.min(100, p.fame + 1); chips.push({ label: "Sosyal +8", col: "#C9A84C", k: "chip.social", p: ["+8"] }); } else { p.honor = Math.max(0, p.honor - 1); } }
+    else if (ev.id === "soru") { if (pass) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); } }
+    else if (ev.id === "yaramazlik") { if (pass) { bumpNam(p, "capkin", 2); } else { p.honor = Math.max(0, p.honor - 2); chips.push({ label: "Şeref −2", col: "#C0556B", k: "chip.honor", p: ["−2"] }); } }
+    else { if (pass) { p.honor = Math.min(100, p.honor + 3); gainSkill(s, "social", 6); chips.push({ label: "Sosyal +6", col: "#C9A84C", k: "chip.social", p: ["+6"] }); } }
     push(s, "mektep", `Mektep: ${SCHOOL_EV_TR[ev.id + "." + w]}`, "kişisel", false, { k: "sch." + ev.id + "." + w });
   }
   // ── Sınav: her 4 derste bir (ilgili statla test) ──
   if (p.lesson_count % 4 === 0) {
     const passed = Math.random() < Math.min(0.9, 0.35 + effStat(p, EXAM_STAT[id] || "intelligence") * 0.12);
-    if (passed) { p.stat_points += 1; chips.push({ label: "Sınav geçildi · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Sınava girdin ve geçtin — bir özellik puanı kazandın.", "kişisel", true, { k: "evj.examPass" }); }
-    else { chips.push({ label: "Sınavda zorlandın", col: "#C0556B" }); push(s, "mektep", "Sınava girdin ama zorlandın; daha çok çalışmalısın.", "kişisel", false, { k: "evj.examFail" }); }
+    if (passed) { p.stat_points += 1; chips.push({ label: "Sınav geçildi · Puan +1", col: "#E0BC5A", k: "chip.exam" }); push(s, "mektep", "Sınava girdin ve geçtin — bir özellik puanı kazandın.", "kişisel", true, { k: "evj.examPass" }); }
+    else { chips.push({ label: "Sınavda zorlandın", col: "#C0556B", k: "chip.examFail" }); push(s, "mektep", "Sınava girdin ama zorlandın; daha çok çalışmalısın.", "kişisel", false, { k: "evj.examFail" }); }
   }
   return { state: s, key, chips };
 }
@@ -2651,32 +2658,32 @@ export function clubPractice(prev: GameState): StudyResult {
   if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true }; // çalışma gücü yetmiyor
   p.study_energy = studyEnergy(s) - STUDY_COST;
   p.hunger = Math.max(0, p.hunger - 4);
-  const chips: { label: string; col: string }[] = [];
+  const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = [];
   let gain = 1; let key = "";
   if (p.club === "gures") {
     const win = Math.random() < Math.min(0.9, 0.4 + effStat(p, "strength") * 0.05);
     if (win) { gainSkill(s, "combat", 10); addStatXp(s, "strength", 4); p.fame = Math.min(100, p.fame + 2); gain = 2;
-      chips.push({ label: "Dövüş +10", col: "#C9A84C" }, { label: "Şöhret +2", col: "#7B4FAF" }); key = "club.gures.win";
+      chips.push({ label: "Dövüş +10", col: "#C9A84C", k: "chip.fight", p: ["+10"] }, { label: "Şöhret +2", col: "#7B4FAF", k: "chip.fame", p: ["+2"] }); key = "club.gures.win";
       push(s, "mektep", "Güreş minderinde rakibini yendin; adın delikanlılar arasında anıldı.", "kişisel", true, { k: "club.gures.win" }); }
     else { gainSkill(s, "combat", 4); p.health = Math.max(1, p.health - 3);
-      chips.push({ label: "Dövüş +4", col: "#C9A84C" }, { label: "Sağlık −3", col: "#C0556B" }); key = "club.gures.lose";
+      chips.push({ label: "Dövüş +4", col: "#C9A84C", k: "chip.fight", p: ["+4"] }, { label: "Sağlık −3", col: "#C0556B", k: "chip.health", p: ["−3"] }); key = "club.gures.lose";
       push(s, "mektep", "Güreşte sırtın yere geldi; ama mindere her düşüş bir ders.", "kişisel", false, { k: "club.gures.lose" }); }
   } else if (p.club === "cirak") {
     gainSkill(s, "crafting", 10); addStatXp(s, "intelligence", 2);
     const pay = 5 + Math.floor(Math.random() * 12); p.money += pay;
-    chips.push({ label: "Zanaat +10", col: "#C9A84C" }, { label: `+${pay} akçe`, col: "#E0BC5A" }); key = "club.cirak.win";
+    chips.push({ label: "Zanaat +10", col: "#C9A84C", k: "chip.craft", p: ["+10"] }, { label: `+${pay} akçe`, col: "#E0BC5A", k: "chip.coin", p: [pay] }); key = "club.cirak.win";
     push(s, "mektep", "Ustanın yanında bir işi bitirdin; emeğinin karşılığını cebine koydun.", "kişisel", true, { k: "club.cirak.win", p: [pay] });
   } else { // koro
     const win = Math.random() < Math.min(0.9, 0.4 + effStat(p, "charisma") * 0.05);
     if (win) { gainSkill(s, "social", 10); addStatXp(s, "charisma", 4); p.reputation = Math.min(100, p.reputation + 1); gain = 2;
-      chips.push({ label: "Sosyal +10", col: "#C9A84C" }, { label: "İtibar +1", col: "#7FA66A" }); key = "club.koro.win";
+      chips.push({ label: "Sosyal +10", col: "#C9A84C", k: "chip.social", p: ["+10"] }, { label: "İtibar +1", col: "#7FA66A", k: "chip.rep", p: ["+1"] }); key = "club.koro.win";
       push(s, "mektep", "Koroda sesin meclisi büyüledi; el üstünde tutuldun.", "kişisel", true, { k: "club.koro.win" }); }
     else { gainSkill(s, "social", 4);
-      chips.push({ label: "Sosyal +4", col: "#C9A84C" }); key = "club.koro.lose";
+      chips.push({ label: "Sosyal +4", col: "#C9A84C", k: "chip.social", p: ["+4"] }); key = "club.koro.lose";
       push(s, "mektep", "Koroda biraz tutuldun ama gayretten geri durmadın.", "kişisel", false, { k: "club.koro.lose" }); }
   }
   p.club_standing = (p.club_standing || 0) + gain;
-  if (p.club_standing % 12 === 0) { p.stat_points += 1; chips.push({ label: "Kulüp ustalığı · Puan +1", col: "#E0BC5A" }); push(s, "mektep", "Kulüpte göze girdin; ustalığın bir özellik puanıyla taçlandı.", "kişisel", true, { k: "club.milestone" }); }
+  if (p.club_standing % 12 === 0) { p.stat_points += 1; chips.push({ label: "Kulüp ustalığı · Puan +1", col: "#E0BC5A", k: "chip.club" }); push(s, "mektep", "Kulüpte göze girdin; ustalığın bir özellik puanıyla taçlandı.", "kişisel", true, { k: "club.milestone" }); }
   return { state: s, key, chips };
 }
 
@@ -2688,7 +2695,7 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
   if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true };
   p.study_energy = studyEnergy(s) - STUDY_COST;
   p.child_acts = p.child_acts || {}; p.child_acts[kind] = (p.child_acts[kind] || 0) + 1; // çocukluk eğilimi birikir
-  const chips: { label: string; col: string }[] = []; let key = "";
+  const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = []; let key = "";
   if (kind === "oyun") {
     p.health = Math.min(100, p.health + 5); addStatXp(s, "stamina", 6); gainSkill(s, "social", 4);
     chips.push({ label: "Sağlık +5", col: "#7FA66A" }, { label: "Dayanıklılık ↑", col: "#C9A84C" });
@@ -2715,7 +2722,7 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
     }
   } else if (kind === "yardim") {
     const earn = 3 + Math.floor(Math.random() * 6); p.money += earn; p.reputation = Math.min(100, p.reputation + 1); gainSkill(s, "crafting", 4);
-    chips.push({ label: `+${earn} akçe`, col: "#E0BC5A" }, { label: "İtibar +1", col: "#7FA66A" }); key = "child.yardim";
+    chips.push({ label: `+${earn} akçe`, col: "#E0BC5A" }, { label: "İtibar +1", col: "#7FA66A", k: "chip.rep", p: ["+1"] }); key = "child.yardim";
     push(s, "cocukluk", "Ev işlerinde aileye el verdin; eline biraz harçlık geçti.", "kişisel", false, { k: "child.yardim", p: [earn] });
   } else if (kind === "yaramazlik") {
     // Yoldaşın varsa bazen yaramazlık onu da sırtından vurur → dargınlık birikir (rakipliğe giden yol).
@@ -2724,7 +2731,7 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
       chips.push({ label: "Dargınlık", col: "#C0556B" }); key = "child.feud";
       push(s, "cocukluk", "Yaramazlığın yoldaşına patladı; aranıza bir soğukluk girdi.", "kişisel", false, { k: "child.feud", p: [{ fn: [p.child_friend.seed, p.child_friend.gender] }] });
     } else if (Math.random() < 0.5) { bumpNam(p, "capkin", 2); gainSkill(s, "social", 5); p.health = Math.min(100, p.health + 2);
-      chips.push({ label: "Sosyal +5", col: "#C9A84C" }); key = "child.yaramazlik.win";
+      chips.push({ label: "Sosyal +5", col: "#C9A84C", k: "chip.social", p: ["+5"] }); key = "child.yaramazlik.win";
       push(s, "cocukluk", "Bir yaramazlık çevirdin ve yakayı sıyırdın; akranların kıkırdadı.", "kişisel", false, { k: "child.yaramazlik.win" }); }
     else { p.reputation = Math.max(-100, p.reputation - 2); p.honor = Math.max(0, p.honor - 1);
       chips.push({ label: "İtibar −2", col: "#C0556B" }); key = "child.yaramazlik.lose";
@@ -2791,7 +2798,7 @@ export function elderAction(prev: GameState, kind: ElderAct): StudyResult {
   if (p.dead || p.age < 55) return { state: s, key: "", chips: [] };
   if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true };
   p.study_energy = studyEnergy(s) - STUDY_COST;
-  const chips: { label: string; col: string }[] = []; let key = "";
+  const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = []; let key = "";
   if (kind === "nasihat") {
     p.reputation = Math.min(100, p.reputation + 2); p.honor = Math.min(100, p.honor + 1); gainSkill(s, "social", 6);
     chips.push({ label: "İtibar +2", col: "#7FA66A" }, { label: "Şeref +1", col: "#6FA0C0" }); key = "elder.nasihat";
@@ -2812,7 +2819,7 @@ export function elderAction(prev: GameState, kind: ElderAct): StudyResult {
     push(s, "ihtiyarlik", "Ocağın başında dinlenip biraz toparlandın; yaşlı beden mola ister.", "kişisel", false, { k: "elder.dinlen" });
   } else {
     p.fame = Math.min(100, p.fame + 2); addStatXp(s, "intelligence", 6); gainSkill(s, "social", 4);
-    chips.push({ label: "Şöhret +2", col: "#7B4FAF" }); key = "elder.ani";
+    chips.push({ label: "Şöhret +2", col: "#7B4FAF", k: "chip.fame", p: ["+2"] }); key = "elder.ani";
     push(s, "ihtiyarlik", "Ömrünün hikâyesini anlattın; adın dilden dile dolaşacak.", "kişisel", false, { k: "elder.ani" });
   }
   return { state: s, key, chips };

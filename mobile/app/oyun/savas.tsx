@@ -194,6 +194,12 @@ export default function Savas() {
             <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, lineHeight: 17 }}>{t("cb.tooWeak")}</Text>
           </View>
         )}
+        {p.age < 13 && !p.dead && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(168,52,52,0.1)", borderWidth: 1, borderColor: "rgba(168,52,52,0.45)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+            <GameIcon name="savas" size={15} color={C.blood} />
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, lineHeight: 17 }}>{t("cb.tooYoung")}</Text>
+          </View>
+        )}
         {foughtThisMonth && !tooWeak && !p.dead && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(168,52,52,0.1)", borderWidth: 1, borderColor: "rgba(168,52,52,0.45)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
             <GameIcon name="savas" size={15} color={C.blood} />

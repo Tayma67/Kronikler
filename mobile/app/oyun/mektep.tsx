@@ -26,7 +26,7 @@ export default function Mektep() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
   const { t, lang } = useI18n();
-  const [last, setLast] = useState<null | { key: string; chips: { label: string; col: string }[]; tick: number }>(null);
+  const [last, setLast] = useState<null | { key: string; chips: { label: string; col: string; k?: string; p?: (string | number)[] }[]; tick: number }>(null);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const done = studiedThisTurn(state);
@@ -88,7 +88,7 @@ export default function Mektep() {
                   <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim, marginTop: 1 }}>{p.age < 18 ? t("mek.young") : t("mek.old")}</Text>
                 </View>
                 <View style={{ alignItems: "center", gap: 3, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.16)", borderRadius: 8, paddingVertical: 6, paddingHorizontal: 9 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="mektep" size={9} color={C.gold} /><Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 0.5, color: C.gold }}>SINAV</Text></View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="mektep" size={9} color={C.gold} /><Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 0.5, color: C.gold }}>{t("mek.examBadge")}</Text></View>
                   <Text style={{ fontFamily: F.display, fontSize: 10, color: done ? C.sage : toExam === 1 ? C.ember : C.parchment }}>{done ? "✓" : toExam === 1 ? t("mek.examNow").replace("!", "") : applyParams(t("mek.exam"), [toExam])}</Text>
                 </View>
               </View>
@@ -132,7 +132,7 @@ export default function Mektep() {
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                 {last.chips.map((c, i) => (
                   <View key={i} style={{ backgroundColor: c.col + "22", borderWidth: 1, borderColor: c.col + "66", borderRadius: 20, paddingVertical: 3, paddingHorizontal: 9 }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: c.col }}>{c.label}</Text>
+                    <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: c.col }}>{c.k ? applyParams(t(c.k), c.p || []) : c.label}</Text>
                   </View>
                 ))}
               </View>
@@ -181,7 +181,7 @@ export default function Mektep() {
                 const on = p.club === cl.id;
                 return (
                   <Pressable key={cl.id} onPress={() => { hap("tap"); apply((s) => joinClub(s, on ? null : cl.id)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 13, borderWidth: 1.5, borderColor: on ? C.gold : C.border, backgroundColor: on ? "rgba(212,180,90,0.12)" : C.card }}>
-                    {on && <View style={{ position: "absolute", top: 7, right: 7, borderWidth: 1, borderColor: "rgba(102,176,112,0.6)", backgroundColor: "rgba(102,176,112,0.18)", borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 }}><Text style={{ fontFamily: F.display, fontSize: 7, color: C.sage }}>ÜYE</Text></View>}
+                    {on && <View style={{ position: "absolute", top: 7, right: 7, borderWidth: 1, borderColor: "rgba(102,176,112,0.6)", backgroundColor: "rgba(102,176,112,0.18)", borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 }}><Text style={{ fontFamily: F.display, fontSize: 7, color: C.sage }}>{t("club.member")}</Text></View>}
                     <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: on ? C.gold : C.borderHi, backgroundColor: "rgba(40,30,16,0.6)" }}>
                       <GameIcon name={cl.id === "koro" ? "lyre" : cl.id === "gures" ? "crossed-swords" : "anvil"} size={18} color={on ? C.gold : C.goldDim} />
                     </View>

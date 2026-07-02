@@ -213,13 +213,13 @@ export default function NpcDetail() {
             <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>{GOAL_HELP_COST}⚜</Text>
           </Pressable>
         )}
-        {canGoal && v > -25 && (
-          <Pressable onPress={() => { hap("tap"); apply((s) => exploitNpcGoal(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: couldMarry ? 1 : 0, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+        {canGoal && v > -25 && (() => { const exploited = state.player.exploit_turn === state.turn; return (
+          <Pressable disabled={exploited} onPress={() => { hap("tap"); apply((s) => exploitNpcGoal(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: couldMarry ? 1 : 0, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: exploited ? 0.4 : 1 })}>
             <GameIcon name="hood" size={16} color={C.ember} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.ember }}>{t("npc.exploitGoal")}</Text>
             <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
           </Pressable>
-        )}
+        ); })()}
         {/* Evlenme teklifi */}
         {couldMarry && (
           <Pressable onPress={() => { if (courtable) { hap("success"); apply((s) => proposeMarriage(s, npc)); } }} disabled={!courtable} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: courtable ? "rgba(201,168,76,0.08)" : "transparent" }}>
@@ -258,7 +258,7 @@ export default function NpcDetail() {
           {giftables.length === 0 ? (
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, textAlign: "center", paddingVertical: 8 }}>{t("npc.noGift")}</Text>
           ) : giftables.map((k) => (
-            <Pressable key={k} onPress={() => { hap("tap"); apply((s) => giftTo(s, npc, k)); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7 }}>
+            <Pressable key={k} disabled={mingled} onPress={() => { hap("tap"); apply((s) => giftTo(s, npc, k)); setGiftOpen(false); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7, opacity: mingled ? 0.4 : 1 }}>
               <View style={{ width: 32, height: 32, borderRadius: 7, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
                 <GameIcon name={giftIcon(ITEMS[k])} size={16} color={C.gold} />
               </View>
