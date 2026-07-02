@@ -4,10 +4,10 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { doCrime, resolveCrimeScene, CrimeKind, fenceHotGoods } from "../../lib/game";
+import { doCrime, resolveCrimeScene, CrimeKind, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader } from "../../lib/ui";
 
@@ -34,18 +34,23 @@ export default function Suc() {
 
   // Ay başına tek suç denemesi (doCrime last_crime_turn) — çekirdek sessizce reddediyor; tuşu kilitle + sebep göster.
   const crimeDone = state.player.last_crime_turn === state.turn || state.player.dead;
-  const Crime = ({ kind, title, desc }: { kind: CrimeKind; title: string; desc: string }) => (
-    <Pressable disabled={crimeDone} onPress={() => { hap("advance"); apply((s) => doCrime(s, kind)); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 11, padding: 14, marginBottom: 10, opacity: crimeDone ? 0.45 : 1 }}>
-      <View style={{ width: 38, height: 38, borderRadius: 9, backgroundColor: "rgba(123,79,175,0.12)", borderWidth: 1, borderColor: "rgba(123,79,175,0.35)", alignItems: "center", justifyContent: "center" }}>
-        <GameIcon name="hood" size={18} color={C.ink} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: F.display, fontSize: 13, color: C.ink }}>{title}</Text>
-        <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted, marginTop: 3 }}>{desc}</Text>
-      </View>
-      <Text style={{ color: C.ink, fontSize: 15 }}>›</Text>
-    </Pressable>
-  );
+  const standing = underworldStanding(state.player);
+  const Crime = ({ kind, title, desc }: { kind: CrimeKind; title: string; desc: string }) => {
+    const open = crimeUnlocked(state.player, kind);
+    const locked = !open;
+    return (
+      <Pressable disabled={crimeDone || locked} onPress={() => { hap("advance"); apply((s) => doCrime(s, kind)); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 11, padding: 14, marginBottom: 10, opacity: crimeDone || locked ? 0.45 : 1 }}>
+        <View style={{ width: 38, height: 38, borderRadius: 9, backgroundColor: "rgba(123,79,175,0.12)", borderWidth: 1, borderColor: "rgba(123,79,175,0.35)", alignItems: "center", justifyContent: "center" }}>
+          <GameIcon name={locked ? "prisoner" : "hood"} size={18} color={C.ink} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 13, color: C.ink }}>{title}</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: locked ? C.goldDim : C.parchmentMuted, marginTop: 3 }}>{locked ? applyParams(t("suc.lockReq"), [crimeReq(state.player, kind), standing]) : desc}</Text>
+        </View>
+        <Text style={{ color: locked ? C.parchmentMuted : C.ink, fontSize: 15 }}>›</Text>
+      </Pressable>
+    );
+  };
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>

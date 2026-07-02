@@ -45,6 +45,7 @@ export interface Player {
   child_dream?: string; // çocukluk hayali (meslek domeni: combat/trade/crafting/social); reşitlikte meslek uyarsa ödül
   hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
   last_crime_turn?: number; // son suç denemesi turu (ay başına tek deneme; risksiz spam önlenir)
+  crime_wins?: number; // başarıyla tamamlanan suç sayısı — yeraltı namı; ağır işler bununla açılır (merdiven)
   governorships?: string[]; // valisi olunan şehirler
   legacy?: Record<string, boolean>; // kalıcı görkem eserleri (vakıf/anıt/imaret) — bir kez kurulur
   govLeg?: Record<string, number>; // valilik meşruiyeti (şehir → 0-100); düşerse isyan/azil
@@ -1215,6 +1216,14 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         push(s, "sohbet", `${who.name} yolda önünü kesip laf soktu; dişini sıkıp geçtin.`, "kişisel", false, { k: "npci.taunt", p: [who.name] });
       }
     }
+  }
+  // ── Ocak imzaları: mensubu olduğun ocak kendini ara sıra hatırlatır — her ocağın kendine has dokusu (otomatik, farm edilemez) ──
+  if (!p.dead && p.faction && chance(0.04)) {
+    if (p.faction === "tuccar") { gainSkill(s, "trade", 3); push(s, "gunluk", "Loncadan bir tüyo geldi: hangi malın nerede para ettiği kulağına fısıldandı.", "kişisel", false, { k: "fsig.tuccar" }); }
+    else if (p.faction === "demirci") { gainSkill(s, "crafting", 3); push(s, "gunluk", "Ustalar seni ocağa çağırdı; körük başında geçen akşam eline hüner kattı.", "kişisel", false, { k: "fsig.demirci" }); }
+    else if (p.faction === "asker") { gainSkill(s, "combat", 3); push(s, "gunluk", "Ocak talime çağırdı; kılıcınla ter döktün, bileğin sertleşti.", "kişisel", false, { k: "fsig.asker" }); }
+    else if (p.faction === "sifaci") { p.health = Math.min(100, p.health + 3); p.reputation = Math.min(100, p.reputation + 1); push(s, "gunluk", "Meclis şifalı merhemden pay gönderdi; bedenin dinçleşti.", "kişisel", false, { k: "fsig.sifaci" }); }
+    else if (p.faction === "golge") { gainSkill(s, "social", 3); p.fear = Math.min(100, p.fear + 1); push(s, "gunluk", "Kardeşlikten kulağına bir sır fısıldandı; kimin nerede gezdiğini artık biliyorsun.", "kişisel", false, { k: "fsig.golge" }); }
   }
   // ── Dulluk: eş de fanidir; birlikte yaşlandıkça vefat ihtimali artar. Dul kalınca yas + (genç dulsa yeniden evlilik mümkün) ──
   if (!p.dead && p.married && p.spouse_seed != null && p.age >= 45 && !p.spouse_is_player) {
@@ -2996,10 +3005,20 @@ export const CRIME_TYPES: Record<CrimeKind, { base: number; lootMin: number; loo
   soygun:        { base: 0.45, lootMin: 25, lootMax: 65,  fine: 30, hurt: 10, fear: 5, nam: 5, sev: 3, label: "Bir yol soygunu" },
   konak_soygunu: { base: 0.34, lootMin: 50, lootMax: 110, fine: 50, hurt: 14, fear: 7, nam: 7, sev: 4, label: "Bir konak soygunu" },
 };
+// ── Suç merdiveni: ağır işlere ilk günden girilmez — yeraltında ad yapmak gerekir. ──
+// Yeraltı namı = başarılı suçlar + korkulan ad (fear/5); Gölge Kardeşliği üyeliği eşiği yarıya indirir (kapıları kardeşlik açar).
+export const CRIME_REQ: Record<CrimeKind, number> = { yankesicilik: 0, dukkan_soyma: 2, soygun: 6, konak_soygunu: 12 };
+export function underworldStanding(p: Player): number { return (p.crime_wins || 0) + Math.floor((p.fear || 0) / 5); }
+export function crimeReq(p: Player, kind: CrimeKind): number {
+  const base = CRIME_REQ[kind] ?? 0;
+  return p.faction === "golge" ? Math.ceil(base / 2) : base;
+}
+export function crimeUnlocked(p: Player, kind: CrimeKind): boolean { return underworldStanding(p) >= crimeReq(p, kind); }
 export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
   if (s.pendingScene) return s;                       // bekleyen yakalanma sahnesini ezerek ceza atlanamaz
+  if (!crimeUnlocked(p, kind)) return s;               // merdiven: yeraltı namı yetmeden ağır iş yok (ay hakkı da yanmaz)
   if (p.last_crime_turn === s.turn) return s;          // ay başına tek suç denemesi (risksiz spam ile para basma önlenir)
   p.last_crime_turn = s.turn;
   const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
@@ -3018,6 +3037,7 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
     const hot = ct.sev >= 3 ? Math.round(loot * 0.45) : 0;
     const cash = loot - hot;
     p.money += cash; if (hot > 0) p.hotGoods = (p.hotGoods || 0) + hot;
+    p.crime_wins = (p.crime_wins || 0) + 1; // yeraltı namı: tamamlanan iş merdiveni tırmandırır
     p.fear = Math.min(100, p.fear + ct.fear);
     bumpNam(p, "zalim", ct.nam);
     witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.22);
