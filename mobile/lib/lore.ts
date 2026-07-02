@@ -37,16 +37,18 @@ export function worldNews(turn: number, seed: number, lang: Lang = "tr"): NewsIt
   return out;
 }
 
-export function rumors(turn: number, seed: number, lang: Lang = "tr"): NewsItem[] {
-  const npcs = generateNPCs(seed, 30, lang);
+export function rumors(turn: number, seed: number, lang: Lang = "tr", roster?: { name: string; goal: string }[]): NewsItem[] {
+  // Dedikodu GERÇEK kadroyu ansın: çağıran, bulunduğu yerin yaşayan ahalisini (rosterAt) verir —
+  // oyuncunun tanışabileceği, yaşlanan/ölen kişiler konuşulur. Verilmezse eski hayalet havuza düşer (geriye uyumlu).
+  const npcs = roster && roster.length ? roster : generateNPCs(seed, 30, lang);
   if (npcs.length === 0) return [];
   const r = mkRng((seed ^ (turn * 40503)) >>> 0);
   const n = 1 + Math.floor(r() * 2);
   const out: NewsItem[] = [];
   for (let i = 0; i < n; i++) {
     const npc = npcs[Math.floor(r() * npcs.length)];
-    // Bazen NPC'nin hayat hedefine dair, bazen yerelleşmiş genel dedikodu.
-    const body = r() < 0.45 ? `${npc.name} ${goalL(npc.goal, lang)}.` : tFor(lang, `gossip.${Math.floor(r() * 7)}`).replace("%n", npc.name);
+    // Bazen NPC'nin hayat hedefine dair, bazen yerelleşmiş genel dedikodu (çocukların hedefi yok → genel).
+    const body = npc.goal && r() < 0.45 ? `${npc.name} ${goalL(npc.goal, lang)}.` : tFor(lang, `gossip.${Math.floor(r() * 7)}`).replace("%n", npc.name);
     out.push({ id: `rumor_${turn}_${i}`, kind: "dedikodu", title: npc.name, body });
   }
   return out;

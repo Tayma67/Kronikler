@@ -1489,7 +1489,13 @@ export function advance(prev: GameState, n = 1): GameState {
       push(s, "fisilti", FIS[fi], "kişisel", false, { k: "fis." + fi });
     }
   }
-  if (s.history.length > 250) s.history = s.history.slice(-250);
+  // Kronik budaması dönüm noktalarını (landmark) korur: roman/tarih, çocukluk bölümlerini kaybetmesin.
+  // Landmark'lar zaten seyrek (ömürde onlarca) — kayıt boyutu güvenliği bozulmaz; sıradan girdiler en yeni 250'ye kırpılır.
+  if (s.history.length > 250) {
+    const marks = s.history.filter((e) => e.landmark);
+    const rest = s.history.filter((e) => !e.landmark).slice(-(250 - Math.min(marks.length, 80)));
+    s.history = [...marks.slice(-80), ...rest].sort((a, b) => a.day - b.day);
+  }
   return s;
 }
 

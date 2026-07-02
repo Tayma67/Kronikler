@@ -2,6 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
+import { npcsOf } from "../../lib/game";
 import { worldNews, rumors } from "../../lib/lore";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -17,7 +18,7 @@ export default function Haberler() {
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const cal = currentCalendar(state.turn);
   const news = worldNews(state.turn, state.seed, lang);
-  const gossip = rumors(state.turn, state.seed, lang);
+  const gossip = rumors(state.turn, state.seed, lang, npcsOf(state, lang)); // dedikodu, bulunduğun yerin gerçek (yaşayan) ahalisini anar
   const tips = state.tips || [];
 
   return (
