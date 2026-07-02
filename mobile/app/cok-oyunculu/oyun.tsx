@@ -206,7 +206,7 @@ export default function MpOyun() {
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.realm").toUpperCase()}</Text>
         <View style={{ gap: 8 }}>
           {!kingIsMe && (
-            <Pressable disabled={!throneEligible} onPress={() => { spend(THRONE_COST); intent({ k: "claimThrone" }); }} style={[shareBtn, !throneEligible && { opacity: 0.45 }]}>
+            <Pressable disabled={!throneEligible} onPress={() => { if (guestId) syncPlayer(mePublic(guestId, s, ready)); spend(THRONE_COST); intent({ k: "claimThrone" }); }} style={[shareBtn, !throneEligible && { opacity: 0.45 }]}>
               <GameIcon name="crown" size={14} color={C.gold} />
               <View style={{ flex: 1 }}>
                 <Text style={shareTxt}>{t("mp.claimThroneBtn")}</Text>
@@ -283,7 +283,7 @@ export default function MpOyun() {
                     <Text style={miniTxt}>{t("mp.beylik.leaveBtn")}</Text></Pressable>
                 )}
                 {!isBey && (
-                  <Pressable disabled={!beyEligible} onPress={() => { spend(BEY_COST); intent({ k: "claimBey", beylikId: b.id }); }} style={[miniBtnGold, !beyEligible && { opacity: 0.4 }]}>
+                  <Pressable disabled={!beyEligible} onPress={() => { if (guestId) syncPlayer(mePublic(guestId, s, ready)); spend(BEY_COST); intent({ k: "claimBey", beylikId: b.id }); }} style={[miniBtnGold, !beyEligible && { opacity: 0.4 }]}>
                     <Text style={miniTxtGold}>{b.beyId ? t("mp.beylik.seizeBtn") : t("mp.beylik.foundBtn")}</Text></Pressable>
                 )}
                 {isBey && (
