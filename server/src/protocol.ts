@@ -17,6 +17,7 @@
 export const PROTOCOL_VERSION = 2;
 export const MAX_PLAYERS = 10;           // bir diyardaki insan slotu (kalanı NPC doldurur)
 export const TICK_TIMEOUT_MS = 5 * 60 * 1000; // çoğunluk olmazsa otomatik ay atlama tavanı
+export const TICK_SOFT_MS = 90 * 1000;         // en az bir oyuncu hazırsa bekleme bu kadara iner (2 kişilik diyarda 5 dk çile bitti)
 export const READY_MAJORITY = 0.5;       // > yarısı hazır → tick
 
 // Mount & Blade muhabbeti: bir beyliğe bey olmak/kurmak için gereken asgari hane gücü

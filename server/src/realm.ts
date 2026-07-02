@@ -14,7 +14,7 @@ import {
   THRONE_MIN_AGE, THRONE_MIN_POWER, THRONE_MIN_FAME,
   Bond, Offer, PactType, GIFT_MAX, ASSASSINATE_MIN_AGE,
   NpcPublic, NpcBond, RealmNews,
-  PROTOCOL_VERSION, MAX_PLAYERS, TICK_TIMEOUT_MS, readyToTick,
+  PROTOCOL_VERSION, MAX_PLAYERS, TICK_TIMEOUT_MS, TICK_SOFT_MS, readyToTick,
 } from "./protocol";
 
 interface Env { REALM: DurableObjectNamespace; DIRECTORY: DurableObjectNamespace }
@@ -192,7 +192,18 @@ export class RealmDO {
       }
       case "ready": {
         const p = this.snap.players.find((x) => x.id === att.playerId);
-        if (p) { p.ready = m.ready; this.broadcastPresence(); if (readyToTick(this.snap.players)) await this.tick(); }
+        if (p) {
+          p.ready = m.ready;
+          if (readyToTick(this.snap.players)) { this.broadcastPresence(); await this.tick(); break; }
+          // Uyarlanır bekleme: en az bir canlı oyuncu hazırsa 5 dk tavanını 90 sn'ye çek —
+          // karşı taraf yine o ay eylem yapabilir ama hazır oyuncu çile çekmez.
+          const anyReady = this.snap.players.some((x) => x.online && !x.dead && x.ready);
+          if (anyReady && this.snap.phase === "open") {
+            const soft = Date.now() + TICK_SOFT_MS;
+            if (!this.snap.tickDeadline || this.snap.tickDeadline > soft) { this.snap.tickDeadline = soft; await this.state.storage.setAlarm(soft); }
+          }
+          this.broadcastPresence();
+        }
         break;
       }
       case "intent": {
@@ -463,6 +474,9 @@ export class RealmDO {
         ev(pid, "mp.beylik.campaignWon", [target.name]);
         if (prevBey && prevBey !== pid) ev(prevBey, "mp.beylik.lostToCampaign", [target.name, playerById(pid)?.name || ""]);
         this.snap.players.filter((p) => p.beylikId === target.id && p.id !== pid && !p.dead).forEach((p) => ev(p.id, "mp.beylik.conquered", [target.name]));
+        // ÜYE TEMETTÜSÜ: sefer ganimeti yalnız beye değil, sancağı taşıyan üyelere de akar —
+        // beylik üyeliği artık vergi ödenen bir yük değil, pay alınan bir ortaklık.
+        this.snap.players.filter((pl) => pl.beylikId === attackerB.id && pl.id !== pid && !pl.dead).forEach((pl) => { ev(pl.id, "mp.beylik.spoils", [target.name, 150]); });
         attackerB.power += 8;
       } else {
         target.power = Math.round(target.power + 6); // savunma güçlendi

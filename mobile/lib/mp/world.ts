@@ -83,6 +83,7 @@ export function applyTickEvents(prev: GameState, events: TickEvent[]): GameState
       // joined/left/claimFailed/tooWeak/taxSet → yalnız bilgilendirme (kişisel istat etkisi yok)
 
       // ── SOSYAL DOKU olayları ──
+      case "mp.beylik.spoils": p.money += Number(e.p?.[1]) || 0; p.fame = clamp100(p.fame + 2); break; // sefer ganimetinden üye payı
       case "mp.soc.giftGot": p.money += Number(e.p?.[1]) || 0; break;       // bağış aldın
       case "mp.soc.loanGot": p.money += Number(e.p?.[1]) || 0; break;       // borç aldın
       case "mp.soc.loanGave": p.money = Math.max(0, p.money - (Number(e.p?.[1]) || 0)); break; // borç verdin
