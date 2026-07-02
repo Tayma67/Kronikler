@@ -1,5 +1,5 @@
 // Sıkça Sorulan Sorular / mekanik rehberi. Metinler doğrudan koddaki mekaniklere göre yazıldı.
-// Diğer diller TR'ye düşer (faqFor).
+// 6 dilde tam içerik (faqFor); bilinmeyen dil TR'ye düşer.
 export interface FaqItem { q: string; a: string; }
 export interface FaqSection { icon: string; title: string; items: FaqItem[]; }
 
@@ -177,6 +177,362 @@ const EN: FaqSection[] = [
   },
 ];
 
+
+const ES: FaqSection[] = [
+  {
+    icon: "hourglass", title: "Tiempo y Vida",
+    items: [
+      { q: "¿Cómo avanza el mes/año?", a: "Avanzas el tiempo con el botón grande de la pantalla principal. Con cada avance baja tu hambre, ocurren sucesos y de vez en cuando surge un dilema o una oportunidad." },
+      { q: "¿Qué hacen el hambre y la salud?", a: "Si el hambre llega a 0, tu salud empieza a mermar. Si la salud llega a 0, tu personaje muere. Comiendo repones el hambre; descansando o curándote, la salud." },
+      { q: "¿Qué pasa cuando muero?", a: "Si tienes un heredero, continúas con su vida (nueva generación). Parte de tu herencia, un tercio de tu fama y tu tierra natal pasan al heredero." },
+    ],
+  },
+  {
+    icon: "shield", title: "Atributos y Habilidades",
+    items: [
+      { q: "¿Para qué sirven los atributos (Fuerza/Inteligencia/Carisma/Aguante)?", a: "La Fuerza cuenta en el combate; la Inteligencia, en el comercio y la artesanía; el Carisma, en la charla, el regateo y el crimen; el Aguante, en el trabajo y la fatiga. Las heridas pueden bajar los atributos temporalmente." },
+      { q: "¿Cómo gano y gasto puntos de atributo?", a: "Los ganas estudiando en la escuela (de vez en cuando), en los exámenes y en algunos sucesos. Los repartes desde la pantalla de Personaje en el atributo que quieras (el tope de cada atributo es 10)." },
+      { q: "¿Cómo crecen las habilidades (Combate/Comercio/Artesanía/Social)?", a: "Suben solas al actuar: pelear desarrolla Combate; regatear y comerciar, Comercio; producir en el taller, Artesanía; la charla y la escuela, Social. En los niveles 3, 6 y 9 se desbloquea un don en el Árbol de Habilidades." },
+    ],
+  },
+  {
+    icon: "flame", title: "Prestigio · Honor · Temor · Fama",
+    items: [
+      { q: "¿Qué determina la Fama?", a: "CUÁNTO y HASTA DÓNDE se conoce tu nombre. Con poca fama, en las ciudades lejanas nadie te conoce; tu carácter (honor, temor, etc.) solo llega a los demás en la medida en que te reconocen." },
+      { q: "¿Qué es el reconocimiento? ¿Tierra natal frente a tierra ajena?", a: "Es el grado en que una persona corriente del lugar donde estás te trata según tu nombre. En tu tierra natal (la ciudad donde naciste) todos te conocen un poco; al ir a otra ciudad, solo tu fama te acompaña. En la pantalla de Personaje ves 'cómo te ve la gente' y el porcentaje de reconocimiento." },
+      { q: "¿Pros y contras del Honor?", a: "A FAVOR: el matrimonio y los tratos con familias respetables se facilitan, ganas prestigio más rápido en los gremios honorables y las casas confían en ti. EN CONTRA: si te atrapan en un crimen, tu prestigio cae con más fuerza — tienes un nombre que perder." },
+      { q: "¿Pros y contras del Temor?", a: "A FAVOR: tus crímenes prosperan más (la víctima se paraliza) y tu palabra pesa al regatear (el vendedor cede para quitarte de encima). EN CONTRA: la gente se retrae al conversar, bajan tus opciones de matrimonio y los gremios honorables guardan las distancias." },
+      { q: "¿Cómo cambia el Prestigio?", a: "Los banquetes, la limosna, las tareas de gremio, las oportunidades y las decisiones honorables lo suben; el crimen, la intimidación y el fracaso lo bajan. Determina cómo te tratan las casas y abre o cierra ciertas puertas." },
+    ],
+  },
+  {
+    icon: "star", title: "Renombre (el Color de tu Fama)",
+    items: [
+      { q: "¿Qué es el renombre?", a: "El carácter que lleva tu nombre: Generoso, Cruel, Mujeriego, Devoto, Valiente. Se acumula con tus actos y moldea cómo se te acerca la gente (en la medida en que te reconocen)." },
+      { q: "Generoso / Devoto", a: "Generoso: te gana el cariño del pueblo y suaviza la intimidación (ya no asustas a nadie). Devoto: añade respeto y te acerca a las familias devotas; pero si un devoto es atrapado en un crimen, la hipocresía se castiga con más dureza." },
+      { q: "Mujeriego / Valiente", a: "Mujeriego: facilita crear vínculos con el flirteo y los cumplidos; pero las familias tradicionales y fieles recelan de esa fama. Valiente: te gana respeto en toda casa y la lealtad de aliados y gremios; pero tu honradez dificulta los asuntos turbios (el crimen)." },
+      { q: "Cruel", a: "Se combina con el temor para potenciar la intimidación y el crimen; pero te cuesta el cariño del pueblo y la confianza de las instituciones honorables." },
+    ],
+  },
+  {
+    icon: "coins", title: "Dinero y Sustento",
+    items: [
+      { q: "¿Cómo gano dinero?", a: "Toma una profesión y trabaja; compra y vende en el mercado; produce en el taller y vende; compra propiedades y cobra rentas e ingresos; acepta tareas de gremio y oportunidades." },
+      { q: "¿Cómo funciona el regateo?", a: "Tu opción de regateo depende de Carisma + habilidad de Comercio; si aciertas, consigues descuento. Si eres conocido (querido o temido), tu palabra pesa más." },
+      { q: "¿Qué necesito para producir en el taller?", a: "NO exige profesión. Solo necesitas suficiente habilidad de Artesanía y los materiales requeridos. La carta de cada receta muestra el nivel y los materiales necesarios (tienes/faltan). Producir desarrolla la Artesanía." },
+    ],
+  },
+  {
+    icon: "family", title: "Relaciones y Matrimonio",
+    items: [
+      { q: "¿Cómo mejoro una relación?", a: "Entra en la carta de una persona y conversa (charla, halaga, escucha sus penas, bromea) o dale un regalo. Cada persona tiene su temperamento; la intención equivocada puede salirte al revés. Un renombre cálido y querido aumenta lo que ganas al conversar." },
+      { q: "¿Cómo me caso?", a: "Necesitas una cercanía de 50+ con la persona y que ambos tengan 18+. Entonces se abre la 'Propuesta de Matrimonio'. La aceptación depende de la cercanía + Carisma + tu renombre (valiente/honor la suben, mujeriego/temor la bajan)." },
+    ],
+  },
+  {
+    icon: "crossed-swords", title: "Gremios · Guerra · Crimen",
+    items: [
+      { q: "¿Cómo me uno a un gremio?", a: "Primero acumula prestigio (standing) haciendo tareas para el gremio; al superar el umbral entras en sus filas. Los gremios honorables confían antes en el valiente y honorable; la Hermandad de la Sombra, en el temor y la crueldad." },
+      { q: "¿Cómo funciona la guerra/el frente?", a: "Si la organización a la que perteneces entra en guerra, puedes ir al frente; la victoria da fama, honor y renombre de Valiente. Tus enemigos (némesis) pueden encontrarte." },
+      { q: "¿Debería cometer crímenes?", a: "El carterismo y el robo dan dinero rápido, pero son arriesgados. El éxito depende de Carisma + tu poder de temor; el castigo si te atrapan, de tu prestigio. Alguien honorable o devoto pierde mucho más al ser atrapado." },
+    ],
+  },
+  {
+    icon: "compass", title: "Oportunidades y Dilemas",
+    items: [
+      { q: "¿Qué son las oportunidades/dilemas que aparecen en pantalla?", a: "Al avanzar el mes, de vez en cuando surge una oportunidad (aceptar/dejar pasar) o un dilema (elección). Las oportunidades traen recompensa y riesgo; si el atributo requerido es alto, sube tu opción de éxito." },
+      { q: "¿Para qué sirve la pantalla de Tareas?", a: "Reúne en una sola lista los asuntos pendientes importantes (repartir puntos de atributo, elegir un don, casarte, unirte a un gremio, la guerra, el heredero...) y te lleva a la pantalla correspondiente. Debajo tiene además el panel de 'Misiones de Familia'." },
+    ],
+  },
+  {
+    icon: "castle", title: "Sistemas del Reino",
+    items: [
+      { q: "¿Cómo funciona la caravana? ¿Qué es la ruta?", a: "En el mercado inviertes monedas y envías una caravana. Sigue la ruta origen→parada(s) intermedia(s)→destino, avanzando una parada al mes. En el camino pueden asaltarla bandidos (tu prestigio, tu habilidad de comercio y tu temor bajan el riesgo; tu fuerza y tu habilidad de combate reducen la pérdida). Al llegar, el beneficio vuelve sobre el capital superviviente. Puedes seguir el avance desde la pantalla principal y el mercado." },
+      { q: "¿Qué son el control del sanjak y las guerras de gremios?", a: "Cada uno de los 4 sanjaks lo domina un gremio. Con el tiempo los gremios rivales lo codician, la tensión se acumula y estalla una guerra por un sanjak; el vencedor se lo queda. Si tu gremio toma parte, puedes ir al frente desde Gremios y Órdenes e influir en el resultado. Si tu gremio domina el sanjak donde estás, las tareas de gremio allí pagan un 25% más." },
+      { q: "¿Qué aporta contratar trabajadores para una propiedad?", a: "Contratas para tus propiedades trabajadores de entre la gente de esa ciudad (número de plazas según tipo y nivel). El trabajador aumenta la producción pero pide un salario mensual; con baja condición/prosperidad el salario puede comerse la ganancia. En el panel de trabajadores ves el ingreso neto mensual (verde/rojo). El rendimiento del trabajador viene de la edad + el encaje con su profesión + el temperamento." },
+      { q: "¿Qué es la calidad de los objetos?", a: "Los bienes duraderos como armas, armaduras y elixires vienen en 4 calidades: defectuoso, corriente, bueno y obra maestra. Con una habilidad de Artesanía alta produces mejor calidad. Lo de calidad se vende más caro en el mercado; la calidad del arma/armadura que llevas también se refleja en tu poder de combate y tu defensa." },
+      { q: "¿Para qué sirven el círculo del PNJ y 'ayudar a su meta'?", a: "Cada PNJ tiene una familia, amigos y rivales (su círculo) y una meta de vida; los ves en la pantalla del PNJ. Puedes ayudar a su meta (a cambio de monedas: gran cercanía + renombre Generoso) o explotarla (le sacas monedas pero quemas su confianza, renombre Cruel)." },
+    ],
+  },
+  {
+    icon: "scroll", title: "Estado, Corte y Profesión",
+    items: [
+      { q: "¿Qué puedo hacer como gobernador?", a: "Con suficiente prestigio te vuelves gobernador de una ciudad (desde la pantalla del Reino). Ajustas la tasa de impuestos (ingresos ↔ contento del pueblo), gastas el tesoro de la ciudad en servicios y seguridad para la gente, y renuevas tu legitimidad con obras de caridad. Además puedes emitir DECRETOS (justicia, amnistía fiscal, trabajos forzados, mercado libre — con tiempo de espera y sus contrapartidas) y levantar OBRAS PÚBLICAS permanentes (fuente/puente/casa de caridad/torreón — suben la base de contento/ingresos + fama). Si tu legitimidad cae, te destituyen; si el pueblo se enfada demasiado, estalla la revuelta; de vez en cuando el Consejo Imperial reclama una parte del tesoro." },
+      { q: "¿Qué cambia al subir al trono (soberano)?", a: "Cumpliendo los requisitos de edad, poder de tu casa, prestigio, fama y monedas — con el respaldo de un gremio (o un cargo de Visir o superior en la corte) — reclamas el trono. Como soberano tienes AUTORIDAD: emites decretos en el Consejo Imperial (carta de justicia, obras, amnistía general, festejo, impuesto duro), lanzas CAMPAÑAS contra los beyliks rivales (victoria → anexión + botín + fama) y nombras o destituyes GOBERNADORES leales en las ciudades (ingreso por tributo). La autoridad se desgasta si la descuidas; si toca fondo, una revuelta puede derribar tu trono. Los sucesos de palacio (embajadores, hambruna, intrigas del visir) afectan tu autoridad." },
+      { q: "¿Qué es la Oportunidad de Profesión (acción distintiva)?", a: "Cada profesión tiene, más allá del trabajo normal, una acción distintiva propia con tiempo de espera (en la pantalla de Profesión): el herrero forja una obra maestra, el mercader parte en una expedición de comercio lejano, el sanador combate una epidemia, el soldado se une a una incursión fronteriza, el granjero organiza la fiesta de la cosecha… Se pone a prueba con el atributo principal de la profesión; el éxito trae, según tu rango, una gran ganancia + fama/prestigio + habilidad. Las peligrosas (herrero/pescador/cazador/soldado/sanador) arriesgan tu salud si fracasas." },
+      { q: "¿Cómo entro en la corte y cuáles son los rangos?", a: "Si no estás en el trono (16+ años, prestigio e inteligencia suficientes — más fácil si eres escriba), puedes entrar al servicio de la corte y el consejo desde la pantalla de Gremios y Órdenes. Empiezas como Escriba; cumpliendo el Servicio del Consejo ganas puntos de servicio + el favor del soberano + un salario, y asciendes: Tesorero → Canciller → Visir → Gran Visir. Puedes comprar favor ofreciendo un presente. El favor se desgasta si lo descuidas y, si toca fondo, te destituyen; hay intrigas de cortesanos rivales y mercedes del sultán. Un cargo de Visir o superior te da respaldo para aspirar al trono." },
+    ],
+  },
+];
+
+const PT: FaqSection[] = [
+  {
+    icon: "hourglass", title: "Tempo & Vida",
+    items: [
+      { q: "Como avançam os meses/anos?", a: "Avanças o tempo com o botão grande do ecrã principal. A cada avanço a tua fome diminui, acontecem eventos e, de vez em quando, surge um dilema ou uma oportunidade." },
+      { q: "O que fazem a fome e a saúde?", a: "Se a fome chegar a 0, a tua saúde começa a esgotar-se. Se a saúde chegar a 0, a tua personagem morre. Recuperas a fome comendo e a saúde descansando ou com curas." },
+      { q: "O que acontece quando morro?", a: "Se tiveres um herdeiro, continuas com a vida dele (nova geração). Parte da tua herança, um terço da tua fama e a tua terra natal passam ao herdeiro." },
+    ],
+  },
+  {
+    icon: "shield", title: "Atributos & Perícias",
+    items: [
+      { q: "Para que servem os atributos (Força/Inteligência/Carisma/Resistência)?", a: "A Força conta no combate, a Inteligência no comércio/ofício, o Carisma na conversa/regateio/crime, a Resistência no trabalho e na fadiga. Os ferimentos podem baixar temporariamente os atributos." },
+      { q: "Como ganho e gasto pontos de atributo?", a: "Ganhas ao estudar na escola (de vez em quando), nos exames e nalguns eventos. Distribuis no ecrã da Personagem pelo atributo que quiseres (limite de 10 por atributo)." },
+      { q: "Como evoluem as perícias (Combate/Comércio/Ofício/Social)?", a: "Sobem por si à medida que ages: lutar desenvolve o Combate, regatear/negociar o Comércio, produzir na oficina o Ofício, conversar/ir à escola o Social. Nos níveis 3, 6 e 9 desbloqueias um dote na Árvore de Perícias." },
+    ],
+  },
+  {
+    icon: "flame", title: "Reputação · Honra · Medo · Fama",
+    items: [
+      { q: "O que determina a Fama?", a: "O QUANTO e ATÉ ONDE o teu nome é conhecido. Com fama baixa, ninguém te conhece nas cidades distantes; o teu carácter (honra/medo etc.) só chega aos outros na medida em que és reconhecido." },
+      { q: "O que é o reconhecimento? Terra natal vs terras alheias?", a: "É o grau em que uma pessoa comum do sítio onde estás reage ao teu nome. Na tua terra natal (cidade onde nasceste) toda a gente te conhece um pouco; noutra cidade só a tua fama te acompanha. No ecrã da Personagem vês 'como o povo te vê' + a percentagem de reconhecimento." },
+      { q: "Prós e contras da Honra?", a: "PRÓS: o casamento e os acordos com famílias respeitáveis tornam-se mais fáceis, ganhas reputação depressa nas guildas honradas, as casas confiam em ti. CONTRAS: se fores apanhado num crime, a tua reputação cai com mais força — tens um nome a perder." },
+      { q: "Prós e contras do Medo?", a: "PRÓS: o teu êxito no crime aumenta (a vítima gela), a tua palavra pesa no regateio (o mercador baixa o preço para se ver livre de ti). CONTRAS: as pessoas retraem-se na conversa, as hipóteses de casamento caem, as guildas honradas mantêm distância." },
+      { q: "Como muda a Reputação?", a: "Banquetes, esmolas, tarefas de guilda, oportunidades e escolhas honradas fazem-na subir; o crime, a intimidação e o fracasso fazem-na descer. Determina a atitude das casas para contigo e abre ou fecha certas portas." },
+    ],
+  },
+  {
+    icon: "star", title: "Renome (A Cor da Tua Fama)",
+    items: [
+      { q: "O que é o Renome?", a: "O carácter que o teu nome carrega: Generoso, Cruel, Mulherengo, Devoto, Valente. Acumula-se com os teus atos e molda a forma como as pessoas te abordam (na medida do reconhecimento)." },
+      { q: "Generoso / Devoto", a: "Generoso: ganha-te o afeto do povo e suaviza a intimidação (já não metes medo). Devoto: acrescenta respeito e aproxima-te das famílias devotas; mas se um devoto for apanhado num crime, a hipocrisia é punida com mais dureza." },
+      { q: "Mulherengo / Valente", a: "Mulherengo: facilita criar laços com namoricos e elogios; mas as famílias tradicionais/leais arreceiam-se desse renome. Valente: é respeitado em todas as casas e ganha lealdade de aliados e guildas; mas a tua honestidade dificulta os trabalhos sorrateiros (crime)." },
+      { q: "Cruel", a: "Junta-se ao medo e aumenta o poder de intimidação/crime; mas faz-te perder o afeto do povo e a confiança das instituições honradas." },
+    ],
+  },
+  {
+    icon: "coins", title: "Dinheiro & Sustento",
+    items: [
+      { q: "Como ganho dinheiro?", a: "Arranja uma profissão e trabalha; compra e vende no mercado; produz na oficina e vende; compra propriedades e recolhe rendas/rendimentos; aceita tarefas de guilda e oportunidades." },
+      { q: "Como funciona o regateio?", a: "A tua hipótese no regateio depende do Carisma + perícia de Comércio; se tiveres êxito, obténs desconto. Se fores conhecido (amado ou temido), a tua palavra pesa mais." },
+      { q: "O que é preciso para produzir na oficina?", a: "NÃO é preciso profissão. Só precisas de perícia de Ofício suficiente e dos materiais necessários. O cartão de cada receita mostra o nível e os materiais exigidos (tens/precisas). Produzir desenvolve o Ofício." },
+    ],
+  },
+  {
+    icon: "family", title: "Relações & Casamento",
+    items: [
+      { q: "Como desenvolvo uma relação?", a: "Abre o cartão de uma pessoa e conversa (dois dedos de conversa, elogio, ouvir desabafos, piada), dá presentes. Cada pessoa tem a sua índole; a intenção errada pode sair pela culatra. Um renome caloroso/querido aumenta os ganhos da conversa." },
+      { q: "Como me caso?", a: "Precisas de 50+ de proximidade com a pessoa e ambos têm de ter 18+. Depois abre-se o 'Pedido de Casamento'. A hipótese de aceitação depende da proximidade + Carisma + do teu renome (valente/honra ajudam, mulherengo/medo prejudicam)." },
+    ],
+  },
+  {
+    icon: "crossed-swords", title: "Guildas · Guerra · Crime",
+    items: [
+      { q: "Como entro numa guilda?", a: "Primeiro acumula reputação (standing) fazendo tarefas para a guilda; ao passares o limiar, juntas-te às fileiras. As guildas honradas confiam mais depressa no valente/honrado; a Irmandade da Sombra, no medo/cruel." },
+      { q: "Como funciona a guerra/frente?", a: "Se a organização a que pertences entrar em guerra, podes ir para a frente; a vitória traz fama, honra e renome de valente. Os teus inimigos (némesis) podem encontrar-te." },
+      { q: "Devo cometer crimes?", a: "Bater carteiras/assaltar rende dinheiro rápido mas é arriscado. O êxito depende do Carisma + poder do medo; o castigo, se fores apanhado, depende da tua reputação. Quem é honrado/devoto perde muito mais ao ser apanhado." },
+    ],
+  },
+  {
+    icon: "compass", title: "Oportunidades & Dilemas",
+    items: [
+      { q: "O que são as oportunidades/dilemas que aparecem no ecrã?", a: "Ao avançares o mês, de vez em quando surge uma oportunidade (aceitar/recusar) ou um dilema (escolha). As oportunidades trazem recompensa e risco; se o atributo exigido estiver alto, as tuas hipóteses de êxito aumentam." },
+      { q: "Para que serve o ecrã de Tarefas?", a: "Reúne numa só lista os assuntos importantes pendentes (distribuir pontos de atributo, escolher um dote, casar, entrar numa guilda, guerra, herdeiro...) e leva-te ao ecrã certo. Em baixo tem também o painel de 'Marcos Familiares'." },
+    ],
+  },
+  {
+    icon: "castle", title: "Sistemas do Reino",
+    items: [
+      { q: "Como funciona a caravana? O que é a rota?", a: "No mercado investes moedas e envias uma caravana. A caravana segue uma rota origem→paragem(ns) intermédia(s)→destino, avançando uma paragem por mês. No caminho pode haver ataques de bandidos (a tua reputação, a perícia de comércio e o medo baixam o risco; a força e a perícia de combate reduzem a perda). À chegada, o lucro é calculado sobre o capital que sobreviveu. Podes acompanhar o progresso no ecrã principal e no mercado." },
+      { q: "O que são o domínio do sanjaco e as guerras de guildas?", a: "Cada um dos 4 sanjacos é dominado por uma guilda. Com o tempo, guildas rivais cobiçam-nos, a tensão acumula-se e rebenta uma guerra por um sanjaco; quem vencer fica com ele. Se a tua guilda for parte, podes ir à frente a partir de Guildas e Ordens e influenciar o resultado. Se a tua guilda dominar o sanjaco onde estás, as tarefas de guilda aí pagam 25% mais." },
+      { q: "O que ganho ao contratar trabalhadores para as propriedades?", a: "Contratas para as tuas propriedades trabalhadores de entre o povo dessa cidade (número de vagas conforme o tipo e o nível). O trabalhador aumenta a produção mas exige salário mensal; com estado/prosperidade baixos, o salário pode comer o lucro. O painel de trabalhadores mostra o rendimento líquido mensal (verde/vermelho). A produtividade vem da idade + adequação da profissão + índole." },
+      { q: "O que é a qualidade dos itens?", a: "Os bens duráveis como armas, armaduras e elixires têm 4 qualidades: defeituoso, comum, bom e obra-prima. Com perícia de Ofício alta produzes com mais qualidade. Os bens de qualidade vendem-se mais caros no mercado; a qualidade da arma/armadura que trazes equipada também se reflete no teu poder de combate e na tua defesa." },
+      { q: "O que são o círculo do NPC e a 'ajuda à meta'?", a: "Cada NPC tem uma família, amigos e rivais (o seu círculo) e uma meta de vida; vês tudo isso no ecrã do NPC. Podes ajudar a sua meta (a troco de moedas, ganhas grande proximidade + renome de generoso) ou explorá-la (arrancas moedas mas queimas a confiança dele, renome de cruel)." },
+    ],
+  },
+  {
+    icon: "scroll", title: "Estado, Corte & Profissão",
+    items: [
+      { q: "O que posso fazer como governador?", a: "Com reputação suficiente tornas-te governador de uma cidade (a partir do ecrã do Reino). Ajustas a taxa de imposto (receita ↔ contentamento do povo), gastas o tesouro da cidade em serviços/segurança para o povo e renovas a tua legitimidade com obras de caridade. Além disso podes emitir DECRETOS (justiça, perdão fiscal, corveia, mercado livre — com tempo de espera e contrapartidas) e mandar erguer OBRAS PÚBLICAS permanentes (fonte/ponte/cozinha de caridade/torreão — sobem a base de contentamento/receita + fama). Se a tua legitimidade cair és destituído, se o povo ficar muito ressentido rebenta uma revolta; de vez em quando o conselho imperial exige uma parte do tesouro." },
+      { q: "O que muda quando subo ao trono (soberano)?", a: "Cumprindo os requisitos de idade, poder da dinastia, reputação, fama e moedas — e com o apoio de uma guilda (ou um posto de Vizir+ na corte) — reivindicas o trono. Como soberano passas a ter AUTORIDADE: emites decretos no conselho imperial (édito de justiça, campanha de obras, amnistia geral, festa, imposto severo), lanças CAMPANHAS contra beilhiques rivais (vitória → anexação + espólio + fama) e nomeias/destituis GOVERNADORES leais nas cidades (receita de tributo). A autoridade desgasta-se se for negligenciada; se bater no fundo, uma revolta pode derrubar o teu trono. Os eventos da corte (enviados, fome, intrigas de vizires) afetam a tua autoridade." },
+      { q: "O que é a Oportunidade de Profissão (ação de assinatura)?", a: "Para lá do trabalho normal, cada profissão tem uma ação de assinatura própria, com tempo de espera (no ecrã de Profissão): o ferreiro forja uma obra-prima, o mercador parte numa expedição de comércio longínquo, o curandeiro combate uma epidemia, o soldado junta-se a uma incursão na fronteira, o agricultor organiza a festa da colheita… É testada com o atributo base da profissão; o êxito traz um grande ganho conforme o teu escalão + fama/reputação + perícia. As perigosas (ferreiro/pescador/caçador/soldado/curandeiro) arriscam a tua saúde em caso de fracasso." },
+      { q: "Como entro na corte e quais são os postos?", a: "Se não estiveres no trono (16+ anos, reputação e inteligência suficientes — mais fácil se fores escrivão), podes entrar ao serviço da corte/conselho a partir do ecrã de Guildas e Ordens. Começas como Escrivão e, ao cumprir o Dever do Conselho, ganhas pontos de serviço + favor do soberano + salário, subindo a Tesoureiro → Chanceler → Vizir → Grão-Vizir. Podes oferecer um presente para comprar favor. O favor desgasta-se se for negligenciado e, se bater no fundo, és destituído; há intrigas de cortesãos rivais e mercês do soberano. Um posto de Vizir+ dá-te apoio para reivindicar o trono." },
+    ],
+  },
+];
+
+const AR: FaqSection[] = [
+  {
+    icon: "hourglass", title: "الزمن والحياة",
+    items: [
+      { q: "كيف يتقدّم الشهر/السنة؟", a: "تقدّم الزمن بالزرّ الكبير في الشاشة الرئيسية. مع كل تقدّم ينخفض جوعك، وتقع أحداث، وتظهر بين الحين والآخر معضلة أو فرصة." },
+      { q: "ماذا يفعل الجوع والصحة؟", a: "إذا هبط الجوع إلى 0 بدأت صحّتك بالذوبان. وإذا بلغت الصحة 0 ماتت شخصيّتك. بالأكل تستعيد جوعك، وبالراحة/العلاج تستعيد صحّتك." },
+      { q: "ماذا يحدث حين أموت؟", a: "إن كان لك وريث واصلت اللعب بحياته (جيل جديد). ينتقل إلى الوريث جزء من ثروتك وثلث شهرتك ومسقط رأسك." },
+    ],
+  },
+  {
+    icon: "shield", title: "الصفات والمهارات",
+    items: [
+      { q: "ما فائدة الصفات (القوّة/الذكاء/الكاريزما/التحمّل)؟", a: "القوّة تنفع في القتال، والذكاء في التجارة والحِرفة، والكاريزما في الحديث والمساومة والجريمة، والتحمّل في العمل والإرهاق. وقد تُنقص الجروح الصفات مؤقتًا." },
+      { q: "كيف أكسب نقاط الصفات وكيف أنفقها؟", a: "تكسبها أثناء الدراسة في المكتب (بين الحين والآخر) وفي الامتحانات وبعض الأحداث. وتوزّعها من شاشة الشخصية على الصفة التي تريد (سقف الصفة 10)." },
+      { q: "كيف تنمو المهارات (القتال/التجارة/الحِرفة/الاجتماعية)؟", a: "تنمو تلقائيًا مع أفعالك: القتال يرفع مهارة القتال، والمساومة والبيع والشراء التجارة، والإنتاج في الورشة الحِرفة، والحديث والمكتب المهارة الاجتماعية. وعند المستويات 3 و6 و9 تُفتَح موهبة من شجرة المهارات." },
+    ],
+  },
+  {
+    icon: "flame", title: "السمعة · الشرف · الخوف · الشهرة",
+    items: [
+      { q: "ماذا تحدّد الشهرة؟", a: "كم يُعرَف اسمك وإلى أيّ مدى يبلغ. حين تكون شهرتك منخفضة لا يعرفك أحد في المدن البعيدة؛ وشخصيّتك (شرفك وخوفك وغيرهما) لا تنعكس عليك إلا بقدر ما يعرفك الناس." },
+      { q: "ما التعرّف؟ ومسقط الرأس مقابل الغربة؟", a: "هو درجة تعامل شخص عاديّ معك بحسب اسمك حيثما كنت. في مسقط رأسك (مدينة مولدك) يعرفك الجميع قليلًا؛ وإذا ذهبت إلى مدينة أخرى لم يحملك إلا شهرتك. وفي شاشة الشخصية ترى «كيف يراك الناس» + نسبة التعرّف عليك." },
+      { q: "الشرف — ما له وما عليه؟", a: "لَه: يسهل الزواج والاتفاق مع الأُسَر المحترمة، وتُكسَب المكانة في النقابات الشريفة أسرع، وتثق بك البيوت. وعليه: إن قُبض عليك في جريمة هبطت سمعتك هبوطًا أقسى — فلك اسم تخسره." },
+      { q: "الخوف — ما له وما عليه؟", a: "لَه: يزداد نجاحك في الجريمة (يتجمّد الضحية)، وتُسمَع كلمتك في المساومة (ينزل التاجر بالسعر ليتخلّص منك). وعليه: يتحفّظ الناس في الحديث معك، وتهبط فرص الزواج، وتقف النقابات الشريفة منك على مسافة." },
+      { q: "كيف تتغيّر السمعة؟", a: "ترفعها الولائم والصدقة ومهامّ النقابة والفرص والخيارات الشريفة؛ وتخفضها الجريمة والترهيب والفشل. وهي تحدّد موقف الأُسَر منك وتفتح بعض الأبواب أو تغلقها." },
+    ],
+  },
+  {
+    icon: "star", title: "الصيت (لون شهرتك)",
+    items: [
+      { q: "ما الصيت؟", a: "الشخصية التي يحملها اسمك: كريم، قاسٍ، ماجن، تقيّ، شجاع. يتراكم بأفعالك ويشكّل طريقة تعامل الناس معك (بقدر التعرّف عليك)." },
+      { q: "كريم / تقيّ", a: "الكريم: يكسبك محبّة في عيون العامّة ويليّن الترهيب (فلم تعُد مخيفًا). التقيّ: يزيدك وقارًا ويقرّبك من الأُسَر المتديّنة؛ لكن إن قُبض على التقيّ في جريمة عوقب على الرياء عقابًا أشدّ." },
+      { q: "ماجن / شجاع", a: "الماجن: يسهّل بناء العلاقات بالغزل والإطراء؛ لكنّ الأُسَر العريقة/الوفيّة تنفر من هذا الصيت. الشجاع: يُحترَم في كل بيت ويكسبك ولاء الحلفاء والنقابة؛ لكنّ استقامتك تصعّب الأعمال الخفيّة (الجريمة)." },
+      { q: "قاسٍ", a: "يجتمع مع الخوف فيزيد قوّة الترهيب والجريمة؛ لكنه يفقدك محبّة العامّة وثقة المؤسّسات الشريفة." },
+    ],
+  },
+  {
+    icon: "coins", title: "المال والمعيشة",
+    items: [
+      { q: "كيف أكسب المال؟", a: "اتّخذ مهنة واعمل؛ بِع واشترِ في السوق؛ أنتج في الورشة وبِع؛ اشترِ أملاكًا واجمع الإيجار/الدخل؛ وتولَّ مهامّ النقابة والفرص." },
+      { q: "كيف تعمل المساومة؟", a: "حظّك في المساومة يعتمد على الكاريزما + مهارة التجارة؛ فإن نجحت نلت خصمًا. وإن كنت معروفًا (محبوبًا أو مهيبًا) كان لكلمتك وقع أكبر." },
+      { q: "ماذا يلزم للإنتاج في الورشة؟", a: "لا يُشترَط أيّ مهنة. كل ما يلزم: مهارة حِرفة كافية والموادّ اللازمة. وفي بطاقة كل وصفة يُكتَب المستوى المطلوب والموادّ (المتوافر/المطلوب). والإنتاج يطوّر الحِرفة." },
+    ],
+  },
+  {
+    icon: "family", title: "العلاقات والزواج",
+    items: [
+      { q: "كيف أطوّر العلاقة؟", a: "ادخل بطاقة الشخص وتحدّث إليه (سلام وسؤال، إطراء، إصغاء إلى الهموم، مزاح) وقدّم هديّة. لكلّ شخص مزاجه؛ والنيّة الخاطئة قد ترتدّ عليك. والصيت الدافئ/المحبوب يزيد كسبك من الحديث." },
+      { q: "كيف أتزوّج؟", a: "يلزم أن تبلغ الألفة مع الطرف الآخر 50+، وأن يكون كلاكما 18+. عندها يظهر «عرض الزواج». وفرصة القبول تعتمد على الألفة + الكاريزما + صيتك (الشجاعة/الشرف يرفعانها، والمجون/الخوف يخفضانها)." },
+    ],
+  },
+  {
+    icon: "crossed-swords", title: "النقابات · الحرب · الجريمة",
+    items: [
+      { q: "كيف أنضمّ إلى نقابة؟", a: "اكسب أولًا مكانة لدى النقابة بأداء المهامّ؛ فإذا تجاوزت العتبة انضممت إلى صفوفها. النقابات الشريفة تثق بالشجاع/الشريف أسرع، وأخوية الظل تثق بالخوف/القسوة أسرع." },
+      { q: "كيف تعمل الحرب/الجبهة؟", a: "إذا دخل التنظيم الذي تنتمي إليه حربًا أمكنك الذهاب إلى الجبهة؛ والنصر يكسبك شهرة وشرفًا وصيت الشجاع. وقد يجدك أعداؤك (الغريم)." },
+      { q: "هل أرتكب الجرائم؟", a: "النشل/السطو يجلبان مالًا سريعًا لكنهما محفوفان بالخطر. النجاح يعتمد على الكاريزما + قوّة الخوف؛ وعقوبة القبض عليك تعتمد على سمعتك. والشريف/التقيّ يخسر عند القبض عليه أكثر بكثير." },
+    ],
+  },
+  {
+    icon: "compass", title: "الفرص والمعضلات",
+    items: [
+      { q: "ما الفرصة/المعضلة التي تظهر على الشاشة؟", a: "أثناء تقديم الشهر تظهر بين الحين والآخر فرصة (تولَّ/انصرف) أو معضلة (اختيار). الفرص تحمل مكافأة ومخاطرة؛ وكلّما علت الصفة المطلوبة زادت فرصة نجاحك." },
+      { q: "لِمَ شاشة المهام؟", a: "تجمع الأعمال المهمّة المعلّقة (وزّع نقاط الصفات، اختر موهبة، تزوّج، انضمّ إلى نقابة، الحرب، الوريث...) في قائمة واحدة وتأخذك إلى الشاشة المعنيّة. وتحتها أيضًا لوحة «مهامّ العائلة»." },
+    ],
+  },
+  {
+    icon: "castle", title: "أنظمة الديار",
+    items: [
+      { q: "كيف تعمل القافلة؟ وما الطريق؟", a: "تستثمر قطعًا نقدية من السوق وترسل قافلة. تسير القافلة على طريق: البداية ← المحطّة الوسطى (المحطّات) ← الهدف، وتتقدّم محطّة كل شهر. وقد يهاجمها قطّاع الطرق في الطريق (سمعتك ومهارتك في التجارة وخوفك تُنقص الخطر؛ وقوّتك ومهارتك في القتال تقلّلان الخسارة). وعند الوصول يعود الربح على رأس المال الناجي. وتتابع التقدّم من الشاشة الرئيسية ومن السوق." },
+      { q: "ما السيطرة على السنجق وحروب النقابات؟", a: "كلّ واحد من السناجق الأربعة بيد نقابة. ومع الوقت تطمع فيها النقابات المنافسة، فيتراكم التوتّر وتندلع حرب على سنجق؛ ومن ينتصر يستولي عليه. إن كانت نقابتك طرفًا أمكنك الذهاب إلى الجبهة من شاشة المنظمات والتأثير في النتيجة. وإذا كانت نقابتك تسيطر على السنجق الذي أنت فيه، دفعت مهامّ النقابة هناك 25% أكثر." },
+      { q: "ماذا يفيد توظيف العمّال في الأملاك؟", a: "توظّف في أملاكك عمّالًا من أهل تلك المدينة (عدد المواضع بحسب النوع والدرجة). العامل يزيد الإنتاج لكنه يطلب أجرًا شهريًا؛ وعند تدنّي الحال/الرخاء قد تأكل الأجور الربح. وفي لوحة العمّال يظهر صافي الدخل الشهري (أخضر/أحمر). وإنتاجية العامل تأتي من العمر + ملاءمة المهنة + المزاج." },
+      { q: "ما جودة الأغراض؟", a: "السلع المعمّرة كالسلاح والدرع والإكسير تأتي في 4 درجات جودة: معيب، عاديّ، جيّد، صنعة أستاذ. وكلّما علت مهارتك في الحِرفة أنتجت جودة أعلى. السلعة الجيّدة تُباع في السوق بثمن أغلى؛ وجودة سلاحك ودرعك اللذين تحملهما تنعكس أيضًا على قوّتك القتالية ودفاعك." },
+      { q: "ما دائرة الشخصية وما فائدة «مساعدة الهدف»؟", a: "لكلّ شخصية عائلة وأصدقاء وخصوم (دائرتها) وهدف في الحياة؛ تراها كلها في شاشة تلك الشخصية. يمكنك أن تساعد هدفه (قطع نقدية مقابل ألفة كبيرة + صيت الكريم) أو أن تستغلّه (تنتزع قطعًا لكنك تحرق ثقته، وتنال صيت القاسي)." },
+    ],
+  },
+  {
+    icon: "scroll", title: "الدولة والبلاط والمهنة",
+    items: [
+      { q: "ماذا أستطيع حين أصير واليًا؟", a: "بسمعة كافية تصير واليًا على مدينة (من شاشة الديار). تضبط نسبة الضريبة (الدخل ↔ رضا الأهالي)، وتنفق خزينة المدينة على خدمة الناس والأمن، وتجدّد شرعيّتك بأعمال الخير. ويمكنك فوق ذلك إصدار فرمانات (العدل، عفو الضرائب، السخرة، حرية السوق — بمهلة انتظار ومقايضات) وتشييد أثر عمرانيّ دائم (نافورة/جسر/دار إطعام/برج — يرفع قاعدة الرضا/الدخل ويمنح شهرة). إن هبطت شرعيّتك عُزلت، وإن سخط الأهالي كثيرًا اندلع العصيان؛ وبين الحين والآخر يطلب الديوان الهمايوني نصيبًا من الخزينة." },
+      { q: "ماذا يتغيّر حين أعتلي العرش (الحاكم)؟", a: "تستوفي شروط العمر وقوّة السلالة والسمعة والشهرة والقطع النقدية، وتدّعي العرش بدعم نقابة (أو بمنصب الوزير فأعلى في البلاط). وحين تصير الحاكم تكون لك «سلطة»: تُصدر الفرمانات في الديوان الهمايوني (فرمان العدل، الإعمار، العفو العامّ، الاحتفال، الضريبة الثقيلة)، وتشنّ حملات على البكويات المنافسة (النصر ← الضمّ + الغنيمة + الشهرة)، وتعيّن على المدن ولاة أوفياء وتعزلهم (دخل الخراج). إن أُهملت السلطة تآكلت؛ وإن بلغت القاع أطاح العصيان بعرشك. وأحداث البلاط (الرسل، المجاعة، مكائد الوزراء) تؤثّر في سلطتك." },
+      { q: "ما فرصة المهنة (العمل المميّز)؟", a: "لكلّ مهنة، فوق العمل المعتاد، عمل مميّز خاصّ بها بمهلة انتظار (في شاشة المهنة): الحدّاد يطرق تحفة، والتاجر يخرج في رحلة تجارة بعيدة، والمعالج يحارب الوباء، والجنديّ يشارك في غارة على الثغر، والفلّاح يقيم احتفال الحصاد... يُختبَر بالصفة الأساسية للمهنة؛ والنجاح يجلب بحسب رتبتك كسبًا كبيرًا + شهرة/سمعة + مهارة. والمهن الخطرة (الحدّاد/صيّاد السمك/الصيّاد/الجنديّ/المعالج) تحمل عند الفشل خطرًا على الصحة." },
+      { q: "كيف أدخل البلاط وما الرتب؟", a: "إن لم تكن على العرش (عمر 16+، وسمعة وذكاء كافيان — والأمر أيسر إن كنت كاتبًا) أمكنك دخول خدمة البلاط/الديوان من شاشة المنظمات. تبدأ كاتبًا، وبأداء خدمة الديوان تكسب نقاط خدمة + حظوة الحاكم + راتبًا، وترتقي: دفتردار ← نيشانجي ← الوزير ← الصدر الأعظم. ويمكنك شراء الحظوة بتقديم هديّة. إن أُهملت الحظوة تآكلت، وإن بلغت القاع عُزلت؛ وتقع مكائد رجال البلاط المنافسين وتأتي ألطاف السلطان. ومنصب الوزير فأعلى يمنحك سندًا لادّعاء العرش." },
+    ],
+  },
+];
+
+const RU: FaqSection[] = [
+  {
+    icon: "hourglass", title: "Время и жизнь",
+    items: [
+      { q: "Как идут месяцы и годы?", a: "Большой кнопкой на главном экране ты продвигаешь время. С каждым шагом убывает сытость, случаются события, порой выпадает дилемма или возможность." },
+      { q: "Что делают голод и здоровье?", a: "Если сытость упадёт до 0, здоровье начнёт таять. Если здоровье дойдёт до 0, твой персонаж умрёт. Едой ты восполняешь сытость, отдыхом и лечением — здоровье." },
+      { q: "Что происходит после смерти?", a: "Если у тебя есть наследник, ты продолжаешь его жизнью (новое поколение). Часть состояния, треть славы и родной город переходят наследнику." },
+    ],
+  },
+  {
+    icon: "shield", title: "Свойства и навыки",
+    items: [
+      { q: "Зачем нужны свойства (Сила/Ум/Харизма/Выносливость)?", a: "Сила решает в бою, Ум — в торговле и ремесле, Харизма — в беседе, торге и тёмных делах, Выносливость — в работе и усталости. Раны могут временно снижать свойства." },
+      { q: "Как получать и тратить очки свойств?", a: "Ты зарабатываешь их за учёбой в школе (время от времени), на экзаменах и в некоторых событиях. Распределяешь их на экране персонажа на любое свойство (потолок свойства — 10)." },
+      { q: "Как растут навыки (Бой/Торговля/Ремесло/Общение)?", a: "Сами собой, по мере действий: драки поднимают Бой, торг и покупки — Торговлю, работа в мастерской — Ремесло, беседы и школа — Общение. На уровнях 3, 6 и 9 в Древе навыков открывается умение." },
+    ],
+  },
+  {
+    icon: "flame", title: "Репутация · Честь · Страх · Слава",
+    items: [
+      { q: "Что определяет слава (fame)?", a: "НАСКОЛЬКО и КАК ДАЛЕКО известно твоё имя. Пока слава мала, в дальних городах тебя никто не знает; твой характер (честь, страх и прочее) отражается на людях лишь настолько, насколько ты узнаваем." },
+      { q: "Что такое узнаваемость? Родной город и чужбина?", a: "Это то, насколько обычный человек там, где ты находишься, судит о тебе по имени. В родном городе (где ты родился) тебя все немного знают; в другом городе тебя несёт лишь твоя слава. На экране персонажа видно, как народ на тебя смотрит, и процент узнаваемости." },
+      { q: "Плюсы и минусы чести?", a: "ПЛЮС: легче жениться и договариваться с уважаемыми семьями, в честных гильдиях репутация растёт быстрее, дома тебе доверяют. МИНУС: попадёшься на преступлении — репутация рухнет куда сильнее: тебе есть что терять." },
+      { q: "Плюсы и минусы страха?", a: "ПЛЮС: тёмные дела удаются чаще (жертва цепенеет), в торге твоё слово весомее (торговец уступает, лишь бы отвязаться). МИНУС: в беседе люди сторонятся, шансы на брак падают, честные гильдии держатся на расстоянии." },
+      { q: "Как меняется репутация?", a: "Пиры, милостыня, задания гильдии, возможности и честные поступки поднимают её; преступления, запугивание и провалы роняют. Она определяет отношение домов к тебе и открывает или закрывает некоторые двери." },
+    ],
+  },
+  {
+    icon: "star", title: "Молва (цвет твоей славы)",
+    items: [
+      { q: "Что такое молва?", a: "Характер, который несёт твоё имя: Щедрый, Жестокий, Повеса, Набожный, Доблестный. Она копится из твоих поступков и определяет, как люди к тебе подходят (в меру узнаваемости)." },
+      { q: "Щедрый / Набожный", a: "Щедрый: даёт любовь народа, смягчает запугивание (тебя больше не боятся). Набожный: прибавляет уважения, сближает с набожными семьями; но если набожный попадётся на преступлении, лицемерие карается куда тяжелее." },
+      { q: "Повеса / Доблестный", a: "Повеса: флирт и комплименты быстрее строят отношения; но родовитые и верные семьи шарахаются от такой молвы. Доблестный: уважаем в каждом доме, приносит верность союзников и гильдии; но честность мешает тёмным делам (преступлениям)." },
+      { q: "Жестокий", a: "В связке со страхом усиливает запугивание и тёмные дела; но лишает любви народа и доверия честных заведений." },
+    ],
+  },
+  {
+    icon: "coins", title: "Деньги и заработок",
+    items: [
+      { q: "Как заработать?", a: "Возьми профессию и работай; покупай и продавай на рынке; производи в мастерской и продавай; покупай владения и собирай ренту; бери задания гильдии и возможности." },
+      { q: "Как работает торг?", a: "Шанс сторговаться зависит от Харизмы + навыка Торговли; удастся — получишь скидку. Если ты известен (любим или внушаешь страх), твоё слово весит больше." },
+      { q: "Что нужно для работы в мастерской?", a: "Профессия НЕ требуется. Нужны лишь достаточный навык Ремесла и материалы. На карточке каждого рецепта указаны нужный уровень и материалы (есть/нужно). Производство развивает Ремесло." },
+    ],
+  },
+  {
+    icon: "family", title: "Отношения и брак",
+    items: [
+      { q: "Как развивать отношения?", a: "Открой карточку человека и говори с ним (поболтай, сделай комплимент, выслушай, пошути), дари подарки. У каждого свой нрав; неверный подход может выйти боком. Тёплая, любимая народом молва усиливает отдачу от бесед." },
+      { q: "Как жениться?", a: "Нужна близость 50+ с человеком, и вам обоим должно быть 18+. Тогда откроется «Предложение руки». Шанс согласия зависит от близости + Харизмы + твоей молвы (доблесть и честь помогают, повеса и страх мешают)." },
+    ],
+  },
+  {
+    icon: "crossed-swords", title: "Гильдии · Война · Преступление",
+    items: [
+      { q: "Как вступить в гильдию?", a: "Сначала копи уважение (standing), выполняя задания для гильдии; перейдёшь порог — вступишь в её ряды. Честные гильдии быстрее доверяют доблестным и честным, Братство Тени — страху и жестокости." },
+      { q: "Как работает война и фронт?", a: "Если твоя организация вступает в войну, ты можешь пойти на фронт; победа приносит славу, честь и молву доблестного. Враги (заклятый недруг) могут тебя разыскать." },
+      { q: "Стоит ли идти на преступление?", a: "Карманные кражи и грабёж дают быстрые деньги, но рискованны. Успех зависит от Харизмы + силы страха; кара при поимке — от твоей репутации. Честный или набожный, попавшись, теряет куда больше." },
+    ],
+  },
+  {
+    icon: "compass", title: "Возможности и дилеммы",
+    items: [
+      { q: "Что за возможности и дилеммы на экране?", a: "Пока ты продвигаешь месяц, порой выпадает возможность (взяться/отказаться) или дилемма (выбор). Возможности несут награду и риск; чем выше нужное свойство, тем больше шанс успеха." },
+      { q: "Для чего экран задач?", a: "Он собирает важные ожидающие дела (распределить очки свойств, выбрать умение, жениться, вступить в гильдию, война, наследник...) в один список и ведёт на нужный экран. Ниже есть и панель «Семейные вехи»." },
+    ],
+  },
+  {
+    icon: "castle", title: "Системы края",
+    items: [
+      { q: "Как работает караван? Что такое маршрут?", a: "На рынке ты вкладываешь монеты и отправляешь караван. Он идёт по маршруту начало→промежуточные стоянки→цель, продвигаясь на одну стоянку в месяц. В пути возможно нападение разбойников (репутация, навык торговли и страх снижают риск; сила и навык боя уменьшают потери). По прибытии прибыль возвращается с уцелевшего капитала. За ходом можно следить с главного экрана и с рынка." },
+      { q: "Что такое власть над санджаком и войны гильдий?", a: "Каждый из 4 санджаков держит одна гильдия. Со временем соперники начинают на них зариться, копится напряжение, и за санджак вспыхивает война; победитель забирает его. Если твоя гильдия в деле, можешь пойти на фронт из «Гильдий и орденов» и повлиять на исход. Если твоя гильдия владеет санджаком, где ты находишься, задания гильдии там платят на 25% больше." },
+      { q: "Что даёт наём работников во владения?", a: "Ты нанимаешь во владения людей из того города (число мест зависит от типа и уровня). Работник повышает выработку, но требует месячного жалованья; при плохом состоянии или низком процветании жалованье может съесть прибыль. В панели работников виден месячный чистый доход (зелёный/красный). Выработка складывается из возраста + соответствия профессии + нрава." },
+      { q: "Что такое качество вещей?", a: "Долговечные товары — оружие, броня, эликсиры — бывают 4 качеств: бракованный, обычный, добротный, мастерской работы. Чем выше твой навык Ремесла, тем качественнее выходит вещь. Качественный товар продаётся на рынке дороже; качество надетого оружия и брони влияет и на боевую мощь, и на защиту." },
+      { q: "Что дают круг NPC и «помощь его цели»?", a: "У каждого NPC есть семья, друзья и соперники (его круг) и жизненная цель; всё это видно на экране NPC. Можно помочь его цели (за монеты — большая близость + молва щедрого) или использовать её (выбьешь монеты, но сожжёшь доверие — молва жестокого)." },
+    ],
+  },
+  {
+    icon: "scroll", title: "Государство, двор и профессия",
+    items: [
+      { q: "Что я могу как наместник?", a: "С достаточной репутацией ты становишься наместником города (с экрана края). Ты настраиваешь налог (доход ↔ довольство народа), тратишь городскую казну на службы и порядок, укрепляешь законность благими делами. Вдобавок можешь издавать УКАЗЫ (правосудие, налоговая амнистия, повинность, свобода рынка — с временем ожидания и своей ценой) и возводить долговечные ПОСТРОЙКИ (фонтан/мост/бесплатная кухня/башня — поднимают основу довольства и дохода + слава). Упадёт законность — тебя сместят; если народ вконец озлобится — вспыхнет мятеж; время от времени высокий диван требует долю из казны." },
+      { q: "Что меняется на троне (государь)?", a: "Выполнив условия по возрасту, мощи дома, репутации, славе и монетам и заручившись поддержкой гильдии (или чином Визиря+ при дворе), ты претендуешь на трон. Став государем, ты обретаешь ВЛАСТЬ: издаёшь указы в диване (указ о правосудии, строительный поход, всеобщая амнистия, праздник, тяжёлый налог), водишь ПОХОДЫ на соседние бейлики (победа → присоединение + добыча + слава), назначаешь и смещаешь верных НАМЕСТНИКОВ в городах (доход с дани). Заброшенная власть тает; упадёт до дна — мятеж может низвергнуть трон. Придворные события (послы, голод, заговор визиря) влияют на власть." },
+      { q: "Что такое Особое дело (фирменное действие профессии)?", a: "У каждой профессии, помимо обычной работы, есть своё особое действие с временем ожидания (на экране профессии): кузнец куёт шедевр, купец идёт в дальний торговый поход, лекарь борется с мором, солдат идёт в пограничный набег, крестьянин устраивает праздник урожая... Проверяется главным свойством профессии; успех даёт большой заработок по твоему рангу + славу/репутацию + навык. Опасные (кузнец/рыбак/охотник/солдат/лекарь) при провале грозят здоровью." },
+      { q: "Как попасть ко двору и что за чины?", a: "Если ты не на троне (16+ лет, достаточно репутации и ума — писарю проще), можешь поступить на службу двора и дивана с экрана «Гильдии и ордена». Начинаешь Писарем, несёшь Службу дивана, зарабатывая очки службы + милость государя (favor) + жалованье, и растёшь: Дефтердар → Нишанджи → Визирь → Великий визирь. Милость можно и купить, поднеся дар. Заброшенная милость тает; упадёт до дна — тебя отстранят; бывают козни соперников-придворных и щедроты султана. Чин Визиря+ даёт опору для притязания на трон." },
+    ],
+  },
+];
+
 export function faqFor(lang: string): FaqSection[] {
-  return lang === "en" ? EN : TR;
+  switch (lang) {
+    case "en": return EN;
+    case "es": return ES;
+    case "pt": return PT;
+    case "ar": return AR;
+    case "ru": return RU;
+    default: return TR;
+  }
 }
