@@ -1264,6 +1264,9 @@ function claimAchievements(s: GameState) {
 }
 
 export function advance(prev: GameState, n = 1): GameState {
+  // Bekleyen yakalanma sahnesinden (donanım-geri vb.) ay ilerleterek kaçılamaz:
+  // sahne çözülmeden zaman akmaz — kaçmayı denemiş sayılırsın ("kaç" zorlanır).
+  if (prev.pendingScene?.kind === "crime") prev = resolveCrimeScene(prev, "kac");
   const s = clone(prev);
   for (let i = 0; i < n; i++) {
     if (s.player.dead) break;
@@ -1805,23 +1808,22 @@ function tickCaravan(s: GameState) {
   if (!c.route) { c.route = [p.location_name, c.dest]; c.step = 0; c.lost = 0; }
   const route = c.route; const last = route.length - 1;
   c.step = Math.min((c.step ?? 0) + 1, last);
-  // Ara konaklarda saldırı kontrolü (varış adımında değil).
-  if (c.step < last) {
-    if (Math.random() < caravanAttackChance(s)) {
-      const lost = Math.round(c.invested * caravanLossPct(s));
-      c.invested -= lost; c.lost = (c.lost ?? 0) + lost;
-      push(s, "kervan", `Kervan ${route[c.step]} yakınında eşkıyaya uğradı! ${lost} akçelik mal yağmalandı.`, "kişisel", true, { k: "evj.carRaid", p: [{ pl: route[c.step] }, lost] });
-      if (c.invested <= 0) {
-        push(s, "kervan", "Kervan tümüyle yağmalandı; elde bir şey kalmadı.", "kişisel", true, { k: "evj.carLost" });
-        s.caravan = null;
-      }
+  // Konaklarda saldırı kontrolü — varış menzili de tekin değildir (son ayakta yarı ihtimalle pusu; "son ayak hep güvenli" garantisi kaldırıldı).
+  if (Math.random() < caravanAttackChance(s) * (c.step < last ? 1 : 0.5)) {
+    const lost = Math.round(c.invested * caravanLossPct(s));
+    c.invested -= lost; c.lost = (c.lost ?? 0) + lost;
+    push(s, "kervan", `Kervan ${route[c.step]} yakınında eşkıyaya uğradı! ${lost} akçelik mal yağmalandı.`, "kişisel", true, { k: "evj.carRaid", p: [{ pl: route[c.step] }, lost] });
+    if (c.invested <= 0) {
+      push(s, "kervan", "Kervan tümüyle yağmalandı; elde bir şey kalmadı.", "kişisel", true, { k: "evj.carLost" });
+      s.caravan = null;
+      return;
     }
-    return; // hâlâ yolda
   }
+  if (c.step < last) return; // hâlâ yolda
   // Varış: hayatta kalan sermaye üzerinden kâr çöz — fiyat farkı (arbitraj) kârı belirler.
   // spread = malın hedefteki/çıkıştaki fiyat endeksi (1 = fark yok, >1 kârlı, <1 zarar). Eski kayıt: spread yoksa 1.
   const spread = c.spread ?? (c.good ? cityGoodPriceIndex(s, c.dest, c.good) / Math.max(0.5, cityGoodPriceIndex(s, route[0], c.good)) : 1.2);
-  const mult = Math.max(0.4, (0.85 + 0.5 * spread) * (1 + p.skills.trade * 0.03) + (Math.random() * 0.3 - 0.05));
+  const mult = Math.max(0.4, (0.85 + 0.34 * spread) * (1 + p.skills.trade * 0.03) + (Math.random() * 0.3 - 0.05)); // 0.5→0.38: kervan tek başına en iyi strateji olmasın (denge simülasyonu: +%58/döngü → ~%30)
   const ret = Math.round(c.invested * mult);
   p.money += ret; gainSkill(s, "trade", 10);
   const paid = c.invested + (c.lost ?? 0); const net = ret - paid; // gerçek kâr/zarar (yağma dahil)
@@ -3226,7 +3228,8 @@ export function doFactionTask(prev: GameState, id: string): GameState {
   const statBonus = p.stats[f.stat] * 2;
   // Loncan bu sancağa hâkimse burada daha güçlüsün: görev daha çok kazandırır.
   const dom = factionHoldsHere(s, id) ? 1.25 : 1;
-  let reward = Math.round((f.task.reward + statBonus + Math.floor(Math.random() * 8)) * rank.mult * dom);
+  // Taban %30 kısıldı (erken oyunda işin ~3 katıydı) ama işçi maaşı gibi enflasyona bağlandı (geç oyunda değersizleşmesin).
+  let reward = Math.round((f.task.reward * 0.7 + statBonus + Math.floor(Math.random() * 8)) * rank.mult * dom * inflationFactor(s));
   if (id === "tuccar" && hasPerk(p, "guvenli_kervan")) reward = Math.round(reward * 1.5);
   p.money += reward; p.hunger = Math.max(0, p.hunger - 6);
   let standing = f.task.standing * factionStandingMod(s, id) * dom;
@@ -3658,13 +3661,13 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "define",   name: "Define Sahibi",   desc: "10.000 akçeye ulaş.",               icon: "gems",         done: (s) => s.player.money >= 10000 },
   // ── Yeni sistemlere bağlı başarımlar (yaşayan dünya / fraksiyon / valilik) ──
   { id: "soylukan", name: "Soylu Kan",       desc: "Hanedanını 3. nesle taşı.",         icon: "crown",        done: (s) => s.player.generation >= 3 },
-  { id: "vali",     name: "Valilik Mührü",   desc: "Bir şehrin valisi ol.",             icon: "scroll",       done: (s) => (s.player.governorships || []).length >= 1 },
+  { id: "vali",     name: "Valilik Mührü",   desc: "İki şehrin valisi ol.",             icon: "scroll",       done: (s) => (s.player.governorships || []).length >= 2 },
   { id: "loncabuyugu",name:"Lonca Büyüğü",   desc: "Bir loncada 120 itibara ulaş.",     icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 120) },
-  { id: "sancakhakimi",name:"Sancak Hâkimi", desc: "Loncan bir sancağa hâkim olsun.",   icon: "castle",       done: (s) => !!s.player.faction && (s.realm || []).some((sn) => sn.holder === s.player.faction) },
+  { id: "sancakhakimi",name:"Sancak Hâkimi", desc: "Loncan iki sancağa hâkim olsun.",   icon: "castle",       done: (s) => !!s.player.faction && (s.realm || []).filter((sn) => sn.holder === s.player.faction).length >= 2 },
   { id: "golgeeli", name: "Gölge Eli",       desc: "Gölge Kardeşliği'ne katıl.",        icon: "skull",        done: (s) => s.player.faction === "golge" },
   { id: "cokdost",  name: "Sevilen Yüz",     desc: "8 kişiyle yakın dost ol (ilişki ≥ 40).", icon: "family",   done: (s) => Object.values(s.relationships || {}).filter((v) => v >= 40).length >= 8 },
-  { id: "hayirsever",name:"Hayırsever",      desc: "Cömert namın 60'ı aşsın.",          icon: "coins",        done: (s) => (s.player.nam?.comert || 0) >= 60 },
-  { id: "korkulanad",name:"Korkulan Ad",     desc: "Zalim namın 60'ı aşsın.",           icon: "skull",        done: (s) => (s.player.nam?.zalim || 0) >= 60 },
+  { id: "hayirsever",name:"Hayırsever",      desc: "Cömert namın 85'i aşsın.",          icon: "coins",        done: (s) => (s.player.nam?.comert || 0) >= 85 },
+  { id: "korkulanad",name:"Korkulan Ad",     desc: "Zalim namın 85'i aşsın.",           icon: "skull",        done: (s) => (s.player.nam?.zalim || 0) >= 85 },
   // ── Ekonomi / görkem başarımları (kademeli yerleşim + bağış muslukları) ──
   { id: "kasabali",  name: "Kasaba Beyi",     desc: "Bir yerleşimini kasabaya büyüt.",   icon: "castle",       done: (s) => (s.settlements || []).some((st) => st.tier === "kasaba" || st.tier === "şehir") },
   { id: "sehirkuran",name: "Şehir Kuran",     desc: "Bir yerleşimini şehre büyüt.",      icon: "castle",       done: (s) => (s.settlements || []).some((st) => st.tier === "şehir") },
