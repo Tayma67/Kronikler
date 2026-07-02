@@ -28,7 +28,7 @@ function marketItemIcon(g: { kind?: string; heal?: number; feed?: number }): str
   return "menu";
 }
 
-const CARAVAN_AMOUNTS = [50, 120, 300];
+const CARAVAN_AMOUNTS = [100, 300, 1000, 3000]; // doygunluk çekirdekte: büyük yük güvenle açıldı — yüzde düşer, mutlak kazanç ölçeklenir (gerçek karar)
 // Pazar tezgâhları — mallar türüne göre dükkânlara ayrılır (pazar hissi).
 const STALLS = [
   { kinds: ["yiyecek"], icon: "ye", key: "paz.stall.food", tone: C.sage },

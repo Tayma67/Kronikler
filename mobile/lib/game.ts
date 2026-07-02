@@ -1854,9 +1854,17 @@ function tickCaravan(s: GameState) {
   // Varış: hayatta kalan sermaye üzerinden kâr çöz — fiyat farkı (arbitraj) kârı belirler.
   // spread = malın hedefteki/çıkıştaki fiyat endeksi (1 = fark yok, >1 kârlı, <1 zarar). Eski kayıt: spread yoksa 1.
   const spread = c.spread ?? (c.good ? cityGoodPriceIndex(s, c.dest, c.good) / Math.max(0.5, cityGoodPriceIndex(s, route[0], c.good)) : 1.2);
-  const mult = Math.max(0.4, (0.85 + 0.34 * spread) * (1 + p.skills.trade * 0.03) + (Math.random() * 0.3 - 0.05)); // 0.5→0.38: kervan tek başına en iyi strateji olmasın (denge simülasyonu: +%58/döngü → ~%30)
+  // PAZAR DOYGUNLUĞU: büyük yük hedef pazarı doyurur — fiyat farkı sermaye büyüdükçe erir.
+  // Küçük kervan (300-2000) tam arbitrajı yer; 20k+ yük farkın ancak kırıntısını görür. Böylece kervan
+  // "bileşik faizli hazine" olmaktan çıkar, işçilikle rekabet eden ölçekli bir ticaret kalır.
+  const satCap = 2500 * inflationFactor(s);
+  const effSpread = 1 + (spread - 1) * (satCap / (satCap + c.invested));
+  // Taban ~0.92: fiyat farkı yoksa kervan masrafına çalışır (arbitraj yok = kâr yok). Ticaret becerisi
+  // yalnız arbitraj dilimini büyütür — doymuş pazarda usta tüccar bile ancak başabaş çıkar.
+  const mult = Math.max(0.4, 0.92 + 0.5 * (effSpread - 1) * (1 + p.skills.trade * 0.05) + (Math.random() * 0.2 - 0.05));
   const ret = Math.round(c.invested * mult);
   p.money += ret; gainSkill(s, "trade", 10);
+  if (c.good) addTradePressure(s, c.dest, c.good, -Math.min(0.20, c.invested / 20000)); // getirdiğin mal hedefte arzı bollaştırır (kalıcı iz, sönümlü)
   const paid = c.invested + (c.lost ?? 0); const net = ret - paid; // gerçek kâr/zarar (yağma dahil)
   if (net > 200) p.reputation = Math.min(100, p.reputation + 2); // büyük kâr nam getirir
   const carried = c.good ? { i: c.good } : { i: "bugday" };
