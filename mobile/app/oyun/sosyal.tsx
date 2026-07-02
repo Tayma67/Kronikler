@@ -62,9 +62,9 @@ export default function Sosyal() {
   const canAct = p.age >= 13 && !p.dead;
 
   const actions = [
-    { key: "feast", fn: hostFeast, cost: "40⚜", enabled: canAct && p.money >= 40 },
-    { key: "alms", fn: giveAlms, cost: "15⚜", enabled: canAct && p.money >= 15 },
-    { key: "intim", fn: intimidate, cost: "—", enabled: canAct },
+    { key: "feast", fn: hostFeast, cost: "40⚜", enabled: canAct && p.money >= 40 && p.feast_turn !== state.turn },
+    { key: "alms", fn: giveAlms, cost: "15⚜", enabled: canAct && p.money >= 15 && p.alms_turn !== state.turn },
+    { key: "intim", fn: intimidate, cost: "—", enabled: canAct && p.intimidate_turn !== state.turn },
   ];
 
   return (

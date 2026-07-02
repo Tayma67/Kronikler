@@ -13,7 +13,9 @@ export default function Basarimlar() {
   const { state } = useGame();
   const { t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
-  const list = achievementsOf(state);
+  // Bir kez kazanılan rozet kazanılmış kalır: koşul sonradan bozulsa da (kervan vardı, mülk satıldı,
+  // eşik yükseldi) claimed listesindeki başarım kilitli görünmez.
+  const list = achievementsOf(state).map((x) => ({ ...x, done: x.done || (state.player.claimed || []).includes(x.a.id) }));
   const done = list.filter((x) => x.done).length;
 
   return (

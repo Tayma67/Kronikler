@@ -66,6 +66,10 @@ export interface Player {
   favor_turn?: number; // bu ay pîşkeş/iltifat yapıldı mı (tur başına tek)
   craft_turn?: number; // bu ay zanaat işlendi mi (tur başına tek — beceri/kalite-satış farmı önlenir)
   battle_turn?: number; // bu ay taktik savaşa/düelloya girildi mi (tur başına tek — para/beceri/itibar farmı önlenir; work/war ile aynı desen)
+  intimidate_turn?: number; // bu ay gözdağı verildi mi (tur başına tek — korku spam'i önlenir)
+  feast_turn?: number; // bu ay ziyafet verildi mi (tur başına tek — para→şöhret/itibar çeviricisi farmlanamaz)
+  alms_turn?: number; // bu ay sadaka dağıtıldı mı (tur başına tek — şeref farmı önlenir)
+  trade_xp_turn?: number; // bu ay pazar işleminden ticaret tecrübesi alındı mı (tur başına tek — al-sat XP farmı önlenir)
   last_travel_turn?: number; // bu ay yol olayı tetiklendi mi (tur başına tek — git-gel beceri/eşya farmı önlenir)
   gov_action_turn?: number; // bu ay valilik tedbiri (meşruiyet/hazine) yapıldı mı (tur başına tek)
   opp_turn?: number; // bu ay fırsat çözüldü mü (tur başına tek — çoklu fırsat gelir farmı önlenir)
@@ -205,7 +209,11 @@ export function repay(prev: GameState, amount: number): GameState {
   if (amt <= 0) return s;
   p.money -= amt; p.debt = Math.round((p.debt || 0) - amt);
   if (p.debt <= 0) {
-    p.debt = 0; p.loan_turn = undefined; p.reputation = Math.min(100, p.reputation + 2);
+    // İtibar yalnız gerçekten taşınmış (önceki turdan kalan, faizi işlemiş) borcun kapanmasında —
+    // aynı turda al-öde döngüsüyle bedava itibar pompalanamaz.
+    const carried = p.loan_turn !== undefined && p.loan_turn < s.turn;
+    p.debt = 0; p.loan_turn = undefined;
+    if (carried) p.reputation = Math.min(100, p.reputation + 2);
     push(s, "ticaret", `Borcunu tümüyle kapattın; sarraf defterini sildi, sözün yeniden geçer oldu (+itibar).`, "kişisel", true, { k: "evj.repayFull" });
   } else {
     push(s, "ticaret", `Borcuna ${amt} akçe ödedin; kalan borç ${p.debt} akçe.`, "kişisel", false, { k: "evj.repay", p: [amt, p.debt] });
@@ -2101,7 +2109,7 @@ export function buyItem(prev: GameState, id: string): GameState {
   if (p.money < price) return s;
   p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
   addTradePressure(s, p.location_name, id, 0.05); // alım yerel arzı azaltır → fiyat tırmanır
-  gainSkill(s, "trade", 5);
+  if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 5); } // al-sat XP: tur başına tek (buğday al-sat döngüsüyle beceri farmı kapatıldı);
   push(s, "ticaret", `${g.name} aldın (${price} akçe).`, "kişisel", false, { k: "evj.buy", p: [{ i: id }, price] });
   return s;
 }
@@ -2149,7 +2157,7 @@ export function sellItem(prev: GameState, id: string): GameState {
   let sell = Math.max(1, Math.round(marketPrice(g.sell, s.econ) * goodPriceMult(s, id) * QUALITY_MULT[tier])); // 0 akçeye satış/envanter sızıntısı önlenir (diğer fiyat fonksiyonlarıyla tutarlı)
   if (hasPerk(p, "dilbaz")) sell = Math.round(sell * 1.25);
   p.money += sell; addTradePressure(s, p.location_name, id, -0.045); // satış yerel arzı artırır → fiyat düşer
-  gainSkill(s, "trade", 5);
+  if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 5); } // al-sat XP: tur başına tek (buğday al-sat döngüsüyle beceri farmı kapatıldı);
   const qNote = tier !== "siradan" ? ` (${QUALITY_LABEL[tier]})` : "";
   if (tier !== "siradan") push(s, "ticaret", `${g.name}${qNote} sattın (+${sell} akçe).`, "kişisel", false, { k: "evj.sellQ", p: [{ i: id }, { q: tier }, sell] });
   else push(s, "ticaret", `${g.name} sattın (+${sell} akçe).`, "kişisel", false, { k: "evj.sell", p: [{ i: id }, sell] });
@@ -2607,8 +2615,8 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   p.lesson_count = (p.lesson_count || 0) + 1;
   p.hunger = Math.max(0, p.hunger - 5);
   addStatXp(s, EXAM_STAT[id] || "intelligence", 5); // dersin özelliği tecrübeyle gelişir
-  const lucky = hasPerk(p, "mucit") || chance(0.5);
-  const statBonus = hasPerk(p, "mucit") || chance(0.12); // serbest özellik puanı artık nadir (grind sömürüsü kapatıldı)
+  const lucky = chance(hasPerk(p, "mucit") ? 0.75 : 0.5);
+  const statBonus = chance(hasPerk(p, "mucit") ? 0.35 : 0.12); // mucit şansı ~3 katlar ama GARANTİLEMEZ (garanti = yılda 24 puan, ekonomi kırılıyordu)
   const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = [];
   let key = "";
   p.teacherBond = (p.teacherBond || 0) + 1; // hoca bağı çalıştıkça güçlenir
@@ -2618,7 +2626,7 @@ export function studySubject(prev: GameState, id: string): StudyResult {
     if (lucky) { p.honor = Math.min(100, p.honor + 2); chips.push({ label: "Şeref +2", col: "#7FA66A", k: "chip.honor", p: ["+2"] }); key = "ev.study.din.l"; push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu.", "kişisel", false, { k: key }); }
     else { key = "ev.study.din.p"; push(s, "mektep", "Mektepte dua ve hikmet dinledin.", "kişisel", false, { k: key }); }
   } else if (id === "matematik") {
-    gainSkill(s, "trade", 5); chips.push({ label: "Ticaret +5", col: "#C9A84C", k: "chip.trade", p: ["+5"] });
+    if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 5); } // al-sat XP: tur başına tek (buğday al-sat döngüsüyle beceri farmı kapatıldı); chips.push({ label: "Ticaret +5", col: "#C9A84C", k: "chip.trade", p: ["+5"] });
     if (statBonus) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.matematik.l"; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
     else { addStatXp(s, "intelligence", 6); key = "ev.study.matematik.p"; push(s, "mektep", "Rakamlarla boğuştun.", "kişisel", false, { k: key }); }
   } else if (id === "edebiyat") {
@@ -3152,7 +3160,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     }
   }
   const ancestor: DynastyRecord = {
-    generation: p.generation, name: p.name, profession: p.profession === "işsiz" ? "—" : p.profession,
+    generation: p.generation, name: p.name, profession: p.profession,
     diedAge: p.age, fame: Math.round(p.fame), reputation: Math.round(p.reputation), faction: p.faction,
     note: dynastyNote(p),
   };
@@ -3182,7 +3190,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
       crowned: p.crowned || false, will_pref: "esit", fates: [], claimed: [], governorships: [], // taht irsîdir; kader/başarım/valilik yeni baştan
     },
-    history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, ${will.label.toLowerCase()} vasiyetiyle mirası devraldı (${inheritMoney} akçe, ${props.length} mülk).${noteStr}`, scope: "kişisel", landmark: true }],
+    history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, ${will.label.toLowerCase()} vasiyetiyle mirası devraldı (${inheritMoney} akçe, ${props.length} mülk).${noteStr}`, scope: "kişisel", landmark: true, k: "evj.genHandover", p: [gen, heir, inheritMoney, props.length] }],
   };
   return ns;
 }
@@ -3378,12 +3386,13 @@ export function socialTier(axis: SocialAxis, value: number): string {
 export function hostFeast(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
+  if (p.feast_turn === s.turn) return s; // ayda tek ziyafet — para→şöhret çeviricisi spam'lenemez
   const cost = 40;
   if (p.money < cost) { push(s, "sosyal", "Ziyafet verecek akçen yok.", "kişisel", false, { k: "evj.noFeast" }); return s; }
   let fame = 8, rep = 5;
   if (hasPerk(p, "sohret_avcisi")) fame += 5;
   if (hasPerk(p, "diplomat")) { fame = Math.round(fame * 1.5); rep = Math.round(rep * 1.5); }
-  p.money -= cost; p.fame = Math.min(100, p.fame + fame); p.reputation = Math.min(100, p.reputation + rep);
+  p.money -= cost; p.feast_turn = s.turn; p.fame = Math.min(100, p.fame + fame); p.reputation = Math.min(100, p.reputation + rep);
   gainSkill(s, "social", 5); bumpNam(p, "comert", 8);
   const why = recognition(s) > 0.5 ? " Tanınan biri olduğundan ziyafetin çok konuşuldu." : "";
   push(s, "sosyal", `Köye bir ziyafet verdin; adın dilden dile dolaştı.${why}`, "kişisel", true, { k: "evj.feast", p: [recognition(s) > 0.5 ? { sfx: "sfx.feastWhy" } : ""] });
@@ -3394,12 +3403,13 @@ export function hostFeast(prev: GameState): GameState {
 export function giveAlms(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
+  if (p.alms_turn === s.turn) return s; // ayda tek sadaka — şeref farmı önlenir
   const cost = 15;
   if (p.money < cost) { push(s, "sosyal", "Sadaka verecek akçen yok.", "kişisel", false, { k: "evj.noAlms" }); return s; }
   let honor = 7, rep = 3;
   if (hasPerk(p, "hosgoru")) honor += 5;
   if (hasPerk(p, "diplomat")) { honor = Math.round(honor * 1.5); rep = Math.round(rep * 1.5); }
-  p.money -= cost; p.honor = Math.min(100, p.honor + honor); p.reputation = Math.min(100, p.reputation + rep);
+  p.money -= cost; p.alms_turn = s.turn; p.honor = Math.min(100, p.honor + honor); p.reputation = Math.min(100, p.reputation + rep);
   gainSkill(s, "social", 5);
   bumpNam(p, "comert", 6); bumpNam(p, "dindar", 5);
   push(s, "sosyal", "Yoksullara sadaka dağıttın; vicdanın hafifledi, şerefin yükseldi.", "kişisel", false, { k: "evj.alms" });
@@ -3410,7 +3420,9 @@ export function giveAlms(prev: GameState): GameState {
 export function intimidate(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
-  const ok = hasPerk(p, "kan_donduran") || Math.random() < 0.5 + p.stats.strength * 0.04 + dread(s) / 300;
+  if (p.intimidate_turn === s.turn) return s; // ayda tek gözdağı — korku 0→100 spam'i kapatıldı
+  p.intimidate_turn = s.turn;
+  const ok = Math.random() < Math.min(0.92, 0.5 + p.stats.strength * 0.04 + dread(s) / 300 + (hasPerk(p, "kan_donduran") ? 0.25 : 0)); // perk garantiyi değil olasılığı artırır
   if (ok) { let fear = hasPerk(p, "kan_donduran") ? 12 : 8; if (hasPerk(p, "diplomat")) fear = Math.round(fear * 1.5); p.fear = Math.min(100, p.fear + fear); p.reputation = Math.max(-100, p.reputation - 3); bumpNam(p, "zalim", 7); witnessScandal(s, "tehdit", 0.5); const why = dread(s) > 30 ? " Zaten korkulan adın, bir bakışın yetti." : ""; push(s, "sosyal", `Birine gözdağı verdin; adın çekinilen biri oldu.${why}`, "kişisel", false, { k: "evj.intimWin", p: [dread(s) > 30 ? { sfx: "sfx.intimWinWhy" } : ""] }); }
   else { p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); const why = esteem(s) > 25 ? " Sevilen biri olduğundan kimse seni ciddiye almadı." : ""; push(s, "sosyal", `Gözdağın ters tepti; itibarın zarar gördü.${why}`, "kişisel", false, { k: "evj.intimLose", p: [esteem(s) > 25 ? { sfx: "sfx.intimLoseWhy" } : ""] }); }
   return s;
@@ -3543,6 +3555,7 @@ function maybeInjure(s: GameState, heavy: boolean) {
 export function applyBattleOutcome(prev: GameState, id: string, won: boolean, finalHp: number): GameState {
   const s = clone(prev); const p = s.player; const e = ENCOUNTERS.find((x) => x.id === id);
   if (!e) return s;
+  if (p.battle_turn === s.turn) return s; // çekirdek kapısı (UI'dan bağımsız): ayda tek dövüş
   p.battle_turn = s.turn; // bu ay dövüşüldü — kazanç da kayıp da turu tüketir (yenilip tekrar deneyip farmlanamaz)
   gainSkill(s, "combat", won ? 14 : 7);
   if (won) {
@@ -3577,6 +3590,7 @@ export function nemesisEncounter(s: GameState): Encounter | null {
 }
 export function applyNemesisOutcome(prev: GameState, won: boolean, finalHp: number): GameState {
   const s = clone(prev); const p = s.player; const n = s.story?.nemesis; if (!n) return s;
+  if (p.battle_turn === s.turn) return s; // çekirdek kapısı (UI'dan bağımsız)
   p.battle_turn = s.turn; // nemesis hesaplaşması da tur başına tek dövüş kapısına dahil
   gainSkill(s, "combat", won ? 16 : 8);
   if (won) {
@@ -3836,7 +3850,7 @@ function gainSkill(s: GameState, key: SkillKey, xp: number) {
 // Bir perk seç (kademe hak edilmişse).
 export function choosePerk(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const pk = perkById(id);
-  if (!pk || hasPerk(p, id)) return s;
+  if (p.dead || !pk || hasPerk(p, id)) return s;
   if (p.skills[pk.tree] < pk.tier) return s;
   if (pendingPerkTier(p, pk.tree) !== pk.tier) return s; // bu kademe zaten doldurulmuş
   p.perks.push(id);
@@ -3856,7 +3870,7 @@ export function beginArc(prev: GameState, id: string): GameState {
 // Aktif yayda bir seçim yap: etkiyi uygula, sahneyi ilerlet ya da bitir.
 export function advanceArc(prev: GameState, choiceIdx: number, loc?: { result?: string; endLabel?: string }): GameState {
   const s = clone(prev);
-  if (!s.story.active) return s;
+  if (s.player.dead || !s.story.active) return s; // ceset hikâye ilerletemez (kazanç mirasa sızıyordu)
   const a = arcById(s.story.active.id); if (!a) { s.story.active = null; return s; }
   const stage = a.stages[s.story.active.stage]; if (!stage) { s.story.active = null; return s; }
   const c: ArcChoice | undefined = stage.choices[choiceIdx]; if (!c) return s;

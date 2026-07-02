@@ -12,10 +12,10 @@ import { BackLabel, PageHeader } from "../../lib/ui";
 
 export default function Nesil() {
   const insets = useSafeAreaInsets(); const router = useRouter();
-  const { state, apply, resetGame } = useGame();
+  const { state, apply } = useGame();
   const { t } = useI18n();
   const [heir, setHeir] = useState<string | null>(null);
-  const [will, setWill] = useState<string>("esit");
+  const [will, setWill] = useState<string>(state?.player.will_pref || "esit"); // hanedanda önceden seçilen vasiyet burada varsayılan olur
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const chosenHeir = heir || p.children[0];

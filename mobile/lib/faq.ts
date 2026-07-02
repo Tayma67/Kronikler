@@ -16,7 +16,7 @@ const TR: FaqSection[] = [
     icon: "shield", title: "Özellikler & Beceriler",
     items: [
       { q: "Özellikler (Güç/Zekâ/Karizma/Dayanıklılık) ne işe yarar?", a: "Güç savaşta, Zekâ ticaret/zanaatta, Karizma sohbet/pazarlık/suçta, Dayanıklılık iş ve yorgunlukta etkilidir. Yaralanmalar özellikleri geçici düşürebilir." },
-      { q: "Özellik puanını nasıl alır, nasıl harcarım?", a: "Mektepte çalışırken (½ ihtimalle) ve bazı olaylarda kazanırsın. Karakter ekranından istediğin özelliğe dağıtırsın." },
+      { q: "Özellik puanını nasıl alır, nasıl harcarım?", a: "Mektepte çalışırken (arada bir), sınavlarda ve bazı olaylarda kazanırsın. Karakter ekranından istediğin özelliğe dağıtırsın (özellik tavanı 10)." },
       { q: "Beceriler (Savaş/Ticaret/Zanaat/Sosyal) nasıl gelişir?", a: "Eyleme geçtikçe kendiliğinden artar: dövüşmek Savaş'ı, pazarlık/alışveriş Ticaret'i, atölyede üretim Zanaat'ı, sohbet/mektep Sosyal'i geliştirir. 3, 6 ve 9. seviyede Beceri Ağacı'ndan bir hüner açılır." },
     ],
   },
@@ -103,7 +103,7 @@ const EN: FaqSection[] = [
     icon: "shield", title: "Attributes & Skills",
     items: [
       { q: "What are attributes for?", a: "Strength in combat, Intellect in trade/crafting, Charisma in talk/haggling/crime, Stamina in work and fatigue. Injuries can temporarily lower attributes." },
-      { q: "How do I get and spend stat points?", a: "You earn them studying at school (½ chance) and from some events. Spend them on the Character screen." },
+      { q: "How do I get and spend stat points?", a: "You earn them occasionally while studying at school, from exams and some events. Spend them on the Character screen (each stat caps at 10)." },
       { q: "How do skills grow?", a: "Automatically as you act: fighting raises Combat, trade/haggling Trade, crafting Crafting, talk/school Social. At levels 3, 6 and 9 a perk unlocks on the Skill Tree." },
     ],
   },
