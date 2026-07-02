@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useRef, useState, useCallback, useEffect } from "react";
 import { MpClient, NetStatus } from "./net";
 import { getServerUrl, getGuestId } from "./config";
-import { ClientMsg, ServerMsg, RealmSnapshot, PlayerPublic, SharedIntent, TickResult, ChatScope } from "./protocol";
+import { ClientMsg, ServerMsg, RealmSnapshot, PlayerPublic, SharedIntent, TickResult, TickEvent, ChatScope } from "./protocol";
 
 export interface ChatLine { from: string; fromName: string; text: string; at: number; scope?: ChatScope; to?: string }
 
@@ -12,6 +12,8 @@ interface MpCtx {
   snapshot: RealmSnapshot | null;
   chat: ChatLine[];
   lastTick: { turn: number; results: TickResult[] } | null;
+  missed: TickEvent[] | null;              // çevrimdışıyken biriken kişisel olaylar (katılımda sunucudan gelir)
+  clearMissed: () => void;                 // olaylar yerel duruma işlendikten sonra çağrılır
   error: string | null;
   joinRealm: (realmId: string, realmName: string, player: PlayerPublic) => Promise<void>;
   syncPlayer: (player: PlayerPublic) => void;
@@ -34,6 +36,7 @@ export function MpProvider({ children }: { children: React.ReactNode }) {
   const [snapshot, setSnapshot] = useState<RealmSnapshot | null>(null);
   const [chat, setChat] = useState<ChatLine[]>([]);
   const [lastTick, setLastTick] = useState<{ turn: number; results: TickResult[] } | null>(null);
+  const [missed, setMissed] = useState<TickEvent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
 
@@ -51,6 +54,7 @@ export function MpProvider({ children }: { children: React.ReactNode }) {
         setSnapshot(m.snapshot);
         setLastTick({ turn: m.turn, results: m.results });
         break;
+      case "missed": setMissed((prev) => prev ? [...prev, ...m.events] : m.events); break;
       case "chat":
         setChat((c) => [...c.slice(-80), { from: m.from, fromName: m.fromName, text: m.text, at: m.at, scope: m.scope, to: m.to }]);
         break;
@@ -90,10 +94,11 @@ export function MpProvider({ children }: { children: React.ReactNode }) {
   const sendChat = useCallback((text: string, scope: ChatScope = "all", to?: string) => { if (text.trim()) send({ t: "chat", text: text.slice(0, 240), scope, to }); }, [send]);
   const saveState = useCallback((blob: string) => send({ t: "saveState", blob }), [send]);
   const setTravel = useCallback((traveling: boolean) => send({ t: "setTravel", traveling }), [send]);
-  const leave = useCallback(() => { lastJoinRef.current = null; send({ t: "leave" }); clientRef.current?.close(); setSnapshot(null); setChat([]); setLastTick(null); setSaved(null); }, [send]);
+  const clearMissed = useCallback(() => setMissed(null), []);
+  const leave = useCallback(() => { lastJoinRef.current = null; send({ t: "leave" }); clientRef.current?.close(); setSnapshot(null); setChat([]); setLastTick(null); setMissed(null); setSaved(null); }, [send]);
 
   return (
-    <Ctx.Provider value={{ status, guestId, snapshot, chat, lastTick, error, joinRealm, syncPlayer, setReady, sendIntent, sendChat, saved, saveState, setTravel, leave }}>
+    <Ctx.Provider value={{ status, guestId, snapshot, chat, lastTick, missed, clearMissed, error, joinRealm, syncPlayer, setReady, sendIntent, sendChat, saved, saveState, setTravel, leave }}>
       {children}
     </Ctx.Provider>
   );

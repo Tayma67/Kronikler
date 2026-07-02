@@ -33,7 +33,7 @@ export default function MpOyun() {
   const { t } = useI18n();
   const { name } = useLocalSearchParams<{ name: string }>();
   const { state: s, apply, mpMode, enterMp, exitMp } = useGame();
-  const { guestId, snapshot, lastTick, setReady, sendIntent, syncPlayer, saved, saveState, setTravel } = useMp();
+  const { guestId, snapshot, lastTick, missed, clearMissed, setReady, sendIntent, syncPlayer, saved, saveState, setTravel } = useMp();
 
   const [ready, setReadyLocal] = useState(false);
   const [evLines, setEvLines] = useState<string[]>([]);
@@ -74,6 +74,17 @@ export default function MpOyun() {
     syncPlayer(mePublic(guestId, ns, false));
     saveState(JSON.stringify(ns)); // her ay sonunda sunucuya yedekle → çıkıp girince aynı karaktere devam
   }, [lastTick]);
+
+  // Yokluğunda biriken kişisel olaylar (hediye altını, borç düşümü, düğün...) — katılımda sunucudan gelir, bir kez işlenir.
+  useEffect(() => {
+    if (!missed || !missed.length || !guestId || !sRef.current) return;
+    const ns = applyTickEvents(sRef.current, missed);
+    setEvLines(missed.map((e) => pf(t(e.k), ...(e.p || []))));
+    apply(() => ns);
+    clearMissed();
+    syncPlayer(mePublic(guestId, ns, false));
+    saveState(JSON.stringify(ns));
+  }, [missed, guestId]);
 
   // Çıkışta MP modundan çık (SP kaydı geri yüklenir)
   useEffect(() => () => { exitMp(); }, []);

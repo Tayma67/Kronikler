@@ -144,7 +144,10 @@ export class RealmDO {
         // dead de korunur: yoklukta NPC-vekil öldüyse istemcinin dead:false'ı bunu EZMEMELİ → oyuncu dönünce
         // ölü bulur (welcome snapshot dead:true → istemci vâris akışını tetikler, sonra heir alive olarak sync'ler).
         // Dönüşte: tekrar çevrimiçi, seyahat biter (oyuncu geri döndü).
-        if (existing) { Object.assign(existing, p, { online: true, beylikId: existing.beylikId, honor: existing.honor ?? 0, traveling: false, dead: !!existing.dead || !!p.dead }); }
+        // married: sunucuda evlilik paktı varsa (oyuncu-oyuncu düğün) istemcinin bayat married:false'ı ezemez —
+        // düğün olayını kaçıran taraf "bekar" dönüp ikinci kez evlenemesin (tek taraflı evlilik desync'i).
+        const weddedJ = this.snap.bonds.some((b) => b.pact === "marriage" && (b.a === p.id || b.b === p.id));
+        if (existing) { Object.assign(existing, p, { online: true, beylikId: existing.beylikId, honor: existing.honor ?? 0, traveling: false, dead: !!existing.dead || !!p.dead, married: !!p.married || weddedJ }); }
         else {
           if (this.snap.players.filter((x) => x.online).length >= MAX_PLAYERS) { this.sendTo(ws, { t: "error", code: "FULL", msg: "Diyar dolu" }); return; }
           this.snap.players.push({ ...p, online: true, ready: false, beylikId: null, honor: typeof p.honor === "number" ? p.honor : 0, traveling: false, married: !!p.married });
@@ -154,6 +157,11 @@ export class RealmDO {
         const saved = (await this.state.storage.get<string>("save:" + p.id)) || null;
         await this.persist();
         this.sendTo(ws, { t: "welcome", you: p.id, snapshot: this.snap, saved });
+        // Yokluğunda biriken kişisel olayları teslim et (hediye altını, borç düşümü, düğün...).
+        {
+          const pend = (await this.state.storage.get<Record<string, TickEvent[]>>("pendingEv")) || {};
+          if (pend[p.id]?.length) { this.sendTo(ws, { t: "missed", events: pend[p.id] }); delete pend[p.id]; await this.state.storage.put("pendingEv", pend); }
+        }
         this.broadcastPresence();
         await this.ensureAlarm();
         await this.reportDirectory();
@@ -163,7 +171,8 @@ export class RealmDO {
         const p = this.snap.players.find((x) => x.id === att.playerId);
         // beylikId + honor SUNUCU otoritesindedir (istemcinin game.ts'inde karşılığı yok) → sync ezmez.
         if (p && m.player) {
-          Object.assign(p, m.player, { id: p.id, online: true, beylikId: p.beylikId, honor: p.honor ?? 0, traveling: p.traveling ?? false });
+          const weddedS = this.snap.bonds.some((b) => b.pact === "marriage" && (b.a === p.id || b.b === p.id));
+          Object.assign(p, m.player, { id: p.id, online: true, beylikId: p.beylikId, honor: p.honor ?? 0, traveling: p.traveling ?? false, married: !!m.player.married || weddedS });
           // Yerel NPC ile evlendiyse (married→true), bekleyen evlilik tekliflerini düşür:
           // bayat bir teklif kabul edilip çifte evlilik (NPC + oyuncu) doğmasın.
           if (p.married) this.snap.offers = this.snap.offers.filter((o) => o.kind !== "marriage" || (o.from !== p.id && o.to !== p.id));
@@ -680,6 +689,19 @@ export class RealmDO {
     await this.persist();
     await this.state.storage.setAlarm(this.snap.tickDeadline);
 
+    // Çevrimdışı oyuncuya düşen kişisel olaylar yayında kaybolmasın: kalıcı kuyruğa yaz, dönüşünde teslim et.
+    // (Aksi hâlde borç kabulünde veren tarafın borcu hiç düşmüyordu → altın çoğalması; hediye yok oluyordu; evlilik tek taraflı kalıyordu.)
+    {
+      const pend = (await this.state.storage.get<Record<string, TickEvent[]>>("pendingEv")) || {};
+      let dirty = false;
+      for (const r of Object.values(results)) {
+        if (!r.events.length) continue;
+        if (this.socketsOf([r.playerId]).length) continue; // bağlıysa yayınla zaten alacak
+        pend[r.playerId] = [...(pend[r.playerId] || []), ...r.events].slice(-40); // oyuncu başına sınırlı kuyruk
+        dirty = true;
+      }
+      if (dirty) await this.state.storage.put("pendingEv", pend);
+    }
     this.broadcast({ t: "tick", turn: this.snap.turn, results: Object.values(results), snapshot: this.snap });
     await this.reportDirectory();
   }

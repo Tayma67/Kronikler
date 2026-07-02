@@ -227,6 +227,7 @@ export type ServerMsg =
   | { t: "snapshot"; snapshot: RealmSnapshot }       // tam durum (katılış + tick sonrası)
   | { t: "presence"; players: PlayerPublic[]; phase: RealmSnapshot["phase"]; tickDeadline: number }
   | { t: "tick"; turn: number; results: TickResult[]; snapshot: RealmSnapshot }
+  | { t: "missed"; events: TickEvent[] } // çevrimdışıyken biriken kişisel olaylar (katılımda teslim edilir; hediye/borç/evlilik kaybolmaz)
   | { t: "chat"; from: string; fromName: string; text: string; at: number; scope?: ChatScope; to?: string }
   | { t: "error"; code: string; msg: string }
   | { t: "pong" };
