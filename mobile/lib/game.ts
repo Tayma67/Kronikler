@@ -443,7 +443,7 @@ function setWarCooldown(s: GameState, a: string, b: string, turns: number) { if 
 export function joinThreshold(p: Player, f: Faction): number { return p.perks.includes("karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep; }
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; }
-export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; }
+export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; noteK?: string; } // noteK: kitabe kimliği (6 dile çevrilir); note eski kayıtlar için TR yedek
 export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; } // int_turn: bu kişiyle bu ay anlamlı bir etkileşim (sohbet/flört/hediye/hakaret/dedikodu) yapıldı mı — tur başına tek, ilişki/beceri farmı önlenir
 // İlişkinin etkin değeri: kalıcı taban + yapısal anıların toplam yükü (Vercel effective_rel).
 export function relWith(s: GameState, id: string): number {
@@ -3028,14 +3028,16 @@ export function repairProperty(prev: GameState, index: number): GameState {
 }
 
 // Atayı bir cümlede özetle (hanedan defteri için).
+// Kitabe kimliği döner — gösterim yerinde t("dynnote."+id) ile 6 dile çevrilir (eski kayıtlar için TR metni ayrıca saklanır).
 function dynastyNote(p: Player): string {
-  if (p.fame >= 60) return "Adı destanlara karıştı.";
-  if (p.reputation >= 50) return "Diyarda saygın bir isimdi.";
-  if (p.properties.length >= 3) return "Geride büyük bir mülk bıraktı.";
-  if (p.fear >= 50) return "Korkulan bir isimdi.";
-  if (p.children.length >= 3) return "Kalabalık bir soy bıraktı.";
-  return "Sade bir hayat sürdü.";
+  if (p.fame >= 60) return "destan";
+  if (p.reputation >= 50) return "saygin";
+  if (p.properties.length >= 3) return "mulk";
+  if (p.fear >= 50) return "korkulan";
+  if (p.children.length >= 3) return "kalabalik";
+  return "sade";
 }
+const DYNNOTE_TR: Record<string, string> = { destan: "Adı destanlara karıştı.", saygin: "Diyarda saygın bir isimdi.", mulk: "Geride büyük bir mülk bıraktı.", korkulan: "Korkulan bir isimdi.", kalabalik: "Kalabalık bir soy bıraktı.", sade: "Sade bir hayat sürdü." };
 
 // ── Mersiye: bir hayat biterken kişiye özel kapanış ──
 export interface Eulogy { epithet: string; lines: string[]; close: string; }
@@ -3168,7 +3170,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const ancestor: DynastyRecord = {
     generation: p.generation, name: p.name, profession: p.profession,
     diedAge: p.age, fame: Math.round(p.fame), reputation: Math.round(p.reputation), faction: p.faction,
-    note: dynastyNote(p),
+    note: DYNNOTE_TR[dynastyNote(p)], noteK: dynastyNote(p),
   };
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
@@ -3835,7 +3837,8 @@ export function pendingPerkTier(p: Player, tree: SkillKey): number | null {
   return null;
 }
 export function pendingPerkCount(p: Player): number {
-  return SKILL_META.reduce((n, m) => n + (pendingPerkTier(p, m.key) !== null ? 1 : 0), 0);
+  // Dal değil KADEME sayar: seviye 9 + hiç hüner seçilmemiş dalda 3 bekleyen hak vardır — rozet eksik saymasın.
+  return SKILL_META.reduce((n, m) => n + SKILL_TIERS.filter((t) => p.skills[m.key] >= t && !p.perks.some((id) => { const pk = perkById(id); return pk && pk.tree === m.key && pk.tier === t; })).length, 0);
 }
 // XP ekle; seviye atlarsa günlüğe işle (saf — clone edilmiş state üstünde çağrılır).
 function gainSkill(s: GameState, key: SkillKey, xp: number) {

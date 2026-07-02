@@ -270,7 +270,7 @@ export default function Dashboard() {
         const epLabel = eul.epithet ? (() => { const fk = "ep." + eul.epithet + ".f"; const fv = t(fk); return p.gender === "kadın" && fv !== fk ? fv : t("ep." + eul.epithet); })() : "";
         return (
           <EulogyModal visible={showEulogy} name={p.name} epithet={epLabel} bornYear={diedYear - p.age} diedYear={diedYear} age={p.age}
-            professionLine={profLine} lines={eul.lines.map((l) => applyParams(t(l.k), l.p))} close={eul.close} hasHeir={p.children.length > 0}
+            professionLine={profLine} lines={eul.lines.map((l) => applyParams(t(l.k), l.p))} close={t("dynnote." + eul.close)} hasHeir={p.children.length > 0}
             onChronicle={() => { setShowEulogy(false); router.push("/oyun/roman"); }}
             onContinue={() => { setShowEulogy(false); if (p.children.length > 0) router.push("/oyun/nesil"); else { resetGame(); router.replace("/yeni-oyun"); } }} />
         );
