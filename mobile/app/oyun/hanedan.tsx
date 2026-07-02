@@ -16,12 +16,12 @@ import {
   campaignTargets, canLaunchCampaign, campaignOdds, launchCampaign, CAMPAIGN_COST,
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
   inCourt, courtRankId,
-} from "../../lib/game";
+  suppressPretender, reconcilePretender, PRETENDER_SUPPRESS_COST, PRETENDER_RECONCILE_COST } from "../../lib/game";
 import { generateDynasties, houseName as rivalHouseName, localFirstName } from "../../lib/world";
 import { professionNameL, placeName } from "../../lib/locale-data";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader } from "../../lib/ui";
 
@@ -126,9 +126,42 @@ export default function Hanedan() {
         <SecTitle>{t("dyn.throne")}</SecTitle>
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: claimable ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 12, padding: 14 }}>
           {p.crowned ? (
+            <View>
             <View style={{ alignItems: "center", paddingVertical: 6 }}>
               <GameIcon name="crown" size={30} color={C.gold} />
               <Text style={{ fontFamily: F.serifItalic, fontSize: 13.5, color: C.gold, textAlign: "center", marginTop: 6, lineHeight: 20 }}>{t("thr.crowned")}</Text>
+            </View>
+            {/* Taht İddiacısı — taç rahat durmaz: bastır (sert) ya da uzlaş (onurlu), yoksa iç savaş kapıda */}
+            {state.pretender && (() => {
+              const ph = (state.rivals || []).find((h) => h.id === state.pretender!.houseId);
+              if (!ph) return null;
+              const str = state.pretender!.strength;
+              const acted = p.crown_action_turn === state.turn;
+              return (
+                <View style={{ marginTop: 10, borderWidth: 1.5, borderColor: "rgba(200,64,64,0.55)", backgroundColor: "rgba(200,64,64,0.07)", borderRadius: 11, padding: 12 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+                    <GameIcon name="crossed-swords" size={14} color={C.blood} />
+                    <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.blood, textTransform: "uppercase" }}>{t("dyn.pret.title")}</Text>
+                    <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood }}>{str}/100</Text>
+                  </View>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, marginTop: 6, lineHeight: 17 }}>
+                    {applyParams(t("dyn.pret.body"), [ph.nameIdx != null ? rivalHouseName(ph.nameIdx, lang) : ph.name])}
+                  </Text>
+                  <View style={{ height: 6, borderRadius: 3, backgroundColor: "rgba(0,0,0,0.4)", overflow: "hidden", marginTop: 8 }}>
+                    <View style={{ width: `${str}%`, height: "100%", backgroundColor: C.blood }} />
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+                    <Pressable disabled={acted || p.money < PRETENDER_SUPPRESS_COST} onPress={() => { hap("advance"); apply((x) => suppressPretender(x)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(200,64,64,0.6)", backgroundColor: "rgba(200,64,64,0.14)", opacity: (acted || p.money < PRETENDER_SUPPRESS_COST) ? 0.45 : 1 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10.5, letterSpacing: 0.5, color: C.blood }}>{t("dyn.pret.suppress")} · {PRETENDER_SUPPRESS_COST}⚜</Text>
+                    </Pressable>
+                    <Pressable disabled={acted || p.money < PRETENDER_RECONCILE_COST} onPress={() => { hap("success"); apply((x) => reconcilePretender(x)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.12)", opacity: (acted || p.money < PRETENDER_RECONCILE_COST) ? 0.45 : 1 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10.5, letterSpacing: 0.5, color: C.gold }}>{t("dyn.pret.reconcile")} · {PRETENDER_RECONCILE_COST}⚜</Text>
+                    </Pressable>
+                  </View>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 7, lineHeight: 14 }}>{acted ? t("dyn.pret.acted") : t("dyn.pret.hint")}</Text>
+                </View>
+              );
+            })()}
             </View>
           ) : (
             <>

@@ -72,6 +72,7 @@ export interface Player {
   trade_xp_turn?: number; // bu ay pazar işleminden ticaret tecrübesi alındı mı (tur başına tek — al-sat XP farmı önlenir)
   yr_money?: number; // geçen yaş gününde kese ne kadardı (yıl dönümü özeti farkı için)
   temperament?: string; // yaratılışta seçilen mizaç (yigit/kurnaz/merhametli/hirsli) — ömürlük küçük etkiler
+  crown_action_turn?: number; // bu ay taht eylemi (iddiacıyı bastır/uzlaş) yapıldı mı — tur başına tek
   last_travel_turn?: number; // bu ay yol olayı tetiklendi mi (tur başına tek — git-gel beceri/eşya farmı önlenir)
   gov_action_turn?: number; // bu ay valilik tedbiri (meşruiyet/hazine) yapıldı mı (tur başına tek)
   opp_turn?: number; // bu ay fırsat çözüldü mü (tur başına tek — çoklu fırsat gelir farmı önlenir)
@@ -657,6 +658,7 @@ export interface GameState {
   realm?: SancakHold[]; // 4 sancağın fraksiyon hakimiyeti (emergent şehir-kontrolü)
   mpRealm?: boolean; // çok oyuncu: beylik hakimiyeti SUNUCUDA → yerel ocak-beylik savaşı bastırılır (paralel gerçeklik olmaz)
   rivals?: RivalHouse[]; // rakip hanedanların yaşayan gücü (zamanla değişir + hamle yapar)
+  pretender?: { houseId: string; strength: number } | null; // taht iddiacısı: taçtayken beliren rakip hanedan — bastır ya da uzlaş, yoksa iç savaş
   caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number; good?: string; spread?: number } | null;
   econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
   settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
@@ -4425,6 +4427,43 @@ export function governorIncome(s: GameState): number {
 
 // ── HÜKÜMDARLIK (taht sonrası oynanış): otorite + dîvân fermanları + sefer + vali atama/azil + saray olayları ──
 export function crownAuthorityOf(p: Player): number { return p.crownAuthority ?? 72; }
+// İddiacıyı BASTIR: sert yol — güç gösterisiyle iddiayı geriletir; başarısızlık otorite yer.
+export const PRETENDER_SUPPRESS_COST = 400;
+export function suppressPretender(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!p.crowned || p.dead || !s.pretender || p.money < PRETENDER_SUPPRESS_COST) return s;
+  if (p.crown_action_turn === s.turn) return s; // ayda tek taht eylemi
+  p.crown_action_turn = s.turn; p.money -= PRETENDER_SUPPRESS_COST;
+  const h = ensureRivals(s).find((x) => x.id === s.pretender!.houseId); if (!h) { s.pretender = null; return s; }
+  if (Math.random() < Math.min(0.9, 0.45 + p.skills.combat * 0.03 + crownAuthorityOf(p) / 200)) {
+    s.pretender!.strength = Math.max(0, s.pretender!.strength - 28); h.power = Math.max(20, h.power - 8); p.fear = clamp100(p.fear + 3);
+    if (s.pretender!.strength <= 0) { s.pretender = null; p.crownAuthority = clamp100(crownAuthorityOf(p) + 8); push(s, "taht", `${h.name} sindirildi; iddia söndü.`, "kişisel", true, { k: "crown.pretCrushed", p: [{ hn: h.nameIdx }] }); }
+    else push(s, "taht", `${h.name} destekçilerine gözdağı verdin; iddia geriledi.`, "kişisel", false, { k: "crown.pretSupWin", p: [{ hn: h.nameIdx }] });
+  } else {
+    s.pretender!.strength = Math.max(0, s.pretender!.strength - 8);
+    p.crownAuthority = clamp100(crownAuthorityOf(p) - 4);
+    push(s, "taht", `Baskın ters tepti; iddiacının sesi daha gür çıkıyor.`, "kişisel", false, { k: "crown.pretSupFail" });
+  }
+  return s;
+}
+// İddiacıyla UZLAŞ: pahalı ama onurlu yol — hanedanın gönlünü alır; gönül yeterince yumuşarsa iddia tümden düşer.
+export const PRETENDER_RECONCILE_COST = 800;
+export function reconcilePretender(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!p.crowned || p.dead || !s.pretender || p.money < PRETENDER_RECONCILE_COST) return s;
+  if (p.crown_action_turn === s.turn) return s;
+  p.crown_action_turn = s.turn; p.money -= PRETENDER_RECONCILE_COST;
+  const h = ensureRivals(s).find((x) => x.id === s.pretender!.houseId); if (!h) { s.pretender = null; return s; }
+  h.tutum = Math.min(100, (h.tutum ?? 0) + 25);
+  s.pretender!.strength = Math.max(0, s.pretender!.strength - 20);
+  if (h.tutum >= 10 || s.pretender!.strength <= 0) {
+    s.pretender = null; p.honor = clamp100(p.honor + 5); p.crownAuthority = clamp100(crownAuthorityOf(p) + 5);
+    push(s, "taht", `${h.name} ile barış sağlandı; iddia onurlu bir anlaşmayla düştü.`, "kişisel", true, { k: "crown.pretPeace", p: [{ hn: h.nameIdx }] });
+  } else {
+    push(s, "taht", `${h.name} hediyeleri kabul etti; buzlar eriyor ama iddia henüz düşmedi.`, "kişisel", false, { k: "crown.pretSoften", p: [{ hn: h.nameIdx }] });
+  }
+  return s;
+}
 const clamp100 = (x: number) => Math.max(0, Math.min(100, x));
 
 // Dîvân-ı hümâyun fermanları (şâhâne kararname): otorite/şöhret/hazine tradeoff'lu, bekleme süreli.
@@ -4561,6 +4600,34 @@ function crownTick(s: GameState) {
     else if (ev === "famine") { p.crownAuthority = clamp100(crownAuthorityOf(p) - 5); push(s, "taht", `Diyarda kıtlık baş gösterdi; halkın hükümdara güveni sarsıldı.`, "kişisel", true, { k: "crown.ev.famine" }); }
     else if (ev === "loyal") { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); push(s, "taht", `Sadık bir tebaa divanda seni öven nutuk verdi; otoriten pekişti.`, "kişisel", false, { k: "crown.ev.loyal" }); }
     else { if (auth > 50) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); push(s, "taht", `Bir vezir entrikası açığa çıktı; vaktinde bastırdın, otoriten arttı.`, "kişisel", true, { k: "crown.ev.plotFoil" }); } else { p.crownAuthority = clamp100(crownAuthorityOf(p) - 6); p.fear = clamp100(p.fear + 4); push(s, "taht", `Sarayda bir entrika otoriteni hırpaladı; korku saçtın.`, "kişisel", true, { k: "crown.ev.plotHit" }); } }
+  }
+  // ── Taht İddiacısı: taç rahat durmaz — hoşnutsuz bir hanedan hak iddia eder. Kral artık her ay karar sahibi. ──
+  if (!s.pretender && Math.random() < (crownAuthorityOf(p) < 50 ? 0.12 : 0.05)) {
+    const cand = ensureRivals(s).filter((h) => (h.tutum ?? 0) < 20).sort((a, b) => ((a.tutum ?? 0) - (b.tutum ?? 0)) || (b.power - a.power))[0];
+    if (cand) {
+      s.pretender = { houseId: cand.id, strength: 25 };
+      push(s, "taht", `${cand.name} tahtında hak iddia etti; diyar ikiye bölünmeye başladı.`, "kişisel", true, { k: "crown.pretRise", p: [{ hn: cand.nameIdx }] });
+    }
+  } else if (s.pretender) {
+    const h = ensureRivals(s).find((x) => x.id === s.pretender!.houseId);
+    if (!h) { s.pretender = null; }
+    else {
+      s.pretender.strength = Math.min(100, s.pretender.strength + 2 + (crownAuthorityOf(p) < 50 ? 2 : 0));
+      if (s.pretender.strength >= 100) {
+        // İç savaş: iddia doruğa vardı — tek hamlede çözülür.
+        const win = Math.random() < Math.max(0.15, Math.min(0.85, 0.5 + (crownAuthorityOf(p) - 50) / 100 + p.skills.combat / 40 - h.power / 400));
+        if (win) {
+          s.pretender = null; h.power = Math.max(20, h.power - 30);
+          p.fame = clamp100(p.fame + 10); p.crownAuthority = clamp100(crownAuthorityOf(p) + 15);
+          push(s, "taht", `${h.name} iç savaşı göze aldı ve ezildi; tahtın sarsılmaz çıktı.`, "kişisel", true, { k: "crown.pretWarWin", p: [{ hn: h.nameIdx }] });
+        } else {
+          s.pretender = null;
+          p.crowned = false; p.crownAuthority = undefined; p.appointedGov = {};
+          p.reputation = Math.max(-100, p.reputation - 20);
+          push(s, "taht", `${h.name} iç savaşı kazandı; taht elinden gitti.`, "kişisel", true, { k: "crown.pretWarLose", p: [{ hn: h.nameIdx }] });
+        }
+      }
+    }
   }
   // Otorite dibe vurursa: isyan — bastıramazsan tacını yitirirsin (nadir, çok düşük otoritede).
   if (crownAuthorityOf(p) < 12 && Math.random() < 0.05) { // tur-içi olaylardan sonraki güncel otorite
