@@ -875,7 +875,10 @@ export function pickFestival(s: GameState): Dilemma | null {
 export function pickDilemma(s: GameState): Dilemma | null {
   const p = s.player;
   if (p.dead) return null;
-  const pool = DILEMMAS.filter((d) => !d.when || d.when(p));
+  // Tekrar koruması: son görülen ikilemler (ring 6) havuz dışı — havuz tümüyle tükenirse yoksayılır (kilitlenme yok).
+  const recent = s.recent_dilemmas || [];
+  let pool = DILEMMAS.filter((d) => (!d.when || d.when(p)) && !recent.includes(d.id));
+  if (pool.length === 0) pool = DILEMMAS.filter((d) => !d.when || d.when(p));
   if (pool.length === 0) return null;
   // Kimliğe tepki veren olaylar daha ağırlıklı: dünyanın seni tanıdığı hissi.
   const weighted: Dilemma[] = [];

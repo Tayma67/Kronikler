@@ -706,6 +706,7 @@ export interface GameState {
   pendingScene?: { kind: string; ctx: Record<string, string> } | null; // oyuncu seçimi bekleyen interaktif sahne (suç kesintisi vb.)
   tips?: Tip[]; // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
   locEvents?: LocEvent[]; // lokasyon-bazlı tipli dünya olayları (kuraklık/panayır/veba...)
+  recent_dilemmas?: string[]; // son görülen ikilem id'leri (ring 6) — dar havuzlarda aynı sahnenin üst üste gelmesi önlenir
 }
 // Dost bir hanedanın oyuncuya teklifi (ittifak veya evlilik).
 export interface DynastyOffer { id: string; houseId: string; nameIdx: number; type: "ittifak" | "evlilik"; }
@@ -1058,14 +1059,20 @@ export function npcsOf(s: GameState, lang: Lang = "tr"): NPC[] { return rosterAt
 
 export function newGame(first: string, surname: string, gender: "erkek" | "kadın"): GameState {
   const birthplace = rnd(LOCATIONS);
+  const seed = Math.floor(Math.random() * 1e9);
+  // Doğuş kaderi: aynı toplam bütçeyle (5 puan) statlar seed'e göre dağılır — iki hayat aynı başlamaz (güçlenme değil, çeşitlilik).
+  const fateKeys: (keyof Stats)[] = ["strength", "intelligence", "charisma", "stamina"];
+  const gift = fateKeys[seed % 4];
+  const birthStats: Stats = { strength: 1, intelligence: 1, charisma: 1, stamina: 1 };
+  birthStats[gift] += 1;
   return {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, inflation: 1 },
+    turn: 0, seed, world: { ready: true, inflation: 1 },
     relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null, econ: 1,
     player: {
       name: surname ? `${first} ${surname}` : first, surname, gender, base_age: 7, age: 7,
-      money: 12, profession: "işsiz", health: 100, hunger: 100,
+      money: 10 + (seed % 6), profession: "işsiz", health: 100, hunger: 100,
       reputation: 0, honor: 0, fear: 0, fame: 0,
-      stats: { strength: 1, intelligence: 1, charisma: 1, stamina: 2 },
+      stats: birthStats,
       stat_points: 0, dead: false, location_name: birthplace, home_name: birthplace,
       married: false, spouse_name: null, children: [], mother: rnd(SPOUSE_K), father: rnd(SPOUSE_E), mother_seed: Math.floor(Math.random() * 1e9), father_seed: Math.floor(Math.random() * 1e9), inventory: { ekmek: 2 },
       properties: [], generation: 1,
@@ -1076,7 +1083,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
       crowned: false, will_pref: "esit", fates: [], claimed: [],
     },
     settlements: [],
-    history: [],
+    history: [{ day: 0, type: "doğum", text: `Bu diyara bir can daha geldi; doğuştan bir yanı kuvvetli.`, scope: "kişisel", landmark: false, k: "evj.birthFate", p: [{ statk: gift }] }],
   };
 }
 
@@ -3378,7 +3385,7 @@ function crimeCaught(s: GameState, kind: CrimeKind) {
 }
 
 // ── Fırsat: kabul edilince stat'a göre çözülür ──
-export interface Opportunity { id: string; key: string; title: string; desc: string; reward: number; risk: number; stat: keyof Stats; }
+export interface Opportunity { id: string; key: string; title: string; desc: string; reward: number; risk: number; stat: keyof Stats; minAge?: number; } // minAge: çocuğa kervan muhafızlığı teklif edilmez (mantıksızlık koruması)
 // forced: mini-oyunun belirlediği sonuç (verilmezse stat'a bağlı rastgele — geriye dönük güvenli).
 export function resolveOpportunity(prev: GameState, opp: Opportunity, forced?: boolean): GameState {
   const s = clone(prev); const p = s.player;
@@ -3402,29 +3409,30 @@ export function resolveOpportunity(prev: GameState, opp: Opportunity, forced?: b
 // Tura göre deterministik fırsat listesi.
 export function opportunitiesFor(s: GameState): Opportunity[] {
   const pool: Omit<Opportunity, "id">[] = [
-    { key: "pazar_duzen", title: "Pazarda Düzen", desc: "Voyvoda kavgayı yatıştırmanı istiyor.", reward: 30, risk: 0.4, stat: "charisma" },
-    { key: "kervan_muhafiz", title: "Kervan Muhafızlığı", desc: "Tehlikeli yolda kervana eşlik et.", reward: 60, risk: 0.6, stat: "strength" },
+    { key: "pazar_duzen", minAge: 14, title: "Pazarda Düzen", desc: "Voyvoda kavgayı yatıştırmanı istiyor.", reward: 30, risk: 0.4, stat: "charisma" },
+    { key: "kervan_muhafiz", minAge: 15, title: "Kervan Muhafızlığı", desc: "Tehlikeli yolda kervana eşlik et.", reward: 60, risk: 0.6, stat: "strength" },
     { key: "sifa_ot", title: "Şifalı Ot Topla", desc: "Şifacı için dağdan ot getir.", reward: 20, risk: 0.25, stat: "stamina" },
     { key: "hesap_tut", title: "Hesap Tut", desc: "Tüccarın defterini düzelt.", reward: 25, risk: 0.3, stat: "intelligence" },
     // ── Vercel opportunities.py'den ek fırsatlar ──
-    { key: "kurt_avi", title: "Kurt Avı", desc: "Köyü basan kurt sürüsünü avla.", reward: 55, risk: 0.55, stat: "strength" },
-    { key: "alacak_tahsil", title: "Alacak Tahsili", desc: "Borçlu bir esnaftan tüccarın alacağını topla.", reward: 35, risk: 0.45, stat: "charisma" },
+    { key: "kurt_avi", minAge: 15, title: "Kurt Avı", desc: "Köyü basan kurt sürüsünü avla.", reward: 55, risk: 0.55, stat: "strength" },
+    { key: "alacak_tahsil", minAge: 14, title: "Alacak Tahsili", desc: "Borçlu bir esnaftan tüccarın alacağını topla.", reward: 35, risk: 0.45, stat: "charisma" },
     { key: "haber_gotur", title: "Haber Götür", desc: "Komşu sancağa acele bir mektup ulaştır.", reward: 28, risk: 0.35, stat: "stamina" },
-    { key: "kopru_onarim", title: "Köprü Onarımı", desc: "Sel basmış köprünün onarımına el ver.", reward: 32, risk: 0.4, stat: "strength" },
-    { key: "sinir_devriye", title: "Sınır Devriyesi", desc: "Sancak beyi için sınır yolunu kolla.", reward: 48, risk: 0.5, stat: "strength" },
-    { key: "dugun_kahya", title: "Düğün Kâhyalığı", desc: "Bir konağın düğün hazırlığını yönet.", reward: 38, risk: 0.3, stat: "charisma" },
-    { key: "mahkeme_sahit", title: "Mahkeme Şahitliği", desc: "Kadı huzurunda adil bir ifade ver.", reward: 26, risk: 0.35, stat: "intelligence" },
-    { key: "maden_kesfi", title: "Maden Keşfi", desc: "Dağ eteğinde damar olduğu söylenen yeri araştır.", reward: 70, risk: 0.65, stat: "intelligence" },
+    { key: "kopru_onarim", minAge: 13, title: "Köprü Onarımı", desc: "Sel basmış köprünün onarımına el ver.", reward: 32, risk: 0.4, stat: "strength" },
+    { key: "sinir_devriye", minAge: 15, title: "Sınır Devriyesi", desc: "Sancak beyi için sınır yolunu kolla.", reward: 48, risk: 0.5, stat: "strength" },
+    { key: "dugun_kahya", minAge: 14, title: "Düğün Kâhyalığı", desc: "Bir konağın düğün hazırlığını yönet.", reward: 38, risk: 0.3, stat: "charisma" },
+    { key: "mahkeme_sahit", minAge: 13, title: "Mahkeme Şahitliği", desc: "Kadı huzurunda adil bir ifade ver.", reward: 26, risk: 0.35, stat: "intelligence" },
+    { key: "maden_kesfi", minAge: 15, title: "Maden Keşfi", desc: "Dağ eteğinde damar olduğu söylenen yeri araştır.", reward: 70, risk: 0.65, stat: "intelligence" },
     // ── Yaşayan dünyaya bağlı fırsatlar (vefat/düğün/yetim) ──
-    { key: "miras_katibi", title: "Miras Kâtibi", desc: "Vefat eden bir konak sahibinin mirasını adilce paylaştır.", reward: 42, risk: 0.4, stat: "intelligence" },
+    { key: "miras_katibi", minAge: 15, title: "Miras Kâtibi", desc: "Vefat eden bir konak sahibinin mirasını adilce paylaştır.", reward: 42, risk: 0.4, stat: "intelligence" },
     { key: "dugun_sazi", title: "Düğün Sazı", desc: "Bir düğünde saz çalıp meclisi şenlendir.", reward: 30, risk: 0.3, stat: "charisma" },
     { key: "yetime_kanat", title: "Yetime Kanat", desc: "Kimsesiz kalmış bir çocuğa kol kanat ger.", reward: 24, risk: 0.3, stat: "charisma" },
     { key: "hasat_imece", title: "Hasat İmecesi", desc: "Köyün hasadına imece ile omuz ver.", reward: 28, risk: 0.35, stat: "stamina" },
     { key: "kayip_cocuk", title: "Kayıp Çocuk", desc: "Pazarda kaybolan bir çocuğu bul.", reward: 34, risk: 0.45, stat: "intelligence" },
-    { key: "esnaf_arasi", title: "Esnaf Arası", desc: "Kavgaya tutuşan iki esnafı ayır.", reward: 30, risk: 0.45, stat: "strength" },
+    { key: "esnaf_arasi", minAge: 14, title: "Esnaf Arası", desc: "Kavgaya tutuşan iki esnafı ayır.", reward: 30, risk: 0.45, stat: "strength" },
   ];
   const seed = (s.turn * 2654435761) >>> 0;
-  return pool.filter((_, i) => ((seed >> i) & 1) === 1 || i === seed % pool.length)
+  return pool.filter((o) => !o.minAge || s.player.age >= o.minAge) // çocuğa çocuk işi: yaşına uymayan fırsat hiç gösterilmez
+    .filter((_, i) => ((seed >> i) & 1) === 1 || i === seed % pool.length)
     .map((o, i) => ({ ...o, id: `opp_${s.turn}_${i}` }));
 }
 
@@ -4212,6 +4220,8 @@ export const FAMILY_QUESTS: FamilyQuest[] = [
   { id: "bezirgan",   icon: "scales", title: "Bezirgân",      desc: "Ticaret becerini 6'ya çıkar.",          minAge: 22, reward: { money: 30, rep: 3 },           done: (s) => s.player.skills.trade >= 6 },
   { id: "konaksahibi",icon: "castle", title: "Konak Sahibi",  desc: "Üç mülk edin.",                         minAge: 25, reward: { money: 0, rep: 5, statPt: 1 },  done: (s) => s.player.properties.length >= 3 },
   { id: "itibarli",   icon: "medal", title: "İtibarlı",      desc: "İtibarını 60'a çıkar.",                 minAge: 30, reward: { money: 30, fame: 5 },          done: (s) => s.player.reputation >= 60 },
+  { id: "diyarinbeyi",icon: "crown", title: "Diyarın Beyi",  desc: "Tahta çık; diyar senin adınla anılsın.",minAge: 30, reward: { money: 0, fame: 10, statPt: 1 }, done: (s) => !!s.player.crowned },
+  { id: "tastayazili",icon: "castle", title: "Taşa Yazılan Ad",desc: "Bir anıt diktir; adın çağları aşsın.",  minAge: 35, reward: { money: 0, fame: 10, rep: 5 },   done: (s) => !!s.player.legacy?.anit },
   { id: "soyagaci",   icon: "leaf", title: "Soyağacı",      desc: "Hanedanını sürdür (2. nesil ve ötesi).",minAge: 7,  reward: { money: 40, fame: 8 },          done: (s) => s.player.generation >= 2 },
 ];
 export function familyQuestsOf(s: GameState): { q: FamilyQuest; done: boolean; claimed: boolean; locked: boolean }[] {
@@ -4257,6 +4267,9 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string, 
   if (festival) {
     if (p.festival_turn === s.turn) return s; // aynı şenlik iki kez çözülemez (çekirdek kapısı)
     p.festival_turn = s.turn;
+  } else if (seedKey) {
+    // Tekrar koruması: görülen ikilem bir süre havuza dönmez (pickDilemma filtreler; şenlikler ayrı yolda).
+    s.recent_dilemmas = [...(s.recent_dilemmas || []), seedKey.split(":")[0]].slice(-6);
   }
   if (delta.money) p.money = Math.max(0, p.money + delta.money);
   if (delta.health) p.health = clampStat(p.health + delta.health);
