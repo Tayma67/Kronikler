@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, visitParents } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, visitParents, visitHealer, healerCost } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
@@ -268,6 +268,26 @@ export default function Karakter() {
             <StatTop icon="akce" value={Math.round(p.money)} color={C.gold} showBar={false} flex={0.9} />
             <StatTop icon="orgutler" value={crownLevel} color={C.ink} showBar={false} flex={0.65} />
           </View>
+          {/* Hekim ziyareti: sağlık pasif sayı değil — kronik hastalıkta tedavi burada */}
+          {p.age >= 13 && !p.dead && (() => {
+            const seen = p.healer_turn === state.turn;
+            const cost = healerCost(state);
+            const dis = seen || p.money < cost;
+            return (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 }}>
+                <Pressable disabled={dis} onPress={() => { hap("tap"); apply((s) => visitHealer(s)); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: dis ? C.border : "rgba(127,166,106,0.5)", backgroundColor: dis ? C.bg : "rgba(127,166,106,0.1)", opacity: dis ? 0.45 : 1 }}>
+                  <GameIcon name="healing" size={12} color={dis ? C.parchmentMuted : C.sage} />
+                  <Text style={{ fontFamily: F.display, fontSize: 10, color: dis ? C.parchmentMuted : C.sage, letterSpacing: 0.5 }}>{seen ? t("char.healerDone") : `${t("char.healer")} · ${cost}⚜`}</Text>
+                </Pressable>
+                {!!p.chronic && (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: "rgba(160,48,42,0.45)", backgroundColor: "rgba(160,48,42,0.08)" }}>
+                    <GameIcon name="skull" size={11} color={C.blood} />
+                    <Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.blood, letterSpacing: 0.5 }}>{t("chr." + p.chronic.k)}</Text>
+                  </View>
+                )}
+              </View>
+            );
+          })()}
 
           {/* Kariyer XP */}
           {hasCareer && (

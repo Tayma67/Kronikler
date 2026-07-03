@@ -101,6 +101,8 @@ export interface Player {
   harvestAccum?: number; wageAccum?: number; // pasif gelir/ücret yıllık birikimi (kronik yılda bir özetlenir; aylık spam önlenir)
   grandchildren?: string[]; // torunlar (oyuncu yaşlanınca yetişkin evlattan doğar; torun anları)
   death_cause?: string; // ölüm nedeni kodu (die() içinde olay anahtarından türetilir; mersiyeye ve hanedan kütüğüne işlenir)
+  chronic?: { k: string; since: number }; // kronik hastalık (aylık sızıntı + alevlenme); hekim tedavisiyle geçebilir, vârise geçmez
+  healer_turn?: number; // bu ay hekime görünüldü mü (tur başına tek — şifa farm'ı yok)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
@@ -1368,7 +1370,16 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     push(s, p.age < 13 ? "cocukluk" : "gunluk", m.text, "kişisel", false, { k: m.k, p: m.p });
   }
   if (chance(0.05)) { const g = 5 + Math.floor(Math.random() * 20); p.money += g; push(s, "gunluk", `Yolda ${g} akçe buldun.`, "kişisel", false, { k: "evj.foundCoin", p: [g] }); }
-  if (chance(0.04)) { p.health = Math.max(0, p.health - 12); push(s, "hastalik", "Hastalandın, birkaç gün yatakta kaldın.", "kişisel", false, { k: "evj.sick" }); }
+  if (chance(0.04)) {
+    p.health = Math.max(0, p.health - 12); push(s, "hastalik", "Hastalandın, birkaç gün yatakta kaldın.", "kişisel", false, { k: "evj.sick" });
+    // Düşkün bünyede hastalık yerleşebilir: kronik öksürük — hekim tedavisi ister, kendiliğinden geçmez.
+    if (!p.chronic && p.age >= 35 && p.health < 45 && chance(0.25)) { p.chronic = { k: "oksuruk", since: s.turn }; push(s, "hastalik", "Öksürük yakanı bırakmadı; göğsüne yerleşti. Hekim yüzü görmeden geçmeyecek.", "kişisel", true, { k: "evj.chronicStart" }); }
+  }
+  // Kronik hastalık: sessiz aylık sızıntı + arada alevlenme (ölüm nedeni değil, ecele zemin — hekim döngüsüne itki).
+  if (p.chronic && !p.dead) {
+    p.health = Math.max(1, p.health - 1);
+    if (chance(0.08)) { const w = 4 + Math.floor(Math.random() * 3); p.health = Math.max(1, p.health - w); push(s, "hastalik", `Eski öksürük alevlendi; birkaç gün nefessiz kaldın (−${w} sağlık).`, "kişisel", false, { k: "evj.chronicFlare", p: [w] }); }
+  }
   // ── Nemesis dünyada yaşıyor: musallat olur; yoksa derin bir husumet amansız hasma dönüşebilir ──
   if (!p.dead && p.age >= 14 && s.story) {
     if (s.story.nemesis && chance(0.10)) {
@@ -4834,6 +4845,25 @@ export function upgradeEstate(prev: GameState): GameState {
 // ── VAKIF FONU: vakıf kurulduysa (legacy.vakif) sınırsız beslenebilir — servet "anlam"a dönüşür.
 // Toplam fon hiç budanmaz; mersiyeye, hanedan kütüğüne ve vârisin başlangıç itibarına akar.
 export const VAKIF_DONATE_AMOUNTS = [1000, 5000, 25000] as const;
+// ── HEKİM ZİYARETİ: akçeyle tedavi (tur başına tek). Kronik hastalığı iyileştirme şansı taşır — sağlık pasif sayı olmaktan çıkar. ──
+export function healerCost(s: GameState): number { return Math.round(25 * inflationFactor(s)); }
+export function visitHealer(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13) return s;
+  if (p.healer_turn === s.turn) return s; // ayda tek muayene
+  const cost = healerCost(s); if (p.money < cost) return s;
+  p.healer_turn = s.turn; p.money -= cost;
+  p.health = Math.min(100, p.health + 12);
+  if (p.chronic && chance(0.4)) {
+    delete p.chronic;
+    push(s, "saglik", `Hekimin otları nihayet işledi: eski öksürük kesildi, göğsün açıldı (−${cost} akçe).`, "kişisel", true, { k: "evj.chronicCured", p: [cost] });
+  } else if (p.chronic) {
+    push(s, "saglik", `Hekime göründün; nefesin açıldı ama eski öksürük yerinde (−${cost} akçe).`, "kişisel", false, { k: "evj.healerChronic", p: [cost] });
+  } else {
+    push(s, "saglik", `Hekime göründün; şuruplar ve dinlenme iyi geldi (−${cost} akçe).`, "kişisel", false, { k: "evj.healerVisit", p: [cost] });
+  }
+  return s;
+}
 // Vakıf mertebeleri: fon eşikleri aşıldıkça bir kezlik nişan — 100k+ akçelik geç oyunda bile paranın
 // ulaşılacak bir hedefi kalsın. Eşikler üstel büyür; farm edilemez (her eşik ömürde bir kez düşer).
 export const VAKIF_TIERS = [25000, 100000, 250000, 1000000] as const;
