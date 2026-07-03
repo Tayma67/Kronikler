@@ -39,6 +39,9 @@ export interface Player {
   fates?: string[]; // tetiklenen kader anları (yaş dönümleri)
   claimed?: string[]; // ödülü alınan başarımlar
   fq_claimed?: string[]; // tamamlanan aile/yaşam görevleri (family_quests portu)
+  professions_tried?: string[]; // denenen meslekler — koleksiyon başarımları için ömürlük iz (vârise geçmez: her hayat kendi yolunu yürür)
+  capstones?: string[]; // zirvesine varılan meslekler — capstone sahnesi meslek başına bir kez düşer
+  cities_visited?: string[]; // ayak basılan yerleşimler — koleksiyon başarımları için ömürlük iz
   inv_q?: Record<string, Partial<Record<QualityTier, number>>>; // eşya kalite kırılımı (quality.py portu; sıradan izlenmez)
   last_study_turn?: number; lesson_count?: number; // mektep: sınav sayacı (eski gate; enerji sistemine taşındı)
   study_energy?: number; // aylık çalışma gücü — ders + kulüp meşki bundan harcanır
@@ -2244,7 +2247,19 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
     if (style === "kaytarici") p.health = Math.min(100, p.health + 2);
     push(s, "çalışma", `${careerTitle(p.profession, p.career_xp - 1)} olarak çalıştın, ${earn} akçe kazandın.`, "kişisel", false, { k: "evj.work", p: [{ c: [p.profession, p.career_xp - 1] }, earn] });
   }
-  if (pr) { const after = careerTier(pr, p.career_xp); if (after > tierBefore) push(s, "terfi", `Yükseldin: artık ${pr.tiers[after]}!`, "kişisel", true, { k: "evj.promote", p: [{ c: [p.profession, p.career_xp] }] }); }
+  if (pr) {
+    const after = careerTier(pr, p.career_xp);
+    if (after > tierBefore) {
+      push(s, "terfi", `Yükseldin: artık ${pr.tiers[after]}!`, "kişisel", true, { k: "evj.promote", p: [{ c: [p.profession, p.career_xp] }] });
+      // Zirveye İLK varış: mesleğin taçlanma anı — meslek başına ömürde bir kez (farm yok: kariyer sıfırlanıp yeniden tırmanılsa da tekrar düşmez).
+      if (after === pr.tiers.length - 1 && !(p.capstones || []).includes(p.profession)) {
+        (p.capstones = p.capstones || []).push(p.profession);
+        p.fame = Math.min(100, p.fame + 6); p.honor = Math.min(100, p.honor + 4);
+        const odul = Math.round(60 * inflationFactor(s)); p.money += odul;
+        push(s, "terfi", `Mesleğinin zirvesine vardın: ${pr.tiers[after]} olarak adın diyarda anılıyor; lonca şerefine bir kese açtı (+${odul} akçe).`, "kişisel", true, { k: "evj.capstone", p: [{ c: [p.profession, p.career_xp] }, odul] });
+      }
+    }
+  }
   if (!failed && chance(0.3)) rollWorkEvent(s);                 // %30 meslek mini-olayı
   return s;
 }
@@ -2252,28 +2267,30 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
 // ── Meslek mini-olayları (Vercel work_rework.py portu) — stat testli, otomatik çözümlü ──
 interface WorkEvent { text: string; stat: keyof Stats; win: string; lose: string; wMoney?: number; wHealth?: number; wRep?: number; lHealth?: number; lRep?: number; skill?: SkillKey; }
 const WORK_EVENTS: Record<string, WorkEvent[]> = {
-  demirci:  [{ text: "Çetin bir sipariş", stat: "strength", win: "Zorlu siparişi ustaca bitirdin", lose: "Örste elin ezildi", wMoney: 18, lHealth: 5, skill: "crafting" }],
-  tüccar:   [{ text: "Kurnaz bir müşteri", stat: "charisma", win: "Müşteriyi ikna ettin, kârlı sattın", lose: "Müşteri seni dolandırdı", wMoney: 25, lRep: 2, skill: "trade" }],
-  çiftçi:   [{ text: "Hava kapanıyor", stat: "stamina", win: "Hasadı vaktinde topladın", lose: "Yağmur ürünü vurdu", wMoney: 15, lHealth: 3 }],
-  avcı:     [{ text: "İz süren bir av", stat: "strength", win: "Büyük bir av düşürdün", lose: "Av elinden kaçtı, yoruldun", wMoney: 20, lHealth: 4, skill: "combat" }],
-  asker:    [{ text: "Ani bir devriye", stat: "strength", win: "Devriyede yararlık gösterdin", lose: "Çatışmada sıyrık aldın", wMoney: 16, wRep: 2, lHealth: 6, skill: "combat" }],
-  şifacı:   [{ text: "Ağır bir hasta", stat: "intelligence", win: "Hastayı iyileştirdin, dualar aldın", lose: "Hastayı kurtaramadın", wMoney: 22, wRep: 3, lRep: 3 }],
-  müzisyen: [{ text: "Bir düğün daveti", stat: "charisma", win: "Sazınla meclisi coşturdun", lose: "Telin koptu, mahcup oldun", wMoney: 18, wRep: 2, lRep: 1, skill: "social" }],
-  hancı:    [{ text: "Kalabalık bir gece", stat: "charisma", win: "Hanı tıka basa doldurdun", lose: "Sarhoş kavgası çıktı", wMoney: 20, lRep: 2 }],
-  kuyumcu:  [{ text: "Nazik bir takı işi", stat: "intelligence", win: "İnce işçiliğin takdir topladı", lose: "Taşı çatlattın", wMoney: 28, lHealth: 0, skill: "crafting" }],
-  balıkçı:  [{ text: "Fırtınalı bir deniz", stat: "stamina", win: "Ağları dolu çektin", lose: "Dalga teknene vurdu", wMoney: 16, lHealth: 4, skill: "trade" }],
-  marangoz: [{ text: "İnce bir doğrama işi", stat: "intelligence", win: "Kusursuz bir dolap çıkardın", lose: "Tahta çatladı", wMoney: 18, lHealth: 2, skill: "crafting" }],
-  çoban:    [{ text: "Sürüde huzursuzluk", stat: "stamina", win: "Sürüyü kurttan kolladın", lose: "Birkaç koyun telef oldu", wMoney: 14, wRep: 1, lHealth: 3 }],
-  fırıncı:  [{ text: "Şafak vakti fırın", stat: "stamina", win: "Ekmekler altın gibi çıktı", lose: "Hamur ekşidi", wMoney: 15, lRep: 1, skill: "crafting" }],
-  katip:    [{ text: "Çetrefil bir ferman", stat: "intelligence", win: "Belgeyi kusursuz yazdın", lose: "Mürekkep dağıldı", wMoney: 20, wRep: 2, lRep: 1, skill: "social" }],
-  dokumacı: [{ text: "Nazik bir sipariş", stat: "intelligence", win: "Kumaşın göz kamaştırdı", lose: "İplik koptu", wMoney: 17, lHealth: 1, skill: "crafting" }],
-  _:        [{ text: "Sıradan bir gün", stat: "stamina", win: "İşini sağlam yaptın, fazladan kazandın", lose: "Yorgun bir gündü", wMoney: 10, lHealth: 2 }],
+  demirci:  [{ text: "Çetin bir sipariş", stat: "strength", win: "Zorlu siparişi ustaca bitirdin", lose: "Örste elin ezildi", wMoney: 18, lHealth: 5, skill: "crafting" }, { text: "Kervan nalları", stat: "stamina", win: "Şafağa dek çekiç salladın, kervanı yola verdin", lose: "Körük patladı, ocak söndü", wMoney: 16, lHealth: 4, skill: "crafting" }, { text: "Bey konağından sipariş", stat: "intelligence", win: "Kılıç su gibi dengeli çıktı, adın konakta anıldı", lose: "Çelik suyu tutmadı", wMoney: 22, wRep: 2, lRep: 1, skill: "crafting" }],
+  tüccar:   [{ text: "Kurnaz bir müşteri", stat: "charisma", win: "Müşteriyi ikna ettin, kârlı sattın", lose: "Müşteri seni dolandırdı", wMoney: 25, lRep: 2, skill: "trade" }, { text: "Kıtlık söylentisi", stat: "intelligence", win: "Malı ucuzken kapattın, pahalıya sattın", lose: "Söylenti boş çıktı, mal elinde kaldı", wMoney: 30, lRep: 1, skill: "trade" }, { text: "Yabancı bir kervan", stat: "charisma", win: "Kervanbaşıyla dostluk kurdun, ilk seçim senin oldu", lose: "Pazarlık kızıştı, eli boş döndün", wMoney: 20, wRep: 2, lRep: 1, skill: "trade" }],
+  çiftçi:   [{ text: "Hava kapanıyor", stat: "stamina", win: "Hasadı vaktinde topladın", lose: "Yağmur ürünü vurdu", wMoney: 15, lHealth: 3 }, { text: "Komşunun öküzü", stat: "charisma", win: "Öküzü ödünç aldın, tarlayı erken sürdün", lose: "Komşuyla ağız dalaşına tutuştun", wMoney: 14, wRep: 1, lRep: 2 }, { text: "Ambarda fareler", stat: "intelligence", win: "Zahireyi vaktinde kurtardın", lose: "Kışlık zahire delik deşik oldu", wMoney: 12, lHealth: 2 }],
+  avcı:     [{ text: "İz süren bir av", stat: "strength", win: "Büyük bir av düşürdün", lose: "Av elinden kaçtı, yoruldun", wMoney: 20, lHealth: 4, skill: "combat" }, { text: "Kar üstünde izler", stat: "intelligence", win: "Tuzağı ustaca kurdun, post dolu döndün", lose: "Tuzağın boş kaldı, ayazda donup kaldın", wMoney: 22, lHealth: 3, skill: "combat" }, { text: "Yaralı bir geyik", stat: "stamina", win: "Gün boyu iz sürüp avı düşürdün", lose: "Sarp yamaçta ayağın burkuldu", wMoney: 18, lHealth: 5 }],
+  asker:    [{ text: "Ani bir devriye", stat: "strength", win: "Devriyede yararlık gösterdin", lose: "Çatışmada sıyrık aldın", wMoney: 16, wRep: 2, lHealth: 6, skill: "combat" }, { text: "Gece nöbeti", stat: "stamina", win: "Hırsızları fark edip bastırdın", lose: "Nöbette uyuyakaldın", wMoney: 14, wRep: 3, lRep: 3, skill: "combat" }, { text: "Talim meydanı", stat: "strength", win: "Er meydanında herkesi yere serdin", lose: "Talimde omzun zedelendi", wMoney: 12, wRep: 2, lHealth: 5, skill: "combat" }],
+  şifacı:   [{ text: "Ağır bir hasta", stat: "intelligence", win: "Hastayı iyileştirdin, dualar aldın", lose: "Hastayı kurtaramadın", wMoney: 22, wRep: 3, lRep: 3 }, { text: "Dağdan ot toplama", stat: "stamina", win: "Nadide kökler buldun, ilaçların güçlendi", lose: "Yanlış otu kaynattın, kendin hastalandın", wMoney: 18, lHealth: 4 }, { text: "Salgın korkusu", stat: "charisma", win: "Halkı yatıştırıp tedbir aldırdın", lose: "Halk paniğe kapıldı, seni suçladılar", wMoney: 16, wRep: 4, lRep: 3 }],
+  müzisyen: [{ text: "Bir düğün daveti", stat: "charisma", win: "Sazınla meclisi coşturdun", lose: "Telin koptu, mahcup oldun", wMoney: 18, wRep: 2, lRep: 1, skill: "social" }, { text: "Bey meclisine davet", stat: "intelligence", win: "Eski bir destanı ustaca okudun, keseler açıldı", lose: "Nağmeyi şaşırdın, meclis soğudu", wMoney: 26, wRep: 2, lRep: 2, skill: "social" }, { text: "Pazar meydanı", stat: "stamina", win: "Gün boyu çaldın, kesen doldu", lose: "Sesin kısıldı", wMoney: 14, lHealth: 2 }],
+  hancı:    [{ text: "Kalabalık bir gece", stat: "charisma", win: "Hanı tıka basa doldurdun", lose: "Sarhoş kavgası çıktı", wMoney: 20, lRep: 2 }, { text: "Soylu bir konuk", stat: "charisma", win: "Ağırlamandan memnun kaldı, adını her yerde övdü", lose: "Şarap ekşi çıktı, konuk küstü", wMoney: 24, wRep: 3, lRep: 3 }, { text: "Kiler sayımı", stat: "intelligence", win: "Hileyi yakaladın, kileri düzene soktun", lose: "Aşçı seni atlatmış, kiler yarı boş", wMoney: 16, lRep: 1 }],
+  kuyumcu:  [{ text: "Nazik bir takı işi", stat: "intelligence", win: "İnce işçiliğin takdir topladı", lose: "Taşı çatlattın", wMoney: 28, lHealth: 0, skill: "crafting" }, { text: "Gümüş kakma", stat: "stamina", win: "Gece boyu işledin, bilezik göz kamaştırdı", lose: "Gözlerin karardı, işi bozdun", wMoney: 24, lHealth: 3, skill: "crafting" }, { text: "Sahte taş şüphesi", stat: "intelligence", win: "Sahteyi tek bakışta ayırdın, itibarın arttı", lose: "Sahte taşı gerçek diye aldın", wMoney: 18, wRep: 3, lRep: 2 }],
+  balıkçı:  [{ text: "Fırtınalı bir deniz", stat: "stamina", win: "Ağları dolu çektin", lose: "Dalga teknene vurdu", wMoney: 16, lHealth: 4, skill: "trade" }, { text: "Ağ örme günü", stat: "intelligence", win: "Ağları sağlam ördün, ertesi gün bereket yağdı", lose: "İplik çürük çıktı", wMoney: 14, lHealth: 1, skill: "trade" }, { text: "Uzak koylara sefer", stat: "stamina", win: "Kimsenin bilmediği koyda balık sürüsü buldun", lose: "Akıntı seni açığa sürükledi", wMoney: 24, lHealth: 5 }],
+  marangoz: [{ text: "İnce bir doğrama işi", stat: "intelligence", win: "Kusursuz bir dolap çıkardın", lose: "Tahta çatladı", wMoney: 18, lHealth: 2, skill: "crafting" }, { text: "Cami kapısı siparişi", stat: "intelligence", win: "Oyman görenleri hayran bıraktı", lose: "Keski kaydı, elini kesti", wMoney: 24, wRep: 2, lHealth: 4, skill: "crafting" }, { text: "Kereste pazarlığı", stat: "charisma", win: "Kerestecilerle iyi anlaştın, malı ucuza kapattın", lose: "Çürük kereste yutturdular", wMoney: 16, lRep: 1, skill: "trade" }],
+  çoban:    [{ text: "Sürüde huzursuzluk", stat: "stamina", win: "Sürüyü kurttan kolladın", lose: "Birkaç koyun telef oldu", wMoney: 14, wRep: 1, lHealth: 3 }, { text: "Kırkım zamanı", stat: "stamina", win: "Yapağı bereketli çıktı", lose: "Makasla elini kestin", wMoney: 18, lHealth: 3 }, { text: "Kayıp kuzu", stat: "intelligence", win: "Kuzuyu uçurum kenarından çekip çıkardın", lose: "Kuzu bulunamadı, sahibi sana kızgın", wMoney: 10, wRep: 3, lRep: 2 }],
+  fırıncı:  [{ text: "Şafak vakti fırın", stat: "stamina", win: "Ekmekler altın gibi çıktı", lose: "Hamur ekşidi", wMoney: 15, lRep: 1, skill: "crafting" }, { text: "Bayram siparişi", stat: "stamina", win: "Tepsiler fırından çıkmadan tükendi", lose: "Fırının harı kaçtı, hamur çiğ kaldı", wMoney: 20, lRep: 1 }, { text: "Yeni bir tarif", stat: "intelligence", win: "Ballı çörek kapış kapış gitti", lose: "Deneme ziyan oldu, un boşa gitti", wMoney: 16, lHealth: 1, skill: "crafting" }],
+  katip:    [{ text: "Çetrefil bir ferman", stat: "intelligence", win: "Belgeyi kusursuz yazdın", lose: "Mürekkep dağıldı", wMoney: 20, wRep: 2, lRep: 1, skill: "social" }, { text: "Gizli bir mektup", stat: "charisma", win: "Ağzı sıkı çıktın, büyüklerin güvenini kazandın", lose: "Dedikodu sana mal edildi", wMoney: 16, wRep: 3, lRep: 3, skill: "social" }, { text: "Hesap defterleri", stat: "stamina", win: "Geceyi mum ışığında bitirdin, defterler kusursuz", lose: "Gözlerin yoruldu, satırlar birbirine karıştı", wMoney: 22, lHealth: 3 }],
+  dokumacı: [{ text: "Nazik bir sipariş", stat: "intelligence", win: "Kumaşın göz kamaştırdı", lose: "İplik koptu", wMoney: 17, lHealth: 1, skill: "crafting" }, { text: "Boyahane günü", stat: "stamina", win: "Renkler tam kıvamında tuttu", lose: "Kaynar boya elini yaktı", wMoney: 16, lHealth: 3, skill: "crafting" }, { text: "Saray kumaşı söylentisi", stat: "charisma", win: "Kumaşını saray kethüdasına beğendirdin", lose: "Kethüda burun kıvırdı", wMoney: 26, wRep: 2, lRep: 1 }],
+  _:        [{ text: "Sıradan bir gün", stat: "stamina", win: "İşini sağlam yaptın, fazladan kazandın", lose: "Yorgun bir gündü", wMoney: 10, lHealth: 2 }, { text: "Beklenmedik bir yardım", stat: "charisma", win: "El verdin, karşılığını gördün", lose: "Emeğin görmezden gelindi", wMoney: 8, wRep: 2, lRep: 1 }],
 };
 function rollWorkEvent(s: GameState) {
   const p = s.player;
-  const wevKey = WORK_EVENTS[p.profession] ? p.profession : "_";
-  const pool = WORK_EVENTS[p.profession] || WORK_EVENTS._;
-  const ev = pool[Math.floor(Math.random() * pool.length)];
+  const profKey = WORK_EVENTS[p.profession] ? p.profession : "_";
+  const pool = WORK_EVENTS[profKey];
+  const vi = Math.floor(Math.random() * pool.length);
+  const ev = pool[vi];
+  const wevKey = vi > 0 ? profKey + "." + vi : profKey; // varyant 0 eski anahtarları kullanır — eski kayıt olayları çözülmeye devam eder
   const ok = Math.random() < 0.4 + effStat(p, ev.stat) * 0.06;
   if (ok) {
     if (ev.wMoney) p.money += ev.wMoney;
@@ -2755,10 +2772,16 @@ export function giveMoneyTo(prev: GameState, npc: NPC): GameState {
 }
 
 // Seyahat: başka bir yerleşime git (pazar/atmosfer değişir, biraz tokluk gider).
+// Yerleşim ziyaret izi: koleksiyon başarımları için — varışta bir kez kaydedilir.
+function markVisit(p: Player, dest: string) {
+  if (!p.cities_visited) p.cities_visited = [];
+  if (!p.cities_visited.includes(dest)) p.cities_visited.push(dest);
+}
 export function travelTo(prev: GameState, dest: string): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || dest === p.location_name) return s;
-  p.location_name = dest; p.hunger = Math.max(0, p.hunger - 5);
+  markVisit(p, p.location_name); // kalkış noktası da sayılır (doğduğun yerleşim kaybolmasın)
+  p.location_name = dest; markVisit(p, dest); p.hunger = Math.max(0, p.hunger - 5);
   push(s, "yolculuk", `${dest} yerleşimine gittin.`, "kişisel", false, { k: "evj.travel", p: [{ pl: dest }] });
   return s;
 }
@@ -2844,13 +2867,14 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
 export function travelBy(prev: GameState, dest: string, route: TravelRoute): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || dest === p.location_name) return s;
+  markVisit(p, p.location_name); // kalkış noktası da sayılır (doğduğun yerleşim kaybolmasın)
   if (route === "at" && !p.horse) route = "anayol"; // at yoksa ana yola düş
   if (route === "kervan") {
     if (p.money < 8) { push(s, "yolculuk", "Kervana verecek akçen yok.", "kişisel", false, { k: "evj.noCar" }); return s; }
-    p.money -= 8; p.hunger = Math.max(0, p.hunger - 3); p.location_name = dest;
+    p.money -= 8; p.hunger = Math.max(0, p.hunger - 3); p.location_name = dest; markVisit(p, dest);
     push(s, "yolculuk", `Kervana katılıp ${dest}'e rahatça vardın.`, "kişisel", false, { k: "evj.carJoin", p: [{ pl: dest }] });
   } else if (route === "patika") {
-    p.hunger = Math.max(0, p.hunger - 7); p.location_name = dest;
+    p.hunger = Math.max(0, p.hunger - 7); p.location_name = dest; markVisit(p, dest);
     const ambush = Math.random() < Math.max(0.08, 0.3 - combatPower(p) * 0.012);
     if (ambush) {
       const hurt = 8 + Math.floor(Math.random() * 10) - armorDefense(p);
@@ -2862,7 +2886,7 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
       push(s, "yolculuk", `Patikadan kestirerek ${dest}'e vardın.`, "kişisel", false, { k: "evj.pathOk", p: [{ pl: dest }] });
     }
   } else if (route === "at") {
-    p.hunger = Math.max(0, p.hunger - 4); p.location_name = dest;
+    p.hunger = Math.max(0, p.hunger - 4); p.location_name = dest; markVisit(p, dest);
     // At hızlı: pusu nadir, baskına uğrasan da dörtnala sıyrılırsın.
     const ambush = Math.random() < Math.max(0.03, 0.12 - combatPower(p) * 0.01);
     if (ambush && Math.random() < 0.18) { // nadiren atını kaybedersin — yoldaşını yitirmek gibi
@@ -2877,7 +2901,7 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
       push(s, "yolculuk", `Atına atlayıp ${dest} yerleşimine çabucak vardın.`, "kişisel", false, { k: "evj.rideOk", p: [{ pl: dest }] });
     }
   } else {
-    p.hunger = Math.max(0, p.hunger - 5); p.location_name = dest;
+    p.hunger = Math.max(0, p.hunger - 5); p.location_name = dest; markVisit(p, dest);
     push(s, "yolculuk", `Ana yoldan ${dest} yerleşimine gittin.`, "kişisel", false, { k: "evj.travel", p: [{ pl: dest }] });
   }
   if (!p.dead) rollTravelEvent(s, route); // yol olayları (han/yolcu/tüccar/fırtına/geçit/kervan) — artık etkin
@@ -2890,6 +2914,8 @@ export function changeProfession(prev: GameState, prof: string): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || prof === p.profession || !PROFS.includes(prof)) return s;
   p.profession = prof; p.career_xp = 0;
+  if (!p.professions_tried) p.professions_tried = [];
+  if (!p.professions_tried.includes(prof)) p.professions_tried.push(prof);
   push(s, "meslek_değişimi", `${professionById(prof)?.name || cap(prof)} mesleğine geçtin — yeniden en alttan.`, "kişisel", true, { k: "evj.profSwitch", p: [{ pr: prof }] });
   return s;
 }
@@ -4216,6 +4242,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   // Aile & gezi
   { id: "yatirim",  name: "İyi Baba/Ana",    desc: "Bir çocuğa 3 yatırım yap.",         icon: "family",       done: (s) => Object.values(s.player.child_invests || {}).some((l) => l.length >= 3) },
   { id: "gezgin",   name: "Diyar Gezgini",   desc: "Bir şehirde bulun.",                icon: "house",        done: (s) => placeKind(s.player.location_name) === "şehir" },
+  { id: "onsehir",  name: "Yollara Düşen",   desc: "10 farklı yerleşime ayak bas.",     icon: "compass",      done: (s) => new Set([...(s.player.cities_visited || []), s.player.location_name]).size >= 10 },
+  { id: "seyyah",   name: "Seyyâh-ı Âlem",   desc: "25 farklı yerleşime ayak bas.",     icon: "map",          done: (s) => new Set([...(s.player.cities_visited || []), s.player.location_name]).size >= 25 },
+  { id: "besmeslek",name: "On Parmakta Marifet", desc: "Bir ömürde 5 farklı meslek dene.", icon: "backpack",  done: (s) => new Set([...(s.player.professions_tried || []), s.player.profession].filter((x) => x !== "işsiz")).size >= 5 },
   { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
   { id: "bilge",    name: "Yaşlı Bilge",     desc: "70 yaşını gör.",                    icon: "prayer-beads", done: (s) => s.player.age >= 70 },
   { id: "imparator",name: "Mülk İmparatoru", desc: "8 mülke sahip ol.",                 icon: "castle",       done: (s) => s.player.properties.length >= 8 },

@@ -18,6 +18,9 @@ const PROG: Record<string, (s: any) => number> = {
   uzunomur: (s) => s.player.age / 60, hanedan: (s) => s.player.generation / 2, kokluhan: (s) => s.player.generation / 4,
   savas_sv: (s) => s.player.skills.combat / 6, tic_sv: (s) => s.player.skills.trade / 6, zan_sv: (s) => s.player.skills.crafting / 6, sos_sv: (s) => s.player.skills.social / 6,
   hunerli: (s) => s.player.perks.length / 6,
+  onsehir: (s) => new Set([...(s.player.cities_visited || []), s.player.location_name]).size / 10,
+  seyyah: (s) => new Set([...(s.player.cities_visited || []), s.player.location_name]).size / 25,
+  besmeslek: (s) => new Set([...(s.player.professions_tried || []), s.player.profession].filter((x: string) => x !== "işsiz")).size / 5,
 };
 
 export default function Basarimlar() {
