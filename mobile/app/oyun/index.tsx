@@ -185,7 +185,7 @@ export default function Dashboard() {
       const land = [...fresh].reverse().find((e) => e.landmark && e.type !== "ölüm" && e.type !== "nesil_devri" && e.type !== "yıl_dönümü");
       const yr = [...fresh].reverse().find((e) => e.type === "yıl_dönümü");
       if (land) setMilestone(land);
-      else if (yr) setYearReport(yr);
+      if (yr) setYearReport(yr); // bağımsız: aynı ayda büyük an varsa karne onun kapanışını bekler (render guard'ı !milestone)
       // 2+ gelişme varsa "bu ay" şeridi: çok olaylı aylarda hiçbir şey sessizce kaybolmasın.
       setFreshMark(fresh.length >= 2 ? { from: seenLen.current, n: fresh.length } : null);
     }
