@@ -20,6 +20,8 @@ const PROG: Record<string, (s: any) => number> = {
   hunerli: (s) => s.player.perks.length / 6,
   onsehir: (s) => new Set([...(s.player.cities_visited || []), s.player.location_name]).size / 10,
   seyyah: (s) => new Set([...(s.player.cities_visited || []), s.player.location_name]).size / 25,
+  ebedisoy: (s) => s.player.generation / 10,
+  cihangir: (s) => (s.player.crownConquests?.length || 0) / 3,
   besmeslek: (s) => new Set([...(s.player.professions_tried || []), s.player.profession].filter((x: string) => x !== "işsiz")).size / 5,
 };
 

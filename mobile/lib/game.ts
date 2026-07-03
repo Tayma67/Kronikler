@@ -104,6 +104,7 @@ export interface Player {
   chronic?: { k: string; since: number }; // kronik hastalık (aylık sızıntı + alevlenme); hekim tedavisiyle geçebilir, vârise geçmez
   healer_turn?: number; // bu ay hekime görünüldü mü (tur başına tek — şifa farm'ı yok)
   propose_turn?: number; // bu ay bir haneye teklif götürüldü mü (diplomasi tek girişim)
+  fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
@@ -3788,12 +3789,15 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
   // Miras eşyası: atanın kuşandığı silah yadigâr olarak vârise geçer (kalitesiyle) — "nesiller boyu" vaadi eşyada da sürsün.
+  // Bilinçli olarak YALNIZ silah: zırh/giyim bedene göredir ve eskir; kılıç ise hanenin simgesidir (tek parça = anlatı ağırlığı korunur).
   const heirloomId = p.equipped?.silah || null;
   const heirloomQ = heirloomId ? (p.equipped_q?.silah || "siradan") : null;
   const ns: GameState = {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, relationships: {}, dynasty, npc_state: {}, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
     feud: prev.feud ? { houseId: prev.feud.houseId, nameIdx: prev.feud.nameIdx, stage: prev.feud.stage, heat: Math.round(prev.feud.heat / 2) } : undefined,
+    // İttifaklar da nesle geçer (kan davası geçiyorsa el sıkışma da geçer — hanedanlar arası bağ kişisel değil hanevidir).
+    allied_houses: prev.allied_houses ? [...prev.allied_houses] : undefined,
     // Hanedan hafızası vârise geçer: ataların tamamladığı yaylar bayrak olarak kalır, az da olsa anlatı momentumu verir.
     story: { active: null, completed: [], tension: Math.min(20, Object.keys(prev.story?.flags || {}).length * 3), nemesis: null, flags: { ...(prev.story?.flags || {}) }, lull: 0 }, wars: [], caravan: null, econ: 1,
     settlements: prev.settlements || [], // dynastinin kurduğu yerleşimler vârise kalır
@@ -3885,9 +3889,11 @@ export function doFactionTask(prev: GameState, id: string): GameState {
   const rankBefore = factionRankIndex(p.faction_standing[id] || 0);
   p.faction_standing[id] = (p.faction_standing[id] || 0) + standing;
   p.reputation = Math.min(100, p.reputation + 2);
-  // Rütbe töreni: eşik İLK geçildiğinde tek seferlik büyük an (standing tek yönlü büyür → tekrar tetiklenmez, farm yok).
+  // Rütbe töreni: yalnız ömürde görülen EN YÜKSEK rütbe aşılınca (standing düşebilir — useFactionPower −20, leaveFaction ×0.5; damga tekrar töreni keser).
   const rankAfter = factionRankIndex(p.faction_standing[id] || 0);
-  if (rankAfter > rankBefore) {
+  const seenRank = p.fac_rank_seen?.[id] ?? 0;
+  if (rankAfter > rankBefore && rankAfter > seenRank) {
+    (p.fac_rank_seen = p.fac_rank_seen || {})[id] = rankAfter;
     p.fame = Math.min(100, p.fame + 2 + rankAfter); p.honor = Math.min(100, p.honor + 2);
     push(s, "örgüt_görev", `Ocak meclisi toplandı; ${f.name} seni '${FACTION_RANKS[rankAfter].title}' ilan etti. Kadehler senin adına kalktı.`, "kişisel", true, { k: "evj.facRank" + rankAfter, p: [{ fc: id }] });
   }
@@ -4336,6 +4342,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   // Aile & gezi
   { id: "yatirim",  name: "İyi Baba/Ana",    desc: "Bir çocuğa 3 yatırım yap.",         icon: "family",       done: (s) => Object.values(s.player.child_invests || {}).some((l) => l.length >= 3) },
   { id: "gezgin",   name: "Diyar Gezgini",   desc: "Bir şehirde bulun.",                icon: "house",        done: (s) => placeKind(s.player.location_name) === "şehir" },
+  { id: "ebedisoy", name: "Ebedî Hanedan",   desc: "Onuncu nesle ulaş.",                icon: "banner",       done: (s) => s.player.generation >= 10 },
+  { id: "cihangir", name: "Cihangir",        desc: "Taç giyip üç sefer kazan.",         icon: "crossed-swords", done: (s) => (s.player.crownConquests?.length || 0) >= 3 },
   { id: "onsehir",  name: "Yollara Düşen",   desc: "10 farklı yerleşime ayak bas.",     icon: "compass",      done: (s) => new Set([...(s.player.cities_visited || []), s.player.location_name]).size >= 10 },
   { id: "seyyah",   name: "Seyyâh-ı Âlem",   desc: "25 farklı yerleşime ayak bas.",     icon: "map",          done: (s) => new Set([...(s.player.cities_visited || []), s.player.location_name]).size >= 25 },
   { id: "besmeslek",name: "On Parmakta Marifet", desc: "Bir ömürde 5 farklı meslek dene.", icon: "backpack",  done: (s) => new Set([...(s.player.professions_tried || []), s.player.profession].filter((x) => x !== "işsiz")).size >= 5 },
