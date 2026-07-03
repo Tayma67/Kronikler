@@ -22,6 +22,8 @@ export interface Player {
   mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
   spouse_mizac?: string; // kur yaptığın NPC'nin karakterinden gelen eş mizacı (tanıdığın kişi evlenince başkalaşmaz)
   married_turn?: number; // evliliğin kurulduğu tur (yıldönümü anları; eski kayıtta yoksa yıldönümü sessizce atlanır)
+  spouse_bond?: number; // eşle bağ 0-100 (yaşayan evlilik: anlar besler, ihmal/flört törpüler; dulluk acısı ve yıldönümü sıcaklığı buna oranlı)
+  spouse_time_turn?: number; // bu ay eşle vakit geçirildi mi (turda tek — bağ farmı önlenir)
   inventory: Record<string, number>; properties: Property[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
@@ -1180,12 +1182,13 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.dead) return;
   // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50);
-  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.married_turn = s.turn; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
+  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.married_turn = s.turn; p.spouse_bond = 35; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: "evj.childBorn", p: [c] }); }
   // Evlilik yıldönümü: her 12 ayda bir ocak tazelenir — otomatik, küçük, farm'sız (eski kayıtta married_turn yoksa sessizce atlanır).
   if (p.married && p.married_turn !== undefined && s.turn > p.married_turn && (s.turn - p.married_turn) % 12 === 0) {
     const years = Math.floor((s.turn - p.married_turn) / 12);
-    p.health = Math.min(100, p.health + 2);
+    p.spouse_bond = Math.min(100, (p.spouse_bond ?? 40) + 3);
+    p.health = Math.min(100, p.health + 1 + Math.round((p.spouse_bond || 0) / 50));
     const sp: EvtParam = p.spouse_seed != null ? { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] } : (p.spouse_name || "");
     push(s, "evlilik", `${p.spouse_name || "Eşin"} ile ${years}. yılınız: ocağınızın ateşi hâlâ sıcak.`, "kişisel", false, { k: "evj.anniv", p: [sp, years] });
   }
@@ -1260,7 +1263,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     const dc = p.age < 55 ? 0.008 : p.age < 65 ? 0.02 : p.age < 75 ? 0.04 : 0.07;
     if (chance(dc)) {
       const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
-      p.married = false; p.widowed = true; p.spouse_mizac = undefined; p.health = Math.max(1, p.health - 8); bumpNam(p, "dindar", 2);
+      p.married = false; p.widowed = true; p.spouse_mizac = undefined; p.health = Math.max(1, p.health - (4 + Math.round((p.spouse_bond ?? 40) / 12))); p.spouse_bond = undefined; bumpNam(p, "dindar", 2); // acı, bağın derinliğine oranlı
       push(s, "evlilik", `Ömür arkadaşın ${p.spouse_name} vefat etti; ocağın yarısı söndü. Diyar yasını paylaştı.`, "kişisel", true, { k: "evj.spouseDied", p: [{ fn: [p.spouse_seed, sg] }] });
     }
   }
@@ -1281,15 +1284,17 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
     const sn: EvtParam = { fn: [p.spouse_seed, sg] };
     const miz = p.spouse_mizac || spouseMizac(p.spouse_seed); // eş mizacı anların rengini belirler (kur yapılan NPC'nin karakteri öncelikli)
-    if (p.health < 45) { p.health = Math.min(100, p.health + (miz === "sefkatli" ? 9 : 6)); push(s, "evlilik", `Hastalığında ${p.spouse_name} başucundan ayrılmadı; biraz toparlandın.`, "kişisel", false, { k: "evj.spouseCare", p: [sn] }); }
-    else if (p.money < 20 || (p.debt || 0) > 0) { const help = Math.round((15 + Math.floor(Math.random() * 20)) * (miz === "caliskan" ? 1.6 : 1)); p.money += help; push(s, "evlilik", `Sıkışınca ${p.spouse_name} çeyizinden bir şey bozdurdu; eve biraz akçe girdi.`, "kişisel", false, { k: "evj.spouseHelp", p: [sn, help] }); }
+    if (p.spouse_bond === undefined) p.spouse_bond = 40; // eski kayıt göçü: bağ orta noktadan başlar
+    const bond = (d: number) => { p.spouse_bond = Math.max(0, Math.min(100, (p.spouse_bond || 0) + d)); };
+    if (p.health < 45) { p.health = Math.min(100, p.health + (miz === "sefkatli" ? 9 : 6)); bond(2); push(s, "evlilik", `Hastalığında ${p.spouse_name} başucundan ayrılmadı; biraz toparlandın.`, "kişisel", false, { k: "evj.spouseCare", p: [sn] }); }
+    else if (p.money < 20 || (p.debt || 0) > 0) { const help = Math.round((15 + Math.floor(Math.random() * 20)) * (miz === "caliskan" ? 1.6 : 1)); p.money += help; bond(2); push(s, "evlilik", `Sıkışınca ${p.spouse_name} çeyizinden bir şey bozdurdu; eve biraz akçe girdi.`, "kişisel", false, { k: "evj.spouseHelp", p: [sn, help] }); }
     else { let r = Math.random();
       if (miz === "sefkatli") r *= 0.7;              // şefkatli → daha çok huzurlu akşam
       else if (miz === "dikbasli") r = 0.4 + r * 0.4; // dik başlı → daha çok atışma (sonra barışma)
-      if (r < 0.4) { p.health = Math.min(100, p.health + (miz === "sefkatli" ? 5 : 3)); p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 1); if (miz === "dindar") bumpNam(p, "dindar", 1); push(s, "evlilik", `${p.spouse_name} ile sessiz, huzurlu bir akşam geçirdiniz; "iyi ki varsın" dedin.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
-      else if (r < 0.7) { if (miz === "dikbasli") { bumpNam(p, "mert", 1); addStatXp(s, "strength", 3); } push(s, "evlilik", `${p.spouse_name} ile küçük bir atışma yaşandı ama akşama kalmadan barıştınız; ocak yeniden ısındı.`, "kişisel", false, { k: "evj.spouseQuarrel", p: [sn] }); }
-      else if (p.age >= 50) { p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 1); push(s, "evlilik", `${p.spouse_name} ile saçlarınız birlikte ağardı; bir ömrü paylaşmanın huzuru yüzüne vurdu.`, "kişisel", false, { k: "evj.spouseAge", p: [sn] }); }
-      else { p.health = Math.min(100, p.health + 2); push(s, "evlilik", `${p.spouse_name} ile geleceğe dair konuştunuz; küçük hayaller kurmak iyi geldi.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
+      if (r < 0.4) { p.health = Math.min(100, p.health + (miz === "sefkatli" ? 5 : 3)); p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 1); if (miz === "dindar") bumpNam(p, "dindar", 1); bond(2); push(s, "evlilik", `${p.spouse_name} ile sessiz, huzurlu bir akşam geçirdiniz; "iyi ki varsın" dedin.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
+      else if (r < 0.7) { if (miz === "dikbasli") { bumpNam(p, "mert", 1); addStatXp(s, "strength", 3); } bond(miz === "dikbasli" ? -1 : 1); push(s, "evlilik", `${p.spouse_name} ile küçük bir atışma yaşandı ama akşama kalmadan barıştınız; ocak yeniden ısındı.`, "kişisel", false, { k: "evj.spouseQuarrel", p: [sn] }); }
+      else if (p.age >= 50) { p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 1); bond(2); push(s, "evlilik", `${p.spouse_name} ile saçlarınız birlikte ağardı; bir ömrü paylaşmanın huzuru yüzüne vurdu.`, "kişisel", false, { k: "evj.spouseAge", p: [sn] }); }
+      else { p.health = Math.min(100, p.health + 2); bond(2); push(s, "evlilik", `${p.spouse_name} ile geleceğe dair konuştunuz; küçük hayaller kurmak iyi geldi.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
     }
   }
   // ── Yaşam-evresi anıları: her döneme doku katan küçük anlar (ara sıra; bazıları aileyi isimle anar) ──
@@ -1873,7 +1878,7 @@ export function acceptDynastyOffer(prev: GameState, offerId: string): GameState 
   if (!s.allied_houses.includes(offer.houseId)) s.allied_houses.push(offer.houseId);
   if (offer.type === "evlilik" && !p.married) {
     const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E);
-    p.married = true; p.married_turn = s.turn; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9);
+    p.married = true; p.married_turn = s.turn; p.spouse_bond = 40; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9);
     p.reputation = Math.min(100, p.reputation + 8); p.fame = Math.min(100, p.fame + 6);
     push(s, "evlilik", `${h?.name || "Köklü bir hanedan"} ile evlilik ittifakı kurdun; iki ocak birleşti.`, "kişisel", true, { k: "evj.houseMarryAccept", p: [h ? { hn: h.nameIdx } : "", { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] });
   } else {
@@ -2599,7 +2604,7 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   const karizmaBonus = hasPerk(p, "karizmatik") ? 0.2 : 0;
   const ok = Math.random() < Math.min(0.97, 0.25 + (rel - 50) * 0.012 + socialPresence(p) * 0.03 + karizmaBonus + courtBonus(s));
   if (ok) {
-    p.married = true; p.married_turn = s.turn; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
+    p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(s.relationships[npc.id] || 40))); p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
     bumpNam(p, "capkin", 5);
     push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
   } else {
@@ -2635,7 +2640,7 @@ export function proposeArranged(prev: GameState, npc: NPC): GameState {
   p.money -= MATCHMAKER_FEE;
   const ok = Math.random() < Math.min(0.92, 0.42 + socialPresence(p) * 0.04 + p.fame / 320 + (hasPerk(p, "karizmatik") ? 0.15 : 0));
   if (ok) {
-    p.married = true; p.married_turn = s.turn; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
+    p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(s.relationships[npc.id] || 40))); p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
     push(s, "evlilik", `${npc.name} ile görücü usulü evlendin — iki aile görüştü, yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
   } else {
     push(s, "sohbet", `${npc.name}'in ailesi teklifi şimdilik geri çevirdi; çöpçatan başka kapı çalacak.`, "kişisel", false, { k: "evj.proposeNo", p: [npc.name] });
@@ -2672,6 +2677,7 @@ export function flirtWith(prev: GameState, npc: NPC): GameState {
     const up = 6 + Math.floor(Math.random() * 8);
     s.relationships[npc.id] = Math.min(100, rel + up); ns.mood = Math.max(-100, Math.min(100, ns.mood + 12));
     bumpNam(p, "capkin", 3); remember(s, npc, "guzel_sohbet");
+    if (p.married) p.spouse_bond = Math.max(0, (p.spouse_bond ?? 40) - 4); // gönül eğlencesi ocağı soğutur
     push(s, "sohbet", `${npc.name} ile gönül eğlendirdin; arana kıvılcım düştü (+${up} ilişki).`, "kişisel", false, { k: "npca.flirtWin", p: [npc.name, up] });
   } else {
     s.relationships[npc.id] = Math.max(-100, rel - 5); ns.mood = Math.max(-100, ns.mood - 6);
@@ -3776,6 +3782,21 @@ export function socialTier(axis: SocialAxis, value: number): string {
 }
 
 // Ziyafet ver: akçe harcayıp şöhret + itibar kazan.
+// Eşinle vakit geçir: ocağı bilerek beslemek — küçük bedel, turda tek (karakter ekranından).
+export function spendWithSpouse(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !p.married) return s;
+  if (p.spouse_time_turn === s.turn) return s; // turda tek — bağ farmı önlenir
+  p.spouse_time_turn = s.turn;
+  if (p.spouse_bond === undefined) p.spouse_bond = 40; // eski kayıt göçü
+  const cost = Math.round(8 * inflationFactor(s)); // küçük bir ikram — çağın parasıyla (yoksa da gönül alınır)
+  if (p.money >= cost) p.money -= cost;
+  p.spouse_bond = Math.min(100, p.spouse_bond + 6);
+  p.health = Math.min(100, p.health + 2); p.hunger = Math.max(0, p.hunger - 3);
+  const sn: EvtParam = p.spouse_seed != null ? { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] } : (p.spouse_name || "");
+  push(s, "evlilik", `${p.spouse_name || "Eşin"} ile başbaşa bir gün geçirdiniz; bağınız pekişti.`, "kişisel", false, { k: "evj.spouseTime", p: [sn] });
+  return s;
+}
 export function hostFeast(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;

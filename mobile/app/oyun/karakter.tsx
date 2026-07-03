@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
@@ -238,10 +238,17 @@ export default function Karakter() {
               {p.married && p.spouse_seed != null ? (() => {
                 const sg = p.gender === "kadın" ? "erkek" : "kadın";
                 const nm = localFirstName(p.spouse_seed, sg, lang);
+                const bond = p.spouse_bond ?? 40;
+                const spent = p.spouse_time_turn === state.turn;
                 return (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}>
-                    <GameIcon name="ring" size={11} color={C.gold} />
-                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("misc.spouse")}: <Text style={{ color: C.parchment }}>{nm}</Text> · {t("mizac." + (p.spouse_mizac || spouseMizac(p.spouse_seed)))}</Text>
+                  <View style={{ marginTop: 5 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                      <GameIcon name="ring" size={11} color={C.gold} />
+                      <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("misc.spouse")}: <Text style={{ color: C.parchment }}>{nm}</Text> · {t("mizac." + (p.spouse_mizac || spouseMizac(p.spouse_seed)))} · <Text style={{ color: bond >= 60 ? C.sage : bond >= 30 ? C.parchment : C.ember }}>{t("char.bond")} {bond}</Text></Text>
+                    </View>
+                    <Pressable disabled={spent} onPress={() => { hap("tap"); apply((s) => spendWithSpouse(s)); }} style={{ alignSelf: "flex-start", marginTop: 5, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", opacity: spent ? 0.4 : 1 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5 }}>{t("char.spendTime")}</Text>
+                    </Pressable>
                   </View>
                 );
               })() : null}
