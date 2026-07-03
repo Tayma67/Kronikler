@@ -1118,6 +1118,22 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   // ── Kader anları: hayatın belirli dönümlerinde kimliğe ayna tutan sahneler ──
   if (!p.fates) p.fates = [];
+  // Atanın çırağı vârisi bulur: geçmiş nesilde yetiştirilen usta (npcEvo.usta) yeni kuşağın kapısını çalar — hanedan mirasının yankısı.
+  // Hayatta bir kez (fates), oyuncu tetiklemesiz ve düşük olasılıklı — farm değil, sürpriz vefa anı.
+  if (p.generation > 1 && !p.fates.includes("usta_ziyaret") && chance(0.02)) {
+    const evo = s.world?.npcEvo || {};
+    const ustaId = Object.keys(evo).find((id) => evo[id]?.usta && !evo[id]?.dead);
+    if (ustaId) {
+      const who = rosterAt(s, p.location_name).find((n) => n.id === ustaId);
+      if (who) {
+        p.fates.push("usta_ziyaret");
+        const gift = Math.round(25 * inflationFactor(s));
+        p.money += gift;
+        s.relationships[ustaId] = Math.max(-100, Math.min(100, (s.relationships[ustaId] || 0) + 20));
+        push(s, "çıraklık", `${who.name} kapını çaldı: atanın yetiştirdiği usta, "Ustamın ocağına borçluyum" deyip hediyesini bıraktı (+${gift} akçe).`, "kişisel", true, { k: "evj.apr.legacy", p: [who.name, gift] });
+      }
+    }
+  }
   const fate = (id: string) => { if (!p.fates!.includes(id)) { p.fates!.push(id); return true; } return false; };
   const whoAmIId = (): string => {
     const nm = p.nam || ({} as Nam);
