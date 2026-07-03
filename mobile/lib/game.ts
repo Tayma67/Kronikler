@@ -3032,7 +3032,7 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
     const golgeGizli = p.faction === "golge" ? 0.5 : 1; // Gölge Kardeşliği iz bırakmaz — sıcaklık yarıya düşer
     const heat = Math.min(0.5, (ct.sev * 0.05 + dread(s) / 100 * 0.15) * golgeGizli);
     if (Math.random() < heat) { s.pendingScene = { kind: "crime", ctx: { crime: kind } }; return s; } // ganimeti güvene almadan enselendin — kaçış sahnesine düş
-    const loot = ct.lootMin + Math.floor(Math.random() * (ct.lootMax - ct.lootMin + 1));
+    const loot = Math.round((ct.lootMin + Math.floor(Math.random() * (ct.lootMax - ct.lootMin + 1))) * inflationFactor(s)); // ganimet çağın parasıyla — geç oyunda 12 nam grindiyle açılan soygun anlamsız kalmasın (dövüş ödülüyle aynı ilke)
     // Büyük soygunlarda ganimetin bir kısmı SICAK MAL: nakde çevrilmesi (eritme) riskli.
     const hot = ct.sev >= 3 ? Math.round(loot * 0.45) : 0;
     const cash = loot - hot;
@@ -3085,7 +3085,7 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
     note = { k: escaped ? "crimesc.hideWin" : "crimesc.hideLose" };
   } else if (choice === "rusvet") {
     // Rüşvet: para ile sustur. Yeterli akçe varsa kaçarsın ama %30 rüşvet söylentisi doğar.
-    const cost = Math.round(ct.fine * 1.2);
+    const cost = Math.round(ct.fine * 1.2 * inflationFactor(s)); // rüşvet de çağın parasıyla — ganimet ölçeklenirken sabit kalsa suç ucuz riske döner
     if (p.money >= cost) {
       p.money -= cost; escaped = true;
       if (Math.random() < 0.3) { bumpNam(p, "zalim", 3); p.reputation = Math.max(-100, p.reputation - 3); note = { k: "crimesc.bribeLeak", p: [cost] }; }
@@ -3112,7 +3112,7 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
 // Yakalanma cezasını uygula (kesinti sahnesinden veya doğrudan). Şiddete göre ceza + tanık + tohum.
 function crimeCaught(s: GameState, kind: CrimeKind) {
   const p = s.player; const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
-  const fine = Math.min(p.money, ct.fine);
+  const fine = Math.min(p.money, Math.round(ct.fine * inflationFactor(s))); // ceza çağın parasıyla (ganimetle birlikte ölçeklenir — risk/ödül oranı her çağda sabit)
   const hurt = Math.round(ct.hurt * (p.faction === "asker" ? 0.5 : 1));
   const extra = crimeCaughtPenalty(s);
   p.money -= fine; p.reputation = Math.max(-100, p.reputation - 6 - ct.sev * 2 - extra); p.health = Math.max(0, p.health - hurt);
