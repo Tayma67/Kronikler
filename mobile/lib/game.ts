@@ -4383,6 +4383,12 @@ export const DILEMMA_SEEDS: Record<string, Omit<Seed, "id" | "ekim">> = {
   "yetiskin_yangin:1": { kaynak: "yangin_sustun", hmin: 60, hmax: 144, agirlik: "buyuk", nesil: true, etki: { reputation: -6 } },
   "yetiskin_yangin:0": { kaynak: "yangin_kahramani", hmin: 36, hmax: 120, agirlik: "orta", nesil: false, etki: { reputation: 6 } },
   "yetiskin_kumar:0": { kaynak: "kumar_borcu", hmin: 12, hmax: 60, agirlik: "kucuk", nesil: false, etki: { money: 15 } },
+  // "Seçimlerin yıllar sonra döner" vaadini genişleten tohumlar (D13): meslek, sevda, servet ve kimlik seçimleri iz bırakır.
+  "cocuk_cirak:0": { kaynak: "usta_mirasi", hmin: 120, hmax: 300, agirlik: "buyuk", nesil: false, etki: { money: 80, reputation: 5 } },
+  "genc_ilkask:0": { kaynak: "ilk_sevda_yuz", hmin: 60, hmax: 200, agirlik: "orta", nesil: false, etki: { reputation: 5 } },
+  "genc_ilkask:1": { kaynak: "ilk_sevda_ic", hmin: 90, hmax: 260, agirlik: "orta", nesil: false, etki: { health: -3 } },
+  "yetiskin_ortaklik:0": { kaynak: "ortak_kader", hmin: 24, hmax: 96, agirlik: "buyuk", nesil: false, etki: { money: 120, reputation: 4 } },
+  "golge_davet:0": { kaynak: "golge_borcu", hmin: 24, hmax: 120, agirlik: "buyuk", nesil: true, etki: { money: -40, reputation: -6 } },
 };
 
 export function applyDilemma(prev: GameState, delta: Delta, resultText: string, seedKey?: string, festival?: boolean): GameState {

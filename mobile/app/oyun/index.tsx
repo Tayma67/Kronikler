@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, ImageBackground, StyleSheet, Dimensions } from "react-native";
+import { View, Text, ScrollView, Pressable, ImageBackground, StyleSheet, Dimensions, Modal } from "react-native";
 import { Ambiance, LoadingScreen, KenBurns, ParticleBurst } from "../../lib/fx";
 import { CoinShower } from "../../lib/skia";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
@@ -95,7 +95,8 @@ export default function Dashboard() {
   const { state, doWork, resetGame, apply } = useGame();
   const { t, lang } = useI18n();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
-  const [freshMark, setFreshMark] = useState<null | { cutoffDay: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + yenilik eşiği
+  const [freshMark, setFreshMark] = useState<null | { from: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + tarihçe indeksi eşiği
+  const [yearReport, setYearReport] = useState<GameEvent | null>(null); // yıl dönümü karnesi (yaş günü ritüeli)
   const [dilemma, setDilemma] = useState<Dilemma | null>(null);
   const [opp, setOpp] = useState<Opportunity | null>(null);
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
@@ -181,10 +182,12 @@ export default function Dashboard() {
     const h = state.history;
     if (h.length > seenLen.current) {
       const fresh = h.slice(seenLen.current);
-      const land = [...fresh].reverse().find((e) => e.landmark && e.type !== "ölüm" && e.type !== "nesil_devri");
+      const land = [...fresh].reverse().find((e) => e.landmark && e.type !== "ölüm" && e.type !== "nesil_devri" && e.type !== "yıl_dönümü");
+      const yr = [...fresh].reverse().find((e) => e.type === "yıl_dönümü");
       if (land) setMilestone(land);
+      else if (yr) setYearReport(yr);
       // 2+ gelişme varsa "bu ay" şeridi: çok olaylı aylarda hiçbir şey sessizce kaybolmasın.
-      setFreshMark(fresh.length >= 2 ? { cutoffDay: fresh[0]?.day ?? state.turn, n: fresh.length } : null);
+      setFreshMark(fresh.length >= 2 ? { from: seenLen.current, n: fresh.length } : null);
     }
     seenLen.current = h.length;
   }, [state?.history.length]);
@@ -209,10 +212,10 @@ export default function Dashboard() {
   // Pano bir "bakış" görünümü: yalnız en yeni DASH_EVENTS olay çizilir (geç-oyunda
   // geçmiş 250'ye dayanırken her aksiyonda 250 kartı yeniden çizip pano kasmasını önler;
   // tam geçmiş "Tümünü gör" → Tarih ekranında). Render maliyeti geçmiş büyüse de sabit kalır.
-  const reversed = [...state.history].reverse();
-  const events = reversed.filter((e) => (tab === "dunya" ? e.scope === "makro" : e.scope !== "makro")).slice(0, DASH_EVENTS);
+  const reversed = state.history.map((e, hIdx) => ({ e, hIdx })).reverse();
+  const events = reversed.filter(({ e }) => (tab === "dunya" ? e.scope === "makro" : e.scope !== "makro")).slice(0, DASH_EVENTS);
 
-  const EventCard = ({ e, last }: { e: GameEvent; last: boolean }) => {
+  const EventCard = ({ e, hIdx, last }: { e: GameEvent; hIdx: number; last: boolean }) => {
     const cfg = EVT[e.type] || DEFAULT_EVT;
     const land = !!e.landmark;
     const col = land ? C.goldBright : cfg.col;
@@ -246,7 +249,7 @@ export default function Dashboard() {
               {land && <GameIcon name="castle" size={9} color={C.goldBright} />}
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-              {freshMark && e.day >= freshMark.cutoffDay && <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.goldBright }} />}
+              {freshMark && hIdx >= freshMark.from && <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.goldBright }} />}
               <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted }}>{timeAgo(e.day)}</Text>
             </View>
           </View>
@@ -271,6 +274,35 @@ export default function Dashboard() {
       ) : ach ? (
         <AchievementToast name={ach.name} icon={ach.icon} onClose={() => setAch(null)} />
       ) : null}
+      {/* Yıl karnesi: yaş günü ritüeli — yılın izleri + mevcut durum */}
+      {yearReport && !milestone && (() => {
+        const yrEvents = state.history.filter((ev) => ev.day > turn - 12 && ev.day <= turn && ev.landmark && ev.type !== "yıl_dönümü").slice(-3);
+        return (
+          <Modal visible transparent animationType="fade" onRequestClose={() => setYearReport(null)}>
+            <View style={{ flex: 1, backgroundColor: "rgba(4,3,2,0.94)", alignItems: "center", justifyContent: "center", padding: 26 }}>
+              <Animated.View entering={FadeInDown.duration(400)} style={{ width: "100%", maxWidth: 400, backgroundColor: C.card, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.5)", borderRadius: 16, padding: 20 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim, textAlign: "center" }}>{t("yr.title").toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 22, color: C.gold, textAlign: "center", marginTop: 6 }}>{applyParams(t("yr.age"), [p.age])}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment, textAlign: "center", lineHeight: 20, marginTop: 10 }}>{renderEvt(yearReport.k, yearReport.text, yearReport.p, lang, t, p.gender === "kadın")}</Text>
+                <View style={{ flexDirection: "row", justifyContent: "center", gap: 14, marginTop: 12 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="akce" size={12} color={C.gold} /><Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold }}>{p.money}</Text></View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="karakter" size={12} color={C.sage} /><Text style={{ fontFamily: F.display, fontSize: 12, color: C.sage }}>{Math.round(p.reputation)}</Text></View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="crown" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchment }}>{fame}</Text></View>
+                </View>
+                <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, marginTop: 14, marginBottom: 6 }}>{t("yr.highlights").toUpperCase()}</Text>
+                {yrEvents.length === 0 ? (
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>{t("yr.none")}</Text>
+                ) : yrEvents.map((ev, i) => (
+                  <Text key={i} style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim, lineHeight: 17, marginBottom: 4 }}>· {renderEvt(ev.k, ev.text, ev.p, lang, t, p.gender === "kadın")}</Text>
+                ))}
+                <Pressable onPress={() => { hap("tap"); setYearReport(null); }} style={{ marginTop: 16, paddingVertical: 12, borderRadius: 9, backgroundColor: C.gold, alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 12, color: "#1a1206", letterSpacing: 1 }}>{t("yr.close")}</Text>
+                </Pressable>
+              </Animated.View>
+            </View>
+          </Modal>
+        );
+      })()}
       <TutorialModal visible={showTut} title={t("sp.tut.title")} bullets={[t("sp.tut.b1"), t("sp.tut.b2"), t("sp.tut.b3"), t("sp.tut.b4"), t("sp.tut.b5"), t("sp.tut.b6")]} gotLabel={t("sp.tut.got")} onClose={closeTut} />
 
       {/* Mersiye — hayatın duygusal kapanışı */}
@@ -613,7 +645,7 @@ export default function Dashboard() {
         {/* Olay listesi */}
         <ScrollView style={{ flex: 1, backgroundColor: "#221808" }} contentContainerStyle={{ padding: 12 }}>
           {/* "Bu ay" özeti: son ilerlemede 2+ gelişme düştüyse sayısı + işaret açıklaması (çok olaylı aylar sessizce kaybolmasın) */}
-          {freshMark && tab === "gunluk" && (
+          {freshMark && (
             <Animated.View entering={FadeInDown.duration(240)} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(224,188,90,0.08)", borderWidth: 1, borderColor: "rgba(224,188,90,0.4)", borderRadius: 9, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 10 }}>
               <GameIcon name="hourglass" size={13} color={C.goldBright} />
               <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, letterSpacing: 0.5, color: C.goldBright }}>{applyParams(t("dash.monthDigest"), [freshMark.n])}</Text>
@@ -636,9 +668,9 @@ export default function Dashboard() {
               </Text>
               <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: C.goldDim, marginTop: 12, textAlign: "center" }}>{t("dash.emptyHint")}</Text>
             </View>
-          ) : events.map((e, i) => (
+          ) : events.map(({ e, hIdx }, i) => (
             <Animated.View key={i} entering={FadeInDown.duration(220).delay(Math.min(i, 8) * 30)}>
-              <EventCard e={e} last={i === events.length - 1} />
+              <EventCard e={e} hIdx={hIdx} last={i === events.length - 1} />
             </Animated.View>
           ))}
           </Animated.View>
