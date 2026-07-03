@@ -21,6 +21,7 @@ export interface Player {
   mother?: string; father?: string; mother_dead?: boolean; father_dead?: boolean; // ebeveynler de fanidir; oyuncu yaşlandıkça birer kez vefat eder
   mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
   spouse_mizac?: string; // kur yaptığın NPC'nin karakterinden gelen eş mizacı (tanıdığın kişi evlenince başkalaşmaz)
+  married_turn?: number; // evliliğin kurulduğu tur (yıldönümü anları; eski kayıtta yoksa yıldönümü sessizce atlanır)
   inventory: Record<string, number>; properties: Property[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
@@ -1179,8 +1180,15 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.dead) return;
   // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50);
-  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
+  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.married_turn = s.turn; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: "evj.childBorn", p: [c] }); }
+  // Evlilik yıldönümü: her 12 ayda bir ocak tazelenir — otomatik, küçük, farm'sız (eski kayıtta married_turn yoksa sessizce atlanır).
+  if (p.married && p.married_turn !== undefined && s.turn > p.married_turn && (s.turn - p.married_turn) % 12 === 0) {
+    const years = Math.floor((s.turn - p.married_turn) / 12);
+    p.health = Math.min(100, p.health + 2);
+    const sp: EvtParam = p.spouse_seed != null ? { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] } : (p.spouse_name || "");
+    push(s, "evlilik", `${p.spouse_name || "Eşin"} ile ${years}. yılınız: ocağınızın ateşi hâlâ sıcak.`, "kişisel", false, { k: "evj.anniv", p: [sp, years] });
+  }
   // ── Evlat kilometre taşları: doğumu kayıtlı evlatlar büyürken birer kez anılır — soy sadece isim listesi değil, büyüyen hayatlar ──
   if (!p.dead && p.child_meta?.length) {
     const MS_AGES = [1, 7, 13, 18]; // ilk adım · mektep · çıraklık · yetişkinlik
@@ -1865,7 +1873,7 @@ export function acceptDynastyOffer(prev: GameState, offerId: string): GameState 
   if (!s.allied_houses.includes(offer.houseId)) s.allied_houses.push(offer.houseId);
   if (offer.type === "evlilik" && !p.married) {
     const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E);
-    p.married = true; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9);
+    p.married = true; p.married_turn = s.turn; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9);
     p.reputation = Math.min(100, p.reputation + 8); p.fame = Math.min(100, p.fame + 6);
     push(s, "evlilik", `${h?.name || "Köklü bir hanedan"} ile evlilik ittifakı kurdun; iki ocak birleşti.`, "kişisel", true, { k: "evj.houseMarryAccept", p: [h ? { hn: h.nameIdx } : "", { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] });
   } else {
@@ -2591,7 +2599,7 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   const karizmaBonus = hasPerk(p, "karizmatik") ? 0.2 : 0;
   const ok = Math.random() < Math.min(0.97, 0.25 + (rel - 50) * 0.012 + socialPresence(p) * 0.03 + karizmaBonus + courtBonus(s));
   if (ok) {
-    p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
+    p.married = true; p.married_turn = s.turn; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
     bumpNam(p, "capkin", 5);
     push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
   } else {
@@ -2627,7 +2635,7 @@ export function proposeArranged(prev: GameState, npc: NPC): GameState {
   p.money -= MATCHMAKER_FEE;
   const ok = Math.random() < Math.min(0.92, 0.42 + socialPresence(p) * 0.04 + p.fame / 320 + (hasPerk(p, "karizmatik") ? 0.15 : 0));
   if (ok) {
-    p.married = true; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
+    p.married = true; p.married_turn = s.turn; p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
     push(s, "evlilik", `${npc.name} ile görücü usulü evlendin — iki aile görüştü, yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
   } else {
     push(s, "sohbet", `${npc.name}'in ailesi teklifi şimdilik geri çevirdi; çöpçatan başka kapı çalacak.`, "kişisel", false, { k: "evj.proposeNo", p: [npc.name] });
