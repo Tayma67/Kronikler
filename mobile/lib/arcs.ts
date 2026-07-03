@@ -303,6 +303,46 @@ ARCS.push(
   },
 );
 
+// Yaşlılık yayları: hayatın son üçte biri anlatısal olarak boş kalmasın (yaş 55+).
+ARCS.push(
+  {
+    id: "torun_ocagi", title: "Torun Ocağı", icon: "family",
+    blurb: "Küçük ayaklar avluda; ocağın yanında sana bir yer açıldı.",
+    when: (p) => p.age >= 55 && p.children.length >= 1,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Torunun dizinin dibine oturdu: 'Dede, gençliğini anlat' diyor. Gözlerinde merak, elinde senin eski çakın.", choices: [
+        { label: "Ömrünü anlat", result: "Gözleri parlayarak dinledi; adın bir kuşak daha yaşayacak.", delta: { fame: 4, honor: 2 }, next: "s2" },
+        { label: "Zanaatını göster", result: "Küçük eller beceriksiz ama hevesli; ocakta yeni bir kıvılcım yandı.", delta: { reputation: 3 }, next: "s2" },
+      ]},
+      s2: { id: "s2", text: "Bir akşam torunun sordu: 'Dede, senin düşmanların var mıydı?' Avluda bir sessizlik oldu.", choices: [
+        { label: "Doğruyu söyle", result: "Acısıyla tatlısıyla anlattın; sana daha da bağlandı. Doğruluk da mirastır.", delta: { honor: 6 }, next: "end" },
+        { label: "Bir masal anlat", result: "Onu eski husumetlerin gölgesinden korudun; belki bir gün kendi öğrenir.", delta: { reputation: 2 }, next: "end" },
+      ]},
+    },
+  },
+  {
+    id: "eski_dost_vedasi", title: "Eski Dostun Vedası", icon: "hourglass",
+    blurb: "Bir ömür yan yana yürüdüğün adam, son yolculuğuna hazırlanıyor.",
+    when: (p) => p.age >= 57,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Haber geldi: gençlik yoldaşın ölüm döşeğinde, seni soruyormuş. Yol uzak, kemiklerin ağrıyor.", choices: [
+        { label: "Yanına koş", result: "Son nefesinde elini tuttun; helalleştiniz. Yol seni yordu ama gönlün hafif.", delta: { health: -3, honor: 6 }, next: "s2" },
+        { label: "Bir mektup yolla", result: "Sözlerin ona ulaştı; ama gözlerine bakamadın. İçinde bir sızı kaldı.", delta: { honor: -2, reputation: 1 }, next: "s2b" },
+      ]},
+      s2: { id: "s2", text: "Dostun sana eski kılıç kayışını bıraktı — ve bir vasiyet: 'Oğlumu affet. Sana ettiğini biliyorum.'", choices: [
+        { label: "Affet", result: "Mezar başında oğlunun elini sıktın. Diyar, ak sakalına bir kez daha hürmet etti.", delta: { honor: 8, reputation: 4 }, next: "end" },
+        { label: "Affetme", result: "Kayışı aldın, elini sıkmadın. Vasiyet yerde kaldı; gece uykuların bölük.", delta: { fear: 3, honor: -3 }, next: "end" },
+      ]},
+      s2b: { id: "s2b", text: "Cenazede ailesi sana son mektubunu uzattı. Mühürü kırılmamış; adın üstünde.", choices: [
+        { label: "Mezar başında yüksek sesle oku", result: "Sözleri diyarı ağlattı; dostluğunuz destan oldu.", delta: { fame: 4, reputation: 2 }, next: "end" },
+        { label: "Kimseye gösterme", result: "Mektubu koynunda taşıyorsun. Bazı sözler yalnız iki kişiye aittir.", delta: { honor: 2 }, next: "end" },
+      ]},
+    },
+  },
+);
+
 export function arcById(id: string | null): Arc | undefined { return ARCS.find((a) => a.id === id); }
 // Uygun, henüz tamamlanmamış ve aktif olmayan yaylar.
 export function availableArcs(p: Player, completed: string[], tension: number, activeId: string | null): Arc[] {

@@ -441,6 +441,7 @@ export default function Dashboard() {
           { k: "meclis", icon: "iliskiler", label: t("adult.act.meclis") },
           { k: "tefekkur", icon: "scroll", label: t("adult.act.tefekkur") },
           { k: "yuruyus", icon: "firsatlar", label: t("adult.act.yuruyus") },
+          { k: "ibadet", icon: "prayer-beads", label: t("adult.act.ibadet") },
         ];
         const onAdult = (k: AdultAct) => { if (!can) return; hap("tap"); const r = adultAction(state, k); if (!r.blocked) apply(() => r.state); };
         return (
@@ -476,6 +477,7 @@ export default function Dashboard() {
           { k: "hayir", icon: "akce", label: t("elder.act.hayir") },
           { k: "dinlen", icon: "saglik", label: t("elder.act.dinlen") },
           { k: "ani", icon: "roman", label: t("elder.act.ani") },
+          { k: "tekke", icon: "prayer-beads", label: t("elder.act.tekke") },
         ];
         const onElder = (k: ElderAct) => { if (!can) return; hap("tap"); const r = elderAction(state, k); if (!r.blocked) apply(() => r.state); };
         return (

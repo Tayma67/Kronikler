@@ -100,6 +100,7 @@ export interface Player {
   court_action_turn?: number; // son divan hizmeti turu (bekleme süresi)
   harvestAccum?: number; wageAccum?: number; // pasif gelir/ücret yıllık birikimi (kronik yılda bir özetlenir; aylık spam önlenir)
   grandchildren?: string[]; // torunlar (oyuncu yaşlanınca yetişkin evlattan doğar; torun anları)
+  death_cause?: string; // ölüm nedeni kodu (die() içinde olay anahtarından türetilir; mersiyeye ve hanedan kütüğüne işlenir)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
@@ -483,7 +484,7 @@ function setWarCooldown(s: GameState, a: string, b: string, turns: number) { if 
 export function joinThreshold(p: Player, f: Faction): number { return p.perks.includes("karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep; }
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; }
-export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; noteK?: string; } // noteK: kitabe kimliği (6 dile çevrilir); note eski kayıtlar için TR yedek
+export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; noteK?: string; causeK?: string; } // noteK: kitabe kimliği (6 dile çevrilir); note eski kayıtlar için TR yedek; causeK: ölüm nedeni kodu
 export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; } // int_turn: bu kişiyle bu ay anlamlı bir etkileşim (sohbet/flört/hediye/hakaret/dedikodu) yapıldı mı — tur başına tek, ilişki/beceri farmı önlenir
 // İlişkinin etkin değeri: kalıcı taban + yapısal anıların toplam yükü (Vercel effective_rel).
 export function relWith(s: GameState, id: string): number {
@@ -1112,7 +1113,17 @@ function clone(s: GameState): GameState {
   // structuredClone (Hermes destekli) JSON round-trip'ten belirgin hızlı — geç nesillerde dokunma gecikmesini azaltır.
   return typeof structuredClone === "function" ? structuredClone(s) : JSON.parse(JSON.stringify(s));
 }
-function die(s: GameState, text: string, loc?: { k: string; p?: EvtParam[] }) { s.player.dead = true; push(s, "ölüm", text, "kişisel", true, loc); }
+// Ölüm nedeni: olay anahtarı → neden kodu (mersiye "nasıl öldü"yü de anlatsın; eski kayıtta alan yoksa satır sessizce atlanır).
+const DEATH_CAUSE: Record<string, string> = {
+  "evj.dieOld": "ecel", "evj.dieAge": "ecel", "evj.dieIll": "hastalik", "evj.dieStarve": "aclik",
+  "evj.feud.die": "kan_davasi", "evj.dieWar": "savas", "evj.dieRoad": "yol", "evj.diePath": "haydut",
+  "evj.dieCrime": "suc", "evj.dieEnc": "vahsi", "evj.dieNemesis": "hesaplasma", "evj.dieEvent": "felaket", "evj.dieArc": "macera",
+};
+function die(s: GameState, text: string, loc?: { k: string; p?: EvtParam[] }) {
+  s.player.dead = true;
+  if (loc && DEATH_CAUSE[loc.k]) s.player.death_cause = DEATH_CAUSE[loc.k];
+  push(s, "ölüm", text, "kişisel", true, loc);
+}
 
 function monthlyFlavor(s: GameState, cal: CalendarInfo): { k: string; text: string } {
   const child = s.player.age < 13; const pool: { k: string; text: string }[] = [];
@@ -3208,11 +3219,11 @@ function shapeChildhood(s: GameState) {
 }
 
 // İhtiyarlık uğraşları (55+): hayatın akşamına anlam — nasihat, hayır, dinlenme, anı. Çalışma gücünden harcar.
-export type ElderAct = "nasihat" | "hayir" | "dinlen" | "ani";
+export type ElderAct = "nasihat" | "hayir" | "dinlen" | "ani" | "tekke";
 // ── Olgunluk uğraşları (18-54): "ölü bölge" doldu — atıl duran aylık çalışma gücü artık işliyor.
 // Yetişkinde enerji 2 = ayda TEK uğraş (yapısal farm engeli). Karizma/dayanıklılığın yetişkinlikte
 // hiç büyüyememe deliği de burada kapanır: dört uğraş dört statı besler.
-export type AdultAct = "talim" | "meclis" | "tefekkur" | "yuruyus";
+export type AdultAct = "talim" | "meclis" | "tefekkur" | "yuruyus" | "ibadet";
 export const ADULT_TRAINER_COST = 10;
 export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
   const s = clone(prev); const p = s.player;
@@ -3259,6 +3270,21 @@ export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
       gainSkill(s, "trade", 5); addStatXp(s, "intelligence", 3);
       push(s, "olgunluk", "Hesapların arasında kimsenin görmediği bir düzen fark ettin; tüccar aklın keskinleşti.", "kişisel", false, { k: "adult.tefekkurInsight" });
     } else push(s, "olgunluk", "Kitap ve hesap başında bir akşam; zihin bilenmeden durmaz.", "kişisel", false, { k: "adult.tefekkur" });
+  } else if (kind === "ibadet") {
+    // Dindar hayatın aktif döngüsü: gönül toplama — küçük tavanlı ödüller, para musluğu yok (enerji kapısı farm'ı keser).
+    p.study_energy = studyEnergy(s) - STUDY_COST;
+    p.hunger = Math.max(0, p.hunger - 3);
+    bumpNam(p, "dindar", 3); p.reputation = Math.min(100, p.reputation + 1);
+    key = "adult.ibadet";
+    if (Math.random() > 0.88) { // derviş sohbeti: parlak an
+      bumpNam(p, "dindar", 2); gainSkill(s, "social", 3); p.health = Math.min(100, p.health + 3);
+      chips.push({ label: "Dindar +5", col: "#9C7BC4" }, { label: "Sağlık +3", col: "#7FA66A" });
+      push(s, "olgunluk", "Tekkede bir dervişle sohbete daldın; içindeki düğüm çözüldü.", "kişisel", false, { k: "adult.ibadetDervis" });
+    } else {
+      p.health = Math.min(100, p.health + 2);
+      chips.push({ label: "Dindar +3", col: "#9C7BC4" }, { label: "Sağlık +2", col: "#7FA66A" });
+      push(s, "olgunluk", "İbadetini edip gönlünü topladın; için ferahladı.", "kişisel", false, { k: "adult.ibadet" });
+    }
   } else {
     p.study_energy = studyEnergy(s) - STUDY_COST;
     addStatXp(s, "stamina", 5); p.health = Math.min(100, p.health + 2);
@@ -3299,6 +3325,11 @@ export function elderAction(prev: GameState, kind: ElderAct): StudyResult {
     p.health = Math.min(100, p.health + 8); p.hunger = Math.min(100, p.hunger + 5);
     chips.push({ label: "Sağlık +8", col: "#7FA66A" }); key = "elder.dinlen";
     push(s, "ihtiyarlik", "Ocağın başında dinlenip biraz toparlandın; yaşlı beden mola ister.", "kişisel", false, { k: "elder.dinlen" });
+  } else if (kind === "tekke") {
+    // İhtiyarın manevi döngüsü: zikir gönlü dinlendirir — dindar nam yaşlılıkta da aktif işlenir.
+    p.health = Math.min(100, p.health + 4); p.honor = Math.min(100, p.honor + 1); bumpNam(p, "dindar", 4);
+    chips.push({ label: "Sağlık +4", col: "#7FA66A" }, { label: "Dindar +4", col: "#9C7BC4" }); key = "elder.tekke";
+    push(s, "ihtiyarlik", "Tekkeye gidip zikre katıldın; yaşlı gönül gençleşti, için nurlandı.", "kişisel", false, { k: "elder.tekke" });
   } else {
     p.fame = Math.min(100, p.fame + 2); addStatXp(s, "intelligence", 6); gainSkill(s, "social", 4);
     chips.push({ label: "Şöhret +2", col: "#7B4FAF", k: "chip.fame", p: ["+2"] }); key = "elder.ani";
@@ -3555,6 +3586,8 @@ export function eulogy(s: GameState): { epithet: string; lines: EulLine[]; close
   if (p.fame >= 60) lines.push({ k: "eul.fameHigh" });
   else if (p.fame >= 30) lines.push({ k: "eul.fameMid" });
   else lines.push({ k: "eul.fameLow" });
+  // Nasıl öldüğü de mirastır: düelloda düşenle yatağında göçen aynı mersiyeyi almasın.
+  if (p.death_cause) lines.push({ k: "eul.cause." + p.death_cause });
   // En belirgin huy
   if (p.fear >= 50 || (n.zalim || 0) >= 50) lines.push({ k: "eul.traitFear" });
   else if (p.honor >= 50 || (n.mert || 0) >= 50) lines.push({ k: "eul.traitHonor" });
@@ -3704,7 +3737,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const ancestor: DynastyRecord = {
     generation: p.generation, name: p.name, profession: p.profession,
     diedAge: p.age, fame: Math.round(p.fame), reputation: Math.round(p.reputation), faction: p.faction,
-    note: DYNNOTE_TR[dynastyNote(p)], noteK: dynastyNote(p),
+    note: DYNNOTE_TR[dynastyNote(p)], noteK: dynastyNote(p), causeK: p.death_cause,
   };
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";

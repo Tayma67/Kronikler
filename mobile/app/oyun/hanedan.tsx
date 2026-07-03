@@ -502,6 +502,7 @@ export default function Hanedan() {
                   {profL(a.profession)} · {t("dyn.passedAt").replace("%n", String(a.diedAge))} · {t("dyn.fameWord")} {a.fame}
                 </Text>
                 <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.gold, marginTop: 4 }}>{a.noteK ? t("dynnote." + a.noteK) : a.note}</Text>
+                {!!a.causeK && <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{t("eul.cause." + a.causeK)}</Text>}
               </View>
             ))}
           </>
