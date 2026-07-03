@@ -70,6 +70,8 @@ export interface Player {
   battle_turn?: number; // bu ay taktik savaşa/düelloya girildi mi (tur başına tek — para/beceri/itibar farmı önlenir; work/war ile aynı desen)
   battle_award_turn?: number; // bu ay dövüş sonucu uygulandı mı (giriş kilidi battle_turn'e taşındı; ödülün tek-seferliği bu alanla korunur)
   festival_turn?: number; // bu ayın şenlik sahnesi çözüldü mü (şenlikler sabit aylarda yılda bir döner — ödülleri farmlanamaz)
+  apprentice?: { id: string; name: string; months: number; skill: keyof Skills }; // usta çağında yanına alınan çırak (tek seferde bir; hikmet aktarımı)
+  apprentice_turn?: number; // bu ay çırakla çalışıldı mı (ayda bir ders — ilişki/beceri farmı önlenir)
   intimidate_turn?: number; // bu ay gözdağı verildi mi (tur başına tek — korku spam'i önlenir)
   feast_turn?: number; // bu ay ziyafet verildi mi (tur başına tek — para→şöhret/itibar çeviricisi farmlanamaz)
   alms_turn?: number; // bu ay sadaka dağıtıldı mı (tur başına tek — şeref farmı önlenir)
@@ -676,7 +678,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; breath?: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
-  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean; goalHelped?: boolean; goalDone?: boolean; gname?: string; goalk?: string }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
+  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean; goalHelped?: boolean; goalDone?: boolean; gname?: string; goalk?: string; usta?: boolean }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
@@ -2350,6 +2352,51 @@ export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
 // Her NPC'nin bir hayat hedefi var (npc.goal); ona yardım büyük yakınlık + cömert nam,
 // istismar ise akçe + zalim nam getirir ama ilişkiyi yakar.
 export const GOAL_HELP_COST = 25;
+// ── Çıraklık: usta çağındaki oyuncu bir genci yanına alır, aylar içinde yetiştirir (hikmet aktarımı). ──
+// Geç oyun doku: şöhret/şeref getirisi 24 aylık emeğin ucunda; tek seferde tek çırak, ayda bir ders — farm imkânsız.
+export const APPRENTICE_MONTHS = 24; // yetişme süresi (2 yıl)
+export function bestSkillOf(p: Player): keyof Skills {
+  const keys: (keyof Skills)[] = ["combat", "trade", "crafting", "social"];
+  return keys.reduce((a, b) => (p.skills[b] > p.skills[a] ? b : a), keys[0]);
+}
+export function canTakeApprentice(s: GameState, npc: NPC): boolean {
+  const p = s.player;
+  return !p.dead && p.age >= 45 && !p.apprentice && p.skills[bestSkillOf(p)] >= 6 && npc.alive !== false && npc.age >= 12 && npc.age <= 22;
+}
+export function takeApprentice(prev: GameState, npc: NPC): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!canTakeApprentice(s, npc)) return s;
+  p.apprentice = { id: npc.id, name: npc.name, months: 0, skill: bestSkillOf(p) };
+  s.relationships[npc.id] = Math.max(-100, Math.min(100, (s.relationships[npc.id] || 0) + 10));
+  push(s, "çıraklık", `${npc.name}'i yanına çırak aldın; hünerini bir gence aktaracaksın.`, "kişisel", true, { k: "evj.apr.taken", p: [npc.name] });
+  return s;
+}
+export function mentorApprentice(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  const a = p.apprentice; if (p.dead || !a) return s;
+  if (p.apprentice_turn === s.turn) return s; // ayda bir ders
+  if (s.world?.npcEvo?.[a.id]?.dead) {
+    // Çırak dünya akışında ölmüş olabilir — yarım kalan çıraklık kapanır.
+    p.apprentice = undefined;
+    push(s, "çıraklık", `Çırağın ${a.name} bu dünyadan göçtü; yarım kalan hüner yüreğinde sızı bıraktı.`, "kişisel", true, { k: "evj.apr.lost", p: [a.name] });
+    return s;
+  }
+  p.apprentice_turn = s.turn;
+  a.months += 1;
+  gainSkill(s, "social", 5); // öğretmek de bir sanattır
+  s.relationships[a.id] = Math.max(-100, Math.min(100, (s.relationships[a.id] || 0) + 3));
+  if (a.months >= APPRENTICE_MONTHS) {
+    p.apprentice = undefined;
+    p.fame = Math.min(100, p.fame + 5); p.honor = Math.min(100, p.honor + 5);
+    s.relationships[a.id] = Math.max(-100, Math.min(100, (s.relationships[a.id] || 0) + 25));
+    if (s.world) { s.world.npcEvo = s.world.npcEvo || {}; const evo = (s.world.npcEvo[a.id] = s.world.npcEvo[a.id] || {}); evo.usta = true; } // kalıcı iz: senin elinden çıkma usta
+    push(s, "çıraklık", `${a.name} yetişti: senin elinden çıkma bir usta artık. Adın onunla da anılacak.`, "kişisel", true, { k: "evj.apr.done", p: [a.name] });
+  } else {
+    push(s, "çıraklık", `${a.name} ile tezgâh başında bir ay geçti (${a.months}/${APPRENTICE_MONTHS}).`, "kişisel", false, { k: "evj.apr.step", p: [a.name, a.months, APPRENTICE_MONTHS] });
+  }
+  return s;
+}
+
 export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.money < GOAL_HELP_COST || !npc.goal) return s; // hedefi kalmayana (muradına ermiş/çocuk) yardım anlamsız

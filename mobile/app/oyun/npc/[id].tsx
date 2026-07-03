@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, GIVE_MONEY_AMT, martialLoad } from "../../../lib/game";
+import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
 import { useI18n } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
@@ -217,6 +217,28 @@ export default function NpcDetail() {
           <Pressable disabled={exploited} onPress={() => { hap("tap"); apply((s) => exploitNpcGoal(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: couldMarry ? 1 : 0, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: exploited ? 0.4 : 1 })}>
             <GameIcon name="hood" size={16} color={C.ember} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.ember }}>{t("npc.exploitGoal")}</Text>
+            <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
+          </Pressable>
+        ); })()}
+        {/* Çırak al (usta çağı: 45+, en iyi beceri ≥6, genç NPC) */}
+        {canTakeApprentice(state, npc) && (
+          <Pressable onPress={() => { hap("success"); apply((s) => takeApprentice(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+            <GameIcon name="anvil" size={16} color={C.gold} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t("npc.aprTake")}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 1 }}>{t("npc.aprTakeSub")}</Text>
+            </View>
+            <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
+          </Pressable>
+        )}
+        {/* Çırakla çalış (ayda bir ders) */}
+        {state.player.apprentice?.id === npc.id && (() => { const taught = state.player.apprentice_turn === state.turn; return (
+          <Pressable disabled={taught} onPress={() => { hap("tap"); apply((s) => mentorApprentice(s)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "rgba(201,168,76,0.06)", opacity: taught ? 0.4 : 1 })}>
+            <GameIcon name="graduate-cap" size={16} color={C.gold} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t("npc.aprMentor")}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 1 }}>{(state.player.apprentice?.months || 0)}/{APPRENTICE_MONTHS} {t("npc.aprMonths")}</Text>
+            </View>
             <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
           </Pressable>
         ); })()}
