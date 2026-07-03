@@ -326,12 +326,21 @@ export default function MpOyun() {
           );
         })()}
 
-        {/* Diyardaki haneler */}
+        {/* Diyardaki haneler — liderlik tablosu: güç+ün sıralı, rütbeli (salt istemci; snapshot mutasyonsuz, protokol değişmez) */}
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.players")} · {liveCount}</Text>
-        {players.map((x) => (
-          <View key={x.id} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.border }}>
+        {[...players].sort((a, b) => ((b.power || 0) + (b.fame || 0)) - ((a.power || 0) + (a.fame || 0))).map((x, ri) => (
+          <View key={x.id} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: x.id === guestId ? "rgba(201,168,76,0.07)" : "transparent" }}>
+            <Text style={{ width: 20, fontFamily: F.display, fontSize: 11, textAlign: "center", color: ri === 0 ? C.gold : ri === 1 ? "#B8B4AC" : ri === 2 ? "#A8794A" : C.parchmentMuted }}>{ri + 1}</Text>
             <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: x.online ? C.sage : C.parchmentDim }} />
-            <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, color: x.id === guestId ? C.gold : C.parchment }}>{x.name}{x.crowned ? " ♔" : ""}{x.id === guestId ? " " + t("mp.you") : ""}</Text>
+            <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.display, fontSize: 12, color: x.id === guestId ? C.gold : x.dead ? C.parchmentMuted : C.parchment }}>{x.name}{x.crowned ? " ♔" : ""}{x.id === guestId ? " " + t("mp.you") : ""}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              <GameIcon name="crossed-swords" size={10} color={C.parchmentDim} />
+              <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.parchmentDim }}>{x.power || 0}</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              <GameIcon name="star" size={10} color={C.parchmentDim} />
+              <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.parchmentDim }}>{x.fame || 0}</Text>
+            </View>
             <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("misc.age")} {x.age}</Text>
           </View>
         ))}

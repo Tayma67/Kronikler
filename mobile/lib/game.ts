@@ -3431,8 +3431,8 @@ export function opportunitiesFor(s: GameState): Opportunity[] {
     { key: "esnaf_arasi", minAge: 14, title: "Esnaf Arası", desc: "Kavgaya tutuşan iki esnafı ayır.", reward: 30, risk: 0.45, stat: "strength" },
   ];
   const seed = (s.turn * 2654435761) >>> 0;
-  return pool.filter((o) => !o.minAge || s.player.age >= o.minAge) // çocuğa çocuk işi: yaşına uymayan fırsat hiç gösterilmez
-    .filter((_, i) => ((seed >> i) & 1) === 1 || i === seed % pool.length)
+  const eligible = pool.filter((o) => !o.minAge || s.player.age >= o.minAge); // çocuğa çocuk işi: yaşına uymayan fırsat hiç gösterilmez
+  return eligible.filter((_, i) => ((seed >> i) & 1) === 1 || i === seed % eligible.length) // garanti indeksi filtrelenmiş uzunluğa göre — boş liste imkânsız
     .map((o, i) => ({ ...o, id: `opp_${s.turn}_${i}` }));
 }
 
