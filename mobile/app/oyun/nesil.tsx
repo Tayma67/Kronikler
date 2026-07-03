@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { INVESTMENTS, WILL_STYLES, investInChild, continueAsHeir, EDU_TRACKS, eduLevel, setChildEducation, childNature } from "../../lib/game";
+import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, continueAsHeir, EDU_TRACKS, eduLevel, setChildEducation, childNature } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -16,6 +16,7 @@ export default function Nesil() {
   const { t } = useI18n();
   const [heir, setHeir] = useState<string | null>(null);
   const [will, setWill] = useState<string>(state?.player.will_pref || "esit"); // hanedanda önceden seçilen vasiyet burada varsayılan olur
+  const [lw, setLw] = useState<string>("helalles"); // son söz — devir anında bir kez seçilir, vârise temalı iz bırakır
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const chosenHeir = heir || p.children[0];
@@ -59,7 +60,17 @@ export default function Nesil() {
                 <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>{t("will." + w.id + ".d")}</Text>
               </Pressable>
             ))}
-            <Pressable onPress={() => { hap("success"); apply((s) => continueAsHeir(s, will, chosenHeir)); router.replace("/oyun"); }} style={{ marginTop: 12, paddingVertical: 15, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
+            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 12, marginBottom: 8 }}>{t("nes.lastWords")}</Text>
+            {LAST_WORDS.map((w) => (
+              <Pressable key={w.id} onPress={() => setLw(w.id)} style={{ flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 9, borderWidth: 1, marginBottom: 7, borderColor: lw === w.id ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: lw === w.id ? "rgba(201,168,76,0.12)" : C.card }}>
+                <GameIcon name={w.icon} size={16} color={lw === w.id ? C.gold : C.parchmentDim} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 12, color: lw === w.id ? C.gold : C.parchment }}>{t("lw." + w.id + ".l")}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>{t("lw." + w.id + ".d")}</Text>
+                </View>
+              </Pressable>
+            ))}
+            <Pressable onPress={() => { hap("success"); apply((s) => continueAsHeir(s, will, chosenHeir, lw)); router.replace("/oyun"); }} style={{ marginTop: 12, paddingVertical: 15, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206", letterSpacing: 1.5 }}>{t("dash.continueHeir")}</Text>
             </Pressable>
           </>

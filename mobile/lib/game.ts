@@ -3293,7 +3293,18 @@ export function setChildEducation(prev: GameState, childName: string, trackId: s
 }
 
 // Nesil mirası: ölünce vâris (varsayılan ilk çocuk) ile devam et. Vasiyet stili miras oranını belirler.
-export function continueAsHeir(prev: GameState, willId = "esit", heirName?: string): GameState {
+// Son sözler: ölüm döşeğinde söylenen söz vârisin yoluna ışık tutar. Nesil devri anının kendisi kapı — nesil başına bir kez, farm imkânsız.
+export const LAST_WORDS: { id: string; icon: string }[] = [
+  { id: "adimizi_yasat", icon: "banner" },   // hanedan adı: vâris şöhretle başlar
+  { id: "helalles", icon: "prayer-beads" },  // temiz sayfa: vâris itibarla başlar
+  { id: "sirrini_ver", icon: "coins" },      // kazancın sırrı: vâris ticarete yatkın başlar
+];
+const LW_ECHO_TR: Record<string, string> = {
+  adimizi_yasat: `%1'in son sözü buydu: "Adımızı yaşat." O ad şimdi senin sırtında.`,
+  helalles: `%1 herkesle helalleşip göçtü; ardında dua, önünde açık kapı bıraktı.`,
+  sirrini_ver: `%1 son nefesinde kazancının sırrını kulağına fısıldadı; o söz hâlâ aklında.`,
+};
+export function continueAsHeir(prev: GameState, willId = "esit", heirName?: string, lastWordsId?: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!p.dead || p.children.length === 0) return s;
   const heir = heirName && p.children.includes(heirName) ? heirName : p.children[0];
@@ -3375,6 +3386,14 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     },
     history: [{ day: 0, type: "nesil_devri", text: `${gen}. nesil: ${heir}, ${will.label.toLowerCase()} vasiyetiyle mirası devraldı (${inheritMoney} akçe, ${props.length} mülk).${noteStr}`, scope: "kişisel", landmark: true, k: "evj.genHandover", p: [gen, heir, inheritMoney, props.length] }],
   };
+  // Atanın son sözü vârise iz bırakır: küçük, temalı bir başlangıç avantajı + kroniğe düşen yankı.
+  if (lastWordsId && LW_ECHO_TR[lastWordsId]) {
+    const hp = ns.player;
+    if (lastWordsId === "adimizi_yasat") hp.fame = Math.min(100, hp.fame + 6);
+    else if (lastWordsId === "helalles") hp.reputation = Math.max(-100, Math.min(100, hp.reputation + 6));
+    else if (lastWordsId === "sirrini_ver") { hp.skills.trade = Math.min(10, hp.skills.trade + 1); hp.skill_xp.trade = hp.skills.trade * 100; }
+    ns.history.push({ day: 0, type: "nesil_devri", text: LW_ECHO_TR[lastWordsId].replace("%1", p.name), scope: "kişisel", landmark: false, k: "evj.lw." + lastWordsId, p: [p.name] });
+  }
   return ns;
 }
 
