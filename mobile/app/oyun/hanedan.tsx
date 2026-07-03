@@ -18,7 +18,7 @@ import {
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
   inCourt, courtRankId,
   suppressPretender, reconcilePretender, PRETENDER_SUPPRESS_COST, PRETENDER_RECONCILE_COST,
-  ESTATE_TIERS, estateCost, upgradeEstate, VAKIF_DONATE_AMOUNTS, donateVakif } from "../../lib/game";
+  ESTATE_TIERS, estateCost, upgradeEstate, VAKIF_DONATE_AMOUNTS, VAKIF_TIERS, donateVakif } from "../../lib/game";
 import { generateDynasties, houseName as rivalHouseName, localFirstName } from "../../lib/world";
 import { professionNameL, placeName } from "../../lib/locale-data";
 import { GameIcon } from "../../lib/icons";
@@ -451,6 +451,15 @@ export default function Hanedan() {
                 ))}
               </View>
               {donated && <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted, marginTop: 6, textAlign: "center" }}>{t("est.vakif.done")}</Text>}
+              {(() => {
+                const fon = p.vakif_fon || 0;
+                const next = VAKIF_TIERS.find((x) => fon < x);
+                return (
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.goldDim, marginTop: 5, textAlign: "center" }}>
+                    {next ? t("est.vakif.next").replace("%1", next.toLocaleString()) : t("est.vakif.max")}
+                  </Text>
+                );
+              })()}
             </View>
           );
         })()}

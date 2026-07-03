@@ -14,6 +14,11 @@ async function persistWithBackup(s: unknown) {
   } catch {}
 }
 
+// Kaydın ham JSON'unu dışa ver (ayarlar ekranındaki yedekle/paylaş): tek offline kayıt telefonla birlikte kaybolmasın.
+export async function exportSaveText(): Promise<string | null> {
+  try { return (await AsyncStorage.getItem(KEY)) || (await AsyncStorage.getItem(KEY + "_bak")); } catch { return null; }
+}
+
 // Eski kayıtları yeni alanlarla uyumlulaştır (geriye dönük güvenli yükleme).
 function migrate(s: GameState): GameState {
   const p: any = s.player || {};

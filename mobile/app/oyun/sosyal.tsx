@@ -62,9 +62,9 @@ export default function Sosyal() {
   const canAct = p.age >= 13 && !p.dead;
 
   const actions = [
-    { key: "feast", fn: hostFeast, cost: "40⚜", enabled: canAct && p.money >= 40 && p.feast_turn !== state.turn },
-    { key: "alms", fn: giveAlms, cost: "15⚜", enabled: canAct && p.money >= 15 && p.alms_turn !== state.turn },
-    { key: "intim", fn: intimidate, cost: "—", enabled: canAct && p.intimidate_turn !== state.turn },
+    { key: "feast", fn: hostFeast, cost: "40⚜", need: 40, used: p.feast_turn === state.turn, enabled: canAct && p.money >= 40 && p.feast_turn !== state.turn },
+    { key: "alms", fn: giveAlms, cost: "15⚜", need: 15, used: p.alms_turn === state.turn, enabled: canAct && p.money >= 15 && p.alms_turn !== state.turn },
+    { key: "intim", fn: intimidate, cost: "—", need: 0, used: p.intimidate_turn === state.turn, enabled: canAct && p.intimidate_turn !== state.turn },
   ];
 
   return (
@@ -154,6 +154,11 @@ export default function Sosyal() {
             <View>
               <Text style={{ fontFamily: F.display, fontSize: 13, color: act.enabled ? C.parchment : C.parchmentMuted, letterSpacing: 0.5 }}>{t("soc." + act.key + ".l")}</Text>
               <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim, marginTop: 2 }}>{t("soc." + act.key + ".n")}</Text>
+              {!act.enabled && canAct && (
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted, marginTop: 3 }}>
+                  {act.used ? t("soc.lock.done") : t("soc.lock.money").replace("%1", String(act.need))}
+                </Text>
+              )}
             </View>
             <Text style={{ fontFamily: F.display, fontSize: 12, color: act.enabled ? C.gold : C.parchmentMuted }}>{act.cost}</Text>
           </Pressable>

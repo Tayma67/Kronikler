@@ -1,8 +1,9 @@
-import { View, Text, Pressable, Alert, Switch, ScrollView } from "react-native";
+import { View, Text, Pressable, Alert, Switch, ScrollView, Share } from "react-native";
 import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useGame } from "../../lib/store";
+import Constants from "expo-constants";
+import { useGame, exportSaveText } from "../../lib/store";
 import { useI18n } from "../../lib/i18n";
 import { LANGS } from "../../lib/locale-data";
 import { isSoundEnabled, setSoundEnabled, playTap } from "../../lib/sound";
@@ -88,10 +89,19 @@ export default function Ayarlar() {
           </View>
           <Switch value={reduceM} onValueChange={toggleReduceM} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={reduceM ? C.gold : "#8a7a55"} />
         </View>
+        {/* Kayıt yedeği: ham kayıt JSON'unu paylaş — tek offline kayıt cihazla birlikte kaybolmasın */}
+        <Pressable onPress={async () => { hap("tap"); const j = await exportSaveText(); if (j) Share.share({ message: j }).catch(() => {}); else Alert.alert(t("settings.backup"), t("settings.backupNone")); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+          <GameIcon name="scroll" size={20} color={C.gold} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.backup")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.backupDesc")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
+        </Pressable>
         <Pressable onPress={reset} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
           <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood }}>{t("settings.newLife")}</Text>
         </Pressable>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, textAlign: "center", marginTop: 24 }}>Kronikler: Küllerin Mirası · v1.0.0</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, textAlign: "center", marginTop: 24 }}>Kronikler: Küllerin Mirası · v{Constants.expoConfig?.version || "1.0.0"}</Text>
       </ScrollView>
     </View>
   );

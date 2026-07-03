@@ -25,12 +25,16 @@ export function StatDeltaOverlay() {
   const [tierUp, setTierUp] = useState<null | { tier: number; tick: number }>(null);
   const [crown, setCrown] = useState<null | { tick: number }>(null);
   const [settle, setSettle] = useState<null | { name: string; tick: number }>(null);
+  const [wed, setWed] = useState<null | { name: string; tick: number }>(null);
+  const [birth, setBirth] = useState<null | { name: string; tick: number }>(null);
   const [mourn, setMourn] = useState<null | { tick: number }>(null);
   const prev = useRef<Record<string, number> | null>(null);
   const gen = useRef<number>(-1);
   const fameTier = useRef<number>(-1);
   const wasCrowned = useRef<boolean | null>(null);
   const settleCount = useRef<number>(-1);
+  const wasMarried = useRef<boolean | null>(null);
+  const childCount = useRef<number>(-1);
   const wasDead = useRef<boolean | null>(null);
 
   // Vefat — en ağır an: kutlama değil, kül tonu ve ağır dokunuş (ölüm sessiz geçmesin).
@@ -59,6 +63,24 @@ export function StatDeltaOverlay() {
     if (list.length > settleCount.current) { setSettle({ name: list[list.length - 1]?.name || "", tick: Date.now() }); hap("success"); playTap(); setTimeout(() => setSettle(null), 2600); }
     settleCount.current = list.length;
   }, [state?.settlements?.length]);
+
+  // Evlilik — ömrün duygusal omurgası; yerleşim kadar özel kutlanır.
+  useEffect(() => {
+    if (!state) return;
+    const m = !!state.player.married;
+    if (wasMarried.current === null || gen.current !== state.player.generation) { wasMarried.current = m; return; }
+    if (m && !wasMarried.current) { setWed({ name: state.player.spouse_name || "", tick: Date.now() }); hap("success"); playFanfare(); setTimeout(() => setWed(null), 2800); }
+    wasMarried.current = m;
+  }, [state?.player.married, state?.player.generation]);
+
+  // Evlat doğumu.
+  useEffect(() => {
+    if (!state) return;
+    const list = state.player.children || [];
+    if (childCount.current < 0 || gen.current !== state.player.generation) { childCount.current = list.length; return; }
+    if (list.length > childCount.current) { setBirth({ name: list[list.length - 1] || "", tick: Date.now() }); hap("success"); playTap(); setTimeout(() => setBirth(null), 2600); }
+    childCount.current = list.length;
+  }, [state?.player.children?.length]);
 
   // Şöhret kademe atlayınca büyük kutlama anı.
   useEffect(() => {
@@ -124,7 +146,7 @@ export function StatDeltaOverlay() {
     setTimeout(() => setToasts((cur) => cur.filter((tt) => !ids.includes(tt.id))), 1750);
   }, [state?.player]);
 
-  if (toasts.length === 0 && !tierUp && !crown && !settle && !mourn) return null;
+  if (toasts.length === 0 && !tierUp && !crown && !settle && !wed && !birth && !mourn) return null;
   return (
     <View pointerEvents="none" style={{ position: "absolute", top: insets.top + 8, left: 0, right: 0, alignItems: "center", zIndex: 999 }}>
       {mourn && (
@@ -140,6 +162,22 @@ export function StatDeltaOverlay() {
           <GameIcon name="castle" size={24} color={C.sage} />
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2.5, color: C.goldDim, marginTop: 4 }}>{t("feel.settle").toUpperCase()}</Text>
           {!!settle.name && <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 1, color: C.sage, marginTop: 2 }}>{settle.name}</Text>}
+        </Animated.View>
+      )}
+      {wed && (
+        <Animated.View key={"wed" + wed.tick} entering={ZoomIn.springify().damping(15)} exiting={FadeOut.duration(380)}
+          style={{ alignItems: "center", backgroundColor: "rgba(13,10,6,0.96)", borderWidth: 1.5, borderColor: C.gold, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 22, marginBottom: 10, shadowColor: C.gold, shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 10 }}>
+          <GameIcon name="ring" size={24} color={C.gold} />
+          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2.5, color: C.goldDim, marginTop: 4 }}>{t("feel.wed").toUpperCase()}</Text>
+          {!!wed.name && <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 1, color: C.gold, marginTop: 2 }}>{wed.name}</Text>}
+        </Animated.View>
+      )}
+      {birth && (
+        <Animated.View key={"birth" + birth.tick} entering={ZoomIn.springify().damping(15)} exiting={FadeOut.duration(380)}
+          style={{ alignItems: "center", backgroundColor: "rgba(13,10,6,0.96)", borderWidth: 1.5, borderColor: C.sage, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 22, marginBottom: 10, shadowColor: C.sage, shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 10 }}>
+          <GameIcon name="baby" size={24} color={C.sage} />
+          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2.5, color: C.goldDim, marginTop: 4 }}>{t("feel.birth").toUpperCase()}</Text>
+          {!!birth.name && <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 1, color: C.sage, marginTop: 2 }}>{birth.name}</Text>}
         </Animated.View>
       )}
       {crown && (

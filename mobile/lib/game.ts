@@ -3596,6 +3596,34 @@ const LW_ECHO_TR: Record<string, string> = {
   helalles: `%1 herkesle helalleşip göçtü; ardında dua, önünde açık kapı bıraktı.`,
   sirrini_ver: `%1 son nefesinde kazancının sırrını kulağına fısıldadı; o söz hâlâ aklında.`,
 };
+// Vâris seçim ekranı önizlemesi: continueAsHeir'ın başlangıç hesabının saf (state'i değiştirmeyen) aynası.
+// Formüller continueAsHeir ile birebir aynı kalmalı; sapma önizlemeyi yalancı yapar.
+export function heirPreview(prev: GameState, heirName: string, willId = "esit"): { points: number; money: number; rep: number } {
+  const p = prev.player;
+  const will = WILL_STYLES.find((w) => w.id === willId) || WILL_STYLES[0];
+  const netWealth = Math.max(0, (p.money + (p.deposit || 0)) - (p.debt || 0));
+  const inheritMoney = Math.floor(netWealth * will.frac) + 20;
+  const gen = p.generation + 1;
+  const heirLegacy: Record<string, boolean> = { ...(p.legacy || {}) }; delete heirLegacy.hekim; delete heirLegacy.hac;
+  const legacyRep = (heirLegacy.imaret ? 5 : 0) + (heirLegacy.vakif ? 8 : 0) + Math.min(12, Math.floor((p.vakif_fon || 0) / 5000)) + 2 * vakifTier(p.vakif_fon || 0);
+  const estateTier = p.estate || 0;
+  const invests = (p.child_invests && p.child_invests[heirName]) || [];
+  let points = Math.min(gen, 10); let money = inheritMoney; let rep = Math.floor(p.reputation / 2) + will.repBonus;
+  if (estateTier >= 3) points += 1;
+  if (estateTier >= 5) money += 80;
+  for (const inv of invests) {
+    if (inv === "egitim") points += 1;
+    if (inv === "zanaat") money += 30;
+    if (inv === "saglik") rep += 6;
+  }
+  const nat = childNature(heirName, p.generation);
+  if (nat === "sevecen") rep += 3;
+  else if (nat === "hirsli") points += 1;
+  const edu = p.child_edu && p.child_edu[heirName];
+  if (edu) { const lvl = eduLevel(edu.weeks); if (lvl > 0) rep += lvl; }
+  return { points, money, rep: Math.max(-100, Math.min(100, rep + legacyRep)) };
+}
+
 export function continueAsHeir(prev: GameState, willId = "esit", heirName?: string, lastWordsId?: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!p.dead || p.children.length === 0) return s;
@@ -3608,7 +3636,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const surname = p.surname;
   // Kalıcı görkem eserleri vârise geçer (oyunun kendi vaadi: "nesiller boyu sürecek") — hekim ve hac kişiseldir, kalmaz.
   const heirLegacy: Record<string, boolean> = { ...(p.legacy || {}) }; delete heirLegacy.hekim; delete heirLegacy.hac;
-  const legacyRep = (heirLegacy.imaret ? 5 : 0) + (heirLegacy.vakif ? 8 : 0) + Math.min(12, Math.floor((p.vakif_fon || 0) / 5000)); // atanın hayratı (+fonun büyüklüğü) vârisin adını önden yürütür
+  const legacyRep = (heirLegacy.imaret ? 5 : 0) + (heirLegacy.vakif ? 8 : 0) + Math.min(12, Math.floor((p.vakif_fon || 0) / 5000)) + 2 * vakifTier(p.vakif_fon || 0); // atanın hayratı (+fonun büyüklüğü) vârisin adını önden yürütür
   const legacyFameFloor = heirLegacy.anit ? 15 : 0; // anıt: aile adı unutulmaz — vârisin şöhret tabanı
   const estateTier = p.estate || 0; // konak taşınmazdır: vâris aynı çatının altında doğar
   // Vârise yapılan yatırımların başlangıç avantajları
@@ -4736,14 +4764,26 @@ export function upgradeEstate(prev: GameState): GameState {
 // ── VAKIF FONU: vakıf kurulduysa (legacy.vakif) sınırsız beslenebilir — servet "anlam"a dönüşür.
 // Toplam fon hiç budanmaz; mersiyeye, hanedan kütüğüne ve vârisin başlangıç itibarına akar.
 export const VAKIF_DONATE_AMOUNTS = [1000, 5000, 25000] as const;
+// Vakıf mertebeleri: fon eşikleri aşıldıkça bir kezlik nişan — 100k+ akçelik geç oyunda bile paranın
+// ulaşılacak bir hedefi kalsın. Eşikler üstel büyür; farm edilemez (her eşik ömürde bir kez düşer).
+export const VAKIF_TIERS = [25000, 100000, 250000, 1000000] as const;
+export function vakifTier(fon: number): number { let n = 0; for (const t of VAKIF_TIERS) { if (fon >= t) n++; } return n; }
 export function donateVakif(prev: GameState, amount: number): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || !p.legacy?.vakif || amount <= 0 || p.money < amount) return s;
   if (p.vakif_turn === s.turn) return s; // ayda tek bağış — itibar damlası farmlanamaz
   p.vakif_turn = s.turn; p.money -= amount;
+  const onceki = vakifTier(p.vakif_fon || 0);
   p.vakif_fon = (p.vakif_fon || 0) + amount;
   p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "comert", 3);
   push(s, "bagis", `Vakfına ${amount} akçe akıttın; kazanın altında yanan ateş büyüdü.`, "kişisel", false, { k: "est.vakifFund", p: [amount] });
+  // Mertebe eşiği aşıldı: bir kezlik büyük an (landmark) — şöhret ve cömert nam mertebeyle büyür.
+  const yeni = vakifTier(p.vakif_fon || 0);
+  if (yeni > onceki) {
+    p.fame = Math.min(100, p.fame + 3 + yeni * 2); bumpNam(p, "comert", 4 + yeni);
+    const VT_TR = ["", "Vakfın mahallenin direği oldu; kapısında kazan hiç sönmüyor.", "Vakfın şehrin dört yanında anılıyor; adın hayırla yazılıyor.", "Vakfın diyarın en büyük hayratlarından sayılıyor; kervanlar bile yolunu değiştirip uğruyor.", "Vakfın çağlara kalacak bir müessese oldu; adın taşa değil gönüllere kazındı."];
+    push(s, "bagis", VT_TR[yeni] || VT_TR[1], "kişisel", true, { k: "est.vakifTier" + yeni });
+  }
   return s;
 }
 export const PRESTIGE: Record<string, { cost: number; repeat?: boolean; once?: boolean }> = {

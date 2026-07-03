@@ -83,7 +83,7 @@ export default function MpOyun() {
   useEffect(() => {
     if (!missed || !missed.length || !guestId || !sRef.current) return;
     const ns = applyTickEvents(sRef.current, missed);
-    setEvLines((prev) => [...missed.map((e) => pf(t(e.k), ...(e.p || []))), ...prev].slice(0, 12));
+    setEvLines((prev) => [...missed.map((e) => t("mp.whileAway") + " · " + pf(t(e.k), ...(e.p || []))), ...prev].slice(0, 12));
     apply(() => ns);
     clearMissed();
     syncPlayer(mePublic(guestId, ns, false));
