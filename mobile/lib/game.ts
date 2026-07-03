@@ -1761,10 +1761,17 @@ function tickFeud(s: GameState, rivals: RivalHouse[]) {
     const pr = p.properties[Math.floor(Math.random() * p.properties.length)];
     pr.cond = Math.max(15, pr.cond - 25);
     push(s, "kan_davası", `${h.name} adamları gece ${PROPERTY_TYPES[pr.type]?.name || "mülküne"} (${pr.loc}) dadandı; dava mala sıçradı.`, "makro", true, { k: "evj.feud.sabotage", p: [{ hn: h.nameIdx }, { pt2: pr.type }, { pl: pr.loc }] });
-  } else if (f.stage === 3 && Math.random() < 0.12) {
-    const hurt = 8 + Math.floor(Math.random() * 7);
+  } else if (f.stage === 3 && Math.random() < 0.09) {
+    const hurt = 6 + Math.floor(Math.random() * 6);
     p.health = Math.max(1, p.health - hurt); p.fear = Math.min(100, p.fear + 2); // pusu öldürmez ama iz bırakır — ölüm ancak meydan savaşında
     push(s, "kan_davası", `${h.name} pusu kurdu; canını zor kurtardın (sağlık -${hurt}).`, "kişisel", true, { k: "evj.feud.ambush", p: [{ hn: h.nameIdx }, hurt] });
+  }
+  // Aksakallı sulhü: ateş tavana dayanıp iki taraf da yorulunca büyükler araya girebilir — dava kendiliğinden kapanır.
+  // (İlgilenmeyen oyuncu için ömür boyu kan kaybı olmasın; ölçüldü — davasız medyan ömür 66, sonsuz davada 59'a düşüyordu.)
+  if (s.feud && f.heat >= 90 && Math.random() < 0.06) {
+    s.feud = null;
+    h.tutum = -25;
+    push(s, "kan_davası", `Aksakallılar araya girdi: ${h.name} ile dava yorgunluktan söndü; kor küllendi ama unutulmadı.`, "makro", true, { k: "evj.feud.elders", p: [{ hn: h.nameIdx }] });
   }
 }
 // Sulh bedeli: hanenin gururu + çağın parası.
