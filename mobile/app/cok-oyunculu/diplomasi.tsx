@@ -91,6 +91,20 @@ export default function Diplomasi() {
           </>
         )}
 
+        {/* Gönderdiğim teklifler — kör gönderim olmasın: bekleyenler görünür (salt bilgi, tuş yok) */}
+        {(() => { const sent = snapshot.offers.filter((o) => o.from === guestId); return sent.length > 0 ? (
+          <>
+            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("mp.soc.offersOut")}</Text>
+            {sent.map((o) => (
+              <View key={o.id} style={{ borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 10, marginBottom: 8, backgroundColor: C.card, opacity: 0.85 }}>
+                <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted }}>
+                  {pf(t("mp.soc.offerOut." + o.kind), snapshot.players.find((x) => x.id === o.to)?.name || "?", o.amount ?? 0)} · {t("mp.soc.pending")}
+                </Text>
+              </View>
+            ))}
+          </>
+        ) : null; })()}
+
         {/* Sıralama / haneler */}
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 6, marginBottom: 8 }}>{t("mp.soc.standings")}</Text>
         {others.length === 0 && <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted }}>{t("mp.empty")}</Text>}

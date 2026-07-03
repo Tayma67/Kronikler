@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator, AppState } from "react-native";
+import { CountdownSecs } from "../../lib/mp/countdown";
+import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../lib/i18n";
@@ -170,18 +171,3 @@ export default function Diyar() {
   );
 }
 
-// İzole geri sayım: yalnız bu küçük yazı saniyede bir render olur (tüm oda değil).
-// Arka plana geçilince timer durur → pil/CPU tasarrufu. React.memo ile dış render'lardan korunur.
-const CountdownSecs = React.memo(function CountdownSecs({ deadline, fmt, style }: { deadline: number; fmt: (s: number) => string; style: object }) {
-  const [secs, setSecs] = useState(() => Math.max(0, Math.round((deadline - Date.now()) / 1000)));
-  useEffect(() => {
-    let id: ReturnType<typeof setInterval> | null = null;
-    const tick = () => setSecs(Math.max(0, Math.round((deadline - Date.now()) / 1000)));
-    const start = () => { if (!id) { tick(); id = setInterval(tick, 1000); } };
-    const stop = () => { if (id) { clearInterval(id); id = null; } };
-    start();
-    const sub = AppState.addEventListener("change", (s) => { if (s === "active") start(); else stop(); });
-    return () => { stop(); sub.remove(); };
-  }, [deadline]);
-  return <Text style={style} numberOfLines={1}>{fmt(secs)}</Text>;
-});

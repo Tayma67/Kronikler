@@ -6,6 +6,7 @@ import { useI18n } from "../../lib/i18n";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { mePublic, applyTickEvents, realmYearMonth } from "../../lib/mp/world";
+import { CountdownSecs } from "../../lib/mp/countdown";
 import { SharedIntent, BEY_MIN_POWER, BEY_MIN_AGE, BEY_COST, MP_CAMPAIGN_COST, THRONE_MIN_AGE, THRONE_MIN_POWER, THRONE_MIN_FAME, THRONE_COST, VENTURE_MAX_STAKE } from "../../lib/mp/protocol";
 import { newGame, advance, continueAsHeir, GameState, beylikName } from "../../lib/game";
 import { C, F } from "../../lib/theme";
@@ -67,8 +68,11 @@ export default function MpOyun() {
     processedTurn.current = lastTick.turn;
     let ns = advance(sRef.current, 1);
     const mine = lastTick.results.find((r) => r.playerId === guestId);
-    if (mine && mine.events.length) { ns = applyTickEvents(ns, mine.events); setEvLines(mine.events.map((e) => pf(t(e.k), ...(e.p || [])))); }
-    else setEvLines([]);
+    if (mine && mine.events.length) {
+      ns = applyTickEvents(ns, mine.events);
+      const ym = realmYearMonth(lastTick.turn); // kişisel sonuçlar buharlaşmasın: ay damgalı kalıcı günlük (son 12)
+      setEvLines((prev) => [...mine.events.map((e) => `${ym.year}/${ym.month} · ` + pf(t(e.k), ...(e.p || []))), ...prev].slice(0, 12));
+    }
     apply(() => ns);
     setReadyLocal(false);
     syncPlayer(mePublic(guestId, ns, false));
@@ -79,7 +83,7 @@ export default function MpOyun() {
   useEffect(() => {
     if (!missed || !missed.length || !guestId || !sRef.current) return;
     const ns = applyTickEvents(sRef.current, missed);
-    setEvLines(missed.map((e) => pf(t(e.k), ...(e.p || []))));
+    setEvLines((prev) => [...missed.map((e) => pf(t(e.k), ...(e.p || []))), ...prev].slice(0, 12));
     apply(() => ns);
     clearMissed();
     syncPlayer(mePublic(guestId, ns, false));
@@ -165,7 +169,8 @@ export default function MpOyun() {
         {/* Çapraz-etki olayları */}
         {evLines.length > 0 && (
           <View style={{ marginTop: 10, borderWidth: 1, borderColor: "rgba(111,160,192,0.4)", backgroundColor: "rgba(111,160,192,0.08)", borderRadius: 9, padding: 10 }}>
-            {evLines.map((l, i) => <Text key={i} style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment, lineHeight: 18 }}>• {l}</Text>)}
+            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: "rgba(111,160,192,0.9)", marginBottom: 5 }}>{t("mp.log").toUpperCase()}</Text>
+            {evLines.map((l, i) => <Text key={i} style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: i < 3 ? C.parchment : C.parchmentMuted, lineHeight: 18 }}>• {l}</Text>)}
           </View>
         )}
 
@@ -360,9 +365,14 @@ export default function MpOyun() {
 
       {/* Alt: hazır oyu + senkron tick (Yaşa = ay-atla oyu) */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: insets.bottom + 10, paddingTop: 10, paddingHorizontal: 14, backgroundColor: "rgba(8,5,2,0.94)", borderTopWidth: 1, borderTopColor: C.borderHi, flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>
-          {snapshot.phase === "ticking" ? t("mp.ticking") : pf(t("mp.readyCount"), readyCount, liveCount)}
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>
+            {snapshot.phase === "ticking" ? t("mp.ticking") : pf(t("mp.readyCount"), readyCount, liveCount)}
+          </Text>
+          {snapshot.phase !== "ticking" && !!snapshot.tickDeadline && (
+            <CountdownSecs deadline={snapshot.tickDeadline} fmt={(sc) => pf(t("mp.tickIn"), sc)} style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: C.goldDim, marginTop: 2 }} />
+          )}
+        </View>
         <Pressable disabled={p.dead} onPress={doReady} style={{ paddingVertical: 13, paddingHorizontal: 26, borderRadius: 9, borderWidth: 1, borderColor: ready ? "rgba(127,166,106,0.7)" : "rgba(201,168,76,0.6)", backgroundColor: ready ? "rgba(127,166,106,0.16)" : C.gold, opacity: p.dead ? 0.4 : 1 }}>
           <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: ready ? C.sage : "#2a1d08" }}>{ready ? t("mp.ready") + " ✓" : t("mp.ready")}</Text>
         </Pressable>

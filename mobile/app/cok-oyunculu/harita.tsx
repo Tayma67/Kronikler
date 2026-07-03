@@ -60,6 +60,16 @@ export default function Harita() {
                 <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>
                   {pf(t("mp.beylik.powerLine"), b.power)} · {pf(t("mp.map.tax"), b.tax)}{b.ocak ? " · " + pf(t("mp.beylik.ocakLine"), b.ocak) : ""}
                 </Text>
+                {(() => { const members = snapshot.players.filter((x) => x.beylikId === b.id && !x.dead); return members.length > 0 ? (
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+                    {members.map((m) => (
+                      <View key={m.id} style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: m.online ? C.sage : C.parchmentDim }} />
+                        <Text style={{ fontFamily: F.serif, fontSize: 10, color: m.id === guestId ? C.gold : C.parchmentMuted }}>{m.name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null; })()}
               </View>
             </View>
           );
