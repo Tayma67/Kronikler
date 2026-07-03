@@ -4,7 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, inflationFactor } from "../../lib/game";
+import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, startBattleAttempt, inflationFactor } from "../../lib/game";
 import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -54,8 +54,9 @@ export default function Savas() {
   const canFight = p.age >= 13 && !p.dead && !tooWeak && !foughtThisMonth;
 
   const nemEnc = nemesisEncounter(state);
-  const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); setBs(startBattle(p, { ...e, title: gt("enc." + e.id + ".t", e.title) })); setApplied(false); setFloats([]); };
-  const beginNemesis = () => { if (!nemEnc) return; setEncId("nemesis"); setBs(startBattle(p, nemEnc)); setApplied(false); setFloats([]); };
+  // Ay hakkı girişte yanar (çekirdek kilidi): kaybederken ekrandan kaçıp bedelsiz tekrar denenemez.
+  const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); setBs(startBattle(p, { ...e, title: gt("enc." + e.id + ".t", e.title) })); setApplied(false); setFloats([]); apply((s) => startBattleAttempt(s)); };
+  const beginNemesis = () => { if (!nemEnc) return; setEncId("nemesis"); setBs(startBattle(p, nemEnc)); setApplied(false); setFloats([]); apply((s) => startBattleAttempt(s)); };
   const play = (mv: Move) => {
     if (!bs || bs.over) return;
     const next = stepBattle(bs, p, mv, stance);

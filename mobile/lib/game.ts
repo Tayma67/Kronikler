@@ -68,6 +68,7 @@ export interface Player {
   favor_turn?: number; // bu ay pîşkeş/iltifat yapıldı mı (tur başına tek)
   craft_turn?: number; // bu ay zanaat işlendi mi (tur başına tek — beceri/kalite-satış farmı önlenir)
   battle_turn?: number; // bu ay taktik savaşa/düelloya girildi mi (tur başına tek — para/beceri/itibar farmı önlenir; work/war ile aynı desen)
+  battle_award_turn?: number; // bu ay dövüş sonucu uygulandı mı (giriş kilidi battle_turn'e taşındı; ödülün tek-seferliği bu alanla korunur)
   intimidate_turn?: number; // bu ay gözdağı verildi mi (tur başına tek — korku spam'i önlenir)
   feast_turn?: number; // bu ay ziyafet verildi mi (tur başına tek — para→şöhret/itibar çeviricisi farmlanamaz)
   alms_turn?: number; // bu ay sadaka dağıtıldı mı (tur başına tek — şeref farmı önlenir)
@@ -3735,12 +3736,20 @@ function maybeInjure(s: GameState, heavy: boolean) {
   push(s, "yaralanma", `${t.label} aldın${permanent ? " — kalıcı iz bıraktı" : ""}.`, "kişisel", false, permanent ? { k: "evj.injurePerm", p: [{ wd: wIdx }] } : { k: "evj.injure", p: [{ wd: wIdx }] });
 }
 
+// Dövüş girişi: ay hakkı ekrana adım atınca yanar — kaybederken OS-geri ile kaçıp bedelsiz tekrar denenemez (risk by-pass'ı kapalı).
+export function startBattleAttempt(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.battle_turn === s.turn) return s;
+  p.battle_turn = s.turn;
+  return s;
+}
 // Tur-tabanlı savaşın sonucunu uygula (savas ekranı çağırır).
 export function applyBattleOutcome(prev: GameState, id: string, won: boolean, finalHp: number): GameState {
   const s = clone(prev); const p = s.player; const e = ENCOUNTERS.find((x) => x.id === id);
   if (!e) return s;
-  if (p.battle_turn === s.turn) return s; // çekirdek kapısı (UI'dan bağımsız): ayda tek dövüş
-  p.battle_turn = s.turn; // bu ay dövüşüldü — kazanç da kayıp da turu tüketir (yenilip tekrar deneyip farmlanamaz)
+  if (p.battle_award_turn === s.turn) return s; // çekirdek kapısı (UI'dan bağımsız): sonuç ayda bir kez uygulanır
+  p.battle_award_turn = s.turn;
+  p.battle_turn = s.turn; // giriş kilidi kurulmamışsa (eski akış) burada da kurulur — çifte güvence
   gainSkill(s, "combat", won ? 14 : 7);
   if (won) {
     let reward = Math.round(e.reward * inflationFactor(s)); // ödül çağın parasıyla — geç oyunda dövüş anlamsız kalmasın
@@ -3749,7 +3758,7 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
     p.fear = Math.min(100, p.fear + Math.round(e.fame / 2));
     bumpNam(p, "mert", 6);
     const floor = hasPerk(p, "yilmaz") ? 5 : 1;
-    p.health = Math.max(floor, Math.round(finalHp));
+    p.health = Math.max(floor, Math.min(Math.round(finalHp), p.health)); // zafer canı giriş canını aşamaz (15-19 canla girip 20 ile çıkma kapalı)
     maybeInjure(s, false);
     push(s, "savaş_zafer", `${e.title}: Zafer senin! (+${reward} akçe, şöhretin arttı.)`, "kişisel", true, { k: "evj.battleWin", p: [{ enc: e.id }, reward] });
   } else {
@@ -3774,13 +3783,14 @@ export function nemesisEncounter(s: GameState): Encounter | null {
 }
 export function applyNemesisOutcome(prev: GameState, won: boolean, finalHp: number): GameState {
   const s = clone(prev); const p = s.player; const n = s.story?.nemesis; if (!n) return s;
-  if (p.battle_turn === s.turn) return s; // çekirdek kapısı (UI'dan bağımsız)
-  p.battle_turn = s.turn; // nemesis hesaplaşması da tur başına tek dövüş kapısına dahil
+  if (p.battle_award_turn === s.turn) return s; // çekirdek kapısı (UI'dan bağımsız): sonuç ayda bir kez uygulanır
+  p.battle_award_turn = s.turn;
+  p.battle_turn = s.turn; // nemesis hesaplaşması da tur başına tek dövüş kapısına dahil (giriş kilidi kurulmamışsa çifte güvence)
   gainSkill(s, "combat", won ? 16 : 8);
   if (won) {
     p.money += Math.round(90 * inflationFactor(s)); p.fame = Math.min(100, p.fame + 16); p.honor = Math.min(100, p.honor + 8); // ödül çağın parasıyla (nemesisEncounter göstergesiyle aynı)
     bumpNam(p, "mert", 8);
-    const floor = hasPerk(p, "yilmaz") ? 5 : 1; p.health = Math.max(floor, Math.round(finalHp));
+    const floor = hasPerk(p, "yilmaz") ? 5 : 1; p.health = Math.max(floor, Math.min(Math.round(finalHp), p.health)); // zafer canı giriş canını aşamaz
     s.story.nemesis = null;
     push(s, "nemesis", `${n.name}'ı alt ettin! Hesap kapandı, adın korkusuz diye anıldı.`, "kişisel", true, { k: "evj.nemWin", p: [n.name] });
   } else {
