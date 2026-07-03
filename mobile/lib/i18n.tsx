@@ -645,7 +645,7 @@ const TR: Dict = {
   "settings.title": "Ayarlar", "settings.sound": "SESLER", "settings.soundDesc": "İnce dokunma ve ay sesleri",
   "settings.generation": "NESİL", "settings.newLife": "YENİ HAYAT BAŞLAT", "settings.reset": "Mevcut oyun silinsin mi?",
   "sec.livelihood": "Geçim", "sec.power": "Güç & Mevki", "sec.realm": "Diyar & Soy", "sec.records": "Kayıt & Anı",
-  "dash.journal": "HAYAT GÜNLÜĞÜ", "dash.empty": "Günlüğün henüz boş. Ayı ilerlet, hikâyen başlasın.","dash.emptyTitle":"Boş bir sayfa","dash.worldEmptyTitle":"Sessiz diyar","dash.emptyHint":"Aşağıdaki “Ayı İlerle” ile başla",
+  "dash.journal": "HAYAT GÜNLÜĞÜ", "dash.empty": "Günlüğün henüz boş. Ayı ilerlet, hikâyen başlasın.","dash.monthDigest":"Bu ay %1 gelişme — yeniler işaretli","dash.emptyTitle":"Boş bir sayfa","dash.worldEmptyTitle":"Sessiz diyar","dash.emptyHint":"Aşağıdaki “Ayı İlerle” ile başla",
   "guide.core": "Her tur bir aydır. “Yaşa” ile zaman ilerler; çalış, ye ve çevreni tanı. Yaptıkların hatırlanır.", "guide.eat": "Açlığın azaldı — “Ye” ile doyun. Aç kalırsan sağlığın erimeye başlar.", "guide.child": "Çocukluk çağındasın. Her ay bir uğraş seçersin; bu küçük seçimler yıllar sonra karşına çıkar.", "guide.prof": "Reşit oldun. “Meslek” ekranından bir iş seç — gelirin ve kariyerin orada başlar.", "guide.faction": "Loncalar güç ve gelir sağlar. “Örgütler” ekranından görev yapıp itibar kazan, sonra katıl.",
   "settings.haptics": "TİTREŞİM", "settings.hapticsDesc": "Önemli anlarda hafif dokunsal geri bildirim", "settings.perf": "SADE MOD", "settings.perfDesc": "Süslü animasyonları kapatır — pil dostu. Düşük RAM'li cihazlarda ilk açılışta otomatik devreye girer",
 };
@@ -670,7 +670,7 @@ const EN: Dict = {
   "settings.title": "Settings", "settings.sound": "SOUNDS", "settings.soundDesc": "Subtle taps and month chimes",
   "settings.generation": "GENERATION", "settings.newLife": "START A NEW LIFE", "settings.reset": "Delete the current game?",
   "sec.livelihood": "Livelihood", "sec.power": "Power & Status", "sec.realm": "Realm & Lineage", "sec.records": "Records",
-  "dash.journal": "LIFE JOURNAL", "dash.empty": "Your journal is empty. Advance the month to begin your story.","dash.emptyTitle":"A blank page","dash.worldEmptyTitle":"A quiet realm","dash.emptyHint":"Begin with “Advance the Month” below",
+  "dash.journal": "LIFE JOURNAL", "dash.empty": "Your journal is empty. Advance the month to begin your story.","dash.monthDigest":"%1 developments this month — new ones marked","dash.emptyTitle":"A blank page","dash.worldEmptyTitle":"A quiet realm","dash.emptyHint":"Begin with “Advance the Month” below",
   "guide.core": "Each turn is a month. “Live” advances time; work, eat and meet people. What you do is remembered.", "guide.eat": "Your hunger is low — tap “Eat”. If you starve, your health will start to fade.", "guide.child": "You are still a child. Each month you pick a pastime; these small choices return years later.", "guide.prof": "You have come of age. Choose a trade on the “Profession” screen — income and career start there.", "guide.faction": "Guilds bring power and income. Earn standing with tasks on the “Organizations” screen, then join.",
   "settings.haptics": "VIBRATION", "settings.hapticsDesc": "Subtle haptic feedback on key moments", "settings.perf": "LITE MODE", "settings.perfDesc": "Turns off decorative animations — battery-friendly. Auto-enabled on first launch on devices with less than 3 GB RAM",
 };
@@ -689,7 +689,7 @@ const ES: Dict = {
   "settings.title": "Ajustes", "settings.sound": "SONIDOS", "settings.soundDesc": "Toques sutiles y campanadas",
   "settings.generation": "GENERACIÓN", "settings.newLife": "EMPEZAR UNA NUEVA VIDA", "settings.reset": "¿Borrar la partida actual?",
   "sec.livelihood": "Sustento", "sec.power": "Poder y Estatus", "sec.realm": "Reino y Linaje", "sec.records": "Registros",
-  "dash.journal": "DIARIO DE VIDA", "dash.empty": "Tu diario está vacío. Avanza el mes para empezar tu historia.","dash.emptyTitle":"Una página en blanco","dash.worldEmptyTitle":"Un reino en calma","dash.emptyHint":"Empieza con “Avanzar el mes” abajo",
+  "dash.journal": "DIARIO DE VIDA", "dash.empty": "Tu diario está vacío. Avanza el mes para empezar tu historia.","dash.monthDigest":"%1 novedades este mes — las nuevas marcadas","dash.emptyTitle":"Una página en blanco","dash.worldEmptyTitle":"Un reino en calma","dash.emptyHint":"Empieza con “Avanzar el mes” abajo",
   "guide.core": "Cada turno es un mes. “Vivir” avanza el tiempo; trabaja, come y conoce a la gente. Lo que haces se recuerda.", "guide.eat": "Tu hambre es alta — pulsa “Comer”. Si pasas hambre, tu salud empezará a decaer.", "guide.child": "Aún eres un niño. Cada mes eliges un pasatiempo; estas pequeñas decisiones vuelven años después.", "guide.prof": "Has llegado a la mayoría de edad. Elige un oficio en la pantalla “Profesión”; ahí empiezan ingresos y carrera.", "guide.faction": "Los gremios dan poder e ingresos. Gana prestigio con tareas en “Organizaciones” y únete.",
   "settings.haptics": "VIBRACIÓN", "settings.hapticsDesc": "Respuesta háptica sutil en momentos clave", "settings.perf": "MODO LIGERO", "settings.perfDesc": "Desactiva animaciones decorativas — ahorra batería. Se activa automáticamente en el primer inicio en dispositivos con menos de 3 GB de RAM",
 };
@@ -708,7 +708,7 @@ const PT: Dict = {
   "settings.title": "Definições", "settings.sound": "SONS", "settings.soundDesc": "Toques subtis e sinos",
   "settings.generation": "GERAÇÃO", "settings.newLife": "COMEÇAR UMA NOVA VIDA", "settings.reset": "Apagar o jogo atual?",
   "sec.livelihood": "Sustento", "sec.power": "Poder e Estatuto", "sec.realm": "Reino e Linhagem", "sec.records": "Registos",
-  "dash.journal": "DIÁRIO DE VIDA", "dash.empty": "O teu diário está vazio. Avança o mês para começar a tua história.","dash.emptyTitle":"Uma página em branco","dash.worldEmptyTitle":"Um reino calmo","dash.emptyHint":"Começa com “Avançar o mês” abaixo",
+  "dash.journal": "DIÁRIO DE VIDA", "dash.empty": "O teu diário está vazio. Avança o mês para começar a tua história.","dash.monthDigest":"%1 novidades este mês — as novas marcadas","dash.emptyTitle":"Uma página em branco","dash.worldEmptyTitle":"Um reino calmo","dash.emptyHint":"Começa com “Avançar o mês” abaixo",
   "guide.core": "Cada turno é um mês. “Viver” avança o tempo; trabalha, come e conhece as pessoas. O que fazes é lembrado.", "guide.eat": "A tua fome está alta — toca em “Comer”. Se passares fome, a tua saúde começará a decair.", "guide.child": "Ainda és uma criança. Cada mês escolhes um passatempo; estas pequenas escolhas voltam anos depois.", "guide.prof": "Atingiste a maioridade. Escolhe um ofício no ecrã “Profissão”; aí começam rendimento e carreira.", "guide.faction": "As guildas dão poder e rendimento. Ganha prestígio com tarefas em “Organizações” e adere.",
   "settings.haptics": "VIBRAÇÃO", "settings.hapticsDesc": "Resposta tátil subtil em momentos importantes", "settings.perf": "MODO LEVE", "settings.perfDesc": "Desliga animações decorativas — poupa bateria. Ativa automaticamente no primeiro arranque em dispositivos com menos de 3 GB de RAM",
 };
@@ -727,7 +727,7 @@ const AR: Dict = {
   "settings.title": "الإعدادات", "settings.sound": "الأصوات", "settings.soundDesc": "نقرات خفيفة وأجراس",
   "settings.generation": "الجيل", "settings.newLife": "ابدأ حياة جديدة", "settings.reset": "حذف اللعبة الحالية؟",
   "sec.livelihood": "المعيشة", "sec.power": "القوة والمكانة", "sec.realm": "الديار والنسل", "sec.records": "السجلّات",
-  "dash.journal": "يوميات الحياة", "dash.empty": "يومياتك فارغة. تقدّم شهرًا لتبدأ حكايتك.","dash.emptyTitle":"صفحة فارغة","dash.worldEmptyTitle":"ديار هادئة","dash.emptyHint":"ابدأ بـ«تقدّم شهرًا» بالأسفل",
+  "dash.journal": "يوميات الحياة", "dash.empty": "يومياتك فارغة. تقدّم شهرًا لتبدأ حكايتك.","dash.monthDigest":"%1 مستجدات هذا الشهر — الجديدة معلَّمة","dash.emptyTitle":"صفحة فارغة","dash.worldEmptyTitle":"ديار هادئة","dash.emptyHint":"ابدأ بـ«تقدّم شهرًا» بالأسفل",
   "guide.core": "كل دور شهر. اضغط «عِش» ليمضي الزمن؛ اعمل وكُل وتعرّف إلى الناس. ما تفعله يُذكَر.", "guide.eat": "جوعك مرتفع — اضغط «كُل». إن جعت بدأت صحتك تتآكل.", "guide.child": "أنت في سنّ الطفولة. تختار كل شهر تسلية؛ هذه الخيارات الصغيرة تعود بعد سنين.", "guide.prof": "بلغت الرشد. اختر حرفة من شاشة «المهنة»؛ هناك يبدأ الدخل والمسيرة.", "guide.faction": "النقابات تمنح القوة والدخل. اكسب مكانة بالمهام في شاشة «المنظمات» ثم انضمّ.",
   "settings.haptics": "الاهتزاز", "settings.hapticsDesc": "ارتجاع لمسي خفيف في اللحظات المهمة", "settings.perf": "الوضع المبسّط", "settings.perfDesc": "يوقف الرسوم الزخرفية — أوفر للبطارية. يُفعَّل تلقائيًا عند أول تشغيل على الأجهزة ذات أقل من 3 جيجابايت رام",
 };
@@ -746,7 +746,7 @@ const RU: Dict = {
   "settings.title": "Настройки", "settings.sound": "ЗВУКИ", "settings.soundDesc": "Тихие нажатия и колокола",
   "settings.generation": "ПОКОЛЕНИЕ", "settings.newLife": "НАЧАТЬ НОВУЮ ЖИЗНЬ", "settings.reset": "Удалить текущую игру?",
   "sec.livelihood": "Заработок", "sec.power": "Власть и статус", "sec.realm": "Край и род", "sec.records": "Записи",
-  "dash.journal": "ДНЕВНИК ЖИЗНИ", "dash.empty": "Дневник пуст. Проживите месяц, чтобы начать историю.","dash.emptyTitle":"Чистая страница","dash.worldEmptyTitle":"Тихий край","dash.emptyHint":"Начни с «Прожить месяц» внизу",
+  "dash.journal": "ДНЕВНИК ЖИЗНИ", "dash.empty": "Дневник пуст. Проживите месяц, чтобы начать историю.","dash.monthDigest":"%1 событий в этом месяце — новые отмечены","dash.emptyTitle":"Чистая страница","dash.worldEmptyTitle":"Тихий край","dash.emptyHint":"Начни с «Прожить месяц» внизу",
   "guide.core": "Каждый ход — месяц. «Жить» двигает время; работай, ешь и знакомься с людьми. Твои поступки помнят.", "guide.eat": "Голод высок — нажми «Есть». Будешь голодать — здоровье начнёт убывать.", "guide.child": "Сейчас пора детства. Каждый месяц ты выбираешь занятие; эти мелкие выборы вернутся годы спустя.", "guide.prof": "Пора выбрать ремесло на экране «Профессия» — там начинаются доход и карьера.", "guide.faction": "Гильдии дают силу и доход. Заслужи уважение заданиями на экране «Организации», затем вступай.",
   "settings.haptics": "ВИБРАЦИЯ", "settings.hapticsDesc": "Лёгкая тактильная отдача в ключевые моменты", "settings.perf": "ЛЁГКИЙ РЕЖИМ", "settings.perfDesc": "Отключает декоративные анимации — бережёт батарею. При первом запуске автоматически включается на устройствах с менее 3 ГБ ОЗУ",
 };

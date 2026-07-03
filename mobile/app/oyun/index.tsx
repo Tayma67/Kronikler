@@ -15,7 +15,7 @@ import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, Eulog
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
-import { playTap } from "../../lib/sound";
+import { playTap, playChime } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
 
@@ -95,6 +95,7 @@ export default function Dashboard() {
   const { state, doWork, resetGame, apply } = useGame();
   const { t, lang } = useI18n();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
+  const [freshMark, setFreshMark] = useState<null | { cutoffDay: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + yenilik eşiği
   const [dilemma, setDilemma] = useState<Dilemma | null>(null);
   const [opp, setOpp] = useState<Opportunity | null>(null);
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
@@ -163,7 +164,7 @@ export default function Dashboard() {
       lastRolledTurn.current = state.turn;
       if (!state.player.dead && !dilemma && !opp) {
         const fest = pickFestival(state); // şenlik ayı: yılın nabzı rastgele olaydan önce gelir (yılda bir; ay geçerse gelecek yıla)
-        if (fest) setDilemma(fest);
+        if (fest) { setDilemma(fest); playChime(); }
         else {
           const roll = Math.random();
           if (roll < 0.28) { const d = pickDilemma(state); if (d) setDilemma(d); }
@@ -182,6 +183,8 @@ export default function Dashboard() {
       const fresh = h.slice(seenLen.current);
       const land = [...fresh].reverse().find((e) => e.landmark && e.type !== "ölüm" && e.type !== "nesil_devri");
       if (land) setMilestone(land);
+      // 2+ gelişme varsa "bu ay" şeridi: çok olaylı aylarda hiçbir şey sessizce kaybolmasın.
+      setFreshMark(fresh.length >= 2 ? { cutoffDay: fresh[0]?.day ?? state.turn, n: fresh.length } : null);
     }
     seenLen.current = h.length;
   }, [state?.history.length]);
@@ -242,7 +245,10 @@ export default function Dashboard() {
               </Text>
               {land && <GameIcon name="castle" size={9} color={C.goldBright} />}
             </View>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted }}>{timeAgo(e.day)}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+              {freshMark && e.day >= freshMark.cutoffDay && <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.goldBright }} />}
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted }}>{timeAgo(e.day)}</Text>
+            </View>
           </View>
           <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment, lineHeight: 19 }}>{txt}</Text>
         </View>
@@ -458,7 +464,7 @@ export default function Dashboard() {
               {acts.map((a) => {
                 const dis = !can || (a.cost != null && p.money < a.cost);
                 return (
-                  <Pressable key={a.k} onPress={() => { if (!dis) onAdult(a.k); }} disabled={dis} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: dis ? C.border : "rgba(111,160,192,0.4)", backgroundColor: dis ? C.bg : C.card, opacity: dis ? 0.5 : 1 }}>
+                  <Pressable key={a.k} onPress={() => { if (!dis) onAdult(a.k); }} disabled={dis} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: dis ? C.border : "rgba(111,160,192,0.4)", backgroundColor: dis ? C.bg : C.card, opacity: dis ? 0.5 : 1 }}>
                     <GameIcon name={a.icon} size={16} color={dis ? C.parchmentMuted : "#6FA0C0"} />
                     <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, color: dis ? C.parchmentMuted : C.parchment }} numberOfLines={1}>{a.label}{a.cost != null ? ` · ${a.cost}⚜` : ""}</Text>
                   </Pressable>
@@ -473,7 +479,7 @@ export default function Dashboard() {
       {!p.dead && p.age >= 55 && (() => {
         const en = studyEnergy(state); const can = en >= STUDY_COST;
         const acts: { k: ElderAct; icon: string; label: string }[] = [
-          { k: "nasihat", icon: "prayer-beads", label: t("elder.act.nasihat") },
+          { k: "nasihat", icon: "speaker", label: t("elder.act.nasihat") },
           { k: "hayir", icon: "akce", label: t("elder.act.hayir") },
           { k: "dinlen", icon: "saglik", label: t("elder.act.dinlen") },
           { k: "ani", icon: "roman", label: t("elder.act.ani") },
@@ -492,7 +498,7 @@ export default function Dashboard() {
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {acts.map((a) => (
-                <Pressable key={a.k} onPress={() => onElder(a.k)} disabled={!can} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: can ? "rgba(123,79,175,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
+                <Pressable key={a.k} onPress={() => onElder(a.k)} disabled={!can} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: can ? "rgba(123,79,175,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
                   <GameIcon name={a.icon} size={16} color={can ? C.ink : C.parchmentMuted} />
                   <Text style={{ fontFamily: F.display, fontSize: 11, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
                 </Pressable>
@@ -606,6 +612,13 @@ export default function Dashboard() {
 
         {/* Olay listesi */}
         <ScrollView style={{ flex: 1, backgroundColor: "#221808" }} contentContainerStyle={{ padding: 12 }}>
+          {/* "Bu ay" özeti: son ilerlemede 2+ gelişme düştüyse sayısı + işaret açıklaması (çok olaylı aylar sessizce kaybolmasın) */}
+          {freshMark && tab === "gunluk" && (
+            <Animated.View entering={FadeInDown.duration(240)} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(224,188,90,0.08)", borderWidth: 1, borderColor: "rgba(224,188,90,0.4)", borderRadius: 9, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 10 }}>
+              <GameIcon name="hourglass" size={13} color={C.goldBright} />
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, letterSpacing: 0.5, color: C.goldBright }}>{applyParams(t("dash.monthDigest"), [freshMark.n])}</Text>
+            </Animated.View>
+          )}
           <Animated.View key={tab} entering={FadeIn.duration(220)}>
           {events.length === 0 ? (
             <View style={{ alignItems: "center", paddingVertical: 30 }}>

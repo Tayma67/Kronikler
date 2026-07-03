@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, startBattleAttempt, inflationFactor } from "../../lib/game";
 import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
+import { playVictory } from "../../lib/sound";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -75,6 +76,7 @@ export default function Savas() {
   };
   const finish = () => {
     if (bs && !applied) {
+      if (bs.won) playVictory();
       if (encId === "nemesis") apply((s) => applyNemesisOutcome(s, bs.won, bs.playerHp));
       else apply((s) => applyBattleOutcome(s, encId, bs.won, bs.playerHp));
       setApplied(true);
