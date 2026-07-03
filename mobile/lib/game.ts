@@ -1297,6 +1297,16 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       else { p.health = Math.min(100, p.health + 2); bond(2); push(s, "evlilik", `${p.spouse_name} ile geleceğe dair konuştunuz; küçük hayaller kurmak iyi geldi.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
     }
   }
+  // ── Sadık dostun karşılığı: borç boğarken yıllarca kurulan bağ el uzatır — iyi niyet tükenir (ilişki düşer), farmlanamaz ──
+  if (!p.dead && (p.debt || 0) > 40 && chance(0.12)) {
+    const loyal = rosterAt(s, p.location_name).find((n) => (s.relationships[n.id] || 0) >= 50);
+    if (loyal) {
+      const pay = Math.min(p.debt || 0, Math.round(50 * inflationFactor(s)));
+      p.debt = Math.round((p.debt || 0) - pay);
+      s.relationships[loyal.id] = Math.max(-100, (s.relationships[loyal.id] || 0) - 15); // iyi niyet tükendi: dostluk yeniden kazanılmalı
+      push(s, "sohbet", `${loyal.name} borcunun bir kısmını sessizce kapattı (${pay} akçe); minnet borcun büyüdü.`, "kişisel", true, { k: "evj.friendDebt", p: [loyal.name, pay] });
+    }
+  }
   // ── Yaşam-evresi anıları: her döneme doku katan küçük anlar (ara sıra; bazıları aileyi isimle anar) ──
   if (!p.dead && chance(0.14)) {
     const child = p.children.length ? rnd(p.children) : null;
@@ -1791,9 +1801,16 @@ function tickFeud(s: GameState, rivals: RivalHouse[]) {
     pr.cond = Math.max(15, pr.cond - 25);
     push(s, "kan_davası", `${h.name} adamları gece ${PROPERTY_TYPES[pr.type]?.name || "mülküne"} (${pr.loc}) dadandı; dava mala sıçradı.`, "makro", true, { k: "evj.feud.sabotage", p: [{ hn: h.nameIdx }, { pt2: pr.type }, { pl: pr.loc }] });
   } else if (f.stage === 3 && Math.random() < 0.09) {
-    const hurt = 6 + Math.floor(Math.random() * 6);
-    p.health = Math.max(1, p.health - hurt); p.fear = Math.min(100, p.fear + 2); // pusu öldürmez ama iz bırakır — ölüm ancak meydan savaşında
-    push(s, "kan_davası", `${h.name} pusu kurdu; canını zor kurtardın (sağlık -${hurt}).`, "kişisel", true, { k: "evj.feud.ambush", p: [{ hn: h.nameIdx }, hurt] });
+    const guard = rosterAt(s, p.location_name).find((n) => (s.relationships[n.id] || 0) >= 50);
+    if (guard && Math.random() < 0.4) {
+      // Sadık dost pusudan haber uçurur — kendini riske attığı için bağ hafif yıpranır (dostluk bedava kalkan değil).
+      s.relationships[guard.id] = Math.max(-100, (s.relationships[guard.id] || 0) - 5);
+      push(s, "kan_davası", `${h.name} pususunu ${guard.name} önceden haber verdi; kıl payı kurtuldun.`, "kişisel", true, { k: "evj.feud.friendWarn", p: [guard.name, { hn: h.nameIdx }] });
+    } else {
+      const hurt = 6 + Math.floor(Math.random() * 6);
+      p.health = Math.max(1, p.health - hurt); p.fear = Math.min(100, p.fear + 2); // pusu öldürmez ama iz bırakır — ölüm ancak meydan savaşında
+      push(s, "kan_davası", `${h.name} pusu kurdu; canını zor kurtardın (sağlık -${hurt}).`, "kişisel", true, { k: "evj.feud.ambush", p: [{ hn: h.nameIdx }, hurt] });
+    }
   }
   // Aksakallı sulhü: ateş tavana dayanıp iki taraf da yorulunca büyükler araya girebilir — dava kendiliğinden kapanır.
   // (İlgilenmeyen oyuncu için ömür boyu kan kaybı olmasın; ölçüldü — davasız medyan ömür 66, sonsuz davada 59'a düşüyordu.)
@@ -3455,6 +3472,9 @@ export function eulogy(s: GameState): { epithet: string; lines: EulLine[]; close
   // Torunlar
   const gcN = p.grandchildren?.length || 0;
   if (gcN > 0) lines.push({ k: "eul.grandchildren", p: [gcN] });
+  // Sadık dostlar: bir ömür boyu kurulan bağlar ardından ağlar
+  const loyalN = Object.values(s.relationships || {}).filter((v) => (v as number) >= 50).length;
+  if (loyalN > 0) lines.push({ k: "eul.friends", p: [loyalN] });
   return { epithet: deathEpithet(s), lines, close: dynastyNote(p) };
 }
 
