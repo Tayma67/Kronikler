@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { doCrime, resolveCrimeScene, CrimeKind, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding } from "../../lib/game";
+import { doCrime, resolveCrimeScene, CrimeKind, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -58,6 +58,31 @@ export default function Suc() {
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
         <PageHeader kicker={t("scr.suc")} title={t("scr.suc")} sub={t("suc.hint")} />
+        {/* Yeraltı mertebesi: gizli sayı görünür kariyere dönüşür — sonraki kademeye ilerleme şeridi */}
+        {(() => {
+          const st = underworldStanding(state.player);
+          const tier = underworldTier(state.player);
+          const next = tier < UNDERWORLD_TIERS.length - 1 ? UNDERWORLD_TIERS[tier + 1] : null;
+          const base = UNDERWORLD_TIERS[tier];
+          const frac = next != null ? Math.min(1, (st - base) / (next - base)) : 1;
+          return (
+            <View style={{ backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderRadius: 11, padding: 12, marginBottom: 12 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <GameIcon name="hood" size={15} color={C.ink} />
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.ink }}>{t("uw.tier" + tier).toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.parchmentMuted }}>{t("uw.standing")} {st}</Text>
+              </View>
+              {next != null && (
+                <>
+                  <View style={{ height: 4, borderRadius: 2, backgroundColor: "rgba(123,79,175,0.18)", marginTop: 8, overflow: "hidden" }}>
+                    <View style={{ width: `${Math.round(frac * 100)}%`, height: "100%", backgroundColor: C.ink }} />
+                  </View>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 4 }}>{applyParams(t("uw.next"), [next - st, t("uw.tier" + (tier + 1))])}</Text>
+                </>
+              )}
+            </View>
+          );
+        })()}
 
         {res && (
           <Animated.View key={res.tick} entering={FadeInDown.duration(240)} style={{ backgroundColor: res.ok ? "rgba(127,166,106,0.10)" : "rgba(200,64,64,0.10)", borderWidth: 1, borderColor: res.ok ? "rgba(127,166,106,0.5)" : "rgba(200,64,64,0.5)", borderLeftWidth: 3, borderLeftColor: res.ok ? C.sage : C.blood, borderRadius: 10, padding: 12, marginBottom: 12 }}>

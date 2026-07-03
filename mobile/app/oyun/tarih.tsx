@@ -36,7 +36,8 @@ export default function Tarih() {
           const cal = currentCalendar(e.day);
           const bigIcon = e.landmark ? BIG_ICON[e.type] : undefined;
           // Nesil devri: kronikte bölüm başlığı gibi durur — hanedanın perde arası.
-          if (e.type === "nesil_devri") {
+          // Yalnız GERÇEK devir kaydı (evj.genHandover; p[0]=nesil no) — son-söz yankısı da aynı tipi taşır ama başlık değildir.
+          if (e.type === "nesil_devri" && (!e.k || e.k === "evj.genHandover")) {
             return (
               <View style={{ marginTop: 14, marginBottom: 10 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>

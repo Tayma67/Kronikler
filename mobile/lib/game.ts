@@ -2790,8 +2790,9 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
   const chance = (route === "patika" ? 0.42 : route === "kervan" ? 0.5 : 0.34) + insec * 0.012;
   if (Math.random() >= chance) return;
   const test = (stat: keyof Stats, per = 0.05, base = 0.4) => Math.random() < Math.min(0.9, base + effStat(p, stat) * per);
-  // Kervan rotası güvenli/sosyal olaylara yönelir; diğerleri tüm havuzu çeker.
-  const pool = route === "kervan" ? ["han", "yolcu", "tuccar"] : ["han", "yolcu", "tuccar", "firtina", "gecit", "kervanf"];
+  // Kervan rotası güvenli/sosyal olaylara yönelir; diğerleri tüm havuzu çeker. At sahibine özel olay eklenir.
+  const pool = route === "kervan" ? ["han", "yolcu", "tuccar", "kutsal"] : ["han", "yolcu", "tuccar", "firtina", "gecit", "kervanf", "kutsal", "izler", "coban", "harabe"];
+  if (p.horse) pool.push("atli"); // atlıya yol başka görünür
   const ev = pool[Math.floor(Math.random() * pool.length)];
   if (ev === "han") {
     const cost = Math.min(p.money, 4 + Math.floor(Math.random() * 4));
@@ -2816,6 +2817,23 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
     // Kervan fırsatı: ticaret testiyle küçük kâr.
     if (test("intelligence", 0.05, 0.4)) { const gain = 10 + Math.floor(Math.random() * 25); p.money += gain; gainSkill(s, "trade", 6); push(s, "yolculuk", `Yolda bir kervana ufak bir ticaret yaptın (+${gain} akçe).`, "kişisel", true, { k: "evj.trCarWin", p: [gain] }); }
     else push(s, "yolculuk", "Yolda bir kervan gördün ama denk bir alışveriş çıkmadı.", "kişisel", false, { k: "evj.trCarLose" });
+  }
+  else if (ev === "kutsal") {
+    // Yol üstü türbe: sakin bir an — test yok, küçük gönül ferahlığı.
+    p.honor = Math.min(100, p.honor + 2); p.health = Math.min(100, p.health + 3); bumpNam(p, "dindar", 1);
+    push(s, "yolculuk", "Yol üstünde bir türbeye uğrayıp dua ettin; içine bir ferahlık indi.", "kişisel", false, { k: "evj.trShrine" });
+  } else if (ev === "izler") {
+    if (test("stamina", 0.06, 0.45)) { gainSkill(s, "combat", 6); push(s, "yolculuk", "Patikada kurt izleri gördün; izleri okuyup sürüden önce davrandın.", "kişisel", false, { k: "evj.trTracksWin" }); }
+    else { const hurt = 3 + Math.floor(Math.random() * 4); p.health = Math.max(1, p.health - hurt); push(s, "yolculuk", `Kurtlar karanlıkta yolunu kesti; kaçarken hırpalandın (−${hurt} sağlık).`, "kişisel", false, { k: "evj.trTracksLose", p: [hurt] }); }
+  } else if (ev === "coban") {
+    if (test("stamina", 0.05, 0.5)) { const pay = Math.round((6 + Math.floor(Math.random() * 8)) * inflationFactor(s)); p.money += pay; bumpNam(p, "comert", 2); push(s, "yolculuk", `Sürüsü dağılmış bir çobana yardım ettin; duasını ve birkaç akçesini aldın (+${pay}).`, "kişisel", false, { k: "evj.trShepherd", p: [pay] }); }
+    else push(s, "yolculuk", "Dağılan bir sürüyü toparlamaya çalıştın ama koyunlar seni dinlemedi; çoban gülümseyip teşekkür etti.", "kişisel", false, { k: "evj.trShepherdLose" });
+  } else if (ev === "harabe") {
+    if (test("intelligence", 0.05, 0.38)) { const loot = Math.round((10 + Math.floor(Math.random() * 18)) * inflationFactor(s)); p.money += loot; push(s, "yolculuk", `Eski bir kervansaray harabesini kolaçan ettin; taşların arasından unutulmuş bir kese çıktı (+${loot} akçe).`, "kişisel", true, { k: "evj.trRuinWin", p: [loot] }); }
+    else push(s, "yolculuk", "Eski bir harabeyi kolaçan ettin; örümcek ağından başka bir şey çıkmadı.", "kişisel", false, { k: "evj.trRuinLose" });
+  } else if (ev === "atli") {
+    if (test("stamina", 0.05, 0.5)) { p.fame = Math.min(100, p.fame + 2); bumpNam(p, "mert", 1); push(s, "yolculuk", `Yolda bir atlıyla yarıştınız; ${p.horse_name || "atın"} rüzgâr gibi uçtu, adın yol boyu anlatıldı.`, "kişisel", false, { k: "evj.trRaceWin", p: [p.horse_name || ""] }); }
+    else push(s, "yolculuk", "Yolda bir atlıyla yarıştınız; tozunu yuttun ama iyi koşturdun.", "kişisel", false, { k: "evj.trRaceLose" });
   }
   if (p.health <= 0) die(s, `${p.name}, yolda can verdi.`, { k: "evj.dieRoad", p: [p.name] });
 }
@@ -3276,6 +3294,13 @@ export function crimeReq(p: Player, kind: CrimeKind): number {
   return p.faction === "golge" ? Math.ceil(base / 2) : base;
 }
 export function crimeUnlocked(p: Player, kind: CrimeKind): boolean { return underworldStanding(p) >= crimeReq(p, kind); }
+// Yeraltı mertebeleri: eşikler suç merdiveninin kilitleriyle hizalı (0/2/6/12) + doruk 20 — gölge kariyerini görünür kılar.
+export const UNDERWORLD_TIERS = [0, 2, 6, 12, 20];
+export function underworldTier(p: Player): number {
+  const st = underworldStanding(p); let tier = 0;
+  for (let i = 0; i < UNDERWORLD_TIERS.length; i++) if (st >= UNDERWORLD_TIERS[i]) tier = i;
+  return tier;
+}
 export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
@@ -3926,7 +3951,7 @@ export function intimidate(prev: GameState): GameState {
 }
 
 // ── Savaş / Çatışma ──
-export interface Encounter { id: string; title: string; desc: string; power: number; reward: number; fame: number; honor: number; danger: number; }
+export interface Encounter { id: string; title: string; desc: string; power: number; reward: number; fame: number; honor: number; danger: number; minFame?: number; } // minFame: efsane karşılaşmalar ancak ad duyulunca gelir (geç oyuna amaç)
 export const ENCOUNTERS: Encounter[] = [
   { id: "haydut",  title: "Yol Haydutları",   desc: "Pusudaki haydutlar kervanına göz dikti.", power: 6,  reward: 35,  fame: 4,  honor: 3,  danger: 14 },
   { id: "ayi",     title: "Dağda Ayı",        desc: "Patikada azgın bir ayıyla burun buruna geldin.", power: 8,  reward: 30,  fame: 5,  honor: 4,  danger: 20 },
@@ -3937,6 +3962,9 @@ export const ENCOUNTERS: Encounter[] = [
   { id: "reis",    title: "Eşkıya Reisi",     desc: "Diyarı kasıp kavuran eşkıya reisini avla.", power: 15, reward: 95,  fame: 15, honor: 11, danger: 30 },
   { id: "akin",    title: "Akın",             desc: "Akıncılarla düşman topraklarına bir akın.", power: 16, reward: 110, fame: 17, honor: 12, danger: 33 },
   { id: "kusatma", title: "Kale Kuşatması",   desc: "Surların önünde kanlı bir kuşatma.",        power: 18, reward: 130, fame: 20, honor: 14, danger: 38 },
+  // ── Efsane karşılaşmalar: adı duyulmuş cengâverin geç-oyun sınavları (elit: niyeti tam okunamaz, combat.ts power 14+ kuralı) ──
+  { id: "canavar", title: "Gece Canavarı",    desc: "Köyleri boşaltan adsız bir dehşet; izini yalnız sen sürebilirsin.", power: 22, reward: 180, fame: 26, honor: 16, danger: 44, minFame: 55 },
+  { id: "kara_alp", title: "Kara Alp",        desc: "Diyar diyar yenilmezliğiyle anılan zırhlı cengâver seni arıyor: 'Adın bana denk mi?'", power: 26, reward: 220, fame: 32, honor: 20, danger: 50, minFame: 70 },
 ];
 // Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
 export function combatPower(p: Player): number {

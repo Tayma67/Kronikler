@@ -219,7 +219,7 @@ export default function Savas() {
             </Pressable>
           </View>
         )}
-        {ENCOUNTERS.map((e) => {
+        {ENCOUNTERS.filter((e) => !e.minFame || p.fame >= e.minFame).map((e) => {
           const tooStrong = e.power > pw + 8;
           return (
             <View key={e.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 10 }}>
