@@ -696,6 +696,7 @@ export interface GameState {
   seeds?: Seed[]; // sonuç tohumları (geçmişin geleceğe etkisi)
   dynastyOffers?: DynastyOffer[]; // dost hanelerden ittifak/evlilik teklifleri
   allied_houses?: string[]; // ittifak kurulan hanelerin id'leri
+  feud?: { houseId: string; nameIdx: number; stage: number; heat: number; act_turn?: number } | null; // kan davası: tek aktif dava; ısı büyür, aşama tırmanır, NESLE GEÇER (continueAsHeir)
   epochNext?: number; // bir sonraki çağ olayının turu (legacy_system epoch_tick)
   pendingScene?: { kind: string; ctx: Record<string, string> } | null; // oyuncu seçimi bekleyen interaktif sahne (suç kesintisi vb.)
   tips?: Tip[]; // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
@@ -1671,9 +1672,11 @@ function tickDynasties(s: GameState, announce: boolean) {
     const target = houseAttitude(p, h);
     h.tutum = Math.round(Math.max(-100, Math.min(100, (h.tutum ?? target) * 0.85 + target * 0.15)));
   }
+  // ── Kan davası tiki: tutuşma, ısı, tırmanma, aylık zarar. Dava sulh ya da meydan savaşıyla biter; bitmezse NESLE GEÇER. ──
+  if (announce) tickFeud(s, rivals);
   // Düşman hane sabotajı: tutumu çok düşük bir hane oyuncunun mülküne el uzatır (gerçek zarar).
   if (announce && p.properties.length) {
-    const foes = rivals.filter((h) => (h.tutum ?? 0) <= -25);
+    const foes = rivals.filter((h) => (h.tutum ?? 0) <= -25 && h.id !== s.feud?.houseId); // dava hanesi ayrı işlenir (tickFeud) — çifte sabotaj olmasın
     if (foes.length && Math.random() < 0.12) {
       const h = foes[Math.floor(Math.random() * foes.length)];
       const pr = p.properties[Math.floor(Math.random() * p.properties.length)];
@@ -1728,6 +1731,105 @@ function tickDynasties(s: GameState, announce: boolean) {
     push(s, "hanedan_haber", `${h.name} ile ${other.name} bir ittifak kurdu; diyarda dengeler değişiyor.`, "makro", true, { k: "evj.houseAlly", p: [{ hn: h.nameIdx }, { hn: other.nameIdx }] });
   }
 }
+// ── Kan davası: nesiller boyu sürebilen tırmanmalı husumet. Aşamalar: 1 husumet → 2 sabotaj → 3 açık çatışma. ──
+const FEUD_STAGE2_HEAT = 25; const FEUD_STAGE3_HEAT = 55;
+function tickFeud(s: GameState, rivals: RivalHouse[]) {
+  const p = s.player;
+  if (p.dead) return;
+  if (!s.feud) {
+    // Tutuşma: derin husumetli bir hane (tutum ≤ -45) davayı başlatabilir.
+    const bitter = rivals.filter((h) => (h.tutum ?? 0) <= -45);
+    if (bitter.length && Math.random() < 0.08) {
+      const h = bitter[Math.floor(Math.random() * bitter.length)];
+      s.feud = { houseId: h.id, nameIdx: h.nameIdx, stage: 1, heat: 0 };
+      push(s, "kan_davası", `${h.name} ile aranızda kan davası başladı; iki ocak arasına ateş düştü.`, "makro", true, { k: "evj.feud.start", p: [{ hn: h.nameIdx }] });
+    }
+    return;
+  }
+  const f = s.feud;
+  const h = rivals.find((x) => x.id === f.houseId);
+  if (!h) { s.feud = null; return; } // hane kayıtlardan düşmüşse dava söner
+  h.tutum = Math.min(h.tutum ?? -45, -45); // dava sürerken husumet tabanı: tutum kendiliğinden yumuşamaz
+  f.heat = Math.min(100, f.heat + 1 + (h.trait === "kindar" ? 1 : 0));
+  if (f.stage < 2 && f.heat >= FEUD_STAGE2_HEAT) { f.stage = 2; push(s, "kan_davası", `${h.name} ile dava büyüdü: artık laf değil, mal mülk hedefte.`, "makro", true, { k: "evj.feud.stage2", p: [{ hn: h.nameIdx }] }); }
+  else if (f.stage < 3 && f.heat >= FEUD_STAGE3_HEAT) { f.stage = 3; push(s, "kan_davası", `${h.name} ile dava kana bulandı: adamları silahlandı, yollar güvensiz.`, "makro", true, { k: "evj.feud.stage3", p: [{ hn: h.nameIdx }] }); }
+  // Aylık zarar: aşamaya göre sertleşir (olasılıklı — her ay değil).
+  if (f.stage === 1 && Math.random() < 0.14) {
+    p.reputation = Math.max(-100, p.reputation - 2);
+    push(s, "kan_davası", `${h.name} çarşıda adını çamura buladı; dava sinsice işliyor.`, "makro", false, { k: "evj.feud.taunt", p: [{ hn: h.nameIdx }] });
+  } else if (f.stage === 2 && p.properties.length && Math.random() < 0.14) {
+    const pr = p.properties[Math.floor(Math.random() * p.properties.length)];
+    pr.cond = Math.max(15, pr.cond - 25);
+    push(s, "kan_davası", `${h.name} adamları gece ${PROPERTY_TYPES[pr.type]?.name || "mülküne"} (${pr.loc}) dadandı; dava mala sıçradı.`, "makro", true, { k: "evj.feud.sabotage", p: [{ hn: h.nameIdx }, { pt2: pr.type }, { pl: pr.loc }] });
+  } else if (f.stage === 3 && Math.random() < 0.12) {
+    const hurt = 8 + Math.floor(Math.random() * 7);
+    p.health = Math.max(1, p.health - hurt); p.fear = Math.min(100, p.fear + 2); // pusu öldürmez ama iz bırakır — ölüm ancak meydan savaşında
+    push(s, "kan_davası", `${h.name} pusu kurdu; canını zor kurtardın (sağlık -${hurt}).`, "kişisel", true, { k: "evj.feud.ambush", p: [{ hn: h.nameIdx }, hurt] });
+  }
+}
+// Sulh bedeli: hanenin gururu + çağın parası.
+export function feudPeaceCost(s: GameState): number {
+  const h = s.feud ? ensureRivals(s).find((x) => x.id === s.feud!.houseId) : null;
+  return Math.round((60 + (h?.pride || 40)) * inflationFactor(s));
+}
+// Sulh iste: bedel öde, karizma/itibar şansıyla dava kapansın. Ayda bir girişim.
+export function feudSuePeace(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  const f = s.feud; if (!f || p.dead) return s;
+  if (f.act_turn === s.turn) return s; // ayda tek dava hamlesi
+  const cost = feudPeaceCost(s);
+  if (p.money < cost) return s;
+  f.act_turn = s.turn;
+  p.money -= cost;
+  const h = ensureRivals(s).find((x) => x.id === f.houseId);
+  const chance = Math.max(0.15, Math.min(0.85, 0.35 + effStat(p, "charisma") * 0.03 + p.reputation * 0.002 - f.heat * 0.003));
+  if (Math.random() < chance) {
+    s.feud = null;
+    if (h) h.tutum = -10; // sulh: husumet küle döner ama kor hâlâ sıcak
+    p.honor = Math.min(100, p.honor + 4);
+    push(s, "kan_davası", `${h?.name || "Hasım hane"} ile sulh oldu: kan parası ödendi (${cost} akçe), dava kapandı.`, "makro", true, { k: "evj.feud.peace", p: [h ? { hn: h.nameIdx } : "", cost] });
+  } else {
+    f.heat = Math.min(100, f.heat + 5); // reddedilen sulh gururlarını okşadı, ateşi harladı
+    push(s, "kan_davası", `${h?.name || "Hasım hane"} sulh akçeni yüzüne fırlattı (${cost} akçe gitti); dava harlandı.`, "makro", true, { k: "evj.feud.peaceFail", p: [h ? { hn: h.nameIdx } : "", cost] });
+  }
+  return s;
+}
+// Karşılık ver: aşama 1-2'de misilleme (ısıyı yükseltir ama güçlerini kırar), aşama 3'te MEYDAN SAVAŞI (davayı bitirebilir).
+export function feudStrike(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  const f = s.feud; if (!f || p.dead || p.age < 16) return s;
+  if (f.act_turn === s.turn) return s; // ayda tek dava hamlesi
+  f.act_turn = s.turn;
+  const h = ensureRivals(s).find((x) => x.id === f.houseId);
+  if (!h) { s.feud = null; return s; }
+  if (f.stage < 3) {
+    h.power = Math.max(20, h.power - 3);
+    f.heat = Math.min(100, f.heat + 6);
+    p.fear = Math.min(100, p.fear + 3); p.reputation = Math.max(-100, p.reputation - 2); // misilleme korku salar ama el âlem hoş görmez
+    bumpNam(p, "zalim", 2);
+    push(s, "kan_davası", `${h.name}'na misilleme yaptın: adamları geri çekildi ama ateş büyüdü.`, "makro", true, { k: "evj.feud.strike", p: [{ hn: h.nameIdx }] });
+    return s;
+  }
+  // Meydan savaşı: gücün + müttefiklerin hanenin gücüne karşı. Kazanan davayı bitirir.
+  const allyBoost = (s.allied_houses?.length || 0) > 0 ? 0.1 : 0; // arkanı kollayan hane varsa terazi senden yana
+  const chance = Math.max(0.15, Math.min(0.85, 0.25 + (combatPower(p) * 2 - h.power) * 0.008 + allyBoost));
+  if (Math.random() < chance) {
+    const loot = Math.round(100 * inflationFactor(s)); // savaş tazminatı çağın parasıyla
+    s.feud = null;
+    h.power = Math.max(20, h.power - 20); h.tutum = -20;
+    p.money += loot; p.fame = Math.min(100, p.fame + 8); p.fear = Math.min(100, p.fear + 8); p.honor = Math.min(100, p.honor + 4);
+    bumpNam(p, "mert", 6);
+    push(s, "kan_davası", `Meydan savaşında ${h.name}'nı dize getirdin: dava bitti, tazminat kesildi (+${loot} akçe).`, "kişisel", true, { k: "evj.feud.win", p: [{ hn: h.nameIdx }, loot] });
+  } else {
+    const hurt = 18 + Math.floor(Math.random() * 8);
+    p.health = Math.max(0, p.health - hurt);
+    if (p.health <= 0) { die(s, `${p.name}, ${h.name} ile meydan savaşında can verdi; dava vârise kaldı.`, { k: "evj.feud.die", p: [p.name, { hn: h.nameIdx }] }); return s; }
+    maybeInjure(s, true);
+    push(s, "kan_davası", `Meydan savaşında ${h.name}'na yenildin; yaralarını sardın, dava sürüyor.`, "kişisel", true, { k: "evj.feud.lose", p: [{ hn: h.nameIdx }, hurt] });
+  }
+  return s;
+}
+
 // Dost hane teklifini kabul et (ittifak veya evlilik).
 export function acceptDynastyOffer(prev: GameState, offerId: string): GameState {
   const s = clone(prev); const p = s.player;
@@ -3409,6 +3511,8 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
   const ns: GameState = {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, relationships: {}, dynasty, npc_state: {}, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
+    // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
+    feud: prev.feud ? { houseId: prev.feud.houseId, nameIdx: prev.feud.nameIdx, stage: prev.feud.stage, heat: Math.round(prev.feud.heat / 2) } : undefined,
     // Hanedan hafızası vârise geçer: ataların tamamladığı yaylar bayrak olarak kalır, az da olsa anlatı momentumu verir.
     story: { active: null, completed: [], tension: Math.min(20, Object.keys(prev.story?.flags || {}).length * 3), nemesis: null, flags: { ...(prev.story?.flags || {}) }, lull: 0 }, wars: [], caravan: null, econ: 1,
     settlements: prev.settlements || [], // dynastinin kurduğu yerleşimler vârise kalır
@@ -3441,6 +3545,8 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     else if (lastWordsId === "sirrini_ver") { hp.skills.trade = Math.min(10, hp.skills.trade + 1); hp.skill_xp.trade = hp.skills.trade * 100; }
     ns.history.push({ day: 0, type: "nesil_devri", text: LW_ECHO_TR[lastWordsId].replace("%1", p.name), scope: "kişisel", landmark: false, k: "evj.lw." + lastWordsId, p: [p.name] });
   }
+  // Devralınan kan davası kroniğe düşer: yeni kuşak yükün farkında başlar.
+  if (ns.feud) ns.history.push({ day: 0, type: "kan_davası", text: `Atalardan kalan kan davası sana geçti; o hesap hâlâ açık.`, scope: "kişisel", landmark: true, k: "evj.feud.inherit", p: [{ hn: ns.feud.nameIdx }] });
   return ns;
 }
 

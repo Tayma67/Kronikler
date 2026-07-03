@@ -12,6 +12,7 @@ import {
   nextSettleTier, canUpgradeSettleTier, upgradeSettleTier, propsInLoc,
   PRESTIGE, prestigeCost, fundPrestige, MARKET_LEVER_MIN, marketLeverCost, canManipulateMarket, manipulateMarket,
   acceptDynastyOffer, declineDynastyOffer,
+  feudPeaceCost, feudSuePeace, feudStrike,
   crownAuthorityOf, CROWN_DECREES, canIssueDecree, issueDecree, decreeCooldownLeft,
   campaignTargets, canLaunchCampaign, campaignOdds, launchCampaign, CAMPAIGN_COST,
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
@@ -69,6 +70,39 @@ export default function Hanedan() {
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
         <PageHeader kicker={t("dyn.kicker")} title={houseName} sub={t("dyn.rivalsHint")} />
+
+        {/* ── KAN DAVASI ── aktif dava: aşama, ısı ve oyuncu hamleleri (sulh / karşılık / meydan savaşı) */}
+        {state.feud && (() => {
+          const f = state.feud!;
+          const fname = rivalHouseName(f.nameIdx, lang);
+          const acted = f.act_turn === state.turn;
+          const cost = feudPeaceCost(state);
+          return (
+            <View style={{ backgroundColor: "rgba(160,48,42,0.08)", borderWidth: 1, borderColor: "rgba(160,48,42,0.5)", borderRadius: 14, padding: 14, marginBottom: 10 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <GameIcon name="crossed-swords" size={16} color={C.blood} />
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.blood }}>{t("feud.title").toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.parchmentDim }}>{t("feud.stage" + f.stage)}</Text>
+              </View>
+              <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, marginTop: 8 }}>{applyParams(t("feud.body"), [fname])}</Text>
+              <View style={{ height: 5, borderRadius: 3, backgroundColor: "rgba(160,48,42,0.18)", marginTop: 10, overflow: "hidden" }}>
+                <View style={{ width: `${Math.min(100, f.heat)}%`, height: "100%", backgroundColor: C.blood }} />
+              </View>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 3 }}>{t("feud.heat")}: {f.heat}/100</Text>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+                <Pressable disabled={acted || p.money < cost} onPress={() => { hap("tap"); apply((s) => feudSuePeace(s)); }} style={{ flex: 1, paddingVertical: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(201,168,76,0.08)", alignItems: "center", opacity: acted || p.money < cost ? 0.4 : 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold }}>{t("feud.sue")}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.parchmentMuted, marginTop: 1 }}>{cost} ⚜</Text>
+                </Pressable>
+                <Pressable disabled={acted || p.age < 16} onPress={() => { hap("advance"); apply((s) => feudStrike(s)); }} style={{ flex: 1, paddingVertical: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(160,48,42,0.55)", backgroundColor: "rgba(160,48,42,0.14)", alignItems: "center", opacity: acted || p.age < 16 ? 0.4 : 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood }}>{f.stage >= 3 ? t("feud.battle") : t("feud.strike")}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.parchmentMuted, marginTop: 1 }}>{f.stage >= 3 ? t("feud.battleSub") : t("feud.strikeSub")}</Text>
+                </Pressable>
+              </View>
+              {acted && <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 7, textAlign: "center" }}>{t("feud.acted")}</Text>}
+            </View>
+          );
+        })()}
 
         {/* ── HANEDAN MÜHRÜ ── */}
         <View style={{ backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 14, padding: 18, alignItems: "center", marginBottom: 10 }}>
