@@ -786,6 +786,91 @@ export const DILEMMAS: Dilemma[] = [
   },
 ];
 
+// ── Şenlikler: yılın nabzı — sabit aylarda dönen mevsim sahneleri. ──
+// Takvim (calendar.ts): turn % 12 → 0=Ocak … 11=Aralık. Nevruz = Mart (2), Hasat Şenliği = Ağustos (7), Kış Meclisi = Aralık (11).
+// Her şenliğin çocuk (<16) ve yetişkin (16+) varyantı var — 7 yaşındaki sofra kurmaz, ateşten atlar.
+// Ödüller küçük ve yılda bir (festival_turn kilidi applyDilemma'da) — farm edilemez.
+export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
+  {
+    month: 2,
+    variants: [
+      {
+        id: "fest_nevruz_c", icon: "flame", title: "Nevruz Ateşi",
+        text: "Bahar geldi; meydanda Nevruz ateşi yandı. Büyük çocuklar birer birer üstünden atlıyor.",
+        when: (p) => p.age < 16,
+        choices: [
+          { label: "Ateşin üstünden atla", delta: { health: -2, fame: 2, nam: { mert: 2 } }, result: "Alev eteğini yaladı ama atladın; meydan alkışladı, adın cesura çıktı." },
+          { label: "Kenardan seyret", delta: { hunger: 4 }, result: "Ateşi uzaktan izledin; dağıtılan lokmadan payını alıp gecenin tadını çıkardın." },
+        ],
+      },
+      {
+        id: "fest_nevruz", icon: "flame", title: "Nevruz",
+        text: "Yeni yılın ateşi yandı; komşular meydanda. Böyle günde el açık, gönül ferah gerek derler.",
+        when: (p) => p.age >= 16,
+        choices: [
+          { label: "Sofra kur, konu komşuyu doyur", delta: { money: -30, reputation: 5, nam: { comert: 4 } }, result: "Kapını açtın, kazanın kaynadı; mahalle senin sofranda yeni yıla girdi." },
+          { label: "Ocağının başında dua et", delta: { honor: 4, nam: { dindar: 3 } }, result: "Kalabalığa karışmadın; ocağının başında geçen yıla şükredip yenisine niyet ettin." },
+        ],
+      },
+    ],
+  },
+  {
+    month: 7,
+    variants: [
+      {
+        id: "fest_hasat_c", icon: "wheat", title: "Harman Şenliği",
+        text: "Harman kalktı, köy meydanında şenlik var. Çocuklar başak toplama yarışına diziliyor.",
+        when: (p) => p.age < 16,
+        choices: [
+          { label: "Yarışa katıl", delta: { money: 6, hunger: -4 }, result: "Ter döktün ama kucağın başak doldu; harman ağası avucuna birkaç akçe sıkıştırdı." },
+          { label: "Davulcunun peşine takıl", delta: { hunger: 6, fame: 1 }, result: "Gün boyu davulun peşinde teptin; pilavdan payını kaptın, herkes seni tanıdı." },
+        ],
+      },
+      {
+        id: "fest_hasat", icon: "wheat", title: "Hasat Şenliği",
+        text: "Harman sonu şenliği kuruldu: yağlı güreş, kazan kazan pilav. Er meydanı seni de çağırıyor.",
+        when: (p) => p.age >= 16,
+        choices: [
+          { label: "Güreşe çık", delta: { health: -5, fame: 4, nam: { mert: 3 } }, result: "Er meydanında ter döktün; sırtın yere gelse de gelmese de, yiğitliğin dillere düştü." },
+          { label: "Kese aç, davul kirala", delta: { money: -25, fame: 3, nam: { comert: 3 } }, result: "Şenliğin davulu senin akçenle gümledi; köylü o geceyi senin adınla andı." },
+        ],
+      },
+    ],
+  },
+  {
+    month: 11,
+    variants: [
+      {
+        id: "fest_kis_c", icon: "book", title: "Kış Gecesi",
+        text: "Kar kapıyı kapattı; ocak başında uzun gece. Yaşlılar masal anlatıyor, dışarıda kartopu savaşı var.",
+        when: (p) => p.age < 16,
+        choices: [
+          { label: "Masal dinle", delta: { honor: 2 }, result: "Dizinin dibinde masal dinledin; dedenin sesi yüreğine, masalın hikmeti aklına işledi." },
+          { label: "Kartopu savaşına koş", delta: { health: -1, hunger: -5, fame: 1 }, result: "Yanakların kızarana dek koştun; eve buz gibi ama kahkahayla döndün." },
+        ],
+      },
+      {
+        id: "fest_kis", icon: "book", title: "Kış Meclisi",
+        text: "Uzun kış gecesi; ocak başı meclisi kuruldu. Söz sırayla dolaşıyor — dinleyen çok, anlatan az.",
+        when: (p) => p.age >= 16,
+        choices: [
+          { label: "Sen anlat", delta: { fame: 3, reputation: 2 }, result: "Söz sende döndü; başından geçeni öyle anlattın ki meclis dağılana dek adın anıldı." },
+          { label: "Ocağına misafir al", delta: { money: -15, reputation: 4, nam: { comert: 2 } }, result: "Yolda kalmışı ocağına buyur ettin; çorbanı bölüştün, duasını aldın." },
+        ],
+      },
+    ],
+  },
+];
+// Bu ayın şenliğini döndür (varsa ve henüz çözülmediyse). Sabit ay → yılda bir; kilit applyDilemma'da kurulur.
+export function pickFestival(s: GameState): Dilemma | null {
+  const p = s.player;
+  if (p.dead) return null;
+  if (p.festival_turn === s.turn) return null; // bu ayın şenliği çözüldü
+  const f = FESTIVALS.find((x) => x.month === s.turn % 12);
+  if (!f) return null;
+  return f.variants.find((d) => !d.when || d.when(p)) || null;
+}
+
 // Tura göre bir ikilem seç (deterministik değil; çağıran olasılıkla tetikler).
 export function pickDilemma(s: GameState): Dilemma | null {
   const p = s.player;

@@ -69,6 +69,7 @@ export interface Player {
   craft_turn?: number; // bu ay zanaat işlendi mi (tur başına tek — beceri/kalite-satış farmı önlenir)
   battle_turn?: number; // bu ay taktik savaşa/düelloya girildi mi (tur başına tek — para/beceri/itibar farmı önlenir; work/war ile aynı desen)
   battle_award_turn?: number; // bu ay dövüş sonucu uygulandı mı (giriş kilidi battle_turn'e taşındı; ödülün tek-seferliği bu alanla korunur)
+  festival_turn?: number; // bu ayın şenlik sahnesi çözüldü mü (şenlikler sabit aylarda yılda bir döner — ödülleri farmlanamaz)
   intimidate_turn?: number; // bu ay gözdağı verildi mi (tur başına tek — korku spam'i önlenir)
   feast_turn?: number; // bu ay ziyafet verildi mi (tur başına tek — para→şöhret/itibar çeviricisi farmlanamaz)
   alms_turn?: number; // bu ay sadaka dağıtıldı mı (tur başına tek — şeref farmı önlenir)
@@ -3946,8 +3947,12 @@ export const DILEMMA_SEEDS: Record<string, Omit<Seed, "id" | "ekim">> = {
   "yetiskin_kumar:0": { kaynak: "kumar_borcu", hmin: 12, hmax: 60, agirlik: "kucuk", nesil: false, etki: { money: 15 } },
 };
 
-export function applyDilemma(prev: GameState, delta: Delta, resultText: string, seedKey?: string): GameState {
+export function applyDilemma(prev: GameState, delta: Delta, resultText: string, seedKey?: string, festival?: boolean): GameState {
   const s = clone(prev); const p = s.player;
+  if (festival) {
+    if (p.festival_turn === s.turn) return s; // aynı şenlik iki kez çözülemez (çekirdek kapısı)
+    p.festival_turn = s.turn;
+  }
   if (delta.money) p.money = Math.max(0, p.money + delta.money);
   if (delta.health) p.health = clampStat(p.health + delta.health);
   if (delta.hunger) p.hunger = clampStat(p.hunger + delta.hunger);

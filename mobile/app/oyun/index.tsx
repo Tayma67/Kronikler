@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, canWork } from "../../lib/game";
-import { pickDilemma, Dilemma, Choice } from "../../lib/events";
+import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
@@ -154,7 +154,7 @@ export default function Dashboard() {
   const closeTut = () => { setShowTut(false); AsyncStorage.setItem("kronikler_sp_tut", "1").catch(() => {}); };
 
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
-  const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; if (dilemma) { const k = "dil." + dilemma.id + ".r" + i; const v = t(k); res = v === k ? c.result : v; } apply((s) => applyDilemma(s, c.delta, res, sk)); setDilemma(null); };
+  const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; const isFest = !!dilemma && dilemma.id.startsWith("fest_"); if (dilemma) { const k = "dil." + dilemma.id + ".r" + i; const v = t(k); res = v === k ? c.result : v; } apply((s) => applyDilemma(s, c.delta, res, sk, isFest)); setDilemma(null); };
   const onResolveOpp = (success: boolean) => { if (!opp) return; hap("advance"); apply((s) => resolveOpportunity(s, opp, success)); setOpp(null); };
 
   useEffect(() => {
@@ -162,9 +162,13 @@ export default function Dashboard() {
     if (state.turn > lastRolledTurn.current) {
       lastRolledTurn.current = state.turn;
       if (!state.player.dead && !dilemma && !opp) {
-        const roll = Math.random();
-        if (roll < 0.28) { const d = pickDilemma(state); if (d) setDilemma(d); }
-        else if (roll < 0.50) { const list = opportunitiesFor(state); if (list.length) setOpp(list[Math.floor(Math.random() * list.length)]); }
+        const fest = pickFestival(state); // şenlik ayı: yılın nabzı rastgele olaydan önce gelir (yılda bir; ay geçerse gelecek yıla)
+        if (fest) setDilemma(fest);
+        else {
+          const roll = Math.random();
+          if (roll < 0.28) { const d = pickDilemma(state); if (d) setDilemma(d); }
+          else if (roll < 0.50) { const list = opportunitiesFor(state); if (list.length) setOpp(list[Math.floor(Math.random() * list.length)]); }
+        }
       }
     } else if (state.turn < lastRolledTurn.current) {
       lastRolledTurn.current = state.turn;
