@@ -3752,6 +3752,9 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   };
   const dynasty = [...(prev.dynasty || []), ancestor];
   const noteStr = investNotes.length ? ` ${heir}, ${investNotes.join(", ")} olarak yetişti.` : "";
+  // Miras eşyası: atanın kuşandığı silah yadigâr olarak vârise geçer (kalitesiyle) — "nesiller boyu" vaadi eşyada da sürsün.
+  const heirloomId = p.equipped?.silah || null;
+  const heirloomQ = heirloomId ? (p.equipped_q?.silah || "siradan") : null;
   const ns: GameState = {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, relationships: {}, dynasty, npc_state: {}, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
@@ -3772,7 +3775,8 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       mother: p.gender === "erkek" ? (p.spouse_name || rnd(SPOUSE_K)) : p.name, father: p.gender === "erkek" ? p.name : (p.spouse_name || rnd(SPOUSE_E)),
       // Eş tarafı ebeveyn kültürel tohumla (dile göre çözülür); önceki oyuncu tarafı kendi adıyla kalır.
       mother_seed: p.gender === "erkek" ? p.spouse_seed : undefined, father_seed: p.gender === "erkek" ? undefined : p.spouse_seed,
-      inventory: { ekmek: 2 }, properties: props, generation: gen,
+      inventory: heirloomId ? { ekmek: 2, [heirloomId]: 1 } : { ekmek: 2 }, properties: props, generation: gen,
+      inv_q: heirloomId && heirloomQ && heirloomQ !== "siradan" ? { [heirloomId]: { [heirloomQ]: 1 } } : undefined,
       faction: null, faction_standing: {},
       skills, skill_xp: { combat: skills.combat * 100, trade: 0, crafting: skills.crafting * 100, social: skills.social * 100 },
       perks: [], injuries: [], career_xp: 0, nam: { comert: 0, zalim: 0, capkin: 0, dindar: 0, mert: 0 }, child_invests: {}, equipped: { silah: null, zirh: null },
@@ -3790,6 +3794,8 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   }
   // Devralınan kan davası kroniğe düşer: yeni kuşak yükün farkında başlar.
   if (ns.feud) ns.history.push({ day: 0, type: "kan_davası", text: `Atalardan kalan kan davası sana geçti; o hesap hâlâ açık.`, scope: "kişisel", landmark: true, k: "evj.feud.inherit", p: [{ hn: ns.feud.nameIdx }] });
+  // Yadigâr kroniğe düşer: atanın silahı sandıkta vârisi bekler.
+  if (heirloomId) ns.history.push({ day: 0, type: "nesil_devri", text: `${p.name}'in silahı sandıktan çıktı: bu yadigâr artık senin.`, scope: "kişisel", landmark: false, k: "evj.heirloom", p: [p.name, { i: heirloomId }] });
   return ns;
 }
 
@@ -3841,8 +3847,15 @@ export function doFactionTask(prev: GameState, id: string): GameState {
   let standing = f.task.standing * factionStandingMod(s, id) * dom;
   if (hasPerk(p, "lider")) standing = standing * 1.5;
   standing = Math.round(standing);
+  const rankBefore = factionRankIndex(p.faction_standing[id] || 0);
   p.faction_standing[id] = (p.faction_standing[id] || 0) + standing;
   p.reputation = Math.min(100, p.reputation + 2);
+  // Rütbe töreni: eşik İLK geçildiğinde tek seferlik büyük an (standing tek yönlü büyür → tekrar tetiklenmez, farm yok).
+  const rankAfter = factionRankIndex(p.faction_standing[id] || 0);
+  if (rankAfter > rankBefore) {
+    p.fame = Math.min(100, p.fame + 2 + rankAfter); p.honor = Math.min(100, p.honor + 2);
+    push(s, "örgüt_görev", `Ocak meclisi toplandı; ${f.name} seni '${FACTION_RANKS[rankAfter].title}' ilan etti. Kadehler senin adına kalktı.`, "kişisel", true, { k: "evj.facRank" + rankAfter, p: [{ fc: id }] });
+  }
   gainSkill(s, f.stat === "strength" ? "combat" : f.stat === "charisma" ? "social" : "trade", 6);
   const domNote = dom > 1 ? " Loncan bu sancağa hâkim — sözün daha çok geçti." : "";
   push(s, "örgüt_görev", `${f.name} için "${f.task.label}" görevini gördün (+${reward} akçe, itibar arttı).${domNote}`, "kişisel", false, { k: "evj.factionTask", p: [{ fc: id }, { ftl: id }, reward, dom > 1 ? { sfx: "sfx.factionDom" } : ""] });
