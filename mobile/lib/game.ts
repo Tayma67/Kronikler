@@ -1469,6 +1469,7 @@ export function advance(prev: GameState, n = 1): GameState {
     const produced: Record<string, number> = {}; // işçilerin ürettiği gerçek hammadde (üretim zinciri)
     const cityCache: Record<string, { prosperity: number; security: number }> = {};
     const cityOf = (loc: string) => cityCache[loc] || (cityCache[loc] = cityInfo(loc, placeKind(loc)));
+    let burnPr: Property | null = null; // katastrofik kayıp adayı: turda EN FAZLA bir mülk yanar
     for (const pr of s.player.properties) {
       const base = PROPERTY_TYPES[pr.type]?.income || 0;
       const ci = cityOf(pr.loc || s.player.location_name);
@@ -1493,6 +1494,16 @@ export function advance(prev: GameState, n = 1): GameState {
       if (effSec < 30 && chance(0.02 + (effSec < 10 ? 0.03 : 0))) {                    // düşük güvenlikte (eşkıya/yangın olayı kötüleştirir) yağma
         pr.cond = Math.max(20, pr.cond - 15);
         if (i === n - 1) push(s, "mülk_yagma", `${PROPERTY_TYPES[pr.type]?.name || "Mülkün"} (${pr.loc}) yağmaya uğradı; onarım gerek.`, "kişisel", false, { k: "evj.propRaid", p: [{ pt2: pr.type }, { pl: pr.loc }] });
+      }
+      // Katastrofik kayıp: mahallede AKTİF yangın olayı varken çok düşük olasılıkla mülk tümüyle kül olur.
+      // Diyardaki tek geri-alınamaz mülki kayıp: oyuncu düşük güvenlikli şehirde mülk tutmanın gerçek riskini hisseder.
+      if (!burnPr && i === n - 1 && locEventsAt(s, pr.loc || s.player.location_name).includes("yangin") && chance(0.012)) burnPr = pr;
+    }
+    if (burnPr) {
+      const bi = s.player.properties.indexOf(burnPr);
+      if (bi >= 0) {
+        s.player.properties.splice(bi, 1);
+        push(s, "mülk_yangın", `${PROPERTY_TYPES[burnPr.type]?.name || "Mülkün"} (${burnPr.loc}) yangında kül oldu; geriye taş üstünde taş kalmadı.`, "kişisel", true, { k: "evj.propBurned", p: [{ pt2: burnPr.type }, { pl: burnPr.loc }] });
       }
     }
     inc = Math.round(inc * pmult);
@@ -4436,7 +4447,10 @@ export function esteem(s: GameState): number {
   const usluBonus = p.childhood === "uslu" ? 4 : 0; // uslu çocukluk: ömür boyu süren iyi nam
   const elderBonus = p.age >= 55 ? Math.min(10, Math.round((p.age - 55) * 0.6)) : 0; // ihtiyara hürmet: yaş ilerledikçe saygınlık
   const haciBonus = p.legacy?.hac ? 6 : 0; // Hacı pâyesi: ömür boyu süren sosyal saygınlık
-  const ch = p.reputation + p.honor * 0.8 + (n.comert || 0) * 0.5 + (n.mert || 0) * 0.5 + (n.dindar || 0) * 0.3 - (n.zalim || 0) * 0.7 - p.fear * 0.4 + attireScore(p).prestige + usluBonus + elderBonus + haciBonus;
+  // Görünür servet: harcanmış/taşa yazılmış zenginlik saygınlık getirir — likit nakit DEĞİL (para→saygınlık döngüsü kapalı; "zengin ama pinti" fark edilir).
+  const l = p.legacy || ({} as Record<string, boolean>);
+  const wealthShow = Math.min(15, (p.estate || 0) * 1.5 + (l.imaret ? 3 : 0) + (l.vakif ? 4 : 0) + (l.anit ? 5 : 0) + (p.horse ? 1 : 0) + Math.min(3, p.properties.length));
+  const ch = p.reputation + p.honor * 0.8 + (n.comert || 0) * 0.5 + (n.mert || 0) * 0.5 + (n.dindar || 0) * 0.3 - (n.zalim || 0) * 0.7 - p.fear * 0.4 + attireScore(p).prestige + usluBonus + elderBonus + haciBonus + wealthShow;
   return Math.round(ch * recognition(s));
 }
 // "Ne kadar korkulan/çekinilen" (0..+) — tanınma ile kapılı; cömertlik/mertlik korkuyu yumuşatır.

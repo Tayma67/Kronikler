@@ -25,11 +25,22 @@ export function StatDeltaOverlay() {
   const [tierUp, setTierUp] = useState<null | { tier: number; tick: number }>(null);
   const [crown, setCrown] = useState<null | { tick: number }>(null);
   const [settle, setSettle] = useState<null | { name: string; tick: number }>(null);
+  const [mourn, setMourn] = useState<null | { tick: number }>(null);
   const prev = useRef<Record<string, number> | null>(null);
   const gen = useRef<number>(-1);
   const fameTier = useRef<number>(-1);
   const wasCrowned = useRef<boolean | null>(null);
   const settleCount = useRef<number>(-1);
+  const wasDead = useRef<boolean | null>(null);
+
+  // Vefat — en ağır an: kutlama değil, kül tonu ve ağır dokunuş (ölüm sessiz geçmesin).
+  useEffect(() => {
+    if (!state) return;
+    const d = !!state.player.dead;
+    if (wasDead.current === null || gen.current !== state.player.generation) { wasDead.current = d; return; }
+    if (d && !wasDead.current) { setMourn({ tick: Date.now() }); hap("heavy"); setTimeout(() => setMourn(null), 3000); }
+    wasDead.current = d;
+  }, [state?.player.dead, state?.player.generation]);
 
   // Tahta çıkış — en büyük an.
   useEffect(() => {
@@ -113,9 +124,16 @@ export function StatDeltaOverlay() {
     setTimeout(() => setToasts((cur) => cur.filter((tt) => !ids.includes(tt.id))), 1750);
   }, [state?.player]);
 
-  if (toasts.length === 0 && !tierUp && !crown && !settle) return null;
+  if (toasts.length === 0 && !tierUp && !crown && !settle && !mourn) return null;
   return (
     <View pointerEvents="none" style={{ position: "absolute", top: insets.top + 8, left: 0, right: 0, alignItems: "center", zIndex: 999 }}>
+      {mourn && (
+        <Animated.View key={"mourn" + mourn.tick} entering={ZoomIn.springify().damping(18)} exiting={FadeOut.duration(600)}
+          style={{ alignItems: "center", backgroundColor: "rgba(10,9,8,0.97)", borderWidth: 1.5, borderColor: "rgba(150,145,135,0.55)", borderRadius: 14, paddingVertical: 12, paddingHorizontal: 24, marginBottom: 10, shadowColor: "#000", shadowOpacity: 0.6, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 10 }}>
+          <GameIcon name="tombstone" size={24} color="#9A948A" />
+          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2.5, color: "#8A857C", marginTop: 4 }}>{t("feel.vefat").toUpperCase()}</Text>
+        </Animated.View>
+      )}
       {settle && (
         <Animated.View key={"settle" + settle.tick} entering={ZoomIn.springify().damping(15)} exiting={FadeOut.duration(380)}
           style={{ alignItems: "center", backgroundColor: "rgba(13,10,6,0.96)", borderWidth: 1.5, borderColor: C.sage, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 22, marginBottom: 10, shadowColor: C.sage, shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 10 }}>
