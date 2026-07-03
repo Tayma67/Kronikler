@@ -2463,11 +2463,18 @@ export function bestSkillOf(p: Player): keyof Skills {
 }
 export function canTakeApprentice(s: GameState, npc: NPC): boolean {
   const p = s.player;
-  return !p.dead && p.age >= 45 && !p.apprentice && p.skills[bestSkillOf(p)] >= 6 && npc.alive !== false && npc.age >= 12 && npc.age <= 22;
+  // Mevcut çırak varken de yeni çırak alınabilir (eskisi bırakılır) — şehir değiştiren oyuncu içerikten kalıcı mahrum kalmasın.
+  return !p.dead && p.age >= 45 && p.apprentice?.id !== npc.id && p.apprentice_turn !== s.turn && p.skills[bestSkillOf(p)] >= 6 && npc.alive !== false && npc.age >= 12 && npc.age <= 22;
 }
 export function takeApprentice(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player;
   if (!canTakeApprentice(s, npc)) return s;
+  p.apprentice_turn = s.turn; // ayda tek çıraklık eylemi (al/değiştir/ders aynı ailede) — ilişki farmı önlenir
+  if (p.apprentice) {
+    // Eski çırak bırakılır: yarım kalan emek gider, gönül kırılır (değiştirmenin bedeli).
+    s.relationships[p.apprentice.id] = Math.max(-100, Math.min(100, (s.relationships[p.apprentice.id] || 0) - 10));
+    push(s, "çıraklık", `Çırağın ${p.apprentice.name}'i yol yarısında bıraktın; gönlü kırıldı.`, "kişisel", false, { k: "evj.apr.released", p: [p.apprentice.name] });
+  }
   p.apprentice = { id: npc.id, name: npc.name, months: 0, skill: bestSkillOf(p) };
   s.relationships[npc.id] = Math.max(-100, Math.min(100, (s.relationships[npc.id] || 0) + 10));
   push(s, "çıraklık", `${npc.name}'i yanına çırak aldın; hünerini bir gence aktaracaksın.`, "kişisel", true, { k: "evj.apr.taken", p: [npc.name] });

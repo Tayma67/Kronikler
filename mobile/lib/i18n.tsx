@@ -3029,27 +3029,27 @@ const FEUDDIL: Record<Lang, Dict> = {
 const APRDIL: Record<Lang, Dict> = {
   tr: {
     "npc.aprTake":"Çırak al","npc.aprTakeSub":"Hünerini bir gence aktar; yıllar ister ama adın onunla anılır.","npc.aprMentor":"Çırağınla çalış","npc.aprMonths":"ay",
-    "evj.apr.taken":"%1'i yanına çırak aldın; hünerini bir gence aktaracaksın.","evj.apr.step":"%1 ile tezgâh başında bir ay geçti (%2/%3).","evj.apr.done":"%1 yetişti: senin elinden çıkma bir usta artık. Adın onunla da anılacak.","evj.apr.lost":"Çırağın %1 bu dünyadan göçtü; yarım kalan hüner yüreğinde sızı bıraktı.",
+    "evj.apr.taken":"%1'i yanına çırak aldın; hünerini bir gence aktaracaksın.","evj.apr.released":"Çırağın %1'i yol yarısında bıraktın; gönlü kırıldı.","evj.apr.step":"%1 ile tezgâh başında bir ay geçti (%2/%3).","evj.apr.done":"%1 yetişti: senin elinden çıkma bir usta artık. Adın onunla da anılacak.","evj.apr.lost":"Çırağın %1 bu dünyadan göçtü; yarım kalan hüner yüreğinde sızı bıraktı.",
   },
   en: {
     "npc.aprTake":"Take as apprentice","npc.aprTakeSub":"Pass your craft to the young; it takes years, but your name will live in theirs.","npc.aprMentor":"Work with your apprentice","npc.aprMonths":"months",
-    "evj.apr.taken":"You took %1 as your apprentice; you will pass your craft to the young.","evj.apr.step":"A month at the bench with %1 (%2/%3).","evj.apr.done":"%1 has come into their own: a master of your making. Your name will be spoken with theirs.","evj.apr.lost":"Your apprentice %1 has left this world; the unfinished craft left an ache in your heart.",
+    "evj.apr.taken":"You took %1 as your apprentice; you will pass your craft to the young.","evj.apr.released":"You let your apprentice %1 go halfway down the road; their heart was broken.","evj.apr.step":"A month at the bench with %1 (%2/%3).","evj.apr.done":"%1 has come into their own: a master of your making. Your name will be spoken with theirs.","evj.apr.lost":"Your apprentice %1 has left this world; the unfinished craft left an ache in your heart.",
   },
   es: {
     "npc.aprTake":"Tomar de aprendiz","npc.aprTakeSub":"Lega tu oficio a un joven; lleva años, pero tu nombre vivirá en el suyo.","npc.aprMentor":"Trabaja con tu aprendiz","npc.aprMonths":"meses",
-    "evj.apr.taken":"Tomaste a %1 de aprendiz; legarás tu oficio a un joven.","evj.apr.step":"Un mes en el taller con %1 (%2/%3).","evj.apr.done":"%1 ya está formado: un maestro salido de tus manos. Tu nombre sonará junto al suyo.","evj.apr.lost":"Tu aprendiz %1 dejó este mundo; el oficio a medias te dejó una pena en el pecho.",
+    "evj.apr.taken":"Tomaste a %1 de aprendiz; legarás tu oficio a un joven.","evj.apr.released":"Dejaste a tu aprendiz %1 a mitad del camino; se le rompió el corazón.","evj.apr.step":"Un mes en el taller con %1 (%2/%3).","evj.apr.done":"%1 ya está formado: un maestro salido de tus manos. Tu nombre sonará junto al suyo.","evj.apr.lost":"Tu aprendiz %1 dejó este mundo; el oficio a medias te dejó una pena en el pecho.",
   },
   pt: {
     "npc.aprTake":"Tomar como aprendiz","npc.aprTakeSub":"Lega o teu ofício a um jovem; leva anos, mas o teu nome viverá no dele.","npc.aprMentor":"Trabalha com o teu aprendiz","npc.aprMonths":"meses",
-    "evj.apr.taken":"Tomaste %1 como aprendiz; vais legar o teu ofício a um jovem.","evj.apr.step":"Um mês na bancada com %1 (%2/%3).","evj.apr.done":"%1 está formado: um mestre saído das tuas mãos. O teu nome soará junto ao dele.","evj.apr.lost":"O teu aprendiz %1 deixou este mundo; o ofício a meio deixou-te uma dor no peito.",
+    "evj.apr.taken":"Tomaste %1 como aprendiz; vais legar o teu ofício a um jovem.","evj.apr.released":"Largaste o teu aprendiz %1 a meio do caminho; ficou de coração partido.","evj.apr.step":"Um mês na bancada com %1 (%2/%3).","evj.apr.done":"%1 está formado: um mestre saído das tuas mãos. O teu nome soará junto ao dele.","evj.apr.lost":"O teu aprendiz %1 deixou este mundo; o ofício a meio deixou-te uma dor no peito.",
   },
   ar: {
     "npc.aprTake":"اتّخذه صبيًّا","npc.aprTakeSub":"أورِث حرفتك شابًّا؛ يستغرق سنين، لكن اسمك سيحيا باسمه.","npc.aprMentor":"اعمل مع صبيّك","npc.aprMonths":"شهرًا",
-    "evj.apr.taken":"اتّخذت %1 صبيًّا عندك؛ ستورّث حرفتك شابًّا.","evj.apr.step":"شهر على المنضدة مع %1 (%2/%3).","evj.apr.done":"نضج %1: صار معلّمًا من صنع يديك. سيُذكر اسمك مع اسمه.","evj.apr.lost":"رحل صبيّك %1 عن هذه الدنيا؛ ترك الصنعةُ الناقصة وجعًا في قلبك.",
+    "evj.apr.taken":"اتّخذت %1 صبيًّا عندك؛ ستورّث حرفتك شابًّا.","evj.apr.released":"تركت صبيّك %1 في منتصف الطريق؛ فانكسر قلبه.","evj.apr.step":"شهر على المنضدة مع %1 (%2/%3).","evj.apr.done":"نضج %1: صار معلّمًا من صنع يديك. سيُذكر اسمك مع اسمه.","evj.apr.lost":"رحل صبيّك %1 عن هذه الدنيا؛ ترك الصنعةُ الناقصة وجعًا في قلبك.",
   },
   ru: {
     "npc.aprTake":"Взять в ученики","npc.aprTakeSub":"Передай ремесло юному; уйдут годы, но твоё имя будет жить в его имени.","npc.aprMentor":"Работай с учеником","npc.aprMonths":"мес.",
-    "evj.apr.taken":"Ты взял %1 в ученики; передашь своё ремесло юному.","evj.apr.step":"Месяц за верстаком с %1 (%2/%3).","evj.apr.done":"%1 выучился: мастер твоей выделки. Твоё имя будут называть вместе с его.","evj.apr.lost":"Твой ученик %1 покинул этот мир; недоданное ремесло оставило боль в сердце.",
+    "evj.apr.taken":"Ты взял %1 в ученики; передашь своё ремесло юному.","evj.apr.released":"Ты отпустил ученика %1 на полпути; его сердце было разбито.","evj.apr.step":"Месяц за верстаком с %1 (%2/%3).","evj.apr.done":"%1 выучился: мастер твоей выделки. Твоё имя будут называть вместе с его.","evj.apr.lost":"Твой ученик %1 покинул этот мир; недоданное ремесло оставило боль в сердце.",
   },
 };
 // Son sözler (lw.* + evj.lw.*) — ölüm döşeği seçimi ve vârisin kroniğine düşen yankı.
