@@ -12,7 +12,7 @@ import {
   nextSettleTier, canUpgradeSettleTier, upgradeSettleTier, propsInLoc,
   PRESTIGE, prestigeCost, fundPrestige, MARKET_LEVER_MIN, marketLeverCost, canManipulateMarket, manipulateMarket,
   acceptDynastyOffer, declineDynastyOffer,
-  feudPeaceCost, feudSuePeace, feudStrike,
+  feudPeaceCost, feudSuePeace, feudStrike, proposeToHouse,
   crownAuthorityOf, CROWN_DECREES, canIssueDecree, issueDecree, decreeCooldownLeft,
   campaignTargets, canLaunchCampaign, campaignOdds, launchCampaign, CAMPAIGN_COST,
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
@@ -545,6 +545,25 @@ export default function Hanedan() {
                     <View style={{ backgroundColor: attTone(h.attitude) + "1A", borderWidth: 1, borderColor: attTone(h.attitude) + "55", borderRadius: 6, paddingVertical: 3, paddingHorizontal: 8 }}>
                       <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.3, color: attTone(h.attitude) }}>{t("dyn.att." + attKey(h.attitude))}</Text>
                     </View>
+                  )}
+                  {/* Proaktif diplomasi: soğuk olmayan hanelere teklif götür (ayda tek; ret tutumu düşürür) */}
+                  {!h.mine && !(state.allied_houses || []).includes(h.id) && h.attitude > -10 && p.age >= 16 && (() => {
+                    const acted = p.propose_turn === state.turn;
+                    return (
+                      <View style={{ gap: 4 }}>
+                        <Pressable disabled={acted} onPress={() => { hap("tap"); apply((s) => proposeToHouse(s, h.id, "ittifak")); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: acted ? C.border : "rgba(111,160,192,0.5)", opacity: acted ? 0.4 : 1 }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 8.5, color: acted ? C.parchmentMuted : "#6FA0C0" }}>{t("dyn.propose.ally")}</Text>
+                        </Pressable>
+                        {!p.married && (
+                          <Pressable disabled={acted} onPress={() => { hap("tap"); apply((s) => proposeToHouse(s, h.id, "evlilik")); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: acted ? C.border : "rgba(201,168,76,0.5)", opacity: acted ? 0.4 : 1 }}>
+                            <Text style={{ fontFamily: F.display, fontSize: 8.5, color: acted ? C.parchmentMuted : C.gold }}>{t("dyn.propose.marry")}</Text>
+                          </Pressable>
+                        )}
+                      </View>
+                    );
+                  })()}
+                  {!h.mine && (state.allied_houses || []).includes(h.id) && (
+                    <Text style={{ fontFamily: F.display, fontSize: 9, color: C.sage }}>{t("dyn.allied")}</Text>
                   )}
                 </View>
               ))}

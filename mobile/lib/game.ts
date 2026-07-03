@@ -103,6 +103,7 @@ export interface Player {
   death_cause?: string; // ölüm nedeni kodu (die() içinde olay anahtarından türetilir; mersiyeye ve hanedan kütüğüne işlenir)
   chronic?: { k: string; since: number }; // kronik hastalık (aylık sızıntı + alevlenme); hekim tedavisiyle geçebilir, vârise geçmez
   healer_turn?: number; // bu ay hekime görünüldü mü (tur başına tek — şifa farm'ı yok)
+  propose_turn?: number; // bu ay bir haneye teklif götürüldü mü (diplomasi tek girişim)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
@@ -1954,6 +1955,40 @@ export function acceptDynastyOffer(prev: GameState, offerId: string): GameState 
   }
   return s;
 }
+// Oyuncudan haneye teklif: hanedan ekranını pasiften aktife çevirir. Tur başına tek girişim (diplomasi farm'ı yok).
+// Şans tutum + saygınlıkla ölçeklenir; ret tutumu düşürür — teklif spam'ı kendi kendini cezalandırır.
+export function proposeToHouse(prev: GameState, houseId: string, type: "ittifak" | "evlilik"): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 16) return s;
+  if (p.propose_turn === s.turn) return s; // ayda tek teklif
+  if (type === "evlilik" && p.married) return s;
+  const h = ensureRivals(s).find((x) => x.id === houseId);
+  if (!h) return s;
+  if ((s.allied_houses || []).includes(houseId)) return s; // zaten müttefik
+  p.propose_turn = s.turn;
+  const tutum = h.tutum ?? 0;
+  const sans = Math.max(0.05, Math.min(0.9, 0.25 + tutum / 100 + esteem(s) / 60 + (type === "evlilik" ? p.fame / 300 : 0)));
+  if (Math.random() < sans) {
+    h.tutum = Math.min(100, tutum + (type === "evlilik" ? 40 : 30));
+    if (!s.allied_houses) s.allied_houses = [];
+    s.allied_houses.push(houseId);
+    if (type === "evlilik" && !p.married) {
+      const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E);
+      p.married = true; p.married_turn = s.turn; p.spouse_bond = 40; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9);
+      p.reputation = Math.min(100, p.reputation + 8); p.fame = Math.min(100, p.fame + 6);
+      push(s, "evlilik", `Dünürcüler ${h.name} kapısından güler yüzle döndü: iki ocak birleşti.`, "kişisel", true, { k: "evj.houseMarryAccept", p: [{ hn: h.nameIdx }, { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] });
+    } else {
+      p.reputation = Math.min(100, p.reputation + 5);
+      push(s, "hanedan_haber", `${h.name} teklifini kabul etti; iki hane el sıkıştı.`, "makro", true, { k: "evj.houseAllyAccept", p: [{ hn: h.nameIdx }] });
+    }
+  } else {
+    h.tutum = Math.max(-100, tutum - 8);
+    p.reputation = Math.max(-100, p.reputation - 2);
+    push(s, "hanedan_haber", `${h.name} teklifini geri çevirdi; kapıda soğuk bir rüzgâr esti.`, "kişisel", false, { k: "evj.houseProposeRefused", p: [{ hn: h.nameIdx }] });
+  }
+  return s;
+}
+
 // Hane teklifini geri çevir (tutum biraz düşer).
 export function declineDynastyOffer(prev: GameState, offerId: string): GameState {
   const s = clone(prev);
