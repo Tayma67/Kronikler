@@ -1105,7 +1105,10 @@ export function applyTemperament(prev: GameState, id: string): GameState {
 function push(s: GameState, type: string, text: string, scope: "kişisel" | "makro" = "kişisel", landmark = false, loc?: { k: string; p?: EvtParam[] }) {
   s.history.push({ day: s.turn, type, text, scope, landmark, k: loc?.k, p: loc?.p });
 }
-function clone(s: GameState): GameState { return JSON.parse(JSON.stringify(s)); }
+function clone(s: GameState): GameState {
+  // structuredClone (Hermes destekli) JSON round-trip'ten belirgin hızlı — geç nesillerde dokunma gecikmesini azaltır.
+  return typeof structuredClone === "function" ? structuredClone(s) : JSON.parse(JSON.stringify(s));
+}
 function die(s: GameState, text: string, loc?: { k: string; p?: EvtParam[] }) { s.player.dead = true; push(s, "ölüm", text, "kişisel", true, loc); }
 
 function monthlyFlavor(s: GameState, cal: CalendarInfo): { k: string; text: string } {

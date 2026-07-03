@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.kronikler.app"
+      "package": "com.kronikler.app",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -26,9 +27,26 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      ["expo-audio", { "microphonePermission": false }],
-      ["expo-splash-screen", { "backgroundColor": "#0D0A06", "image": "./assets/splash-icon.png", "imageWidth": 200 }],
-      ["expo-navigation-bar", { "hidden": true }],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0D0A06",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ],
+      [
+        "expo-navigation-bar",
+        {
+          "hidden": true
+        }
+      ],
       "./plugins/withoutRecordAudio"
     ],
     "scheme": "kronikler",

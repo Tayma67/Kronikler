@@ -5,6 +5,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameState, newGame, advance, eat, work, achievementsOf, WorkStyle } from "./game";
 
 const KEY = "kronikler_save_v1";
+// Yazmadan önce son sağlam kaydı yedeğe kaydır: yarım yazım/bozulma tek noktadan toplam kayba dönmesin.
+async function persistWithBackup(s: unknown) {
+  try {
+    const prev = await AsyncStorage.getItem(KEY);
+    if (prev) await AsyncStorage.setItem(KEY + "_bak", prev);
+    await AsyncStorage.setItem(KEY, JSON.stringify(s));
+  } catch {}
+}
 
 // Eski kayıtları yeni alanlarla uyumlulaştır (geriye dönük güvenli yükleme).
 function migrate(s: GameState): GameState {
@@ -74,13 +82,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(KEY);
-        if (raw) {
-          const obj = JSON.parse(raw);
-          // Bozuk/eksik kayıt (sürüm geçişi, yarım yazım) "Devam Et"i gösterip /oyun'da
-          // çökmesin: yalnızca geçerli bir player nesnesi varsa kaydı kabul et.
-          if (obj && typeof obj === "object" && obj.player && typeof obj.player === "object") setState(migrate(obj));
-        }
+        const parseOk = (raw: string | null) => {
+          if (!raw) return null;
+          try { const obj = JSON.parse(raw); return obj && typeof obj === "object" && obj.player && typeof obj.player === "object" ? obj : null; } catch { return null; }
+        };
+        // Bozuk/eksik kayıt (sürüm geçişi, yarım yazım) "Devam Et"i gösterip /oyun'da çökmesin:
+        // önce ana kayıt, o bozuksa bir önceki yazımın yedeği (tek nokta = toplam kayıp olmasın).
+        const obj = parseOk(await AsyncStorage.getItem(KEY)) || parseOk(await AsyncStorage.getItem(KEY + "_bak"));
+        if (obj) setState(migrate(obj));
       } catch {}
       setLoading(false);
     })();
@@ -94,13 +103,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
     const s = pending.current; pending.current = null;
     if (mpRef.current) return; // MP modunda SP kaydına yazma
-    if (s) AsyncStorage.setItem(KEY, JSON.stringify(s)).catch(() => {});
+    if (s) persistWithBackup(s);
   }, []);
   const schedulePersist = useCallback((s: GameState) => {
     if (mpRef.current) return; // MP modunda SP kaydına yazma (çevrimdışı kayıt korunur)
     pending.current = s;
     if (saveTimer.current) return;
-    saveTimer.current = setTimeout(() => { saveTimer.current = null; const x = pending.current; pending.current = null; if (x) AsyncStorage.setItem(KEY, JSON.stringify(x)).catch(() => {}); }, 1200);
+    saveTimer.current = setTimeout(() => { saveTimer.current = null; const x = pending.current; pending.current = null; if (x) persistWithBackup(x); }, 1200);
   }, []);
   // Uygulama arka plana alınınca / kapanırken bekleyen kaydı hemen diske yaz.
   useEffect(() => {

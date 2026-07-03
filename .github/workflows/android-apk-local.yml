@@ -25,6 +25,11 @@ jobs:
       - name: Bagimliliklar (mobile)
         working-directory: mobile
         run: npm install --no-audit --no-fund
+      - name: versionCode'u derleme numarasiyla ez (her APK bir oncekinin ustune kurulabilsin)
+        working-directory: mobile
+        run: |
+          node -e "const f='app.json',j=require('./'+f);j.expo.android.versionCode=${{ github.run_number }};require('fs').writeFileSync(f,JSON.stringify(j,null,2));"
+          grep versionCode app.json
       - name: Expo prebuild (android native uret)
         working-directory: mobile
         run: npx expo prebuild --platform android --no-install --non-interactive
