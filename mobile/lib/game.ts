@@ -3152,6 +3152,8 @@ export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
   if (p.dead || p.age < 18 || p.age >= 55) return { state: s, key: "", chips: [] };
   if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true };
   const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = []; let key = "";
+  // Uğraşlar saf XP tıkı değil: her birinde düşük olasılıklı risk/parlak an — orta oyunun ayına gerilim katar.
+  // Ödüller XP/ilişki cinsinden ve tavanlı (para musluğu YOK); riskler küçük ve effStat ile yumuşar. Enerji kapısı (turda 1) farm'ı zaten keser.
   if (kind === "talim") {
     if (p.money < ADULT_TRAINER_COST) { chips.push({ label: "Akçe yok", col: "#C0556B" }); return { state: s, key: "evj.noCoin", chips, blocked: true };
     }
@@ -3159,23 +3161,49 @@ export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
     p.money -= ADULT_TRAINER_COST; p.hunger = Math.max(0, p.hunger - 6);
     addStatXp(s, "strength", 5); gainSkill(s, "combat", 4);
     key = "adult.talim";
-    push(s, "olgunluk", "Talim meydanında ter döktün; kollar hatırlar.", "kişisel", false, { k: "adult.talim" });
+    const r = Math.random();
+    if (r < Math.max(0.03, 0.10 - effStat(p, "stamina") * 0.008)) { // acemilik sakatlar; dayanıklılık korur
+      const hurt = 3 + Math.floor(Math.random() * 4); p.health = Math.max(1, p.health - hurt);
+      chips.push({ label: `Sakatlık -${hurt}`, col: "#C0556B", k: "chip.talimHurt", p: [hurt] });
+      push(s, "olgunluk", `Talimde ters düştün; bir yerini incittin (sağlık -${hurt}).`, "kişisel", false, { k: "adult.talimHurt", p: [hurt] });
+    } else if (r > 0.88) { // parlak gün: hoca övdü
+      addStatXp(s, "strength", 4); gainSkill(s, "combat", 4); bumpNam(p, "mert", 1);
+      push(s, "olgunluk", "Talimde herkesi geride bıraktın; hoca adını övdü.", "kişisel", false, { k: "adult.talimShine" });
+    } else push(s, "olgunluk", "Talim meydanında ter döktün; kollar hatırlar.", "kişisel", false, { k: "adult.talim" });
   } else if (kind === "meclis") {
     p.study_energy = studyEnergy(s) - STUDY_COST;
     p.hunger = Math.max(0, p.hunger - 4);
     addStatXp(s, "charisma", 5); gainSkill(s, "social", 4); p.reputation = Math.min(100, p.reputation + 1);
     key = "adult.meclis";
-    push(s, "olgunluk", "Sohbet meclisinde söz aldın; lafın dinlenir oldu.", "kişisel", false, { k: "adult.meclis" });
+    const r = Math.random();
+    if (r < Math.max(0.03, 0.09 - effStat(p, "charisma") * 0.007)) { // yanlış söz: dedikodu tohumu
+      p.reputation = Math.max(-100, p.reputation - 3); witnessScandal(s, "tatsiz_konu", 0.2);
+      push(s, "olgunluk", "Mecliste ağzından yanlış bir laf kaçtı; kulaktan kulağa yayıldı.", "kişisel", false, { k: "adult.meclisSlip" });
+    } else if (r > 0.88) { // sözün mecliste karşılık buldu: yeni bir tanışlık
+      const who = rosterAt(s, p.location_name).find((n) => (s.relationships[n.id] || 0) < 30);
+      if (who) { s.relationships[who.id] = Math.min(100, (s.relationships[who.id] || 0) + 8); push(s, "olgunluk", `Mecliste sözün ${who.name}'in dikkatini çekti; aranızda hukuk doğdu.`, "kişisel", false, { k: "adult.meclisAlly", p: [who.name] }); }
+      else push(s, "olgunluk", "Sohbet meclisinde söz aldın; lafın dinlenir oldu.", "kişisel", false, { k: "adult.meclis" });
+    } else push(s, "olgunluk", "Sohbet meclisinde söz aldın; lafın dinlenir oldu.", "kişisel", false, { k: "adult.meclis" });
   } else if (kind === "tefekkur") {
     p.study_energy = studyEnergy(s) - STUDY_COST;
     addStatXp(s, "intelligence", 5); gainSkill(s, "trade", 3);
     key = "adult.tefekkur";
-    push(s, "olgunluk", "Kitap ve hesap başında bir akşam; zihin bilenmeden durmaz.", "kişisel", false, { k: "adult.tefekkur" });
+    if (Math.random() > 0.86) { // hesap defterinde bir açık/fırsat gördün: ticaret sezgisi keskinleşir
+      gainSkill(s, "trade", 5); addStatXp(s, "intelligence", 3);
+      push(s, "olgunluk", "Hesapların arasında kimsenin görmediği bir düzen fark ettin; tüccar aklın keskinleşti.", "kişisel", false, { k: "adult.tefekkurInsight" });
+    } else push(s, "olgunluk", "Kitap ve hesap başında bir akşam; zihin bilenmeden durmaz.", "kişisel", false, { k: "adult.tefekkur" });
   } else {
     p.study_energy = studyEnergy(s) - STUDY_COST;
     addStatXp(s, "stamina", 5); p.health = Math.min(100, p.health + 2);
     key = "adult.yuruyus";
-    push(s, "olgunluk", "Şehrin dışına uzun bir yürüyüş; beden dinç, kafa berrak.", "kişisel", false, { k: "adult.yuruyus" });
+    const r = Math.random();
+    if (r < 0.05) { // yolda aksilik: hava döndü, ıslandın
+      p.health = Math.max(1, p.health - 2); p.hunger = Math.max(0, p.hunger - 4);
+      push(s, "olgunluk", "Yürüyüşte hava birden döndü; sırılsıklam döndün, ertesi gün burnun aktı.", "kişisel", false, { k: "adult.yuruyusRain" });
+    } else if (r > 0.88) { // manzara iyi geldi: iç huzur
+      p.health = Math.min(100, p.health + 3); addStatXp(s, "stamina", 3);
+      push(s, "olgunluk", "Tepeden diyara baktın; içine bir genişlik, adımına bir kuvvet geldi.", "kişisel", false, { k: "adult.yuruyusVista" });
+    } else push(s, "olgunluk", "Şehrin dışına uzun bir yürüyüş; beden dinç, kafa berrak.", "kişisel", false, { k: "adult.yuruyus" });
   }
   return { state: s, key, chips };
 }
