@@ -3220,7 +3220,7 @@ export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
       push(s, "olgunluk", "Mecliste ağzından yanlış bir laf kaçtı; kulaktan kulağa yayıldı.", "kişisel", false, { k: "adult.meclisSlip" });
     } else if (r > 0.88) { // sözün mecliste karşılık buldu: yeni bir tanışlık
       const who = rosterAt(s, p.location_name).find((n) => (s.relationships[n.id] || 0) < 30);
-      if (who) { s.relationships[who.id] = Math.min(100, (s.relationships[who.id] || 0) + 8); push(s, "olgunluk", `Mecliste sözün ${who.name}'in dikkatini çekti; aranızda hukuk doğdu.`, "kişisel", false, { k: "adult.meclisAlly", p: [who.name] }); }
+      if (who) { s.relationships[who.id] = Math.min(100, (s.relationships[who.id] || 0) + 8); push(s, "olgunluk", `Mecliste sözün dikkat çekti; ${who.name} ile aranızda hukuk doğdu.`, "kişisel", false, { k: "adult.meclisAlly", p: [who.name] }); }
       else push(s, "olgunluk", "Sohbet meclisinde söz aldın; lafın dinlenir oldu.", "kişisel", false, { k: "adult.meclis" });
     } else push(s, "olgunluk", "Sohbet meclisinde söz aldın; lafın dinlenir oldu.", "kişisel", false, { k: "adult.meclis" });
   } else if (kind === "tefekkur") {
@@ -3904,7 +3904,7 @@ export function spendWithSpouse(prev: GameState): GameState {
   p.spouse_bond = Math.min(100, p.spouse_bond + 6);
   p.health = Math.min(100, p.health + 2); p.hunger = Math.max(0, p.hunger - 3);
   const sn: EvtParam = p.spouse_seed != null ? { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] } : (p.spouse_name || "");
-  push(s, "evlilik", `${p.spouse_name || "Eşin"} ile başbaşa bir gün geçirdiniz; bağınız pekişti.`, "kişisel", false, { k: "evj.spouseTime", p: [sn] });
+  push(s, "evlilik", `${p.spouse_name || "Eşin"} ile baş başa bir gün geçirdiniz; bağınız pekişti.`, "kişisel", false, { k: "evj.spouseTime", p: [sn] });
   return s;
 }
 export function hostFeast(prev: GameState): GameState {
