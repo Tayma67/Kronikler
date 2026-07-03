@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, visitParents } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
@@ -375,6 +375,12 @@ export default function Karakter() {
                   name={p.spouse_seed != null ? localFirstName(p.spouse_seed, spouseGender, lang) : (p.spouse_name || t("char.none"))}
                   age={Math.max(16, p.age - 1)} gender={spouseGender} seed={p.spouse_seed ?? `${p.name}-s`} />
               </View>
+              {/* Ebeveyn ziyareti: en az biri hayattaysa (turda tek) */}
+              {!(p.mother_dead && p.father_dead) && (() => { const visited = p.parent_visit_turn === state.turn; return (
+                <Pressable disabled={visited} onPress={() => { hap("tap"); apply((s) => visitParents(s)); }} style={{ alignSelf: "flex-start", marginTop: 8, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", opacity: visited ? 0.4 : 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5 }}>{t("char.visitParents")}{p.parent_bond != null ? ` · ${t("char.bond")} ${p.parent_bond}` : ""}</Text>
+                </Pressable>
+              ); })()}
               {/* Çocuklar */}
               <View style={{ marginTop: 11, paddingTop: 11, borderTopWidth: 1, borderTopColor: C.border }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 7 }}>

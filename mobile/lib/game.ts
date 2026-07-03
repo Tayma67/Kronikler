@@ -19,6 +19,8 @@ export interface Player {
   spouse_is_player?: boolean; // çok oyuncu: eş başka bir GERÇEK oyuncu → yerel sim onu öldüremez (desync önlenir)
   widowed?: boolean; // eşi vefat etmiş (dul); married=false olur ama anı/eulogy için iz kalır
   mother?: string; father?: string; mother_dead?: boolean; father_dead?: boolean; // ebeveynler de fanidir; oyuncu yaşlandıkça birer kez vefat eder
+  parent_bond?: number; // anne-babayla bağ 0-100 (ziyaret besler; vefat acısı ve küçük miras bağa oranlı; eski kayıtta yoksa 45 sayılır)
+  parent_visit_turn?: number; // bu ay ebeveyn ziyareti yapıldı mı (turda tek — bağ farmı önlenir)
   mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
   spouse_mizac?: string; // kur yaptığın NPC'nin karakterinden gelen eş mizacı (tanıdığın kişi evlenince başkalaşmaz)
   married_turn?: number; // evliliğin kurulduğu tur (yıldönümü anları; eski kayıtta yoksa yıldönümü sessizce atlanır)
@@ -1271,12 +1273,14 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (!p.dead && p.age >= 28) {
     const pdc = p.age < 40 ? 0.012 : p.age < 55 ? 0.03 : 0.06;
     if (!p.mother_dead && p.mother && chance(pdc)) {
-      p.mother_dead = true; p.health = Math.max(1, p.health - 5); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1);
+      p.mother_dead = true; p.health = Math.max(1, p.health - (3 + Math.round((p.parent_bond ?? 45) / 20))); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1); // acı, bağın derinliğine oranlı
       push(s, "kader", `Annen ${p.mother} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.motherDied", p: [{ fn: [p.mother_seed ?? 0, "kadın"] }] });
+      if ((p.parent_bond ?? 45) >= 60) { const mir = Math.round(20 * inflationFactor(s)); p.money += mir; push(s, "kader", `Annenin çeyiz sandığından sana kalan çıktı (+${mir} akçe); yakın olana el emeği kalır.`, "kişisel", false, { k: "evj.parentLegacy", p: [mir] }); }
     }
     if (!p.father_dead && p.father && chance(pdc)) {
-      p.father_dead = true; p.health = Math.max(1, p.health - 5); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1);
+      p.father_dead = true; p.health = Math.max(1, p.health - (3 + Math.round((p.parent_bond ?? 45) / 20))); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1); // acı, bağın derinliğine oranlı
       push(s, "kader", `Baban ${p.father} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.fatherDied", p: [{ fn: [p.father_seed ?? 0, "erkek"] }] });
+      if ((p.parent_bond ?? 45) >= 60) { const mir = Math.round(20 * inflationFactor(s)); p.money += mir; push(s, "kader", `Babanın kesesinden sana ayırdığı çıktı (+${mir} akçe); yakın olana el emeği kalır.`, "kişisel", false, { k: "evj.parentLegacy", p: [mir] }); }
     }
   }
   // ── Evli hayat anları: eşinle ocak tüten yıllar; ara sıra sıcak ya da sınanan anlar (sadık-dost'a paralel) ──
@@ -3802,6 +3806,17 @@ export function socialTier(axis: SocialAxis, value: number): string {
 }
 
 // Ziyafet ver: akçe harcayıp şöhret + itibar kazan.
+// Ebeveynlerini ziyaret et: el öpmek bağı besler — turda tek (karakter ekranından). İkisi de vefat ettiyse kapanır.
+export function visitParents(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || (p.mother_dead && p.father_dead)) return s;
+  if (p.parent_visit_turn === s.turn) return s; // turda tek — bağ farmı önlenir
+  p.parent_visit_turn = s.turn;
+  p.parent_bond = Math.min(100, (p.parent_bond ?? 45) + 5);
+  p.honor = Math.min(100, p.honor + 1); bumpNam(p, "dindar", 1);
+  push(s, "gunluk", `Ana-babanın elini öptün, sofralarına oturdun; duaları üstünde.`, "kişisel", false, { k: "evj.parentVisit" });
+  return s;
+}
 // Eşinle vakit geçir: ocağı bilerek beslemek — küçük bedel, turda tek (karakter ekranından).
 export function spendWithSpouse(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
