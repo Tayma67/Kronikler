@@ -2913,8 +2913,10 @@ export const ALL_PROFS = PROFS;
 export function changeProfession(prev: GameState, prof: string): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || prof === p.profession || !PROFS.includes(prof)) return s;
-  p.profession = prof; p.career_xp = 0;
   if (!p.professions_tried) p.professions_tried = [];
+  // Ayrıldığın meslek de sayılır (doğumda doğrudan atanan ilk meslek kaybolmasın — markVisit'teki kalkış kaydının analoğu).
+  if (p.profession !== "işsiz" && !p.professions_tried.includes(p.profession)) p.professions_tried.push(p.profession);
+  p.profession = prof; p.career_xp = 0;
   if (!p.professions_tried.includes(prof)) p.professions_tried.push(prof);
   push(s, "meslek_değişimi", `${professionById(prof)?.name || cap(prof)} mesleğine geçtin — yeniden en alttan.`, "kişisel", true, { k: "evj.profSwitch", p: [{ pr: prof }] });
   return s;

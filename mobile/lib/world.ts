@@ -235,6 +235,10 @@ export function locSeed(name: string): number {
   let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h;
 }
 
+// Bayrak yerleşimlerin elle yazılmış tasvirleri: şehirler birbirinden gerçekten farklı hissetsin.
+// Haritada olmayan adlar genel havuza (cityblurb.0-4) düşer; RNG sırası değişmez.
+const BESPOKE_BLURB: Record<string, string> = { "Yenişehir": "cityblurb.c.yenisehir", "Gümüşhisar": "cityblurb.c.gumushisar", "Akşehir": "cityblurb.c.aksehir", "Demirhan": "cityblurb.c.demirhan", "Develi": "cityblurb.c.develi", "Konuralp": "cityblurb.c.konuralp", "Alaşehir": "cityblurb.c.alasehir", "Beyşehir": "cityblurb.c.beysehir", "Eğirdir": "cityblurb.c.egirdir", "Honaz": "cityblurb.c.honaz", "Ilgın": "cityblurb.c.ilgin" };
+
 // Şehir detayı — deterministik (vali, güvenlik, refah, nüfus).
 export interface CityInfo { governor: string; security: number; prosperity: number; population: number; blurb: string; }
 const GOV_KEYS = ["gov.subasi", "gov.voyvoda", "gov.dizdar", "gov.kethuda", "gov.bey"];
@@ -251,8 +255,8 @@ export function cityInfo(name: string, kind: string, lang: Lang = "tr"): CityInf
   const population = base + Math.floor(r() * (kind === "şehir" ? 8000 : kind === "kale" ? 400 : 500));
   const security = (kind === "kale" ? 55 : 30) + Math.floor(r() * 40);
   const prosperity = (kind === "şehir" ? 45 : 25) + Math.floor(r() * 45);
-  const bi = Math.floor(r() * 5);
-  return { governor: gov, security, prosperity, population, blurb: tFor(lang, `cityblurb.${bi}`) };
+  const bi = Math.floor(r() * 5); // RNG sırası için her zaman tüketilir
+  return { governor: gov, security, prosperity, population, blurb: tFor(lang, BESPOKE_BLURB[name] || `cityblurb.${bi}`) };
 }
 
 // Rakip hanedanlar — diyarın güç odakları (deterministik). nameIdx = kültürel havuz indeksi.
