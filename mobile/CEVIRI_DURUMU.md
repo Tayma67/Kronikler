@@ -1,6 +1,6 @@
 # Çeviri Durumu (6 dil: tr/en/es/pt/ar/ru)
 
-Tüm çeviriler `lib/i18n.tsx` içinde blok bloktur; `DICTS` her dil için blokları
+Tüm çeviriler `lib/i18n.tsx` içinde blok bloktur; `DICT_BUILDERS` her dil için blokları (tembel: aktif dil ilk kullanımda kurulur)
 `{...}` ile birleştirir. Eksik anahtar TR'ye, o da yoksa anahtarın kendine düşer
 (oyun asla bozulmaz). Veri listeleri (perk/achievement/arc/dilemma/subject/...)
 **id bazlı** anahtarlanır ve ekranlarda `t("blok." + id + ".alan")` ile çözülür.
@@ -45,7 +45,7 @@ Kanonik Türkçe anahtar/oyun-mantığı korunur; yalnızca **gösterim** yerell
 2. Şehir/rakip hanedan adları (world.ts HOUSE_NAMES), AD/SOYAD havuzları — özel ad; çevrilmez.
 
 ## Yapı notları
-- Yeni blok ekle → `lib/i18n.tsx`'te const tanımla → `DICTS`'in 6 diline `...BLOK.xx` ekle.
+- Yeni blok ekle → `lib/i18n.tsx`'te const tanımla → `DICT_BUILDERS`'ın 6 dil kurucusuna `...BLOK.xx` ekle.
 - Her batch sonrası: `npx tsc --noEmit` + `npx expo export --platform android` ile doğrula.
 - APK: `npx expo prebuild --platform android` → `cd android && ./gradlew :app:assembleRelease --no-daemon`
   (gradle 8.14.3 pinli; ANDROID_HOME=/opt/android-sdk, JAVA_HOME java'dan türetilir).
