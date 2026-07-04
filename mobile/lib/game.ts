@@ -3627,6 +3627,7 @@ export interface Eulogy { epithet: string; lines: string[]; close: string; }
 // Ölüm lakabı — id döner (gösterimde index.tsx ep.<id> ile 6 dile + cinsiyete çevrilir; kalıcı değil).
 export function deathEpithet(s: GameState): string {
   const p = s.player; const n = p.nam || ({} as Nam);
+  if (p.crowned && (p.crownConquests?.length || 0) >= 4) return "cihangir"; // diyarı birleştiren: en yüksek lakap
   if (p.crowned) return "hukumdar";
   if ((p.courtRank ?? -1) >= 4) return "sadrazam";
   if ((p.courtRank ?? -1) >= 3) return "vezir";
@@ -5289,6 +5290,11 @@ export function launchCampaign(prev: GameState, beylikId: string): { state: Game
     bumpNam(p, "mert", 5);
     const tribute = 300 + Math.floor(Math.random() * 300); p.money += tribute;
     push(s, "taht", `Sefer zaferle bitti; topraklar tâcına katıldı (+${tribute} akçe ganimet).`, "kişisel", true, { k: "crown.campaignWin", p: [{ bl: beylikId }, tribute] });
+    // Diyar birleşmesi: son sancak da tâca katıldıysa bir kezlik doruk anı (hedef listesi boşaldığında tetiklenir — tekrarlanamaz).
+    if (campaignTargets(s).length === 0) {
+      p.fame = 100; p.crownAuthority = 100; bumpNam(p, "mert", 8);
+      push(s, "taht", `Beş sancak tek tâcın altında: diyar birleşti. Adın artık çağların değil, çağlar senin adının etrafında dönecek.`, "kişisel", true, { k: "crown.unification" });
+    }
   } else {
     p.crownAuthority = clamp100(crownAuthorityOf(p) - 12);
     p.reputation = Math.max(-100, p.reputation - 6);
