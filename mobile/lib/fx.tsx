@@ -67,12 +67,13 @@ export function SkeletonBlock({ w = "100%", h = 14, r = 7, mb = 8 }: { w?: numbe
 
 // Temalı yükleme ekranı — nabız atan arma.
 export function LoadingScreen() {
+  // Fontlar bu ekran görünürken HENÜZ yüklü değil — bilerek sistem fontu (fontFamily yok) ve emoji yerine düz metin.
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, alignItems: "center", justifyContent: "center" }}>
-      <Pulse min={0.4} max={1} dur={900}>
-        <Text style={{ fontSize: 30, color: C.gold, textAlign: "center" }}>⚜</Text>
+      <Text style={{ fontSize: 15, letterSpacing: 6, color: C.gold, textAlign: "center", fontWeight: "600" }}>KRONİKLER</Text>
+      <Pulse min={0.35} max={1} dur={900}>
+        <Text style={{ fontSize: 12, letterSpacing: 2, color: C.goldDim, marginTop: 16, textAlign: "center" }}>Yükleniyor…  ·  Loading…</Text>
       </Pulse>
-      <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 5, color: C.goldDim, marginTop: 14 }}>KRONİKLER</Text>
     </View>
   );
 }
