@@ -861,7 +861,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Pazarda zahire aldığın tüccarın terazisinin hileli olduğunu fark ettin — herkesten eksik tartıyor. Adam senin de eski alacaklın.",
     when: (p) => p.age >= 28 && p.age < 50,
     choices: [
-      { label: "Kadıya bildir, çarşıyı koru", delta: { reputation: 5, honor: 4, nam: { mert: 2 } }, result: "Terazi meydanda kırıldı, esnaf sana dua etti. Alacağın yandı ama adın 'doğru adam' diye anılır oldu." },
+      { label: "Kadıya bildir, çarşıyı koru", delta: { reputation: 5, honor: 4, nam: { mert: 2 } }, result: "Terazi meydanda kırıldı, esnaf sana dua etti. Alacağın yandı ama adın 'doğru insan' diye anılır oldu." },
       { label: "Sus, alacağına say", delta: { money: 12, honor: -4 }, result: "Adam alacağını fazlasıyla kapattı; terazi eksik tartmaya devam etti. Kazandın ama pazar kaybetti." },
     ],
   },

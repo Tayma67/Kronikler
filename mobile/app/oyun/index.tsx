@@ -156,7 +156,7 @@ export default function Dashboard() {
   const closeTut = () => { setShowTut(false); AsyncStorage.setItem("kronikler_sp_tut", "1").catch(() => {}); };
 
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
-  const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; const isFest = !!dilemma && dilemma.id.startsWith("fest_"); if (dilemma) { const k = "dil." + dilemma.id + ".r" + i; const v = t(k); res = v === k ? c.result : v; } apply((s) => applyDilemma(s, c.delta, res, sk, isFest)); setDilemma(null); };
+  const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; const isFest = !!dilemma && dilemma.id.startsWith("fest_"); if (dilemma) { const k = "dil." + dilemma.id + ".r" + i; const v = t(k); res = v === k ? c.result : v; } apply((s) => applyDilemma(s, c.delta, res, sk, isFest, dilemma ? "dil." + dilemma.id + ".r" + i : undefined)); setDilemma(null); };
   const onResolveOpp = (success: boolean) => { if (!opp) return; hap("advance"); apply((s) => resolveOpportunity(s, opp, success)); setOpp(null); };
 
   useEffect(() => {

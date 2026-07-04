@@ -136,7 +136,7 @@ export function StatDeltaOverlay() {
     for (const w of WATCH) {
       const d = snap[w.path] - (prev.current[w.path] ?? snap[w.path]);
       if (Math.abs(d) < w.min) continue;
-      if (w.skipFromZero && (prev.current[w.path] ?? 0) === 0 && d > 0 && d >= w.min + 3) continue; // evlilik/ilk kayıt kurulumu: +40 gibi sıçrama gürültüsü olmasın
+      if (w.skipFromZero && (((prev.current[w.path] ?? 0) === 0 && d > 0 && d >= w.min + 3) || (snap[w.path] === 0 && d < 0))) continue; // kurulum sıçraması (+40) ve defter sıfırlanması (dulluk: bağ kaybedilmedi, alan silindi) gürültü yapmasın
       if (w.onlyDrop && d > 0) continue;
       const sign = d > 0 ? "+" : "−";
       const txt = w.label ? `${sign}${Math.abs(Math.round(d))} ${w.label}` : `${sign}${Math.abs(Math.round(d))}`;

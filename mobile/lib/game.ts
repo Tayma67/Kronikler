@@ -4558,7 +4558,7 @@ export const DILEMMA_SEEDS: Record<string, Omit<Seed, "id" | "ekim">> = {
   "yetiskin_gurbetci:0": { kaynak: "gurbetci_vefa", hmin: 36, hmax: 150, agirlik: "orta", nesil: false, etki: { money: 90, reputation: 4 } },
 };
 
-export function applyDilemma(prev: GameState, delta: Delta, resultText: string, seedKey?: string, festival?: boolean): GameState {
+export function applyDilemma(prev: GameState, delta: Delta, resultText: string, seedKey?: string, festival?: boolean, evKey?: string): GameState {
   const s = clone(prev); const p = s.player;
   if (festival) {
     if (p.festival_turn === s.turn) return s; // aynı şenlik iki kez çözülemez (çekirdek kapısı)
@@ -4579,7 +4579,7 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string, 
   if (delta.nam) for (const k of Object.keys(delta.nam) as (keyof Nam)[]) bumpNam(p, k, delta.nam[k]!);
   if (delta.standing && p.faction) p.faction_standing[p.faction] = (p.faction_standing[p.faction] || 0) + delta.standing; // lonca itibarı (fraksiyon sahnesi)
   if (seedKey && DILEMMA_SEEDS[seedKey]) sowSeed(s, DILEMMA_SEEDS[seedKey]); // sessiz tohum: seçim yıllar sonra döner
-  push(s, "olay", resultText, "kişisel");
+  push(s, "olay", resultText, "kişisel", false, evKey ? { k: evKey } : undefined); // anahtar varsa günlük dile/dişile göre yeniden çözülür (renderEvt fallback güvenli)
   if (p.health <= 0) die(s, `${p.name} bu olaydan sağ çıkamadı.`, { k: "evj.dieEvent", p: [p.name] });
   return s;
 }
