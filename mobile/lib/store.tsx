@@ -56,6 +56,7 @@ export function migrate(s: GameState): GameState {
   if (!s.wars) s.wars = [];
   if (s.caravan === undefined) s.caravan = null;
   if (s.econ === undefined) s.econ = 1;
+  (s as GameState).schema = 1; // şema damgası: bu sürümün göçlerinden geçti
   return s;
 }
 

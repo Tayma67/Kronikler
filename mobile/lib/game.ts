@@ -734,6 +734,7 @@ export interface GameState {
   epochNext?: number; // bir sonraki çağ olayının turu (legacy_system epoch_tick)
   pendingScene?: { kind: string; ctx: Record<string, string> } | null; // oyuncu seçimi bekleyen interaktif sahne (suç kesintisi vb.)
   micro?: { id: string } | null; // ay-içi mikro an: atlanabilir tek satırlık seçim (ertesi ay kendiliğinden kaybolur)
+  schema?: number; // kayıt şeması sürümü — migrate() her yüklemede damgalar; gelecek göçler bununla dallanır
   tips?: Tip[]; // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
   locEvents?: LocEvent[]; // lokasyon-bazlı tipli dünya olayları (kuraklık/panayır/veba...)
   recent_dilemmas?: string[]; // son görülen ikilem id'leri (ring 6) — dar havuzlarda aynı sahnenin üst üste gelmesi önlenir
