@@ -47,6 +47,7 @@ export interface Player {
   inv_q?: Record<string, Partial<Record<QualityTier, number>>>; // eşya kalite kırılımı (quality.py portu; sıradan izlenmez)
   last_study_turn?: number; lesson_count?: number; // mektep: sınav sayacı (eski gate; enerji sistemine taşındı)
   study_energy?: number; // aylık çalışma gücü — ders + kulüp meşki bundan harcanır
+  play_energy?: number; // çocukluk günleri hakkı — mektepten AYRI havuz (ders çalışmak oyunu yemez)
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
   club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
   horse?: boolean; horse_name?: string; // bir atın var mı + adı (hızlı/güvenli "at ile" yolculuğu açar; yolda kaybedilebilir)
@@ -1482,6 +1483,7 @@ export function advance(prev: GameState, n = 1): GameState {
     }
     // Çalışma gücü: her ay yenilenir (ders + kulüp meşki bundan harcanır).
     s.player.study_energy = maxStudyEnergy(s.player.age);
+    s.player.play_energy = maxPlayEnergy(s.player.age); // çocukluk hakları da tazelenir
     // Mektep kulübü: okul çağında (7-17) her ay sessiz pasif beceri kazanımı (Vercel öğrenci topluluğu).
     if (s.player.club && s.player.age >= 7 && s.player.age < 18) { const cl = CLUBS.find((c) => c.id === s.player.club); if (cl) gainSkill(s, cl.skill, 2); }
     // Mezuniyet: 18'inde kulüpten ayrılırken, yılların kulüp itibarı kalıcı bir hüner bırakır.
@@ -3061,6 +3063,10 @@ export function maxStudyEnergy(age: number): number { return age >= 7 && age < 1
 export function studyEnergy(s: GameState): number { return s.player.study_energy ?? maxStudyEnergy(s.player.age); }
 // Bu ay artık çalışılamıyor mu? (enerji ders maliyetinin altında).
 export function studiedThisTurn(s: GameState): boolean { return studyEnergy(s) < STUDY_COST; }
+// Çocukluk günleri (oyun/yardım/yaramazlık/keşif) mektepten ayrı hak kullanır — ders çalışan çocuk oynamaktan olmaz (test geri bildirimi).
+export const PLAY_COST = 2;
+export function maxPlayEnergy(age: number): number { return age < 13 ? 4 : 0; } // ayda 2 çocukluk hakkı
+export function playEnergy(s: GameState): number { return s.player.play_energy ?? maxPlayEnergy(s.player.age); }
 // Sınava kaç ders kaldı (4 derste bir sınav).
 export function lessonsToExam(p: Player): number { return 4 - ((p.lesson_count || 0) % 4); }
 const EXAM_STAT: Record<string, keyof Stats> = { din: "intelligence", matematik: "intelligence", edebiyat: "charisma", beden: "strength" };
@@ -3198,12 +3204,12 @@ export type ChildAct = "oyun" | "yardim" | "yaramazlik" | "kesif";
 export function childAction(prev: GameState, kind: ChildAct): StudyResult {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age >= 13) return { state: s, key: "", chips: [] };
-  if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true };
-  p.study_energy = studyEnergy(s) - STUDY_COST;
+  if (playEnergy(s) < PLAY_COST) return { state: s, key: "", chips: [], blocked: true };
+  p.play_energy = playEnergy(s) - PLAY_COST;
   p.child_acts = p.child_acts || {}; p.child_acts[kind] = (p.child_acts[kind] || 0) + 1; // çocukluk eğilimi birikir
   const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = []; let key = "";
   if (kind === "oyun") {
-    p.health = Math.min(100, p.health + 5); addStatXp(s, "stamina", 6); gainSkill(s, "social", 4);
+    p.health = Math.min(100, p.health + 5); addStatXp(s, "stamina", 4); gainSkill(s, "social", 4);
     chips.push({ label: "Sağlık +5", col: "#7FA66A" }, { label: "Dayanıklılık ↑", col: "#C9A84C" });
     if (!p.child_friend) { // ilk oyunda bir can yoldaşı belirir
       const seed = (Math.floor(Math.random() * 1e9)) >>> 0;
@@ -3219,8 +3225,8 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
       if (before < 50 && cf.bond >= 50) { key = "child.friend.close"; push(s, "cocukluk", "Yoldaşınla aranızdaki bağ pekişti; sırdaş oldunuz.", "kişisel", true, { k: "child.friend.close", p: [{ fn: [cf.seed, cf.gender] }] }); }
       else if (Math.random() < 0.35) { // küçük ortak macera (oyunu çeşitlendirir)
         const adv = Math.floor(Math.random() * 4);
-        if (adv === 0) { addStatXp(s, "intelligence", 6); chips.push({ label: "Zekâ ↑", col: "#6FA0C0" }); key = "child.adv.nest"; push(s, "cocukluk", "Yoldaşınla bir kuş yuvası buldunuz; saatlerce izleyip merak ettiniz.", "kişisel", false, { k: "child.adv.nest", p: [{ fn: [cf.seed, cf.gender] }] }); }
-        else if (adv === 1) { addStatXp(s, "stamina", 6); p.health = Math.min(100, p.health + 3); chips.push({ label: "Dayanıklılık ↑", col: "#C9A84C" }); key = "child.adv.hide"; push(s, "cocukluk", "Saklambaçta sokağın bütün köşelerini avucunuzun içi gibi öğrendiniz.", "kişisel", false, { k: "child.adv.hide" }); }
+        if (adv === 0) { addStatXp(s, "intelligence", 4); chips.push({ label: "Zekâ ↑", col: "#6FA0C0" }); key = "child.adv.nest"; push(s, "cocukluk", "Yoldaşınla bir kuş yuvası buldunuz; saatlerce izleyip merak ettiniz.", "kişisel", false, { k: "child.adv.nest", p: [{ fn: [cf.seed, cf.gender] }] }); }
+        else if (adv === 1) { addStatXp(s, "stamina", 4); p.health = Math.min(100, p.health + 3); chips.push({ label: "Dayanıklılık ↑", col: "#C9A84C" }); key = "child.adv.hide"; push(s, "cocukluk", "Saklambaçta sokağın bütün köşelerini avucunuzun içi gibi öğrendiniz.", "kişisel", false, { k: "child.adv.hide" }); }
         else if (adv === 2) { const coin = 2 + Math.floor(Math.random() * 6); p.money += coin; chips.push({ label: `+${coin} akçe`, col: "#E0BC5A" }); key = "child.adv.find"; push(s, "cocukluk", "Yıkık bir duvarın dibinde eski bir akçe buldunuz; paylaştınız.", "kişisel", false, { k: "child.adv.find", p: [coin] }); }
         else { cf.bond = Math.min(100, cf.bond + 5); bumpNam(p, "mert", 2); chips.push({ label: "Bağ ↑↑", col: "#C0556B" }); key = "child.adv.bully"; push(s, "cocukluk", "Bir kabadayı yolunuzu kesti; yoldaşınla sırt sırta verip göğüs gerdiniz, bağınız perçinlendi.", "kişisel", true, { k: "child.adv.bully", p: [{ fn: [cf.seed, cf.gender] }] }); }
       }
@@ -3246,7 +3252,7 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
     const r = Math.random();
     if (r < 0.4) { const coin = 2 + Math.floor(Math.random() * 8); p.money += coin; chips.push({ label: `+${coin} akçe`, col: "#E0BC5A" }); key = "child.kesif.coin"; push(s, "cocukluk", "Çarşıyı arşınlarken yerde birkaç akçe buldun.", "kişisel", false, { k: "child.kesif.coin", p: [coin] }); }
     else if (r < 0.65) { const g = rnd(["ekmek", "bal", "sifa", "balik"]); p.inventory[g] = (p.inventory[g] || 0) + 1; chips.push({ label: `+${ITEMS[g]?.name || g}`, col: "#7FA66A" }); key = "child.kesif.item"; push(s, "cocukluk", "Keşfe çıktın; iyi kalpli biri eline bir şey tutuşturdu.", "kişisel", false, { k: "child.kesif.item", p: [{ i: g }] }); }
-    else { addStatXp(s, "intelligence", 6); chips.push({ label: "Zekâ ↑", col: "#6FA0C0" }); key = "child.kesif.none"; push(s, "cocukluk", "Diyarı merakla gezdin; gördüklerin aklına kazındı.", "kişisel", false, { k: "child.kesif.none" }); }
+    else { addStatXp(s, "intelligence", 4); chips.push({ label: "Zekâ ↑", col: "#6FA0C0" }); key = "child.kesif.none"; push(s, "cocukluk", "Diyarı merakla gezdin; gördüklerin aklına kazındı.", "kişisel", false, { k: "child.kesif.none" }); }
   }
   return { state: s, key, chips };
 }

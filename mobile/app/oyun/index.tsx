@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, canWork } from "../../lib/game";
+import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork } from "../../lib/game";
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
@@ -433,7 +433,7 @@ export default function Dashboard() {
 
       {/* Çocukluk uğraşları (7-12) — çocuğa hareket alanı; çalışma gücünden harcar */}
       {!p.dead && p.age >= 7 && p.age < 13 && (() => {
-        const en = studyEnergy(state); const can = en >= STUDY_COST;
+        const en = playEnergy(state); const can = en >= PLAY_COST;
         const acts: { k: ChildAct; icon: string; label: string }[] = [
           { k: "oyun", icon: "party", label: t("child.act.oyun") },
           { k: "yardim", icon: "iliskiler", label: t("child.act.yardim") },
@@ -446,7 +446,7 @@ export default function Dashboard() {
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
               <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("child.title")}</Text>
               <View style={{ flexDirection: "row", gap: 4 }}>
-                {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
+                {Array.from({ length: maxPlayEnergy(p.age) }).map((_, i) => (
                   <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.gold : "transparent", borderWidth: 1, borderColor: i < en ? C.gold : C.border }} />
                 ))}
               </View>
