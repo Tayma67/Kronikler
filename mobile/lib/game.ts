@@ -4078,11 +4078,19 @@ export function spendWithSpouse(prev: GameState): GameState {
   p.spouse_time_turn = s.turn;
   if (p.spouse_bond === undefined) p.spouse_bond = 40; // eski kayıt göçü
   const cost = Math.round(8 * inflationFactor(s)); // küçük bir ikram — çağın parasıyla (yoksa da gönül alınır)
-  if (p.money >= cost) p.money -= cost;
-  p.spouse_bond = Math.min(100, p.spouse_bond + 6);
+  const paid = p.money >= cost;
+  if (paid) p.money -= cost;
+  // Eş mizacı günün rengini belirler: aynı buton, dört ayrı ocak (etkiler küçük — turda tek olduğundan farm yok)
+  const miz = p.spouse_mizac || (p.spouse_seed != null ? spouseMizac(p.spouse_seed) : "sefkatli");
+  let bondGain = 6;
+  if (miz === "sefkatli") { bondGain = 7; p.health = Math.min(100, p.health + 1); }
+  else if (miz === "caliskan" && paid) { p.money += Math.round(cost / 2); }
+  else if (miz === "dikbasli") { bondGain = 5; addStatXp(s, "strength", 3); bumpNam(p, "mert", 1); }
+  else if (miz === "dindar") { p.honor = Math.min(100, p.honor + 1); bumpNam(p, "dindar", 1); }
+  p.spouse_bond = Math.min(100, p.spouse_bond + bondGain);
   p.health = Math.min(100, p.health + 2); p.hunger = Math.max(0, p.hunger - 3);
   const sn: EvtParam = p.spouse_seed != null ? { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] } : (p.spouse_name || "");
-  push(s, "evlilik", `${p.spouse_name || "Eşin"} ile baş başa bir gün geçirdiniz; bağınız pekişti.`, "kişisel", false, { k: "evj.spouseTime", p: [sn] });
+  push(s, "evlilik", `${p.spouse_name || "Eşin"} ile baş başa bir gün geçirdiniz; bağınız pekişti.`, "kişisel", false, { k: "evj.spouseTime2." + miz, p: [sn] });
   return s;
 }
 export function hostFeast(prev: GameState): GameState {
