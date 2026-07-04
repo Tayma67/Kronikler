@@ -4206,8 +4206,12 @@ export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
 }
 // ── Divan/Arzuhal: taç sahibinin huzuruna düşen dilekçeler — hükümdarlık soyut ferman menüsü değil, yüzü olan kararlar.
 // Etki dengesi bilinçli: halkı kollamak keseden yer ama otorite/itibar getirir; keseyi kollamak nam bedeli öder (farm yok: an rastgele düşer).
-export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit"];
+export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit", "kacak_asker", "iki_imam", "leke_surulen", "eski_silah_arkadasi"];
 const DIVAN_R_TR: Record<string, [string, string]> = {
+  kacak_asker: ["Sipahi diz çöküp kılıcını sana uzattı: 'Bu can artık senindir.' Ordugâhta kimi yumuşaklık dedi, kimi adalet — ama o sipahi bir daha hiçbir seferden kaçmadı.", "Ceza meydanda verildi; saflar sıklaştı, gözler soğudu. Düzen korkuyla kuruldu — korkuyla kurulan düzenin bekçisi çok gerek."],
+  iki_imam: ["Minare yükseldi, kürsü kuruldu; ilk hutbede iki imam yan yana durdu ve adını hayırla andı. Cuma çıkışı çarşı senin sözünle çalkalandı.", "İmece kuruldu, taş taş üstüne kondu — yavaş ama onların eseri. Minarenin gölgesi uzun; senin adın o gölgede kısa kaldı."],
+  leke_surulen: ["Tellal üç çarşı gezdi; ertesi hafta kadın hanın mutfağında iş buldu. Yıllar sonra tezgâhından geçen her yetime bir sıcak çorba çıktı — iyilik döner.", "Kadın sessizce çıktı; kapıda duraksayıp dönmedi. Divanın defterinde bu bir hiçti; kasabanın defterinde bir sayfa daha karardı."],
+  eski_silah_arkadasi: ["Önce küstü, sonra anladı. Muhafız üniforması içkiden ağır geldi; bir yıl sonra kapında en ayık, en sadık gölge oydu.", "İlk yıl eski günler gibiydi; ikinci yıl sancağın vergisi handa içildi. Hatıra sancak taşımaz — sancak omuz ister."],
   su_kavgasi: ["Kanal iki değirmeni de döndürdü; iki köy düğünde yan yana oynadı. 'Suyu taşla değil akılla bölen hükümdar' diye anıldın.", "Yukarı köy sevindi, aşağı köy sustu; ferman kesin ama gönüller yarım. Teamül sarsılmadı, adın 'sert ama belli' oldu."],
   yetim_arazisi: ["Mühür indi, tarla yetime döndü; kadı önünü ilikledi, bey dişini sıktı. Divandan çıkan söz çarşıda gece yarısına dek anlatıldı.", "Bey kesesinden 'hazineye armağan' bıraktı; yetim sessizce çıktı. Defter düzgün, vicdanlar buruk — bazı mühürler pahalıdır."],
   sinir_haraci: ["Kese köye döndü, taş toprağa oturdu; köy o kış senin adına kurban kesti. Sınırda adın taştan sağlam.", "İhtiyar duasız çıktı. O köyün gençleri ertesi yıl komşu beyliğin pazarına gitti; sınır haritada kaldı, gönüllerde kaydı."],
@@ -4220,6 +4224,7 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
   if (id === "su_kavgasi" && choice === 0 && p.money < 100) return s; // kesede yoksa kanal yaptırılamaz (UI de kapatır)
   if (id === "sinir_haraci" && choice === 0 && p.money < 120) return s;
   if (id === "genc_mucit" && choice === 0 && p.money < 150) return s;
+  if (id === "iki_imam" && choice === 0 && p.money < 200) return s;
   s.divan = null;
   if (id === "su_kavgasi") {
     if (choice === 0) { p.money -= 100; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); }
@@ -4233,6 +4238,18 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
   } else if (id === "genc_mucit") {
     if (choice === 0) { p.money -= 150; p.fame = Math.min(100, p.fame + 5); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "comert", 3); }
     else { p.reputation = Math.max(-100, p.reputation - 2); }
+  } else if (id === "kacak_asker") {
+    if (choice === 0) { p.honor = Math.min(100, p.honor + 4); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "mert", 2); }
+    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.fear = Math.min(100, p.fear + 4); bumpNam(p, "zalim", 2); }
+  } else if (id === "iki_imam") {
+    if (choice === 0) { p.money -= 200; p.reputation = Math.min(100, p.reputation + 5); bumpNam(p, "dindar", 3); bumpNam(p, "comert", 2); }
+    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); }
+  } else if (id === "leke_surulen") {
+    if (choice === 0) { p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "mert", 2); }
+    else { p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); }
+  } else if (id === "eski_silah_arkadasi") {
+    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 2); }
+    else { p.honor = Math.min(100, p.honor + 2); p.crownAuthority = clamp100(crownAuthorityOf(p) - 4); }
   }
   const rtr = DIVAN_R_TR[id];
   push(s, "taht", rtr ? rtr[choice] : "", "kişisel", choice === 0, { k: `divan.${id}.r${choice}` });
