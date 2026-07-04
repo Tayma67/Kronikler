@@ -363,6 +363,26 @@ ARCS.push(
   },
 );
 
+// Geç sevda: orta yaş bekârlığının anlatısı — s1.c0 kabulle s2'ye akar; düğün dalı evliliği kurmaz (mevcut evlilik yolları kurar), yalnız anlatı ve itibar taşır.
+ARCS.push(
+  {
+    id: "gec_sevda", title: "Geç Sevda", icon: "ring",
+    blurb: "Herkes senin için 'artık evlenmez' derken, pazar yerinde bir bakış her şeyi değiştirdi.",
+    when: (p) => p.age >= 38 && p.age < 60 && !p.married,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Pazarda tezgâh komşun oldu: senin gibi hayatın tenhasına çekilmiş, güngörmüş biri. Sohbet uzuyor, kahve soğuyor.", choices: [
+        { label: "Ertesi gün de kahve götür", result: "Kahve bahaneydi, ikiniz de biliyordunuz. Pazar esnafı gülümseyerek başka yana baktı.", delta: { reputation: 2 }, next: "s2" },
+        { label: "Bu yaştan sonra olmaz, uzak dur", result: "Tezgâhını pazarın öbür ucuna taşıdın. Bazı kapılar açılmadan kapanır; sessizlik de bir cevaptır.", delta: { honor: 2 }, next: "end" },
+      ]},
+      s2: { id: "s2", text: "Kasaba konuşmaya başladı: 'Bu yaşta düğün mü olur?' Kimi güldü, kimi hayır duası etti. Karar günü geldi.", choices: [
+        { label: "Davulu vurdur: düğün var", result: "Gülenler düğünde en önde oynadı. Geç gelen sevda, acele gelenden uzun sürermiş — ocağın geç ama sağlam tüttü.", delta: { reputation: 6, fame: 4 }, next: "end" },
+        { label: "Dost kalalım de", result: "El sıkıştınız; pazar günleri kahve hâlâ içiliyor. Kasabaya göre yarım kalan iş, size göre tam kararında bir dostluk.", delta: { honor: 4 }, next: "end" },
+      ]},
+    },
+  },
+);
+
 export function arcById(id: string | null): Arc | undefined { return ARCS.find((a) => a.id === id); }
 // Uygun, henüz tamamlanmamış ve aktif olmayan yaylar.
 export function availableArcs(p: Player, completed: string[], tension: number, activeId: string | null): Arc[] {
