@@ -1,4 +1,14 @@
-# Google Play Yayın Kontrol Listesi — Kronikler: Küllerin Mirası
+# Yayın Rehberi — Kronikler: Küllerin Mirası
+
+## GÜNCEL BORU HATTI: Doğrudan APK (GitHub Actions — EAS/hesap gerekmez)
+- **Tetikleme:** GitHub → Actions → "APK (yerel derleme - hesapsiz)" → Run workflow → branch `apk`.
+- **Kalite kapısı:** Derlemeden önce `tsc --noEmit` + 300-hayat smoke koşar; geçmeyen kod APK'ya binemez.
+- **Sürüm:** `versionCode` her derlemede `github.run_number` ile otomatik artar (üst üste kurulabilir).
+- **Kalıcı indirme linki:** https://github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk
+- **İmza:** debug anahtarı — doğrudan cihaza kurulum için yeterli; **Play Store için değil** (aşağıya bak).
+- Yerel hızlı doğrulama: `cd mobile && npm run typecheck && npm run smoke`.
+
+## GELECEK: Google Play (EAS ile)
 
 ## Yapı (build)
 - **AAB üret:** `eas build --platform android --profile production`
