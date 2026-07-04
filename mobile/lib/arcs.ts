@@ -343,6 +343,26 @@ ARCS.push(
   },
 );
 
+// Kimlik yayı: korkulan/zalim oyuncuya kefaret ya da karanlığa gömülme seçimi (erdemli yaylar herkese hitap etmiyordu).
+ARCS.push(
+  {
+    id: "golgeden_cikis", title: "Gölgeden Çıkış", icon: "sun",
+    blurb: "Adın korkuyla anılıyor; bir kapı aralanıyor — ama iki yöne açılıyor.",
+    when: (p) => p.age >= 30 && (p.fear >= 45 || (p.nam?.zalim || 0) >= 45),
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Yaşlı imam kapına geldi: 'Yetimhanenin damı çöktü. Kimse senden istemeye cesaret edemedi — ben ederim. Yardım et, adını temizle.'", choices: [
+        { label: "Keseyi aç, damı yaptır (−40 akçe)", result: "Ustalar bir haftada damı örttü. Çocuklar kapının önünde sana el salladı; kasabada bir fısıltı değişti.", delta: { money: -40, reputation: 8, honor: 4 }, next: "s2" },
+        { label: "'Korku da bir düzendir' de, geri çevir", result: "İmam başını salladı, 'Yazık' dedi, gitti. O gece adın bir beşikte beddua ile anıldı.", delta: { fear: 4, reputation: -5 }, next: "end" },
+      ]},
+      s2: { id: "s2", text: "Dam örtüldü ama eski ortakların rahatsız: 'Yumuşadın' diyorlar. Elçileri geldi: ya eski işlere dönersin ya da 'hesap kapanır'.", choices: [
+        { label: "Reddet: 'O defter kapandı'", result: "Bir gece pusuya düştün; yara aldın ama ayakta kaldın. Kasaba yaranı gördü — ve ilk kez korkudan değil saygıdan selam verdi.", delta: { health: -10, honor: 10, reputation: 8, fear: -10 }, next: "end" },
+        { label: "Dön: gölge daha sıcak", result: "Eski işler eski kazançlarla döndü. İmam bir daha kapına gelmedi; yetimhanenin çocukları artık sokağın öbür tarafından yürüyor.", delta: { money: 45, fear: 6, honor: -8 }, next: "end" },
+      ]},
+    },
+  },
+);
+
 export function arcById(id: string | null): Arc | undefined { return ARCS.find((a) => a.id === id); }
 // Uygun, henüz tamamlanmamış ve aktif olmayan yaylar.
 export function availableArcs(p: Player, completed: string[], tension: number, activeId: string | null): Arc[] {
