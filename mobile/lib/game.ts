@@ -3751,6 +3751,8 @@ export function heirPreview(prev: GameState, heirName: string, willId = "esit"):
   else if (nat === "hirsli") points += 1;
   const edu = p.child_edu && p.child_edu[heirName];
   if (edu) { const lvl = eduLevel(edu.weeks); if (lvl > 0) rep += lvl; }
+  const bond = p.child_bond?.[heirName];
+  if (bond != null) { if (bond >= 60) rep += 2; if (bond >= 85) points += 1; } // ilgiyle büyüyen evlat: ata bağı vârisin adını ve özgüvenini besler
   return { points, money, rep: Math.max(-100, Math.min(100, rep + legacyRep)) };
 }
 
@@ -3803,6 +3805,10 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       investNotes.push(`${tr.label.toLowerCase()}nda yetişmiş (${lvl}. kademe)`);
     }
   }
+  // İlgiyle büyüyen evlat: ata bağı vârisin adını ve özgüvenini besler (heirPreview ile birebir aynı eşikler).
+  // Not: child_bond/child_time_turn vârise taşınmaz — vârisin kendi evlatlarıyla bağı sıfırdan kurulur (bilinçli).
+  const heirBond = p.child_bond?.[heir];
+  if (heirBond != null) { if (heirBond >= 60) startRep += 2; if (heirBond >= 85) startPoints += 1; }
   const ancestor: DynastyRecord = {
     generation: p.generation, name: p.name, profession: p.profession,
     diedAge: p.age, fame: Math.round(p.fame), reputation: Math.round(p.reputation), faction: p.faction,
