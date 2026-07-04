@@ -5338,7 +5338,7 @@ export function suppressPretender(prev: GameState): GameState {
   if (p.crown_action_turn === s.turn) return s; // ayda tek taht eylemi
   p.crown_action_turn = s.turn; p.money -= PRETENDER_SUPPRESS_COST;
   const h = ensureRivals(s).find((x) => x.id === s.pretender!.houseId); if (!h) { s.pretender = null; return s; }
-  if (Math.random() < Math.min(0.9, 0.45 + p.skills.combat * 0.03 + crownAuthorityOf(p) / 200)) {
+  if (Math.random() < Math.min(0.9, 0.45 + p.skills.combat * 0.03 + crownAuthorityOf(p) / 200 + Math.min(0.09, (s.allied_houses?.length || 0) * 0.03))) { // müttefikler iddiacıya karşı da yanında
     s.pretender!.strength = Math.max(0, s.pretender!.strength - 28); h.power = Math.max(20, h.power - 8); p.fear = clamp100(p.fear + 3);
     if (s.pretender!.strength <= 0) { s.pretender = null; p.crownAuthority = clamp100(crownAuthorityOf(p) + 8); push(s, "taht", `${h.name} sindirildi; iddia söndü.`, "kişisel", true, { k: "crown.pretCrushed", p: [{ hn: h.nameIdx }] }); }
     else push(s, "taht", `${h.name} destekçilerine gözdağı verdin; iddia geriledi.`, "kişisel", false, { k: "crown.pretSupWin", p: [{ hn: h.nameIdx }] });
@@ -5415,13 +5415,17 @@ export function canLaunchCampaign(s: GameState): boolean {
 }
 export function campaignOdds(s: GameState): number {
   const p = s.player;
-  const odds = 0.40 + (dynastyPower(s) - 140) / 400 + crownAuthorityOf(p) / 300 + p.skills.combat / 50;
+  const odds = 0.40 + (dynastyPower(s) - 140) / 400 + crownAuthorityOf(p) / 300 + p.skills.combat / 50 + Math.min(0.12, (s.allied_houses?.length || 0) * 0.04); // müttefik haneler sancağın altına atlı yollar
   return Math.max(0.15, Math.min(0.88, odds));
 }
 export function launchCampaign(prev: GameState, beylikId: string): { state: GameState; success: boolean } {
   const s = clone(prev); const p = s.player;
   if (!canLaunchCampaign(s) || !campaignTargets(s).some((tg) => tg.id === beylikId)) return { state: s, success: false };
   p.money -= CAMPAIGN_COST;
+  if ((s.allied_houses || []).length) {
+    const ah = ensureRivals(s).find((x) => s.allied_houses!.includes(x.id));
+    if (ah) push(s, "taht", `${ah.name} sancağın altına atlılarını yolladı; ordun güçlendi.`, "kişisel", false, { k: "crown.allyAid", p: [{ hn: ah.nameIdx }] });
+  }
   const success = Math.random() < campaignOdds(s);
   if (success) {
     p.crownConquests = [...(p.crownConquests || []), beylikId];
