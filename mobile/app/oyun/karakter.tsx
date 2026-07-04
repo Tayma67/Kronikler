@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, visitParents, visitHealer, healerCost } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
@@ -250,6 +250,14 @@ export default function Karakter() {
                       <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5 }}>{t("char.spendTime")}</Text>
                     </Pressable>
                   </View>
+                );
+              })() : null}
+              {p.children.length > 0 ? (() => {
+                const tended = p.child_time_turn === state.turn;
+                return (
+                  <Pressable disabled={tended} onPress={() => { hap("tap"); apply((s) => tendChild(s)); }} style={{ alignSelf: "flex-start", marginTop: 5, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", opacity: tended ? 0.4 : 1 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5 }}>{t("char.tendChildren")}</Text>
+                  </Pressable>
                 );
               })() : null}
               {p.horse && p.horse_name ? (

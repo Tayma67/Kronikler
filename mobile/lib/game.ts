@@ -33,6 +33,8 @@ export interface Player {
   injuries: Injury[]; career_xp: number;
   nam: Nam; child_invests: Record<string, string[]>;
   child_edu?: Record<string, { track: string; weeks: number }>; // süregelen evlat eğitimi (haftalık biriken)
+  child_bond?: Record<string, number>; // evlat başına bağ 0-100 (ilgiyle beslenir; ilk dokunuşta 50)
+  child_time_turn?: number; // bu ay evlatla ilgilenildi mi (turda tek — bağ farmı önlenir)
   equipped: { silah: string | null; zirh: string | null } & Partial<Record<EquipSlot, string | null>>;
   equipped_q?: Partial<Record<EquipSlot, QualityTier>>; // kuşanılı teçhizatın kalite kademesi
   crowned?: boolean; will_pref?: string;
@@ -4091,6 +4093,26 @@ export function spendWithSpouse(prev: GameState): GameState {
   p.health = Math.min(100, p.health + 2); p.hunger = Math.max(0, p.hunger - 3);
   const sn: EvtParam = p.spouse_seed != null ? { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] } : (p.spouse_name || "");
   push(s, "evlilik", `${p.spouse_name || "Eşin"} ile baş başa bir gün geçirdiniz; bağınız pekişti.`, "kişisel", false, { k: "evj.spouseTime2." + miz, p: [sn] });
+  return s;
+}
+// Evlatlarınla ilgilen: en küçüğün yaşına göre bir sahne — soy isim listesi değil, büyüyen hayatlar (turda tek).
+export function tendChild(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !p.children.length) return s;
+  if (p.child_time_turn === s.turn) return s; // turda tek — bağ farmı önlenir
+  p.child_time_turn = s.turn;
+  // En küçük evlat seçilir (evde en çok o var); doğumu kayıtsız eski-kayıt çocukları yetişkin sayılır
+  let name = p.children[0]; let age = 18;
+  if (p.child_meta?.length) {
+    const cm = [...p.child_meta].filter((c) => p.children.includes(c.n)).sort((a, b) => b.born - a.born)[0];
+    if (cm) { name = cm.n; age = Math.floor((s.turn - cm.born) / 12); }
+  }
+  if (!p.child_bond) p.child_bond = {};
+  const bond = (d: number) => { p.child_bond![name] = Math.max(0, Math.min(100, (p.child_bond![name] ?? 50) + d)); };
+  if (age < 7) { p.health = Math.min(100, p.health + 2); bond(4); push(s, "doğum", `Minik ${name} ile evin önünde oynadın; kahkahası günün yorgunluğunu sildi.`, "kişisel", false, { k: "evj.childTend.bebek", p: [name] }); }
+  else if (age < 13) { bond(4); if (p.child_edu?.[name]) p.child_edu[name].weeks += 1; push(s, "cocukluk", `${name} ile rahlenin başına oturdunuz; harfler sökülünce gözleri parladı.`, "kişisel", false, { k: "evj.childTend.mektepli", p: [name] }); }
+  else if (age < 18) { bond(4); p.reputation = Math.min(100, p.reputation + 1); push(s, "cocukluk", `${name}'e zanaatının inceliğini gösterdin; el alışkanlığı sana çekmiş.`, "kişisel", false, { k: "evj.childTend.genc", p: [name] }); }
+  else { bond(3); p.reputation = Math.min(100, p.reputation + 1); push(s, "gunluk", `Yetişkin evladın ${name} ile sofra kurdunuz; kendi ocağının derdini, sevincini dinledin.`, "kişisel", false, { k: "evj.childTend.yetiskin", p: [name] }); }
   return s;
 }
 export function hostFeast(prev: GameState): GameState {
