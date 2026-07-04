@@ -532,7 +532,7 @@ export default function Dashboard() {
               {acts.map((a) => (
                 <Pressable key={a.k} onPress={() => onElder(a.k)} disabled={!can} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: can ? "rgba(123,79,175,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
                   <GameIcon name={a.icon} size={16} color={can ? C.ink : C.parchmentMuted} />
-                  <Text style={{ fontFamily: F.display, fontSize: 11, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
+                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.display, fontSize: 11, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
                 </Pressable>
               ))}
             </View>
