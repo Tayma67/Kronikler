@@ -4283,12 +4283,12 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
     const floor = hasPerk(p, "yilmaz") ? 5 : 1;
     p.health = Math.max(floor, Math.min(Math.round(finalHp), p.health)); // zafer canı giriş canını aşamaz (15-19 canla girip 20 ile çıkma kapalı)
     maybeInjure(s, false);
-    push(s, "savaş_zafer", `${e.title}: Zafer senin! (+${reward} akçe, şöhretin arttı.)`, "kişisel", true, { k: "evj.battleWin", p: [{ enc: e.id }, reward] });
+    push(s, "savaş_zafer", `${e.title}: Zafer senin! (+${reward} akçe, şöhretin arttı.)`, "kişisel", true, { k: "evj.battleWin2", p: [{ enc: e.id }, reward, { sfx: "enc." + e.id + ".w" }] });
   } else {
     p.health = Math.max(0, Math.round(finalHp));
     if (p.health <= 0) { die(s, `${p.name}, ${e.title.toLowerCase()} sırasında can verdi.`, { k: "evj.dieEnc", p: [p.name, { enc: e.id }] }); return s; }
     maybeInjure(s, true);
-    push(s, "savaş_yenilgi", `${e.title}: Yenildin, yaralarını sardın.`, "kişisel", false, { k: "evj.battleLose", p: [{ enc: e.id }] });
+    push(s, "savaş_yenilgi", `${e.title}: Yenildin, yaralarını sardın.`, "kişisel", false, { k: "evj.battleLose2", p: [{ enc: e.id }, { sfx: "enc." + e.id + ".l" }] });
     // Yenilgi bir düşmanlık doğurabilir (nemesis)
     if (s.story && !s.story.nemesis && Math.random() < 0.4) {
       const name = `${NEMESIS_NAMES[Math.floor(Math.random() * NEMESIS_NAMES.length)]}`;

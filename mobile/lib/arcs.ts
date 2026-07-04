@@ -363,7 +363,7 @@ ARCS.push(
   },
 );
 
-// Geç sevda: orta yaş bekârlığının anlatısı — s1.c0 kabulle s2'ye akar; düğün dalı evliliği kurmaz (mevcut evlilik yolları kurar), yalnız anlatı ve itibar taşır.
+// Geç sevda: orta yaş bekârlığının anlatısı — s1.c0 kabulle s2'ye akar; düğün dalı marry delta'sıyla evliliği gerçekten kurar (bekârsa), dost kalma dalı yalnız anlatı taşır.
 ARCS.push(
   {
     id: "gec_sevda", title: "Geç Sevda", icon: "ring",
