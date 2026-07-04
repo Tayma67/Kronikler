@@ -3,7 +3,7 @@ import type { EvtParam } from "./i18n";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname, SPECIALTIES, Item, WClass, applyFamilySurnames, npcAgeProfession } from "./world";
 import { Lang } from "./locale-data";
-import { converse, ConvResult, spontaneousLine, callbackLine } from "./dialogue";
+import { converse, ConvResult, spontaneousLine, callbackLine, perceptionGreeting } from "./dialogue";
 import { Memory, addMemory, decayMemories, effectiveRel, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS } from "./npc-mind";
 import { arcById, ArcChoice, availableArcs } from "./arcs";
 
@@ -2586,6 +2586,14 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   // Diyalog katmanları (Vercel): NPC bazen kendi gündemini açar (spontane) + geçmişi hatırlar (callback).
   let line = r.line;
+  // Algı selamı: halk seni nasıl görüyorsa NPC de öyle karşılar (yalnız hoşbeşte, tanınıyorsan) — sınıf yolculuğu sohbette hissedilsin.
+  if (intent === "hosbes") {
+    const pp = publicPerception(s);
+    if (pp.key !== "unknown" && pp.key !== "neutral" && Math.random() < 0.35) {
+      const g = perceptionGreeting(lang as any, pp.key);
+      if (g) line = g + " " + line;
+    }
+  }
   if (intent === "hosbes" && Math.random() < 0.3) { const sp = spontaneousLine(npc, ns.mood, lang as any); if (sp) line = sp + " " + line; }
   const lastAni = ns.anilar && ns.anilar.length ? ns.anilar[ns.anilar.length - 1] : null;
   if (lastAni && Math.random() < 0.3) { const cb = callbackLine(npc, lastAni.tur, lang as any); if (cb) line = line + " " + cb; }

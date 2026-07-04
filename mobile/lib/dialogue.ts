@@ -17,6 +17,11 @@ export const INTENTS: Intent[] = [
 
 export interface ConvResult { line: string; moodDelta: number; relDelta: number; memory: string; }
 
+// Algı selamı: halkın seni görüşü (feared/beloved...) sohbet açılışına yansır. Anahtar yoksa boş döner (ham anahtar sızmaz).
+export function perceptionGreeting(lang: Lang, key: string): string {
+  const k = "pp.greet." + key; const v = tFor(lang, k); return v === k ? "" : v;
+}
+
 function moodTier(m: number): "küs" | "soğuk" | "nötr" | "sıcak" | "neşeli" {
   if (m <= -40) return "küs"; if (m < -10) return "soğuk"; if (m <= 10) return "nötr"; if (m < 45) return "sıcak"; return "neşeli";
 }
