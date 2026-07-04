@@ -20,7 +20,7 @@ export async function exportSaveText(): Promise<string | null> {
 }
 
 // Eski kayıtları yeni alanlarla uyumlulaştır (geriye dönük güvenli yükleme).
-function migrate(s: GameState): GameState {
+export function migrate(s: GameState): GameState {
   const p: any = s.player || {};
   if (p.faction === undefined) p.faction = null;
   if (!p.faction_standing) p.faction_standing = {};

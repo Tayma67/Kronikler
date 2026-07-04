@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView, ActivityIndicator } from "react-nati
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../lib/i18n";
-import { useGame } from "../../lib/store";
+import { useGame, migrate } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { mePublic, applyTickEvents, realmYearMonth } from "../../lib/mp/world";
 import { CountdownSecs } from "../../lib/mp/countdown";
@@ -48,7 +48,7 @@ export default function MpOyun() {
   useEffect(() => {
     if (mpMode || !guestId) return;
     let init: GameState | null = null;
-    if (saved) { try { const r = JSON.parse(saved); if (r && r.player) init = { ...r, mpRealm: true }; } catch {} }
+    if (saved) { try { const r = JSON.parse(saved); if (r && r.player) init = { ...migrate(r), mpRealm: true }; } catch {} } // sunucu yedeği eski şemadan olabilir — SP ile aynı göç yolundan geçir
     if (!init) init = { ...newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"), mpRealm: true };
     // Yoklukta NPC-vekil yaşlandıysa/öldüyse dönüşte karaktere yansıt (sunucu otoritesi).
     const meP = snapshot?.players.find((x) => x.id === guestId);
