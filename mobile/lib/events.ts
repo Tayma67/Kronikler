@@ -866,6 +866,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
           { label: "Ocağının başında dua et", delta: { honor: 4, nam: { dindar: 3 } }, result: "Kalabalığa karışmadın; ocağının başında geçen yıla şükredip yenisine niyet ettin." },
         ],
       },
+      {
+        id: "fest_nevruz_2", icon: "crossed-swords", title: "Nevruz Güreşleri",
+        text: "Meydanda er meydanı kuruldu; davul vuruyor, pehlivanlar yağlanıyor. Tellal seni de çağırıyor: 'Var mısın?'",
+        when: (p) => p.age >= 16,
+        choices: [
+          { label: "Soyun, er meydanına çık", delta: { health: -3, fame: 3, nam: { mert: 2 } }, result: "Sırtın yere gelse de gelmese de meydan seni alkışladı; Nevruz'da güreşen unutulmaz." },
+          { label: "Davul ekibine katıl, coştur", delta: { reputation: 2, nam: { capkin: 1 } }, result: "Tokmak elinde akşama dek vurdun; güreşten çok davulun konuşuldu, gülen gözler seni buldu." },
+        ],
+      },
     ],
   },
   {
@@ -887,6 +896,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
         choices: [
           { label: "Güreşe çık", delta: { health: -5, fame: 4, nam: { mert: 3 } }, result: "Er meydanında ter döktün; sırtın yere gelse de gelmese de, yiğitliğin dillere düştü." },
           { label: "Kese aç, davul kirala", delta: { money: -25, fame: 3, nam: { comert: 3 } }, result: "Şenliğin davulu senin akçenle gümledi; köylü o geceyi senin adınla andı." },
+        ],
+      },
+      {
+        id: "fest_hasat_2", icon: "coins", title: "Harman Pazarı",
+        text: "Harman sonrası pazar taştı; kervanlar erken mal kapatıyor. Bir yanda tezgâh fırsatı, bir yanda imeceye çağıran komşular.",
+        when: (p) => p.age >= 16,
+        choices: [
+          { label: "Tezgâh aç, kervanlara sat", delta: { money: 18, nam: { capkin: 1 } }, result: "Gün batmadan tezgâh boşaldı; kesen şenlik akşamına dolu girdi." },
+          { label: "İmeceye omuz ver", delta: { reputation: 5, nam: { comert: 3 }, hunger: 4 }, result: "Dul kadının harmanı senin kolunla kalktı; akşam sofrasında baş köşe senindi." },
         ],
       },
     ],
@@ -912,6 +930,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
           { label: "Ocağına misafir al", delta: { money: -15, reputation: 4, nam: { comert: 2 } }, result: "Yolda kalmışı ocağına buyur ettin; çorbanı bölüştün, duasını aldın." },
         ],
       },
+      {
+        id: "fest_kis_2", icon: "book", title: "Meddah Gecesi",
+        text: "Kış meclisine gezgin bir meddah düştü; ocak başında hikâye hikâyeye ekleniyor. Sıra sana gelince meclis sustu.",
+        when: (p) => p.age >= 16,
+        choices: [
+          { label: "Kendi başından geçeni anlat", delta: { fame: 4, nam: { capkin: 1 } }, result: "Hikâyen meddahı bile sarstı; 'bunu ben anlatacağım diyar diyar' dedi. Adın kış yollarına çıktı." },
+          { label: "Sözü gençlere bırak", delta: { honor: 3, reputation: 2 }, result: "Utangaç bir çırak senin bakışınla cesaret buldu, meclisi güldürdü. Büyüklük bazen susmaktır." },
+        ],
+      },
     ],
   },
 ];
@@ -922,7 +949,8 @@ export function pickFestival(s: GameState): Dilemma | null {
   if (p.festival_turn === s.turn) return null; // bu ayın şenliği çözüldü
   const f = FESTIVALS.find((x) => x.month === s.turn % 12);
   if (!f) return null;
-  return f.variants.find((d) => !d.when || d.when(p)) || null;
+  const uygun = f.variants.filter((d) => !d.when || d.when(p));
+  return uygun.length ? uygun[Math.floor(Math.random() * uygun.length)] : null;
 }
 
 // Tura göre bir ikilem seç (deterministik değil; çağıran olasılıkla tetikler).
