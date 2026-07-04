@@ -16,6 +16,14 @@ import { loadReduceMotion } from "../lib/perf";
 import { C } from "../lib/theme";
 
 // Açılış hiçbir koşulda asılı kalmasın: font yüklemesi hata verirse ya da 6 sn'yi aşarsa sistem fontuyla devam edilir.
+// Erişilebilirlik: cihazın "büyük yazı" ayarı oyunda çalışır; %125 tavanı sabit-yükseklikli satırların taşmasını önler.
+// (defaultProps RN 0.7x'te Text için hâlâ geçerli; ileride kalkarsa no-op olur, açılışı etkilemez.)
+try {
+  const T: any = Text;
+  T.defaultProps = T.defaultProps || {};
+  if (T.defaultProps.maxFontSizeMultiplier == null) T.defaultProps.maxFontSizeMultiplier = 1.25;
+} catch {}
+
 export default function RootLayout() {
   const [loaded, fontError] = useFonts({
     Cinzel_400Regular, Cinzel_700Bold, CrimsonText_400Regular, CrimsonText_400Regular_Italic,
