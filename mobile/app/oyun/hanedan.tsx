@@ -12,7 +12,7 @@ import {
   nextSettleTier, canUpgradeSettleTier, upgradeSettleTier, propsInLoc,
   PRESTIGE, prestigeCost, fundPrestige, MARKET_LEVER_MIN, marketLeverCost, canManipulateMarket, manipulateMarket,
   acceptDynastyOffer, declineDynastyOffer,
-  feudPeaceCost, feudSuePeace, feudStrike, proposeToHouse,
+  feudPeaceCost, feudSuePeace, feudStrike, proposeToHouse, sendEnvoy, ENVOY_COST, demandTribute, inflationFactor,
   crownAuthorityOf, CROWN_DECREES, canIssueDecree, issueDecree, decreeCooldownLeft,
   campaignTargets, canLaunchCampaign, campaignOdds, launchCampaign, CAMPAIGN_COST,
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
@@ -23,7 +23,7 @@ import { generateDynasties, houseName as rivalHouseName, localFirstName } from "
 import { professionNameL, placeName } from "../../lib/locale-data";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
-import { useI18n, applyParams } from "../../lib/i18n";
+import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader } from "../../lib/ui";
 
@@ -269,9 +269,16 @@ export default function Hanedan() {
                     {targets.map((tg) => {
                       const can = canLaunchCampaign(state);
                       return (
-                        <Pressable key={tg.id} disabled={!can} onPress={() => doCampaign(tg.id)} style={{ paddingVertical: 8, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: can ? "rgba(200,64,64,0.5)" : C.border, backgroundColor: can ? "rgba(200,64,64,0.10)" : C.bg, opacity: can ? 1 : 0.5 }}>
+                        <View key={tg.id} style={{ gap: 4 }}>
+                        <Pressable disabled={!can} onPress={() => doCampaign(tg.id)} style={{ paddingVertical: 8, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: can ? "rgba(200,64,64,0.5)" : C.border, backgroundColor: can ? "rgba(200,64,64,0.10)" : C.bg, opacity: can ? 1 : 0.5 }}>
                           <Text style={{ fontFamily: F.display, fontSize: 11, color: can ? C.ember : C.parchmentMuted }}>{t("crown.campaignBtn")}: {t("beylik." + tg.id)}</Text>
                         </Pressable>
+                        {(() => { const tcan = p.crown_action_turn !== state.turn; return (
+                        <Pressable disabled={!tcan} onPress={() => { hap("tap"); const r = demandTribute(state, tg.id); apply(() => r.state); setCampMsg({ ok: r.success, tick: Date.now() }); }} style={{ paddingVertical: 6, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: tcan ? "rgba(201,168,76,0.45)" : C.border, backgroundColor: tcan ? "rgba(201,168,76,0.08)" : C.bg, opacity: tcan ? 1 : 0.5 }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 10, color: tcan ? C.gold : C.parchmentMuted }}>{t("crown.tributeBtn")}: {t("beylik." + tg.id)}</Text>
+                        </Pressable>
+                        ); })()}
+                        </View>
                       );
                     })}
                   </View>
@@ -310,6 +317,25 @@ export default function Hanedan() {
                     ))}
                   </>
                 )}
+              </View>
+            </>
+          );
+        })()}
+
+        {/* ── KARAR DEFTERİ: divan arzuhalleri + fermanlar — hükümdarın izi ── */}
+        {p.crowned && (() => {
+          const kayitlar = state.history.filter((e) => e.type === "taht" && e.k && (String(e.k).startsWith("divan.") || String(e.k).startsWith("crown."))).slice(-8).reverse();
+          if (!kayitlar.length) return null;
+          return (
+            <>
+              <SecTitle>{t("divan.ledger")}</SecTitle>
+              <View style={{ backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 11, marginBottom: 4 }}>
+                {kayitlar.map((e, i) => (
+                  <View key={i} style={{ flexDirection: "row", gap: 7, marginBottom: i === kayitlar.length - 1 ? 0 : 8 }}>
+                    <Text style={{ fontFamily: F.serif, fontSize: 9.5, color: C.goldDim, width: 34 }}>{Math.floor(e.day / 12) + 1247}</Text>
+                    <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentDim, lineHeight: 15 }} numberOfLines={2}>{renderEvt(e.k, e.text, e.p, lang, t, p.gender === "kadın")}</Text>
+                  </View>
+                ))}
               </View>
             </>
           );
@@ -547,14 +573,19 @@ export default function Hanedan() {
                     </View>
                   )}
                   {/* Proaktif diplomasi: soğuk olmayan hanelere teklif götür (ayda tek; ret tutumu düşürür) */}
-                  {!h.mine && !(state.allied_houses || []).includes(h.id) && h.attitude > -10 && p.age >= 16 && (() => {
+                  {!h.mine && !(state.allied_houses || []).includes(h.id) && p.age >= 16 && (() => {
                     const acted = p.propose_turn === state.turn;
                     return (
                       <View style={{ gap: 4 }}>
+                        <Pressable disabled={acted} onPress={() => { hap("tap"); apply((s) => sendEnvoy(s, h.id)); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: acted ? C.border : "rgba(127,166,106,0.5)", opacity: acted ? 0.4 : 1 }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 8.5, color: acted ? C.parchmentMuted : C.sage }}>{applyParams(t("dyn.envoy"), [Math.round(ENVOY_COST * inflationFactor(state))])}</Text>
+                        </Pressable>
+                        {h.attitude > -10 && (
                         <Pressable disabled={acted} onPress={() => { hap("tap"); apply((s) => proposeToHouse(s, h.id, "ittifak")); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: acted ? C.border : "rgba(111,160,192,0.5)", opacity: acted ? 0.4 : 1 }}>
                           <Text style={{ fontFamily: F.display, fontSize: 8.5, color: acted ? C.parchmentMuted : "#6FA0C0" }}>{t("dyn.propose.ally")}</Text>
                         </Pressable>
-                        {!p.married && (
+                        )}
+                        {!p.married && h.attitude > -10 && (
                           <Pressable disabled={acted} onPress={() => { hap("tap"); apply((s) => proposeToHouse(s, h.id, "evlilik")); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: acted ? C.border : "rgba(201,168,76,0.5)", opacity: acted ? 0.4 : 1 }}>
                             <Text style={{ fontFamily: F.display, fontSize: 8.5, color: acted ? C.parchmentMuted : C.gold }}>{t("dyn.propose.marry")}</Text>
                           </Pressable>

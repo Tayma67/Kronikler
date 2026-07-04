@@ -2009,6 +2009,39 @@ export function acceptDynastyOffer(prev: GameState, offerId: string): GameState 
   }
   return s;
 }
+// Elçi gönder: soğuyan haneye hediyelerle yumuşama — ittifakın ön adımı (ayda tek diplomasi hakkını kullanır; farm yok).
+export const ENVOY_COST = 40;
+export function sendEnvoy(prev: GameState, houseId: string): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 16) return s;
+  if (p.propose_turn === s.turn) return s; // teklif ve elçi aynı aylık hakkı paylaşır
+  const h = ensureRivals(s).find((x) => x.id === houseId); if (!h) return s;
+  if ((s.allied_houses || []).includes(houseId)) return s;
+  const cost = Math.round(ENVOY_COST * inflationFactor(s));
+  if (p.money < cost) { push(s, "hanedan_haber", `Elçi donatacak akçen yok.`, "kişisel", false, { k: "evj.envoyNoFee" }); return s; }
+  p.propose_turn = s.turn; p.money -= cost;
+  h.tutum = Math.min(100, (h.tutum ?? 0) + 8 + Math.floor(Math.random() * 7)); // 8-14: iki-üç elçilik soğuk haneyi teklife hazır eder
+  push(s, "hanedan_haber", `${h.name} kapısına hediyelerle elçi gönderdin; soğuk selam ılıdı.`, "makro", false, { k: "evj.envoySent", p: [{ hn: h.nameIdx }] });
+  return s;
+}
+// Haraç talebi: kılıç çekmeden beylik sindirmek — başarısı seferden düşük, bedeli otorite (taht eylemi hakkını kullanır).
+export function demandTribute(prev: GameState, beylikId: string): { state: GameState; success: boolean } {
+  const s = clone(prev); const p = s.player;
+  if (!p.crowned || p.dead) return { state: s, success: false };
+  if (p.crown_action_turn === s.turn) return { state: s, success: false }; // ayda tek taht eylemi (iddia bastırmayla ortak)
+  if (!campaignTargets(s).some((t) => t.id === beylikId)) return { state: s, success: false };
+  p.crown_action_turn = s.turn;
+  const odds = Math.max(0.1, Math.min(0.8, campaignOdds(s) - 0.1)); // kılıçsız korkutmak kılıçtan zordur
+  if (Math.random() < odds) {
+    const trib = Math.round(150 * inflationFactor(s));
+    p.money += trib; p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.fear = clamp100(p.fear + 3);
+    push(s, "taht", `Elçin boş dönmedi: haraç geldi; adın sınırda ağır anılıyor.`, "kişisel", true, { k: "crown.tributeWin", p: [{ bl: beylikId }, trib] });
+    return { state: s, success: true };
+  }
+  p.crownAuthority = clamp100(crownAuthorityOf(p) - 5); p.reputation = Math.max(-100, p.reputation - 2);
+  push(s, "taht", `Haraç talebin geri çevrildi; sınır kahvelerinde gülüşmeler dolaşıyor.`, "kişisel", false, { k: "crown.tributeLose", p: [{ bl: beylikId }] });
+  return { state: s, success: false };
+}
 // Oyuncudan haneye teklif: hanedan ekranını pasiften aktife çevirir. Tur başına tek girişim (diplomasi farm'ı yok).
 // Şans tutum + saygınlıkla ölçeklenir; ret tutumu düşürür — teklif spam'ı kendi kendini cezalandırır.
 export function proposeToHouse(prev: GameState, houseId: string, type: "ittifak" | "evlilik"): GameState {
@@ -4230,22 +4263,23 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
     if (choice === 0) { p.money -= 100; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); }
     else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); p.fear = Math.min(100, p.fear + 2); }
   } else if (id === "yetim_arazisi") {
+    if (choice === 1) sowSeed(s, { kaynak: "divan_yetim_kirgin", hmin: 60, hmax: 180, agirlik: "buyuk", nesil: true, etki: { reputation: -8 } });
     if (choice === 0) { p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 4); p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); bumpNam(p, "mert", 2); }
     else { const bag = 120; p.money += bag; p.honor = Math.max(0, p.honor - 5); bumpNam(p, "zalim", 3); }
   } else if (id === "sinir_haraci") {
     if (choice === 0) { p.money -= 120; p.crownAuthority = clamp100(crownAuthorityOf(p) + 7); p.reputation = Math.min(100, p.reputation + 3); }
     else { p.reputation = Math.max(-100, p.reputation - 3); p.crownAuthority = clamp100(crownAuthorityOf(p) - 3); bumpNam(p, "zalim", 2); }
   } else if (id === "genc_mucit") {
-    if (choice === 0) { p.money -= 150; p.fame = Math.min(100, p.fame + 5); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "comert", 3); }
+    if (choice === 0) { p.money -= 150; p.fame = Math.min(100, p.fame + 5); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "comert", 3); sowSeed(s, { kaynak: "divan_mucit", hmin: 36, hmax: 96, agirlik: "orta", nesil: false, etki: { money: 250, reputation: 5 } }); }
     else { p.reputation = Math.max(-100, p.reputation - 2); }
   } else if (id === "kacak_asker") {
-    if (choice === 0) { p.honor = Math.min(100, p.honor + 4); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "mert", 2); }
+    if (choice === 0) { p.honor = Math.min(100, p.honor + 4); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "mert", 2); sowSeed(s, { kaynak: "divan_affedilen", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { reputation: 7 } }); }
     else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.fear = Math.min(100, p.fear + 4); bumpNam(p, "zalim", 2); }
   } else if (id === "iki_imam") {
     if (choice === 0) { p.money -= 200; p.reputation = Math.min(100, p.reputation + 5); bumpNam(p, "dindar", 3); bumpNam(p, "comert", 2); }
     else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); }
   } else if (id === "leke_surulen") {
-    if (choice === 0) { p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "mert", 2); }
+    if (choice === 0) { p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "mert", 2); sowSeed(s, { kaynak: "divan_aklanan", hmin: 24, hmax: 72, agirlik: "kucuk", nesil: false, etki: { money: 60, reputation: 4 } }); }
     else { p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); }
   } else if (id === "eski_silah_arkadasi") {
     if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 2); }
