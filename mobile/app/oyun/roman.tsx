@@ -20,11 +20,11 @@ const BANDS = [
 
 // Olay türünü bir temaya indirger (yıllık hikâye özeti — Vercel generate_year_story ruhu).
 function catOf(type: string): string {
-  if (/savas|savaş|ocak|doruk|combat/.test(type)) return "catisma";
-  if (/ticaret|mulk|mülk|hasat|kervan|atolye|zanaat/.test(type)) return "kazanc";
+  if (/savas|savaş|ocak|doruk|combat|kan_dav/.test(type)) return "catisma";
+  if (/ticaret|mulk|mülk|hasat|kervan|atolye|zanaat|bagis|bağış/.test(type)) return "kazanc";
   if (/evlilik|dogum|doğum|nesil|aile/.test(type)) return "aile";
   if (/sohbet|orgut|örgüt|fai/.test(type)) return "dostluk";
-  if (/mektep|beceri/.test(type)) return "ogrenme";
+  if (/mektep|beceri|cirak|çırak|olgunluk|ihtiyarlik/.test(type)) return "ogrenme";
   if (/suc|suç|ceza|golge|gölge/.test(type)) return "karanlik";
   if (/yonetim|yönetim/.test(type)) return "mevki";
   if (/hikaye|hikâye|seyahat|yolculuk|dunya|dünya|fisilti|fısıltı/.test(type)) return "yollar";

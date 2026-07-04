@@ -88,6 +88,18 @@ const TR: FaqSection[] = [
       { q: "Saraya nasıl girerim, rütbeler nedir?", a: "Tahtta değilsen (16+ yaş, yeterli itibar ve zekâ — kâtipsen daha kolay) Örgütler ekranından saray/divan hizmetine girebilirsin. Kâtip olarak başlar, Divan Hizmeti vererek hizmet puanı + hükümdar itibarı (favor) + maaş kazanır, Defterdar → Nişancı → Vezir → Sadrazam'a yükselirsin. Pîşkeş sunarak favor satın alabilirsin. Favor ihmal edilirse aşınır, dibe vurursa azledilirsin; rakip saraylı entrikaları ve sultan lütufları olur. Vezir+ mevki tahta iddia için arka sağlar." },
     ],
   },
+  {
+    icon: "banner", title: "Hanedan Yolları (Yeni Sistemler)",
+    items: [
+      { q: "İbadet ne kazandırır?", a: "Yetişkin uğraşları arasında İbadet vardır: gönlünü toplar, Dindar namını ve biraz sağlık kazandırır; ara sıra bir dervişle sohbet denk gelir. Yaşlılıkta aynı yolun adı Tekke'dir — zikir yaşlı gönlü dinlendirir." },
+      { q: "Hastalık yakamı bırakmıyor, ne yapayım?", a: "35 yaş sonrası düşkün bünyede öksürük göğse yerleşebilir (kronik): her ay biraz sağlık sızdırır, arada alevlenir. Karakter ekranındaki Hekime Görün düğmesi hem sağlık toplar hem her muayenede kroniği kesme şansı taşır." },
+      { q: "Vakıf fonu ne işe yarar?", a: "Vakıf kurduktan sonra fona sınırsız bağış yapabilirsin (ayda bir). 25 bin / 100 bin / 250 bin / 1 milyon akçe eşiklerinde vakfın mertebe atlar: şöhret ve cömert nam kazanırsın. Fon ayrıca mersiyene ve vârisinin başlangıç itibarına akar." },
+      { q: "Ölünce eşyalarım ne olur?", a: "Kuşandığın silah, kalitesiyle birlikte yadigâr olarak vârisin sandığına geçer. Servetin vasiyet payına göre, mülklerin ve konağın ise olduğu gibi vârise kalır; gerisi hayatınla birlikte gider." },
+      { q: "Çırak nasıl alırım, ne kazandırır?", a: "İlişkin iyi olan bir gence kişi ekranından çıraklık teklif edebilirsin. Ay ay emek verip 24 aya ulaşınca çırağın usta olur — adın zanaat çevresinde büyür. Atasının çırağı, yıllar sonra vârisin kapısını da çalabilir." },
+      { q: "Kan davası nasıl başlar, nasıl biter?", a: "Bir haneyle tutum dibe vurursa kıvılcım çakabilir. Dava ısındıkça pusular artar. Hanedan ekranından sulh parası ödeyebilir ya da karşılık verebilirsin; en sonda meydan savaşı vardır. Bitmeyen dava, ısısı yarılanmış hâlde vârise geçer." },
+      { q: "Hanelerle ittifak nasıl kurulur, bozulur mu?", a: "Hanedan ekranındaki hane listesinden soğuk olmayan hanelere ittifak teklif edebilir, bekârsan dünür gönderebilirsin (ayda bir girişim). Şansı tutumları ve saygınlığın belirler; ret tutumu düşürür. Kurulan ittifak vârise geçer — ama dostluk soğur da tutum dibe vurursa el sıkışma bozulur." },
+    ],
+  },
 ];
 
 const EN: FaqSection[] = [
@@ -173,6 +185,18 @@ const EN: FaqSection[] = [
       { q: "What changes when I take the throne?", a: "Meeting the age, dynasty power, standing, fame and gold thresholds — with a guild's backing (or a Vizier+ court office) — you claim the throne. As ruler you gain AUTHORITY: you issue council decrees (edict of justice, building drive, general amnesty, festival, heavy tax), launch CAMPAIGNS against rival realms (victory → annexation + spoils + fame), and appoint/dismiss loyal GOVERNORS (tribute income). Authority erodes if neglected; if it bottoms out, revolt can topple your throne. Court events (envoys, famine, vizier plots) sway your authority." },
       { q: "What is a Signature Work (vocation action)?", a: "Beyond ordinary work, each profession has its own cooldown-gated signature action (on the Vocation screen): the smith forges a masterwork, the merchant sails a far trade venture, the healer fights a plague, the soldier joins a border raid, the farmer holds a harvest feast… It is tested against the profession's core attribute; success brings a large reward scaled by your rank, plus fame/standing and skill. The dangerous ones (smith/fisher/hunter/soldier/healer) risk your health on failure." },
       { q: "How do I enter the court, and what are the ranks?", a: "If you are not on the throne (age 16+, enough standing and wit — easier as a scribe) you can enter court/council service from the Organizations screen. You start as Scribe, and by performing Council Duty you gain service points + the ruler's favor + a salary, rising Treasurer → Chancellor → Vizier → Grand Vizier. You can offer a gift to buy favor. Favor erodes if neglected and you are dismissed if it bottoms out; rival courtier plots and royal favors occur. A Vizier+ office gives you backing to claim the throne." },
+    ],
+  },
+  {
+    icon: "banner", title: "Dynasty Paths (New Systems)",
+    items: [
+      { q: "What does Worship give?", a: "Worship is one of the adult pursuits: it settles your heart, builds your Devout renown and a little health; now and then you fall into talk with a dervish. In old age the same path is the Lodge — dhikr eases the old heart." },
+      { q: "Illness will not let go of me — what do I do?", a: "After 35, in a weakened body, the cough can settle in the chest (chronic): it drains a little health each month and flares at times. The See the Healer button on the character screen restores health and each visit carries a chance to cure the chronic." },
+      { q: "What is the endowment fund for?", a: "After founding the endowment you can donate without limit (once a month). At 25k / 100k / 250k / 1M coins the endowment rises in rank: you gain fame and generous renown. The fund also flows into your eulogy and your heir's starting standing." },
+      { q: "What happens to my things when I die?", a: "The weapon you wear passes to your heir's chest as an heirloom, quality and all. Your wealth passes by the will's share, your properties and manor pass whole; the rest goes with your life." },
+      { q: "How do I take an apprentice and what does it give?", a: "You can offer apprenticeship to a youth you are close to, from their profile. Mentor them month by month; at 24 months your apprentice becomes a master — your name grows among the craft. Your ancestor's apprentice may knock on your heir's door years later." },
+      { q: "How does a blood feud start and end?", a: "If relations with a house hit rock bottom, a spark may catch. As the feud heats, ambushes grow. From the dynasty screen you can pay for peace or strike back; at the end waits a pitched battle. An unfinished feud passes to your heir at half heat." },
+      { q: "How are house alliances made — can they break?", a: "From the house list on the dynasty screen you can propose alliance to houses that are not cold, or send matchmakers if unmarried (one attempt a month). Their attitude and your standing set the odds; refusal lowers attitude. An alliance passes to your heir — but if the friendship goes cold and attitude hits bottom, the handshake breaks." },
     ],
   },
 ];
@@ -263,6 +287,18 @@ const ES: FaqSection[] = [
       { q: "¿Cómo entro en la corte y cuáles son los rangos?", a: "Si no estás en el trono (16+ años, prestigio e inteligencia suficientes — más fácil si eres escriba), puedes entrar al servicio de la corte y el consejo desde la pantalla de Gremios y Órdenes. Empiezas como Escriba; cumpliendo el Servicio del Consejo ganas puntos de servicio + el favor del soberano + un salario, y asciendes: Tesorero → Canciller → Visir → Gran Visir. Puedes comprar favor ofreciendo un presente. El favor se desgasta si lo descuidas y, si toca fondo, te destituyen; hay intrigas de cortesanos rivales y mercedes del sultán. Un cargo de Visir o superior te da respaldo para aspirar al trono." },
     ],
   },
+  {
+    icon: "banner", title: "Caminos de la dinastía (sistemas nuevos)",
+    items: [
+      { q: "¿Qué da la Oración?", a: "La Oración es una ocupación adulta: serena el corazón, aumenta tu fama de Devoto y algo de salud; a veces conversas con un derviche. En la vejez el mismo camino es la Logia." },
+      { q: "La enfermedad no me suelta, ¿qué hago?", a: "Después de los 35, en un cuerpo débil, la tos puede volverse crónica: drena algo de salud cada mes y a veces se aviva. El botón Ver al sanador en la pantalla de personaje recupera salud y cada visita puede curar la crónica." },
+      { q: "¿Para qué sirve el fondo de la fundación?", a: "Tras fundarla puedes donar sin límite (una vez al mes). En 25 mil / 100 mil / 250 mil / 1 millón la fundación sube de rango: ganas fama y renombre generoso. El fondo también fluye a tu elegía y al prestigio inicial del heredero." },
+      { q: "¿Qué pasa con mis cosas al morir?", a: "El arma que llevas pasa al arcón del heredero como reliquia, con su calidad. La riqueza pasa según el testamento; propiedades y mansión pasan enteras; el resto se va con tu vida." },
+      { q: "¿Cómo tomo un aprendiz y qué me da?", a: "Puedes ofrecer el aprendizaje a un joven cercano desde su perfil. Guíalo mes a mes; a los 24 meses tu aprendiz se hace maestro — tu nombre crece en el oficio. El aprendiz del antepasado puede llamar años después a la puerta del heredero." },
+      { q: "¿Cómo empieza y acaba una venganza de sangre?", a: "Si la relación con una casa toca fondo, puede saltar la chispa. Al calentarse, crecen las emboscadas. Desde la pantalla de dinastía puedes pagar la paz o devolver el golpe; al final espera la batalla campal. La venganza inconclusa pasa al heredero con la mitad del calor." },
+      { q: "¿Cómo se hacen las alianzas y pueden romperse?", a: "Desde la lista de casas puedes proponer alianza a las que no sean frías, o enviar casamenteros si estás soltero (un intento al mes). Su actitud y tu prestigio fijan la suerte; el rechazo baja la actitud. La alianza pasa al heredero — pero si la amistad se enfría del todo, el apretón se rompe." },
+    ],
+  },
 ];
 
 const PT: FaqSection[] = [
@@ -348,6 +384,18 @@ const PT: FaqSection[] = [
       { q: "O que muda quando subo ao trono (soberano)?", a: "Cumprindo os requisitos de idade, poder da dinastia, reputação, fama e moedas — e com o apoio de uma guilda (ou um posto de Vizir+ na corte) — reivindicas o trono. Como soberano passas a ter AUTORIDADE: emites decretos no conselho imperial (édito de justiça, campanha de obras, amnistia geral, festa, imposto severo), lanças CAMPANHAS contra beilhiques rivais (vitória → anexação + espólio + fama) e nomeias/destituis GOVERNADORES leais nas cidades (receita de tributo). A autoridade desgasta-se se for negligenciada; se bater no fundo, uma revolta pode derrubar o teu trono. Os eventos da corte (enviados, fome, intrigas de vizires) afetam a tua autoridade." },
       { q: "O que é a Oportunidade de Profissão (ação de assinatura)?", a: "Para lá do trabalho normal, cada profissão tem uma ação de assinatura própria, com tempo de espera (no ecrã de Profissão): o ferreiro forja uma obra-prima, o mercador parte numa expedição de comércio longínquo, o curandeiro combate uma epidemia, o soldado junta-se a uma incursão na fronteira, o agricultor organiza a festa da colheita… É testada com o atributo base da profissão; o êxito traz um grande ganho conforme o teu escalão + fama/reputação + perícia. As perigosas (ferreiro/pescador/caçador/soldado/curandeiro) arriscam a tua saúde em caso de fracasso." },
       { q: "Como entro na corte e quais são os postos?", a: "Se não estiveres no trono (16+ anos, reputação e inteligência suficientes — mais fácil se fores escrivão), podes entrar ao serviço da corte/conselho a partir do ecrã de Guildas e Ordens. Começas como Escrivão e, ao cumprir o Dever do Conselho, ganhas pontos de serviço + favor do soberano + salário, subindo a Tesoureiro → Chanceler → Vizir → Grão-Vizir. Podes oferecer um presente para comprar favor. O favor desgasta-se se for negligenciado e, se bater no fundo, és destituído; há intrigas de cortesãos rivais e mercês do soberano. Um posto de Vizir+ dá-te apoio para reivindicar o trono." },
+    ],
+  },
+  {
+    icon: "banner", title: "Caminhos da dinastia (sistemas novos)",
+    items: [
+      { q: "O que dá a Oração?", a: "A Oração é uma ocupação adulta: assenta o coração, aumenta a tua fama de Devoto e um pouco de saúde; às vezes conversas com um dervixe. Na velhice o mesmo caminho é a Loja Sufi." },
+      { q: "A doença não me larga — que faço?", a: "Depois dos 35, num corpo fraco, a tosse pode tornar-se crónica: drena um pouco de saúde por mês e por vezes reacende. O botão Ver o curandeiro no ecrã de personagem recupera saúde e cada visita pode curar a crónica." },
+      { q: "Para que serve o fundo da fundação?", a: "Depois de a fundares podes doar sem limite (uma vez por mês). Aos 25 mil / 100 mil / 250 mil / 1 milhão a fundação sobe de grau: ganhas fama e renome generoso. O fundo também flui para a tua elegia e o prestígio inicial do herdeiro." },
+      { q: "O que acontece às minhas coisas quando morro?", a: "A arma que usas passa à arca do herdeiro como relíquia, com a sua qualidade. A riqueza passa pela parte do testamento; propriedades e mansão passam inteiras; o resto vai com a tua vida." },
+      { q: "Como tomo um aprendiz e o que me dá?", a: "Podes oferecer a aprendizagem a um jovem próximo, no perfil dele. Orienta-o mês a mês; aos 24 meses o teu aprendiz torna-se mestre — o teu nome cresce no ofício. O aprendiz do antepassado pode bater anos depois à porta do herdeiro." },
+      { q: "Como começa e acaba uma vingança de sangue?", a: "Se a relação com uma casa bater no fundo, a faísca pode saltar. Ao aquecer, crescem as emboscadas. No ecrã de dinastia podes pagar a paz ou retaliar; no fim espera a batalha campal. A vingança inacabada passa ao herdeiro com metade do calor." },
+      { q: "Como se fazem as alianças e podem quebrar-se?", a: "Na lista de casas podes propor aliança às que não estejam frias, ou enviar casamenteiros se fores solteiro (uma tentativa por mês). A atitude delas e o teu prestígio definem a sorte; a recusa baixa a atitude. A aliança passa ao herdeiro — mas se a amizade esfriar de vez, o aperto de mão quebra." },
     ],
   },
 ];
@@ -437,6 +485,18 @@ const AR: FaqSection[] = [
       { q: "كيف أدخل البلاط وما الرتب؟", a: "إن لم تكن على العرش (عمر 16+، وسمعة وذكاء كافيان — والأمر أيسر إن كنت كاتبًا) أمكنك دخول خدمة البلاط/الديوان من شاشة المنظمات. تبدأ كاتبًا، وبأداء خدمة الديوان تكسب نقاط خدمة + حظوة الحاكم + راتبًا، وترتقي: دفتردار ← نيشانجي ← الوزير ← الصدر الأعظم. ويمكنك شراء الحظوة بتقديم هديّة. إن أُهملت الحظوة تآكلت، وإن بلغت القاع عُزلت؛ وتقع مكائد رجال البلاط المنافسين وتأتي ألطاف السلطان. ومنصب الوزير فأعلى يمنحك سندًا لادّعاء العرش." },
     ],
   },
+  {
+    icon: "banner", title: "دروب السلالة (أنظمة جديدة)",
+    items: [
+      { q: "ماذا تمنح العبادة؟", a: "العبادة من مشاغل الكبار: تجمع قلبك وتزيد سمعة التديّن وقليلًا من الصحة؛ وأحيانًا تجالس درويشًا. وفي الشيخوخة الطريق نفسه هو التكية." },
+      { q: "المرض لا يفارقني، ماذا أفعل؟", a: "بعد الخامسة والثلاثين، في بدن ضعيف، قد يستقر السعال في الصدر (مزمن): يستنزف قليلًا من الصحة كل شهر ويشتد أحيانًا. زر «زر الطبيب» في شاشة الشخصية يستعيد الصحة وكل زيارة تحمل فرصة الشفاء من المزمن." },
+      { q: "ما فائدة صندوق الوقف؟", a: "بعد إنشاء الوقف يمكنك التبرع بلا حد (مرة في الشهر). عند 25 ألفًا / 100 ألف / 250 ألفًا / مليون قطعة يرتقي وقفك مرتبة: تكسب شهرة وسمعة كرم. ويصبّ الصندوق أيضًا في مرثيتك ومكانة وريثك الأولى." },
+      { q: "ماذا يحدث لأشيائي عند موتي؟", a: "السلاح الذي ترتديه ينتقل إلى صندوق وريثك إرثًا بجودته. ثروتك تنتقل بحسب حصة الوصية، وعقاراتك وقصرك ينتقلان كما هما؛ والباقي يذهب مع حياتك." },
+      { q: "كيف أتخذ صبيًا وماذا يفيدني؟", a: "يمكنك عرض التتلمذ على شابّ تربطك به علاقة طيبة من صفحته. وجّهه شهرًا بشهر؛ وعند 24 شهرًا يصير صبيّك معلمًا — ويكبر اسمك بين أهل الحرفة. وقد يطرق صبيُّ الجدّ بابَ الوريث بعد سنين." },
+      { q: "كيف يبدأ الثأر وكيف ينتهي؟", a: "إذا بلغت العلاقة مع أحد البيوت الحضيض فقد تنقدح الشرارة. وكلما اشتد الثأر كثرت الكمائن. من شاشة السلالة يمكنك دفع مال الصلح أو الرد؛ وفي النهاية معركة الميدان. والثأر الذي لا ينتهي ينتقل إلى الوريث بنصف حرارته." },
+      { q: "كيف تُعقد التحالفات مع البيوت وهل تنفكّ؟", a: "من قائمة البيوت في شاشة السلالة يمكنك عرض التحالف على البيوت غير الباردة، أو إرسال الخُطّاب إن كنت أعزب (محاولة واحدة شهريًا). موقفهم ومكانتك يحددان الحظ؛ والرفض يخفض الموقف. التحالف ينتقل إلى الوريث — لكن إذا بردت الصداقة وبلغ الموقف الحضيض انفكّت المصافحة." },
+    ],
+  },
 ];
 
 const RU: FaqSection[] = [
@@ -522,6 +582,18 @@ const RU: FaqSection[] = [
       { q: "Что меняется на троне (государь)?", a: "Выполнив условия по возрасту, мощи дома, репутации, славе и монетам и заручившись поддержкой гильдии (или чином Визиря+ при дворе), ты претендуешь на трон. Став государем, ты обретаешь ВЛАСТЬ: издаёшь указы в диване (указ о правосудии, строительный поход, всеобщая амнистия, праздник, тяжёлый налог), водишь ПОХОДЫ на соседние бейлики (победа → присоединение + добыча + слава), назначаешь и смещаешь верных НАМЕСТНИКОВ в городах (доход с дани). Заброшенная власть тает; упадёт до дна — мятеж может низвергнуть трон. Придворные события (послы, голод, заговор визиря) влияют на власть." },
       { q: "Что такое Особое дело (фирменное действие профессии)?", a: "У каждой профессии, помимо обычной работы, есть своё особое действие с временем ожидания (на экране профессии): кузнец куёт шедевр, купец идёт в дальний торговый поход, лекарь борется с мором, солдат идёт в пограничный набег, крестьянин устраивает праздник урожая... Проверяется главным свойством профессии; успех даёт большой заработок по твоему рангу + славу/репутацию + навык. Опасные (кузнец/рыбак/охотник/солдат/лекарь) при провале грозят здоровью." },
       { q: "Как попасть ко двору и что за чины?", a: "Если ты не на троне (16+ лет, достаточно репутации и ума — писарю проще), можешь поступить на службу двора и дивана с экрана «Гильдии и ордена». Начинаешь Писарем, несёшь Службу дивана, зарабатывая очки службы + милость государя (favor) + жалованье, и растёшь: Дефтердар → Нишанджи → Визирь → Великий визирь. Милость можно и купить, поднеся дар. Заброшенная милость тает; упадёт до дна — тебя отстранят; бывают козни соперников-придворных и щедроты султана. Чин Визиря+ даёт опору для притязания на трон." },
+    ],
+  },
+  {
+    icon: "banner", title: "Пути династии (новые системы)",
+    items: [
+      { q: "Что даёт Молитва?", a: "Молитва — одно из занятий взрослого: она умиротворяет сердце, растит славу Набожного и немного здоровья; порой случается беседа с дервишем. В старости этот же путь — Обитель." },
+      { q: "Болезнь не отпускает — что делать?", a: "После 35, в ослабшем теле, кашель может осесть в груди (хроника): каждый месяц он тянет немного здоровья и порой обостряется. Кнопка «К лекарю» на экране персонажа восстанавливает здоровье, и каждый визит даёт шанс излечить хронику." },
+      { q: "Зачем нужен фонд вакфа?", a: "Основав вакф, можешь жертвовать без предела (раз в месяц). На порогах 25 тыс. / 100 тыс. / 250 тыс. / 1 млн вакф поднимается на ступень: ты получаешь славу и щедрую молву. Фонд также вливается в твою элегию и стартовое положение наследника." },
+      { q: "Что станет с моими вещами после смерти?", a: "Оружие, что ты носишь, переходит в сундук наследника как реликвия — вместе с качеством. Богатство переходит по доле завещания; владения и усадьба — целиком; остальное уходит с твоей жизнью." },
+      { q: "Как взять подмастерье и что это даёт?", a: "Предложи ученичество юноше, с которым близок, на его странице. Наставляй месяц за месяцем; через 24 месяца твой подмастерье становится мастером — твоё имя растёт среди ремесла. Подмастерье предка может годы спустя постучать в дверь наследника." },
+      { q: "Как начинается и кончается кровная месть?", a: "Если отношения с домом падают на дно, может вспыхнуть искра. Чем жарче вражда, тем больше засад. На экране династии можно заплатить за мир или ударить в ответ; в конце ждёт открытая битва. Неоконченная месть переходит наследнику с половиной жара." },
+      { q: "Как заключаются союзы с домами — могут ли они распасться?", a: "В списке домов на экране династии можно предложить союз нехолодным домам или заслать сватов, если холост (одна попытка в месяц). Их отношение и твоя репутация задают шанс; отказ снижает отношение. Союз переходит наследнику — но если дружба остынет до дна, рукопожатие рвётся." },
     ],
   },
 ];
