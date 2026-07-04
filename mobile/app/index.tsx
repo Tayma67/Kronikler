@@ -72,6 +72,9 @@ export default function MainMenu() {
           <Pressable onPress={() => { hap("tap"); router.push("/cok-oyunculu"); }} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 15, borderRadius: 9, borderWidth: 1, borderColor: "rgba(111,160,192,0.6)", backgroundColor: "rgba(8,5,2,0.55)" }}>
             <GameIcon name="iliskiler" size={16} color="#6FA0C0" />
             <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: "#6FA0C0" }}>{t("menu.multi")}</Text>
+            <View style={{ borderWidth: 1, borderColor: "rgba(111,160,192,0.5)", borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: "#6FA0C0" }}>BETA</Text>
+            </View>
           </Pressable>
         </View>
       </View>

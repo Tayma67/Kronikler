@@ -30,6 +30,12 @@ jobs:
         run: |
           node -e "const f='app.json',j=require('./'+f);j.expo.android.versionCode=${{ github.run_number }};require('fs').writeFileSync(f,JSON.stringify(j,null,2));"
           grep versionCode app.json
+      - name: Kalite kapisi (tsc + 300-hayat smoke) — kirik mantik APK'ya binmesin
+        working-directory: mobile
+        run: |
+          npx tsc --noEmit
+          npx esbuild lib/game.ts --bundle --platform=node --format=cjs --outfile=/tmp/kronikler-game-bundle.cjs --log-level=error
+          node scripts/_smoke/run.cjs
       - name: Expo prebuild (android native uret)
         working-directory: mobile
         run: npx expo prebuild --platform android --no-install --non-interactive

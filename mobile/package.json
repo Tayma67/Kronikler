@@ -35,7 +35,9 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "smoke": "esbuild lib/game.ts --bundle --platform=node --format=cjs --outfile=/tmp/kronikler-game-bundle.cjs --log-level=error && node scripts/_smoke/run.cjs"
   },
   "private": true
 }
