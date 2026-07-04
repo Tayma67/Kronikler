@@ -95,9 +95,11 @@ export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr"): strin
     hediye: "dlg.cb.gift", comert_hediye: "dlg.cb.gift", yardim: "dlg.cb.help",
     hakaret: "dlg.cb.insult", alay: "dlg.cb.insult", somuru: "dlg.cb.exploit",
     icten_sohbet: "dlg.cb.warm", guzel_sohbet: "dlg.cb.warm",
+    tatsiz_konu: "dlg.cb.sour", rahatsizlik: "dlg.cb.sour",
   };
   const k = map[memTur]; if (!k) return "";
-  return tFor(lang, k).replace("%n", npc.name.split(" ")[0]);
+  const key = Math.random() < 0.5 ? k : k + "2"; // her göndermenin iki varyantı — uzun oyunda ezber kırılır
+  return tFor(lang, key).replace("%n", npc.name.split(" ")[0]);
 }
 
 export function moodLabel(m: number): string {
