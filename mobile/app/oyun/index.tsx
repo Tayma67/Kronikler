@@ -576,11 +576,14 @@ export default function Dashboard() {
           <View style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(126,138,106,0.45)", backgroundColor: "rgba(126,138,106,0.08)" }}>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{t("micro." + m.id + ".x")}</Text>
             <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-              {([0, 1] as const).map((c) => (
-                <Pressable key={c} onPress={() => { hap("tap"); apply((s) => resolveMicro(s, c)); }} style={{ flex: 1, paddingVertical: 7, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)" }}>
+              {([0, 1] as const).map((c) => {
+                const dis = m.id === "cirak_tabla" && c === 1 && p.money < 2;
+                return (
+                <Pressable key={c} disabled={dis} onPress={() => { hap("tap"); apply((s) => resolveMicro(s, c)); }} style={{ flex: 1, paddingVertical: 7, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", opacity: dis ? 0.4 : 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5, textAlign: "center" }}>{t("micro." + m.id + ".c" + c)}</Text>
                 </Pressable>
-              ))}
+                );
+              })}
             </View>
           </View>
         );

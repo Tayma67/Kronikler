@@ -4146,6 +4146,7 @@ const MICRO_R_TR: Record<string, [string, string]> = {
 export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
   const s = clone(prev); const p = s.player;
   const m = s.micro; if (!m || p.dead) return s;
+  if (m.id === "cirak_tabla" && choice === 1 && p.money < 2) return s; // akçesiz simit alınmaz — günlüğe "akçe saydın" düşmesin (UI de kapatır)
   s.micro = null;
   const id = m.id;
   if (id === "saganak") { if (choice === 0) addStatXp(s, "stamina", 3); else p.health = Math.min(100, p.health + 1); }
