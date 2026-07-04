@@ -1212,7 +1212,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   if (p.dead) return;
   // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
-  const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50);
+  const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50) || s.story?.active?.id === "gec_sevda"; // aktif sevda yayı da bir kur — görücü araya girmesin
   if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.married_turn = s.turn; p.spouse_bond = 35; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); push(s, "evlilik", `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); push(s, "doğum", `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: "evj.childBorn", p: [c] }); }
   // Evlilik yıldönümü: her 12 ayda bir ocak tazelenir — otomatik, küçük, farm'sız (eski kayıtta married_turn yoksa sessizce atlanır).
@@ -4462,6 +4462,7 @@ export interface Delta {
   reputation?: number; honor?: number; fear?: number; fame?: number;
   stat_points?: number; addItem?: string; standing?: number;
   nam?: { [k in keyof Nam]?: number };
+  marry?: boolean; // sonuç metni düğün anlatıyorsa mekanik de evlendirsin (yalnız bekârsa; yay/ikilem sonuçları için)
 }
 const clampStat = (x: number) => Math.max(0, Math.min(100, x));
 // İkilem seçimi → sonuç tohumu (Vercel LIFE_EVENT_SEEDS): "<dilemmaId>:<seçimIdx>" → tohum tarifi.
@@ -4625,6 +4626,11 @@ export function advanceArc(prev: GameState, choiceIdx: number, loc?: { result?: 
     if (d.stat_points) p.stat_points += d.stat_points;
     if (d.addItem) p.inventory[d.addItem] = (p.inventory[d.addItem] || 0) + 1;
     if (d.nam) for (const k of Object.keys(d.nam) as (keyof Nam)[]) bumpNam(p, k, d.nam[k]!);
+    // Düğün dalı: anlatı ile mekanik ayrışmasın — sonuç "düğün var" diyorsa oyuncu gerçekten evlenir (rastgele evlilikle aynı kurulum).
+    if (d.marry && !p.married) {
+      const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E);
+      p.married = true; p.married_turn = s.turn; p.spouse_bond = 45; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.widowed = false;
+    }
   }
   push(s, "hikaye", loc?.result || c.result, "kişisel");
   if (c.next === "end") {

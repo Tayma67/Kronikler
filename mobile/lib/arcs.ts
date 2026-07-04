@@ -376,7 +376,7 @@ ARCS.push(
         { label: "Bu yaştan sonra olmaz, uzak dur", result: "Tezgâhını pazarın öbür ucuna taşıdın. Bazı kapılar açılmadan kapanır; sessizlik de bir cevaptır.", delta: { honor: 2 }, next: "end" },
       ]},
       s2: { id: "s2", text: "Kasaba konuşmaya başladı: 'Bu yaşta düğün mü olur?' Kimi güldü, kimi hayır duası etti. Karar günü geldi.", choices: [
-        { label: "Davulu vurdur: düğün var", result: "Gülenler düğünde en önde oynadı. Geç gelen sevda, acele gelenden uzun sürermiş — ocağın geç ama sağlam tüttü.", delta: { reputation: 6, fame: 4 }, next: "end" },
+        { label: "Davulu vurdur: düğün var", result: "Gülenler düğünde en önde oynadı. Geç gelen sevda, acele gelenden uzun sürermiş — ocağın geç ama sağlam tüttü.", delta: { reputation: 6, fame: 4, marry: true }, next: "end" },
         { label: "Dost kalalım de", result: "El sıkıştınız; pazar günleri kahve hâlâ içiliyor. Kasabaya göre yarım kalan iş, size göre tam kararında bir dostluk.", delta: { honor: 4 }, next: "end" },
       ]},
     },
