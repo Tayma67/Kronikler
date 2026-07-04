@@ -316,7 +316,7 @@ export function childNature(name: string, generation: number): string {
 export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); }
 // Yaşayan dünya kadrosu: deterministik temel (isim dile göre çözülür) + kalıcı evrim katmanı (ölüm/yaş/doğum).
 // Kadro büyüklüğü yerleşim tipine göre: şehir kalabalık, köy tenha (canlı dünya hissi).
-export function rosterSize(loc: string): number { const k = placeKind(loc); return k === "şehir" ? 24 : k === "kale" ? 16 : 10; }
+export function rosterSize(loc: string): number { const k = placeKind(loc); return k === "şehir" ? 30 : k === "kale" ? 20 : 15; } // test geri bildirimi: 10 kişilik kasaba boş hissettiriyordu; taban deterministik olduğundan büyütme eski kayıtlara yeni yüzler ekler, kimseyi silmez
 // Dünya saati: nesiller boyu biriken yıl (NPC'ler bununla yaşlanır).
 export function worldYears(s: GameState): number { return (s.world?.npcYears || 0) + Math.floor(s.turn / 12); }
 // Deterministik temel kadro önbelleği: generateNPCs(loc,lang) saf ve değişmez → sonsuza dek memo'lanır.
@@ -349,6 +349,12 @@ function npcBaby(s: GameState, loc: string): NPC {
   n.nameSeed = (Math.floor(Math.random() * 1e9)) >>> 0; // isim dile göre çözülsün
   return n;
 }
+// Diyara yerleşen bekâr yetişkin: oyuncunun çağında kimse kalmadıysa kasabaya taze kan (yılda en çok bir; farm yok — oyuncu eylemi değil).
+function npcNewcomer(s: GameState, loc: string, gender: "erkek" | "kadın", age: number): NPC {
+  const n = npcBaby(s, loc);
+  n.gender = gender; n.age = Math.max(18, Math.min(50, age));
+  return n;
+}
 function npcLifeTick(s: GameState) {
   if (s.turn === 0 || s.turn % 12 !== 0) return; // yılda bir
   if (!s.world.npcEvo) s.world.npcEvo = {};
@@ -364,6 +370,17 @@ function npcLifeTick(s: GameState) {
       // Ölen NPC oyuncunun işçisiyse mülkten çıkar (slot boşalsın) + haber ver.
       for (const pr of s.player.properties) { if (pr.workers?.includes(n.id)) { pr.workers = pr.workers.filter((id) => id !== n.id); push(s, "mülk", `İşçin ${n.name} vefat etti; ${PROPERTY_TYPES[pr.type]?.name || "mülkünde"} bir yer boşaldı.`, "kişisel", false, { k: "npclife.workerDied", p: [n.name, { pt2: pr.type }] }); } }
       if (!knownGone && s.npc_state?.[n.id]) knownGone = n.name;
+    }
+  }
+  // Bekâr yaşıt garantisi: bekâr oyuncunun (18-50) kasabasında çağına yakın bekâr kalmadıysa yılda bir yeni biri yerleşir (test geri bildirimi: "yaşıtım bekâr yok").
+  const pp = s.player;
+  if (!pp.dead && !pp.married && pp.age >= 18 && pp.age <= 50) {
+    const eligible = rosterAt(s, pp.location_name).filter((n) => n.gender !== pp.gender && n.age >= 18 && n.age < 60 && Math.abs(n.age - pp.age) <= 12);
+    if (eligible.length < 2) {
+      const g2: "erkek" | "kadın" = pp.gender === "erkek" ? "kadın" : "erkek";
+      const nc = npcNewcomer(s, pp.location_name, g2, pp.age - 2 + Math.floor(Math.random() * 6));
+      s.world.npcBorn.push(nc);
+      push(s, "dunya_olayi", `${pp.location_name}'e yeni biri yerleşti; çarşıda tanımadık bir yüz var.`, "kişisel", false, { k: "npclife.newcomer", p: [{ pl: pp.location_name }] });
     }
   }
   if (knownGone) push(s, "dunya_olayi", `${knownGone} bu dünyadan göçtü; tanıdık bir yüz eksildi.`, "kişisel", true, { k: "npclife.deathKnown", p: [knownGone] });
@@ -3035,9 +3052,10 @@ export function statTierKey(v: number): string {
   return "st.tier.exceptional";
 }
 export function statXpOf(p: Player, key: keyof Stats): number { return p.stat_xp?.[key] ?? 0; }
+const STAT_OVERFLOW_SKILL: Record<keyof Stats, SkillKey> = { strength: "combat", intelligence: "trade", charisma: "social", stamina: "crafting" };
 function addStatXp(s: GameState, key: keyof Stats, amt: number) {
   const p = s.player;
-  if (p.stats[key] >= 10) return;
+  if (p.stats[key] >= 10) { gainSkill(s, STAT_OVERFLOW_SKILL[key], Math.max(1, Math.round(amt / 2))); return; } // tavan sonrası emek boşa gitmez: ilgili beceriye yarı oranda ustalık akar
   if (!p.stat_xp) p.stat_xp = { strength: 0, intelligence: 0, charisma: 0, stamina: 0 };
   p.stat_xp[key] += amt;
   while (p.stats[key] < 10 && p.stat_xp[key] >= statXpForNext(p.stats[key])) {
