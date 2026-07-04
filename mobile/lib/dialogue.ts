@@ -85,9 +85,9 @@ export function spontaneousLine(npc: NPC, mood: number, lang: Lang = "tr"): stri
   const L = (k: string) => tFor(lang, k).replace("%n", fn).replace("%g", goalL(npc.goal, lang));
   const pick = (base: string, n: number) => { const i = Math.floor(Math.random() * n); return L(i === 0 ? base : base + (i + 1)); };
   const mt = moodTier(mood);
-  if (mt === "neşeli") return pick("dlg.spont.happy", 2);
-  if (mt === "küs" || mt === "soğuk") return pick("dlg.spont.sad", 2);
-  return Math.random() < 0.5 ? pick("dlg.spont.goal", 2) : "";
+  if (mt === "neşeli") return pick("dlg.spont.happy", 4);
+  if (mt === "küs" || mt === "soğuk") return pick("dlg.spont.sad", 4);
+  return Math.random() < 0.5 ? pick("dlg.spont.goal", 4) : "";
 }
 // Yapısal anı türüne göre sohbette geçmişe gönderme (Vercel _memory_callback). Boş dönebilir.
 export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr"): string {
