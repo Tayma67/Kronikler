@@ -858,6 +858,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
         ],
       },
       {
+        id: "fest_nevruz_c2", icon: "party", title: "Nevruz Boyaları",
+        text: "Meydanda yumurta boyanıyor, tokuşturma yarışı başlıyor. Senin yumurtan sapasağlam — herkes tokuşmak istiyor.",
+        when: (p) => p.age < 16,
+        choices: [
+          { label: "Yarışa gir, hepsini tokuştur", delta: { hunger: 6, nam: { capkin: 1 } }, result: "Yumurtan üç meydan gezdi kırılmadı; kazandığın boyalı yumurtalarla eve döndün, dillere destan oldun." },
+          { label: "Yumurtanı küçük kardeşe ver", delta: { honor: 2, nam: { comert: 2 } }, result: "Küçüğün gözleri parladı; senin yumurtanla yarışı o kazandı. Zaferi onundu, sevabı senin." },
+        ],
+      },
+      {
         id: "fest_nevruz", icon: "flame", title: "Nevruz",
         text: "Yeni yılın ateşi yandı; komşular meydanda. Böyle günde el açık, gönül ferah gerek derler.",
         when: (p) => p.age >= 16,
@@ -890,6 +899,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
         ],
       },
       {
+        id: "fest_hasat_c2", icon: "sheep", title: "Harman Atlaması",
+        text: "Saman yığınları dağ gibi; büyük çocuklar en tepeden atlıyor. Sıra sana geldi, aşağıda herkes bakıyor.",
+        when: (p) => p.age < 16,
+        choices: [
+          { label: "En tepeden atla", delta: { health: -2, fame: 2, nam: { mert: 1 } }, result: "Havada bir an asılı kaldın; samana gömüldüğünde meydan alkıştan yıkılıyordu. Dizin sıyrıldı, adın büyüdü." },
+          { label: "Aşağıda gözleme kuyruğuna gir", delta: { hunger: 5 }, result: "Sıcak gözleme, taze kaymak; atlayanlar acıkınca sana imrendi. Herkesin şenliği kendine." },
+        ],
+      },
+      {
         id: "fest_hasat", icon: "wheat", title: "Hasat Şenliği",
         text: "Harman sonu şenliği kuruldu: yağlı güreş, kazan kazan pilav. Er meydanı seni de çağırıyor.",
         when: (p) => p.age >= 16,
@@ -919,6 +937,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
         choices: [
           { label: "Masal dinle", delta: { honor: 2 }, result: "Dizinin dibinde masal dinledin; dedenin sesi yüreğine, masalın hikmeti aklına işledi." },
           { label: "Kartopu savaşına koş", delta: { health: -1, hunger: -5, fame: 1 }, result: "Yanakların kızarana dek koştun; eve buz gibi ama kahkahayla döndün." },
+        ],
+      },
+      {
+        id: "fest_kis_c2", icon: "star", title: "Bilmece Gecesi",
+        text: "Kış meclisinde bilmece sırası çocuklara geldi; kazanana ihtiyar dedenin kesesinden gümüş bir düğme var.",
+        when: (p) => p.age < 16,
+        choices: [
+          { label: "Kafanı yor, bilmeceleri çöz", delta: { stat_points: 1 }, result: "Üç bilmeceyi üst üste çözdün; dede düğmeyi avucuna bastırıp 'bu kafa boşa gitmesin' dedi." },
+          { label: "Kestane koşusuna geç", delta: { hunger: 5, nam: { comert: 1 } }, result: "Ocaktan patlayan kestaneleri kapıp meclise dağıttın; bilmeceyi bilemedin ama geceyi sen tatlandırdın." },
         ],
       },
       {
