@@ -1365,11 +1365,20 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         p.married && p.spouse_name ? { text: `${p.spouse_name} ile sessiz bir akşam geçirdin; 'iyi ki varsın' dedin.`, k: "mem.spouseEve", p: [p.spouse_name] } : { text: "Yalnız bir akşam, geçmişini düşündün.", k: "mem.aloneEve" },
         child ? { text: `${child} masum bir soru sordu; cevabını ararken sen de düşündün.`, k: "mem.childAsk", p: [child] } : { text: "Bir komşuyla eski günleri yâd ettin.", k: "mem.neighbor" },
       );
-    } else {
+    } else if (p.age < 70) {
       mem.push(
         { text: "Dizlerin sızlıyor ama hatıraların zengin.", k: "mem.aches" },
         child ? { text: `${child}'a gençlik hikâyelerini anlattın; gözleri parladı.`, k: "mem.childStory", p: [child], fn: () => bumpNam(p, "dindar", 1) } : { text: "Gençlere akıl verdin; dinlediler mi, bilinmez.", k: "mem.adviseYouth", fn: () => bumpNam(p, "dindar", 1) },
         { text: "Bir mezar taşı okudun; kendi faniliğini düşündün.", k: "mem.grave" },
+      );
+    } else {
+      // 70+: ömrün son faslının kendi dokusu — şafak yalnızlığı, giden dostlar, nasırlı eller, destanlaşan ad
+      mem.push(
+        { text: "Şafaktan önce uyandın; bütün kasaba uyurken dünya bir süre yalnız sana aitti.", k: "mem.dawn", fn: () => { p.health = Math.min(100, p.health + 1); } },
+        { text: "Çarşıda eski bir dostun tezgâhının yerinde başkasını gördün; içinden bir dua geçirdin.", k: "mem.oldFriendGone", fn: () => bumpNam(p, "dindar", 1) },
+        { text: "Ellerine baktın: her nasır bir hikâye. Gençlerin haftada yapamadığını sen bir günde yapardın.", k: "mem.craftHands", fn: () => { p.honor = Math.min(100, p.honor + 1); } },
+        { text: "Bir yolcu, gençliğindeki bir kavganı hikâye diye anlattı; adları değiştirmişler ama sen kendini tanıdın.", k: "mem.nameEcho", fn: () => { p.fame = Math.min(100, p.fame + 1); } },
+        { text: "Sokakta bir çocuğa senin adını seslendiler; adın senden önce yürümeye başladı bile.", k: "mem.grandName", fn: () => { p.reputation = Math.min(100, p.reputation + 1); } },
       );
     }
     const m = rnd(mem); m.fn?.();
