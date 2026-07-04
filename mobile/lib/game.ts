@@ -107,6 +107,10 @@ export interface Player {
   chronic?: { k: string; since: number }; // kronik hastalık (aylık sızıntı + alevlenme); hekim tedavisiyle geçebilir, vârise geçmez
   healer_turn?: number; // bu ay hekime görünüldü mü (tur başına tek — şifa farm'ı yok)
   propose_turn?: number; // bu ay bir haneye teklif götürüldü mü (diplomasi tek girişim)
+  bargain_buy_turn?: number; bargain_sell_turn?: number; // pazarlık ayda birer kez (sınırsız arbitraj + XP farm'ı kapalı)
+  dilemma_turn?: number; // ikilem sonucu turda bir kez uygulanır (çift tık / yarış koruması)
+  prestige_turn?: number; // ayda tek hayrat işi (hekim/imaret spam'ı kapalı)
+  gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
@@ -690,6 +694,8 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
   }
   if (eylem === "yay") {
     if (r.yon <= 0) return s; // kendi aleyhine lafı yaymak akıl kârı değil
+    if (r.yayildi) return s; // aynı söylenti bir kez yayılır — tıkla-itibar farm'ı kapalı
+    r.yayildi = true;
     r.siddet = Math.min(4, r.siddet + 1); p.reputation = Math.min(100, p.reputation + 1);
     push(s, "söylenti", `Sözü sen de salladın; namın büyüyor.`, "kişisel", false, { k: "rum.spread.win" });
     return s;
@@ -743,7 +749,7 @@ export interface GameState {
 // Dost bir hanedanın oyuncuya teklifi (ittifak veya evlilik).
 export interface DynastyOffer { id: string; houseId: string; nameIdx: number; type: "ittifak" | "evlilik"; }
 // Oyuncu hakkında söylenti — tanıklı skandal anıdan doğar, zamanla söner.
-export interface Rumor { id: string; hafta: number; tur: string; vi: number; nam: string | null; yon: number; siddet: number; kaynak: string; }
+export interface Rumor { id: string; hafta: number; tur: string; vi: number; nam: string | null; yon: number; siddet: number; kaynak: string; yayildi?: boolean; }
 // Hanedanın kurduğu yerleşim — mezra olarak başlar, yıllarca gelişir, vergi getirir.
 export interface Settlement { name: string; founded: number; dev: number; tier?: string; loc?: string; }
 // Piyasa çarpanına göre fiyat.
@@ -1081,6 +1087,7 @@ const PROF_SKILL: Record<string, "combat" | "trade" | "crafting" | "social"> = {
 const SPOUSE_K = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif","Nur","Reyhan"];
 const SPOUSE_E = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim","Osman","Yusuf"];
 const CHILD = ["Ali","Veli","Can","Ece","Mert","Naz","Kerem","Defne","Arda","Mira"];
+const CHILD_F = new Set(["Ece", "Naz", "Defne", "Mira"]); // kız adları — vâris cinsiyeti adından türetilir (portre/metin tutarlılığı)
 
 const rnd = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 const chance = (p: number) => Math.random() < p;
@@ -2554,9 +2561,11 @@ export function negotiatedBuy(prev: GameState, id: string, price: number): GameS
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   const bb = bargainBase(s, id); price = Math.max(Math.round(bb * 0.6), Math.min(bb, Math.round(price || 0))); // fiyat pazarlık aralığına sınırlanır (UI dışı keyfi/sıfır fiyat exploit'i önlenir)
   if (p.money < price) return s;
+  if (p.bargain_buy_turn === s.turn) return s; // pazarlıkla alım ayda bir — tezgahta sabah pazarlığı olur, bütün gün olmaz (farm kapısı)
+  p.bargain_buy_turn = s.turn;
   p.money -= price; p.inventory[id] = (p.inventory[id] || 0) + 1;
   addTradePressure(s, p.location_name, id, 0.05);
-  gainSkill(s, "trade", 6);
+  if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 6); }
   push(s, "ticaret", `Pazarlıkla ${g.name} aldın (${price} akçe).`, "kişisel", false, { k: "evj.buyHaggle", p: [{ i: id }, price] });
   return s;
 }
@@ -2590,11 +2599,14 @@ export function negotiatedSell(prev: GameState, id: string, price: number): Game
   if (!(p.inventory[id] > 0)) return s;
   const g = marketGoods(locSeed(p.location_name)).find((x) => x.id === id); if (!g) return s;
   const sb = bargainSellBase(s, id); price = Math.max(sb, Math.min(Math.round(sb * 1.4), Math.round(price || 0))); // fiyat pazarlık aralığına sınırlanır (keyfi yüksek satış exploit'i önlenir)
+  if (p.bargain_sell_turn === s.turn) return s; // pazarlıkla satış ayda bir (alımla simetrik farm kapısı)
+  p.bargain_sell_turn = s.turn;
   const tier = QUALITY_GOODS.has(id) ? takeQualityUnit(p, id) : "siradan";
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
   let earn = Math.max(1, Math.round(price * QUALITY_MULT[tier]));
   if (hasPerk(p, "dilbaz")) earn = Math.round(earn * 1.25);
-  p.money += earn; addTradePressure(s, p.location_name, id, -0.045); gainSkill(s, "trade", 6);
+  p.money += earn; addTradePressure(s, p.location_name, id, -0.045);
+  if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 6); }
   push(s, "ticaret", `Pazarlıkla ${g.name} sattın (+${earn} akçe).`, "kişisel", false, { k: "evj.sellHaggle", p: [{ i: id }, earn] });
   return s;
 }
@@ -2807,6 +2819,8 @@ export function arrangedSuitors(s: GameState, lang: Lang = "tr"): NPC[] {
 export function proposeArranged(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.married || p.age < 18 || npc.gender === p.gender || npc.age < 18) return s;
+  if (p.propose_turn === s.turn) return s; // ayda tek dünür girişimi (hane teklifiyle ortak hak — retry kumarı kapalı)
+  p.propose_turn = s.turn;
   if (p.money < MATCHMAKER_FEE) { push(s, "sohbet", `Çöpçatana verecek akçen yok.`, "kişisel", false, { k: "evj.matchNoFee" }); return s; }
   p.money -= MATCHMAKER_FEE;
   const ok = Math.random() < Math.min(0.92, 0.42 + socialPresence(p) * 0.04 + p.fame / 320 + (hasPerk(p, "karizmatik") ? 0.15 : 0));
@@ -3872,7 +3886,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     seeds: (prev.seeds || []).filter((t) => t.nesil).map((t) => ({ ...t, ekim: t.ekim - prev.turn })),
     player_rumors: [],
     player: {
-      name: surname ? `${heir} ${surname}` : heir, surname, gender: Math.random() < 0.5 ? "erkek" : "kadın",
+      name: surname ? `${heir} ${surname}` : heir, surname, gender: CHILD_F.has(heir) ? "kadın" : "erkek",
       base_age: 7, age: 7, money: startMoney, profession: "işsiz", health: startHealth, hunger: 100,
       reputation: Math.max(-100, Math.min(100, startRep + legacyRep)), honor: 0, fear: 0, fame: Math.max(Math.floor(p.fame / 3), legacyFameFloor), legacy: heirLegacy, estate: estateTier, vakif_fon: p.vakif_fon,
       stats, stat_points: startPoints,
@@ -4624,9 +4638,10 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string, 
   if (festival) {
     if (p.festival_turn === s.turn) return s; // aynı şenlik iki kez çözülemez (çekirdek kapısı)
     p.festival_turn = s.turn;
-  } else if (seedKey) {
-    // Tekrar koruması: görülen ikilem bir süre havuza dönmez (pickDilemma filtreler; şenlikler ayrı yolda).
-    s.recent_dilemmas = [...(s.recent_dilemmas || []), seedKey.split(":")[0]].slice(-6);
+  } else {
+    if (p.dilemma_turn === s.turn) return s; // turda tek ikilem sonucu (çift tık / yarış koruması — şenlikler kendi kapısında)
+    p.dilemma_turn = s.turn;
+    if (seedKey) s.recent_dilemmas = [...(s.recent_dilemmas || []), seedKey.split(":")[0]].slice(-6); // tekrar koruması: görülen ikilem bir süre havuza dönmez
   }
   if (delta.money) p.money = Math.max(0, p.money + delta.money);
   if (delta.health) p.health = clampStat(p.health + delta.health);
@@ -5120,6 +5135,8 @@ export function fundPrestige(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const def = PRESTIGE[id]; if (!def || p.dead) return s;
   const cost = prestigeCost(s, id); if (p.money < cost) return s;
   if (def.once && p.legacy?.[id]) return s;
+  if (p.prestige_turn === s.turn) return s; // ayda tek hayrat işi — hekim/imaret aynı turda tavana pompalanamaz
+  p.prestige_turn = s.turn;
   p.money -= cost; p.legacy = p.legacy || {};
   if (id === "hekim") { p.health = Math.min(100, p.health + 16); push(s, "saglik", `Usta bir hekim tuttun; sağlığın tazelendi (+16 sağlık).`, "kişisel", false, { k: "ev.prestige.hekim" }); }
   else if (id === "imaret") { p.reputation = Math.min(100, p.reputation + 9); p.fame = Math.min(100, p.fame + 3); p.legacy.imaret = true; push(s, "bagis", `Bir imaret açtın; yoksullar adını hayırla anıyor (+itibar).`, "kişisel", true, { k: "ev.prestige.imaret" }); }
@@ -5164,6 +5181,8 @@ export function canRunForGovernor(s: GameState, name: string): boolean {
 export function runForGovernor(prev: GameState, name: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!canRunForGovernor(s, name)) return s;
+  if (p.gov_run_turn === s.turn) return s; // ayda tek valilik adaylığı — aynı turda şehir şehir vali olunamaz
+  p.gov_run_turn = s.turn;
   if (!p.governorships) p.governorships = [];
   p.governorships.push(name);
   if (!p.govLeg) p.govLeg = {};
