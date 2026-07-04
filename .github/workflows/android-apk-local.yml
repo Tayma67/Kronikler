@@ -44,6 +44,19 @@ jobs:
         run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon --stacktrace
       - name: APK'yi temiz isimle kopyala
         run: cp mobile/android/app/build/outputs/apk/release/app-release.apk Kronikler.apk
+      - name: Kalici imza (KEYSTORE secret'lari varsa; yoksa debug imza aynen kalir)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then echo "Keystore secret yok - debug imza ile devam (dogrudan dagitim icin yeterli)"; exit 0; fi
+          echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/zipalign" -f -p 4 Kronikler.apk Kronikler-hizali.apk
+          "$BT/apksigner" sign --ks release.keystore --ks-key-alias kronikler --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD --out Kronikler-imzali.apk Kronikler-hizali.apk
+          mv Kronikler-imzali.apk Kronikler.apk
+          rm -f release.keystore Kronikler-hizali.apk
+          echo "Kalici imza uygulandi"
       - name: APK'yi yukle (artefakt)
         uses: actions/upload-artifact@v4
         with:
