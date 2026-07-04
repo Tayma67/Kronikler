@@ -3049,9 +3049,12 @@ export function changeProfession(prev: GameState, prof: string): GameState {
 }
 
 // Özellik puanı harca.
+// Özellik tavanı yaşa bağlı: çocuk bedeni/aklı 8'de durur, 10 "olağanüstü" yetişkinliğe kalır
+// (denge: tam-gaz çocukluk 13 yaşında 4 statı da maksluyordu; puanlar kaybolmaz, 13'ten sonra harcanır).
+export function statCapOf(p: Player): number { return p.age < 13 ? 8 : 10; }
 export function allocateStat(prev: GameState, key: keyof Stats): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.stat_points <= 0 || p.stats[key] >= 10) return s; // tavan 10 (addStatXp ile aynı sınır) — elle dağıtım da 10'u aşamaz
+  if (p.stat_points <= 0 || p.stats[key] >= statCapOf(p)) return s; // yaş tavanı (addStatXp ile aynı sınır)
   p.stat_points -= 1; p.stats[key] += 1;
   return s;
 }
@@ -3072,15 +3075,16 @@ export function statXpOf(p: Player, key: keyof Stats): number { return p.stat_xp
 const STAT_OVERFLOW_SKILL: Record<keyof Stats, SkillKey> = { strength: "combat", intelligence: "trade", charisma: "social", stamina: "crafting" };
 function addStatXp(s: GameState, key: keyof Stats, amt: number) {
   const p = s.player;
-  if (p.stats[key] >= 10) { gainSkill(s, STAT_OVERFLOW_SKILL[key], Math.max(1, Math.round(amt / 2))); return; } // tavan sonrası emek boşa gitmez: ilgili beceriye yarı oranda ustalık akar
+  const cap = statCapOf(p); // çocukta 8, yetişkinde 10
+  if (p.stats[key] >= cap) { gainSkill(s, STAT_OVERFLOW_SKILL[key], Math.max(1, Math.round(amt / 2))); return; } // tavan sonrası emek boşa gitmez: ilgili beceriye yarı oranda ustalık akar
   if (!p.stat_xp) p.stat_xp = { strength: 0, intelligence: 0, charisma: 0, stamina: 0 };
   p.stat_xp[key] += amt;
-  while (p.stats[key] < 10 && p.stat_xp[key] >= statXpForNext(p.stats[key])) {
+  while (p.stats[key] < cap && p.stat_xp[key] >= statXpForNext(p.stats[key])) {
     p.stat_xp[key] -= statXpForNext(p.stats[key]);
     p.stats[key] += 1;
     push(s, "beceri", `${STAT_LABEL[key]} özelliğin tecrübeyle gelişti (${p.stats[key]}).`, "kişisel", false, { k: "statxp.up", p: [{ statk: key }, p.stats[key]] });
   }
-  if (p.stats[key] >= 10) p.stat_xp[key] = 0;
+  if (p.stats[key] >= 10) p.stat_xp[key] = 0; // yalnız gerçek tavanda sıfırla — çocuk tavanındaki birikim 13'te serpilmeye dönüşür
 }
 
 // ── Mektep: 4 ders, her biri farklı yön geliştirir ──
