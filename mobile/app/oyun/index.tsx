@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork } from "../../lib/game";
+import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveDivan, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork } from "../../lib/game";
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
@@ -581,6 +581,31 @@ export default function Dashboard() {
                 return (
                 <Pressable key={c} disabled={dis} onPress={() => { hap("tap"); apply((s) => resolveMicro(s, c)); }} style={{ flex: 1, paddingVertical: 7, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", opacity: dis ? 0.4 : 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5, textAlign: "center" }}>{t("micro." + m.id + ".c" + c)}</Text>
+                </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        );
+      })()}
+
+      {/* Divan arzuhali — taç sahibine huzura çıkan dilekçeci (yok sayılırsa ertesi ay düşer) */}
+      {!p.dead && p.crowned && state.divan && (() => {
+        const d = state.divan!;
+        const NEED: Record<string, number> = { su_kavgasi: 100, sinir_haraci: 120, genc_mucit: 150 };
+        return (
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.10)" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 5 }}>
+              <GameIcon name="crown" size={13} color={C.gold} />
+              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("divan.title")}</Text>
+            </View>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{t("divan." + d.id + ".x")}</Text>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+              {([0, 1] as const).map((c) => {
+                const dis = c === 0 && NEED[d.id] != null && p.money < NEED[d.id];
+                return (
+                <Pressable key={c} disabled={dis} onPress={() => { hap("tap"); apply((s) => resolveDivan(s, c)); }} style={{ flex: 1, paddingVertical: 7, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", opacity: dis ? 0.4 : 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5, textAlign: "center" }}>{t("divan." + d.id + ".c" + c)}</Text>
                 </Pressable>
                 );
               })}

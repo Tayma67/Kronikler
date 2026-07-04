@@ -734,6 +734,7 @@ export interface GameState {
   epochNext?: number; // bir sonraki çağ olayının turu (legacy_system epoch_tick)
   pendingScene?: { kind: string; ctx: Record<string, string> } | null; // oyuncu seçimi bekleyen interaktif sahne (suç kesintisi vb.)
   micro?: { id: string } | null; // ay-içi mikro an: atlanabilir tek satırlık seçim (ertesi ay kendiliğinden kaybolur)
+  divan?: { id: string } | null; // taç sahibinin divanına düşen arzuhal (ertesi ay kendiliğinden düşer; ferman bekler)
   schema?: number; // kayıt şeması sürümü — migrate() her yüklemede damgalar; gelecek göçler bununla dallanır
   tips?: Tip[]; // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
   locEvents?: LocEvent[]; // lokasyon-bazlı tipli dünya olayları (kuraklık/panayır/veba...)
@@ -1646,6 +1647,7 @@ export function advance(prev: GameState, n = 1): GameState {
     }
     { const mf = monthlyFlavor(s, cal); push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k }); }
     if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 13 && chance(0.12)) s.micro = { id: MICRO_IDS[Math.floor(Math.random() * MICRO_IDS.length)] }; } // mikro an: yok sayılırsa ertesi ay kaybolur
+    if (i === n - 1) { s.divan = null; if (!s.player.dead && s.player.crowned && chance(0.10)) s.divan = { id: DIVAN_IDS[Math.floor(Math.random() * DIVAN_IDS.length)] }; } // divan arzuhali: yalnız taç sahibine, yok sayılırsa düşer
     rollLifeEvents(s, cal);
     tickFactions(s, i === n - 1);
     tickDynasties(s, i === n - 1);
@@ -4182,6 +4184,40 @@ export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
   else if (id === "yildiz_gecesi") { if (choice === 0) bumpNam(p, "dindar", 1); else addStatXp(s, "intelligence", 2); }
   const rtr = MICRO_R_TR[id];
   push(s, "gunluk", rtr ? rtr[choice] : "", "kişisel", false, { k: `micro.${id}.r${choice}` });
+  return s;
+}
+// ── Divan/Arzuhal: taç sahibinin huzuruna düşen dilekçeler — hükümdarlık soyut ferman menüsü değil, yüzü olan kararlar.
+// Etki dengesi bilinçli: halkı kollamak keseden yer ama otorite/itibar getirir; keseyi kollamak nam bedeli öder (farm yok: an rastgele düşer).
+export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit"];
+const DIVAN_R_TR: Record<string, [string, string]> = {
+  su_kavgasi: ["Kanal iki değirmeni de döndürdü; iki köy düğünde yan yana oynadı. 'Suyu taşla değil akılla bölen hükümdar' diye anıldın.", "Yukarı köy sevindi, aşağı köy sustu; ferman kesin ama gönüller yarım. Teamül sarsılmadı, adın 'sert ama belli' oldu."],
+  yetim_arazisi: ["Mühür indi, tarla yetime döndü; kadı önünü ilikledi, bey dişini sıktı. Divandan çıkan söz çarşıda gece yarısına dek anlatıldı.", "Bey kesesinden 'hazineye armağan' bıraktı; yetim sessizce çıktı. Defter düzgün, vicdanlar buruk — bazı mühürler pahalıdır."],
+  sinir_haraci: ["Kese köye döndü, taş toprağa oturdu; köy o kış senin adına kurban kesti. Sınırda adın taştan sağlam.", "İhtiyar duasız çıktı. O köyün gençleri ertesi yıl komşu beyliğin pazarına gitti; sınır haritada kaldı, gönüllerde kaydı."],
+  genc_mucit: ["Dolap ilk kuraklıkta değerini kanıtladı; gıcırtısı köye ninni oldu. Gencin adı ustaya, senin adın 'ileri görüşlü'ye çıktı.", "Genç maketini koltuğuna alıp çıktı; iki yıl sonra aynı dolap komşu beyliğin bostanlarını suluyordu. Bazı fırsatlar bir kez kapı çalar."],
+};
+export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
+  const s = clone(prev); const p = s.player;
+  const d = s.divan; if (!d || p.dead || !p.crowned) return s;
+  const id = d.id;
+  if (id === "su_kavgasi" && choice === 0 && p.money < 100) return s; // kesede yoksa kanal yaptırılamaz (UI de kapatır)
+  if (id === "sinir_haraci" && choice === 0 && p.money < 120) return s;
+  if (id === "genc_mucit" && choice === 0 && p.money < 150) return s;
+  s.divan = null;
+  if (id === "su_kavgasi") {
+    if (choice === 0) { p.money -= 100; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); }
+    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); p.fear = Math.min(100, p.fear + 2); }
+  } else if (id === "yetim_arazisi") {
+    if (choice === 0) { p.honor = Math.min(100, p.honor + 5); p.reputation = Math.min(100, p.reputation + 4); p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); bumpNam(p, "mert", 2); }
+    else { const bag = 120; p.money += bag; p.honor = Math.max(0, p.honor - 5); bumpNam(p, "zalim", 3); }
+  } else if (id === "sinir_haraci") {
+    if (choice === 0) { p.money -= 120; p.crownAuthority = clamp100(crownAuthorityOf(p) + 7); p.reputation = Math.min(100, p.reputation + 3); }
+    else { p.reputation = Math.max(-100, p.reputation - 3); p.crownAuthority = clamp100(crownAuthorityOf(p) - 3); bumpNam(p, "zalim", 2); }
+  } else if (id === "genc_mucit") {
+    if (choice === 0) { p.money -= 150; p.fame = Math.min(100, p.fame + 5); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "comert", 3); }
+    else { p.reputation = Math.max(-100, p.reputation - 2); }
+  }
+  const rtr = DIVAN_R_TR[id];
+  push(s, "taht", rtr ? rtr[choice] : "", "kişisel", choice === 0, { k: `divan.${id}.r${choice}` });
   return s;
 }
 export function hostFeast(prev: GameState): GameState {
