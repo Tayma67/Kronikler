@@ -1777,6 +1777,16 @@ function tickDynasties(s: GameState, announce: boolean) {
       push(s, "hanedan_haber", `${h.name} adamları ${PROPERTY_TYPES[pr.type]?.name || "mülküne"} (${pr.loc}) zarar verdi; hesap büyüyor.`, "makro", true, { k: "evj.houseSabotage", p: [{ hn: h.nameIdx }, { pt2: pr.type }, { pl: pr.loc }] });
     }
   }
+  // İttifak kopuşu: müttefik hanenin tutumu dibe vurursa el sıkışma bozulur (ittifak sonsuz bayrak değil, yaşayan bağ).
+  if (announce && (s.allied_houses || []).length) {
+    for (const hid of [...s.allied_houses!]) {
+      const ah = rivals.find((x) => x.id === hid);
+      if (ah && (ah.tutum ?? 0) <= -30) {
+        s.allied_houses = s.allied_houses!.filter((x) => x !== hid);
+        push(s, "hanedan_haber", `${ah.name} ile ittifak bozuldu; soğuyan dostluk sonunda koptu.`, "makro", true, { k: "evj.houseAllyBroken", p: [{ hn: ah.nameIdx }] });
+      }
+    }
+  }
   // Dost hane teklifi: tutumu yüksek bir hane ittifak ya da evlilik önerir (oyuncu kabul/ret eder).
   if (announce) {
     const offers = s.dynastyOffers || [];
