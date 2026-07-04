@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, canWork } from "../../lib/game";
+import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, canWork } from "../../lib/game";
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
@@ -566,6 +566,23 @@ export default function Dashboard() {
             </View>
             <Text style={{ fontFamily: F.display, fontSize: 9.5, color: tone, letterSpacing: 0.5 }}>{lbl}</Text>
           </Pressable>
+        );
+      })()}
+
+      {/* Ay-içi mikro an — atlanabilir küçük seçim (yok sayılırsa ertesi ay kaybolur) */}
+      {!p.dead && state.micro && (() => {
+        const m = state.micro!;
+        return (
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(126,138,106,0.45)", backgroundColor: "rgba(126,138,106,0.08)" }}>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{t("micro." + m.id + ".x")}</Text>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+              {([0, 1] as const).map((c) => (
+                <Pressable key={c} onPress={() => { hap("tap"); apply((s) => resolveMicro(s, c)); }} style={{ flex: 1, paddingVertical: 7, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)" }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5, textAlign: "center" }}>{t("micro." + m.id + ".c" + c)}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
         );
       })()}
 

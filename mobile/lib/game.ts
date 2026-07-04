@@ -715,6 +715,7 @@ export interface GameState {
   feud?: { houseId: string; nameIdx: number; stage: number; heat: number; act_turn?: number } | null; // kan davası: tek aktif dava; ısı büyür, aşama tırmanır, NESLE GEÇER (continueAsHeir)
   epochNext?: number; // bir sonraki çağ olayının turu (legacy_system epoch_tick)
   pendingScene?: { kind: string; ctx: Record<string, string> } | null; // oyuncu seçimi bekleyen interaktif sahne (suç kesintisi vb.)
+  micro?: { id: string } | null; // ay-içi mikro an: atlanabilir tek satırlık seçim (ertesi ay kendiliğinden kaybolur)
   tips?: Tip[]; // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
   locEvents?: LocEvent[]; // lokasyon-bazlı tipli dünya olayları (kuraklık/panayır/veba...)
   recent_dilemmas?: string[]; // son görülen ikilem id'leri (ring 6) — dar havuzlarda aynı sahnenin üst üste gelmesi önlenir
@@ -1615,6 +1616,7 @@ export function advance(prev: GameState, n = 1): GameState {
       }
     }
     { const mf = monthlyFlavor(s, cal); push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k }); }
+    if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 13 && chance(0.12)) s.micro = { id: MICRO_IDS[Math.floor(Math.random() * MICRO_IDS.length)] }; } // mikro an: yok sayılırsa ertesi ay kaybolur
     rollLifeEvents(s, cal);
     tickFactions(s, i === n - 1);
     tickDynasties(s, i === n - 1);
@@ -4119,6 +4121,32 @@ export function tendChild(prev: GameState): GameState {
   else if (age < 13) { bond(4); if (p.child_edu?.[name]) p.child_edu[name].weeks += 1; push(s, "cocukluk", `${name} ile rahlenin başına oturdunuz; harfler sökülünce gözleri parladı.`, "kişisel", false, { k: "evj.childTend.mektepli", p: [name] }); }
   else if (age < 18) { bond(4); p.reputation = Math.min(100, p.reputation + 1); push(s, "cocukluk", `${name}'e zanaatının inceliğini gösterdin; el alışkanlığı sana çekmiş.`, "kişisel", false, { k: "evj.childTend.genc", p: [name] }); }
   else { bond(3); p.reputation = Math.min(100, p.reputation + 1); push(s, "gunluk", `Yetişkin evladın ${name} ile sofra kurdunuz; kendi ocağının derdini, sevincini dinledin.`, "kişisel", false, { k: "evj.childTend.yetiskin", p: [name] }); }
+  return s;
+}
+// ── Ay-içi mikro an: panoda beliren tek satırlık, atlanabilir seçim — "aynı üç buton" hissini kırar.
+// Etkiler bilinçli olarak minicik: iki seçenek de geçerli, farm yok (an rastgele düşer, ertesi ay kaybolur).
+export const MICRO_IDS = ["saganak", "sokak_kedisi", "cirak_tabla", "eski_turku", "yol_soran", "yildiz_gecesi"];
+const MICRO_R_TR: Record<string, [string, string]> = {
+  saganak: ["Sırılsıklam ama dinç döndün; yağmur insanı bilerken vücudu peklerştirir derler.", "Saçak altında bir soluk aldın; damlaların sesi içini dinlendirdi."],
+  sokak_kedisi: ["Kedi karnını doyurup dizine kıvrıldı; komşular gülümseyerek baktı.", "Kedi bir süre seni süzdü, sonra kendi yoluna gitti; sabır da bir liman."],
+  cirak_tabla: ["Beraber topladınız; ustası uzaktan görüp başını salladı: 'Aferin.'", "Tozlu simide akçe saydın; çırağın yüzü güldü, tadı da fena değildi."],
+  eski_turku: ["Sesin nağmeye karıştı; türkü bitince meydandakiler birbirine gülümsedi.", "Nağme eski günleri getirdi geçirdi; için bir hoş oldu."],
+  yol_soran: ["Adam duasını eksik etmeden yola koyuldu; iyilik iz bırakır.", "Patikaları bir bir saydın; kendi diyarını ne kadar iyi bildiğini fark ettin."],
+  yildiz_gecesi: ["Dileğini kimseye söylemedin; içinde sıcak bir umut yandı.", "Sayı yüzü geçince şaşırdın kaldın; gökyüzü insanı küçültür, ferahlatır."],
+};
+export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
+  const s = clone(prev); const p = s.player;
+  const m = s.micro; if (!m || p.dead) return s;
+  s.micro = null;
+  const id = m.id;
+  if (id === "saganak") { if (choice === 0) addStatXp(s, "stamina", 3); else p.health = Math.min(100, p.health + 1); }
+  else if (id === "sokak_kedisi") { if (choice === 0) { bumpNam(p, "comert", 1); p.hunger = Math.max(0, p.hunger - 2); } else addStatXp(s, "stamina", 2); }
+  else if (id === "cirak_tabla") { if (choice === 0) { p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 1); } else if (p.money >= 2) { p.money -= 2; p.hunger = Math.min(100, p.hunger + 4); } }
+  else if (id === "eski_turku") { if (choice === 0) gainSkill(s, "social", 3); else p.health = Math.min(100, p.health + 1); }
+  else if (id === "yol_soran") { if (choice === 0) p.reputation = Math.min(100, p.reputation + 1); else addStatXp(s, "intelligence", 2); }
+  else if (id === "yildiz_gecesi") { if (choice === 0) bumpNam(p, "dindar", 1); else addStatXp(s, "intelligence", 2); }
+  const rtr = MICRO_R_TR[id];
+  push(s, "gunluk", rtr ? rtr[choice] : "", "kişisel", false, { k: `micro.${id}.r${choice}` });
   return s;
 }
 export function hostFeast(prev: GameState): GameState {
