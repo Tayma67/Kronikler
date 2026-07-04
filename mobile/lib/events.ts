@@ -838,6 +838,42 @@ export const DILEMMAS: Dilemma[] = [
       { label: "Bırak kessinler, odunu payına düşsün", delta: { money: 12 }, result: "Balta sesleri bir gün sürdü. Kışlık odunun çıktı; ama meydan artık yazın gölgesiz." },
     ],
   },
+  {
+    id: "genc_at_yarisi", icon: "compass", title: "Beyzadenin Atı",
+    text: "Beyzade, panayır yarışında kendi atını sürmen için seni seçti: 'Kaybedersen adını unuturum, kazanırsan herkes öğrenir.'",
+    when: (p) => p.age >= 14 && p.age < 22,
+    choices: [
+      { label: "Eyere atla, yarışa gir", delta: { health: -3, fame: 4, nam: { mert: 2 } }, result: "Toza karışıp uçtun; kazanamasan da düşmeden bitirdin, meydan adını aldı. Beyzade eyer kayışını sana bıraktı." },
+      { label: "Atı tımarla, yarışı ona bırak", delta: { money: 8, reputation: 2 }, result: "Atı sen hazırladın, yarışı o kazandı; kesesinden payını ayırdı. Herkes bilir: at kazanır, seyis yetiştirir." },
+    ],
+  },
+  {
+    id: "genc_usta_sirri", icon: "anvil", title: "Ustanın Sırrı",
+    text: "Rakip dükkânın kalfası seni kuytuda buldu: ustanın meşhur işinin sırrını satarsan kese dolusu akçe senin.",
+    when: (p) => p.age >= 15 && p.age < 24 && p.profession !== "işsiz",
+    choices: [
+      { label: "Reddet, ustana söyle", delta: { honor: 6, reputation: 3, nam: { mert: 2 } }, result: "Ustan dinledi, uzun uzun sustu; sonra tezgâhın anahtarını sana uzattı: 'Sır zaten sendeymiş.'" },
+      { label: "Sırrı sat, keseyi al", delta: { money: 20, honor: -6, fear: 1 }, result: "Akçe cebe girdi ama çarşıda iki dükkân aynı işi yapar oldu; ustanın bakışlarından kaçar oldun." },
+    ],
+  },
+  {
+    id: "orta_terazi", icon: "scales", title: "Eksik Tartan Terazi",
+    text: "Pazarda zahire aldığın tüccarın terazisinin hileli olduğunu fark ettin — herkesten eksik tartıyor. Adam senin de eski alacaklın.",
+    when: (p) => p.age >= 28 && p.age < 50,
+    choices: [
+      { label: "Kadıya bildir, çarşıyı koru", delta: { reputation: 5, honor: 4, nam: { mert: 2 } }, result: "Terazi meydanda kırıldı, esnaf sana dua etti. Alacağın yandı ama adın 'doğru adam' diye anılır oldu." },
+      { label: "Sus, alacağına say", delta: { money: 12, honor: -4 }, result: "Adam alacağını fazlasıyla kapattı; terazi eksik tartmaya devam etti. Kazandın ama pazar kaybetti." },
+    ],
+  },
+  {
+    id: "orta_komsu_duvar", icon: "house", title: "Komşunun Duvarı",
+    text: "Komşun avlu duvarını yenilerken iki karış senin tarafına taşırdı. Kadıya gitsen kazanırsın; ama adam kışın çocuğuna kaftanını sermiş biri.",
+    when: (p) => p.age >= 30 && p.age < 55 && p.properties.length >= 1,
+    choices: [
+      { label: "Tatlı dille konuş, sınırı düzelttir", delta: { reputation: 4, honor: 3 }, result: "Adam kızardı, güldü, duvarı kendi eliyle geri aldı. Kahveniz o akşam onun avlusunda içildi." },
+      { label: "İki karışı hediye say", delta: { money: -15, reputation: 6, nam: { comert: 2 } }, result: "'Duvar senin olsun, gölgesi bize yeter' dedin. Söz mahallede dolaştı; iki karış toprak, iki kat hayır dua getirdi." },
+    ],
+  },
 ];
 
 // ── Şenlikler: yılın nabzı — sabit aylarda dönen mevsim sahneleri. ──
