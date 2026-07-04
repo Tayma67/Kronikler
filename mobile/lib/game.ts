@@ -4471,6 +4471,7 @@ export const DILEMMA_SEEDS: Record<string, Omit<Seed, "id" | "ekim">> = {
   "genc_ilkask:1": { kaynak: "ilk_sevda_ic", hmin: 90, hmax: 260, agirlik: "orta", nesil: false, etki: { health: -3 } },
   "yetiskin_ortaklik:0": { kaynak: "ortak_kader", hmin: 24, hmax: 96, agirlik: "buyuk", nesil: false, etki: { money: 120, reputation: 4 } },
   "golge_davet:0": { kaynak: "golge_borcu", hmin: 24, hmax: 120, agirlik: "buyuk", nesil: true, etki: { money: -40, reputation: -6 } },
+  "yetiskin_gurbetci:0": { kaynak: "gurbetci_vefa", hmin: 36, hmax: 150, agirlik: "orta", nesil: false, etki: { money: 90, reputation: 4 } },
 };
 
 export function applyDilemma(prev: GameState, delta: Delta, resultText: string, seedKey?: string, festival?: boolean): GameState {

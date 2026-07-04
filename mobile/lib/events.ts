@@ -784,6 +784,60 @@ export const DILEMMAS: Dilemma[] = [
       { label: "Kapıdan çevir", delta: { fear: 2, reputation: -3 }, result: "Vaktin yok dedin; köylü boynu bükük döndü, kapındaki nöbetçi bile üzüldü." },
     ],
   },
+  {
+    id: "cocuk_firtina", icon: "sheep", title: "Fırtına Gecesi",
+    text: "Gece bastıran fırtınada komşunun kuzusu dışarıda kalmış; meleme sesi rüzgârı deliyor. Büyükler uyuyor.",
+    when: (p) => p.age >= 7 && p.age < 13,
+    choices: [
+      { label: "Gizlice çık, kuzuyu kurtar", delta: { honor: 4, health: -3, nam: { mert: 2 } }, result: "Sırılsıklam döndün ama kuzu kucağındaydı. Komşu sabah kapıya geldi; adın 'yürekli' kaldı." },
+      { label: "Yorganın altında kal", delta: { health: 1 }, result: "Sabah kuzu ahırın saçağında bulundu — üşümüş ama sağ. İçinde küçük bir eziklik kaldı." },
+    ],
+  },
+  {
+    id: "genc_suclama", icon: "scales", title: "Suçu Yüklenen",
+    text: "Çarşıda devrilen küfeler senin dikkatsizliğindi; ama suçu yanındaki arkadaşın üstlendi. Esnaf ondan tazminat istiyor.",
+    when: (p) => p.age >= 14 && p.age < 22,
+    choices: [
+      { label: "Öne çık, doğruyu söyle", delta: { honor: 8, reputation: -4, nam: { mert: 3 } }, result: "Bedelini sen ödedin; kimi güldü, kimi şapka çıkardı. Arkadaşın o günden sonra yanından ayrılmadı." },
+      { label: "Sus, bırak o ödesin", delta: { fear: 2, honor: -5 }, result: "Sustun. Arkadaşın borcunu ödedi, sana bir şey demedi — ama bakışı eskisi gibi değil." },
+    ],
+  },
+  {
+    id: "yetiskin_kuyu", icon: "bucket", title: "Ortak Kuyu",
+    text: "Kurak yazda sınırdaki kuyu tartışma çıkardı: komşu, suyun çoğunu senin çektiğini söylüyor. Muhtar ikinizi de dinliyor.",
+    when: (p) => p.age >= 22 && p.age < 55,
+    choices: [
+      { label: "Nöbet düzeni öner, ilk hakkı ona ver", delta: { reputation: 6, honor: 3, money: -10 }, result: "Kuyuya nöbet çizelgesi asıldı; ilk kova onun. Muhtar 'akıl bunda' dedi; komşuluk kurtuldu." },
+      { label: "Kuyu benim tarafımda, diren", delta: { money: 8, reputation: -5, fear: 2 }, result: "Sınır taşı senden yana çıktı; su senin. Ama komşunun selamı kesildi, kapısı sana kapandı." },
+    ],
+  },
+  {
+    id: "yetiskin_gurbetci", icon: "backpack", title: "Gurbetten Dönen",
+    text: "Çocukluk arkadaşın gurbetten eli boş döndü; utana sıkıla bir sermaye istiyor: 'Bir tezgâh kurayım, ödeyeceğim.'",
+    when: (p) => p.age >= 25 && p.age < 60,
+    choices: [
+      { label: "Sermayeyi ver", delta: { money: -35, reputation: 3, nam: { comert: 3 } }, result: "Keseyi uzattın; gözleri doldu. 'Bu iyiliği unutmam' dedi — gurbet görmüş adamın sözü ağırdır." },
+      { label: "Kibarca geri çevir", delta: { honor: -2 }, result: "Elin varmadı ama kesen de el vermedi. Arkadaşın anlayışla başını salladı; içinde ufak bir burukluk kaldı." },
+    ],
+  },
+  {
+    id: "orta_sirdas", icon: "hood", title: "Sırdaş",
+    text: "Yakın dostun sana açıldı: sevdiğiyle başka diyara kaçacaklar; ailesi kızı zorla başkasına verecekmiş. 'Kimseye söyleme' dedi.",
+    when: (p) => p.age >= 28 && p.age < 55,
+    choices: [
+      { label: "Sırrı tut", delta: { honor: 3, fear: 2, nam: { mert: 2 } }, result: "Bir sabah ikisi de yoktu. Aileler kapını aşındırdı; sen sustun. Sözün senettir artık — ama gözler üstünde." },
+      { label: "Kızın ailesine haber ver", delta: { reputation: 4, honor: -4 }, result: "Kaçış son gece bozuldu. Aile sana dua etti, kasaba 'sağduyulu' dedi — dostun ise bir daha yüzüne bakmadı." },
+    ],
+  },
+  {
+    id: "yasli_cinar", icon: "leaf", title: "Meydandaki Çınar",
+    text: "Gençliğinde diktiğin çınar meydanı gölgeliyor; ama kökleri çeşmenin yolunu tıkamış. Kasaba keselim diyor — ustalar 'kökü çevirmek pahalı' diyor.",
+    when: (p) => p.age >= 55,
+    choices: [
+      { label: "Ustaların parasını öde, çınarı kurtar", delta: { money: -30, reputation: 5, fame: 3 }, result: "Kökler taş olukla çevrildi; su yeniden aktı, çınar yerinde kaldı. Gölgesinde oturanlar adını anıyor." },
+      { label: "Bırak kessinler, odunu payına düşsün", delta: { money: 12 }, result: "Balta sesleri bir gün sürdü. Kışlık odunun çıktı; ama meydan artık yazın gölgesiz." },
+    ],
+  },
 ];
 
 // ── Şenlikler: yılın nabzı — sabit aylarda dönen mevsim sahneleri. ──
