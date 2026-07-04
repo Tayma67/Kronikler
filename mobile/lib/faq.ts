@@ -100,6 +100,16 @@ const TR: FaqSection[] = [
       { q: "Hanelerle ittifak nasıl kurulur, bozulur mu?", a: "Hanedan ekranındaki hane listesinden soğuk olmayan hanelere ittifak teklif edebilir, bekârsan dünür gönderebilirsin (ayda bir girişim). Şansı tutumları ve saygınlığın belirler; ret tutumu düşürür. Kurulan ittifak vârise geçer — ama dostluk soğur da tutum dibe vurursa el sıkışma bozulur." },
     ],
   },
+  {
+    icon: "family", title: "Yaşayan Hane (Yeni)",
+    items: [
+      { q: "Panoda beliren küçük seçim kartı ne?", a: "Ay içinde bazen tek satırlık bir an düşer: sağanak, sokak kedisi, devrilen tabla... İki küçük seçenekten birini seçebilir ya da hiç dokunmayabilirsin — ay ilerleyince kendiliğinden kaybolur. Etkileri küçüktür; hayata renk katmak içindir." },
+      { q: "Eşimle vakit geçirmek ne kazandırır?", a: "Karakter ekranındaki düğme eşinin mizacına göre başka türlü akar: şefkatli eş teselli eder, çalışkan eş hesabı tutar (ikramın yarısı döner), dikbaşlı eşle tatlı-sert atışırsın, dindar eşle akşam duası edersin. Her seferinde eş bağı artar; bağ, yıldönümü sıcaklığını ve dulluk acısını belirler." },
+      { q: "Evlat bağı ne işe yarar?", a: "Evlatlarınla İlgilen düğmesi en küçüğünün yaşına göre bir sahne açar: bebekle oyun, mektepliyle ders, gençle zanaat, yetişkinle sofra. Her ilgi bağı büyütür. Bağı yüksek (60+) evlat vâris olursa +2 itibarla, gözbebeğin (85+) +1 özellik puanıyla başlar." },
+      { q: "Yaşlılıkta oyun sönükleşir mi?", a: "Hayır — 70'ten sonra hayat kendi anılarını getirir: şafak yalnızlığı, giden dostun boş tezgâhı, adının senden önce yürümesi... 55 üstü hikâye yayları, torun anları ve Tekke uğraşı da bu çağın dokusudur." },
+      { q: "Savaş sonuçları neden hep farklı anlatılıyor?", a: "Her karşılaşmanın kendi zafer ve yenilgi hikâyesi vardır: eşkıya reisini zincire vurursun, Kara Alp önünde diz çöker... Efsane karşılaşmalar (Gece Canavarı, Kara Alp) ancak adın duyulunca yolunu bulur." },
+    ],
+  },
 ];
 
 const EN: FaqSection[] = [
@@ -197,6 +207,16 @@ const EN: FaqSection[] = [
       { q: "How do I take an apprentice and what does it give?", a: "You can offer apprenticeship to a youth you are close to, from their profile. Mentor them month by month; at 24 months your apprentice becomes a master — your name grows among the craft. Your ancestor's apprentice may knock on your heir's door years later." },
       { q: "How does a blood feud start and end?", a: "If relations with a house hit rock bottom, a spark may catch. As the feud heats, ambushes grow. From the dynasty screen you can pay for peace or strike back; at the end waits a pitched battle. An unfinished feud passes to your heir at half heat." },
       { q: "How are house alliances made — can they break?", a: "From the house list on the dynasty screen you can propose alliance to houses that are not cold, or send matchmakers if unmarried (one attempt a month). Their attitude and your standing set the odds; refusal lowers attitude. An alliance passes to your heir — but if the friendship goes cold and attitude hits bottom, the handshake breaks." },
+    ],
+  },
+  {
+    icon: "family", title: "The Living Hearth (New)",
+    items: [
+      { q: "What is the small choice card on the dashboard?", a: "Now and then a one-line moment lands during the month: a downpour, a street cat, a tipped-over tray... Pick one of two small options or ignore it entirely — it fades on its own when the month passes. Effects are tiny; it is there to color life." },
+      { q: "What does spending time with my spouse do?", a: "The button on the character screen plays out by your spouse's temper: a tender spouse consoles you, a diligent one keeps the accounts (half your treat comes back), with a headstrong one you bicker and laugh, with a devout one you share the evening prayer. Each time the spouse bond grows; the bond sets anniversary warmth and the grief of widowhood." },
+      { q: "What is the child bond for?", a: "The Tend to Your Children button opens a scene by your youngest's age: play with the baby, lessons with the schoolchild, craft with the youth, a shared table with the adult. Every act of care grows the bond. An heir with a high bond (60+) starts with +2 reputation; the apple of your eye (85+) starts with +1 attribute point." },
+      { q: "Does the game fade in old age?", a: "No — past 70 life brings its own memories: the solitude of dawn, an old friend's empty stall, your name walking ahead of you... Story arcs past 55, grandchild moments and the Tekke pursuit are the fabric of that age." },
+      { q: "Why is every battle told differently?", a: "Each encounter has its own victory and defeat tale: you put the bandit chief in chains, Kara Alp kneels before you... Legendary encounters (the Night Terror, Kara Alp) only find you once your name is known." },
     ],
   },
 ];
@@ -299,6 +319,16 @@ const ES: FaqSection[] = [
       { q: "¿Cómo se hacen las alianzas y pueden romperse?", a: "Desde la lista de casas puedes proponer alianza a las que no sean frías, o enviar casamenteros si estás soltero (un intento al mes). Su actitud y tu prestigio fijan la suerte; el rechazo baja la actitud. La alianza pasa al heredero — pero si la amistad se enfría del todo, el apretón se rompe." },
     ],
   },
+  {
+    icon: "family", title: "El hogar vivo (Nuevo)",
+    items: [
+      { q: "¿Qué es la pequeña tarjeta de elección del panel?", a: "De vez en cuando cae un momento de una línea durante el mes: un aguacero, un gato callejero, una bandeja volcada... Elige una de dos opciones pequeñas o ignórala — desaparece sola al pasar el mes. Sus efectos son mínimos; está para dar color a la vida." },
+      { q: "¿Qué me da pasar tiempo con mi cónyuge?", a: "El botón de la pantalla de personaje fluye según su temperamento: el cariñoso consuela, el diligente lleva las cuentas (vuelve la mitad del convite), con el testarudo discutes y ríes, con el devoto compartes la oración de la tarde. Cada vez crece el vínculo conyugal; el vínculo marca el calor del aniversario y el dolor de la viudez." },
+      { q: "¿Para qué sirve el vínculo con los hijos?", a: "El botón Ocúpate de tus hijos abre una escena según la edad del menor: juego con el bebé, lecciones con el escolar, oficio con el joven, mesa con el adulto. Cada gesto agranda el vínculo. Un heredero con vínculo alto (60+) empieza con +2 de reputación; la niña de tus ojos (85+), con +1 punto de atributo." },
+      { q: "¿El juego se apaga en la vejez?", a: "No — pasados los 70 la vida trae sus propios recuerdos: la soledad del alba, el puesto vacío de un viejo amigo, tu nombre caminando delante de ti... Los arcos de los 55+, los nietos y la senda del Tekke son la trama de esa edad." },
+      { q: "¿Por qué cada batalla se cuenta distinto?", a: "Cada encuentro tiene su propia historia de victoria y derrota: encadenas al cabecilla, Kara Alp se arrodilla ante ti... Los encuentros legendarios (el Terror Nocturno, Kara Alp) solo te encuentran cuando tu nombre ya suena." },
+    ],
+  },
 ];
 
 const PT: FaqSection[] = [
@@ -396,6 +426,16 @@ const PT: FaqSection[] = [
       { q: "Como tomo um aprendiz e o que me dá?", a: "Podes oferecer a aprendizagem a um jovem próximo, no perfil dele. Orienta-o mês a mês; aos 24 meses o teu aprendiz torna-se mestre — o teu nome cresce no ofício. O aprendiz do antepassado pode bater anos depois à porta do herdeiro." },
       { q: "Como começa e acaba uma vingança de sangue?", a: "Se a relação com uma casa bater no fundo, a faísca pode saltar. Ao aquecer, crescem as emboscadas. No ecrã de dinastia podes pagar a paz ou retaliar; no fim espera a batalha campal. A vingança inacabada passa ao herdeiro com metade do calor." },
       { q: "Como se fazem as alianças e podem quebrar-se?", a: "Na lista de casas podes propor aliança às que não estejam frias, ou enviar casamenteiros se fores solteiro (uma tentativa por mês). A atitude delas e o teu prestígio definem a sorte; a recusa baixa a atitude. A aliança passa ao herdeiro — mas se a amizade esfriar de vez, o aperto de mão quebra." },
+    ],
+  },
+  {
+    icon: "family", title: "O lar vivo (Novo)",
+    items: [
+      { q: "O que é o pequeno cartão de escolha no painel?", a: "De vez em quando cai um momento de uma linha durante o mês: um aguaceiro, um gato de rua, um tabuleiro virado... Escolhe uma de duas opções pequenas ou ignora — some sozinho quando o mês passa. Os efeitos são mínimos; existe para dar cor à vida." },
+      { q: "O que ganho ao passar tempo com o meu cônjuge?", a: "O botão do ecrã de personagem corre conforme o temperamento: o carinhoso consola, o diligente faz as contas (metade do mimo volta), com o teimoso discutes e ris, com o devoto partilhas a oração da tarde. De cada vez o laço conjugal cresce; o laço define o calor do aniversário e a dor da viuvez." },
+      { q: "Para que serve o laço com os filhos?", a: "O botão Cuida dos teus filhos abre uma cena conforme a idade do mais novo: brincadeira com o bebé, lições com o estudante, ofício com o jovem, mesa com o adulto. Cada gesto aumenta o laço. Um herdeiro com laço alto (60+) começa com +2 de reputação; a menina dos teus olhos (85+), com +1 ponto de atributo." },
+      { q: "O jogo esmorece na velhice?", a: "Não — depois dos 70 a vida traz as suas próprias memórias: a solidão da alvorada, a banca vazia de um velho amigo, o teu nome a andar à tua frente... Os arcos dos 55+, os netos e a senda do Tekke são o tecido dessa idade." },
+      { q: "Porque é que cada batalha é contada de forma diferente?", a: "Cada encontro tem a sua própria história de vitória e derrota: acorrentas o chefe dos salteadores, Kara Alp ajoelha-se diante de ti... Os encontros lendários (o Terror da Noite, Kara Alp) só te acham quando o teu nome já corre." },
     ],
   },
 ];
@@ -497,6 +537,16 @@ const AR: FaqSection[] = [
       { q: "كيف تُعقد التحالفات مع البيوت وهل تنفكّ؟", a: "من قائمة البيوت في شاشة السلالة يمكنك عرض التحالف على البيوت غير الباردة، أو إرسال الخُطّاب إن كنت أعزب (محاولة واحدة شهريًا). موقفهم ومكانتك يحددان الحظ؛ والرفض يخفض الموقف. التحالف ينتقل إلى الوريث — لكن إذا بردت الصداقة وبلغ الموقف الحضيض انفكّت المصافحة." },
     ],
   },
+  {
+    icon: "family", title: "البيت الحي (جديد)",
+    items: [
+      { q: "ما بطاقة الاختيار الصغيرة في اللوحة؟", a: "بين حين وآخر تهبط خلال الشهر لحظة من سطر واحد: وابل مطر، قط شارع، طبلية منقلبة... اختر أحد خيارين صغيرين أو تجاهلها — تختفي وحدها بمرور الشهر. آثارها ضئيلة؛ وُجدت لتلوين الحياة." },
+      { q: "ماذا يفيد قضاء الوقت مع الزوج؟", a: "زر شاشة الشخصية يجري بحسب طبع شريكك: الحنون يواسي، والمجتهد يمسك الحساب (يعود نصف ما أنفقت)، والعنيد تتشاجر معه ثم تضحكان، والتقي تشاركه دعاء المساء. في كل مرة تنمو رابطة الزوجية؛ والرابطة تحدد دفء الذكرى ولوعة الترمل." },
+      { q: "ما فائدة رابطة الولد؟", a: "زر الاعتناء بالأولاد يفتح مشهدًا بحسب عمر الأصغر: لعب مع الرضيع، درس مع التلميذ، حرفة مع اليافع، مائدة مع الراشد. كل عناية تكبر الرابطة. الوريث ذو الرابطة العالية (+60) يبدأ بسمعة +2؛ وقرة العين (+85) بنقطة خاصية إضافية." },
+      { q: "هل تخبو اللعبة في الشيخوخة؟", a: "لا — بعد السبعين تجيء الحياة بذكرياتها: وحدة الفجر، بسطة الصديق الراحل، اسمك يمشي قبلك... وأقواس ما بعد الخامسة والخمسين ولحظات الأحفاد ودرب التكية نسيجُ ذلك العمر." },
+      { q: "لماذا تُروى كل معركة بشكل مختلف؟", a: "لكل مواجهة حكاية نصر وهزيمة خاصة: تُقيّد زعيم قطاع الطرق بالسلاسل، ويجثو قره ألب أمامك... والمواجهات الأسطورية (رعب الليل وقره ألب) لا تجدك إلا حين يذيع اسمك." },
+    ],
+  },
 ];
 
 const RU: FaqSection[] = [
@@ -594,6 +644,16 @@ const RU: FaqSection[] = [
       { q: "Как взять подмастерье и что это даёт?", a: "Предложи ученичество юноше, с которым близок, на его странице. Наставляй месяц за месяцем; через 24 месяца твой подмастерье становится мастером — твоё имя растёт среди ремесла. Подмастерье предка может годы спустя постучать в дверь наследника." },
       { q: "Как начинается и кончается кровная месть?", a: "Если отношения с домом падают на дно, может вспыхнуть искра. Чем жарче вражда, тем больше засад. На экране династии можно заплатить за мир или ударить в ответ; в конце ждёт открытая битва. Неоконченная месть переходит наследнику с половиной жара." },
       { q: "Как заключаются союзы с домами — могут ли они распасться?", a: "В списке домов на экране династии можно предложить союз нехолодным домам или заслать сватов, если холост (одна попытка в месяц). Их отношение и твоя репутация задают шанс; отказ снижает отношение. Союз переходит наследнику — но если дружба остынет до дна, рукопожатие рвётся." },
+    ],
+  },
+  {
+    icon: "family", title: "Живой очаг (Новое)",
+    items: [
+      { q: "Что за маленькая карточка выбора на панели?", a: "Иногда среди месяца выпадает момент в одну строку: ливень, уличный кот, опрокинутый лоток... Выбери один из двух небольших вариантов или не трогай вовсе — с новым месяцем карточка исчезнет сама. Эффекты крошечные; она нужна, чтобы расцветить жизнь." },
+      { q: "Что даёт время с супругом?", a: "Кнопка на экране персонажа играет по нраву супруга: ласковый утешит, работящий сведёт счета (половина угощения вернётся), с упрямым повздоришь и посмеёшься, с набожным разделишь вечернюю молитву. Каждый раз растёт супружеская связь; она задаёт тепло годовщин и горечь вдовства." },
+      { q: "Зачем нужна связь с ребёнком?", a: "Кнопка «Позаботиться о детях» открывает сцену по возрасту младшего: игра с малышом, урок со школьником, ремесло с юношей, стол со взрослым. Каждая забота растит связь. Наследник с крепкой связью (60+) начинает с +2 репутации; свет очей (85+) — с +1 очком свойства." },
+      { q: "Не гаснет ли игра в старости?", a: "Нет — после 70 жизнь приносит собственные воспоминания: одиночество рассвета, пустой лоток старого друга, имя, идущее впереди тебя... Сюжетные арки после 55, внуки и стезя текке — ткань этого возраста." },
+      { q: "Почему каждая битва рассказана по-разному?", a: "У каждой стычки своя история победы и поражения: атамана заковываешь в цепи, Кара Алп преклоняет колено... Легендарные встречи (Ночной ужас, Кара Алп) находят тебя лишь когда имя твоё гремит." },
     ],
   },
 ];

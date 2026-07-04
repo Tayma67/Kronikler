@@ -2634,7 +2634,7 @@ const FLAVX: Record<Lang, Dict> = {
 const MPX: Record<Lang, Dict> = {
   tr: {
     "mp.title": "Çok Oyuncu", "mp.stat": "Yaş %1 · Sağlık %2 · %3 akçe · Şöhret %4", "mp.eat": "Ye", "mp.work": "Çalış", "mp.claimThroneBtn": "Tahta İddia Et", "mp.subtitle": "Paylaşımlı diyarda yaşayan hanedanlar",
-    "mp.serverNotSet": "Sunucu adresi henüz ayarlanmadı.", "mp.serverHint": "Sunucu adresi (wss://…)", "mp.serverSave": "Kaydet", "mp.serverSet": "Sunucu ayarlandı ✓",
+    "mp.serverNotSet": "Çok oyunculu (BETA) kendi sunucunu ya da bir dostunun diyarını gerektirir — herkese açık sunucu yoktur. Adresi gir ve bağlan.", "mp.serverHint": "Sunucu adresi (wss://…)", "mp.serverSave": "Kaydet", "mp.serverSet": "Sunucu ayarlandı ✓",
     "mp.nameLabel": "Hanedan adın", "mp.namePlaceholder": "Adını yaz", "mp.createRealm": "Diyar Kur", "mp.joinRealm": "Diyara Katıl",
     "mp.realmCode": "Diyar kodu", "mp.realmCodePlaceholder": "Kodu gir", "mp.connecting": "Bağlanıyor…", "mp.connected": "Bağlı",
     "mp.disconnected": "Bağlantı kesildi", "mp.reconnecting": "Yeniden bağlanıyor…", "mp.offline": "Çevrimdışı — internet gerekli", "mp.back": "Geri",
@@ -2663,7 +2663,7 @@ const MPX: Record<Lang, Dict> = {
   },
   en: {
     "mp.title": "Multiplayer", "mp.stat": "Age %1 · Health %2 · %3 coins · Fame %4", "mp.eat": "Eat", "mp.work": "Work", "mp.claimThroneBtn": "Claim the Throne", "mp.subtitle": "Dynasties living in a shared realm",
-    "mp.serverNotSet": "Server address is not set yet.", "mp.serverHint": "Server address (wss://…)", "mp.serverSave": "Save", "mp.serverSet": "Server set ✓",
+    "mp.serverNotSet": "Multiplayer (BETA) needs your own server or a friend's realm — there is no public server. Enter the address and connect.", "mp.serverHint": "Server address (wss://…)", "mp.serverSave": "Save", "mp.serverSet": "Server set ✓",
     "mp.nameLabel": "Your dynasty name", "mp.namePlaceholder": "Enter a name", "mp.createRealm": "Create Realm", "mp.joinRealm": "Join Realm",
     "mp.realmCode": "Realm code", "mp.realmCodePlaceholder": "Enter code", "mp.connecting": "Connecting…", "mp.connected": "Connected",
     "mp.disconnected": "Disconnected", "mp.reconnecting": "Reconnecting…", "mp.offline": "Offline — internet required", "mp.back": "Back",
@@ -2692,7 +2692,7 @@ const MPX: Record<Lang, Dict> = {
   },
   es: {
     "mp.title": "Multijugador", "mp.stat": "Edad %1 · Salud %2 · %3 monedas · Fama %4", "mp.eat": "Comer", "mp.work": "Trabajar", "mp.claimThroneBtn": "Reclamar el Trono", "mp.subtitle": "Dinastías viviendo en un reino compartido",
-    "mp.serverNotSet": "La dirección del servidor aún no está configurada.", "mp.serverHint": "Dirección del servidor (wss://…)", "mp.serverSave": "Guardar", "mp.serverSet": "Servidor configurado ✓",
+    "mp.serverNotSet": "El multijugador (BETA) requiere tu propio servidor o el reino de un amigo — no hay servidor público. Introduce la dirección y conecta.", "mp.serverHint": "Dirección del servidor (wss://…)", "mp.serverSave": "Guardar", "mp.serverSet": "Servidor configurado ✓",
     "mp.nameLabel": "Nombre de tu dinastía", "mp.namePlaceholder": "Escribe un nombre", "mp.createRealm": "Crear Reino", "mp.joinRealm": "Unirse al Reino",
     "mp.realmCode": "Código del reino", "mp.realmCodePlaceholder": "Introduce el código", "mp.connecting": "Conectando…", "mp.connected": "Conectado",
     "mp.disconnected": "Desconectado", "mp.reconnecting": "Reconectando…", "mp.offline": "Sin conexión — se requiere internet", "mp.back": "Atrás",
@@ -2721,7 +2721,7 @@ const MPX: Record<Lang, Dict> = {
   },
   pt: {
     "mp.title": "Multijogador", "mp.stat": "Idade %1 · Saúde %2 · %3 moedas · Fama %4", "mp.eat": "Comer", "mp.work": "Trabalhar", "mp.claimThroneBtn": "Reivindicar o Trono", "mp.subtitle": "Dinastias vivendo num reino partilhado",
-    "mp.serverNotSet": "O endereço do servidor ainda não está definido.", "mp.serverHint": "Endereço do servidor (wss://…)", "mp.serverSave": "Guardar", "mp.serverSet": "Servidor definido ✓",
+    "mp.serverNotSet": "O multijogador (BETA) requer o teu próprio servidor ou o reino de um amigo — não há servidor público. Insere o endereço e liga-te.", "mp.serverHint": "Endereço do servidor (wss://…)", "mp.serverSave": "Guardar", "mp.serverSet": "Servidor definido ✓",
     "mp.nameLabel": "Nome da tua dinastia", "mp.namePlaceholder": "Escreve um nome", "mp.createRealm": "Criar Reino", "mp.joinRealm": "Entrar no Reino",
     "mp.realmCode": "Código do reino", "mp.realmCodePlaceholder": "Introduz o código", "mp.connecting": "A ligar…", "mp.connected": "Ligado",
     "mp.disconnected": "Desligado", "mp.reconnecting": "A religar…", "mp.offline": "Offline — internet necessária", "mp.back": "Voltar",
@@ -2750,7 +2750,7 @@ const MPX: Record<Lang, Dict> = {
   },
   ar: {
     "mp.title": "متعدد اللاعبين", "mp.stat": "العمر %1 · الصحة %2 · %3 عملة · الشهرة %4", "mp.eat": "كُل", "mp.work": "اعمل", "mp.claimThroneBtn": "طالب بالعرش", "mp.subtitle": "سلالاتٌ تعيش في ديارٍ مشتركة",
-    "mp.serverNotSet": "عنوان الخادم لم يُضبط بعد.", "mp.serverHint": "عنوان الخادم (wss://…)", "mp.serverSave": "حفظ", "mp.serverSet": "ضُبط الخادم ✓",
+    "mp.serverNotSet": "اللعب الجماعي (تجريبي) يتطلب خادمك الخاص أو ديار صديق — لا يوجد خادم عام. أدخل العنوان واتصل.", "mp.serverHint": "عنوان الخادم (wss://…)", "mp.serverSave": "حفظ", "mp.serverSet": "ضُبط الخادم ✓",
     "mp.nameLabel": "اسم سلالتك", "mp.namePlaceholder": "اكتب اسمًا", "mp.createRealm": "أنشئ ديارًا", "mp.joinRealm": "انضمّ إلى ديار",
     "mp.realmCode": "رمز الديار", "mp.realmCodePlaceholder": "أدخل الرمز", "mp.connecting": "جارٍ الاتصال…", "mp.connected": "متصل",
     "mp.disconnected": "انقطع الاتصال", "mp.reconnecting": "إعادة الاتصال…", "mp.offline": "دون اتصال — يلزم الإنترنت", "mp.back": "رجوع",
@@ -2779,7 +2779,7 @@ const MPX: Record<Lang, Dict> = {
   },
   ru: {
     "mp.title": "Сетевая игра", "mp.stat": "Возраст %1 · Здоровье %2 · %3 монет · Слава %4", "mp.eat": "Есть", "mp.work": "Работать", "mp.claimThroneBtn": "Притязать на трон", "mp.subtitle": "Династии в общем краю",
-    "mp.serverNotSet": "Адрес сервера ещё не задан.", "mp.serverHint": "Адрес сервера (wss://…)", "mp.serverSave": "Сохранить", "mp.serverSet": "Сервер задан ✓",
+    "mp.serverNotSet": "Сетевая игра (БЕТА) требует собственного сервера или державы друга — общего сервера нет. Введи адрес и подключись.", "mp.serverHint": "Адрес сервера (wss://…)", "mp.serverSave": "Сохранить", "mp.serverSet": "Сервер задан ✓",
     "mp.nameLabel": "Имя твоей династии", "mp.namePlaceholder": "Впиши имя", "mp.createRealm": "Создать край", "mp.joinRealm": "Войти в край",
     "mp.realmCode": "Код края", "mp.realmCodePlaceholder": "Введи код", "mp.connecting": "Подключение…", "mp.connected": "На связи",
     "mp.disconnected": "Связь прервана", "mp.reconnecting": "Переподключение…", "mp.offline": "Офлайн — нужен интернет", "mp.back": "Назад",
