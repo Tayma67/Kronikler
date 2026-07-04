@@ -38,3 +38,13 @@ Kalan izinler: `INTERNET`, `VIBRATE`, `MODIFY_AUDIO_SETTINGS`, `FOREGROUND_SERVI
 ## Notlar
 - Oyun tamamen **çevrimdışı**; sunucu/hesap gerektirmez, kayıt AsyncStorage'da (`kronikler_save_v1`).
 - Ses varsayılan **kapalı** (Ayarlar'dan açılır).
+
+## Yayın Günü Kontrol Listesi (son 24 saat)
+
+1. **Değişiklik dondurma:** Yayından 12 saat önce yeni özellik girmez; yalnız kritik düzeltme (tam doğrulama hattıyla).
+2. **Son build:** En son commit'i kapsayan APK'yı tetikle, `apk-latest` linkinin o build'i verdiğini indirerek doğrula.
+3. **Temiz cihaz duman testi:** APK'yı hiç kurulmamış bir telefona kur → yeni oyun → isim/cinsiyet (kadınla da dene) → ilk 12 ay → kayıt/çık/gir → "Devam Et".
+4. **Eski kayıt testi:** Önceki sürüm yüklü cihazda üzerine kur; kayıt açılmalı (göç bekçisi CI'da da koşuyor).
+5. **Paylaşım linki:** `https://github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk` — kalıcıdır, her build'de en günceli verir.
+6. **MP (opsiyonel):** Sunucu güncellemesi için `cd server && npx wrangler deploy` (canlı v2'de kaldıysa MP BETA eski protokolde çalışır; SP etkilenmez).
+7. **Kalıcı imza (opsiyonel, Play Store öncesi şart):** `keytool -genkeypair -v -keystore kronikler.keystore -alias kronikler -keyalg RSA -keysize 2048 -validity 10000` → GitHub Secrets'a `KEYSTORE_BASE64` + `KEYSTORE_PASSWORD` → sonraki build otomatik kalıcı imzalı. İmza değişimi mevcut kurulumlara "kaldır-yeniden kur" gerektirir; geniş dağıtımdan ÖNCE yapılmalı.
