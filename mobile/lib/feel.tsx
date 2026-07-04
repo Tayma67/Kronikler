@@ -11,7 +11,7 @@ import { C, F } from "./theme";
 import { GameIcon } from "./icons";
 
 // Hangi alanları izliyoruz + nasıl gösteriliyor. "feel" katmanı: kimlik/itibar değişimleri anında patlar.
-type Watch = { path: string; icon: string; color: string; label: string; min: number; onlyDrop?: boolean };
+type Watch = { path: string; icon: string; color: string; label: string; min: number; onlyDrop?: boolean; skipFromZero?: boolean };
 
 interface Toast { id: number; text: string; color: string; icon: string }
 
@@ -109,9 +109,12 @@ export function StatDeltaOverlay() {
     { path: "nam.capkin",     icon: "lyre", color: "#C77BA6", label: t("nam.capkin"), min: 1 },
     { path: "nam.dindar",     icon: "prayer-beads", color: "#9C7BC4", label: t("nam.dindar"), min: 1 },
     { path: "nam.mert",       icon: "crossed-swords", color: "#E0922E", label: t("nam.mert"), min: 1 },
+    { path: "spouse_bond",    icon: "ring", color: "#C9A84C", label: t("feel.spouseBond"), min: 2, skipFromZero: true },
+    { path: "child_bond._dev", icon: "baby", color: "#7FA66A", label: t("feel.childBond"), min: 2, skipFromZero: true },
   ];
 
   const read = (p: any, path: string): number => {
+    if (path === "child_bond._dev") { const cb = p.child_bond || {}; let s = 0; for (const k in cb) s += (cb[k] ?? 50) - 50; return s; } // varsayılan 50'den sapma: ilk dokunuşta dev sıçrama yok
     const parts = path.split(".");
     let v: any = p;
     for (const k of parts) v = v?.[k];
@@ -133,6 +136,7 @@ export function StatDeltaOverlay() {
     for (const w of WATCH) {
       const d = snap[w.path] - (prev.current[w.path] ?? snap[w.path]);
       if (Math.abs(d) < w.min) continue;
+      if (w.skipFromZero && (prev.current[w.path] ?? 0) === 0 && d > 0 && d >= w.min + 3) continue; // evlilik/ilk kayıt kurulumu: +40 gibi sıçrama gürültüsü olmasın
       if (w.onlyDrop && d > 0) continue;
       const sign = d > 0 ? "+" : "−";
       const txt = w.label ? `${sign}${Math.abs(Math.round(d))} ${w.label}` : `${sign}${Math.abs(Math.round(d))}`;
