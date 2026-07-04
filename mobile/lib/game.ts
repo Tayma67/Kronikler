@@ -451,13 +451,14 @@ export interface Faction {
   joinRep: number;              // katılmak için gereken örgüt itibarı (görevle kazanılır)
   perk: string;                 // üyelik avantajı açıklaması
   task: { label: string; reward: number; standing: number; desc: string };
+  taskAlts?: string[]; // ek görev metni varyantları (yalnız anlatı — ödül formülü task'tan; tekrar hissini kırar, denge değişmez)
 }
 export const FACTIONS: Faction[] = [
-  { id: "tuccar", name: "Tüccarlar Loncası", icon: "pazar", blurb: "İpek yolunun akçesi onların avucunda döner.", stat: "charisma", joinRep: 30, perk: "Pazarda alış fiyatları senin için biraz düşer.", task: { label: "Kervan hesabı tut", reward: 28, standing: 10, desc: "Loncanın defterlerini denkleştir." } },
-  { id: "demirci", name: "Demirciler Loncası", icon: "anvil", blurb: "Köz ve örs; her kılıcın ve sabanın atası.", stat: "strength", joinRep: 30, perk: "İşten kazancın artar (zanaat eli).", task: { label: "Ocakta körük çek", reward: 24, standing: 10, desc: "Usta için ağır bir sipariş bitir." } },
-  { id: "asker", name: "Asker Ocağı", icon: "karakter", blurb: "Sınır boylarının kalkanı; sancağın gölgesi.", stat: "strength", joinRep: 40, perk: "Suç ve tehlikede sağlık kaybın azalır.", task: { label: "Devriyeye çık", reward: 32, standing: 12, desc: "Gece nöbetinde yolları kolla." } },
-  { id: "sifaci", name: "Şifacılar Meclisi", icon: "healing", blurb: "Ot, dua ve sabır; canın sessiz bekçileri.", stat: "intelligence", joinRep: 30, perk: "Her ay az da olsa sağlık tazelenir.", task: { label: "Hastalara bak", reward: 18, standing: 10, desc: "Köyün dermansızlarına şifa dağıt." } },
-  { id: "golge", name: "Gölge Kardeşliği", icon: "hood", blurb: "Adı anılmaz, yüzü görülmez; ama her kapıda bir kulağı vardır.", stat: "charisma", joinRep: 25, perk: "Gölge işlerinde yakalanma riskin azalır.", task: { label: "Haber taşı", reward: 22, standing: 12, desc: "Kardeşlik için sessizce bir sır ulaştır." } },
+  { id: "tuccar", name: "Tüccarlar Loncası", icon: "pazar", blurb: "İpek yolunun akçesi onların avucunda döner.", stat: "charisma", joinRep: 30, perk: "Pazarda alış fiyatları senin için biraz düşer.", task: { label: "Kervan hesabı tut", reward: 28, standing: 10, desc: "Loncanın defterlerini denkleştir." }, taskAlts: ["Kervana refakat et", "Pazar kavgasını yatıştır"] },
+  { id: "demirci", name: "Demirciler Loncası", icon: "anvil", blurb: "Köz ve örs; her kılıcın ve sabanın atası.", stat: "strength", joinRep: 30, perk: "İşten kazancın artar (zanaat eli).", task: { label: "Ocakta körük çek", reward: 24, standing: 10, desc: "Usta için ağır bir sipariş bitir." }, taskAlts: ["Nal siparişini yetiştir", "Çırakları çalıştır"] },
+  { id: "asker", name: "Asker Ocağı", icon: "karakter", blurb: "Sınır boylarının kalkanı; sancağın gölgesi.", stat: "strength", joinRep: 40, perk: "Suç ve tehlikede sağlık kaybın azalır.", task: { label: "Devriyeye çık", reward: 32, standing: 12, desc: "Gece nöbetinde yolları kolla." }, taskAlts: ["Sur nöbetine dur", "Yol kesen çeteyi dağıt"] },
+  { id: "sifaci", name: "Şifacılar Meclisi", icon: "healing", blurb: "Ot, dua ve sabır; canın sessiz bekçileri.", stat: "intelligence", joinRep: 30, perk: "Her ay az da olsa sağlık tazelenir.", task: { label: "Hastalara bak", reward: 18, standing: 10, desc: "Köyün dermansızlarına şifa dağıt." }, taskAlts: ["Dağdan ot getir", "Loğusa evine koş"] },
+  { id: "golge", name: "Gölge Kardeşliği", icon: "hood", blurb: "Adı anılmaz, yüzü görülmez; ama her kapıda bir kulağı vardır.", stat: "charisma", joinRep: 25, perk: "Gölge işlerinde yakalanma riskin azalır.", task: { label: "Haber taşı", reward: 22, standing: 12, desc: "Kardeşlik için sessizce bir sır ulaştır." }, taskAlts: ["Bir mührü sahtele", "Kulağı delik ol"] },
 ];
 export function factionById(id: string | null): Faction | undefined { return FACTIONS.find((f) => f.id === id); }
 // Fraksiyon arketipleri — AI'ın MANTIKLI davranması için (şifacı savaş açmaz, müttefikler birbirine saldırmaz).
@@ -3899,7 +3900,11 @@ export function doFactionTask(prev: GameState, id: string): GameState {
   }
   gainSkill(s, f.stat === "strength" ? "combat" : f.stat === "charisma" ? "social" : "trade", 6);
   const domNote = dom > 1 ? " Loncan bu sancağa hâkim — sözün daha çok geçti." : "";
-  push(s, "örgüt_görev", `${f.name} için "${f.task.label}" görevini gördün (+${reward} akçe, itibar arttı).${domNote}`, "kişisel", false, { k: "evj.factionTask", p: [{ fc: id }, { ftl: id }, reward, dom > 1 ? { sfx: "sfx.factionDom" } : ""] });
+  const alts = f.taskAlts || [];
+  const tvi = Math.floor(Math.random() * (1 + alts.length));
+  const tlabel = tvi === 0 ? f.task.label : alts[tvi - 1];
+  const ftlKey = tvi === 0 ? id : id + "." + tvi; // varyant 0 eski anahtarı kullanır
+  push(s, "örgüt_görev", `${f.name} için "${tlabel}" görevini gördün (+${reward} akçe, itibar arttı).${domNote}`, "kişisel", false, { k: "evj.factionTask", p: [{ fc: id }, { ftl: ftlKey }, reward, dom > 1 ? { sfx: "sfx.factionDom" } : ""] });
   return s;
 }
 
