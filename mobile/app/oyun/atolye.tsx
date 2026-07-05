@@ -7,20 +7,21 @@ import { ITEMS } from "../../lib/world";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
+import { professionNameL } from "../../lib/locale-data";
 import { hap } from "../../lib/haptics";
 import { playTap } from "../../lib/sound";
 import { BackLabel, PageHeader, Pill } from "../../lib/ui";
 
 // Tarifleri kategoriye ayır (görsel düzen için).
-const CAT: Record<string, "food" | "arms" | "heal"> = {
-  un: "food", ekmek: "food", corba: "food", turfanda: "food", tuzlu_balik: "food", balli_corek: "food", yun_kaftan: "food",
+const CAT: Record<string, "food" | "arms" | "heal" | "wear"> = {
+  un: "food", ekmek: "food", corba: "food", turfanda: "food", tuzlu_balik: "food", balli_corek: "food", yun_kaftan: "wear",
   bicak: "arms", kilic: "arms", celik_kilic: "arms", kalkan: "arms", deri_zirh: "arms",
   yay: "arms", savas_balta: "arms", zincir_zirh: "arms",
   iksir: "heal",
 };
-const CAT_ORDER: ("food" | "arms" | "heal")[] = ["food", "arms", "heal"];
-const CAT_TONE = { food: "#7FA66A", arms: "#E0922E", heal: "#6FA0C0" };
-const CAT_ICON = { food: "ye", arms: "silah", heal: "saglik" };
+const CAT_ORDER: ("food" | "arms" | "heal" | "wear")[] = ["food", "arms", "heal", "wear"];
+const CAT_TONE = { food: "#7FA66A", arms: "#E0922E", heal: "#6FA0C0", wear: "#B08FBE" };
+const CAT_ICON = { food: "ye", arms: "silah", heal: "saglik", wear: "wool" };
 // Eşya ikonu — türüne göre (emoji yerine GameIcon).
 function itmIcon(it: any): string {
   if (!it) return "menu";
@@ -39,7 +40,7 @@ function itmIcon(it: any): string {
 export default function Atolye() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const skill = p.skills.crafting;
@@ -47,6 +48,7 @@ export default function Atolye() {
   const RecipeCard = ({ r }: { r: Recipe }) => {
     const tone = CAT_TONE[CAT[r.id]];
     const locked = skill < r.minSkill;
+    const profLocked = !!r.prof && p.profession !== r.prof; // ustalık tarifi: kapının nedeni butonda yazsın
     const crafted = p.craft_turn === state.turn; // bu ay üretildi → tur dolana dek kapalı
     const able = canCraft(p, r) && !crafted;
     const inputs = Object.entries(r.inputs);
@@ -89,7 +91,7 @@ export default function Atolye() {
           style={{ marginTop: 12, paddingVertical: 11, borderRadius: 9, borderWidth: 1, alignItems: "center",
             borderColor: able ? tone + "88" : C.border, backgroundColor: able ? tone + "1F" : C.bg }}>
           <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: able ? tone : C.parchmentMuted }}>
-            {able ? t("misc.craft") : crafted ? t("wsp.craftedTurn") : locked ? applyParams(t("wsp.locked"), [r.minSkill]) : t("wsp.noMat")}
+            {able ? t("misc.craft") : profLocked ? applyParams(t("wsp.profOnly"), [professionNameL(r.prof!, lang)]) : crafted ? t("wsp.craftedTurn") : locked ? applyParams(t("wsp.locked"), [r.minSkill]) : t("wsp.noMat")}
           </Text>
         </Pressable>
       </View>

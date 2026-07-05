@@ -373,7 +373,7 @@ function npcLifeTick(s: GameState) {
       else s.world.npcEvo[n.id] = { dead: true };
       s.world.npcBorn.push(npcBaby(s, loc)); // her ölüm bir doğumla dengelenir → nüfus stabil
       // Ölen NPC oyuncunun işçisiyse mülkten çıkar (slot boşalsın) + haber ver.
-      for (const pr of s.player.properties) { if (pr.workers?.includes(n.id)) { pr.workers = pr.workers.filter((id) => id !== n.id); push(s, "mülk", `İşçin ${n.name} vefat etti; ${PROPERTY_TYPES[pr.type]?.name || "mülkünde"} bir yer boşaldı.`, "kişisel", false, { k: "npclife.workerDied", p: [n.name, { pt2: pr.type }] }); } }
+      for (const pr of s.player.properties) { if (pr.workers?.includes(n.id)) { pr.workers = pr.workers.filter((id) => id !== n.id); push(s, "mülk", `İşçin ${n.name} vefat etti; mülkünde bir yer boşaldı.`, "kişisel", false, { k: "npclife.workerDied", p: [n.name, { pt2: pr.type }] }); } }
       if (!knownGone && s.npc_state?.[n.id]) knownGone = n.name;
     }
   }
