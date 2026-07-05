@@ -2,6 +2,21 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 83-92 paketi (5 Temmuz, akşam)
+
+**Tek cümle (mağaza/what's new):**
+TR: "Beş yeni sistem: gençken sebepsiz ölüm bitti, eklem ağrısı yaşlılığın yeni çilesi, şehirlerin başına düğün-göç-maden geldi, mektep renklendi, at gerçek yol arkadaşı oldu — artı her mesleğe ve loncaya yeni hikâyeler."
+EN: "Five new systems: no more unfair early deaths, aching joints as a new trial of age, weddings-migrations-mines hit the cities, school days got richer, and the horse became a true companion — plus new tales for every trade and guild."
+
+**Öne çıkanlar:**
+- **Ölüm eğrisi:** 40 yaş öncesi sebepsiz ölüm %13'ten %4'e; medyan ömür korunuyor (1.500 hayatlık simülasyonla kalibre).
+- **Eklem Ağrısı:** İkinci kronik — 48 sonrası yaştan gelir, sağlıklıyı da bulur; sızıntısı hafif, tutulması sık, hekim kürü inatçı.
+- **Şehir hâlleri 11 tipe çıktı:** Bey düğünü (sofrada ikram, lüks pahalı), göç dalgası (ekmek kıt), yeni maden damarı (demir ucuz) — hepsi refahı, asayişi ve pazarı büker; artık haber ekranında da okunuyor.
+- **Mektep:** Hattat sayfası, kaside ezberi, bahçe imecesi — 9 ders olayı.
+- **At derinliği:** Panayırlarda at yarışı (zafer kese ve nam), düşen nal ve nalbant; kese boşsa nalbant hatıra nallar.
+- **Hikâye genişlemesi:** 15 mesleğin hepsi 4 iş hikâyeli, her loncaya üçüncü görev, selamlara ikinci ağız, 3 yeni dedikodu, 4 yeni ikilem, 3 mikro an, 3 ihtiyarlık anısı.
+- **Cila:** Yedek geri yükleme (cihaz değişimi sigortası), MP'de cinsiyet seçimi, adsız atlara göçte ad, SSS güncel.
+
 ## Dalga 62-82 paketi (5 Temmuz)
 
 **Tek cümle (mağaza/what's new):**
