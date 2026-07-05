@@ -4,7 +4,7 @@ import { mkRng, generateNPCs } from "./world";
 import { Lang, placeName, goalL } from "./locale-data";
 import { tFor } from "./i18n";
 
-export interface NewsItem { id: string; kind: "haber" | "dedikodu"; title: string; body: string; cat?: string; } // cat: haber kategorisi (görsel simge için)
+export interface NewsItem { id: string; kind: "haber" | "dedikodu"; title: string; body: string; cat?: string; local?: boolean; } // cat: haber kategorisi (görsel simge için); local: oyuncunun kendi şehrinden
 
 const DIYAR = ["Üzümlü", "Akpınar", "Demirhan", "Yenişehir", "Karaağaç", "Söğütlü", "Bozkır"];
 // Bey: unvan anahtarı (yerelleşir) + özel ad (korunur).
@@ -17,7 +17,7 @@ const NEWS_IDS = ["hasat", "kuraklik", "kervan", "vergi", "sinir", "salgin", "ha
 function pick<T>(a: T[], r: () => number): T { return a[Math.floor(r() * a.length)]; }
 
 // Bir tur için diyar haberleri (1-2 adet) üretir; seçilen dile göre.
-export function worldNews(turn: number, seed: number, lang: Lang = "tr"): NewsItem[] {
+export function worldNews(turn: number, seed: number, lang: Lang = "tr", playerPlace?: string): NewsItem[] { // playerPlace: verilirse haberler ara sıra oyuncunun şehrinden düşer
   const r = mkRng((seed ^ (turn * 2654435761)) >>> 0);
   const n = 1 + Math.floor(r() * 2);
   const out: NewsItem[] = [];
@@ -27,12 +27,13 @@ export function worldNews(turn: number, seed: number, lang: Lang = "tr"): NewsIt
     while (used.has(idx) && used.size < NEWS_IDS.length) idx = (idx + 1) % NEWS_IDS.length;
     used.add(idx);
     const id = NEWS_IDS[idx];
-    const place = placeName(pick(DIYAR, r), lang);
+    const isLocal = !!playerPlace && r() < 0.35; // ~üç haberden biri kendi diyarından
+    const place = isLocal ? playerPlace : placeName(pick(DIYAR, r), lang);
     const bey = BEY[Math.floor(r() * BEY.length)];
     const beyStr = `${tFor(lang, bey.tk)} ${bey.n}`;
     const title = tFor(lang, `news.${id}.t`);
     const body = tFor(lang, `news.${id}.b`).replace("%p", place).replace("%b", beyStr);
-    out.push({ id: `news_${turn}_${i}`, kind: "haber", title, body, cat: id });
+    out.push({ id: `news_${turn}_${i}`, kind: "haber", title, body, cat: id, local: isLocal });
   }
   return out;
 }

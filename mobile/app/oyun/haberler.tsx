@@ -19,7 +19,7 @@ export default function Haberler() {
   useEffect(() => { apply((s) => (s.newsSeenTurn === s.turn ? s : { ...s, newsSeenTurn: s.turn })); }, [state?.turn]); // görüldü: rozet sıfırlanır (aynı tursa yazma yok)
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const cal = currentCalendar(state.turn);
-  const news = worldNews(state.turn, state.seed, lang);
+  const news = worldNews(state.turn, state.seed, lang, placeName(state.player.location_name, lang));
   const gossip = rumors(state.turn, state.seed, lang, npcsOf(state, lang)); // dedikodu, bulunduğun yerin gerçek (yaşayan) ahalisini anar
   const tips = state.tips || [];
   // Diyarın gerçek ahvali: history'de biriken makro olaylar (savaş, sancak el değiştirme, kıtlık) — hepsi zaten 6 dilde.
@@ -40,10 +40,11 @@ export default function Haberler() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10, marginBottom: 8 }}><GameIcon name="haberler" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("hab.news")}</Text></View>
         {news.map((n) => (
-          <View key={n.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.gold, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
+          <View key={n.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: n.local ? "rgba(201,168,76,0.45)" : C.border, borderLeftColor: C.gold, borderLeftWidth: n.local ? 4 : 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               {n.cat && CAT_ICON[n.cat] ? <GameIcon name={CAT_ICON[n.cat]} size={12} color={C.gold} /> : null}
               <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5 }}>{n.title}</Text>
+              {n.local ? <View style={{ marginLeft: "auto", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, backgroundColor: "rgba(201,168,76,0.14)", borderWidth: 1, borderColor: "rgba(201,168,76,0.4)" }}><Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: C.gold }}>{t("hab.local").toUpperCase()}</Text></View> : null}
             </View>
             <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, lineHeight: 19, marginTop: 4 }}>{n.body}</Text>
           </View>
