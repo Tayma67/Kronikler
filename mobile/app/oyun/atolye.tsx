@@ -13,7 +13,7 @@ import { BackLabel, PageHeader, Pill } from "../../lib/ui";
 
 // Tarifleri kategoriye ayır (görsel düzen için).
 const CAT: Record<string, "food" | "arms" | "heal"> = {
-  un: "food", ekmek: "food", corba: "food",
+  un: "food", ekmek: "food", corba: "food", turfanda: "food", tuzlu_balik: "food", balli_corek: "food", yun_kaftan: "food",
   bicak: "arms", kilic: "arms", celik_kilic: "arms", kalkan: "arms", deri_zirh: "arms",
   yay: "arms", savas_balta: "arms", zincir_zirh: "arms",
   iksir: "heal",

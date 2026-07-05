@@ -5736,8 +5736,13 @@ function courtTick(s: GameState) {
 }
 
 // ── Zanaat / üretim zincirleri — hammaddeyi mamule çevir ──
-export interface Recipe { id: string; out: string; outQty: number; inputs: Record<string, number>; minSkill: number; }
+export interface Recipe { id: string; out: string; outQty: number; inputs: Record<string, number>; minSkill: number; prof?: string; } // prof: yalnız o mesleğin ustalık tarifi
 export const RECIPES: Recipe[] = [
+  // ── Meslek ustalık tarifleri: zanaat kolu olmayan mesleklere kendi tezgâhı (değer öz-kullanımda; arbitraj kapalı) ──
+  { id: "turfanda",    out: "turfanda",    outQty: 1, inputs: { bugday: 2 },      minSkill: 1, prof: "çiftçi" },
+  { id: "tuzlu_balik", out: "tuzlu_balik", outQty: 1, inputs: { balik: 2 },       minSkill: 1, prof: "balıkçı" },
+  { id: "balli_corek", out: "balli_corek", outQty: 1, inputs: { un: 1, bal: 1 },  minSkill: 1, prof: "fırıncı" },
+  { id: "yun_kaftan",  out: "yun_kaftan",  outQty: 1, inputs: { yun: 3 },         minSkill: 2, prof: "çoban" },
   { id: "un",        out: "un",        outQty: 1, inputs: { bugday: 2 },  minSkill: 0 },
   { id: "ekmek",     out: "ekmek",     outQty: 2, inputs: { un: 1 },      minSkill: 0 },
   { id: "corba",     out: "corba",     outQty: 1, inputs: { balik: 1 },   minSkill: 0 },
@@ -5753,6 +5758,7 @@ export const RECIPES: Recipe[] = [
   { id: "zincir_zirh", out: "zincir_zirh", outQty: 1, inputs: { demir: 4 }, minSkill: 5 },
 ];
 export function canCraft(p: Player, r: Recipe): boolean {
+  if (r.prof && p.profession !== r.prof) return false; // ustalık tarifi: meslek dışına kapalı
   if (p.skills.crafting < r.minSkill) return false;
   return Object.entries(r.inputs).every(([id, q]) => (p.inventory[id] || 0) >= q);
 }
