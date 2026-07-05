@@ -44,7 +44,7 @@ const TR: FaqSection[] = [
     items: [
       { q: "Nasıl para kazanırım?", a: "Bir meslek tut ve çalış; pazarda alıp sat; atölyede üretip sat; mülk al, kira/gelir topla; lonca görevleri ve fırsatları üstlen." },
       { q: "Pazarlık nasıl işler?", a: "Pazarlık şansın Karizma + Ticaret becerine bağlıdır; başarırsan indirim alırsın. Tanınmışsan (sevilen ya da korkulan) sözün daha çok geçer." },
-      { q: "Atölyede üretim için ne gerekir?", a: "Meslek şartı YOKTUR. Tek gereken: yeterli Zanaat becerisi ve gerekli malzeme. Her tarifin kartında gerekli seviye ve malzeme (var/gerek) yazılıdır. Üretmek Zanaat'ı geliştirir." },
+      { q: "Atölyede üretim için ne gerekir?", a: "Sıradan tarifler mesleğe bakmaz: yeterli Zanaat becerisi ve malzeme yeter. Yalnız ustalık tarifleri (turfanda sepeti, tuzlu balık, ballı çörek, yün kaftan) o mesleğin elindedir — kartında yazar. Üretmek Zanaat'ı geliştirir." },
     ],
   },
   {
@@ -57,6 +57,7 @@ const TR: FaqSection[] = [
   {
     icon: "crossed-swords", title: "Loncalar · Savaş · Suç",
     items: [
+      { q: "Zindana nasıl düşerim, nasıl çıkarım?", a: "Ağır suçta (soygun ve üstü) yakalanırsan kadı zindan hükmü verebilir; asker ocağındaysan ceza yarıya iner. İçerideyken tezgâh, yol, lonca, sefer ve suç kapalıdır; her ay cezadan bir ay erir. Erken çıkışın tek yolu gardiyana rüşvet — pahalıdır, şerefinden götürür." },
       { q: "Loncaya nasıl katılırım?", a: "Önce loncaya görev yaparak itibar (standing) biriktir; eşiği geçince saflarına katılırsın. Onurlu loncalar mert/şerefe, Gölge Kardeşliği korku/zalime daha hızlı güvenir." },
       { q: "Savaş/cephe nasıl çalışır?", a: "Mensubu olduğun teşkilat savaşa girerse cepheye gidebilirsin; zafer şöhret, şeref ve mert namı kazandırır. Düşmanların (nemesis) seni bulabilir." },
       { q: "Suç işlemeli miyim?", a: "Yankesicilik/soygun hızlı para getirir ama risklidir. Başarı Karizma + korku gücüne; yakalanma cezası itibarına bağlıdır. Şerefli/dindar biri yakalanınca çok daha fazla kaybeder." },
@@ -153,7 +154,7 @@ const EN: FaqSection[] = [
     items: [
       { q: "How do I earn money?", a: "Take a profession and work; buy and sell at market; craft and sell; buy property for income; take guild tasks and opportunities." },
       { q: "How does haggling work?", a: "Your bargain chance depends on Charisma + Trade skill; success gets you a discount. If you're well known (loved or feared) your word carries more weight." },
-      { q: "What does crafting require?", a: "NO profession is required. All you need is enough Crafting skill and the materials. Each recipe card shows the required level and materials (have/need). Crafting raises your Crafting skill." },
+      { q: "What does crafting require?", a: "Ordinary recipes need no profession: enough Crafting skill and materials will do. Only master recipes (early-harvest basket, salted fish, honey bun, wool caftan) belong to their trade — the card says so. Crafting raises your Crafting skill." },
     ],
   },
   {
@@ -166,6 +167,7 @@ const EN: FaqSection[] = [
   {
     icon: "crossed-swords", title: "Guilds · War · Crime",
     items: [
+      { q: "How do I end up in the dungeon — and get out?", a: "Get caught at a serious crime (robbery or worse) and the qadi may sentence you; the Soldiers' Hearth serves half. Inside, the workshop, roads, guilds, campaigns and crime are closed; each month melts a month off. The only early exit is bribing the jailer — costly, and it stains your honor." },
       { q: "How do I join a guild?", a: "First build standing by doing guild tasks; once past the threshold you can join. Honorable guilds trust valor/honor faster; the Shadow Brotherhood trusts fear/cruelty." },
       { q: "How does war work?", a: "If your faction goes to war you can join the front; victory grants fame, honor and valiant nam. Enemies (a nemesis) may come looking for you." },
       { q: "Should I commit crime?", a: "Pickpocketing/robbery bring quick money but are risky. Success scales with Charisma + fear; the penalty if caught scales with your standing. An honorable/pious person loses far more when caught." },
@@ -263,7 +265,7 @@ const ES: FaqSection[] = [
     items: [
       { q: "¿Cómo gano dinero?", a: "Toma una profesión y trabaja; compra y vende en el mercado; produce en el taller y vende; compra propiedades y cobra rentas e ingresos; acepta tareas de gremio y oportunidades." },
       { q: "¿Cómo funciona el regateo?", a: "Tu opción de regateo depende de Carisma + habilidad de Comercio; si aciertas, consigues descuento. Si eres conocido (querido o temido), tu palabra pesa más." },
-      { q: "¿Qué necesito para producir en el taller?", a: "NO exige profesión. Solo necesitas suficiente habilidad de Artesanía y los materiales requeridos. La carta de cada receta muestra el nivel y los materiales necesarios (tienes/faltan). Producir desarrolla la Artesanía." },
+      { q: "¿Qué necesito para producir en el taller?", a: "Las recetas comunes no piden oficio: basta con Artesanía suficiente y los materiales. Solo las recetas de maestría (cesta de primicias, pescado en salazón, bollo de miel, caftán de lana) pertenecen a su oficio — lo indica la carta. La carta de cada receta muestra el nivel y los materiales necesarios (tienes/faltan). Producir desarrolla la Artesanía." },
     ],
   },
   {
@@ -276,6 +278,7 @@ const ES: FaqSection[] = [
   {
     icon: "crossed-swords", title: "Gremios · Guerra · Crimen",
     items: [
+      { q: "¿Cómo caigo en la mazmorra y cómo salgo?", a: "Si te atrapan en un crimen grave (asalto o peor) el cadí puede sentenciarte; el Hogar de Soldados cumple la mitad. Dentro, el taller, los caminos, los gremios, las campañas y el crimen quedan cerrados; cada mes funde un mes de condena. La única salida temprana es sobornar al carcelero — caro, y mancha tu honor." },
       { q: "¿Cómo me uno a un gremio?", a: "Primero acumula prestigio (standing) haciendo tareas para el gremio; al superar el umbral entras en sus filas. Los gremios honorables confían antes en el valiente y honorable; la Hermandad de la Sombra, en el temor y la crueldad." },
       { q: "¿Cómo funciona la guerra/el frente?", a: "Si la organización a la que perteneces entra en guerra, puedes ir al frente; la victoria da fama, honor y renombre de Valiente. Tus enemigos (némesis) pueden encontrarte." },
       { q: "¿Debería cometer crímenes?", a: "El carterismo y el robo dan dinero rápido, pero son arriesgados. El éxito depende de Carisma + tu poder de temor; el castigo si te atrapan, de tu prestigio. Alguien honorable o devoto pierde mucho más al ser atrapado." },
@@ -372,7 +375,7 @@ const PT: FaqSection[] = [
     items: [
       { q: "Como ganho dinheiro?", a: "Arranja uma profissão e trabalha; compra e vende no mercado; produz na oficina e vende; compra propriedades e recolhe rendas/rendimentos; aceita tarefas de guilda e oportunidades." },
       { q: "Como funciona o regateio?", a: "A tua hipótese no regateio depende do Carisma + perícia de Comércio; se tiveres êxito, obténs desconto. Se fores conhecido (amado ou temido), a tua palavra pesa mais." },
-      { q: "O que é preciso para produzir na oficina?", a: "NÃO é preciso profissão. Só precisas de perícia de Ofício suficiente e dos materiais necessários. O cartão de cada receita mostra o nível e os materiais exigidos (tens/precisas). Produzir desenvolve o Ofício." },
+      { q: "O que é preciso para produzir na oficina?", a: "As receitas comuns não pedem profissão: basta Ofício suficiente e os materiais. Só as receitas de mestria (cesto de primícias, peixe salgado, pão de mel, cafetã de lã) pertencem ao seu ofício — o cartão indica-o. O cartão de cada receita mostra o nível e os materiais exigidos (tens/precisas). Produzir desenvolve o Ofício." },
     ],
   },
   {
@@ -385,6 +388,7 @@ const PT: FaqSection[] = [
   {
     icon: "crossed-swords", title: "Guildas · Guerra · Crime",
     items: [
+      { q: "Como caio na masmorra e como saio?", a: "Se fores apanhado num crime grave (assalto ou pior) o cádi pode sentenciar-te; o Lar dos Soldados cumpre metade. Lá dentro, a oficina, as estradas, as guildas, as campanhas e o crime ficam fechados; cada mês derrete um mês de pena. A única saída antecipada é subornar o carcereiro — caro, e mancha a tua honra." },
       { q: "Como entro numa guilda?", a: "Primeiro acumula reputação (standing) fazendo tarefas para a guilda; ao passares o limiar, juntas-te às fileiras. As guildas honradas confiam mais depressa no valente/honrado; a Irmandade da Sombra, no medo/cruel." },
       { q: "Como funciona a guerra/frente?", a: "Se a organização a que pertences entrar em guerra, podes ir para a frente; a vitória traz fama, honra e renome de valente. Os teus inimigos (némesis) podem encontrar-te." },
       { q: "Devo cometer crimes?", a: "Bater carteiras/assaltar rende dinheiro rápido mas é arriscado. O êxito depende do Carisma + poder do medo; o castigo, se fores apanhado, depende da tua reputação. Quem é honrado/devoto perde muito mais ao ser apanhado." },
@@ -481,7 +485,7 @@ const AR: FaqSection[] = [
     items: [
       { q: "كيف أكسب المال؟", a: "اتّخذ مهنة واعمل؛ بِع واشترِ في السوق؛ أنتج في الورشة وبِع؛ اشترِ أملاكًا واجمع الإيجار/الدخل؛ وتولَّ مهامّ النقابة والفرص." },
       { q: "كيف تعمل المساومة؟", a: "حظّك في المساومة يعتمد على الكاريزما + مهارة التجارة؛ فإن نجحت نلت خصمًا. وإن كنت معروفًا (محبوبًا أو مهيبًا) كان لكلمتك وقع أكبر." },
-      { q: "ماذا يلزم للإنتاج في الورشة؟", a: "لا يُشترَط أيّ مهنة. كل ما يلزم: مهارة حِرفة كافية والموادّ اللازمة. وفي بطاقة كل وصفة يُكتَب المستوى المطلوب والموادّ (المتوافر/المطلوب). والإنتاج يطوّر الحِرفة." },
+      { q: "ماذا يلزم للإنتاج في الورشة؟", a: "الوصفات العادية لا تشترط مهنة: تكفي مهارة حِرفة كافية والموادّ. أما وصفات الإتقان (سلة البواكير، السمك المملح، كعكة العسل، قفطان الصوف) فهي حكر على أصحاب مهنتها — والبطاقة تبيّن ذلك. وفي بطاقة كل وصفة يُكتَب المستوى المطلوب والموادّ (المتوافر/المطلوب). والإنتاج يطوّر الحِرفة." },
     ],
   },
   {
@@ -494,6 +498,7 @@ const AR: FaqSection[] = [
   {
     icon: "crossed-swords", title: "النقابات · الحرب · الجريمة",
     items: [
+      { q: "كيف أقع في الزنزانة وكيف أخرج؟", a: "إن قُبض عليك في جريمة كبيرة (سطو فما فوق) فقد يحكم القاضي بالسجن؛ وأهل موقد الجند يقضون نصف المدة. في الداخل تُغلق الورشة والطرق والنقابات والحملات والجريمة؛ وكل شهر يذيب شهرًا من الحكم. المخرج المبكر الوحيد رشوة السجّان — وهي مكلفة وتلطّخ شرفك." },
       { q: "كيف أنضمّ إلى نقابة؟", a: "اكسب أولًا مكانة لدى النقابة بأداء المهامّ؛ فإذا تجاوزت العتبة انضممت إلى صفوفها. النقابات الشريفة تثق بالشجاع/الشريف أسرع، وأخوية الظل تثق بالخوف/القسوة أسرع." },
       { q: "كيف تعمل الحرب/الجبهة؟", a: "إذا دخل التنظيم الذي تنتمي إليه حربًا أمكنك الذهاب إلى الجبهة؛ والنصر يكسبك شهرة وشرفًا وصيت الشجاع. وقد يجدك أعداؤك (الغريم)." },
       { q: "هل أرتكب الجرائم؟", a: "النشل/السطو يجلبان مالًا سريعًا لكنهما محفوفان بالخطر. النجاح يعتمد على الكاريزما + قوّة الخوف؛ وعقوبة القبض عليك تعتمد على سمعتك. والشريف/التقيّ يخسر عند القبض عليه أكثر بكثير." },
@@ -590,7 +595,7 @@ const RU: FaqSection[] = [
     items: [
       { q: "Как заработать?", a: "Возьми профессию и работай; покупай и продавай на рынке; производи в мастерской и продавай; покупай владения и собирай ренту; бери задания гильдии и возможности." },
       { q: "Как работает торг?", a: "Шанс сторговаться зависит от Харизмы + навыка Торговли; удастся — получишь скидку. Если ты известен (любим или внушаешь страх), твоё слово весит больше." },
-      { q: "Что нужно для работы в мастерской?", a: "Профессия НЕ требуется. Нужны лишь достаточный навык Ремесла и материалы. На карточке каждого рецепта указаны нужный уровень и материалы (есть/нужно). Производство развивает Ремесло." },
+      { q: "Что нужно для работы в мастерской?", a: "Обычные рецепты не требуют профессии: хватит навыка Ремесла и материалов. Лишь мастерские рецепты (корзина первого урожая, солёная рыба, медовая булочка, шерстяной кафтан) принадлежат своему ремеслу — это указано на карточке. На карточке каждого рецепта указаны нужный уровень и материалы (есть/нужно). Производство развивает Ремесло." },
     ],
   },
   {
@@ -603,6 +608,7 @@ const RU: FaqSection[] = [
   {
     icon: "crossed-swords", title: "Гильдии · Война · Преступление",
     items: [
+      { q: "Как попасть в темницу — и как выйти?", a: "Попадись на тяжком преступлении (грабёж и хуже) — и кадий может вынести приговор; Очаг солдат отбывает половину. Внутри закрыты мастерская, дороги, гильдии, походы и преступления; каждый месяц плавит месяц срока. Единственный ранний выход — взятка тюремщику: дорого и пятнает честь." },
       { q: "Как вступить в гильдию?", a: "Сначала копи уважение (standing), выполняя задания для гильдии; перейдёшь порог — вступишь в её ряды. Честные гильдии быстрее доверяют доблестным и честным, Братство Тени — страху и жестокости." },
       { q: "Как работает война и фронт?", a: "Если твоя организация вступает в войну, ты можешь пойти на фронт; победа приносит славу, честь и молву доблестного. Враги (заклятый недруг) могут тебя разыскать." },
       { q: "Стоит ли идти на преступление?", a: "Карманные кражи и грабёж дают быстрые деньги, но рискованны. Успех зависит от Харизмы + силы страха; кара при поимке — от твоей репутации. Честный или набожный, попавшись, теряет куда больше." },

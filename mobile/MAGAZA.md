@@ -24,7 +24,7 @@ Sonra daha fazlasını iste: loncanda rütbe söktür, hanelerle ittifak kur, ka
 
 - Tamamen çevrimdışı, reklamsız, satın alımsız
 - 6 dil: Türkçe, English, Español, Português, العربية, Русский
-- 100+ ikilem, 8 arzuhal, 20+ hikâye yayı, 15 meslek, 5 lonca
+- 100+ ikilem, 10 arzuhal, 20+ hikâye yayı, 15 meslek, 5 lonca
 - Nesilden nesile kalıcı dünya: NPC'ler yaşlanır, evlenir, ölür
 - İsteğe bağlı çok oyunculu diyar (BETA — kendi sunucunla)
 
