@@ -28,6 +28,7 @@ interface Ctx {
   apply: (fn: (s: GameState) => GameState) => void;
   doAdvance: (n?: number) => void;
   doEat: () => void;
+  importSave: (raw: string) => Promise<boolean>;
   doWork: (style?: WorkStyle) => void;
   resetGame: () => Promise<void>;
   // ── Çok oyuncu köprüsü ── MP karakterini aynı depoya koyar; böylece TÜM /oyun
@@ -104,6 +105,19 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // MP modunda zaman yalnız sunucu tick'iyle ilerler → yerel doAdvance no-op (desenkron önlenir).
   const doAdvance = useCallback((n = 1) => { if (mpRef.current) return; apply((s) => advance(s, n)); }, [apply]);
   const doEat = useCallback(() => apply(eat), [apply]);
+  // Yedeği içe al: yapıştırılan JSON'u doğrula, göçten geçir, kayda ve yedeğe yaz. MP diyarında kapalı (SP kaydı ezilmesin).
+  const importSave = useCallback(async (raw: string): Promise<boolean> => {
+    if (mpRef.current) return false;
+    try {
+      const obj = JSON.parse(raw.trim());
+      if (!obj || typeof obj !== "object" || !obj.player || typeof obj.turn !== "number") return false;
+      const s = migrate(obj);
+      await AsyncStorage.setItem(KEY, JSON.stringify(s));
+      await AsyncStorage.setItem(KEY + "_bak", JSON.stringify(s));
+      setState(s);
+      return true;
+    } catch { return false; }
+  }, []);
   const doWork = useCallback((style?: WorkStyle) => apply((s) => work(s, style)), [apply]);
   const resetGame = useCallback(async () => { if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null; if (mpRef.current) return; await AsyncStorage.removeItem(KEY); setState(null); }, []);
 
@@ -123,7 +137,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <GameContext.Provider value={{ state, loading, startGame, apply, doAdvance, doEat, doWork, resetGame, mpMode, enterMp, exitMp }}>
+    <GameContext.Provider value={{ state, loading, startGame, apply, doAdvance, doEat, importSave, doWork, resetGame, mpMode, enterMp, exitMp }}>
       {children}
     </GameContext.Provider>
   );

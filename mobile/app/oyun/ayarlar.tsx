@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Alert, Switch, ScrollView, Share } from "react-native";
+import { View, Text, Pressable, Alert, Switch, ScrollView, Share, TextInput } from "react-native";
 import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -14,13 +14,26 @@ import { GameIcon } from "../../lib/icons";
 
 export default function Ayarlar() {
   const insets = useSafeAreaInsets(); const router = useRouter();
-  const { state, resetGame } = useGame();
+  const { state, resetGame, importSave } = useGame();
   const { t, lang, setLang } = useI18n();
   const [sound, setSound] = useState(isSoundEnabled());
   const toggleSound = async (v: boolean) => { setSound(v); await setSoundEnabled(v); if (v) playTap(); };
   const [haptics, setHaptics] = useState(isHapticsEnabled());
   const toggleHaptics = async (v: boolean) => { setHaptics(v); await setHapticsEnabled(v); if (v) hap("selection"); };
   const [reduceM, setReduceM] = useState(isReduceMotion());
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [restoreText, setRestoreText] = useState("");
+  const doRestore = () => {
+    const raw = restoreText.trim(); if (!raw) return;
+    Alert.alert(t("settings.restore"), t("settings.restoreWarn"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: "✓", style: "destructive", onPress: async () => {
+        const ok = await importSave(raw);
+        if (ok) { hap("success"); setRestoreOpen(false); setRestoreText(""); Alert.alert(t("settings.restore"), t("settings.restoreOk")); }
+        else { hap("warning"); Alert.alert(t("settings.restore"), t("settings.restoreBad")); }
+      } },
+    ]);
+  };
   const toggleReduceM = async (v: boolean) => { setReduceM(v); await setReduceMotion(v); };
   const reset = () => Alert.alert(t("settings.newLife"), t("settings.reset"), [
     { text: t("common.cancel"), style: "cancel" },
@@ -98,6 +111,24 @@ export default function Ayarlar() {
           </View>
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
         </Pressable>
+        {/* Yedeği geri yükle: dışa aktarılan JSON yapıştırılır → doğrulanır → onayla mevcut kaydın üstüne yazılır */}
+        <Pressable onPress={() => { hap("tap"); setRestoreOpen((v) => !v); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: restoreOpen ? 8 : 16 }}>
+          <GameIcon name="scroll" size={20} color={C.gold} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.restore")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.restoreDesc")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>{restoreOpen ? "×" : "›"}</Text>
+        </Pressable>
+        {restoreOpen && (
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 12, marginBottom: 16 }}>
+            <TextInput value={restoreText} onChangeText={setRestoreText} multiline placeholder={t("settings.restorePaste")} placeholderTextColor={C.parchmentMuted}
+              style={{ minHeight: 90, maxHeight: 160, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 10, color: C.parchment, fontFamily: F.serif, fontSize: 11, textAlignVertical: "top" }} />
+            <Pressable disabled={!restoreText.trim()} onPress={doRestore} style={{ marginTop: 10, paddingVertical: 11, borderRadius: 8, borderWidth: 1, alignItems: "center", borderColor: restoreText.trim() ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: restoreText.trim() ? "rgba(201,168,76,0.12)" : C.bg }}>
+              <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: restoreText.trim() ? C.gold : C.parchmentMuted }}>{t("settings.restoreGo")}</Text>
+            </Pressable>
+          </View>
+        )}
         <Pressable onPress={reset} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
           <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood }}>{t("settings.newLife")}</Text>
         </Pressable>
