@@ -200,7 +200,9 @@ export function lifestyleUpkeep(s: GameState): number {
   u += (s.settlements?.length || 0) * 8 * inf;                   // yerleşim idare gideri
   // Servete göre kademeli yaşam yükü (maiyet, ziyafet, sadaka beklentisi, divan vergisi) — zengini ısırır.
   // Emanet de servet sayılır → sarrafa yatırarak yaşam yükünden kaçılmaz.
-  const w = p.money + (p.deposit || 0); const b1 = 5000 * inf, b2 = 20000 * inf, b3 = 100000 * inf;
+  // Mülk nominali de yarı ağırlıkla sayılır → nakdi tapuya çevirerek de kaçılmaz (denge simi: 361 tarla sıfır vergi ödüyordu).
+  const propNominal = p.properties.reduce((a, pr) => a + (PROPERTY_TYPES[pr.type]?.cost || 0), 0);
+  const w = p.money + (p.deposit || 0) + 0.5 * propNominal; const b1 = 5000 * inf, b2 = 20000 * inf, b3 = 100000 * inf;
   let annual = 0;
   if (w > b1) annual += (Math.min(w, b2) - b1) * 0.03;
   if (w > b2) annual += (Math.min(w, b3) - b2) * 0.06;
@@ -3517,8 +3519,8 @@ export type CrimeKind = "yankesicilik" | "dukkan_soyma" | "soygun" | "konak_soyg
 export const CRIME_TYPES: Record<CrimeKind, { base: number; lootMin: number; lootMax: number; fine: number; hurt: number; fear: number; nam: number; sev: number; label: string }> = {
   yankesicilik:  { base: 0.70, lootMin: 6,  lootMax: 22,  fine: 10, hurt: 3,  fear: 2, nam: 2, sev: 1, label: "Bir yankesicilik" },
   dukkan_soyma:  { base: 0.55, lootMin: 18, lootMax: 45,  fine: 22, hurt: 6,  fear: 4, nam: 4, sev: 2, label: "Bir dükkân soygunu" },
-  soygun:        { base: 0.45, lootMin: 25, lootMax: 65,  fine: 30, hurt: 10, fear: 5, nam: 5, sev: 3, label: "Bir yol soygunu" },
-  konak_soygunu: { base: 0.34, lootMin: 50, lootMax: 110, fine: 50, hurt: 14, fear: 7, nam: 7, sev: 4, label: "Bir konak soygunu" },
+  soygun:        { base: 0.45, lootMin: 45, lootMax: 115, fine: 30, hurt: 10, fear: 5, nam: 5, sev: 3, label: "Bir yol soygunu" },
+  konak_soygunu: { base: 0.34, lootMin: 90, lootMax: 200, fine: 50, hurt: 14, fear: 7, nam: 7, sev: 4, label: "Bir konak soygunu" },
 };
 // ── Suç merdiveni: ağır işlere ilk günden girilmez — yeraltında ad yapmak gerekir. ──
 // Yeraltı namı = başarılı suçlar + korkulan ad (fear/5); Gölge Kardeşliği üyeliği eşiği yarıya indirir (kapıları kardeşlik açar).
@@ -3887,7 +3889,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const will = WILL_STYLES.find((w) => w.id === willId) || WILL_STYLES[0];
   const netWealth = Math.max(0, (p.money + (p.deposit || 0)) - (p.debt || 0)); // ödenmemiş borç mirastan düşülür (borç ölümle silinmez)
   const inheritMoney = Math.floor(netWealth * will.frac) + 20; // emanet de mirasa dahil
-  const props = [...p.properties];
+  const props = p.properties.slice(0, Math.max(1, Math.ceil(p.properties.length * will.frac))); // vasiyet oranı mülke de işler; kalan hisseler kardeşlere ve vakfa dağılır (boş listede güvenli)
   const gen = p.generation + 1;
   const surname = p.surname;
   // Kalıcı görkem eserleri vârise geçer (oyunun kendi vaadi: "nesiller boyu sürecek") — hekim ve hac kişiseldir, kalmaz.
