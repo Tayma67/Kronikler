@@ -62,7 +62,7 @@ export default function DiyarDetay() {
           <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("lev.head").toUpperCase()}</Text>
           {locEventsAt(state, name).map((ty, idx) => (
             <View key={idx} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: ty === "panayir" || ty === "bereket" ? C.sage : C.blood, borderLeftWidth: 2.5, borderRadius: 8, padding: 11, marginBottom: 6 }}>
-              <GameIcon name={LOC_EVENT_TYPES[ty]?.icon || "scroll"} size={15} color={ty === "panayir" || ty === "bereket" ? C.sage : C.blood} />
+              <GameIcon name={LOC_EVENT_TYPES[ty]?.icon || "scroll"} size={15} color={ty === "panayir" || ty === "bereket" || ty === "dugun" || ty === "maden" ? C.sage : C.blood} />
               <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{t("lev." + ty + ".l")}</Text>
             </View>
           ))}

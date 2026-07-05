@@ -923,8 +923,11 @@ export const LOC_EVENT_TYPES: Record<string, LocEventType> = {
   veba:     { id: "veba",     icon: "skull", prosp: -16, sec: 0,   goods: ["sifa", "iksir"],                        priceMult: 1.6, months: [4, 7] },
   ticaret:  { id: "ticaret",  icon: "camel", prosp: 12,  sec: 0,   goods: ["sarap", "bal", "iksir", "sifa"],        priceMult: 0.75, months: [3, 5] },
   isyan:    { id: "isyan",    icon: "crossed-swords", prosp: -10, sec: -18, goods: [],                                       priceMult: 1.0,  months: [3, 5] },
+  dugun:    { id: "dugun",    icon: "party", prosp: 9,   sec: 6,   goods: ["sarap", "bal", "peynir", "et"],         priceMult: 1.25, months: [1, 2] },
+  goc:      { id: "goc",      icon: "walk",  prosp: -5,  sec: -8,  goods: ["ekmek", "un", "bugday"],                priceMult: 1.25, months: [2, 4] },
+  maden:    { id: "maden",    icon: "anvil", prosp: 14,  sec: 0,   goods: ["demir"],                                priceMult: 0.6,  months: [4, 6] },
 };
-const LOC_EVENT_LABEL: Record<string, string> = { kuraklik: "Kuraklık baş gösterdi", bereket: "Bereketli hasat", eskiya: "Eşkıya türedi", panayir: "Panayır kuruldu", yangin: "Yangın çıktı", veba: "Veba salgını", ticaret: "Ticaret patlaması", isyan: "Ayaklanma çıktı" };
+const LOC_EVENT_LABEL: Record<string, string> = { kuraklik: "Kuraklık baş gösterdi", bereket: "Bereketli hasat", eskiya: "Eşkıya türedi", panayir: "Panayır kuruldu", yangin: "Yangın çıktı", veba: "Veba salgını", ticaret: "Ticaret patlaması", isyan: "Ayaklanma çıktı", dugun: "Bey düğünü şenliği", goc: "Göç dalgası vurdu", maden: "Yeni maden damarı" };
 // Bir şehirde aktif olayların toplam refah/güvenlik etkisi (mülk geliri, seyahat için).
 export function cityFx(s: GameState, loc: string): { prosp: number; sec: number } {
   let prosp = 0, sec = 0;
@@ -970,6 +973,7 @@ function locEventPersonal(s: GameState) {
     if (e.loc !== s.player.location_name || e.until <= s.turn) continue;
     if (e.type === "veba" && chance(0.15)) { const h = 6 + Math.floor(Math.random() * 8); s.player.health = Math.max(1, s.player.health - h); push(s, "saglik", `${e.loc}'deki veba sana da bulaştı; halsiz düştün (−${h} sağlık).`, "kişisel", false, { k: "lev.veba.hit", p: [h] }); }
     else if (e.type === "panayir" && chance(0.30)) { const g = 5 + Math.floor(Math.random() * 10); s.player.money += g; s.player.reputation = Math.min(100, s.player.reputation + 1); push(s, "gunluk", `${e.loc} panayırında eğlendin, biraz da kazandın (+${g} akçe).`, "kişisel", false, { k: "lev.panayir.gain", p: [g] }); }
+    else if (e.type === "dugun" && chance(0.25)) { const g = 4 + Math.floor(Math.random() * 8); s.player.money += g; s.player.reputation = Math.min(100, s.player.reputation + 1); push(s, "gunluk", `${e.loc}'deki düğün sofrasına oturdun; kesene de neşene de düştü (+${g} akçe).`, "kişisel", false, { k: "lev.dugun.gain", p: [g] }); }
     else if (e.type === "kuraklik" && chance(0.25)) { s.player.hunger = Math.max(0, s.player.hunger - 6); push(s, "gunluk", `${e.loc}'de kuraklık; karın doyurmak zorlaştı.`, "kişisel", false, { k: "lev.kuraklik.hit" }); }
     else if (e.type === "yangin" && chance(0.10)) { s.player.fear = Math.min(100, s.player.fear + 3); push(s, "gunluk", `${e.loc}'deki yangın korku saldı.`, "kişisel", false, { k: "lev.yangin.hit" }); }
   }
