@@ -785,6 +785,42 @@ export const DILEMMAS: Dilemma[] = [
     ],
   },
   {
+    id: "cocuk_kus", icon: "leaf", title: "Kanadı Kırık Kuş",
+    text: "Dere kenarında kanadı kırık bir kuş buldun; kuşçu 'üç akçe veririm' diyor.",
+    when: (p) => p.age >= 7 && p.age < 13,
+    choices: [
+      { label: "Sar, sağalt, uçur", delta: { honor: 3, nam: { mert: 1 } }, result: "Haftalarca ekmek kırıntısıyla besledin; bir sabah avucundan havalandı. Gökyüzünde senin de bir payın oldu." },
+      { label: "Kuşçuya sat", delta: { money: 3 }, result: "Üç akçe kesende şıngırdadı; kafesin önünden geçerken gözlerini kaçırdın." },
+    ],
+  },
+  {
+    id: "genc_muhurlu_mektup", icon: "scroll", title: "Mühürlü Mektup",
+    text: "Kadıya mühürlü bir mektup götürüyorsun; handa bir yabancı 'içindekini söyle, kese senin' diye fısıldıyor.",
+    when: (p) => p.age >= 15 && p.age < 25,
+    choices: [
+      { label: "Mühre dokunmadan teslim et", delta: { honor: 5, nam: { mert: 2 } }, result: "Mektup mühürlü ulaştı; kadı yüzüne bakıp 'emin adammışsın' dedi. Bazı keseler alınmaz, taşınır." },
+      { label: "Buharda aç, sat", delta: { money: 25, honor: -6, fear: 1, nam: { zalim: 2 } }, result: "Kese doldu ama mühür bir daha eskisi gibi oturmadı; kadının kâtibi sana uzun uzun baktı." },
+    ],
+  },
+  {
+    id: "orta_yangin_iki_kapi", icon: "flame", title: "Yangında İki Kapı",
+    text: "Çarşıda yangın! Alev bir yanda senin tezgâhını, öbür yanda yaşlı hasırcının dükkânını yalıyor. İkisine birden yetişemezsin.",
+    when: (p) => p.age >= 30,
+    choices: [
+      { label: "Yaşlının dükkânına koş", delta: { honor: 6, money: -20, reputation: 5, nam: { mert: 3 } }, result: "Hasırcının ocağını söndürdün; kendi tezgâhından geriye is kaldı. Çarşı o günü unutmadı: zarar senin, ad senin." },
+      { label: "Kendi tezgâhını kurtar", delta: { money: 15 }, result: "Malını alevden çekip aldın. Hasırcı küllerin başında sessizce oturuyordu; kimse bir şey demedi, demesine gerek de yoktu." },
+    ],
+  },
+  {
+    id: "yasli_sandik", icon: "amphora", title: "Sandıktaki Mektuplar",
+    text: "Tavan arasındaki sandıktan gençliğinde yazıp gönderemediğin mektuplar çıktı; torunlar merakla bakıyor.",
+    when: (p) => p.age >= 60,
+    choices: [
+      { label: "Ocak başında oku", delta: { reputation: 2, health: 1 }, result: "Mektuplar ocak başında bir bir okundu; gülen de oldu, gözü dolan da. O gece sandık değil, yürek boşaldı." },
+      { label: "Ateşe ver, geçmiş geçmişte kalsın", delta: { honor: 1 }, result: "Kâğıtlar alevde kıvrıldı; kokusu bir an gençliğini getirdi, sonra duman oldu. Bazı sözler sahibiyle gider." },
+    ],
+  },
+  {
     id: "cocuk_firtina", icon: "sheep", title: "Fırtına Gecesi",
     text: "Gece bastıran fırtınada komşunun kuzusu dışarıda kalmış; meleme sesi rüzgârı deliyor. Büyükler uyuyor.",
     when: (p) => p.age >= 7 && p.age < 13,
