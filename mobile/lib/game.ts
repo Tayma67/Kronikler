@@ -171,7 +171,7 @@ export const PROP_MAX_LEVEL = 3;
 export function propUpgradeCost(pr: Property): number { return Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * (pr.level || 1) * 0.8); }
 export function upgradeProperty(prev: GameState, index: number): GameState {
   const s = clone(prev); const p = s.player; const pr = p.properties[index];
-  if (!pr || (pr.level || 1) >= PROP_MAX_LEVEL) return s;
+  if (p.dead || !pr || (pr.level || 1) >= PROP_MAX_LEVEL) return s;
   const cost = propUpgradeCost(pr); if (p.money < cost) return s;
   p.money -= cost; pr.level = (pr.level || 1) + 1;
   push(s, "mülk", `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) büyütüldü — kademe ${pr.level} (−${cost} akçe).`, "kişisel", true, { k: "evj.propUp", p: [{ pt2: pr.type }, { pl: pr.loc }, pr.level || 1, cost] });
@@ -248,7 +248,7 @@ export function repay(prev: GameState, amount: number): GameState {
   if (p.debt <= 0) {
     // İtibar yalnız gerçekten taşınmış (önceki turdan kalan, faizi işlemiş) borcun kapanmasında —
     // aynı turda al-öde döngüsüyle bedava itibar pompalanamaz.
-    const carried = p.loan_turn !== undefined && p.loan_turn < s.turn;
+    const carried = p.loan_turn !== undefined && s.turn - p.loan_turn >= 3 && amt >= 100; // itibar yalnız gerçek faiz bedeli ödenmişse: ≥100 akçe borç ≥3 ay taşınıp kapanınca (1 akçelik borçla bedava itibar pompalanamaz)
     p.debt = 0; p.loan_turn = undefined;
     if (carried) p.reputation = Math.min(100, p.reputation + 2);
     push(s, "ticaret", `Borcunu tümüyle kapattın; sarraf defterini sildi, sözün yeniden geçer oldu (+itibar).`, "kişisel", true, { k: "evj.repayFull" });
@@ -679,6 +679,7 @@ function tipsTick(s: GameState) {
 // Söylenti eylemi: yüzleş / yay / sustur (Vercel rumor_action). Döndürür yeni state.
 export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | "yay" | "sustur"): GameState {
   const s = clone(prev); const p = s.player;
+  if (p.dead) return s;
   const rumors = s.player_rumors || [];
   const r = rumors.find((x) => x.id === rumorId);
   if (!r) return s;
@@ -2556,6 +2557,7 @@ export function professionAction(prev: GameState): GameState {
 
 export function eat(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
+  if (p.dead || p.hunger >= 100) return s; // ölüye sofra kurulmaz; tokken akçe boşa gitmez
   // önce envanterdeki yiyecek, yoksa 2 akçeye sokak yemeği
   const bonus = hasPerk(p, "tutumlu") ? 10 : 0;
   const foodId = Object.keys(p.inventory).find((id) => p.inventory[id] > 0 && ITEMS[id]?.feed);
@@ -2567,7 +2569,7 @@ export function eat(prev: GameState): GameState {
 
 export function useItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const it = ITEMS[id];
-  if (!it || !(p.inventory[id] > 0)) return s;
+  if (p.dead || !it || !(p.inventory[id] > 0)) return s;
   // Etkisi zaten dolu olan eşyayı harcama (tokken ekmek / tam canken iksir → boşa gitmesin).
   const wouldHelp = (!!it.feed && p.hunger < 100) || (!!it.heal && p.health < 100);
   if (!wouldHelp) return s;
@@ -2689,6 +2691,7 @@ export function negotiatedSell(prev: GameState, id: string, price: number): Game
 // İlişki: niyetli sohbet (bağlamlı), hediye ver.
 export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string = "tr"): { state: GameState; line: string } {
   const s = clone(prev); const p = s.player;
+  if (p.dead) return { state: s, line: "" };
   const ns = npcStateOf(s, npc.id);
   if (ns.int_turn === s.turn) return { state: s, line: "" }; // bu ay bu kişiyle görüşüldü — aynı turda tekrar konuşup ilişki/sosyal beceri farmlanamaz
   ns.int_turn = s.turn;
@@ -3000,7 +3003,7 @@ export const HORSE_COST = 200;
 export const HORSE_NAMES = ["Doru", "Yağız", "Kır", "Al", "Boz", "Demir", "Rüzgâr", "Yıldız", "Şahin", "Karayel"];
 export function buyHorse(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.horse || p.money < HORSE_COST) return s;
+  if (p.dead || p.age < 13 || p.horse || p.money < HORSE_COST) return s; // çocuğa at satılmaz
   p.money -= HORSE_COST; p.horse = true; p.horse_name = rnd(HORSE_NAMES); p.reputation = Math.min(100, p.reputation + 2);
   push(s, "yolculuk", `${p.horse_name} adında sağlam bir at aldın; artık yollar daha kısa ve emniyetli.`, "kişisel", true, { k: "horse.named", p: [p.horse_name] });
   return s;
@@ -3130,7 +3133,7 @@ export function changeProfession(prev: GameState, prof: string): GameState {
 export function statCapOf(p: Player): number { return p.age < 13 ? 8 : 10; }
 export function allocateStat(prev: GameState, key: keyof Stats): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.stat_points <= 0 || p.stats[key] >= statCapOf(p)) return s; // yaş tavanı (addStatXp ile aynı sınır)
+  if (p.dead || p.stat_points <= 0 || p.stats[key] >= statCapOf(p)) return s; // yaş tavanı (addStatXp ile aynı sınır)
   p.stat_points -= 1; p.stats[key] += 1;
   return s;
 }
@@ -3762,7 +3765,7 @@ export function buyProperty(prev: GameState, type: string): GameState {
 export function repairCost(pr: Property): number { return Math.max(1, Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * 0.3 * (100 - pr.cond) / 100)); }
 export function repairProperty(prev: GameState, index: number): GameState {
   const s = clone(prev); const p = s.player; const pr = p.properties[index];
-  if (!pr || pr.cond >= 100) return s;
+  if (p.dead || !pr || pr.cond >= 100) return s;
   const cost = repairCost(pr); if (p.money < cost) return s;
   p.money -= cost; pr.cond = 100;
   push(s, "mülk", `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) onarıldı (−${cost} akçe).`, "kişisel", false, { k: "evj.propRepair", p: [{ pt2: pr.type }, { pl: pr.loc }, cost] });
@@ -4497,7 +4500,7 @@ export function socialPresence(p: Player): number {
 // Eşya kuşan (silah/zırh) — envanterden çıkarıp slota koyar, eskisini geri verir.
 export function equipItem(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const it = ITEMS[id];
-  if (!it || !(p.inventory[id] > 0)) return s;
+  if (p.dead || !it || !(p.inventory[id] > 0)) return s;
   const slot = slotOfKind(it.kind);
   if (!slot) return s;
   // Çift elli silah ↔ kalkan birlikte taşınamaz: çakışan slotu envantere geri koy.
