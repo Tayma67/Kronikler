@@ -90,6 +90,7 @@ export interface Player {
   yr_money?: number; // geçen yaş gününde kese ne kadardı (yıl dönümü özeti farkı için)
   temperament?: string; // yaratılışta seçilen mizaç (yigit/kurnaz/merhametli/hirsli) — ömürlük küçük etkiler
   crown_action_turn?: number; // bu ay taht eylemi (iddiacıyı bastır/uzlaş) yapıldı mı — tur başına tek
+  jail?: { left: number; kind: string } | null; // zindan: kalan ay + sebep (ağır suç bedeli — zaman kaybı gerçek risk)
   estate?: number; // aile konağı kademesi (0-6) — nesillere kalan görkem merdiveni (avlu→saray yavrusu)
   vakif_fon?: number; // vakıf fonuna ömür boyu akıtılan toplam (SINIRSIZ) — servetin anlama dönüşen tek sayacı
   vakif_turn?: number; // bu ay vakfa bağış yapıldı mı (tur başına tek — itibar damlası farmlanamaz)
@@ -1652,6 +1653,13 @@ export function advance(prev: GameState, n = 1): GameState {
         if ((s.player.debt || 0) <= 0) { s.player.debt = 0; s.player.loan_turn = undefined; }
       }
     }
+    if (inJail(s.player)) { // zindan ayı: tayın açlığı 35'te tutar, rutubet -1 sağlık; süre dolunca kapı açılır
+      const jp = s.player;
+      jp.hunger = Math.max(jp.hunger, 35); jp.health = Math.max(1, jp.health - 1);
+      jp.jail!.left -= 1;
+      if (jp.jail!.left <= 0) { jp.jail = null; jp.reputation = Math.max(-100, jp.reputation - 1); push(s, "suç", `Cezan doldu; zindan kapısı gün ışığına açıldı. Diyar seni unutmamış ama gözler bir süre üstünde.`, "kişisel", true, { k: "jail.released" }); }
+      else push(s, "suç", `Zindanda bir ay daha geçti; duvara bir çentik daha.`, "kişisel", false, { k: "jail.month", p: [jp.jail!.left] });
+    }
     { const mf = monthlyFlavor(s, cal); push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k }); }
     if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 13 && chance(0.12)) s.micro = { id: MICRO_IDS[Math.floor(Math.random() * MICRO_IDS.length)] }; } // mikro an: yok sayılırsa ertesi ay kaybolur
     if (i === n - 1) { s.divan = null; if (!s.player.dead && s.player.crowned && chance(0.10)) s.divan = { id: DIVAN_IDS[Math.floor(Math.random() * DIVAN_IDS.length)] }; } // divan arzuhali: yalnız taç sahibine, yok sayılırsa düşer
@@ -2355,6 +2363,7 @@ export const WORK_STYLES: { id: WorkStyle; mult: number; fail: number }[] = [
   { id: "kaytarici", mult: 0.4, fail: 0.20 },
 ];
 export function canWork(s: GameState): boolean {
+  if (inJail(s.player)) return false; // zindanda tezgâh yok
   const p = s.player;
   return !p.dead && p.age >= 13 && p.profession !== "işsiz" && p.work_turn !== s.turn;
 }
@@ -3025,6 +3034,7 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
 
 export function travelBy(prev: GameState, dest: string, route: TravelRoute): GameState {
   const s = clone(prev); const p = s.player;
+  if (inJail(p)) return s; // zindandan kervan kalkmaz
   if (p.dead || dest === p.location_name) return s;
   markVisit(p, p.location_name); // kalkış noktası da sayılır (doğduğun yerleşim kaybolmasın)
   if (route === "at" && !p.horse) route = "anayol"; // at yoksa ana yola düş
@@ -3507,6 +3517,18 @@ export const CRIME_TYPES: Record<CrimeKind, { base: number; lootMin: number; loo
 // ── Suç merdiveni: ağır işlere ilk günden girilmez — yeraltında ad yapmak gerekir. ──
 // Yeraltı namı = başarılı suçlar + korkulan ad (fear/5); Gölge Kardeşliği üyeliği eşiği yarıya indirir (kapıları kardeşlik açar).
 export const CRIME_REQ: Record<CrimeKind, number> = { yankesicilik: 0, dukkan_soyma: 2, soygun: 6, konak_soygunu: 12 };
+// ── Zindan ──
+export function inJail(p: Player): boolean { return !!p.jail && p.jail.left > 0; }
+export function jailBribeCost(s: GameState): number { return Math.round(80 * (s.player.jail?.left || 1) * inflationFactor(s)); }
+export function bribeJailer(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (!inJail(p)) return s;
+  const cost = jailBribeCost(s);
+  if (p.money < cost) { push(s, "suç", `Gardiyanın gönlünü edecek akçen yok.`, "kişisel", false, { k: "jail.noFee" }); return s; }
+  p.money -= cost; p.jail = null; p.honor = Math.max(0, p.honor - 2); bumpNam(p, "zalim", 1);
+  push(s, "suç", `Gardiyanın avucuna kese sıkıştırdın; gece yarısı kapı gıcırdadı, gölge gibi süzüldün.`, "kişisel", true, { k: "jail.bribe", p: [cost] });
+  return s;
+}
 export function underworldStanding(p: Player): number { return (p.crime_wins || 0) + Math.floor((p.fear || 0) / 5); }
 export function crimeReq(p: Player, kind: CrimeKind): number {
   const base = CRIME_REQ[kind] ?? 0;
@@ -3522,6 +3544,7 @@ export function underworldTier(p: Player): number {
 }
 export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   const s = clone(prev); const p = s.player;
+  if (inJail(p)) return s;
   if (p.dead || p.age < 13) return s;
   if (s.pendingScene) return s;                       // bekleyen yakalanma sahnesini ezerek ceza atlanamaz
   if (!crimeUnlocked(p, kind)) return s;               // merdiven: yeraltı namı yetmeden ağır iş yok (ay hakkı da yanmaz)
@@ -3618,6 +3641,12 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
 // Yakalanma cezasını uygula (kesinti sahnesinden veya doğrudan). Şiddete göre ceza + tanık + tohum.
 function crimeCaught(s: GameState, kind: CrimeKind) {
   const p = s.player; const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
+  // Ağır suç (sev>=3): kadı zindan hükmü verir — sev 3'te yazı tura, sev 4'te kesin (asker ocağı süreyi yarılar).
+  if (ct.sev >= 3 && !inJail(p) && (ct.sev >= 4 || Math.random() < 0.5)) {
+    const ay = Math.max(1, Math.round((ct.sev - 1) * (p.faction === "asker" ? 0.5 : 1)));
+    p.jail = { left: ay, kind };
+    push(s, "suç", `Kadı hükmünü verdi: ${ay} ay zindan. Demir kapı ardında ay saymak da bir mekteptir.`, "kişisel", true, { k: "jail.sentenced", p: [ay] });
+  }
   const fine = Math.min(p.money, Math.round(ct.fine * inflationFactor(s))); // ceza çağın parasıyla (ganimetle birlikte ölçeklenir — risk/ödül oranı her çağda sabit)
   const hurt = Math.round(ct.hurt * (p.faction === "asker" ? 0.5 : 1));
   const extra = crimeCaughtPenalty(s);
@@ -3986,6 +4015,7 @@ export function factionLocalFavor(s: GameState): number {
 }
 export function doFactionTask(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const f = factionById(id);
+  if (inJail(p)) return s;
   if (!f || p.dead || p.age < 13) return s;
   // Bir ocağa bağlıysan yalnız KENDİ ocağına hizmet edebilirsin (rakip ocaktan para/itibar farmı yok).
   if (p.faction && p.faction !== id) { push(s, "örgüt_görev", `${f.name} senin ocağın değil; önce kendi ocağından ayrılmalısın.`, "kişisel", false, { k: "evj.factionNotYours", p: [{ fc: id }] }); return s; }
@@ -5485,6 +5515,7 @@ export function campaignTargets(s: GameState): { id: string; name: string }[] {
   return BEYLIKS.filter((b) => b.id !== own && !done.includes(b.id)).map((b) => ({ id: b.id, name: b.name }));
 }
 export function canLaunchCampaign(s: GameState): boolean {
+  if (inJail(s.player)) return false;
   return !!s.player.crowned && !s.player.dead && s.player.money >= CAMPAIGN_COST && campaignTargets(s).length > 0;
 }
 export function campaignOdds(s: GameState): number {
@@ -5758,6 +5789,7 @@ export const RECIPES: Recipe[] = [
   { id: "zincir_zirh", out: "zincir_zirh", outQty: 1, inputs: { demir: 4 }, minSkill: 5 },
 ];
 export function canCraft(p: Player, r: Recipe): boolean {
+  if (inJail(p)) return false; // zindanda tezgâh yok
   if (r.prof && p.profession !== r.prof) return false; // ustalık tarifi: meslek dışına kapalı
   if (p.skills.crafting < r.minSkill) return false;
   return Object.entries(r.inputs).every(([id, q]) => (p.inventory[id] || 0) >= q);

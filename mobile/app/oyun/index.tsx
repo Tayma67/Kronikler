@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveDivan, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork } from "../../lib/game";
+import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork } from "../../lib/game";
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
@@ -566,6 +566,25 @@ export default function Dashboard() {
             </View>
             <Text style={{ fontFamily: F.display, fontSize: 9.5, color: tone, letterSpacing: 0.5 }}>{lbl}</Text>
           </Pressable>
+        );
+      })()}
+
+      {/* Zindan: ağır suçun bedeli — süre dolana ya da gardiyan sussuzlanana dek çoğu kapı kilitli */}
+      {!p.dead && inJail(p) && (() => {
+        const cost = jailBribeCost(state);
+        const able = p.money >= cost;
+        return (
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(168,52,52,0.5)", backgroundColor: "rgba(168,52,52,0.10)" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+              <GameIcon name="hood" size={15} color={C.blood} />
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.blood, textTransform: "uppercase" }}>{t("jail.title")}</Text>
+              <Text style={{ marginLeft: "auto", fontFamily: F.serif, fontSize: 11, color: C.parchmentDim }}>{applyParams(t("jail.left"), [p.jail!.left])}</Text>
+            </View>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 6, lineHeight: 16 }}>{t("jail.hint")}</Text>
+            <Pressable disabled={!able} onPress={() => { hap("heavy"); apply((s) => bribeJailer(s)); }} style={{ alignSelf: "flex-start", marginTop: 8, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: able ? "rgba(201,168,76,0.5)" : C.border, opacity: able ? 1 : 0.45 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10, color: able ? C.gold : C.parchmentMuted }}>{applyParams(t("jail.bribeBtn"), [cost])}</Text>
+            </Pressable>
+          </View>
         );
       })()}
 
