@@ -13,6 +13,7 @@ const BEY: { tk: string; n: string }[] = [
   { tk: "bey.tekfur", n: "Leon" }, { tk: "bey.subasi", n: "Demir" }, { tk: "bey.kadi", n: "Sinaneddin" },
 ];
 const NEWS_IDS = ["hasat", "kuraklik", "kervan", "vergi", "sinir", "salgin", "han", "kitlik"];
+const LOCAL_OK = new Set(["hasat", "kuraklik", "kervan", "salgin", "han"]); // yalnız metninde şehir (%p) geçen şablonlar yerel işaretlenebilir
 
 function pick<T>(a: T[], r: () => number): T { return a[Math.floor(r() * a.length)]; }
 
@@ -27,7 +28,7 @@ export function worldNews(turn: number, seed: number, lang: Lang = "tr", playerP
     while (used.has(idx) && used.size < NEWS_IDS.length) idx = (idx + 1) % NEWS_IDS.length;
     used.add(idx);
     const id = NEWS_IDS[idx];
-    const isLocal = !!playerPlace && r() < 0.35; // ~üç haberden biri kendi diyarından
+    const isLocal = !!playerPlace && LOCAL_OK.has(id) && r() < 0.56; // ~üç haberden biri kendi diyarından (yalnız şehirli şablonlar)
     const place = isLocal ? playerPlace : placeName(pick(DIYAR, r), lang);
     const bey = BEY[Math.floor(r() * BEY.length)];
     const beyStr = `${tFor(lang, bey.tk)} ${bey.n}`;
