@@ -410,6 +410,18 @@ function npcLifeTick(s: GameState) {
   // Her yıl ölü doğanları ele (yaşayanlar asla silinmez). Böylece npcBorn ≈ yaşayan sayısı (~600) kalır:
   // nüfus korunur (eski 260 sınırı yaşayanı siliyordu) + dizi şişmez (rosterAt ucuz kalır).
   s.world.npcBorn = s.world.npcBorn.filter((n) => n.alive !== false);
+  // Nüfus tavanı: yeni gelen/bekâr garantisi akışları canlı sayıyı sınırsız büyütüyordu (40 yılda ~450, on neselde binler).
+  // Tavan aşılınca yalnız iz bırakmamış doğanlar (tanışılmamış, ilişkisiz, işçi değil, can yoldaşı değil) en yaşlıdan elenir.
+  if (s.world.npcBorn.length > 300) {
+    const touched = new Set<string>();
+    for (const id of Object.keys(s.npc_state || {})) touched.add(id);
+    for (const id of Object.keys(s.relationships || {})) touched.add(id);
+    for (const pr of s.player.properties || []) for (const w of pr.workers || []) touched.add(w);
+    if (s.player.child_friend) touched.add(s.player.child_friend.id);
+    const removable = s.world.npcBorn.filter((n) => !touched.has(n.id)).sort((a, b) => (b.age || 0) - (a.age || 0));
+    const drop = new Set(removable.slice(0, s.world.npcBorn.length - 300).map((n) => n.id));
+    if (drop.size) s.world.npcBorn = s.world.npcBorn.filter((n) => !drop.has(n.id));
+  }
 }
 // Mesleğe göre üretkenlik uyumu (çiftçi tarlada, demirci değirmende daha verimli).
 const PROP_PROF_FIT: Record<string, string[]> = {
