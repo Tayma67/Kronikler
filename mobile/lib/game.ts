@@ -1453,7 +1453,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // Yaşlanma + ölümlülük — geniş dağılım: bazıları genç hastalık/kazaya, sağlıklı & bakımlı olanlar 70-80'e ulaşabilir.
   // Sağlık aşınması daha yumuşak (ayda değil seyrek) → servetle hekim tutan uzun yaşar (gerçek hayat filtresi).
   if (p.age >= 52 && chance(0.5)) p.health = Math.max(0, p.health - Math.floor((p.age - 48) / 7));
-  const accident = (p.age >= 25 ? 0.0008 : 0) + (p.health < 25 ? 0.012 : 0);
+  const accident = (p.age >= 25 ? (p.age < 40 ? 0.0003 : p.age < 55 ? 0.0006 : 0.0009) : 0) + (p.health < 25 ? 0.012 : 0); // kaza terimi yaş basamaklı: 40 öncesi ecel nadir, yaş ilerledikçe ağırlaşır
   const frail = p.health < 40 ? 0.008 : 0;
   const aging = p.age >= 62 ? (p.age - 62) * 0.0045 + frail : frail;
   if (chance(accident + aging)) {
