@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -13,8 +14,9 @@ import { BackLabel } from "../../lib/ui";
 
 export default function Haberler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
-  const { state } = useGame();
+  const { state, apply } = useGame();
   const { lang, t } = useI18n();
+  useEffect(() => { apply((s) => (s.newsSeenTurn === s.turn ? s : { ...s, newsSeenTurn: s.turn })); }, [state?.turn]); // görüldü: rozet sıfırlanır (aynı tursa yazma yok)
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const cal = currentCalendar(state.turn);
   const news = worldNews(state.turn, state.seed, lang);

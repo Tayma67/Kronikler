@@ -719,6 +719,7 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
 export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; breath?: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
+  newsSeenTurn?: number; // haberler ekranının son görüldüğü tur (menü rozeti için; opsiyonel — eski kayıtlar dokunulmadan çalışır)
   relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean; goalHelped?: boolean; goalDone?: boolean; gname?: string; goalk?: string; usta?: boolean }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;

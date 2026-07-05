@@ -57,6 +57,7 @@ export default function Menu() {
       case "hikayeler": return { n: state.story?.active ? 1 : 0, urgent: false };
       case "orgutler": return { n: playerWar(state) ? 1 : 0, urgent: true };
       case "pazar": return { n: state.caravan ? 1 : 0, urgent: false };
+      case "haberler": return { n: Math.min(9, Math.max(0, state.turn - (state.newsSeenTurn ?? state.turn))), urgent: false }; // son ziyaretten beri geçen aylar (ilk açılışa dek sessiz)
       case "nesil": return { n: p.dead && p.children.length > 0 ? 1 : 0, urgent: true };
       default: return { n: 0, urgent: false };
     }
