@@ -4,7 +4,7 @@ import { mkRng, generateNPCs } from "./world";
 import { Lang, placeName, goalL } from "./locale-data";
 import { tFor } from "./i18n";
 
-export interface NewsItem { id: string; kind: "haber" | "dedikodu"; title: string; body: string; }
+export interface NewsItem { id: string; kind: "haber" | "dedikodu"; title: string; body: string; cat?: string; } // cat: haber kategorisi (görsel simge için)
 
 const DIYAR = ["Üzümlü", "Akpınar", "Demirhan", "Yenişehir", "Karaağaç", "Söğütlü", "Bozkır"];
 // Bey: unvan anahtarı (yerelleşir) + özel ad (korunur).
@@ -32,7 +32,7 @@ export function worldNews(turn: number, seed: number, lang: Lang = "tr"): NewsIt
     const beyStr = `${tFor(lang, bey.tk)} ${bey.n}`;
     const title = tFor(lang, `news.${id}.t`);
     const body = tFor(lang, `news.${id}.b`).replace("%p", place).replace("%b", beyStr);
-    out.push({ id: `news_${turn}_${i}`, kind: "haber", title, body });
+    out.push({ id: `news_${turn}_${i}`, kind: "haber", title, body, cat: id });
   }
   return out;
 }
