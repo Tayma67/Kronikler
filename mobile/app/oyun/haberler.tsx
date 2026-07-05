@@ -67,8 +67,8 @@ export default function Haberler() {
               <View key={tp.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: C.sage, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
                 <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, lineHeight: 19 }}>
                   {tp.kind === "market"
-                    ? applyParams(t("tip.market"), [t("it." + tp.good), placeName(tp.cheap || "", lang), placeName(tp.expensive || "", lang)])
-                    : applyParams(t("tip.intel"), [t("fac." + tp.fac + ".n"), t("fac." + tp.vsFac + ".n")])}
+                    ? applyParams(t("tip.market"), [t("it." + tp.good), placeName(tp.cheap || "", lang), placeName(tp.expensive || "", lang)], lang)
+                    : applyParams(t("tip.intel"), [t("fac." + tp.fac + ".n"), t("fac." + tp.vsFac + ".n")], lang)}
                 </Text>
               </View>
             ))}

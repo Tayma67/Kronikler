@@ -576,10 +576,12 @@ export default function Hanedan() {
                   {/* Proaktif diplomasi: soğuk olmayan hanelere teklif götür (ayda tek; ret tutumu düşürür) */}
                   {!h.mine && !(state.allied_houses || []).includes(h.id) && p.age >= 16 && (() => {
                     const acted = p.propose_turn === state.turn;
+                    const envoyFee = Math.round(ENVOY_COST * inflationFactor(state));
+                    const envoyOff = acted || p.money < envoyFee; // ücret yoksa kapalı — başarısız gönderime çıngırak çalınmaz
                     return (
                       <View style={{ gap: 4 }}>
-                        <Pressable disabled={acted} onPress={() => { hap("selection"); playChime(); apply((s) => sendEnvoy(s, h.id)); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: acted ? C.border : "rgba(127,166,106,0.5)", opacity: acted ? 0.4 : 1 }}>
-                          <Text style={{ fontFamily: F.display, fontSize: 8.5, color: acted ? C.parchmentMuted : C.sage }}>{applyParams(t("dyn.envoy"), [Math.round(ENVOY_COST * inflationFactor(state))])}</Text>
+                        <Pressable disabled={envoyOff} onPress={() => { hap("selection"); playChime(); apply((s) => sendEnvoy(s, h.id)); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: envoyOff ? C.border : "rgba(127,166,106,0.5)", opacity: envoyOff ? 0.4 : 1 }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 8.5, color: envoyOff ? C.parchmentMuted : C.sage }}>{applyParams(t("dyn.envoy"), [envoyFee])}</Text>
                         </Pressable>
                         {h.attitude > -10 && (
                         <Pressable disabled={acted} onPress={() => { hap("tap"); apply((s) => proposeToHouse(s, h.id, "ittifak")); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: acted ? C.border : "rgba(111,160,192,0.5)", opacity: acted ? 0.4 : 1 }}>

@@ -163,7 +163,7 @@ export default function Dashboard() {
     if (!state) return;
     if (state.turn > lastRolledTurn.current) {
       lastRolledTurn.current = state.turn;
-      if (!state.player.dead && !dilemma && !opp) {
+      if (!state.player.dead && !inJail(state.player) && !dilemma && !opp) { // hücrede sokak sahnesi/fırsat çalınmaz
         const fest = pickFestival(state); // şenlik ayı: yılın nabzı rastgele olaydan önce gelir (yılda bir; ay geçerse gelecek yıla)
         if (fest) { setDilemma(fest); playChime(); }
         else {

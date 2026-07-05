@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { travelBy, buyHorse, HORSE_COST, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES, citySpecialtyIdx, GOV_EDICTS, canIssueEdict, issueEdict, edictCooldownLeft, GOV_WORKS, canFundWork, fundWork, worksOf } from "../../../lib/game";
+import { inJail, travelBy, buyHorse, HORSE_COST, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES, citySpecialtyIdx, GOV_EDICTS, canIssueEdict, issueEdict, edictCooldownLeft, GOV_WORKS, canFundWork, fundWork, worksOf } from "../../../lib/game";
 import { cityInfo, marketGoods, locSeed } from "../../../lib/world";
 import { useI18n, applyParams } from "../../../lib/i18n";
 import { placeName } from "../../../lib/locale-data";
@@ -218,7 +218,7 @@ export default function DiyarDetay() {
         <>
           <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginBottom: 8 }}>{t("diyar.setOut")}</Text>
           {TRAVEL_ROUTES.filter((r) => r.id !== "at" || state.player.horse).map((r) => (
-            <Pressable key={r.id} onPress={() => { if (state.player.dead) return; apply((s) => travelBy(s, name, r.id)); router.back(); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: r.id === "at" ? "rgba(127,166,106,0.5)" : "rgba(201,168,76,0.4)", backgroundColor: C.card, marginBottom: 8 }}>
+            <Pressable key={r.id} onPress={() => { if (state.player.dead || inJail(state.player)) return; apply((s) => travelBy(s, name, r.id)); router.back(); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: r.id === "at" ? "rgba(127,166,106,0.5)" : "rgba(201,168,76,0.4)", backgroundColor: C.card, marginBottom: 8 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
                 {r.id === "at" ? <GameIcon name="camel" size={18} color={C.sage} /> : null}
                 <View style={{ flex: 1 }}>

@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { doCrime, resolveCrimeScene, CrimeKind, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS } from "../../lib/game";
+import { doCrime, resolveCrimeScene, CrimeKind, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -38,8 +38,9 @@ export default function Suc() {
   const Crime = ({ kind, title, desc }: { kind: CrimeKind; title: string; desc: string }) => {
     const open = crimeUnlocked(state.player, kind);
     const locked = !open;
+    const jailed = inJail(state.player); // hücrede buton da kapalı — sessiz no-op yerine görünür kilit
     return (
-      <Pressable disabled={crimeDone || locked} onPress={() => { hap("advance"); apply((s) => doCrime(s, kind)); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 11, padding: 14, marginBottom: 10, opacity: crimeDone || locked ? 0.45 : 1 }}>
+      <Pressable disabled={crimeDone || locked || jailed} onPress={() => { hap("advance"); apply((s) => doCrime(s, kind)); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(123,79,175,0.4)", borderLeftWidth: 2.5, borderLeftColor: C.ink, borderRadius: 11, padding: 14, marginBottom: 10, opacity: crimeDone || locked || jailed ? 0.45 : 1 }}>
         <View style={{ width: 38, height: 38, borderRadius: 9, backgroundColor: "rgba(123,79,175,0.12)", borderWidth: 1, borderColor: "rgba(123,79,175,0.35)", alignItems: "center", justifyContent: "center" }}>
           <GameIcon name={locked ? "prisoner" : "hood"} size={18} color={C.ink} />
         </View>
@@ -95,7 +96,7 @@ export default function Suc() {
             <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("crime.hotPanel").toUpperCase()}</Text>
             <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, marginTop: 4 }}>{state.player.hotGoods} ⚜ {t("crime.hotValue")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{t(state.player.faction === "golge" ? "crime.fenceGolge" : "crime.fenceRisk")}</Text>
-            <Pressable onPress={() => { hap("advance"); apply((s) => fenceHotGoods(s)); }} style={{ marginTop: 9, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
+            <Pressable disabled={inJail(state.player)} onPress={() => { hap("advance"); apply((s) => fenceHotGoods(s)); }} style={{ marginTop: 9, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
               <Text style={{ fontFamily: F.display, fontSize: 11.5, letterSpacing: 0.5, color: C.gold }}>{t("crime.fence")}</Text>
             </Pressable>
           </View>

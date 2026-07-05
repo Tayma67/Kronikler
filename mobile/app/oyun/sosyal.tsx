@@ -40,7 +40,7 @@ function Axis({ icon, label, value, tier, desc }: { icon: string; label: string;
 export default function Sosyal() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [res, setRes] = useState<null | { text: string; tick: number }>(null);
   const seen = useRef<number>(state?.history.length ?? 0);
 
@@ -124,7 +124,7 @@ export default function Sosyal() {
           const rumors = state.player_rumors || [];
           if (!rumors.length) return <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 6 }}>{t("rum.none")}</Text>;
           return [...rumors].reverse().map((r) => {
-            const txt = applyParams(t("rumor." + r.tur + "." + r.vi), [p.name, r.kaynak]);
+            const txt = applyParams(t("rumor." + r.tur + "." + r.vi), [p.name, r.kaynak], lang);
             const cost = 15 * Math.round(r.siddet);
             return (
               <View key={r.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: r.yon > 0 ? "rgba(124,160,90,0.35)" : "rgba(160,60,60,0.35)", borderLeftWidth: 3, borderLeftColor: r.yon > 0 ? C.sage : C.blood, borderRadius: 10, padding: 12, marginBottom: 8 }}>

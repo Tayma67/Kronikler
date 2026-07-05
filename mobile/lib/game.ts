@@ -2301,7 +2301,7 @@ function bestCaravanRoute(s: GameState, origin: string): { dest: string; good: s
 // Kervan gönder: en kârlı şehirler-arası rotayı bul, çok konaklı yol kur, her ay bir konak ilerlesin.
 export function launchCaravan(prev: GameState, amount: number): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.age < 13 || s.caravan || amount <= 0 || p.money < amount) return s;
+  if (p.dead || p.age < 13 || inJail(p) || s.caravan || amount <= 0 || p.money < amount) return s; // hücreden kervan donatılmaz
   const origin = p.location_name;
   const others = LOCATIONS.filter((l) => l !== origin);
   if (others.length === 0) return s;
@@ -2329,7 +2329,7 @@ export function playerWar(s: GameState): FactionWar | null {
 // Cepheye git: loncan için savaş — risk/ödül, savaş skoruna katkı.
 export function supportWar(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
-  const w = playerWar(s); if (!w || p.dead || p.age < 13) return s;
+  const w = playerWar(s); if (!w || p.dead || p.age < 13 || inJail(p)) return s; // hücreden cepheye gidilmez
   // Tur başına tek cephe çıkışı — yoksa aynı turda üst üste ganimet/itibar farm'lanır.
   if (p.war_support_turn === s.turn) { push(s, "ocak_savasi", `Bu ay cephede yeterince savaştın; biraz soluklan.`, "kişisel", false, { k: "evj.frontWait" }); return s; }
   p.war_support_turn = s.turn;
@@ -2486,7 +2486,7 @@ export function profActionReady(p: Player, turn: number): boolean { const l = p.
 export function profActionCooldownLeft(p: Player, turn: number): number { const l = p.prof_action_turn; return l == null ? 0 : Math.max(0, profCooldownOf(p) - (turn - l)); }
 export function canProfAction(s: GameState): boolean {
   const p = s.player;
-  return !p.dead && p.age >= 13 && hasProfAction(p) && profActionReady(p, s.turn) && p.hunger >= 18;
+  return !p.dead && !inJail(p) && p.age >= 13 && hasProfAction(p) && profActionReady(p, s.turn) && p.hunger >= 18;
 }
 export function professionAction(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
@@ -3584,7 +3584,7 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
 // Sıcak malı erit (kara borsa): gölge loncası iyi oran + düşük risk; diğerleri kötü oran + yakalanma riski.
 export function fenceHotGoods(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
-  const hot = p.hotGoods || 0; if (hot <= 0 || p.dead) return s;
+  const hot = p.hotGoods || 0; if (hot <= 0 || p.dead || inJail(p)) return s; // zindanda kara borsa da yok
   const golge = p.faction === "golge";
   p.hotGoods = 0;
   if (Math.random() < (golge ? 0.05 : 0.18)) {
@@ -3663,7 +3663,7 @@ export interface Opportunity { id: string; key: string; title: string; desc: str
 // forced: mini-oyunun belirlediği sonuç (verilmezse stat'a bağlı rastgele — geriye dönük güvenli).
 export function resolveOpportunity(prev: GameState, opp: Opportunity, forced?: boolean): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead) return s;
+  if (p.dead || inJail(p)) return s; // hücrede fırsat görevi tamamlanmaz
   // Tur başına tek fırsat çözümü (diğer gelir eylemleriyle tutarlı; çoklu-çözüm farmı kapatılır).
   if (p.opp_turn === s.turn) return s;
   p.opp_turn = s.turn;
@@ -4115,7 +4115,7 @@ export function canUseFactionPower(p: Player): boolean {
 }
 export function useFactionPower(prev: GameState, kind: "himaye" | "kese"): GameState {
   const s = clone(prev); const p = s.player; const fid = p.faction;
-  if (p.dead || p.age < 13 || !fid || !canUseFactionPower(p)) return s; // ölü/çocuk oyuncu lonca gücü kullanamaz (diğer eylemlerle tutarlı)
+  if (p.dead || p.age < 13 || !fid || inJail(p) || !canUseFactionPower(p)) return s; // ölü/çocuk/zindandaki oyuncu lonca gücü kullanamaz (diğer eylemlerle tutarlı)
   // Tur başına tek nüfuz kullanımı — yoksa itibar→para aynı turda boşaltılıp farm'lanır.
   if (p.faction_power_turn === s.turn) { push(s, "örgüt", `Ocağın nüfuzunu bu ay zaten kullandın; sık başvurmak yıpratır.`, "kişisel", false, { k: "evj.facPowerWait" }); return s; }
   p.faction_power_turn = s.turn;
@@ -4138,7 +4138,7 @@ export function factionBanLeft(p: Player, id: string, turn: number): number {
 }
 export function joinFaction(prev: GameState, id: string): GameState {
   const s = clone(prev); const p = s.player; const f = factionById(id);
-  if (!f || p.dead || p.age < 13) return s;
+  if (!f || p.dead || p.age < 13 || inJail(p)) return s; // ocağa kayıt zindandan yapılmaz
   if (p.faction === id) return s;
   if (factionBanLeft(p, id, s.turn) > 0) { push(s, "örgüt_katılım", `${f.name} seni henüz geri almıyor; saflarını terk edenin sözü ağır.`, "kişisel", false, { k: "evj.facBanned", p: [{ fc: f.id }] }); return s; }
   const need = hasPerk(p, "karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep;
