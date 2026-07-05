@@ -32,7 +32,8 @@ export default function MpOyun() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useI18n();
-  const { name } = useLocalSearchParams<{ name: string }>();
+  const { name, gender } = useLocalSearchParams<{ name: string; gender?: string }>();
+  const mpGender: "erkek" | "kadın" = gender === "kadın" ? "kadın" : "erkek";
   const { state: s, apply, mpMode, enterMp, exitMp } = useGame();
   const { guestId, snapshot, lastTick, missed, clearMissed, setReady, sendIntent, syncPlayer, saved, saveState, setTravel } = useMp();
 
@@ -49,7 +50,7 @@ export default function MpOyun() {
     if (mpMode || !guestId) return;
     let init: GameState | null = null;
     if (saved) { try { const r = JSON.parse(saved); if (r && r.player) init = { ...migrate(r), mpRealm: true }; } catch {} } // sunucu yedeği eski şemadan olabilir — SP ile aynı göç yolundan geçir
-    if (!init) init = { ...newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"), mpRealm: true };
+    if (!init) init = { ...newGame(String(name || "Hanedan"), String(name || "Han"), mpGender), mpRealm: true };
     // Yoklukta NPC-vekil yaşlandıysa/öldüyse dönüşte karaktere yansıt (sunucu otoritesi).
     const meP = snapshot?.players.find((x) => x.id === guestId);
     if (meP) { if (meP.dead) init.player.dead = true; if (typeof meP.age === "number" && meP.age > init.player.age) init.player.age = meP.age; }
@@ -143,7 +144,7 @@ export default function MpOyun() {
                 <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: "#2a1d08" }}>{t("dash.continueHeir")}</Text>
               </Pressable>
             ) : (
-              <Pressable onPress={() => { hap("advance"); const ns = { ...newGame(String(name || "Hanedan"), String(name || "Han"), "erkek"), mpRealm: true }; apply(() => ns); if (guestId) { syncPlayer(mePublic(guestId, ns, false)); saveState(JSON.stringify(ns)); } }}
+              <Pressable onPress={() => { hap("advance"); const ns = { ...newGame(String(name || "Hanedan"), String(name || "Han"), mpGender), mpRealm: true }; apply(() => ns); if (guestId) { syncPlayer(mePublic(guestId, ns, false)); saveState(JSON.stringify(ns)); } }}
                 style={{ marginTop: 12, paddingVertical: 13, borderRadius: 9, alignItems: "center", borderWidth: 1, borderColor: "rgba(201,168,76,0.6)", backgroundColor: "rgba(201,168,76,0.12)" }}>
                 <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>{t("menu.newGame")}</Text>
               </Pressable>

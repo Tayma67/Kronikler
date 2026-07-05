@@ -44,12 +44,13 @@ export default function MpLobby() {
   };
   useEffect(() => { if (serverUrl) refreshRooms(); }, [serverUrl]);
 
+  const [gender, setGender] = useState<"erkek" | "kadın">("erkek"); // MP karakteri de SP gibi cinsiyet seçer (dişil dil desteği dahil)
   const saveServer = async () => { hap("tap"); await setServerUrl(serverDraft.trim()); setUrl(serverDraft.trim()); };
   const go = async (realmId: string) => {
     const nm = name.trim() || "Hanedan";
     await setSavedName(nm);
     hap("advance");
-    router.push({ pathname: "/cok-oyunculu/diyar", params: { realmId, name: nm } });
+    router.push({ pathname: "/cok-oyunculu/diyar", params: { realmId, name: nm, gender } });
   };
 
   const serverReady = !!serverUrl;
@@ -86,6 +87,14 @@ export default function MpLobby() {
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 20, marginBottom: 8 }}>{t("mp.nameLabel")}</Text>
         <TextInput value={name} onChangeText={setName} maxLength={20} placeholder={t("mp.namePlaceholder")} placeholderTextColor={C.parchmentDim}
           style={{ fontFamily: F.display, fontSize: 15, color: C.parchment, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 9, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: C.card }} />
+        {/* Cinsiyet: SP'deki yeni-oyun akışıyla parite */}
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+          {(["erkek", "kadın"] as const).map((gnd) => (
+            <Pressable key={gnd} onPress={() => { hap("tap"); setGender(gnd); }} style={{ flex: 1, paddingVertical: 10, borderRadius: 9, alignItems: "center", borderWidth: 1, borderColor: gender === gnd ? "rgba(201,168,76,0.7)" : C.border, backgroundColor: gender === gnd ? "rgba(201,168,76,0.14)" : C.card }}>
+              <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: gender === gnd ? C.gold : C.parchmentMuted }}>{gnd === "erkek" ? t("misc.male").toUpperCase() : t("misc.female").toUpperCase()}</Text>
+            </Pressable>
+          ))}
+        </View>
 
         {/* Diyar Kur */}
         <Pressable disabled={!serverReady} onPress={() => go(newRealmCode())} style={{ marginTop: 22, paddingVertical: 15, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: serverReady ? C.gold : C.card, opacity: serverReady ? 1 : 0.5 }}>

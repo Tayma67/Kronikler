@@ -18,7 +18,7 @@ export default function Diyar() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useI18n();
-  const { realmId, name } = useLocalSearchParams<{ realmId: string; name: string }>();
+  const { realmId, name, gender } = useLocalSearchParams<{ realmId: string; name: string; gender?: string }>();
   const { status, guestId, snapshot, chat, error, joinRealm, setReady, sendChat, leave } = useMp();
   const [chatText, setChatText] = useState("");
   const [chatScope, setChatScope] = useState<ChatScope>("all");
@@ -93,7 +93,7 @@ export default function Diyar() {
 
         {/* Diyara gir (paylaşımlı oyun) */}
         {snapshot && (
-          <Pressable onPress={() => { hap("advance"); router.push({ pathname: "/cok-oyunculu/oyun", params: { name: String(name || "Hanedan") } }); }}
+          <Pressable onPress={() => { hap("advance"); router.push({ pathname: "/cok-oyunculu/oyun", params: { name: String(name || "Hanedan"), gender: String(gender || "erkek") } }); }}
             style={{ marginTop: 18, paddingVertical: 14, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold }}>
             <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 2, color: "#2a1d08" }}>{t("mp.enterWorld")}</Text>
           </Pressable>
