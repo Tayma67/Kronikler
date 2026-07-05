@@ -1410,6 +1410,9 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Ellerine baktın: her nasır bir hikâye. Gençlerin haftada yapamadığını sen bir günde yapardın.", k: "mem.craftHands", fn: () => { p.honor = Math.min(100, p.honor + 1); } },
         { text: "Bir yolcu, gençliğindeki bir kavganı hikâye diye anlattı; adları değiştirmişler ama sen kendini tanıdın.", k: "mem.nameEcho", fn: () => { p.fame = Math.min(100, p.fame + 1); } },
         { text: "Sokakta bir çocuğa senin adını seslendiler; adın senden önce yürümeye başladı bile.", k: "mem.grandName", fn: () => { p.reputation = Math.min(100, p.reputation + 1); } },
+        { text: "Gençken diktiğin ağacın gölgesinde soluklandın; ağaç da sen de sözünüzü tutmuşsunuz.", k: "mem.orchardShade", fn: () => { p.health = Math.min(100, p.health + 1); } },
+        { text: "Bir sofrada anandan kalma bir tadı yakaladın; gözlerini kapatınca bir anlığına o mutfağa döndün.", k: "mem.motherTaste", fn: () => { p.hunger = Math.min(100, p.hunger + 2); } },
+        { text: "Kış güneşinde duvar dibine oturdun; sıcaklık iliklerine işledi, kimseyle konuşmadan bir öğle geçti.", k: "mem.winterSun" },
       );
     }
     const m = rnd(mem); m.fn?.();
