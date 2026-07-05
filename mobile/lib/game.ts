@@ -4248,8 +4248,11 @@ export function tendChild(prev: GameState): GameState {
 }
 // ── Ay-içi mikro an: panoda beliren tek satırlık, atlanabilir seçim — "aynı üç buton" hissini kırar.
 // Etkiler bilinçli olarak minicik: iki seçenek de geçerli, farm yok (an rastgele düşer, ertesi ay kaybolur).
-export const MICRO_IDS = ["saganak", "sokak_kedisi", "cirak_tabla", "eski_turku", "yol_soran", "yildiz_gecesi"];
+export const MICRO_IDS = ["saganak", "sokak_kedisi", "cirak_tabla", "eski_turku", "yol_soran", "yildiz_gecesi", "nalbant_kivilcimi", "harman_yeli", "bekci_feneri"];
 const MICRO_R_TR: Record<string, [string, string]> = {
+  nalbant_kivilcimi: ["Alnını okşayıp kulağına bir şeyler mırıldandın; at duruldu. Nalbant 'eline sağlık' dedi.", "Ustanın çekiç ritmini çözdün: el, göz ve sabır — zanaat dediğin üçünün toplamı."],
+  harman_yeli: ["Örtünün ucundan tuttun; harman kurtuldu. Komşu akşam kapına bir tas bulgur bıraktı.", "Rüzgârın savurduğu başakları topladın; akşam çorbasına bir avuç bereket."],
+  bekci_feneri: ["Ocaktan kor uzattın; fener yeniden yandı. O gece sokağın uykusu senin korunla aydınlandı, bekçi duasını esirgemedi.", "Fitili kesip düzelttin; alev daha gür yandı. Bekçi 'usta elin varmış' diye söylendi."],
   saganak: ["Sırılsıklam ama dinç döndün; yağmur insanı bilerken vücudu peklerştirir derler.", "Saçak altında bir soluk aldın; damlaların sesi içini dinlendirdi."],
   sokak_kedisi: ["Kedi karnını doyurup dizine kıvrıldı; komşular gülümseyerek baktı.", "Kedi bir süre seni süzdü, sonra kendi yoluna gitti; sabır da bir liman."],
   cirak_tabla: ["Beraber topladınız; ustası uzaktan görüp başını salladı: 'Aferin.'", "Tozlu simide akçe saydın; çırağın yüzü güldü, tadı da fena değildi."],
@@ -4269,6 +4272,9 @@ export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
   else if (id === "eski_turku") { if (choice === 0) gainSkill(s, "social", 3); else p.health = Math.min(100, p.health + 1); }
   else if (id === "yol_soran") { if (choice === 0) p.reputation = Math.min(100, p.reputation + 1); else addStatXp(s, "intelligence", 2); }
   else if (id === "yildiz_gecesi") { if (choice === 0) bumpNam(p, "dindar", 1); else addStatXp(s, "intelligence", 2); }
+  else if (id === "nalbant_kivilcimi") { if (choice === 0) addStatXp(s, "charisma", 2); else addStatXp(s, "intelligence", 2); }
+  else if (id === "harman_yeli") { if (choice === 0) { bumpNam(p, "comert", 1); p.reputation = Math.min(100, p.reputation + 1); } else p.hunger = Math.min(100, p.hunger + 2); }
+  else if (id === "bekci_feneri") { if (choice === 0) bumpNam(p, "dindar", 1); else gainSkill(s, "crafting", 2); }
   const rtr = MICRO_R_TR[id];
   push(s, "gunluk", rtr ? rtr[choice] : "", "kişisel", false, { k: `micro.${id}.r${choice}` });
   return s;
