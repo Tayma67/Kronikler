@@ -604,7 +604,7 @@ export default function Dashboard() {
               {([0, 1] as const).map((c) => {
                 const dis = c === 0 && NEED[d.id] != null && p.money < NEED[d.id];
                 return (
-                <Pressable key={c} disabled={dis} onPress={() => { hap("tap"); apply((s) => resolveDivan(s, c)); }} style={{ flex: 1, paddingVertical: 7, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", opacity: dis ? 0.4 : 1 }}>
+                <Pressable key={c} disabled={dis} onPress={() => { hap(c === 0 ? "success" : "tap"); if (c === 0) playChime(); apply((s) => resolveDivan(s, c)); }} style={{ flex: 1, paddingVertical: 7, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", opacity: dis ? 0.4 : 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, letterSpacing: 0.5, textAlign: "center" }}>{t("divan." + d.id + ".c" + c)}</Text>
                 </Pressable>
                 );

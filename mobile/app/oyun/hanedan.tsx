@@ -5,6 +5,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
+import { playVictory, playChime } from "../../lib/sound";
 import {
   playerHousePower, houseAttitude, dynastyPower, houseSeal,
   WILL_STYLES, throneRequirements, throneBacking, canClaimThrone, throneOdds, claimThrone, THRONE_COST,
@@ -274,7 +275,7 @@ export default function Hanedan() {
                           <Text style={{ fontFamily: F.display, fontSize: 11, color: can ? C.ember : C.parchmentMuted }}>{t("crown.campaignBtn")}: {t("beylik." + tg.id)}</Text>
                         </Pressable>
                         {(() => { const tcan = p.crown_action_turn !== state.turn; return (
-                        <Pressable disabled={!tcan} onPress={() => { hap("tap"); const r = demandTribute(state, tg.id); apply(() => r.state); setCampMsg({ ok: r.success, tick: Date.now() }); }} style={{ paddingVertical: 6, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: tcan ? "rgba(201,168,76,0.45)" : C.border, backgroundColor: tcan ? "rgba(201,168,76,0.08)" : C.bg, opacity: tcan ? 1 : 0.5 }}>
+                        <Pressable disabled={!tcan} onPress={() => { const r = demandTribute(state, tg.id); hap(r.success ? "success" : "warning"); if (r.success) playVictory(); apply(() => r.state); setCampMsg({ ok: r.success, tick: Date.now() }); }} style={{ paddingVertical: 6, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: tcan ? "rgba(201,168,76,0.45)" : C.border, backgroundColor: tcan ? "rgba(201,168,76,0.08)" : C.bg, opacity: tcan ? 1 : 0.5 }}>
                           <Text style={{ fontFamily: F.display, fontSize: 10, color: tcan ? C.gold : C.parchmentMuted }}>{t("crown.tributeBtn")}: {t("beylik." + tg.id)}</Text>
                         </Pressable>
                         ); })()}
@@ -577,7 +578,7 @@ export default function Hanedan() {
                     const acted = p.propose_turn === state.turn;
                     return (
                       <View style={{ gap: 4 }}>
-                        <Pressable disabled={acted} onPress={() => { hap("tap"); apply((s) => sendEnvoy(s, h.id)); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: acted ? C.border : "rgba(127,166,106,0.5)", opacity: acted ? 0.4 : 1 }}>
+                        <Pressable disabled={acted} onPress={() => { hap("selection"); playChime(); apply((s) => sendEnvoy(s, h.id)); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: acted ? C.border : "rgba(127,166,106,0.5)", opacity: acted ? 0.4 : 1 }}>
                           <Text style={{ fontFamily: F.display, fontSize: 8.5, color: acted ? C.parchmentMuted : C.sage }}>{applyParams(t("dyn.envoy"), [Math.round(ENVOY_COST * inflationFactor(state))])}</Text>
                         </Pressable>
                         {h.attitude > -10 && (

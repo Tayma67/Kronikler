@@ -6,7 +6,7 @@ import { useGame } from "./store";
 import { socialTierIndex } from "./game";
 import { useI18n } from "./i18n";
 import { hap } from "./haptics";
-import { playFanfare, playTap, playToll, playChime } from "./sound";
+import { playFanfare, playTap, playToll, playChime, playVictory } from "./sound";
 import { C, F } from "./theme";
 import { GameIcon } from "./icons";
 
@@ -25,6 +25,7 @@ export function StatDeltaOverlay() {
   const [tierUp, setTierUp] = useState<null | { tier: number; tick: number }>(null);
   const [crown, setCrown] = useState<null | { tick: number }>(null);
   const [settle, setSettle] = useState<null | { name: string; tick: number }>(null);
+  const [capstone, setCapstone] = useState<null | { tick: number }>(null);
   const [wed, setWed] = useState<null | { name: string; tick: number }>(null);
   const [birth, setBirth] = useState<null | { name: string; tick: number }>(null);
   const [mourn, setMourn] = useState<null | { tick: number }>(null);
@@ -33,6 +34,7 @@ export function StatDeltaOverlay() {
   const fameTier = useRef<number>(-1);
   const wasCrowned = useRef<boolean | null>(null);
   const settleCount = useRef<number>(-1);
+  const capstoneCount = useRef<number>(-1);
   const wasMarried = useRef<boolean | null>(null);
   const childCount = useRef<number>(-1);
   const wasDead = useRef<boolean | null>(null);
@@ -63,6 +65,15 @@ export function StatDeltaOverlay() {
     if (list.length > settleCount.current) { setSettle({ name: list[list.length - 1]?.name || "", tick: Date.now() }); hap("success"); playTap(); setTimeout(() => setSettle(null), 2600); }
     settleCount.current = list.length;
   }, [state?.settlements?.length]);
+
+  // Ustalık eseri: mesleğin zirvesine İLK varış — ömürde meslek başına bir kez, zafer sesiyle kutlanır.
+  useEffect(() => {
+    if (!state) return;
+    const n = (state.player.capstones || []).length;
+    if (capstoneCount.current < 0 || gen.current !== state.player.generation) { capstoneCount.current = n; return; }
+    if (n > capstoneCount.current) { setCapstone({ tick: Date.now() }); hap("success"); playVictory(); setTimeout(() => setCapstone(null), 2800); }
+    capstoneCount.current = n;
+  }, [state?.player.capstones?.length]);
 
   // Evlilik — ömrün duygusal omurgası; yerleşim kadar özel kutlanır.
   useEffect(() => {
@@ -150,7 +161,7 @@ export function StatDeltaOverlay() {
     setTimeout(() => setToasts((cur) => cur.filter((tt) => !ids.includes(tt.id))), 1750);
   }, [state?.player]);
 
-  if (toasts.length === 0 && !tierUp && !crown && !settle && !wed && !birth && !mourn) return null;
+  if (toasts.length === 0 && !tierUp && !crown && !settle && !wed && !birth && !mourn && !capstone) return null;
   return (
     <View pointerEvents="none" style={{ position: "absolute", top: insets.top + 8, left: 0, right: 0, alignItems: "center", zIndex: 999 }}>
       {mourn && (
@@ -166,6 +177,13 @@ export function StatDeltaOverlay() {
           <GameIcon name="castle" size={24} color={C.sage} />
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2.5, color: C.goldDim, marginTop: 4 }}>{t("feel.settle").toUpperCase()}</Text>
           {!!settle.name && <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 1, color: C.sage, marginTop: 2 }}>{settle.name}</Text>}
+        </Animated.View>
+      )}
+      {capstone && (
+        <Animated.View key={"cap" + capstone.tick} entering={ZoomIn.springify().damping(15)} exiting={FadeOut.duration(380)}
+          style={{ alignItems: "center", paddingVertical: 10, paddingHorizontal: 22, borderRadius: 14, borderWidth: 1, borderColor: "rgba(201,168,76,0.6)", backgroundColor: "rgba(26,20,12,0.96)" }}>
+          <GameIcon name="anvil" size={26} color={C.gold} />
+          <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 2, color: C.gold, marginTop: 5 }}>{t("feel.capstone")}</Text>
         </Animated.View>
       )}
       {wed && (
