@@ -4270,8 +4270,10 @@ export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
 }
 // ── Divan/Arzuhal: taç sahibinin huzuruna düşen dilekçeler — hükümdarlık soyut ferman menüsü değil, yüzü olan kararlar.
 // Etki dengesi bilinçli: halkı kollamak keseden yer ama otorite/itibar getirir; keseyi kollamak nam bedeli öder (farm yok: an rastgele düşer).
-export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit", "kacak_asker", "iki_imam", "leke_surulen", "eski_silah_arkadasi"];
+export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit", "kacak_asker", "iki_imam", "leke_surulen", "eski_silah_arkadasi", "kayip_kervan", "zindan_affi"];
 const DIVAN_R_TR: Record<string, [string, string]> = {
+  kayip_kervan: ["Kese kervancıya, haber kervanlara ulaştı: 'O tacın gölgesinde mal güvende.' O yıl pazara üç kervan fazla geldi; adın yol boyunca anıldı.", "Kervancı boş keseyle döndü; hikâyesi hanlarda anlatıldı. Ertesi bahar bazı kervanlar komşu beyliğin yolunu tuttu — yol boştu, hanlar suskundu."],
+  zindan_affi: ["Demir kapı açıldı; ana, oğlunun koluna yaslanıp dua ede ede uzaklaştı. Kadı kaşlarını çattı ama çarşı o hafta tacın merhametini konuştu.", "Ana sessizce çekildi; duası yarım kaldı. Zindanın düzeni bozulmadı — ama o kışı oğlan çıkardı mı, kimse sormadı."],
   kacak_asker: ["Sipahi diz çöküp kılıcını sana uzattı: 'Bu can artık senindir.' Ordugâhta kimi yumuşaklık dedi, kimi adalet — ama o sipahi bir daha hiçbir seferden kaçmadı.", "Ceza meydanda verildi; saflar sıklaştı, gözler soğudu. Düzen korkuyla kuruldu — korkuyla kurulan düzenin bekçisi çok gerek."],
   iki_imam: ["Minare yükseldi, kürsü kuruldu; ilk hutbede iki imam yan yana durdu ve adını hayırla andı. Cuma çıkışı çarşı senin sözünle çalkalandı.", "İmece kuruldu, taş taş üstüne kondu — yavaş ama onların eseri. Minarenin gölgesi uzun; senin adın o gölgede kısa kaldı."],
   leke_surulen: ["Tellal üç çarşı gezdi; ertesi hafta kadın hanın mutfağında iş buldu. Yıllar sonra tezgâhından geçen her yetime bir sıcak çorba çıktı — iyilik döner.", "Kadın sessizce çıktı; kapıda duraksayıp dönmedi. Divanın defterinde bu bir hiçti; kasabanın defterinde bir sayfa daha karardı."],
@@ -4289,6 +4291,7 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
   if (id === "sinir_haraci" && choice === 0 && p.money < 120) return s;
   if (id === "genc_mucit" && choice === 0 && p.money < 150) return s;
   if (id === "iki_imam" && choice === 0 && p.money < 200) return s;
+  if (id === "kayip_kervan" && choice === 0 && p.money < 130) return s;
   s.divan = null;
   if (id === "su_kavgasi") {
     if (choice === 0) { p.money -= 100; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); }
@@ -4315,6 +4318,12 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
   } else if (id === "eski_silah_arkadasi") {
     if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 2); }
     else { p.honor = Math.min(100, p.honor + 2); p.crownAuthority = clamp100(crownAuthorityOf(p) - 4); }
+  } else if (id === "kayip_kervan") {
+    if (choice === 0) { p.money -= 130; p.crownAuthority = clamp100(crownAuthorityOf(p) + 5); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); sowSeed(s, { kaynak: "divan_kervanci", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { money: 220, reputation: 4 } }); }
+    else { p.reputation = Math.max(-100, p.reputation - 3); p.crownAuthority = clamp100(crownAuthorityOf(p) - 2); }
+  } else if (id === "zindan_affi") {
+    if (choice === 0) { p.honor = Math.min(100, p.honor + 4); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "mert", 2); sowSeed(s, { kaynak: "divan_ana_duasi", hmin: 24, hmax: 72, agirlik: "kucuk", nesil: false, etki: { reputation: 5 } }); }
+    else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.fear = Math.min(100, p.fear + 2); bumpNam(p, "zalim", 1); }
   }
   const rtr = DIVAN_R_TR[id];
   push(s, "taht", rtr ? rtr[choice] : "", "kişisel", choice === 0, { k: `divan.${id}.r${choice}` });
