@@ -3179,6 +3179,7 @@ interface SchoolEvent { id: string; stat: keyof Stats; }
 const SCHOOL_EVENTS: SchoolEvent[] = [
   { id: "kopya", stat: "intelligence" }, { id: "kavga", stat: "strength" }, { id: "siir", stat: "charisma" },
   { id: "soru", stat: "intelligence" }, { id: "yaramazlik", stat: "charisma" }, { id: "yardim", stat: "intelligence" },
+  { id: "hattat", stat: "intelligence" }, { id: "ezber", stat: "intelligence" }, { id: "bahce", stat: "stamina" },
 ];
 const SCHOOL_EV_TR: Record<string, string> = {
   "kopya.win":"Sınavda kopya teklif edildi; reddedip kendi emeğine güvendin.", "kopya.lose":"Kopyaya kalkıştın ve yakalandın; yüzün kızardı.",
@@ -3187,6 +3188,9 @@ const SCHOOL_EV_TR: Record<string, string> = {
   "soru.win":"Hocanın çetin sorusunu bildin; takdir kazandın (özellik puanı).", "soru.lose":"Hocanın sorusunda bocaladın.",
   "yaramazlik.win":"Sınıfta küçük bir muziplik yaptın; herkes güldü.", "yaramazlik.lose":"Muzipliğin ters tepti; hoca kızdı.",
   "yardim.win":"Geri kalan bir arkadaşına ders çalıştırdın; ikiniz de kazandınız.", "yardim.lose":"Yardım etmeye çalıştın ama anlatamadın.",
+  "hattat.win":"Hokka ve kamışla bir sayfa yazdın; hoca sayfayı herkese gösterdi.", "hattat.lose":"Mürekkep devrildi; sayfa da önlüğün de lekelendi.",
+  "ezber.win":"Uzun kasideyi su gibi okudun; meclis parmak ısırdı.", "ezber.lose":"Ezberin ortasında düğümlendin; kaldığın yeri hoca fısıldadı.",
+  "bahce.win":"Mektep bahçesinde fidan diktin, kuyudan su çektin; akşama hem yorgun hem toktun.", "bahce.lose":"Öğle güneşinde fazla kaldın; başın döndü.",
 };
 // Mektep kulüpleri (Vercel school.py öğrenci topluluğu): okul çağında (7-17) haftalık pasif beceri XP'si.
 export interface SchoolClub { id: string; skill: SkillKey; }
@@ -3250,7 +3254,10 @@ export function studySubject(prev: GameState, id: string): StudyResult {
     else if (ev.id === "siir") { if (pass) { gainSkill(s, "social", 8); p.fame = Math.min(100, p.fame + 1); chips.push({ label: "Sosyal +8", col: "#C9A84C", k: "chip.social", p: ["+8"] }); } else { p.honor = Math.max(0, p.honor - 1); } }
     else if (ev.id === "soru") { if (pass) { if (!seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); } else { addStatXp(s, EXAM_STAT[id] || "intelligence", 10); chips.push({ label: "Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); } } }
     else if (ev.id === "yaramazlik") { if (pass) { bumpNam(p, "capkin", 2); } else { p.honor = Math.max(0, p.honor - 2); chips.push({ label: "Şeref −2", col: "#C0556B", k: "chip.honor", p: ["−2"] }); } }
-    else { if (pass) { p.honor = Math.min(100, p.honor + 3); gainSkill(s, "social", 6); chips.push({ label: "Sosyal +6", col: "#C9A84C", k: "chip.social", p: ["+6"] }); } }
+    else if (ev.id === "yardim") { if (pass) { p.honor = Math.min(100, p.honor + 3); gainSkill(s, "social", 6); chips.push({ label: "Sosyal +6", col: "#C9A84C", k: "chip.social", p: ["+6"] }); } }
+    else if (ev.id === "hattat") { if (pass) { gainSkill(s, "crafting", 8); chips.push({ label: "Zanaat +8", col: "#C9A84C", k: "chip.craft", p: ["+8"] }); } else { p.honor = Math.max(0, p.honor - 1); } }
+    else if (ev.id === "ezber") { if (pass) { addStatXp(s, "intelligence", 8); p.fame = Math.min(100, p.fame + 1); chips.push({ label: "Ustalık", col: "#E0BC5A", k: "chip.ustalik" }); } }
+    else { if (pass) { addStatXp(s, "stamina", 6); p.hunger = Math.min(100, p.hunger + 2); chips.push({ label: "Ustalık", col: "#C9A84C", k: "chip.ustalik" }); } else { p.health = Math.max(1, p.health - 2); chips.push({ label: "Sağlık −2", col: "#C0556B", k: "chip.health", p: ["−2"] }); } }
     push(s, "mektep", `Mektep: ${SCHOOL_EV_TR[ev.id + "." + w]}`, "kişisel", false, { k: "sch." + ev.id + "." + w });
   }
   // ── Sınav: her 4 derste bir (ilgili statla test) ──
