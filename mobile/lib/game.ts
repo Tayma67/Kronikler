@@ -1426,8 +1426,13 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   // Kronik hastalık: sessiz aylık sızıntı + arada alevlenme (ölüm nedeni değil, ecele zemin — hekim döngüsüne itki).
   if (p.chronic && !p.dead) {
-    p.health = Math.max(1, p.health - 1);
-    if (chance(0.08)) { const w = 4 + Math.floor(Math.random() * 3); p.health = Math.max(1, p.health - w); push(s, "hastalik", `Eski öksürük alevlendi; birkaç gün nefessiz kaldın (−${w} sağlık).`, "kişisel", false, { k: "evj.chronicFlare", p: [w] }); }
+    if (p.chronic.k === "eklem") {
+      if (chance(0.5)) p.health = Math.max(1, p.health - 1); // yarı sızıntı — ama alevlenme daha sık
+      if (chance(0.12)) { const w = 3 + Math.floor(Math.random() * 3); p.health = Math.max(1, p.health - w); push(s, "hastalik", `Eklemler tutuldu; birkaç gün merdiven düşman oldu (−${w} sağlık).`, "kişisel", false, { k: "evj.eklemFlare", p: [w] }); }
+    } else {
+      p.health = Math.max(1, p.health - 1);
+      if (chance(0.08)) { const w = 4 + Math.floor(Math.random() * 3); p.health = Math.max(1, p.health - w); push(s, "hastalik", `Eski öksürük alevlendi; birkaç gün nefessiz kaldın (−${w} sağlık).`, "kişisel", false, { k: "evj.chronicFlare", p: [w] }); }
+    }
   }
   // ── Nemesis dünyada yaşıyor: musallat olur; yoksa derin bir husumet amansız hasma dönüşebilir ──
   if (!p.dead && p.age >= 14 && s.story) {
@@ -1453,6 +1458,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // Yaşlanma + ölümlülük — geniş dağılım: bazıları genç hastalık/kazaya, sağlıklı & bakımlı olanlar 70-80'e ulaşabilir.
   // Sağlık aşınması daha yumuşak (ayda değil seyrek) → servetle hekim tutan uzun yaşar (gerçek hayat filtresi).
   if (p.age >= 52 && chance(0.5)) p.health = Math.max(0, p.health - Math.floor((p.age - 48) / 7));
+  // Eklem ağrısı: yaşla gelir (hastalıktan değil) — sağlıklı oyuncu da yakalanabilir; hekim kürü inatçıdır.
+  if (!p.dead && !p.chronic && p.age >= 48 && chance(0.003)) { p.chronic = { k: "eklem", since: s.turn }; push(s, "hastalik", "Dizlerindeki sızı bir gecede yerleşti; sabahları ilk adım eskisinden zor. Hekim görmeden yakanı bırakmayacak.", "kişisel", true, { k: "evj.eklemStart" }); }
   const accident = (p.age >= 25 ? (p.age < 40 ? 0.0003 : p.age < 55 ? 0.0006 : 0.0009) : 0) + (p.health < 25 ? 0.012 : 0); // kaza terimi yaş basamaklı: 40 öncesi ecel nadir, yaş ilerledikçe ağırlaşır
   const frail = p.health < 40 ? 0.008 : 0;
   const aging = p.age >= 62 ? (p.age - 62) * 0.0045 + frail : frail;
@@ -5202,11 +5209,13 @@ export function visitHealer(prev: GameState): GameState {
   const cost = healerCost(s); if (p.money < cost) return s;
   p.healer_turn = s.turn; p.money -= cost;
   p.health = Math.min(100, p.health + 12);
-  if (p.chronic && chance(0.4)) {
-    delete p.chronic;
-    push(s, "saglik", `Hekimin otları nihayet işledi: eski öksürük kesildi, göğsün açıldı (−${cost} akçe).`, "kişisel", true, { k: "evj.chronicCured", p: [cost] });
+  if (p.chronic && chance(p.chronic.k === "eklem" ? 0.25 : 0.4)) {
+    const curedKind = p.chronic.k; delete p.chronic;
+    if (curedKind === "eklem") push(s, "saglik", `Hekimin yakıları işledi: eklemlerdeki sızı çekildi, adımların açıldı (−${cost} akçe).`, "kişisel", true, { k: "evj.eklemCured", p: [cost] });
+    else push(s, "saglik", `Hekimin otları nihayet işledi: eski öksürük kesildi, göğsün açıldı (−${cost} akçe).`, "kişisel", true, { k: "evj.chronicCured", p: [cost] });
   } else if (p.chronic) {
-    push(s, "saglik", `Hekime göründün; nefesin açıldı ama eski öksürük yerinde (−${cost} akçe).`, "kişisel", false, { k: "evj.healerChronic", p: [cost] });
+    if (p.chronic.k === "eklem") push(s, "saglik", `Hekime göründün; yakı iyi geldi ama sızı derinde (−${cost} akçe).`, "kişisel", false, { k: "evj.healerEklem", p: [cost] });
+    else push(s, "saglik", `Hekime göründün; nefesin açıldı ama eski öksürük yerinde (−${cost} akçe).`, "kişisel", false, { k: "evj.healerChronic", p: [cost] });
   } else {
     push(s, "saglik", `Hekime göründün; şuruplar ve dinlenme iyi geldi (−${cost} akçe).`, "kişisel", false, { k: "evj.healerVisit", p: [cost] });
   }
