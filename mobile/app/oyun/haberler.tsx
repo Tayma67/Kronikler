@@ -52,11 +52,18 @@ export default function Haberler() {
         {realm.length > 0 && (
           <>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 8 }}><GameIcon name="banner" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("hab.realm")}</Text></View>
-            {realm.map((e, i) => (
-              <View key={"realm" + i} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: e.type === "ocak_savasi" ? C.blood : C.sage, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 }}>
+            {realm.map((e, i) => {
+              const dest = e.type === "ocak_savasi" ? "/oyun/orgutler" : e.type === "piyasa" ? "/oyun/pazar" : "/oyun/hanedan"; // haberden ilgili ekrana köprü (salt gezinme)
+              return (
+              <Pressable key={"realm" + i} onPress={() => { router.push(dest as any); }} style={({ pressed }) => ({ backgroundColor: pressed ? C.cardHi : C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: e.type === "ocak_savasi" ? C.blood : C.sage, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 })}>
                 <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, lineHeight: 19 }}>{renderEvt(e.k, e.text, e.p, lang, t, state.player.gender === "kadın")}</Text>
-              </View>
-            ))}
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 3, marginTop: 6 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: C.goldDim }}>{t("hab.go").toUpperCase()}</Text>
+                  <Text style={{ color: C.goldDim, fontSize: 11, fontFamily: F.display }}>›</Text>
+                </View>
+              </Pressable>
+              );
+            })}
           </>
         )}
 
