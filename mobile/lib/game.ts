@@ -972,6 +972,11 @@ function locEventPersonal(s: GameState) {
   for (const e of s.locEvents || []) {
     if (e.loc !== s.player.location_name || e.until <= s.turn) continue;
     if (e.type === "veba" && chance(0.15)) { const h = 6 + Math.floor(Math.random() * 8); s.player.health = Math.max(1, s.player.health - h); push(s, "saglik", `${e.loc}'deki veba sana da bulaştı; halsiz düştün (−${h} sağlık).`, "kişisel", false, { k: "lev.veba.hit", p: [h] }); }
+    else if (e.type === "panayir" && s.player.horse && chance(0.20)) {
+      const hn = s.player.horse_name || "";
+      if (Math.random() < Math.min(0.85, 0.4 + effStat(s.player, "stamina") * 0.05)) { const prize = 20 + Math.floor(Math.random() * 21); s.player.money += prize; s.player.fame = Math.min(100, s.player.fame + 3); bumpNam(s.player, "mert", 1); push(s, "gunluk", `${e.loc} panayırında at yarışına girdin; ${hn} tozu dumana kattı, kese ve alkış senin (+${prize} akçe).`, "kişisel", true, { k: "horse.race.win", p: [{ pl: e.loc }, hn, prize] }); }
+      else { s.player.health = Math.max(1, s.player.health - 2); push(s, "gunluk", `${e.loc} panayırındaki yarışta ${hn} son düzlükte kaldı; toz yuttun ama meydan seni tanıdı.`, "kişisel", false, { k: "horse.race.lose", p: [{ pl: e.loc }, hn] }); }
+    }
     else if (e.type === "panayir" && chance(0.30)) { const g = 5 + Math.floor(Math.random() * 10); s.player.money += g; s.player.reputation = Math.min(100, s.player.reputation + 1); push(s, "gunluk", `${e.loc} panayırında eğlendin, biraz da kazandın (+${g} akçe).`, "kişisel", false, { k: "lev.panayir.gain", p: [g] }); }
     else if (e.type === "dugun" && chance(0.25)) { const g = 4 + Math.floor(Math.random() * 8); s.player.money += g; s.player.reputation = Math.min(100, s.player.reputation + 1); push(s, "gunluk", `${e.loc}'deki düğün sofrasına oturdun; kesene de neşene de düştü (+${g} akçe).`, "kişisel", false, { k: "lev.dugun.gain", p: [g] }); }
     else if (e.type === "kuraklik" && chance(0.25)) { s.player.hunger = Math.max(0, s.player.hunger - 6); push(s, "gunluk", `${e.loc}'de kuraklık; karın doyurmak zorlaştı.`, "kişisel", false, { k: "lev.kuraklik.hit" }); }
@@ -1429,6 +1434,12 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     if (!p.chronic && p.age >= 35 && p.health < 45 && chance(0.25)) { p.chronic = { k: "oksuruk", since: s.turn }; push(s, "hastalik", "Öksürük yakanı bırakmadı; göğsüne yerleşti. Hekim yüzü görmeden geçmeyecek.", "kişisel", true, { k: "evj.chronicStart" }); }
   }
   // Kronik hastalık: sessiz aylık sızıntı + arada alevlenme (ölüm nedeni değil, ecele zemin — hekim döngüsüne itki).
+  // At bakımı: nal düşer, nalbant ister — at sahipliğinin küçük ama gerçek bir bedeli var.
+  if (p.horse && !p.dead && chance(0.012)) {
+    const shoeCost = Math.round(8 * inflationFactor(s));
+    if (p.money >= shoeCost) { p.money -= shoeCost; push(s, "yolculuk", `${p.horse_name || "Atın"} nalını düşürdü; nalbant ${shoeCost} akçeye dört nalı tazeledi.`, "kişisel", false, { k: "horse.shoe", p: [p.horse_name || "", shoeCost] }); }
+    else push(s, "yolculuk", `${p.horse_name || "Atın"} nalını düşürdü; kese boştu, nalbant hatırına nalladı — 'hayrına olsun' dedi.`, "kişisel", false, { k: "horse.shoe.poor", p: [p.horse_name || ""] });
+  }
   if (p.chronic && !p.dead) {
     if (p.chronic.k === "eklem") {
       if (chance(0.5)) p.health = Math.max(1, p.health - 1); // yarı sızıntı — ama alevlenme daha sık
