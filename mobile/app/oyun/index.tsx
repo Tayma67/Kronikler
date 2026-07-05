@@ -92,7 +92,7 @@ function MiniStat({ icon, value, max, color }: { icon: string; value: number; ma
 export default function Dashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { state, doWork, resetGame, apply } = useGame();
+  const { state, doWork, doEat, resetGame, apply } = useGame();
   const { t, lang } = useI18n();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
   const [freshMark, setFreshMark] = useState<null | { from: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + tarihçe indeksi eşiği
@@ -397,8 +397,8 @@ export default function Dashboard() {
       {/* İlk Adımlar — yeni oyuncunun yol haritası: gerçek durumu izler, tıklayınca ilgili ekrana götürür.
           Tümü bitince ya da yaş 22'yi geçince kendiliğinden kaybolur; × ile kalıcı kapatılır. */}
       {!p.dead && !guideHidden && p.age < 22 && (() => {
-        const steps: { id: string; done: boolean; route?: string; show: boolean }[] = [
-          { id: "eat",    done: p.hunger >= 55, route: undefined, show: true },
+        const steps: { id: string; done: boolean; route?: string; act?: () => void; show: boolean }[] = [
+          { id: "eat",    done: p.hunger >= 55, act: () => { hap("success"); doEat(); }, show: true }, // ilk adım artık eylemli: dokununca yer (çantadan, yoksa sokaktan)
           { id: "study",  done: (p.lesson_count || 0) >= 1, route: "/oyun/mektep", show: p.age < 18 },
           { id: "club",   done: !!p.club || p.age >= 18, route: "/oyun/mektep", show: p.age < 18 },
           { id: "friend", done: Object.values(state.relationships || {}).some((v) => v >= 10), route: "/oyun/sosyal", show: true },
@@ -421,10 +421,10 @@ export default function Dashboard() {
               <Pressable hitSlop={8} onPress={() => { hap("tap"); hideGuide(); }}><Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchmentMuted }}>×</Text></Pressable>
             </View>
             {next.map((st) => (
-              <Pressable key={st.id} disabled={!st.route} onPress={() => { if (st.route) { hap("tap"); router.push(st.route as never); } }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 11, paddingVertical: 7, borderTopWidth: 1, borderTopColor: "rgba(201,168,76,0.14)", backgroundColor: pressed ? "rgba(201,168,76,0.08)" : "transparent" })}>
+              <Pressable key={st.id} disabled={!st.route && !st.act} onPress={() => { if (st.act) { st.act(); return; } if (st.route) { hap("tap"); router.push(st.route as never); } }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 11, paddingVertical: 7, borderTopWidth: 1, borderTopColor: "rgba(201,168,76,0.14)", backgroundColor: pressed ? "rgba(201,168,76,0.08)" : "transparent" })}>
                 <View style={{ width: 14, height: 14, borderRadius: 7, borderWidth: 1.5, borderColor: C.goldDim }} />
                 <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchment, lineHeight: 15 }}>{t("fs." + st.id)}</Text>
-                {st.route ? <Text style={{ color: C.goldDim, fontSize: 13 }}>›</Text> : null}
+                {st.route || st.act ? <Text style={{ color: C.goldDim, fontSize: 13 }}>›</Text> : null}
               </Pressable>
             ))}
           </View>
@@ -432,7 +432,7 @@ export default function Dashboard() {
       })()}
 
       {/* Çocukluk uğraşları (7-12) — çocuğa hareket alanı; çalışma gücünden harcar */}
-      {!p.dead && p.age >= 7 && p.age < 13 && (() => {
+      {!p.dead && !inJail(p) && p.age >= 7 && p.age < 13 && (() => {
         const en = playEnergy(state); const can = en >= PLAY_COST;
         const acts: { k: ChildAct; icon: string; label: string }[] = [
           { k: "oyun", icon: "party", label: t("child.act.oyun") },
@@ -472,7 +472,7 @@ export default function Dashboard() {
       })()}
 
       {/* Olgunluk uğraşları (18-54) — atıl aylık çalışma gücü işlesin: dört uğraş dört statı besler */}
-      {!p.dead && p.age >= 18 && p.age < 55 && (() => {
+      {!p.dead && !inJail(p) && p.age >= 18 && p.age < 55 && (() => {
         const en = studyEnergy(state); const can = en >= STUDY_COST;
         const acts: { k: AdultAct; icon: string; label: string; cost?: number }[] = [
           { k: "talim", icon: "crossed-swords", label: t("adult.act.talim"), cost: ADULT_TRAINER_COST },
@@ -508,7 +508,7 @@ export default function Dashboard() {
       })()}
 
       {/* İhtiyarlık uğraşları (55+) — hayatın akşamına anlam; çalışma gücünden harcar */}
-      {!p.dead && p.age >= 55 && (() => {
+      {!p.dead && !inJail(p) && p.age >= 55 && (() => {
         const en = studyEnergy(state); const can = en >= STUDY_COST;
         const acts: { k: ElderAct; icon: string; label: string }[] = [
           { k: "nasihat", icon: "speaker", label: t("elder.act.nasihat") },

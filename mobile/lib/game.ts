@@ -3291,7 +3291,7 @@ export function clubPractice(prev: GameState): StudyResult {
 export type ChildAct = "oyun" | "yardim" | "yaramazlik" | "kesif";
 export function childAction(prev: GameState, kind: ChildAct): StudyResult {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.age >= 13) return { state: s, key: "", chips: [] };
+  if (p.dead || p.age >= 13 || inJail(p)) return { state: s, key: "", chips: [] };
   if (playEnergy(s) < PLAY_COST) return { state: s, key: "", chips: [], blocked: true };
   p.play_energy = playEnergy(s) - PLAY_COST;
   p.child_acts = p.child_acts || {}; p.child_acts[kind] = (p.child_acts[kind] || 0) + 1; // çocukluk eğilimi birikir
@@ -3400,7 +3400,7 @@ export type AdultAct = "talim" | "meclis" | "tefekkur" | "yuruyus" | "ibadet";
 export const ADULT_TRAINER_COST = 10;
 export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.age < 18 || p.age >= 55) return { state: s, key: "", chips: [] };
+  if (p.dead || p.age < 18 || p.age >= 55 || inJail(p)) return { state: s, key: "", chips: [] }; // hücrede talim/meclis yok — ceza bedava çalışma süresine dönmesin
   if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true };
   const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = []; let key = "";
   // Uğraşlar saf XP tıkı değil: her birinde düşük olasılıklı risk/parlak an — orta oyunun ayına gerilim katar.
@@ -3476,7 +3476,7 @@ export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
 
 export function elderAction(prev: GameState, kind: ElderAct): StudyResult {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.age < 55) return { state: s, key: "", chips: [] };
+  if (p.dead || p.age < 55 || inJail(p)) return { state: s, key: "", chips: [] };
   if (studyEnergy(s) < STUDY_COST) return { state: s, key: "", chips: [], blocked: true };
   p.study_energy = studyEnergy(s) - STUDY_COST;
   const chips: { label: string; col: string; k?: string; p?: (string | number)[] }[] = []; let key = "";
@@ -5192,7 +5192,7 @@ export const VAKIF_DONATE_AMOUNTS = [1000, 5000, 25000] as const;
 export function healerCost(s: GameState): number { return Math.round(25 * inflationFactor(s)); }
 export function visitHealer(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.age < 13) return s;
+  if (p.dead || p.age < 13 || inJail(p)) return s; // hekim zindana gelmez
   if (p.healer_turn === s.turn) return s; // ayda tek muayene
   const cost = healerCost(s); if (p.money < cost) return s;
   p.healer_turn = s.turn; p.money -= cost;
