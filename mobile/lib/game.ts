@@ -5933,6 +5933,7 @@ export function craft(prev: GameState, id: string): GameState {
 export function migrate(s: GameState): GameState {
   const p: any = s.player || {};
   if (p.faction === undefined) p.faction = null;
+  if (p.horse && !p.horse_name) p.horse_name = rnd(HORSE_NAMES); // eski kayıt: at adları sonradan geldi — adsız at cümleyi bozmasın
   if (!p.faction_standing) p.faction_standing = {};
   if (!p.inventory) p.inventory = {};
   if (!p.properties) p.properties = [];

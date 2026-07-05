@@ -23,7 +23,7 @@ export default function Haberler() {
   const gossip = rumors(state.turn, state.seed, lang, npcsOf(state, lang)); // dedikodu, bulunduğun yerin gerçek (yaşayan) ahalisini anar
   const tips = state.tips || [];
   // Diyarın gerçek ahvali: history'de biriken makro olaylar (savaş, sancak el değiştirme, kıtlık) — hepsi zaten 6 dilde.
-  const realm = (state.history || []).filter((e) => e.scope === "makro" && (e.type === "dunya" || e.type === "ocak_savasi" || e.type === "piyasa")).slice(-5).reverse();
+  const realm = (state.history || []).filter((e) => e.scope === "makro" && (e.type === "dunya" || e.type === "ocak_savasi" || e.type === "piyasa" || e.type === "dunya_olayi")).slice(-5).reverse(); // dunya_olayi: şehir hâlleri (düğün/göç/maden/kuraklık...) da diyarın ahvalidir
   const CAT_ICON: Record<string, string> = { hasat: "wheat", kuraklik: "sun", kervan: "camel", vergi: "coins", sinir: "crossed-swords", salgin: "healing", han: "house", kitlik: "bread" };
 
   return (
@@ -54,7 +54,8 @@ export default function Haberler() {
           <>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 8 }}><GameIcon name="banner" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 2, color: C.goldDim, textTransform: "uppercase" }}>{t("hab.realm")}</Text></View>
             {realm.map((e, i) => {
-              const dest = e.type === "ocak_savasi" ? "/oyun/orgutler" : e.type === "piyasa" ? "/oyun/pazar" : "/oyun/hanedan"; // haberden ilgili ekrana köprü (salt gezinme)
+              const evLoc = e.type === "dunya_olayi" ? (e.p || []).map((x: any) => x && typeof x === "object" && "pl" in x ? x.pl : null).find(Boolean) : null;
+              const dest = e.type === "ocak_savasi" ? "/oyun/orgutler" : e.type === "piyasa" ? "/oyun/pazar" : evLoc ? "/oyun/diyar/" + evLoc : "/oyun/hanedan"; // haberden ilgili ekrana köprü (salt gezinme; şehir olayı kendi şehrine)
               return (
               <Pressable key={"realm" + i} onPress={() => { router.push(dest as any); }} style={({ pressed }) => ({ backgroundColor: pressed ? C.cardHi : C.card, borderWidth: 1, borderColor: C.border, borderLeftColor: e.type === "ocak_savasi" ? C.blood : C.sage, borderLeftWidth: 2.5, borderRadius: 8, padding: 12, marginBottom: 8 })}>
                 <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment, lineHeight: 19 }}>{renderEvt(e.k, e.text, e.p, lang, t, state.player.gender === "kadın")}</Text>
