@@ -134,6 +134,7 @@ export default function YeniOyun() {
         t("ng.cine1"),
         t("ng.cine2").replace("%c", cocuk).replace("%n", first),
         t("ng.cine3"),
+        t("ng.cine4"), // destanın fısıltısı: kül rengi mühür bir gün yolunu bulacak (Kül Yemini önsezisi)
       ]);
     } finally { setBusy(false); }
   };
