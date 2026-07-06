@@ -111,6 +111,14 @@ const TR: FaqSection[] = [
       { q: "Savaş sonuçları neden hep farklı anlatılıyor?", a: "Her karşılaşmanın kendi zafer ve yenilgi hikâyesi vardır: eşkıya reisini zincire vurursun, Kara Alp önünde diz çöker... Efsane karşılaşmalar (Gece Canavarı, Kara Alp) ancak adın duyulunca yolunu bulur." },
     ],
   },
+  {
+    icon: "scroll", title: "Kül Yemini (Ana Destan)",
+    items: [
+      { q: "Kül Yemini nedir, nasıl başlar?", a: "Oyunun nesiller aşan ana hikâyesi. 13 yaşından sonra ilk yıllarda köyün en yaşlısı seni döşeğine çağırır ve kül rengi mührü emanet eder. Kabul edersen destan başlar; geri çekilirsen mühür iki yıl sonra son bir kez kapını çalar." },
+      { q: "Sahneyi kaçırır mıyım? İlerlememi nereden görürüm?", a: "Kaçırmazsın: destan sahneleri panoda altın çerçeveli Kül Yemini kartında bekler, kaybolmaz. Hangi perdede olduğun ve kaç sahne geçtiğin karakter kartındaki Kül Yemini bandında yazar." },
+      { q: "Ölürsem ya da mührü satarsam ne olur?", a: "Destan vârisine geçer; kaldığı yerden devam eder. Mührü Karakuş'a satarsan ihanet dalına girersin: kapılar, mührü geri alıp kefaret ödemeden açılmaz. Destanı tamamlayan Yemin Tamam başarımını alır; sonraki vârisler Mühür Nişanı ile (+2 itibar) doğar." },
+    ],
+  },
 ];
 
 const EN: FaqSection[] = [
@@ -219,6 +227,14 @@ const EN: FaqSection[] = [
       { q: "What is the child bond for?", a: "The Tend to Your Children button opens a scene by your youngest's age: play with the baby, lessons with the schoolchild, craft with the youth, a shared table with the adult. Every act of care grows the bond. An heir with a high bond (60+) starts with +2 reputation; the apple of your eye (85+) starts with +1 attribute point." },
       { q: "Does the game fade in old age?", a: "No — past 70 life brings its own memories: the solitude of dawn, an old friend's empty stall, your name walking ahead of you... Story arcs past 55, grandchild moments and the Tekke pursuit are the fabric of that age." },
       { q: "Why is every battle told differently?", a: "Each encounter has its own victory and defeat tale: you put the bandit chief in chains, Kara Alp kneels before you... Legendary encounters (the Night Terror, Kara Alp) only find you once your name is known." },
+    ],
+  },
+  {
+    icon: "scroll", title: "The Ash Oath (Main Saga)",
+    items: [
+      { q: "What is the Ash Oath and how does it begin?", a: "The game's main story, spanning generations. In the first years after you turn 13, the village elder summons you to a deathbed and entrusts an ash-grey seal. Accept and the saga begins; step back and the seal knocks once more, two years later." },
+      { q: "Can I miss a scene? Where do I see my progress?", a: "You cannot miss one: saga scenes wait on the main board in the gold-framed Ash Oath card and never vanish. Your current act and scene count are shown in the Ash Oath band on the character card." },
+      { q: "What happens if I die, or sell the seal?", a: "The saga passes to your heir and continues where it left off. Selling the seal to Karakus opens the betrayal branch: no gate opens until the seal is won back and atonement is paid. Completing the saga grants The Oath Fulfilled achievement; later heirs are born with the Seal Token (+2 standing)." },
     ],
   },
 ];
@@ -332,6 +348,14 @@ const ES: FaqSection[] = [
       { q: "¿Por qué cada batalla se cuenta distinto?", a: "Cada encuentro tiene su propia historia de victoria y derrota: encadenas al cabecilla, Kara Alp se arrodilla ante ti... Los encuentros legendarios (el Terror Nocturno, Kara Alp) solo te encuentran cuando tu nombre ya suena." },
     ],
   },
+  {
+    icon: "scroll", title: "El Juramento de Ceniza (Saga principal)",
+    items: [
+      { q: "Que es el Juramento de Ceniza y como empieza?", a: "La historia principal del juego, que abarca generaciones. En los primeros anios tras cumplir 13, el anciano de la aldea te llama a su lecho y te confia un sello gris ceniza. Si lo aceptas, la saga comienza; si te retiras, el sello llama una vez mas dos anios despues." },
+      { q: "Puedo perderme una escena? Donde veo mi progreso?", a: "No puedes perderla: las escenas esperan en el tablero, en la tarjeta dorada del Juramento de Ceniza, y nunca desaparecen. Tu acto actual y las escenas superadas se muestran en la banda del juramento de la ficha de personaje." },
+      { q: "Que pasa si muero o vendo el sello?", a: "La saga pasa a tu heredero y continua donde quedo. Vender el sello a Karakus abre la rama de la traicion: ninguna puerta se abre hasta recobrarlo y pagar la expiacion. Completar la saga otorga el logro Juramento Cumplido; los herederos posteriores nacen con la Insignia del Sello (+2 de reputacion)." },
+    ],
+  },
 ];
 
 const PT: FaqSection[] = [
@@ -440,6 +464,14 @@ const PT: FaqSection[] = [
       { q: "Para que serve o laço com os filhos?", a: "O botão Cuida dos teus filhos abre uma cena conforme a idade do mais novo: brincadeira com o bebé, lições com o estudante, ofício com o jovem, mesa com o adulto. Cada gesto aumenta o laço. Um herdeiro com laço alto (60+) começa com +2 de reputação; a menina dos teus olhos (85+), com +1 ponto de atributo." },
       { q: "O jogo esmorece na velhice?", a: "Não — depois dos 70 a vida traz as suas próprias memórias: a solidão da alvorada, a banca vazia de um velho amigo, o teu nome a andar à tua frente... Os arcos dos 55+, os netos e a senda do Tekke são o tecido dessa idade." },
       { q: "Porque é que cada batalha é contada de forma diferente?", a: "Cada encontro tem a sua própria história de vitória e derrota: acorrentas o chefe dos salteadores, Kara Alp ajoelha-se diante de ti... Os encontros lendários (o Terror da Noite, Kara Alp) só te acham quando o teu nome já corre." },
+    ],
+  },
+  {
+    icon: "scroll", title: "O Juramento de Cinza (Saga principal)",
+    items: [
+      { q: "O que e o Juramento de Cinza e como comeca?", a: "A historia principal do jogo, que atravessa geracoes. Nos primeiros anos depois dos 13, o anciao da aldeia chama-te ao seu leito e confia-te um selo cinzento. Se o aceitares, a saga comeca; se recuares, o selo bate a porta mais uma vez, dois anos depois." },
+      { q: "Posso perder uma cena? Onde vejo o meu progresso?", a: "Nao podes: as cenas esperam no painel, no cartao dourado do Juramento de Cinza, e nunca desaparecem. O ato atual e as cenas vencidas aparecem na faixa do juramento na ficha de personagem." },
+      { q: "O que acontece se eu morrer ou vender o selo?", a: "A saga passa ao teu herdeiro e continua de onde parou. Vender o selo a Karakus abre o ramo da traicao: nenhuma porta se abre ate o recuperares e pagares a expiacao. Completar a saga da a conquista Juramento Cumprido; os herdeiros seguintes nascem com a Insignia do Selo (+2 de reputacao)." },
     ],
   },
 ];
@@ -552,6 +584,14 @@ const AR: FaqSection[] = [
       { q: "لماذا تُروى كل معركة بشكل مختلف؟", a: "لكل مواجهة حكاية نصر وهزيمة خاصة: تُقيّد زعيم قطاع الطرق بالسلاسل، ويجثو قره ألب أمامك... والمواجهات الأسطورية (رعب الليل وقره ألب) لا تجدك إلا حين يذيع اسمك." },
     ],
   },
+  {
+    icon: "scroll", title: "يمين الرماد (الملحمة الرئيسية)",
+    items: [
+      { q: "ما يمين الرماد وكيف يبدأ؟", a: "القصة الرئيسية للعبة، تمتد عبر الأجيال. في السنوات الأولى بعد بلوغك الثالثة عشرة يستدعيك شيخ القرية إلى فراشه ويعهد إليك بختم بلون الرماد. إن قبلته بدأت الملحمة؛ وإن تراجعت طرق الختم بابك مرة أخيرة بعد عامين." },
+      { q: "هل قد تفوتني مشاهد؟ وأين أرى تقدمي؟", a: "لا تفوتك: مشاهد الملحمة تنتظر في اللوحة داخل بطاقة يمين الرماد الذهبية ولا تختفي. ويظهر فصلك الحالي وعدد المشاهد في شريط اليمين على بطاقة الشخصية." },
+      { q: "ماذا يحدث إن متّ أو بعت الختم؟", a: "تنتقل الملحمة إلى وريثك وتستمر من حيث توقفت. بيع الختم لقره قوش يفتح فرع الخيانة: لا يُفتح باب حتى يُستردّ الختم وتُدفع الكفّارة. ومن يُتمّ الملحمة ينال إنجاز اليمين التام؛ ويولد الورثة اللاحقون بنيشان الختم (+2 سمعة)." },
+    ],
+  },
 ];
 
 const RU: FaqSection[] = [
@@ -660,6 +700,14 @@ const RU: FaqSection[] = [
       { q: "Зачем нужна связь с ребёнком?", a: "Кнопка «Позаботиться о детях» открывает сцену по возрасту младшего: игра с малышом, урок со школьником, ремесло с юношей, стол со взрослым. Каждая забота растит связь. Наследник с крепкой связью (60+) начинает с +2 репутации; свет очей (85+) — с +1 очком свойства." },
       { q: "Не гаснет ли игра в старости?", a: "Нет — после 70 жизнь приносит собственные воспоминания: одиночество рассвета, пустой лоток старого друга, имя, идущее впереди тебя... Сюжетные арки после 55, внуки и стезя текке — ткань этого возраста." },
       { q: "Почему каждая битва рассказана по-разному?", a: "У каждой стычки своя история победы и поражения: атамана заковываешь в цепи, Кара Алп преклоняет колено... Легендарные встречи (Ночной ужас, Кара Алп) находят тебя лишь когда имя твоё гремит." },
+    ],
+  },
+  {
+    icon: "scroll", title: "Клятва пепла (главная сага)",
+    items: [
+      { q: "Что такое Клятва пепла и как она начинается?", a: "Главная история игры, длящаяся поколениями. В первые годы после 13 лет старейшина деревни зовёт к своему ложу и вверяет пепельно-серую печать. Принять — и сага начнётся; отступить — и печать постучит ещё один раз, два года спустя." },
+      { q: "Можно ли пропустить сцену? Где виден прогресс?", a: "Пропустить нельзя: сцены саги ждут на главном экране в золотой карточке Клятвы пепла и не исчезают. Текущий акт и число пройденных сцен показаны в полосе клятвы на карточке персонажа." },
+      { q: "Что будет, если умереть или продать печать?", a: "Сага переходит к наследнику и продолжается с того же места. Продажа печати Карагушу открывает ветвь предательства: ни одни ворота не откроются, пока печать не возвращена и не уплачено искупление. Завершившему сагу — достижение Клятва исполнена; последующие наследники рождаются со знаком печати (+2 репутации)." },
     ],
   },
 ];
