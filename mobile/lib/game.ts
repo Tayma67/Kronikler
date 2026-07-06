@@ -339,7 +339,7 @@ function rosterBase(loc: string, lang: Lang): NPC[] {
 export function rosterAt(s: GameState, loc: string, lang: Lang = "tr"): NPC[] {
   const wy = worldYears(s); const evo = s.world?.npcEvo;
   // Yaşa göre normalize: meslek (çocuk/çırak) + 14 altı hedef gütmez (2 yaşında tüccar/borç olmaz).
-  const norm = (n: NPC, age: number): NPC => ({ ...n, age, profession: npcAgeProfession(n.profession, age), goal: age < 14 || evo?.[n.id]?.goalDone ? "" : n.goal });
+  const norm = (n: NPC, age: number): NPC => ({ ...n, age, profession: npcAgeProfession(evo?.[n.id]?.prof || n.profession, age), goal: age < 14 || evo?.[n.id]?.goalDone ? "" : n.goal });
   const base = rosterBase(loc, lang)
     .map((n) => norm({ ...n, alive: evo?.[n.id]?.dead ? false : true } as NPC, Math.min(95, n.age + wy)))
     .filter((n) => n.alive !== false);
@@ -407,6 +407,22 @@ function npcLifeTick(s: GameState) {
     s.player.reputation = Math.min(100, s.player.reputation + 2);
     push(s, "dunya_olayi", `${e.gname || "Bir dost"} yıllardır kovaladığı hayaline kavuştu — senin desteğinle. Adın hayır duayla anılıyor.`, "kişisel", true, { k: "npclife.goalDone", p: [e.gname || "?", { goalk: e.goalk || "" }] });
     break; // yılda en çok bir murat haberi (olay seli olmasın)
+  }
+  // NPC'ler kendi hayalini kendisi de kovalar: yılda ~%45 şansla diyardan BİR yetişkin, kimse yardım etmeden muradına erer.
+  // Dünya oyuncusuz da yaşar: dükkân açan/kervana atılan tüccarlığa geçer (şehir kadrosu → arz → fiyat kayar),
+  // ustabaşı olan usta izi bırakır (miras ziyareti havuzuna girer). Oyuncuya ödül yok — farm değil, dünya nabzı.
+  if (Math.random() < 0.45) {
+    const gloc = rnd(LOCATIONS);
+    const cands = rosterAt(s, gloc).filter((n) => n.age >= 18 && !!n.goal);
+    if (cands.length) {
+      const n = rnd(cands);
+      const e = (s.world.npcEvo[n.id] = s.world.npcEvo[n.id] || {});
+      e.goalDone = true; e.gname = n.name; e.goalk = n.goal;
+      if (n.goal === "bir dükkân açmanın hayalini kuruyor" || n.goal === "kervan ticaretine atılmak istiyor") e.prof = "tüccar";
+      else if (n.goal === "ustabaşı olmak istiyor") e.usta = true;
+      const known = s.relationships[n.id] !== undefined || gloc === s.player.location_name;
+      push(s, "dunya_olayi", `${gloc}'te ${n.name} yıllardır kovaladığı hayaline kendi emeğiyle kavuştu: ${n.goal}.`, known ? "kişisel" : "makro", false, { k: "npclife.goalSelf", p: [n.name, { goalk: n.goal }, { pl: gloc }] });
+    }
   }
   // Her yıl ölü doğanları ele (yaşayanlar asla silinmez). Böylece npcBorn ≈ yaşayan sayısı (~600) kalır:
   // nüfus korunur (eski 260 sınırı yaşayanı siliyordu) + dizi şişmez (rosterAt ucuz kalır).
@@ -736,7 +752,7 @@ export interface StoryProgress { active: { id: string; stage: string } | null; c
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
   newsSeenTurn?: number; // haberler ekranının son görüldüğü tur (menü rozeti için; opsiyonel — eski kayıtlar dokunulmadan çalışır)
-  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean; goalHelped?: boolean; goalDone?: boolean; gname?: string; goalk?: string; usta?: boolean }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
+  relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean; goalHelped?: boolean; goalDone?: boolean; gname?: string; goalk?: string; usta?: boolean; prof?: string }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
