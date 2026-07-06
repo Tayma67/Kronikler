@@ -774,6 +774,7 @@ export interface GameState {
   epochNext?: number; // bir sonraki çağ olayının turu (legacy_system epoch_tick)
   pendingScene?: { kind: string; ctx: Record<string, string> } | null; // oyuncu seçimi bekleyen interaktif sahne (suç kesintisi vb.)
   micro?: { id: string } | null; // ay-içi mikro an: atlanabilir tek satırlık seçim (ertesi ay kendiliğinden kaybolur)
+  saga?: { act: number; ch: number; scene?: string | null; path: Record<string, number>; lastTurn?: number; declined?: number } | null; // Kül Yemini destanı: nesiller aşan ana yay (continueAsHeir ile vârise geçer; sahne panoda bekler)
   divan?: { id: string } | null; // taç sahibinin divanına düşen arzuhal (ertesi ay kendiliğinden düşer; ferman bekler)
   schema?: number; // kayıt şeması sürümü — migrate() her yüklemede damgalar; gelecek göçler bununla dallanır
   tips?: Tip[]; // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
@@ -1720,6 +1721,7 @@ export function advance(prev: GameState, n = 1): GameState {
     }
     { const mf = monthlyFlavor(s, cal); push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k }); }
     if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 13 && chance(0.12)) s.micro = { id: MICRO_IDS[Math.floor(Math.random() * MICRO_IDS.length)] }; } // mikro an: yok sayılırsa ertesi ay kaybolur
+    if (i === n - 1) sagaTick(s); // Kül Yemini: destan sahnesi kapıları (düşen sahne panoda bekler, silinmez)
     if (i === n - 1) { s.divan = null; if (!s.player.dead && s.player.crowned && chance(0.10)) s.divan = { id: DIVAN_IDS[Math.floor(Math.random() * DIVAN_IDS.length)] }; } // divan arzuhali: yalnız taç sahibine, yok sayılırsa düşer
     rollLifeEvents(s, cal);
     tickFactions(s, i === n - 1);
@@ -4020,7 +4022,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const heirloomId = p.equipped?.silah || null;
   const heirloomQ = heirloomId ? (p.equipped_q?.silah || "siradan") : null;
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, relationships: {}, dynasty, npc_state: {}, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, relationships: {}, dynasty, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
     feud: prev.feud ? { houseId: prev.feud.houseId, nameIdx: prev.feud.nameIdx, stage: prev.feud.stage, heat: Math.round(prev.feud.heat / 2) } : undefined,
     // İttifaklar da nesle geçer (kan davası geçiyorsa el sıkışma da geçer — hanedanlar arası bağ kişisel değil hanevidir).
@@ -4359,6 +4361,106 @@ export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
   const rtr = MICRO_R_TR[id];
   push(s, "gunluk", rtr ? rtr[choice] : "", "kişisel", false, { k: `micro.${id}.r${choice}` });
   return s;
+}
+// ── Kül Yemini: nesiller aşan ana destan — Perde 1 "Emanet" (Kösedağ sonrası Moğol gölgesi). ──
+// Tasarım: sahneler yaş/tur/gezi kapılarıyla açılır ve panoda BEKLER (ana yay acele ettirmez); her sahne ömürde
+// bir kez düşer, ödüller tek seferlik ve küçüktür (farm yok). Satış (ihanet) dalı perdeyi erken kapatır; kaçış
+// dalı yaprağı yakar — izler path'te tutulur, gelecek perdeler bunlara göre renklenir. Destan vârise geçer.
+export const SAGA1_IDS = ["emanet_muhur", "tahsildar_golgesi", "tas_kapi", "yemin_defteri", "gece_kapisi"];
+export const SAGA_CHOICES: Record<string, number> = { emanet_muhur: 2, tahsildar_golgesi: 3, tas_kapi: 3, yemin_defteri: 3, gece_kapisi: 3 };
+export const SAGA_COST: Record<string, Record<number, number>> = { tas_kapi: { 1: 8 }, gece_kapisi: { 1: 40 } };
+const SAGA_R_TR: Record<string, string[]> = {
+  emanet_muhur: [
+    "Mührü avucuna kapattın; ihtiyarın gözleri son kez güldü: 'Yemin artık sende.'",
+    "Geri çekildin; ihtiyar mührü göğsüne bastırıp yüzünü duvara döndü. Bir şey yarım kaldı.",
+  ],
+  tahsildar_golgesi: [
+    "Mührü kuşağının içine, yüreğinin hizasına sakladın; tahsildarın gözü üstünden kaydı geçti.",
+    "Mührü göğsünde açıkça taşıdın; çarşıda kimi başını eğdi, kimi uzun uzun baktı. Yeminin bekçisi diye anılmaya başladın.",
+    "Derviş mührü şöyle bir çevirdi: 'Kösedağ'da düşenlerin nişanı. Sakla — kapısı vakti gelince kendini bulur.'",
+  ],
+  tas_kapi: [
+    "Toprağı elinle kazıdın; oymanın altından bir oyuk çıktı — içinde küflü bir bez, bezin içinde bir yaprak: 'Emanet defteri beşe bölündü.'",
+    "Usta oymaya baktı, mühre baktı: 'Bu Selçuklu sipahi nişanı. Beş kervansarayda eşi var — bu ilk kapı.' Akçesini hak etti.",
+    "Kapının önünde durup işareti aklına kazıdın. Bazı kapılar sabırla açılır — vakti gelince dönersin.",
+  ],
+  yemin_defteri: [
+    "Mührü sıktın ve yemini içtin: 'Düşenlerin emaneti sahipsiz kalmayacak.' O gece rüyanda beş taş kapı gördün.",
+    "Karakuş'un adamı keseyi bıraktı, mührü aldı; giderken güldü: 'Akıllıca pazarlık.' Kese ağır — ama gece uykun hafif değil.",
+    "Yaprağı katlayıp kaldırdın. Bazı yükler omuz ister; senin omzun bugün başka yüklere ayarlı. Ama mühür hâlâ kuşağında.",
+  ],
+  gece_kapisi: [
+    "Kapı eşiğinde çelik konuştu; üçünü de geri püskürttün ama omzunda derin bir iz kaldı. Atlılar giderken öndeki seslendi: 'Bey bunu unutmaz.' Mühür ve yaprak hâlâ sende.",
+    "Keseyi saydın, tatlı dille geceyi savdın; atlılar mührü görmeden döndü. Öndeki homurdandı: 'Bulamadık, bey.' Bu gecelik paçayı kurtardın.",
+    "Arka pencereden harman yeline karıştın; sabaha kadar dere yatağında bekledin. Döndüğünde kapı kırıktı ama mühür koynundaydı — yaprak ocakta kül olmuştu.",
+  ],
+};
+export function resolveSaga(prev: GameState, choice: 0 | 1 | 2): GameState {
+  const s = clone(prev); const p = s.player;
+  const sg = s.saga; if (!sg || !sg.scene || p.dead) return s;
+  const id = sg.scene;
+  const cost = SAGA_COST[id]?.[choice] || 0;
+  if (cost > 0 && p.money < cost) return s; // akçesiz seçenek işlemez (UI de kapatır)
+  sg.scene = null; sg.lastTurn = s.turn; sg.path = { ...sg.path, [id]: choice };
+  let endKey: string | null = null;
+  if (id === "emanet_muhur") {
+    if (choice === 0) { sg.ch = 1; bumpNam(p, "mert", 1); p.reputation = Math.min(100, p.reputation + 1); }
+    else sg.declined = (sg.declined || 0) + 1; // ret: mühür bekler; 24 ay sonra son bir kez daha sorulur
+  } else if (id === "tahsildar_golgesi") {
+    sg.ch = 2;
+    if (choice === 0) addStatXp(s, "intelligence", 3);
+    else if (choice === 1) { p.fear = Math.min(100, p.fear + 2); p.reputation = Math.min(100, p.reputation + 1); }
+    else gainSkill(s, "social", 3);
+  } else if (id === "tas_kapi") {
+    sg.ch = 3;
+    if (choice === 0) gainSkill(s, "crafting", 3);
+    else if (choice === 1) { p.money -= cost; addStatXp(s, "intelligence", 4); }
+    else addStatXp(s, "stamina", 2);
+  } else if (id === "yemin_defteri") {
+    if (choice === 0) { sg.ch = 4; bumpNam(p, "mert", 2); p.reputation = Math.min(100, p.reputation + 2); }
+    else if (choice === 1) { sg.ch = 5; const kese = Math.round(120 * inflationFactor(s)); p.money += kese; bumpNam(p, "zalim", 1); p.honor = Math.max(0, p.honor - 3); endKey = "saga.act1EndSold"; } // ihanet dalı: perde erken kapanır
+    else { sg.ch = 4; p.health = Math.min(100, p.health + 1); } // uzak durmak seni oyundan çıkarmaz — Karakuş yine gelir
+  } else if (id === "gece_kapisi") {
+    sg.ch = 5; endKey = "saga.act1End";
+    if (choice === 0) { gainSkill(s, "combat", 5); p.health = Math.max(1, p.health - 6); }
+    else if (choice === 1) { p.money -= cost; gainSkill(s, "social", 4); }
+    else addStatXp(s, "stamina", 3);
+  }
+  const rtr = SAGA_R_TR[id];
+  push(s, "destan", (rtr && rtr[choice]) || "", "kişisel", true, { k: `saga.${id}.r${choice}` });
+  if (endKey === "saga.act1End") push(s, "destan", "Perde kapandı: mühür hâlâ sende ve beş taş kapının ilki bulundu. Gerisi belki senin ömrüne, belki vârisinin ömrüne yazılacak.", "kişisel", true, { k: endKey });
+  else if (endKey === "saga.act1EndSold") push(s, "destan", "Perde kapandı: mühür Karakuş'un elinde, kesesi senin koynunda. Defter hâlâ beş parça — ve bu hikâye seninle işini bitirmedi.", "kişisel", true, { k: endKey });
+  return s;
+}
+function sagaTick(s: GameState) {
+  const p = s.player;
+  if (p.dead || p.age < 13 || inJail(p)) return;
+  if (s.saga && s.saga.scene) return; // bekleyen sahne varken yenisi düşmez
+  if (!s.saga) {
+    if (chance(0.18)) {
+      s.saga = { act: 1, ch: 0, scene: "emanet_muhur", path: {}, lastTurn: s.turn };
+      push(s, "destan", "Köyün en yaşlısı döşeğinden seni çağırttı; avucunda kül rengi bir mühür duruyor.", "kişisel", true, { k: "saga.start" });
+    }
+    return;
+  }
+  const sg = s.saga;
+  if (sg.act !== 1 || sg.ch >= 5) return;
+  const gap = s.turn - (sg.lastTurn ?? 0);
+  if (sg.ch === 0) { // emanet reddedildi: 24 ay sonra son bir kez daha kapı çalar; ikinci ret bu ömürde kapatır (vâriste sayaç sıfırlanır)
+    if ((sg.declined || 0) >= 2) return;
+    if (gap >= 24 && chance(0.3)) {
+      sg.scene = "emanet_muhur";
+      push(s, "destan", "İhtiyarın torunu kapına geldi: 'Dedem son nefesinde yine seni söyledi.' Mühür yeniden önünde.", "kişisel", true, { k: "saga.reoffer" });
+    }
+    return;
+  }
+  const seen = new Set([...(p.cities_visited || []), p.location_name]).size;
+  const gate =
+    sg.ch === 1 ? gap >= 9 :
+    sg.ch === 2 ? gap >= 8 && (seen >= 2 || gap >= 30) : // kervansaray yol üstünde — hiç gezmeyene de geç kapı açılır
+    sg.ch === 3 ? gap >= 10 :
+    gap >= 12 && p.age >= 21;
+  if (gate && chance(0.3)) sg.scene = SAGA1_IDS[sg.ch];
 }
 // ── Divan/Arzuhal: taç sahibinin huzuruna düşen dilekçeler — hükümdarlık soyut ferman menüsü değil, yüzü olan kararlar.
 // Etki dengesi bilinçli: halkı kollamak keseden yer ama otorite/itibar getirir; keseyi kollamak nam bedeli öder (farm yok: an rastgele düşer).
