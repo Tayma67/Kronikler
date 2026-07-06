@@ -4608,7 +4608,18 @@ function sagaTick(s: GameState) {
     return;
   }
   if (sg.act === 3) {
-    if (sg.ch >= 5) return; // destan tamam — yemin yerini buldu
+    if (sg.ch >= 5) { // destan tamam — yemin diyarın belleğine sızar (salt renk; ödül yok, farm yok)
+      if (chance(0.008)) {
+        const SAGA_ECHO_TR: Record<string, string> = {
+          "saga.worldEcho0": "Bir ozan meydanda Kül Yemini'ni çalıp söylüyor: kül rengi mühür, beş taş kapı ve tutulan söz. Dinleyenler hikâyenin geçtiği haneyi fısıldaşıyor.",
+          "saga.worldEcho1": "Çocuklar sokakta 'mühür kimde' oynuyor; biri ebe, dördü kapı. Yemin, oyun olup çocukların diline düşmüş.",
+          "saga.worldEcho2": "Handa bir yolcu, sahiplerine kavuşan emanet defterinin hikâyesini anlatıyor; ad vermese de herkes kimden bahsettiğini biliyor.",
+        };
+        const k = "saga.worldEcho" + Math.floor(Math.random() * 3);
+        push(s, "destan", SAGA_ECHO_TR[k], "makro", false, { k });
+      }
+      return;
+    }
     const gate3 =
       sg.ch === 0 ? gap >= 8 :
       sg.ch === 1 ? gap >= 10 :
