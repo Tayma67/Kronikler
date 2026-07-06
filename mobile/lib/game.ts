@@ -1453,6 +1453,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Gençken diktiğin ağacın gölgesinde soluklandın; ağaç da sen de sözünüzü tutmuşsunuz.", k: "mem.orchardShade", fn: () => { p.health = Math.min(100, p.health + 1); } },
         { text: "Bir sofrada anandan kalma bir tadı yakaladın; gözlerini kapatınca bir anlığına o mutfağa döndün.", k: "mem.motherTaste", fn: () => { p.hunger = Math.min(100, p.hunger + 2); } },
         { text: "Kış güneşinde duvar dibine oturdun; sıcaklık iliklerine işledi, kimseyle konuşmadan bir öğle geçti.", k: "mem.winterSun" },
+        { text: "Rüzgâr, gençliğinde yürüdüğün kervan yolunun toz kokusunu getirdi; dizlerin sızlasa da içinden yine düşmek geçti o yola.", k: "mem.oldRoad" },
+        { text: "Çarşıda biri arkandan eski lakabınla seslendi; dönüp baktın, tanıyamadın — ama lakap tam yerine oturdu, gülümsedin.", k: "mem.oldNickname" },
       );
     }
     const m = rnd(mem); m.fn?.();
