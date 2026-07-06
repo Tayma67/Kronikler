@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, ImageBackground, ActivityIndicator, ScrollView, Alert, Image, StyleSheet, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
-import Animated, { FadeIn, FadeInUp, useSharedValue, useAnimatedStyle, withTiming, Easing } from "react-native-reanimated";
+import Animated, { FadeIn, FadeInUp, FadeOut, useSharedValue, useAnimatedStyle, withTiming, Easing } from "react-native-reanimated";
 import { useGame } from "../lib/store";
 import { useI18n } from "../lib/i18n";
 import { applyTemperament, TEMPERAMENTS } from "../lib/game";
 import { C, F } from "../lib/theme";
 import { Ambiance, ParticleBurst, Pulse } from "../lib/fx";
+import { SceneArt, Vignette } from "../lib/prolog";
 import { isReduceMotion } from "../lib/perf";
 import { playTap } from "../lib/sound";
 
@@ -64,6 +65,8 @@ function Prolog({ lines, onDone }: { lines: string[]; onDone: () => void }) {
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <CineBackdrop beat={beat} reduced={reduced} />
       <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(6,4,2,0.78)" }]} />
+      {/* Sahne tablosu: vuruşa özel silüet + paralaks + ışık (lib/prolog) */}
+      <SceneArt beat={beat} reduced={reduced} />
       {/* Sahne atmosferi: doğum gecesine kar, diğerlerine köz; finalde köz gürleşir + tek seferlik patlama */}
       {beat === 2 ? (
         <Ambiance season="Kış" width={SW} height={SH} embers={false} />
@@ -71,22 +74,23 @@ function Prolog({ lines, onDone }: { lines: string[]; onDone: () => void }) {
         <Ambiance width={SW} height={SH} flakes={false} count={last ? 13 : 6} />
       )}
       {last && !reduced ? <ParticleBurst top="26%" count={14} /> : null}
+      <Vignette />
       <Letterbox reduced={reduced} />
       <Pressable onPress={onDone} style={{ position: "absolute", top: 52, right: 18, zIndex: 9, paddingVertical: 6, paddingHorizontal: 13, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", backgroundColor: "rgba(6,4,2,0.55)" }}>
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.parchmentDim }}>{t("new.skip").toUpperCase()}</Text>
       </Pressable>
       <Pressable onPress={next} style={{ flex: 1, justifyContent: "center", paddingHorizontal: 30 }}>
         {beat === 0 ? (
-          <Animated.View key="title" entering={FadeIn.duration(1600)}>
+          <Animated.View key="title" entering={FadeIn.duration(1600)} exiting={FadeOut.duration(300)}>
             <Text style={{ fontFamily: F.display, fontSize: 30, letterSpacing: 9, color: C.parchment, textAlign: "center" }}>KRONİKLER</Text>
             <GrowLine beat={beat} />
             <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 5, color: C.goldDim, textAlign: "center" }}>KÜLLERİN MİRASI</Text>
           </Animated.View>
         ) : (
-          <Animated.View key={"b" + beat} entering={reduced ? FadeIn.duration(500) : FadeInUp.duration(900)}>
-            <Text style={{ color: C.gold, textAlign: "center", fontSize: 13, letterSpacing: 4 }}>❧ ⚜ ❧</Text>
+          <Animated.View key={"b" + beat} exiting={FadeOut.duration(300)}>
+            <Animated.Text entering={FadeIn.duration(600)} style={{ color: C.gold, textAlign: "center", fontSize: 13, letterSpacing: 4 }}>❧ ⚜ ❧</Animated.Text>
             <GrowLine beat={beat} />
-            <Text style={{ fontFamily: F.serif, fontSize: 19, color: C.parchment, textAlign: "center", lineHeight: 30 }}>{lines[beat - 1]}</Text>
+            <Animated.Text entering={reduced ? FadeIn.duration(500) : FadeInUp.delay(350).duration(900)} style={{ fontFamily: F.serif, fontSize: 19, color: C.parchment, textAlign: "center", lineHeight: 30 }}>{lines[beat - 1]}</Animated.Text>
           </Animated.View>
         )}
         <View style={{ flexDirection: "row", justifyContent: "center", gap: 7, marginTop: 30 }}>
