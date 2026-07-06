@@ -193,7 +193,7 @@ export default function Diplomasi() {
                       <View style={rowWrap}>
                         {others.map((o) => (
                           <Pressable key={o.id} onPress={() => { hap("tap"); setNpcTarget(o.id); }} style={[mb, { borderColor: npcTarget === o.id ? "rgba(111,160,192,0.7)" : C.border, backgroundColor: npcTarget === o.id ? "rgba(111,160,192,0.14)" : "transparent" }]}>
-                            <Text style={[mt, { color: npcTarget === o.id ? "#6FA0C0" : C.parchmentMuted }]}>{o.name}</Text></Pressable>
+                            <Text style={[mt, { color: npcTarget === o.id ? C.frost : C.parchmentMuted }]}>{o.name}</Text></Pressable>
                         ))}
                       </View>
                       {npcTarget && (

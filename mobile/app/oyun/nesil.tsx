@@ -72,7 +72,7 @@ export default function Nesil() {
               </Pressable>
             ))}
             <Pressable onPress={() => { hap("heavy"); apply((s) => continueAsHeir(s, will, chosenHeir, lw)); router.replace("/oyun"); }} style={{ marginTop: 12, paddingVertical: 15, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206", letterSpacing: 1.5 }}>{t("dash.continueHeir")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1.5 }}>{t("dash.continueHeir")}</Text>
             </Pressable>
           </>
         ) : (

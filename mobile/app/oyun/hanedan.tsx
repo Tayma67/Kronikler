@@ -117,8 +117,8 @@ export default function Hanedan() {
             </View>
             {p.crowned && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: C.gold, borderRadius: 14, paddingVertical: 3, paddingHorizontal: 11 }}>
-                <GameIcon name="crown" size={11} color="#1a1206" />
-                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: "#1a1206" }}>{t("dyn.headWord")}</Text>
+                <GameIcon name="crown" size={11} color={C.inkOnGold} />
+                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: C.inkOnGold }}>{t("dyn.headWord")}</Text>
               </View>
             )}
             {!p.crowned && inCourt(p) && (
@@ -213,7 +213,7 @@ export default function Hanedan() {
               <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.ember, lineHeight: 16, marginTop: 9 }}>⚠ {t("thr.risk")}</Text>
               {claimable && <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, marginTop: 8 }}>{t("thr.odds")}: %{Math.round(throneOdds(state) * 100)} · {t("thr.cost")} {THRONE_COST} ⚜</Text>}
               <Pressable onPress={doClaim} disabled={!claimable} style={{ marginTop: 10, paddingVertical: 13, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: claimable ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: claimable ? C.gold : C.bg }}>
-                <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: claimable ? "#1a1206" : C.parchmentMuted }}>{claimable ? t("thr.claim") : t("thr.need")}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: claimable ? C.inkOnGold : C.parchmentMuted }}>{claimable ? t("thr.claim") : t("thr.need")}</Text>
               </Pressable>
             </>
           )}
@@ -585,7 +585,7 @@ export default function Hanedan() {
                         </Pressable>
                         {h.attitude > -10 && (
                         <Pressable disabled={acted} onPress={() => { hap("tap"); apply((s) => proposeToHouse(s, h.id, "ittifak")); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: acted ? C.border : "rgba(111,160,192,0.5)", opacity: acted ? 0.4 : 1 }}>
-                          <Text style={{ fontFamily: F.display, fontSize: 8.5, color: acted ? C.parchmentMuted : "#6FA0C0" }}>{t("dyn.propose.ally")}</Text>
+                          <Text style={{ fontFamily: F.display, fontSize: 8.5, color: acted ? C.parchmentMuted : C.frost }}>{t("dyn.propose.ally")}</Text>
                         </Pressable>
                         )}
                         {!p.married && h.attitude > -10 && (

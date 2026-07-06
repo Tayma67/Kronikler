@@ -35,7 +35,7 @@ function Particle({ color, dx, dy, rot, dur, size }: { color: string; dx: number
 }
 
 // Partikül patlaması — kutlama konfetisi (sıcak tonlu). mount'ta bir kez oynar.
-const BURST_PALETTE = ["#C9A84C", "#E8D5B0", "#E0C060", "#E05A30"];
+const BURST_PALETTE = [C.gold, C.parchment, "#E0C060", C.ember];
 export function ParticleBurst({ colors = BURST_PALETTE, count = 16, top = "40%", up = true }: { colors?: string[]; count?: number; top?: number | string; up?: boolean }) {
   const parts = useMemo(() => Array.from({ length: count }, () => {
     const ang = rnd(0, Math.PI * 2); const dist = rnd(70, 180);
@@ -121,7 +121,7 @@ function Flake({ x, size, dur, delay, color, fall, sway, radius }: { x: number; 
 // Hero ambiyansı — daima birkaç köz; mevsime göre kar/yaprak.
 export function Ambiance({ season, width = 360, height = 150, embers: showEmbers = true, flakes: showFlakes = true, count = 7 }: { season?: string; width?: number; height?: number; embers?: boolean; flakes?: boolean; count?: number }) {
   const reduced = isReduceMotion(); // sade mod: parçacıklar kapalı (sürekli GPU yok)
-  const embers = useMemo(() => (showEmbers && !reduced ? Array.from({ length: count }, () => ({ x: rnd(8, width - 8), size: rnd(2, 4), dur: rnd(2600, 4200), delay: rnd(0, 3000), rise: rnd(height * 0.6, height), color: Math.random() < 0.5 ? "#E0922E" : "#C9A84C" })) : []), [width, height, showEmbers, count, reduced]);
+  const embers = useMemo(() => (showEmbers && !reduced ? Array.from({ length: count }, () => ({ x: rnd(8, width - 8), size: rnd(2, 4), dur: rnd(2600, 4200), delay: rnd(0, 3000), rise: rnd(height * 0.6, height), color: Math.random() < 0.5 ? C.emberSoft : C.gold })) : []), [width, height, showEmbers, count, reduced]);
   const isWinter = showFlakes && season === "Kış"; const isAutumn = showFlakes && season === "Sonbahar";
   const flakes = useMemo(() => {
     if (reduced || (!isWinter && !isAutumn)) return [];

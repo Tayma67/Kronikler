@@ -296,7 +296,7 @@ export default function Dashboard() {
                   <Text key={i} style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim, lineHeight: 17, marginBottom: 4 }}>· {renderEvt(ev.k, ev.text, ev.p, lang, t, p.gender === "kadın")}</Text>
                 ))}
                 <Pressable onPress={() => { hap("tap"); setYearReport(null); }} style={{ marginTop: 16, paddingVertical: 12, borderRadius: 9, backgroundColor: C.gold, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 12, color: "#1a1206", letterSpacing: 1 }}>{t("yr.close")}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 12, color: C.inkOnGold, letterSpacing: 1 }}>{t("yr.close")}</Text>
                 </Pressable>
               </Animated.View>
             </View>
@@ -387,9 +387,9 @@ export default function Dashboard() {
         const home = atHome(p);
         return (
           <Pressable onPress={() => router.push("/oyun/karakter")} style={{ marginHorizontal: 12, marginTop: 8, paddingVertical: 7, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: home ? "rgba(127,166,106,0.3)" : "rgba(111,160,192,0.3)", backgroundColor: "rgba(8,5,2,0.4)", flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <GameIcon name={home ? "sehir" : "firsatlar"} size={13} color={home ? C.sage : "#6FA0C0"} />
+            <GameIcon name={home ? "sehir" : "firsatlar"} size={13} color={home ? C.sage : C.frost} />
             <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim }} numberOfLines={1}>{t("percept." + pp.key)}</Text>
-            <Text style={{ fontFamily: F.display, fontSize: 9, color: home ? C.sage : "#6FA0C0" }}>%{Math.round(pp.recog * 100)}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 9, color: home ? C.sage : C.frost }}>%{Math.round(pp.recog * 100)}</Text>
           </Pressable>
         );
       })()}
@@ -485,10 +485,10 @@ export default function Dashboard() {
         return (
           <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(111,160,192,0.3)", backgroundColor: "rgba(111,160,192,0.05)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: "#6FA0C0", textTransform: "uppercase" }}>{t("adult.title")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.frost, textTransform: "uppercase" }}>{t("adult.title")}</Text>
               <View style={{ flexDirection: "row", gap: 4 }}>
                 {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
-                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? "#6FA0C0" : "transparent", borderWidth: 1, borderColor: i < en ? "#6FA0C0" : C.border }} />
+                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.frost : "transparent", borderWidth: 1, borderColor: i < en ? C.frost : C.border }} />
                 ))}
               </View>
             </View>
@@ -497,7 +497,7 @@ export default function Dashboard() {
                 const dis = !can || (a.cost != null && p.money < a.cost);
                 return (
                   <Pressable key={a.k} onPress={() => { if (!dis) onAdult(a.k); }} disabled={dis} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: dis ? C.border : "rgba(111,160,192,0.4)", backgroundColor: dis ? C.bg : C.card, opacity: dis ? 0.5 : 1 }}>
-                    <GameIcon name={a.icon} size={16} color={dis ? C.parchmentMuted : "#6FA0C0"} />
+                    <GameIcon name={a.icon} size={16} color={dis ? C.parchmentMuted : C.frost} />
                     <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, color: dis ? C.parchmentMuted : C.parchment }} numberOfLines={1}>{a.label}{a.cost != null ? ` · ${a.cost}⚜` : ""}</Text>
                   </Pressable>
                 );
@@ -772,8 +772,8 @@ export default function Dashboard() {
         <View style={{ paddingHorizontal: 12, paddingBottom: 8, gap: 10 }}>
           {p.children.length > 0 && (
             <Pressable onPress={() => router.push("/oyun/nesil")} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: C.gold }}>
-              <GameIcon name="hanedan" size={14} color="#1a1206" />
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206", letterSpacing: 1 }}>{t("dash.continueHeir")} ({p.children.length} {t("dash.heirs")})</Text>
+              <GameIcon name="hanedan" size={14} color={C.inkOnGold} />
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold, letterSpacing: 1 }}>{t("dash.continueHeir")} ({p.children.length} {t("dash.heirs")})</Text>
             </Pressable>
           )}
           <View style={{ flexDirection: "row", gap: 10 }}>

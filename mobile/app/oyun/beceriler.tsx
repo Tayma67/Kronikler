@@ -12,10 +12,10 @@ import { BackLabel, PageHeader } from "../../lib/ui";
 const TIERS = [3, 6, 9];
 // Her beceri dalının ilgili özelliği (stat) + tonu.
 const LINK: Record<SkillKey, { stat: "strength" | "intelligence" | "charisma" | "stamina"; tone: string }> = {
-  combat:   { stat: "strength",     tone: "#E0922E" },
-  trade:    { stat: "charisma",     tone: "#C9A84C" }, // pazarlık formülü karizma okur (0.42 + cha*0.035 + trade*0.025)
+  combat:   { stat: "strength",     tone: C.emberSoft },
+  trade:    { stat: "charisma",     tone: C.gold }, // pazarlık formülü karizma okur (0.42 + cha*0.035 + trade*0.025)
   crafting: { stat: "intelligence", tone: "#7FA66A" }, // zanaat meslekleri ağırlıkla zekâ stat'ı çalıştırır
-  social:   { stat: "charisma",     tone: "#6FA0C0" },
+  social:   { stat: "charisma",     tone: C.frost },
 };
 
 // ── Genel bakış: dört dal bir arada + hüner ilerlemesi (sayfayı dolu/haritalı gösterir) ──
@@ -90,7 +90,7 @@ function Tree({ tree, icon }: { tree: SkillKey; icon: string }) {
         </View>
         {pending != null && (
           <View style={{ backgroundColor: link.tone, borderRadius: 20, paddingVertical: 3, paddingHorizontal: 9 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: "#1a1206" }}>{t("bec.pick")}!</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: C.inkOnGold }}>{t("bec.pick")}!</Text>
           </View>
         )}
       </View>
@@ -124,7 +124,7 @@ function Tree({ tree, icon }: { tree: SkillKey; icon: string }) {
               <View style={{ width: 34, alignItems: "center" }}>
                 {ti > 0 && <View style={{ position: "absolute", top: 0, height: 22, width: 2, backgroundColor: unlocked ? link.tone + "88" : "rgba(255,255,255,0.12)" }} />}
                 <View style={{ marginTop: 14, width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: nodeBorder, backgroundColor: nodeFill, alignItems: "center", justifyContent: "center" }}>
-                  {chosen ? <GameIcon name="medal" size={12} color="#1a1206" /> : <Text style={{ fontFamily: F.display, fontSize: 10, color: unlocked ? (choosable ? "#1a1206" : link.tone) : C.parchmentMuted }}>{tn}</Text>}
+                  {chosen ? <GameIcon name="medal" size={12} color={C.inkOnGold} /> : <Text style={{ fontFamily: F.display, fontSize: 10, color: unlocked ? (choosable ? C.inkOnGold : link.tone) : C.parchmentMuted }}>{tn}</Text>}
                 </View>
                 {ti < TIERS.length - 1 && <View style={{ flex: 1, marginTop: 2, width: 2, backgroundColor: lvl >= TIERS[ti + 1] ? link.tone + "88" : "rgba(255,255,255,0.12)" }} />}
               </View>

@@ -56,11 +56,11 @@ export default function MainMenu() {
           <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, textAlign: "center", marginBottom: -2 }}>{t("menu.single").toUpperCase()} · {t("menu.singleHint")}</Text>
           {hasSave && (
             <Pressable onPress={() => router.push("/oyun")} style={{ paddingVertical: 16, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: "#2a1d08" }}>{t("menu.continue")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: C.inkOnGold }}>{t("menu.continue")}</Text>
             </Pressable>
           )}
           <Pressable onPress={() => router.push("/yeni-oyun")} style={{ paddingVertical: 16, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.6)", backgroundColor: hasSave ? "rgba(8,5,2,0.55)" : C.gold, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: hasSave ? C.gold : "#2a1d08" }}>{t("menu.newGame")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: hasSave ? C.gold : C.inkOnGold }}>{t("menu.newGame")}</Text>
           </Pressable>
 
           {/* Çok Oyuncu (çevrimiçi paylaşımlı diyar) */}
@@ -70,10 +70,10 @@ export default function MainMenu() {
             <View style={{ flex: 1, height: 1, backgroundColor: C.border }} />
           </View>
           <Pressable onPress={() => { hap("tap"); router.push("/cok-oyunculu"); }} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 15, borderRadius: 9, borderWidth: 1, borderColor: "rgba(111,160,192,0.6)", backgroundColor: "rgba(8,5,2,0.55)" }}>
-            <GameIcon name="iliskiler" size={16} color="#6FA0C0" />
-            <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: "#6FA0C0" }}>{t("menu.multi")}</Text>
+            <GameIcon name="iliskiler" size={16} color={C.frost} />
+            <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: C.frost }}>{t("menu.multi")}</Text>
             <View style={{ borderWidth: 1, borderColor: "rgba(111,160,192,0.5)", borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: "#6FA0C0" }}>BETA</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: C.frost }}>BETA</Text>
             </View>
           </Pressable>
         </View>

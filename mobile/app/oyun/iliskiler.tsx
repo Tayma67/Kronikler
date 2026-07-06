@@ -85,19 +85,19 @@ export default function Iliskiler() {
         {/* Görücü usulü / çöpçatan — bekâr yetişkine talip önerisi (yaş/servet filtreli) */}
         {!state.player.married && state.player.age >= 18 ? (
           <Pressable onPress={() => { router.push("/oyun/copcatan"); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "rgba(192,85,107,0.08)", borderWidth: 1, borderColor: "rgba(192,85,107,0.4)", borderRadius: 12, padding: 13, marginBottom: 12 }}>
-            <GameIcon name="ring" size={18} color="#C0556B" />
+            <GameIcon name="ring" size={18} color={C.roseDim} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 12, color: "#C0556B", letterSpacing: 0.5 }}>{t("cc.title")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.roseDim, letterSpacing: 0.5 }}>{t("cc.title")}</Text>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>{t("cc.entryHint")}</Text>
             </View>
-            <Text style={{ fontFamily: F.display, fontSize: 16, color: "#C0556B" }}>›</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 16, color: C.roseDim }}>›</Text>
           </Pressable>
         ) : null}
 
         {/* Çocukluk yoldaşı ("can dostu") — panodan buraya taşındı; ömürlük dost ya da rakip olabilir */}
         {state.player.child_friend ? (() => {
           const cf = state.player.child_friend!; const nm = localFirstName(cf.seed, cf.gender, lang);
-          const rival = (cf.feud || 0) > cf.bond; const tone = rival ? C.blood : "#C0556B";
+          const rival = (cf.feud || 0) > cf.bond; const tone = rival ? C.blood : C.roseDim;
           const statusKey = rival ? "child.friend.rivalStatus" : cf.bond >= 70 ? "child.friend.lifelong" : "child.friend.label";
           return (
             <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: tone + "44", borderRadius: 12, marginBottom: 12, padding: 12 }}>

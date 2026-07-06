@@ -58,13 +58,13 @@ export default function Sehir() {
 
         {/* Memleket / gurbet + halkın algısı (tanınma sistemi) */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: home ? "rgba(127,166,106,0.10)" : "rgba(111,160,192,0.10)", borderWidth: 1, borderColor: home ? "rgba(127,166,106,0.4)" : "rgba(111,160,192,0.4)", borderRadius: 12, padding: 13, marginBottom: 14 }}>
-          <GameIcon name={home ? "sehir" : "firsatlar"} size={22} color={home ? C.sage : "#6FA0C0"} />
+          <GameIcon name={home ? "sehir" : "firsatlar"} size={22} color={home ? C.sage : C.frost} />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 0.5, color: home ? C.sage : "#6FA0C0" }}>{home ? t("soc.home") : t("soc.away")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 0.5, color: home ? C.sage : C.frost }}>{home ? t("soc.home") : t("soc.away")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, marginTop: 2 }}>{t("percept." + pp.key)}</Text>
           </View>
           <View style={{ alignItems: "flex-end" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 16, color: home ? C.sage : "#6FA0C0" }}>%{Math.round(pp.recog * 100)}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 16, color: home ? C.sage : C.frost }}>%{Math.round(pp.recog * 100)}</Text>
             <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("soc.recog").toUpperCase()}</Text>
           </View>
         </View>

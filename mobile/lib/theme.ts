@@ -18,6 +18,11 @@ export const C = {
   ink: "#7B4FAF",
   azure: "#5E86A8",
   rose: "#D4528A",
+  roseDim: "#C0556B",     // gül kurusu — olumsuz/duygu vurgusu (denetimle jetonlaştı)
+  frost: "#6FA0C0",       // buz mavisi — kış/su vurgusu (denetimle jetonlaştı)
+  emberSoft: "#E0922E",   // yumuşak köz — turuncu ara ton (denetimle jetonlaştı)
+  goldSoft: "#E0BC5A",    // yumuşak altın — pencere ışığı/rozet (denetimle jetonlaştı)
+  inkOnGold: "#1a1206",   // altın zemin üstü mürekkep — altın butonların yazı/ikon rengi (denetimle jetonlaştı)
 };
 
 // Yazı tipi aileleri (expo-font ile yüklenecek: Cinzel = display, Crimson = serif)

@@ -56,8 +56,8 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
     <View style={{ flex: 1, backgroundColor: "#14100C", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <Text style={{ color: "#E8DCC0", fontSize: 16, textAlign: "center", marginBottom: 6 }}>Bir aksilik oldu / Something went wrong</Text>
       <Text style={{ color: "#8A7E68", fontSize: 11, textAlign: "center", marginBottom: 18 }} numberOfLines={3}>{String(error?.message || error)}</Text>
-      <Pressable onPress={retry} style={{ borderWidth: 1, borderColor: "#C9A84C", borderRadius: 8, paddingVertical: 10, paddingHorizontal: 22 }}>
-        <Text style={{ color: "#C9A84C", fontSize: 13, letterSpacing: 1 }}>YENİDEN DENE / RETRY</Text>
+      <Pressable onPress={retry} style={{ borderWidth: 1, borderColor: C.gold, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 22 }}>
+        <Text style={{ color: C.gold, fontSize: 13, letterSpacing: 1 }}>YENİDEN DENE / RETRY</Text>
       </Pressable>
     </View>
   );

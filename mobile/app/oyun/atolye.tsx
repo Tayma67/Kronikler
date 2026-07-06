@@ -20,7 +20,7 @@ const CAT: Record<string, "food" | "arms" | "heal" | "wear"> = {
   iksir: "heal",
 };
 const CAT_ORDER: ("food" | "arms" | "heal" | "wear")[] = ["food", "arms", "heal", "wear"];
-const CAT_TONE = { food: "#7FA66A", arms: "#E0922E", heal: "#6FA0C0", wear: "#B08FBE" };
+const CAT_TONE = { food: "#7FA66A", arms: C.emberSoft, heal: C.frost, wear: "#B08FBE" };
 const CAT_ICON = { food: "ye", arms: "silah", heal: "saglik", wear: "wool" };
 // Eşya ikonu — türüne göre (emoji yerine GameIcon).
 function itmIcon(it: any): string {

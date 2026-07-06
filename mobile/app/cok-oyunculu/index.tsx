@@ -98,7 +98,7 @@ export default function MpLobby() {
 
         {/* Diyar Kur */}
         <Pressable disabled={!serverReady} onPress={() => go(newRealmCode())} style={{ marginTop: 22, paddingVertical: 15, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: serverReady ? C.gold : C.card, opacity: serverReady ? 1 : 0.5 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: serverReady ? "#2a1d08" : C.parchmentMuted }}>{t("mp.createRealm")}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: serverReady ? C.inkOnGold : C.parchmentMuted }}>{t("mp.createRealm")}</Text>
         </Pressable>
 
         {/* Diyara Katıl */}
@@ -111,7 +111,7 @@ export default function MpLobby() {
           <TextInput value={joinCode} onChangeText={(v) => setJoinCode(v.toUpperCase())} autoCapitalize="characters" autoCorrect={false} maxLength={5} placeholder={t("mp.realmCodePlaceholder")} placeholderTextColor={C.parchmentDim}
             style={{ flex: 1, fontFamily: F.display, fontSize: 16, letterSpacing: 3, color: C.parchment, borderWidth: 1, borderColor: C.border, borderRadius: 9, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: C.card, textAlign: "center" }} />
           <Pressable disabled={!serverReady || joinCode.length < 4} onPress={() => go(joinCode)} style={{ paddingHorizontal: 20, justifyContent: "center", borderRadius: 9, borderWidth: 1, borderColor: "rgba(111,160,192,0.6)", backgroundColor: "rgba(111,160,192,0.12)", opacity: (serverReady && joinCode.length >= 4) ? 1 : 0.5 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: "#6FA0C0" }}>{t("mp.joinRealm")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.frost }}>{t("mp.joinRealm")}</Text>
           </Pressable>
         </View>
 
@@ -128,12 +128,12 @@ export default function MpLobby() {
           <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim, marginTop: 12, textAlign: "center" }}>{t("mp.noOpenRealms")}</Text>
         ) : rooms.map((r) => (
           <Pressable key={r.realmId} disabled={!serverReady} onPress={() => go(r.realmId)} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8, paddingVertical: 11, paddingHorizontal: 13, borderRadius: 9, borderWidth: 1, borderColor: C.border, backgroundColor: C.card }}>
-            <GameIcon name="iliskiler" size={15} color="#6FA0C0" />
+            <GameIcon name="iliskiler" size={15} color={C.frost} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{r.name}</Text>
               <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{r.realmId} · {pf(t("mp.realmPlayers"), r.count)}</Text>
             </View>
-            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: "#6FA0C0" }}>{t("mp.joinRealm")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.frost }}>{t("mp.joinRealm")}</Text>
           </Pressable>
         ))}
 
@@ -153,7 +153,7 @@ export default function MpLobby() {
               </View>
             ))}
             <Pressable onPress={dismissTut} style={{ marginTop: 8, paddingVertical: 13, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: "#2a1d08" }}>{t("mp.tut.got")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.inkOnGold }}>{t("mp.tut.got")}</Text>
             </Pressable>
           </Pressable>
         </Pressable>

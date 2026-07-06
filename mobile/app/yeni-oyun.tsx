@@ -226,8 +226,8 @@ export default function YeniOyun() {
           marginTop: 14, paddingVertical: 16, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.6)",
           backgroundColor: C.gold, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
         }}>
-          {busy && <ActivityIndicator color="#2a1d08" size="small" />}
-          <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 3, color: "#2a1d08" }}>
+          {busy && <ActivityIndicator color={C.inkOnGold} size="small" />}
+          <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 3, color: C.inkOnGold }}>
             {busy ? t("new.creating") : t("new.create")}
           </Text>
         </Pressable>

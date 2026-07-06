@@ -48,7 +48,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
               shadowColor: "#000", shadowOpacity: 0.45, shadowRadius: 7, shadowOffset: { width: 0, height: 3 }, elevation: 9,
             }}
           >
-            <GameIcon name="ilerle" size={26} color="#1a1206" />
+            <GameIcon name="ilerle" size={26} color={C.inkOnGold} />
           </Pressable>
         </Animated.View>
       </View>
@@ -83,9 +83,9 @@ function GlobalBackdrop({ bottom }: { bottom: number }) {
       <Svg width="100%" height="100%">
         <Defs>
           <RadialGradient id="bgGlow" cx="50%" cy="13%" rx="78%" ry="55%">
-            <Stop offset="0" stopColor="#E0922E" stopOpacity={0.10} />
-            <Stop offset="0.5" stopColor="#C9A84C" stopOpacity={0.03} />
-            <Stop offset="1" stopColor="#0D0A06" stopOpacity={0} />
+            <Stop offset="0" stopColor={C.emberSoft} stopOpacity={0.10} />
+            <Stop offset="0.5" stopColor={C.gold} stopOpacity={0.03} />
+            <Stop offset="1" stopColor={C.bg} stopOpacity={0} />
           </RadialGradient>
           <RadialGradient id="bgVignette" cx="50%" cy="40%" rx="76%" ry="64%">
             <Stop offset="0.55" stopColor="#000000" stopOpacity={0} />

@@ -146,7 +146,7 @@ export function MilestoneModal({ visible, type, text, onClose }: { visible: bool
           </View>
           <Text style={{ fontFamily: F.serif, fontSize: 16, color: C.parchment, textAlign: "center", lineHeight: 24, marginTop: 14 }}>{text}</Text>
           <Pressable onPress={onClose} style={{ marginTop: 22, paddingVertical: 11, paddingHorizontal: 28, borderRadius: 9, borderWidth: 1.5, borderColor: accent + "99", backgroundColor: accent }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, color: "#1a1206", letterSpacing: 1.5 }}>DEVAM</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 12, color: C.inkOnGold, letterSpacing: 1.5 }}>DEVAM</Text>
           </Pressable>
         </Animated.View>
       </Pressable>
@@ -237,7 +237,7 @@ export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, p
               <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchment }}>{t("eul.chronicle")}</Text>
             </Pressable>
             <Pressable onPress={onContinue} style={{ flex: 1.3, paddingVertical: 13, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: "#1a1206" }}>{hasHeir ? t("eul.continue") : t("eul.newLife")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.inkOnGold }}>{hasHeir ? t("eul.continue") : t("eul.newLife")}</Text>
             </Pressable>
           </Animated.View>
         </Animated.View>
@@ -297,7 +297,7 @@ export function OpportunityModal({ opp, statVal = 5, onResolve, onPass }: { opp:
                 <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentMuted, letterSpacing: 1 }}>{t("frs.pass")}</Text>
               </Pressable>
               <Pressable onPress={() => { hap("tap"); setPhase("play"); }} style={{ flex: 2, paddingVertical: 13, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold, alignItems: "center" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 12, color: "#1a1206", letterSpacing: 1 }}>{t("frs.take")}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 12, color: C.inkOnGold, letterSpacing: 1 }}>{t("frs.take")}</Text>
               </Pressable>
             </View>
           </Animated.View>
@@ -312,7 +312,7 @@ export function OpportunityModal({ opp, statVal = 5, onResolve, onPass }: { opp:
               <View style={{ position: "absolute", left: `${pos}%`, width: 3, top: -2, bottom: -2, backgroundColor: C.goldBright, marginLeft: -1.5 }} />
             </View>
             <Pressable onPress={onStop} style={{ marginTop: 18, paddingVertical: 14, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: "#1a1206" }}>{t("frs.stop")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 14, letterSpacing: 2, color: C.inkOnGold }}>{t("frs.stop")}</Text>
             </Pressable>
           </Animated.View>
         )}
@@ -346,7 +346,7 @@ export function TutorialModal({ visible, title, bullets, gotLabel, onClose }: { 
             </View>
           ))}
           <Pressable onPress={onClose} style={{ marginTop: 8, paddingVertical: 13, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: "#1a1206" }}>{gotLabel}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.inkOnGold }}>{gotLabel}</Text>
           </Pressable>
         </Animated.View>
       </View>

@@ -105,7 +105,7 @@ export default function Menu() {
                   <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, letterSpacing: 0.8, color: C.parchment }}>{t("scr." + key)}</Text>
                   {(() => { const b = badgeFor(key); return b.n > 0 ? (
                     <View style={{ minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 5, alignItems: "center", justifyContent: "center", backgroundColor: b.urgent ? "rgba(200,64,64,0.9)" : "rgba(201,168,76,0.9)" }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 10, color: "#1a1206" }}>{b.n}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 10, color: C.inkOnGold }}>{b.n}</Text>
                     </View>
                   ) : null; })()}
                   <Text style={{ color: C.goldDim, fontSize: 16, fontFamily: F.display }}>›</Text>

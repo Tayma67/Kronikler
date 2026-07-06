@@ -65,9 +65,9 @@ export default function Mulkler() {
           <Svg width="100%" height="100%" style={{ position: "absolute", left: 0, top: 0 }}>
             <Defs>
               <LinearGradient id="mulkscrim" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor="#0D0A06" stopOpacity={0.55} />
-                <Stop offset="0.45" stopColor="#0D0A06" stopOpacity={0.1} />
-                <Stop offset="1" stopColor="#0D0A06" stopOpacity={0.95} />
+                <Stop offset="0" stopColor={C.bg} stopOpacity={0.55} />
+                <Stop offset="0.45" stopColor={C.bg} stopOpacity={0.1} />
+                <Stop offset="1" stopColor={C.bg} stopOpacity={0.95} />
               </LinearGradient>
             </Defs>
             <Rect x="0" y="0" width="100%" height="100%" fill="url(#mulkscrim)" />

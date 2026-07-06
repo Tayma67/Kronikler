@@ -116,11 +116,11 @@ export function StatDeltaOverlay() {
     { path: "stat_points",    icon: "star",  color: C.gold,  label: t("char.points"), min: 1 },
     { path: "health",         icon: "saglik", color: C.blood, label: t("char.health"), min: 4, onlyDrop: true },
     { path: "nam.comert",     icon: "leaf", color: "#7FA66A", label: t("nam.comert"), min: 1 },
-    { path: "nam.zalim",      icon: "skull", color: "#C0556B", label: t("nam.zalim"), min: 1 },
+    { path: "nam.zalim",      icon: "skull", color: C.roseDim, label: t("nam.zalim"), min: 1 },
     { path: "nam.capkin",     icon: "lyre", color: "#C77BA6", label: t("nam.capkin"), min: 1 },
     { path: "nam.dindar",     icon: "prayer-beads", color: "#9C7BC4", label: t("nam.dindar"), min: 1 },
-    { path: "nam.mert",       icon: "crossed-swords", color: "#E0922E", label: t("nam.mert"), min: 1 },
-    { path: "spouse_bond",    icon: "ring", color: "#C9A84C", label: t("feel.spouseBond"), min: 2, skipFromZero: true },
+    { path: "nam.mert",       icon: "crossed-swords", color: C.emberSoft, label: t("nam.mert"), min: 1 },
+    { path: "spouse_bond",    icon: "ring", color: C.gold, label: t("feel.spouseBond"), min: 2, skipFromZero: true },
     { path: "child_bond._dev", icon: "baby", color: "#7FA66A", label: t("feel.childBond"), min: 2, skipFromZero: true },
   ];
 

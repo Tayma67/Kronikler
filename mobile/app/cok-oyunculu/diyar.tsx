@@ -95,7 +95,7 @@ export default function Diyar() {
         {snapshot && (
           <Pressable onPress={() => { hap("advance"); router.push({ pathname: "/cok-oyunculu/oyun", params: { name: String(name || "Hanedan"), gender: String(gender || "erkek") } }); }}
             style={{ marginTop: 18, paddingVertical: 14, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold }}>
-            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 2, color: "#2a1d08" }}>{t("mp.enterWorld")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 2, color: C.inkOnGold }}>{t("mp.enterWorld")}</Text>
           </Pressable>
         )}
 
@@ -107,7 +107,7 @@ export default function Diyar() {
               <Text key={i} style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginBottom: 3 }}>
                 {c.scope === "whisper" && <Text style={{ color: "#C4A24C" }}>[{t("mp.chat.whisper")}] </Text>}
                 {c.scope === "beylik" && <Text style={{ color: C.sage }}>[{t("mp.chat.beylik")}] </Text>}
-                <Text style={{ color: c.from === guestId ? C.gold : "#6FA0C0" }}>{c.fromName}: </Text>{c.text}
+                <Text style={{ color: c.from === guestId ? C.gold : C.frost }}>{c.fromName}: </Text>{c.text}
               </Text>
             ))}
         </View>
@@ -137,7 +137,7 @@ export default function Diyar() {
               return (
                 <Pressable key={x.id} onPress={() => { hap("tap"); setWhisperTo(x.id); }}
                   style={{ paddingVertical: 5, paddingHorizontal: 11, borderRadius: 7, marginRight: 6, borderWidth: 1, borderColor: on ? "rgba(111,160,192,0.7)" : C.border, backgroundColor: on ? "rgba(111,160,192,0.14)" : "transparent" }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 9.5, color: on ? "#6FA0C0" : C.parchmentMuted }}>{x.name}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 9.5, color: on ? C.frost : C.parchmentMuted }}>{x.name}</Text>
                 </Pressable>
               );
             })}

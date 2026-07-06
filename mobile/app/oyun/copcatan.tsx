@@ -80,7 +80,7 @@ export default function Copcatan() {
                     </View>
                   </View>
                   <Pressable disabled={!able} onPress={() => { hap("success"); apply((s) => proposeArranged(s, n)); }} style={{ paddingVertical: 9, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1.5, borderColor: able ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: able ? C.gold : C.bg, opacity: able ? 1 : 0.5 }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: able ? "#1a1206" : C.parchmentMuted }}>{t("cc.propose")}</Text>
+                    <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: able ? C.inkOnGold : C.parchmentMuted }}>{t("cc.propose")}</Text>
                   </Pressable>
                 </View>
               );

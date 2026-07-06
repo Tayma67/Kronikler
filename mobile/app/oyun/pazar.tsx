@@ -441,7 +441,7 @@ export default function Pazar() {
                     <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted }}>{t("paz.give")}</Text>
                   </Pressable>
                   <Pressable onPress={confirmBuy} disabled={!canAfford} style={{ flex: 2, paddingVertical: 12, borderRadius: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: canAfford ? C.gold : C.bg, alignItems: "center" }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: canAfford ? "#1a1206" : C.parchmentMuted }}>{barg.sell ? t("paz.sellAt") : t("paz.buyAt")} {barg.price} ⚜</Text>
+                    <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: canAfford ? C.inkOnGold : C.parchmentMuted }}>{barg.sell ? t("paz.sellAt") : t("paz.buyAt")} {barg.price} ⚜</Text>
                   </Pressable>
                 </View>
               </View>

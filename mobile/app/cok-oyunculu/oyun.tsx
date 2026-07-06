@@ -141,7 +141,7 @@ export default function MpOyun() {
             {p.children && p.children.length > 0 ? (
               <Pressable onPress={() => { hap("advance"); const ns = { ...continueAsHeir(s, "esit"), mpRealm: true }; apply(() => ns); if (guestId) { syncPlayer(mePublic(guestId, ns, false)); saveState(JSON.stringify(ns)); } }}
                 style={{ marginTop: 12, paddingVertical: 13, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold }}>
-                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: "#2a1d08" }}>{t("dash.continueHeir")}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.inkOnGold }}>{t("dash.continueHeir")}</Text>
               </Pressable>
             ) : (
               <Pressable onPress={() => { hap("advance"); const ns = { ...newGame(String(name || "Hanedan"), String(name || "Han"), mpGender), mpRealm: true }; apply(() => ns); if (guestId) { syncPlayer(mePublic(guestId, ns, false)); saveState(JSON.stringify(ns)); } }}
@@ -178,9 +178,9 @@ export default function MpOyun() {
         {/* Diplomasi — oyuncular arası destek/rekabet/entrika/yardım */}
         <Pressable onPress={() => { hap("tap"); router.push("/cok-oyunculu/diplomasi"); }}
           style={{ marginTop: 14, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 13, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(111,160,192,0.55)", backgroundColor: "rgba(111,160,192,0.1)" }}>
-          <GameIcon name="iliskiler" size={16} color="#6FA0C0" />
+          <GameIcon name="iliskiler" size={16} color={C.frost} />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: "#6FA0C0" }}>{t("mp.soc.title")}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.frost }}>{t("mp.soc.title")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("mp.soc.subtitle")}</Text>
           </View>
           <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldDim }}>›</Text>
@@ -375,7 +375,7 @@ export default function MpOyun() {
           )}
         </View>
         <Pressable disabled={p.dead} onPress={doReady} style={{ paddingVertical: 13, paddingHorizontal: 26, borderRadius: 9, borderWidth: 1, borderColor: ready ? "rgba(127,166,106,0.7)" : "rgba(201,168,76,0.6)", backgroundColor: ready ? "rgba(127,166,106,0.16)" : C.gold, opacity: p.dead ? 0.4 : 1 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: ready ? C.sage : "#2a1d08" }}>{ready ? t("mp.ready") + " ✓" : t("mp.ready")}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: ready ? C.sage : C.inkOnGold }}>{ready ? t("mp.ready") + " ✓" : t("mp.ready")}</Text>
         </Pressable>
       </View>
     </View>

@@ -231,7 +231,7 @@ export default function Karakter() {
                 const status = p.age < 13 ? t("child.friend.label") : (rel != null && rel > 0 ? t("child.friend.lifelong") : (rel != null && rel < 0 ? t("child.friend.rivalStatus") : t("child.friend.parted")));
                 return (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}>
-                    <GameIcon name="iliskiler" size={11} color="#C0556B" />
+                    <GameIcon name="iliskiler" size={11} color={C.roseDim} />
                     <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("child.friend.of")}: <Text style={{ color: C.parchment }}>{nm}</Text> · {status}</Text>
                   </View>
                 );

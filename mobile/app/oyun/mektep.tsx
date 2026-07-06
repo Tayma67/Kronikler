@@ -117,7 +117,7 @@ export default function Mektep() {
         {p.stat_points > 0 && (
           <Pressable onPress={() => { hap("tap"); router.push("/oyun/karakter"); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "rgba(212,180,90,0.12)", borderWidth: 1.5, borderColor: "rgba(212,180,90,0.55)", borderRadius: 12, padding: 12, marginBottom: 13 }}>
             <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.gold, alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: "#1a1206" }}>{p.stat_points}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.inkOnGold }}>{p.stat_points}</Text>
             </View>
             <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment }}>{t("mek.pointsCta")}</Text>
             <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.gold }}>{t("mek.spend")} ›</Text>
