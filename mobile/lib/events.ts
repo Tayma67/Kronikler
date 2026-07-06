@@ -983,6 +983,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
           { label: "Köz başında kestane dağıt", delta: { money: -10, reputation: 3, nam: { comert: 2 } }, result: "Atlamayanlara köz kestanesi dağıttın; avuçlar ısındı, adın tatlı anıldı." },
         ],
       },
+      {
+        id: "fest_nevruz_4", icon: "party", title: "Yumurta Tokuşu",
+        text: "Nevruz sabahı boyalı yumurtalar tokuşuyor; kasabanın yenilmezi ortada, elinde geçen yılın şampiyonu. Sıra sende.",
+        when: (p) => p.age >= 14,
+        choices: [
+          { label: "Tokuştur", delta: { fame: 2, nam: { mert: 1 } }, result: "Ustaca bir vuruşla yenilmezin yumurtası çatladı; meydan güldü, adın bir bahar boyu anıldı." },
+          { label: "Sıranı çocuğa ver", delta: { reputation: 2, nam: { comert: 1 } }, result: "Sıranı küçük bir çocuğa verdin; yumurta çatladığında sanki sen kazanmış gibi sevindin." },
+        ],
+      },
     ],
   },
   {
@@ -1033,6 +1042,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
           { label: "Yarıştır: kim önce varırsa onun", delta: { fame: 2, nam: { capkin: 1 } }, result: "İki delikanlıyı tarla başına dizdin; koşu şenliğe döndü, kazanan demeti havaya kaldırdı. Gülen kazandı, küsen kalmadı." },
         ],
       },
+      {
+        id: "fest_hasat_4", icon: "wheat", title: "İmece Sofrası",
+        text: "Harman sonu imece sofrası kuruluyor; kazanlar kaynıyor, kepçe başı boş, el eksik.",
+        when: (p) => p.age >= 14,
+        choices: [
+          { label: "Kepçe başına geç", delta: { reputation: 2, nam: { comert: 1 } }, result: "Akşama kadar kepçe salladın; herkes doyunca sofranın bereketi senin adınla anıldı." },
+          { label: "Sofraya kuzu bağışla", delta: { money: -15, fame: 2, nam: { comert: 2 } }, result: "Kazana kuzu düştü; imece sofrası bayram sofrasına döndü, dualar peş peşe geldi." },
+        ],
+      },
     ],
   },
   {
@@ -1081,6 +1099,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
         choices: [
           { label: "İçeri al, sofranı paylaş", delta: { money: -8, honor: 3, nam: { comert: 2, dindar: 1 } }, result: "Yolcu ocağının başında çözüldü; bir kâse çorbaya bir gece hikâye anlattı, sabah dualarla yola düştü." },
           { label: "Ahırı göster, battaniye ver", delta: { reputation: 1 }, result: "Samanlığa yer, sırtına battaniye verdin; kapı arası da olsa tipide dam damdır. Yolcu minnetle uyudu." },
+        ],
+      },
+      {
+        id: "fest_kis_4", icon: "flame", title: "Helva Gecesi",
+        text: "Kış meclisinin helva gecesi: kazan ateşte, tahta kaşık elden ele geziyor, sıra sana geliyor.",
+        when: (p) => p.age >= 14,
+        choices: [
+          { label: "Helvayı sen kavur", delta: { reputation: 2 }, result: "Kaşığı devrettiğinde helva kokusu sokağa taşmıştı; eline sağlık sesleri geceyi ısıttı." },
+          { label: "Kavrulurken hikâye anlat", delta: { fame: 2 }, result: "Helva dönerken sen de bir hikâye döndürdün; kaşık durdu, kulaklar sende kaldı." },
         ],
       },
     ],
