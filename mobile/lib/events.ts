@@ -956,6 +956,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
           { label: "Davul ekibine katıl, coştur", delta: { reputation: 2, nam: { capkin: 1 } }, result: "Tokmak elinde akşama dek vurdun; güreşten çok davulun konuşuldu, gülen gözler seni buldu." },
         ],
       },
+      {
+        id: "fest_nevruz_3", icon: "flame", title: "Ateşten Atlayış",
+        text: "Nevruz ateşi dizildi; delikanlılar sıra sıra atlıyor. 'Dert ateşte kalır' diye bağırıyor ihtiyarlar. Sıra sende.",
+        when: (p) => p.age >= 16,
+        choices: [
+          { label: "Ateşten atla", delta: { health: -2, fame: 2, nam: { mert: 1 } }, result: "Alev eteğini yaladı ama öte yakaya gülerek indin; 'dertlerin ateşte kaldı' diye bağrıştı meydan." },
+          { label: "Köz başında kestane dağıt", delta: { money: -10, reputation: 3, nam: { comert: 2 } }, result: "Atlamayanlara köz kestanesi dağıttın; avuçlar ısındı, adın tatlı anıldı." },
+        ],
+      },
     ],
   },
   {
@@ -997,6 +1006,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
           { label: "İmeceye omuz ver", delta: { reputation: 5, nam: { comert: 3 }, hunger: 4 }, result: "Dul kadının harmanı senin kolunla kalktı; akşam sofrasında baş köşe senindi." },
         ],
       },
+      {
+        id: "fest_hasat_3", icon: "wheat", title: "Son Demet",
+        text: "Tarladaki son demeti biçme şerefi kavga konusu oldu; iki delikanlı birbirine girmek üzere. Orakçılar sana bakıyor.",
+        when: (p) => p.age >= 16,
+        choices: [
+          { label: "Demeti ikiye böl, ikisine de ver", delta: { reputation: 3, honor: 2 }, result: "Orağı alıp demeti ortadan böldün; iki eve de bereket girdi, kavga gülüşmeye döndü. 'Aklıselim' dediler." },
+          { label: "Yarıştır: kim önce varırsa onun", delta: { fame: 2, nam: { capkin: 1 } }, result: "İki delikanlıyı tarla başına dizdin; koşu şenliğe döndü, kazanan demeti havaya kaldırdı. Gülen kazandı, küsen kalmadı." },
+        ],
+      },
     ],
   },
   {
@@ -1036,6 +1054,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
         choices: [
           { label: "Kendi başından geçeni anlat", delta: { fame: 4, nam: { capkin: 1 } }, result: "Hikâyen meddahı bile sarstı; 'bunu ben anlatacağım diyar diyar' dedi. Adın kış yollarına çıktı." },
           { label: "Sözü gençlere bırak", delta: { honor: 3, reputation: 2 }, result: "Utangaç bir çırak senin bakışınla cesaret buldu, meclisi güldürdü. Büyüklük bazen susmaktır." },
+        ],
+      },
+      {
+        id: "fest_kis_3", icon: "house", title: "Karda Kalan Yolcu",
+        text: "Kış meclisi dağılırken kapına karla kaplı bir yolcu vurdu; hanlar dolu, tipi bastırıyor.",
+        when: (p) => p.age >= 16,
+        choices: [
+          { label: "İçeri al, sofranı paylaş", delta: { money: -8, honor: 3, nam: { comert: 2, dindar: 1 } }, result: "Yolcu ocağının başında çözüldü; bir kâse çorbaya bir gece hikâye anlattı, sabah dualarla yola düştü." },
+          { label: "Ahırı göster, battaniye ver", delta: { reputation: 1 }, result: "Samanlığa yer, sırtına battaniye verdin; kapı arası da olsa tipide dam damdır. Yolcu minnetle uyudu." },
         ],
       },
     ],
