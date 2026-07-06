@@ -12,6 +12,24 @@ export interface Dilemma {
 export const DILEMMAS: Dilemma[] = [
   // ── Orta yaş / yaşlılık / ekonomik kriz ikilemleri (Vercel life_events_v2 boşluğu) ──
   {
+    id: "gec_cesme", icon: "house", title: "Adsız Çeşme",
+    text: "Loncan, meydanda senin adını taşıyacak bir çeşme yaptırmak istiyor; taşın yarısı senin kesenden. Ad mı kalsın, su mu?",
+    when: (p) => p.age >= 55,
+    choices: [
+      { label: "Adını ver, keseni aç", delta: { money: -40, fame: 4, nam: { comert: 2 } }, result: "Çeşme yükseldi; mermerine adın kazındı. Su içen herkes adını okuyor — kimi dua ediyor, kimi 'gösteriş' diyor." },
+      { label: "Adsız kalsın", delta: { honor: 5, nam: { dindar: 2 } }, result: "Su aktı, ad kalmadı. Yalnız taşçı biliyor kimin yaptırdığını — bir de sen. Bazı hayırlar sessiz akar." },
+    ],
+  },
+  {
+    id: "gec_hesap", icon: "scroll", title: "Eski Hesap",
+    text: "Gençken haksızlık ettiğin birinin oğlu kapında: babası ölmüş, defterinde senin adın yazılıymış. Ne gençsin ne de o mesele taze — ama kapıda duruyor.",
+    when: (p) => p.age >= 60,
+    choices: [
+      { label: "Helallik dile", delta: { money: -20, honor: 6, reputation: 2 }, result: "Başını eğdin, hakkı teslim ettin; oğlan keseden çok sözüne baktı. Kapıdan giderken 'babam duysaydı yeterdi' dedi." },
+      { label: "Geçmişi göm", delta: { fear: 2, nam: { zalim: 1 } }, result: "Kapıyı yavaşça kapadın; mesele dışarıda kaldı. Ama o defter bir yerde durdukça, kapı da arada bir çalınacak." },
+    ],
+  },
+  {
     id: "orta_borc", icon: "coins", title: "Borç Tuzağı",
     text: "İşler kötü; bir tefeci ağır faizle borç öneriyor. Kese şişer ama zincir de gelir.",
     when: (p) => p.age >= 25,
