@@ -267,6 +267,18 @@ export default function Karakter() {
                   <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("misc.horse")}: <Text style={{ color: C.parchment }}>{p.horse_name}</Text></Text>
                 </View>
               ) : null}
+              {state.saga ? (() => {
+                const sg = state.saga!;
+                const done = sg.act >= 3 && sg.ch >= 5;
+                return (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}>
+                    <GameIcon name="scroll" size={11} color={C.gold} />
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>
+                      {t("saga.title")}: {done ? <Text style={{ color: C.gold }}>{t("saga.bandDone")}</Text> : <Text style={{ color: C.parchment }}>{t("saga.actName" + sg.act)} · {Math.min(sg.ch, 5)}/5</Text>}
+                    </Text>
+                  </View>
+                );
+              })() : null}
             </View>
           </View>
 
