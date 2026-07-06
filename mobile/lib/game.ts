@@ -3954,6 +3954,7 @@ export function heirPreview(prev: GameState, heirName: string, willId = "esit"):
   if (edu) { const lvl = eduLevel(edu.weeks); if (lvl > 0) rep += lvl; }
   const bond = p.child_bond?.[heirName];
   if (bond != null) { if (bond >= 60) rep += 2; if (bond >= 85) points += 1; } // ilgiyle büyüyen evlat: ata bağı vârisin adını ve özgüvenini besler
+  if (prev.saga && prev.saga.act >= 3 && prev.saga.ch >= 5) rep += 2; // Mühür Nişanı: tamamlanan Kül Yemini vârisi önceler (continueAsHeir paritesi)
   return { points, money, rep: Math.max(-100, Math.min(100, rep + legacyRep)) };
 }
 
@@ -4064,6 +4065,11 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   if (ns.feud) ns.history.push({ day: 0, type: "kan_davası", text: `Atalardan kalan kan davası sana geçti; o hesap hâlâ açık.`, scope: "kişisel", landmark: true, k: "evj.feud.inherit", p: [{ hn: ns.feud.nameIdx }] });
   // Yadigâr kroniğe düşer: atanın silahı sandıkta vârisi bekler.
   if (heirloomId) ns.history.push({ day: 0, type: "nesil_devri", text: `${p.name}'in silahı sandıktan çıktı: bu yadigâr artık senin.`, scope: "kişisel", landmark: false, k: "evj.heirloom", p: [p.name, { i: heirloomId }] });
+  // Mühür Nişanı: atası Kül Yemini'ni tamamlayan vâris bir adım önde başlar (heirPreview paritesi — orada da +2).
+  if (ns.saga && ns.saga.act >= 3 && ns.saga.ch >= 5) {
+    ns.player.reputation = Math.max(-100, Math.min(100, ns.player.reputation + 2));
+    ns.history.push({ day: 0, type: "destan", text: "Kuşağında atalarının kül rengi mührü: Kül Yemini bu hanede tamamlandı. Kapılar sana bir karış daha açık.", scope: "kişisel", landmark: false, k: "saga.echo", p: [] });
+  }
   return ns;
 }
 
