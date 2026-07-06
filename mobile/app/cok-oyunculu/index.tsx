@@ -79,7 +79,7 @@ export default function MpLobby() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, marginBottom: 4 }}>
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.sage }} />
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, flex: 1 }} numberOfLines={1}>{t("mp.serverSet")} · {serverUrl}</Text>
-            <Pressable onPress={() => setUrl("")} hitSlop={8}><GameIcon name="ayarlar" size={14} color={C.goldDim} /></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={t("a11y.clearField")} onPress={() => setUrl("")} hitSlop={8}><GameIcon name="ayarlar" size={14} color={C.goldDim} /></Pressable>
           </View>
         )}
 
@@ -119,7 +119,7 @@ export default function MpLobby() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 22 }}>
           <View style={{ flex: 1, height: 1, backgroundColor: C.border }} />
           <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 2, color: C.goldDim }}>{t("mp.openRealms").toUpperCase()}</Text>
-          <Pressable onPress={() => { hap("tap"); refreshRooms(); }} hitSlop={8}><GameIcon name="ilerle" size={13} color={C.goldDim} /></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("a11y.refresh")} onPress={() => { hap("tap"); refreshRooms(); }} hitSlop={8}><GameIcon name="ilerle" size={13} color={C.goldDim} /></Pressable>
           <View style={{ flex: 1, height: 1, backgroundColor: C.border }} />
         </View>
         {loadingRooms ? (
