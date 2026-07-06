@@ -91,6 +91,7 @@ export interface Player {
   temperament?: string; // yaratılışta seçilen mizaç (yigit/kurnaz/merhametli/hirsli) — ömürlük küçük etkiler
   crown_action_turn?: number; // bu ay taht eylemi (iddiacıyı bastır/uzlaş) yapıldı mı — tur başına tek
   jail?: { left: number; kind: string } | null; // zindan: kalan ay + sebep (ağır suç bedeli — zaman kaybı gerçek risk)
+  jail_freed?: number; races_won?: number; divan_resolved?: number; // başarım sayaçları (history budanır; sayaç kalıcı — opsiyonel, eski kayıt dokunmadan)
   estate?: number; // aile konağı kademesi (0-6) — nesillere kalan görkem merdiveni (avlu→saray yavrusu)
   vakif_fon?: number; // vakıf fonuna ömür boyu akıtılan toplam (SINIRSIZ) — servetin anlama dönüşen tek sayacı
   vakif_turn?: number; // bu ay vakfa bağış yapıldı mı (tur başına tek — itibar damlası farmlanamaz)
@@ -987,7 +988,7 @@ function locEventPersonal(s: GameState) {
     if (e.type === "veba" && chance(0.15)) { const h = 6 + Math.floor(Math.random() * 8); s.player.health = Math.max(1, s.player.health - h); push(s, "saglik", `${e.loc}'deki veba sana da bulaştı; halsiz düştün (−${h} sağlık).`, "kişisel", false, { k: "lev.veba.hit", p: [h] }); }
     else if (e.type === "panayir" && s.player.horse && chance(0.20)) {
       const hn = s.player.horse_name || "";
-      if (Math.random() < Math.min(0.85, 0.4 + effStat(s.player, "stamina") * 0.05)) { const prize = 20 + Math.floor(Math.random() * 21); s.player.money += prize; s.player.fame = Math.min(100, s.player.fame + 3); bumpNam(s.player, "mert", 1); push(s, "gunluk", `${e.loc} panayırında at yarışına girdin; ${hn} tozu dumana kattı, kese ve alkış senin (+${prize} akçe).`, "kişisel", true, { k: "horse.race.win", p: [{ pl: e.loc }, hn, prize] }); }
+      if (Math.random() < Math.min(0.85, 0.4 + effStat(s.player, "stamina") * 0.05)) { const prize = 20 + Math.floor(Math.random() * 21); s.player.money += prize; s.player.races_won = (s.player.races_won || 0) + 1; s.player.fame = Math.min(100, s.player.fame + 3); bumpNam(s.player, "mert", 1); push(s, "gunluk", `${e.loc} panayırında at yarışına girdin; ${hn} tozu dumana kattı, kese ve alkış senin (+${prize} akçe).`, "kişisel", true, { k: "horse.race.win", p: [{ pl: e.loc }, hn, prize] }); }
       else { s.player.health = Math.max(1, s.player.health - 2); push(s, "gunluk", `${e.loc} panayırındaki yarışta ${hn} son düzlükte kaldı; toz yuttun ama meydan seni tanıdı.`, "kişisel", false, { k: "horse.race.lose", p: [{ pl: e.loc }, hn] }); }
     }
     else if (e.type === "panayir" && chance(0.30)) { const g = 5 + Math.floor(Math.random() * 10); s.player.money += g; s.player.reputation = Math.min(100, s.player.reputation + 1); push(s, "gunluk", `${e.loc} panayırında eğlendin, biraz da kazandın (+${g} akçe).`, "kişisel", false, { k: "lev.panayir.gain", p: [g] }); }
@@ -1698,7 +1699,7 @@ export function advance(prev: GameState, n = 1): GameState {
       const jp = s.player;
       jp.hunger = Math.max(jp.hunger, 35); jp.health = Math.max(1, jp.health - 1);
       jp.jail!.left -= 1;
-      if (jp.jail!.left <= 0) { jp.jail = null; jp.reputation = Math.max(-100, jp.reputation - 1); push(s, "suç", `Cezan doldu; zindan kapısı gün ışığına açıldı. Diyar seni unutmamış ama gözler bir süre üstünde.`, "kişisel", true, { k: "jail.released" }); }
+      if (jp.jail!.left <= 0) { jp.jail = null; jp.jail_freed = (jp.jail_freed || 0) + 1; jp.reputation = Math.max(-100, jp.reputation - 1); push(s, "suç", `Cezan doldu; zindan kapısı gün ışığına açıldı. Diyar seni unutmamış ama gözler bir süre üstünde.`, "kişisel", true, { k: "jail.released" }); }
       else push(s, "suç", `Zindanda bir ay daha geçti; duvara bir çentik daha.`, "kişisel", false, { k: "jail.month", p: [jp.jail!.left] });
     }
     { const mf = monthlyFlavor(s, cal); push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k }); }
@@ -4362,6 +4363,7 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
   if (id === "iki_imam" && choice === 0 && p.money < 200) return s;
   if (id === "kayip_kervan" && choice === 0 && p.money < 130) return s;
   s.divan = null;
+  p.divan_resolved = (p.divan_resolved || 0) + 1; // adil hükümdar sayacı
   if (id === "su_kavgasi") {
     if (choice === 0) { p.money -= 100; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); }
     else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 2); p.fear = Math.min(100, p.fear + 2); }
@@ -4667,6 +4669,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "hunerli",  name: "Hünerli",         desc: "En az 6 hüner edin.",               icon: "medal",        done: (s) => s.player.perks.length >= 6 },
   { id: "kusanmis", name: "Teçhizatlı",      desc: "Hem silah hem zırh kuşan.",         icon: "shield",       done: (s) => !!s.player.equipped?.silah && !!s.player.equipped?.zirh },
   { id: "celikli",  name: "Çelik Kılıç",     desc: "Çelik kılıç kuşan.",                icon: "crossed-swords", done: (s) => s.player.equipped?.silah === "celik_kilic" },
+  { id: "demirkapi",name: "Demir Kapı",      desc: "Zindanda cezanı doldurup gün ışığına çık.", icon: "prisoner", done: (s) => (s.player.jail_freed || 0) >= 1 },
+  { id: "meydantozu",name: "Meydanın Tozu",  desc: "Panayırda at yarışı kazan.",        icon: "party",        done: (s) => (s.player.races_won || 0) >= 1 },
+  { id: "adilhukumdar",name: "Adil Hükümdar",desc: "Divanda 10 arzuhali karara bağla.", icon: "scales",       done: (s) => (s.player.divan_resolved || 0) >= 10 },
   // Kariyer & ekonomi
   { id: "kariyer",  name: "Zirvede",         desc: "Mesleğinde en üst unvana ulaş.",    icon: "crown",        done: (s) => { const pr = professionById(s.player.profession); return !!pr && careerTier(pr, s.player.career_xp) >= pr.tiers.length - 1; } },
   { id: "tüccar2",  name: "Servet Sahibi",   desc: "5000 akçeye ulaş.",                 icon: "gems",         done: (s) => s.player.money >= 5000 },
