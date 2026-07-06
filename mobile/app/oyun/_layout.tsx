@@ -21,6 +21,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 // Nav ortasında yükseltilmiş yuvarlak "Ayı İlerle" düğmesi (Karakter ↔ İlişkiler arası).
 function AdvanceFab({ bottom }: { bottom: number }) {
   const { state, doAdvance, mpMode } = useGame();
+  const { t } = useI18n();
   const pulse = useSharedValue(1);
   useEffect(() => {
     if (isReduceMotion()) return; // sade mod: düğme nabzı + tozu kapalı
@@ -40,6 +41,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
         </View>
         <Animated.View style={style}>
           <Pressable
+            accessibilityRole="button" accessibilityLabel={t("a11y.advance")}
             onPress={() => { hap("advance"); playAdvance(); doAdvance(1); }}
             style={{
               width: 60, height: 60, borderRadius: 30, backgroundColor: C.gold,

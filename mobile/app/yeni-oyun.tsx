@@ -76,10 +76,10 @@ function Prolog({ lines, onDone }: { lines: string[]; onDone: () => void }) {
       {last && !reduced ? <ParticleBurst top="26%" count={14} /> : null}
       <Vignette />
       <Letterbox reduced={reduced} />
-      <Pressable onPress={onDone} style={{ position: "absolute", top: 52, right: 18, zIndex: 9, paddingVertical: 6, paddingHorizontal: 13, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", backgroundColor: "rgba(6,4,2,0.55)" }}>
+      <Pressable accessibilityRole="button" accessibilityLabel={t("new.skip")} onPress={onDone} style={{ position: "absolute", top: 52, right: 18, zIndex: 9, paddingVertical: 6, paddingHorizontal: 13, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", backgroundColor: "rgba(6,4,2,0.55)" }}>
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.parchmentDim }}>{t("new.skip").toUpperCase()}</Text>
       </Pressable>
-      <Pressable onPress={next} style={{ flex: 1, justifyContent: "center", paddingHorizontal: 30 }}>
+      <Pressable accessibilityRole="button" accessibilityLabel={t(last ? "new.beginLife" : "new.tapNext")} onPress={next} style={{ flex: 1, justifyContent: "center", paddingHorizontal: 30 }}>
         {beat === 0 ? (
           <Animated.View key="title" entering={FadeIn.duration(1600)} exiting={FadeOut.duration(300)}>
             <Text style={{ fontFamily: F.display, fontSize: 30, letterSpacing: 9, color: C.parchment, textAlign: "center" }}>KRONİKLER</Text>
