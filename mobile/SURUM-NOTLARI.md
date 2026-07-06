@@ -2,6 +2,21 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 109-119 paketi (6 Temmuz, gece)
+
+**Tek cümle (mağaza/what's new):**
+TR: "Destan görünür oldu: karakter kartında Kül Yemini bandı, girişte destana göz kırpan dördüncü sahne, tamamlayan haneye vâris nişanı ve diyara yayılan ozan türküleri; artı iki yeni mikro an ve ekran okuyucu desteğinin ilk adımı."
+EN: "The saga became visible: an Ash Oath band on the character card, a fourth intro scene that winks at the saga, an heir's token for houses that finish it, and bard songs spreading through the land; plus two new micro-moments and the first step of screen-reader support."
+
+**Öne çıkanlar:**
+- **Mühür Nişanı:** Destanı tamamlayan hanedanın vârisi +2 itibarla ve kroniğe düşen yankıyla başlıyor (vâris önizlemesiyle birebir).
+- **Destan bandı ve SSS:** Karakter kartında perde/sahne ilerlemesi; SSS'te üç soru-cevaplık Kül Yemini bölümü.
+- **Dünya yankıları:** Tamamlanan yemin ozan türküsü, çocuk oyunu ve han hikâyesi olarak Diyarın Ahvali'ne nadiren düşüyor — ödülsüz, salt doku.
+- **Prolog önsezisi:** Girişe dördüncü sahne — "kül rengi bir mühür bir gün yolunu bulacak"; açılış filmi ile destan tek anlatı.
+- **Mikro an 14:** Yerinden oynayan değirmen taşı ve okuma bilmeyen ananın gurbet mektubu.
+- **Erişilebilirlik ilk tur:** Ayı İlerle, Atla ve prolog sahne alanı ekran okuyucuya adını söylüyor.
+- **Altyapı:** Denetim araçları (6 dil bekçisi + 120 hanedanlık destan fuzz'ı) depoya taşındı; konveyör el kitabı ve basın kiti yazıldı.
+
 ## Dalga 102-108 paketi (6 Temmuz, akşam)
 
 **Tek cümle (mağaza/what's new):**

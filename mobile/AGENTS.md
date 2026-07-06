@@ -39,6 +39,13 @@ Aşağıdaki kurallar geçmiş oturumlarda kullanıcıyla kesinleşti; **tartı�
 7. **Checker:** `node scripts/_smoke/i18n-icon-check.cjs` → "SONUÇ: 20 sorun kategorisi" (taban; artarsa yeni sorun var demektir).
 8. Depo kökünden commit + `git push -u origin apk` (ağ hatasında 2s/4s/8s/16s geri çekilmeli 5 deneme).
 
+**Senkron bekçisi (yaşanmış olay):** uzak yürütme konteyneri ara sıra ESKİ bir çalışma-kopyası anlık
+görüntüsüne dönebilir — yerel tarihçeden commit kaybolur ama uzak dalda durur (reflog'da iz olmaz).
+Bu yüzden her dalgaya başlamadan önce `git fetch origin apk && git status -sb` ile yerelin
+`origin/apk` ile eşit/ileri olduğunu doğrula. "fetch first" reddi görürsen: durdur → reflog ile teşhis →
+`git rebase origin/apk` ile onar → eksik tabana uygulanmış yamayı ATIP temiz tabanda YENİDEN uygula ve
+tüm doğrulama hattını yeniden koş. Eksik tabanda alınmış smoke sonucu birleşik kod için geçersizdir.
+
 UI-dışı dosyalar (docs) için 2 ve 7 yeterli; game.ts'e dokunmayan UI dalgalarında smoke atlanabilir (tsc+checker şart).
 
 ## Denetim araçları (scripts/_smoke/)
