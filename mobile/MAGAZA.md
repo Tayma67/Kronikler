@@ -20,11 +20,14 @@ Bir çocukluk yaşa: mektepte ders, sokakta oyun, ömürlük bir can yoldaşı �
 
 Sonra daha fazlasını iste: loncanda rütbe söktür, hanelerle ittifak kur, kan davanı büyüt ya da bitir. Tahta çık — divanında arzuhaller dinle, fermanınla iki köyü barıştır ya da hazineyi doldur. Beylikleri tek tâcın altında birleştir; adın "Cihangir" kalsın.
 
+Ve bir yemin taşı: ölüm döşeğindeki bir ihtiyarın avucundan kül rengi bir mühür geçer eline — Kösedağ'da düşenlerin yemini. Üç perdelik Kül Yemini destanı bir ömre sığmayabilir; yarım kalan yemini vârisin tamamlar, ihanetin bedelini belki torunun öder.
+
 Öldüğünde hikâye bitmez: yadigâr silahın, vakfın, ittifakların ve düşmanlıkların vârisine geçer. Her nesil, atalarının gölgesinde kendi kroniğini yazar.
 
 - Tamamen çevrimdışı, reklamsız, satın alımsız
 - 6 dil: Türkçe, English, Español, Português, العربية, Русский
 - 100+ ikilem, 10 arzuhal, 20+ hikâye yayı, 15 meslek, 5 lonca
+- Kül Yemini: nesiller aşan üç perdelik ana destan — seçimlerin vârise geçer
 - Nesilden nesile kalıcı dünya: NPC'ler yaşlanır, evlenir, ölür
 - İsteğe bağlı çok oyunculu diyar (BETA — kendi sunucunla)
 

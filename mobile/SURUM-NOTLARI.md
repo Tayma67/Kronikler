@@ -2,6 +2,18 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 102-108 paketi (6 Temmuz, akşam)
+
+**Tek cümle (mağaza/what's new):**
+TR: "Kül Yemini geldi: nesiller aşan üç perdelik ana destan — ölüm döşeğinde emanet edilen mühürden Karakuş Bey'le son hesaplaşmaya; artı film gibi açılan yeni hikâye girişi ve kendi hayalinin peşinde koşan NPC'ler."
+EN: "The Ash Oath arrives: a three-act main saga spanning generations — from a seal entrusted on a deathbed to the final reckoning with Karakuş Bey; plus a film-like new story intro and NPCs who now chase their own dreams."
+
+**Öne çıkanlar:**
+- **Kül Yemini (ana destan):** 16 sahnelik üç perde — emanet mühür, Moğol tahsildarının gölgesi, beşe bölünen emanet defteri, Ahi bacısının töre sınavı, eşkıya hanı, kronikteki hain, Karakuş'un atlılarıyla aynı kapıya yarış ve final: bağış, sürgün ya da kılıç. Seçimlerin izi vârise geçiyor; mührü satan ihanet dalında kefaret ödemeden kapılar açılmıyor. Destanı bitirene "Yemin Tamam" başarımı.
+- **Sinematik prolog:** Yeni hayat artık film gibi açılıyor — karanlıktan beliren başlık kartı, sinema bantları, sahne başına ağır çekim kadraj, paralakslı silüet tabloları (şafakta surlu şehir, kış gecesinde tek sıcak pencere, kader yolunda taş kemer), doğum sahnesine kar, finale köz patlaması. Sahneler kendiliğinden akar; Atla hep elinin altında.
+- **Diyar oyuncusuz da yaşıyor:** NPC'ler kendi hayalini kendisi kovalıyor — dükkân açan tüccarlığa geçip şehrin arzını ve fiyatlarını gerçekten değiştiriyor, ustabaşı olan usta izi bırakıyor; haber tanıdıksa sana, değilse Diyarın Ahvali'ne düşüyor.
+- **Tasarım sıkılaştırma:** Tekrarlanan kaçak renkler resmî tema jetonu oldu; görünüm değişmedi, tutarlılık arttı.
+
 ## Dalga 93-98 paketi (6 Temmuz)
 
 **Tek cümle (mağaza/what's new):**
