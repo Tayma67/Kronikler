@@ -2,6 +2,20 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 93-98 paketi (6 Temmuz)
+
+**Tek cümle (mağaza/what's new):**
+TR: "Yayın öncesi sıkılaştırma ve yol harçlığı: sömürü kapıları kapandı, on nesillik hanedanlar için kayıt güvencesi geldi, şenliklere ve yollara yeni sahneler, yeni sistemlere üç yeni başarım."
+EN: "Pre-release tightening and road stories: exploit doors closed, save-file safety for ten-generation dynasties, new scenes for festivals and roads, and three new achievements for the new systems."
+
+**Öne çıkanlar:**
+- **Yayın öncesi sıkılaştırma:** Bir akçelik borçla itibar pompalanamıyor (bonus yalnız gerçek faiz bedeli ödenen borçta), sekiz eylemde ölü-oyuncu kapısı, çocuğa at satılmıyor, tokken sokak yemeğine akçe gitmiyor.
+- **Kayıt şişmesi freni:** Canlı doğan nüfusuna 300 tavanı — kırk yılda 450'yi bulan liste artık plato yapıyor; elenenler yalnız iz bırakmamış yabancılar, oyuncunun tanıdığı hiç kimse silinmiyor. 11. nesilde bile kayıt ~124KB, ay başına işlem ~1,4 ms.
+- **Şenliklere üçüncü sahne:** Nevruz'da ateşten atlayış, hasatta son demet kavgasının hakemliği, kış meclisinde karda kalan yolcu — yılın nabzı daha az tekrar ediyor.
+- **Yola üç yeni yüz:** Selin yıktığı köprüde el emeği (zekâ), devrilen yük arabasına omuz (güç), yolunu şaşırmış çocuğa yoldaşlık (karizma; kervan rotasında da).
+- **Üç yeni başarım:** Demir Kapı (zindanda cezanı doldurup çık — rüşvetle çıkış saymaz), Meydanın Tozu (panayırda at yarışı kazan), Adil Hükümdar (divanda 10 arzuhali karara bağla).
+- **Doküman:** SSS kronik cevabı iki hastalığı da anlatıyor; sürüm notları güncel.
+
 ## Dalga 83-92 paketi (5 Temmuz, akşam)
 
 **Tek cümle (mağaza/what's new):**
