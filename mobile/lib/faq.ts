@@ -116,6 +116,15 @@ const TR: FaqSection[] = [
     ],
   },
   {
+        icon: "banner", title: "Çevrimiçi Diyar (Çok Oyunculu)",
+    items: [
+      { q: "Çok oyunculu diyar nasıl hissettirir? Meclis şeridi nedir?", a: "Diyar oyun ekranının tepesinde canlı bir yoldaş şeridi vardır: kim çevrimiçi, kim aya hazır, senin adın altınla. Tek dokunuş naralar (selam, takdir, meydan okuma, yardım çağrısı) herkese anında düşer; genel sohbetin son 12 sözü diyarda saklanır, sonradan gelen meclisin kaldığı yerden dinler." },
+      { q: "Yıllık defneler (Yılın Beyi/Yıldızı/Alicenabı) nasıl kazanılır?", a: "Her oyun yılı kapanışında sunucu üç defne dağıtır: yıl içinde GÜCÜNÜ en çok büyüten Yılın Beyi, ŞÖHRETİNİ en çok artıran Yılın Yıldızı, ŞEREFİNİ en çok yükselten Yılın Alicenabı olur. Nişan bir yıl ad yanında görünür, sonraki kapanışta el değiştirebilir. İlk yılın ölçüm yılıdır; artış olmayan dalda defne verilmez." },
+      { q: "Meclis Reisi seçimi nasıl işler?", a: "Diplomasi ekranından yıl boyunca dilediğin beye 'reis oyu' verirsin; son oyun geçerlidir, kendine oy veremezsin. Yıl kapanışında en çok oyu alan (eşitlikte şerefi yüksek olan) Meclis Reisi seçilir ve bir yıl nişan taşır. Reislik güç vermez — ağırlık verir: kim seçildi, herkes görür." },
+      { q: "Ortak sefer ('omuz ver') nedir, ne kazandırır?", a: "Bir bey o ay beylik seferine çıkacaksa diplomasi ekranından ona omuz verebilirsin: kişisel gücünün yarısı onun ordusuna eklenir. Zaferde ganimet haberi düşer; kazansın kaybetsin, sözünde durduğun için şeref kazanırsın (Alicenap defnesini de besler). Kendi seferine omuz veremezsin." },
+    ],
+  },
+  {
     icon: "scroll", title: "Kül Yemini (Ana Destan)",
     items: [
       { q: "Kül Yemini nedir, nasıl başlar?", a: "Oyunun nesiller aşan ana hikâyesi. 13 yaşından sonra ilk yıllarda köyün en yaşlısı seni döşeğine çağırır ve kül rengi mührü emanet eder. Kabul edersen destan başlar; geri çekilirsen mühür iki yıl sonra son bir kez kapını çalar." },
@@ -235,6 +244,15 @@ const EN: FaqSection[] = [
       { q: "What is the child bond for?", a: "The Tend to Your Children button opens a scene by your youngest's age: play with the baby, lessons with the schoolchild, craft with the youth, a shared table with the adult. Every act of care grows the bond. An heir with a high bond (60+) starts with +2 reputation; the apple of your eye (85+) starts with +1 attribute point." },
       { q: "Does the game fade in old age?", a: "No — past 70 life brings its own memories: the solitude of dawn, an old friend's empty stall, your name walking ahead of you... Story arcs past 55, grandchild moments and the Tekke pursuit are the fabric of that age." },
       { q: "Why is every battle told differently?", a: "Each encounter has its own victory and defeat tale: you put the bandit chief in chains, Kara Alp kneels before you... Legendary encounters (the Night Terror, Kara Alp) only find you once your name is known." },
+    ],
+  },
+  {
+        icon: "banner", title: "The Online Realm (Multiplayer)",
+    items: [
+      { q: "How does the multiplayer realm feel? What is the companions strip?", a: "The realm's game screen carries a live companions strip: who is online, who voted to advance the month, your own name in gold. One-tap battle cries (greeting, praise, challenge, call for help) land instantly for everyone; the last 12 words of the public chat are kept in the realm, so latecomers pick up the hall mid-conversation." },
+      { q: "How are the yearly laurels (Bey/Star/Most Generous of the Year) won?", a: "At the close of each game year the server awards three laurels: whoever grew their POWER most becomes Bey of the Year, whoever raised their FAME most becomes Star of the Year, and whoever lifted their HONOR most becomes Most Generous of the Year. The badge shows beside your name for a year and can change hands at the next close. Your first year is the measuring year; no laurel is given in a branch with no growth." },
+      { q: "How does the Speaker of the Hall election work?", a: "From the diplomacy screen you may cast a speaker vote for any bey all year long; your last vote counts, and you cannot vote for yourself. At year's end the most-voted bey (ties broken by higher honor) becomes Speaker and wears the badge for a year. The office grants no power — it grants weight: everyone sees who was chosen." },
+      { q: "What is backing a campaign ('lend your shoulder')?", a: "If a bey marches on a beylik this month, you can back them from the diplomacy screen: half your personal power joins their army. Victory drops a spoils notice; win or lose, you gain honor for keeping your word (it also feeds the Most Generous laurel). You cannot back your own campaign." },
     ],
   },
   {
@@ -361,6 +379,15 @@ const ES: FaqSection[] = [
     ],
   },
   {
+        icon: "banner", title: "El Reino en Línea (Multijugador)",
+    items: [
+      { q: "¿Cómo se siente el reino multijugador? ¿Qué es la franja de compañeros?", a: "La pantalla del reino lleva una franja viva de compañeros: quién está en línea, quién votó avanzar el mes, tu nombre en oro. Los gritos de un toque (saludo, elogio, desafío, llamada de ayuda) llegan al instante a todos; las últimas 12 palabras del chat general se guardan en el reino, y quien llega tarde escucha la sala desde donde quedó." },
+      { q: "¿Cómo se ganan los laureles anuales (Bey/Estrella/Magnánimo del año)?", a: "Al cerrar cada año de juego el servidor reparte tres laureles: quien más creció su PODER es el Bey del año, quien más subió su FAMA es la Estrella del año y quien más elevó su HONOR es el Magnánimo del año. La insignia se ve junto al nombre durante un año y puede cambiar de manos al siguiente cierre. Tu primer año es de medición; sin crecimiento no hay laurel en esa rama." },
+      { q: "¿Cómo funciona la elección del presidente del consejo?", a: "Desde la pantalla de diplomacia puedes dar tu voto a cualquier bey durante todo el año; vale el último voto y no puedes votarte a ti mismo. Al cierre del año, el más votado (en empate, el de mayor honor) es elegido presidente y lleva la insignia un año. El cargo no da poder — da peso: todos ven a quién eligieron." },
+      { q: "¿Qué es respaldar una campaña ('dar el hombro')?", a: "Si un bey marcha este mes contra un beylicato, puedes respaldarlo desde diplomacia: la mitad de tu poder personal se suma a su ejército. En la victoria cae un aviso de botín; ganes o pierdas, ganas honor por cumplir tu palabra (también alimenta el laurel del Magnánimo). No puedes respaldar tu propia campaña." },
+    ],
+  },
+  {
     icon: "scroll", title: "El Juramento de Ceniza (Saga principal)",
     items: [
       { q: "Que es el Juramento de Ceniza y como empieza?", a: "La historia principal del juego, que abarca generaciones. En los primeros anios tras cumplir 13, el anciano de la aldea te llama a su lecho y te confia un sello gris ceniza. Si lo aceptas, la saga comienza; si te retiras, el sello llama una vez mas dos anios despues." },
@@ -480,6 +507,15 @@ const PT: FaqSection[] = [
       { q: "Para que serve o laço com os filhos?", a: "O botão Cuida dos teus filhos abre uma cena conforme a idade do mais novo: brincadeira com o bebé, lições com o estudante, ofício com o jovem, mesa com o adulto. Cada gesto aumenta o laço. Um herdeiro com laço alto (60+) começa com +2 de reputação; a menina dos teus olhos (85+), com +1 ponto de atributo." },
       { q: "O jogo esmorece na velhice?", a: "Não — depois dos 70 a vida traz as suas próprias memórias: a solidão da alvorada, a banca vazia de um velho amigo, o teu nome a andar à tua frente... Os arcos dos 55+, os netos e a senda do Tekke são o tecido dessa idade." },
       { q: "Porque é que cada batalha é contada de forma diferente?", a: "Cada encontro tem a sua própria história de vitória e derrota: acorrentas o chefe dos salteadores, Kara Alp ajoelha-se diante de ti... Os encontros lendários (o Terror da Noite, Kara Alp) só te acham quando o teu nome já corre." },
+    ],
+  },
+  {
+        icon: "banner", title: "O Reino Online (Multijogador)",
+    items: [
+      { q: "Como é o reino multijogador? O que é a faixa de companheiros?", a: "O ecrã do reino traz uma faixa viva de companheiros: quem está online, quem votou avançar o mês, o teu nome a ouro. Os brados de um toque (saudação, elogio, desafio, pedido de ajuda) chegam no instante a todos; as últimas 12 palavras do chat geral ficam guardadas no reino, e quem chega tarde ouve a sala de onde parou." },
+      { q: "Como se ganham os louros anuais (Bei/Estrela/Magnânimo do ano)?", a: "No fecho de cada ano de jogo o servidor entrega três louros: quem mais cresceu o PODER é o Bei do ano, quem mais subiu a FAMA é a Estrela do ano e quem mais elevou a HONRA é o Magnânimo do ano. A insígnia aparece junto ao nome por um ano e pode mudar de mãos no fecho seguinte. O primeiro ano é de medição; sem crescimento não há louro nesse ramo." },
+      { q: "Como funciona a eleição do presidente do conselho?", a: "No ecrã de diplomacia podes dar o teu voto a qualquer bei durante o ano; vale o último voto e não podes votar em ti. No fecho do ano, o mais votado (em empate, o de maior honra) é eleito presidente e usa a insígnia por um ano. O cargo não dá poder — dá peso: todos veem quem foi escolhido." },
+      { q: "O que é apoiar uma campanha ('dar o ombro')?", a: "Se um bei marcha este mês contra um beilhique, podes apoiá-lo pela diplomacia: metade do teu poder pessoal junta-se ao exército dele. Na vitória cai um aviso de espólios; ganhes ou percas, ganhas honra por cumprir a palavra (também alimenta o louro do Magnânimo). Não podes apoiar a tua própria campanha." },
     ],
   },
   {
@@ -605,6 +641,15 @@ const AR: FaqSection[] = [
     ],
   },
   {
+        icon: "banner", title: "الديار عبر الإنترنت (لعب جماعي)",
+    items: [
+      { q: "كيف تبدو الديار الجماعية؟ وما شريط الرفاق؟", a: "يحمل شاشة الديار شريط رفاق حي: من متصل، ومن صوت لتقدم الشهر، واسمك بالذهب. الصيحات بلمسة واحدة (سلام، إشادة، تحد، نداء عون) تصل للجميع فورا؛ وتحفظ الديار آخر 12 كلمة من المحادثة العامة، فمن يأتي متأخرا يسمع المجلس من حيث توقف." },
+      { q: "كيف تكسب أكاليل السنة (بك السنة/نجمها/أكرمها)؟", a: "عند انقضاء كل سنة لعب يوزع الخادم ثلاثة أكاليل: من نمت قوته أكثر يصير بك السنة، ومن علت شهرته أكثر نجم السنة، ومن ارتفع شرفه أكثر أكرم أهل السنة. يظهر الوسام بجوار الاسم سنة كاملة وقد ينتقل عند الانقضاء التالي. سنتك الأولى سنة قياس؛ ولا إكليل في فرع بلا نماء." },
+      { q: "كيف يجري انتخاب رئيس المجلس؟", a: "من شاشة الدبلوماسية تدلي بصوتك لأي بك طوال السنة؛ العبرة بآخر صوت، ولا يجوز التصويت لنفسك. عند انقضاء السنة ينتخب صاحب أكثر الأصوات (وعند التعادل الأعلى شرفا) رئيسا للمجلس ويحمل الوسام سنة. الرئاسة لا تمنح قوة — بل وزنا: الجميع يرى من اختير." },
+      { q: "ما مساندة الحملة (مد الكتف)؟ وما مكسبها؟", a: "إن خرج بك هذا الشهر لحملة على إمارة، يمكنك مساندته من شاشة الدبلوماسية: ينضم نصف قوتك الشخصية إلى جيشه. في النصر يصلك خبر الغنيمة؛ وفزت أم خسرت تكسب شرفا لوفائك بكلمتك (وهو يغذي إكليل الأكرم أيضا). ولا تساند حملتك أنت." },
+    ],
+  },
+  {
     icon: "scroll", title: "يمين الرماد (الملحمة الرئيسية)",
     items: [
       { q: "ما يمين الرماد وكيف يبدأ؟", a: "القصة الرئيسية للعبة، تمتد عبر الأجيال. في السنوات الأولى بعد بلوغك الثالثة عشرة يستدعيك شيخ القرية إلى فراشه ويعهد إليك بختم بلون الرماد. إن قبلته بدأت الملحمة؛ وإن تراجعت طرق الختم بابك مرة أخيرة بعد عامين." },
@@ -724,6 +769,15 @@ const RU: FaqSection[] = [
       { q: "Зачем нужна связь с ребёнком?", a: "Кнопка «Позаботиться о детях» открывает сцену по возрасту младшего: игра с малышом, урок со школьником, ремесло с юношей, стол со взрослым. Каждая забота растит связь. Наследник с крепкой связью (60+) начинает с +2 репутации; свет очей (85+) — с +1 очком свойства." },
       { q: "Не гаснет ли игра в старости?", a: "Нет — после 70 жизнь приносит собственные воспоминания: одиночество рассвета, пустой лоток старого друга, имя, идущее впереди тебя... Сюжетные арки после 55, внуки и стезя текке — ткань этого возраста." },
       { q: "Почему каждая битва рассказана по-разному?", a: "У каждой стычки своя история победы и поражения: атамана заковываешь в цепи, Кара Алп преклоняет колено... Легендарные встречи (Ночной ужас, Кара Алп) находят тебя лишь когда имя твоё гремит." },
+    ],
+  },
+  {
+        icon: "banner", title: "Сетевой край (мультиплеер)",
+    items: [
+      { q: "Каков мультиплеерный край на ощупь? Что за лента соратников?", a: "На экране края живёт лента соратников: кто в сети, кто проголосовал двигать месяц, твоё имя — золотом. Кличи в одно касание (приветствие, похвала, вызов, зов о помощи) мгновенно видят все; последние 12 слов общего чата хранятся в крае, и опоздавший слышит собрание с того места, где оно остановилось." },
+      { q: "Как достаются годовые лавры (Бей/Звезда/Великодушие года)?", a: "На исходе каждого игрового года сервер вручает три лавра: кто больше всех нарастил СИЛУ — Бей года, кто выше поднял СЛАВУ — Звезда года, кто больше возвысил ЧЕСТЬ — Великодушие года. Знак виден у имени целый год и может сменить владельца на следующем исходе. Первый год — год замера; в ветви без роста лавра не дают." },
+      { q: "Как устроены выборы главы собрания?", a: "С экрана дипломатии весь год можно отдавать голос любому бею; считается последний голос, за себя голосовать нельзя. На исходе года набравший больше всех голосов (при равенстве — с большей честью) становится главой собрания и носит знак год. Должность не даёт силы — даёт вес: все видят, кого выбрали." },
+      { q: "Что такое поддержка похода (подставить плечо)?", a: "Если бей в этом месяце идёт походом на бейлик, поддержи его с экрана дипломатии: половина твоей личной силы вольётся в его войско. Победа принесёт весть о добыче; выиграл или проиграл — получишь честь за сдержанное слово (это питает и лавр Великодушия). Свой собственный поход поддержать нельзя." },
     ],
   },
   {
