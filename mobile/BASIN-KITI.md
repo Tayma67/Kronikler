@@ -35,7 +35,7 @@ the end of the story: your oaths, your feuds, and your unfinished saga pass to y
 | Diller | TR, EN, ES, PT, AR, RU |
 | Bağlantı | Tamamen çevrimdışı (isteğe bağlı MP diyarı — BETA, kendi sunucunla) |
 | Motor | React Native / Expo; tek kişilik geliştirme |
-| İçerik | 100+ ikilem, 16 sahnelik ana destan, çift yönlü entrika sistemi, saray heyeti, maiyet, 15 meslek, 5 lonca, 14 arzuhal, 18 mikro an, 42 yerleşim |
+| İçerik | 100+ ikilem, 16 sahnelik ana destan, çift yönlü entrika sistemi, saray heyeti, maiyet, takı yuvası, 15 meslek, 5 lonca, 14 arzuhal, 18 mikro an, 42 yerleşim; MP: defneler, reis seçimi, ortak sefer |
 | İndirme | github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk |
 
 ## Hikâye kancaları (röportaj/haber açıları)
@@ -45,6 +45,7 @@ the end of the story: your oaths, your feuds, and your unfinished saga pass to y
 3. "1247'de bir NPC'nin hayatı" — yaşayan ekonomi: mesleklerin fiyat belirlediği simülasyon.
 4. "Arapça ve Rusçada cinsiyet dilbilgisi" — 6 dilde dişil varyant/nötr kuruluş disiplini.
 5. "Diyar sana karşı da oynuyor" — çift yönlü entrika: oyuncu komplo örer, haneler karşılık verir, casusbaşı dinler.
+6. "Meclis siyaseti gerçek insanlarla" — MP diyarında yıllık defneler, seçimle gelen Meclis Reisi ve "seferine omuz ver" ittifakları: rekabet, işbirliği ve ihanet aynı masada.
 
 ## Görsel varlıklar (çekim planı MAGAZA.md'de)
 
