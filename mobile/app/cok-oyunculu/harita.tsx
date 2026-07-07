@@ -26,6 +26,8 @@ export default function Harita() {
 
   const myBeylikId = snapshot.players.find((p) => p.id === guestId)?.beylikId ?? null;
   const beyById = (id: string | null) => (id ? snapshot.players.find((p) => p.id === id) : null);
+  // Sunucu muster formülünün istemci tahmini (oyun ekranındakiyle aynı; lonca/NPC desteği hariç).
+  const musterOf = (b: (typeof snapshot.beyliks)[number]) => Math.round(b.power + ((snapshot.players.find((x) => x.id === b.beyId && !x.dead)?.power || 0) * 0.5) + snapshot.players.filter((x) => x.beylikId === b.id && !x.dead && x.id !== b.beyId).reduce((a2, x) => a2 + x.power * 0.25, 0) + (b.ocak ? 15 : 0));
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
@@ -58,7 +60,7 @@ export default function Harita() {
                   {pf(t("mp.beylik.beyLine"), beyLabel)}
                 </Text>
                 <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>
-                  {pf(t("mp.beylik.powerLine"), b.power)} · {pf(t("mp.map.tax"), b.tax)}{b.ocak ? " · " + pf(t("mp.beylik.ocakLine"), b.ocak) : ""}
+                  {pf(t("mp.beylik.powerLine"), b.power)} · {pf(t("mp.beylik.musterLine"), musterOf(b))} · {pf(t("mp.map.tax"), b.tax)}{b.ocak ? " · " + pf(t("mp.beylik.ocakLine"), b.ocak) : ""}
                 </Text>
                 {(() => { const members = snapshot.players.filter((x) => x.beylikId === b.id && !x.dead); return members.length > 0 ? (
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
