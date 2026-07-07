@@ -590,6 +590,23 @@ export default function Hanedan() {
           return (
             <>
               <SecTitle>{t("dyn.houses")}</SecTitle>
+              {state.bloodline && (() => {
+                const b = state.bloodline!;
+                const hh = rivals.find((x) => x.id === b.houseId);
+                const tone = b.path.includes("sulh") || b.path.includes("bedel_kadi") || b.path.includes("golge_sofra") ? C.sage : C.blood;
+                return (
+                  <View style={{ backgroundColor: "rgba(168,52,52,0.06)", borderWidth: 1, borderColor: "rgba(168,52,52,0.45)", borderLeftWidth: 3, borderLeftColor: tone, borderRadius: 9, padding: 11, marginBottom: 10 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <GameIcon name="skull" size={12} color={C.blood} />
+                      <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.blood }}>{t("bl.title").toUpperCase()}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 10, color: C.goldDim }}>{applyParams(t("bl.genLine"), [b.gen])}</Text>
+                    </View>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchment, marginTop: 5, lineHeight: 17 }}>
+                      {applyParams(t("bl.panelLine"), [hh?.name || "?"])}{b.scene ? " " + t("bl.sceneWaiting") : ""}
+                    </Text>
+                  </View>
+                );
+              })()}
               {p.age >= 16 && (() => {
                 const ep = state.enemyPlot;
                 const listened = p.listen_turn === state.turn;
