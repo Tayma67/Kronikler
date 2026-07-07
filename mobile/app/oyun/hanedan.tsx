@@ -16,6 +16,7 @@ import {
   feudPeaceCost, feudSuePeace, feudStrike, proposeToHouse, sendEnvoy, ENVOY_COST, demandTribute, inflationFactor,
   startPlot, hirePlotHelper, plotCost, plotHelperCost,
   listenWhispers, cutThread, listenCost, cutThreadCost,
+  appointOfficer, dismissOfficer, courtAppointCost, courtWage, COURT_OFFICES, CourtOffice,
   crownAuthorityOf, CROWN_DECREES, canIssueDecree, issueDecree, decreeCooldownLeft,
   campaignTargets, canLaunchCampaign, campaignOdds, launchCampaign, CAMPAIGN_COST,
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
@@ -247,6 +248,32 @@ export default function Hanedan() {
                 </View>
                 <View style={{ height: 7, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                   <View style={{ width: `${auth}%`, height: 7, borderRadius: 4, backgroundColor: authCol }} />
+                </View>
+                {/* Saray heyeti */}
+                <Text style={sub}>{t("heyet.title").toUpperCase()}{courtWage(state) > 0 ? ` · ${applyParams(t("heyet.wage"), [courtWage(state)])}` : ""}</Text>
+                <View style={{ gap: 6 }}>
+                  {COURT_OFFICES.map((o) => {
+                    const holder = state.court ? state.court[o] : null;
+                    const acost = courtAppointCost(state);
+                    const can = !holder && p.money >= acost;
+                    return (
+                      <View key={o} style={{ flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.border, borderRadius: 8, paddingVertical: 7, paddingHorizontal: 10 }}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 10.5, color: holder ? C.gold : C.parchmentMuted }}>{t("heyet." + o)}{holder ? ` — ${holder}` : ""}</Text>
+                          <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted }}>{t("heyet.fx." + o)}</Text>
+                        </View>
+                        {holder ? (
+                          <Pressable onPress={() => { hap("tap"); apply((s) => dismissOfficer(s, o)); }} style={{ paddingVertical: 5, paddingHorizontal: 9, borderRadius: 6, borderWidth: 1, borderColor: C.border }}>
+                            <Text style={{ fontFamily: F.display, fontSize: 9, color: C.parchmentMuted }}>{t("heyet.dismiss")}</Text>
+                          </Pressable>
+                        ) : (
+                          <Pressable disabled={!can} onPress={() => { hap("tap"); apply((s) => appointOfficer(s, o)); }} style={{ paddingVertical: 5, paddingHorizontal: 9, borderRadius: 6, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.5)" : C.border, opacity: can ? 1 : 0.4 }}>
+                            <Text style={{ fontFamily: F.display, fontSize: 9, color: can ? C.gold : C.parchmentMuted }}>{applyParams(t("heyet.appoint"), [acost])}</Text>
+                          </Pressable>
+                        )}
+                      </View>
+                    );
+                  })}
                 </View>
                 {/* Dîvân fermanları */}
                 <Text style={sub}>{t("crown.decrees").toUpperCase()}{cd > 0 ? ` · ${t("crown.decreeWait").replace("%1", String(cd))}` : ""}</Text>

@@ -778,6 +778,7 @@ export interface GameState {
   plot?: { kind: "leke" | "sabotaj" | "nifak"; houseId: string; nameIdx: number; stage: number; heat: number; helpers: number; started: number } | null; // entrika: tek aktif komplo; fısıltı birikir, açığa çıkabilir; ölümle düşer (vârise GEÇMEZ)
   enemyPlot?: { houseId: string; nameIdx: number; kind: "leke" | "sabotaj"; stage: number; known: boolean } | null; // karşı entrika: bir hane oyuncu aleyhine örer; kulak tutarak keşfedilir, kesilmezse patlar
   enemyPlotCool?: number; // patlama/bozulma sonrası soğuma: bu turdan önce yeni düşman komplosu doğmaz
+  court?: { vezir?: string | null; hazinedar?: string | null; casusbasi?: string | null } | null; // saray heyeti: yalnız taçta yaşar, ulufe ister, taç düşünce dağılır (vârise GEÇMEZ)
   epochNext?: number; // bir sonraki çağ olayının turu (legacy_system epoch_tick)
   pendingScene?: { kind: string; ctx: Record<string, string> } | null; // oyuncu seçimi bekleyen interaktif sahne (suç kesintisi vb.)
   micro?: { id: string } | null; // ay-içi mikro an: atlanabilir tek satırlık seçim (ertesi ay kendiliğinden kaybolur)
@@ -1668,6 +1669,7 @@ export function advance(prev: GameState, n = 1): GameState {
     if (s.player.crowned) inc += 15 + crownTribute(s); // hükümdar hazinesi + ilhak/atanan vali haracı
     inc += governorIncome(s); // valilik vergi payı
     inc += courtSalary(s.player); // saray/divan maaşı (rütbeye göre)
+    if (s.court && s.court.hazinedar) inc = Math.round(inc * 1.08); // hazinedar defterleri sıkı tutar, sızıntıyı keser
     // Enflasyon nominal gelirleri de yükseltir (gerçek ekonomi): üretken servet değerini korur, biriken nakit erir.
     const inf = inflationFactor(s);
     inc = Math.round(inc * inf);
@@ -1896,6 +1898,7 @@ function tickDynasties(s: GameState, announce: boolean) {
   if (announce) tickPlot(s, rivals);
   if (announce) tickRetinue(s);
   if (announce) tickEnemyPlot(s, rivals);
+  if (announce) tickCourt(s);
   // Düşman hane sabotajı: tutumu çok düşük bir hane oyuncunun mülküne el uzatır (gerçek zarar).
   if (announce && p.properties.length) {
     const foes = rivals.filter((h) => (h.tutum ?? 0) <= -25 && h.id !== s.feud?.houseId); // dava hanesi ayrı işlenir (tickFeud) — çifte sabotaj olmasın
@@ -2003,7 +2006,7 @@ function tickPlot(s: GameState, rivals: RivalHouse[]) {
   const prog = 0.30 + effStat(p, "intelligence") * 0.015 + pl.helpers * 0.12 + (p.faction === "golge" ? 0.08 : 0);
   if (Math.random() < prog) pl.stage += 1;
   // Fısıltı: iş büyüdükçe ve eller çoğaldıkça artar; Gölge iz siler
-  pl.heat += 3 + (pl.kind === "sabotaj" ? 3 : pl.kind === "nifak" ? 2 : 1) + pl.helpers - (p.faction === "golge" ? 1 : 0);
+  pl.heat += 3 + (pl.kind === "sabotaj" ? 3 : pl.kind === "nifak" ? 2 : 1) + pl.helpers - (p.faction === "golge" ? 1 : 0) - (s.court && s.court.casusbasi ? 1 : 0);
   // İfşa: fısıltı 40'ı aşınca her ay artan risk
   if (pl.heat > 40 && Math.random() * 100 < pl.heat - 40) {
     s.plot = null;
@@ -3863,6 +3866,60 @@ function crimeCaught(s: GameState, kind: CrimeKind) {
   if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
 }
 
+// ── SARAY HEYETİ: tacın üç direği — vezir söz, hazinedar defter, casusbaşı kulak. ──
+export type CourtOffice = "vezir" | "hazinedar" | "casusbasi";
+export const COURT_OFFICES: CourtOffice[] = ["vezir", "hazinedar", "casusbasi"];
+export function courtAppointCost(s: GameState): number { return Math.round(50 * inflationFactor(s)); }
+export function courtWage(s: GameState): number {
+  const c = s.court; if (!c) return 0;
+  const n = (c.vezir ? 1 : 0) + (c.hazinedar ? 1 : 0) + (c.casusbasi ? 1 : 0);
+  return Math.round(8 * inflationFactor(s)) * n;
+}
+export function appointOfficer(prev: GameState, office: CourtOffice): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !p.crowned || inJail(p)) return s;
+  if (s.court && s.court[office]) return s; // makam dolu
+  const cost = courtAppointCost(s);
+  if (p.money < cost) return s;
+  p.money -= cost;
+  const seed = (Math.floor(Math.random() * 1e9)) >>> 0;
+  const name = localFirstName(seed, Math.random() < 0.85 ? "erkek" : "kadın");
+  s.court = { ...(s.court || {}), [office]: name };
+  push(s, "taht", `${name}, ${office === "vezir" ? "vezirlik" : office === "hazinedar" ? "hazinedarlık" : "casusbaşılık"} makamına getirildi; ulufesi ay be ay hazineden çıkacak.`, "kişisel", true, { k: "evj.courtAppoint." + office, p: [name] });
+  return s;
+}
+export function dismissOfficer(prev: GameState, office: CourtOffice): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !s.court || !s.court[office]) return s;
+  const name = s.court[office]!;
+  s.court = { ...s.court, [office]: null };
+  push(s, "taht", `${name} makamından azledildi; mühür ve defter teslim alındı.`, "kişisel", false, { k: "evj.courtDismiss", p: [name] });
+  return s;
+}
+function tickCourt(s: GameState) {
+  const p = s.player; const c = s.court;
+  if (!c || p.dead) return;
+  const filled = COURT_OFFICES.filter((o) => c[o]);
+  if (!filled.length) { s.court = null; return; }
+  if (!p.crowned) { // taç düştü: heyet dağılır
+    s.court = null;
+    push(s, "taht", `Taç gidince saray heyeti de dağıldı; mühürler yeni sahibini bekliyor.`, "kişisel", true, { k: "evj.courtDisband" });
+    return;
+  }
+  const wage = courtWage(s);
+  if (p.money >= wage) {
+    p.money -= wage;
+  } else { // ulufe yok: bir makam boşalır (önce casusbaşı, en son vezir)
+    const order: CourtOffice[] = ["casusbasi", "hazinedar", "vezir"];
+    const leave = order.find((o) => c[o])!;
+    const name = c[leave]!;
+    s.court = { ...c, [leave]: null };
+    push(s, "taht", `Ulufe ödenmedi; ${name} mührü bırakıp saraydan ayrıldı.`, "kişisel", false, { k: "evj.courtLeave", p: [name] });
+  }
+  // Vezir: altı ayda bir otoriteyi diri tutar
+  if (s.court && s.court.vezir && s.turn % 6 === 0) p.crownAuthority = clamp100(crownAuthorityOf(p) + 1);
+}
+
 // ── KARŞI ENTRİKA: diyar oyuncuya karşı da oynar — kin tutan hane iplik örer, uyanık bey keser. ──
 export function listenCost(s: GameState): number { return Math.round(15 * inflationFactor(s)); }
 export function cutThreadCost(s: GameState): number { return Math.round(30 * inflationFactor(s)); }
@@ -3912,7 +3969,11 @@ function tickEnemyPlot(s: GameState, rivals: RivalHouse[]) {
     const src = feudH && Math.random() < 0.10 ? feudH : (angry.length && Math.random() < 0.04 ? angry[Math.floor(Math.random() * angry.length)] : null);
     if (!src) return;
     s.enemyPlot = { houseId: src.id, nameIdx: src.nameIdx, kind: Math.random() < 0.5 ? "leke" : "sabotaj", stage: 0, known: false };
-    return; // sessiz doğar — keşif oyuncunun işi
+    if (s.court && s.court.casusbasi) { // casusbaşının kulağı her handa
+      s.enemyPlot.known = true;
+      push(s, "entrika", `Casusbaşın haber uçurdu: ${src.name} aleyhine iplik örmeye başladı!`, "kişisel", true, { k: "evj.courtSpyFound", p: [{ hn: src.nameIdx }] });
+    }
+    return; // sessiz doğar — keşif oyuncunun işi (casusbaşı varsa o görür)
   }
   ep.stage += 1;
   if (ep.stage < 3) return;
