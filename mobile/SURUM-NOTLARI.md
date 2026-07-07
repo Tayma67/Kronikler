@@ -2,6 +2,19 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 183-192 paketi (7 Temmuz, gece) — ÇARŞI DOLU, GÖLGE PUSUDA
+
+**Tek cümle (mağaza/what's new):**
+TR: "Takı artık yalnız süs değil: hediye edilen gerdanlık gönülde başka yer tutuyor. Divana iki yeni arzuhal düştü, çarşıya dört yeni fısıltı yayıldı, sokaklara iki yeni an serildi — ve şöhretin zirvesindekilere hana bir pusula bırakıldı: Gölge Okçusu adını yazdı."
+EN: "Jewelry is no longer mere adornment: a gifted necklace holds a different place in the heart. Two new petitions reached the divan, four new whispers spread through the bazaar, two new street moments unfolded — and for those at the summit of fame, a note was left at the inn: the Shadow Archer wrote your name."
+
+**Öne çıkanlar:**
+- **Takı hediyesi (SP):** Mücevher hediye etmek sıradan hediyeden fazlası — yakınlık ve keyif fazladan artar, günlüğe kendine özgü satır düşer.
+- **Divan 16 arzuhal (SP):** Yanık Köy (kereste ve tohum dileyen isli yüzlü muhtar) ve Salgın Hekimi (yoksulun kapısını gösteren genç hekim) — taç ya kesesini ya vicdanını açıyor.
+- **Gölge Okçusu (SP):** Şöhret 78+ için diyarın en tehlikeli düellosu; hana bırakılan pusulada adın yazılı.
+- **Doku genişlemeleri:** dedikodu 30, mikro an 20 (Semerci Çırağı, İkindi Gölgesi), dünya haberi 32, fısıltı 8, ihtiyarlık anısı +2 (Kuyu Başı, Ezber Dua).
+- **MP cila:** defne/reis ilanları diyar akışında altın manşet; sefer ve ödül anları kişisel günlükte yaprak nişanıyla ayrılıyor.
+
 ## Dalga 170-175 paketi (7 Temmuz, gece) — MECLİSTE SİYASET, YOLDA KILIÇ
 
 **Tek cümle (mağaza/what's new):**
