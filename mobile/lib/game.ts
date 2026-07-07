@@ -5123,6 +5123,7 @@ export const ENCOUNTERS: Encounter[] = [
   { id: "canavar", title: "Gece Canavarı",    desc: "Köyleri boşaltan adsız bir dehşet; izini yalnız sen sürebilirsin.", power: 22, reward: 180, fame: 26, honor: 16, danger: 44, minFame: 55 },
   { id: "kara_alp", title: "Kara Alp",        desc: "Diyar diyar yenilmezliğiyle anılan zırhlı cengâver seni arıyor: 'Adın bana denk mi?'", power: 26, reward: 220, fame: 32, honor: 20, danger: 50, minFame: 70 },
   { id: "bozkir_kurdu", title: "Bozkır Kurdu", desc: "Kösedağ'dan beri hiçbir sancağa boyun eğmemiş ihtiyar akıncı beyi son bir cenk arıyor: 'Ölmeden bir denk görmek isterim.'", power: 24, reward: 200, fame: 29, honor: 18, danger: 47, minFame: 62 },
+  { id: "golge_okcusu", title: "Gölge Okçusu", desc: "Kimse yüzünü görmedi; okları hep şafakta, hep tek atışta konuşur. Hana bir pusula bırakmış: adın yazılı.", power: 28, reward: 260, fame: 36, honor: 22, danger: 54, minFame: 78 },
 ];
 // Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
 export function combatPower(p: Player): number {
