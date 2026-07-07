@@ -426,11 +426,14 @@ export default function MpOyun() {
         {snapshot.news && snapshot.news.length > 0 && (
           <>
             <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.news.title")}</Text>
-            {snapshot.news.slice(-6).reverse().map((nw, i) => (
-              <Text key={i} style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 5, lineHeight: 17 }}>
-                • {pf(t(nw.k), String(nw.p?.[0] ?? ""), beylikName(String(nw.p?.[1] ?? "")))}
-              </Text>
-            ))}
+            {snapshot.news.slice(-6).reverse().map((nw, i) => {
+              const big = nw.k.startsWith("mp.award.") || nw.k === "mp.reis.elected"; // yılın ilanları — meclisin manşeti
+              return (
+                <Text key={i} style={{ fontFamily: F.serifItalic, fontSize: 12, color: big ? C.goldBright : C.parchmentMuted, marginBottom: 5, lineHeight: 17 }}>
+                  {big ? "❧" : "•"} {pf(t(nw.k), String(nw.p?.[0] ?? ""), beylikName(String(nw.p?.[1] ?? "")))}
+                </Text>
+              );
+            })}
           </>
         )}
       </ScrollView>
