@@ -391,6 +391,26 @@ export default function MpOyun() {
           );
         })}
 
+        {/* Gölge Defteri — gizli işlerin hatırlatıcısı (yalnız sahibine görünür) */}
+        {(() => {
+          const amRaider = snapshot.venture?.raider?.id === guestId;
+          const myPlots = (snapshot.plots || []).filter((pl) => pl.members.some((m) => m.id === guestId));
+          if (!amRaider && !myPlots.length) return null;
+          return (
+            <View style={{ borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", borderLeftWidth: 3, borderLeftColor: C.blood, borderRadius: 9, padding: 10, marginTop: 18, backgroundColor: "rgba(200,64,64,0.05)" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <GameIcon name="hood" size={13} color={C.blood} />
+                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.blood }}>{t("mp.shadow.title").toUpperCase()}</Text>
+              </View>
+              {amRaider && <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 5 }}>❧ {t("mp.venture.raidMine")}</Text>}
+              {myPlots.map((pl) => {
+                const tn = players.find((x) => x.id === pl.target)?.name || "?";
+                return <Text key={pl.target} style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 5 }}>❧ {pf(t("mp.shadow.plotLine"), tn, pl.members.length)}</Text>;
+              })}
+            </View>
+          );
+        })()}
+
         {/* ORTAK GİRİŞİM — kervan ortaklığı (v3+ sunucu; eski sunucuda gizli kalır, altın yanmaz) */}
         {(snapshot.v || 0) >= 3 && (() => {
           const v = snapshot.venture;
