@@ -834,6 +834,7 @@ export default function Dashboard() {
               );
             })}
           </View>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginBottom: 7, textAlign: "center" }}>{t("work.hint." + workStyle)}</Text>
           {(() => { const worked = !canWork(state); return (
           <PressableScale onPress={() => { if (worked) return; hap("tap"); playTap(); doWork(workStyle); }} disabled={worked} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card, opacity: worked ? 0.45 : 1 }}>
             <GameIcon name="calis" size={15} color={C.gold} />
