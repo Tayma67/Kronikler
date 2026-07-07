@@ -35,7 +35,7 @@ the end of the story: your oaths, your feuds, and your unfinished saga pass to y
 | Diller | TR, EN, ES, PT, AR, RU |
 | Bağlantı | Tamamen çevrimdışı (isteğe bağlı MP diyarı — BETA, kendi sunucunla) |
 | Motor | React Native / Expo; tek kişilik geliştirme |
-| İçerik | 100+ ikilem, 16 sahnelik ana destan, çift yönlü entrika sistemi, saray heyeti, maiyet, takı yuvası, 15 meslek, 5 lonca, 14 arzuhal, 18 mikro an, 42 yerleşim; MP: defneler, reis seçimi, ortak sefer |
+| İçerik | 100+ ikilem, 16 sahnelik ana destan, çift yönlü entrika sistemi, saray heyeti, maiyet, takı yuvası, 15 meslek, 5 lonca, 16 arzuhal, 20 mikro an, 42 yerleşim; MP: defneler, reis seçimi, ortak sefer |
 | İndirme | github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk |
 
 ## Hikâye kancaları (röportaj/haber açıları)
