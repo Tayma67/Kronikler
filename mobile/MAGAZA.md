@@ -26,7 +26,7 @@ Ve bir yemin taşı: ölüm döşeğindeki bir ihtiyarın avucundan kül rengi b
 
 - Tamamen çevrimdışı, reklamsız, satın alımsız
 - 6 dil: Türkçe, English, Español, Português, العربية, Русский
-- 100+ ikilem, 10 arzuhal, 20+ hikâye yayı, 15 meslek, 5 lonca
+- 100+ ikilem, 12 arzuhal, 20+ hikâye yayı, 15 meslek (her biri 5 iş günlü), 5 lonca
 - Kül Yemini: nesiller aşan üç perdelik ana destan — seçimlerin vârise geçer
 - Nesilden nesile kalıcı dünya: NPC'ler yaşlanır, evlenir, ölür
 - İsteğe bağlı çok oyunculu diyar (BETA — kendi sunucunla)
