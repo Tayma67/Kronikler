@@ -478,7 +478,7 @@ export default function MpOyun() {
               const big = nw.k.startsWith("mp.award.") || nw.k === "mp.reis.elected"; // yılın ilanları — meclisin manşeti
               return (
                 <Text key={i} style={{ fontFamily: F.serifItalic, fontSize: 12, color: big ? C.goldBright : C.parchmentMuted, marginBottom: 5, lineHeight: 17 }}>
-                  {big ? "❧" : "•"} {pf(t(nw.k), String(nw.p?.[0] ?? ""), beylikName(String(nw.p?.[1] ?? "")))}
+                  {big ? "❧" : "•"} {pf(t(nw.k), String(nw.p?.[0] ?? ""), beylikName(String(nw.p?.[1] ?? "")), ...(nw.p || []).slice(2).map((v) => String(v)))}
                 </Text>
               );
             })}
