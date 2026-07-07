@@ -462,6 +462,10 @@ export default function MpOyun() {
               <GameIcon name="star" size={10} color={C.parchmentDim} />
               <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.parchmentDim }}>{x.fame || 0}</Text>
             </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              <GameIcon name="medal" size={10} color={(x.honor || 0) < 0 ? C.blood : C.parchmentDim} />
+              <Text style={{ fontFamily: F.display, fontSize: 10.5, color: (x.honor || 0) < 0 ? C.blood : (x.honor || 0) >= 40 ? C.sage : C.parchmentDim }}>{x.honor || 0}</Text>
+            </View>
             <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("misc.age")} {x.age}</Text>
           </View>
         ))}
