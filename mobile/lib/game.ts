@@ -58,6 +58,7 @@ export interface Player {
   gamble_turn?: number; // zar meclisi ayda bir el — kasa avantajlı kumar gelir farm'ı olamaz
   plot_wins?: number; // tamamlanan komplolar — Gölge Ustası başarımı ve entrika ustalığı izi
   retinue?: number; // maiyet: ulufeli muhafız (0-3) — savaş gücü + yol caydırıcılığı; ulufe ödenmezse dağılır
+  listen_turn?: number; // kulak tutma ayda bir — istihbarat spam'i ve bedava keşif olmaz
   last_crime_turn?: number; // son suç denemesi turu (ay başına tek deneme; risksiz spam önlenir)
   crime_wins?: number; // başarıyla tamamlanan suç sayısı — yeraltı namı; ağır işler bununla açılır (merdiven)
   governorships?: string[]; // valisi olunan şehirler
@@ -775,6 +776,8 @@ export interface GameState {
   allied_houses?: string[]; // ittifak kurulan hanelerin id'leri
   feud?: { houseId: string; nameIdx: number; stage: number; heat: number; act_turn?: number } | null; // kan davası: tek aktif dava; ısı büyür, aşama tırmanır, NESLE GEÇER (continueAsHeir)
   plot?: { kind: "leke" | "sabotaj" | "nifak"; houseId: string; nameIdx: number; stage: number; heat: number; helpers: number; started: number } | null; // entrika: tek aktif komplo; fısıltı birikir, açığa çıkabilir; ölümle düşer (vârise GEÇMEZ)
+  enemyPlot?: { houseId: string; nameIdx: number; kind: "leke" | "sabotaj"; stage: number; known: boolean } | null; // karşı entrika: bir hane oyuncu aleyhine örer; kulak tutarak keşfedilir, kesilmezse patlar
+  enemyPlotCool?: number; // patlama/bozulma sonrası soğuma: bu turdan önce yeni düşman komplosu doğmaz
   epochNext?: number; // bir sonraki çağ olayının turu (legacy_system epoch_tick)
   pendingScene?: { kind: string; ctx: Record<string, string> } | null; // oyuncu seçimi bekleyen interaktif sahne (suç kesintisi vb.)
   micro?: { id: string } | null; // ay-içi mikro an: atlanabilir tek satırlık seçim (ertesi ay kendiliğinden kaybolur)
@@ -1892,6 +1895,7 @@ function tickDynasties(s: GameState, announce: boolean) {
   if (announce) tickFeud(s, rivals);
   if (announce) tickPlot(s, rivals);
   if (announce) tickRetinue(s);
+  if (announce) tickEnemyPlot(s, rivals);
   // Düşman hane sabotajı: tutumu çok düşük bir hane oyuncunun mülküne el uzatır (gerçek zarar).
   if (announce && p.properties.length) {
     const foes = rivals.filter((h) => (h.tutum ?? 0) <= -25 && h.id !== s.feud?.houseId); // dava hanesi ayrı işlenir (tickFeud) — çifte sabotaj olmasın
@@ -3857,6 +3861,72 @@ function crimeCaught(s: GameState, kind: CrimeKind) {
   if (ct.sev >= 3 && Math.random() < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } });
   push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.`, "kişisel", true, { k: "evj.crimeCaught", p: [fine, extra >= 4 ? { sfx: "sfx.crimeHard" } : ""] });
   if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
+}
+
+// ── KARŞI ENTRİKA: diyar oyuncuya karşı da oynar — kin tutan hane iplik örer, uyanık bey keser. ──
+export function listenCost(s: GameState): number { return Math.round(15 * inflationFactor(s)); }
+export function cutThreadCost(s: GameState): number { return Math.round(30 * inflationFactor(s)); }
+export function listenWhispers(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 16 || inJail(p)) return s;
+  if (p.listen_turn === s.turn) return s; // ayda bir kulak
+  const cost = listenCost(s);
+  if (p.money < cost) return s;
+  p.listen_turn = s.turn; p.money -= cost;
+  const ep = s.enemyPlot;
+  if (ep && !ep.known) {
+    const found = Math.random() < 0.35 + effStat(p, "intelligence") * 0.015 + (p.retinue || 0) * 0.05;
+    if (found) {
+      ep.known = true;
+      const h = ensureRivals(s).find((x) => x.id === ep.houseId);
+      push(s, "entrika", `Kulakların iş gördü: ${h ? h.name : "bir hane"} senin aleyhine iplik örüyor! Düğüm vakitken kesilebilir.`, "kişisel", true, { k: "evj.spyFound", p: [{ hn: ep.nameIdx }] });
+      return s;
+    }
+  }
+  push(s, "entrika", `Çarşıda kulak kabarttın; bu ay dişe dokunur bir fısıltı çıkmadı.`, "kişisel", false, { k: "evj.spyQuiet" });
+  return s;
+}
+export function cutThread(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  const ep = s.enemyPlot;
+  if (!ep || !ep.known || p.dead || inJail(p)) return s;
+  const cost = cutThreadCost(s);
+  if (p.money < cost) return s;
+  p.money -= cost;
+  const h = ensureRivals(s).find((x) => x.id === ep.houseId);
+  if (h) h.tutum = Math.max(-100, (h.tutum ?? 0) - 10); // eli boşa çıkan hane daha da küser
+  s.enemyPlot = null; s.enemyPlotCool = s.turn + 12;
+  p.fear = Math.min(100, p.fear + 2);
+  push(s, "entrika", `Düğümü tam vaktinde kestin: ${h ? h.name : "hane"} adamları eli boş döndü. Diyar, kolay lokma olmadığını konuşuyor.`, "makro", true, { k: "evj.spyCut", p: [{ hn: ep.nameIdx }] });
+  return s;
+}
+function tickEnemyPlot(s: GameState, rivals: RivalHouse[]) {
+  const p = s.player;
+  if (p.dead || p.age < 16) return;
+  const ep = s.enemyPlot;
+  if (!ep) {
+    if ((s.enemyPlotCool || 0) > s.turn) return;
+    // doğum: kan davalı hane önce, yoksa tutumu ≤ −30 bir hane
+    const feudH = s.feud ? rivals.find((x) => x.id === s.feud!.houseId) : null;
+    const angry = rivals.filter((h) => (h.tutum ?? 0) <= -30);
+    const src = feudH && Math.random() < 0.10 ? feudH : (angry.length && Math.random() < 0.04 ? angry[Math.floor(Math.random() * angry.length)] : null);
+    if (!src) return;
+    s.enemyPlot = { houseId: src.id, nameIdx: src.nameIdx, kind: Math.random() < 0.5 ? "leke" : "sabotaj", stage: 0, known: false };
+    return; // sessiz doğar — keşif oyuncunun işi
+  }
+  ep.stage += 1;
+  if (ep.stage < 3) return;
+  // patlama
+  const h = rivals.find((x) => x.id === ep.houseId);
+  s.enemyPlot = null; s.enemyPlotCool = s.turn + 12;
+  if (ep.kind === "leke") {
+    p.reputation = Math.max(-100, p.reputation - 8); p.honor = Math.max(0, p.honor - 3);
+    push(s, "entrika", `${h ? h.name : "Bir hane"} aylardır ördüğü çamuru çarşıya döktü: adın dilden dile hırpalanıyor (itibar −8).`, "makro", true, { k: "evj.enemyPlotFired.leke", p: [{ hn: ep.nameIdx }] });
+  } else {
+    const loss = Math.min(p.money, Math.round(40 * inflationFactor(s) + p.money * 0.05));
+    p.money -= loss;
+    push(s, "entrika", `${h ? h.name : "Bir hane"} el altından işini baltaladı: ambar deliği, kayıp senet, ürkütülen müşteri (−${loss} akçe).`, "makro", true, { k: "evj.enemyPlotFired.sabotaj", p: [{ hn: ep.nameIdx }, loss] });
+  }
 }
 
 // ── MAİYET: ulufeli muhafız birliği — kılıç kiralanır, sadakat ulufeyle ayakta durur. ──

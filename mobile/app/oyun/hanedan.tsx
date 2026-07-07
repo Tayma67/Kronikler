@@ -15,6 +15,7 @@ import {
   acceptDynastyOffer, declineDynastyOffer,
   feudPeaceCost, feudSuePeace, feudStrike, proposeToHouse, sendEnvoy, ENVOY_COST, demandTribute, inflationFactor,
   startPlot, hirePlotHelper, plotCost, plotHelperCost,
+  listenWhispers, cutThread, listenCost, cutThreadCost,
   crownAuthorityOf, CROWN_DECREES, canIssueDecree, issueDecree, decreeCooldownLeft,
   campaignTargets, canLaunchCampaign, campaignOdds, launchCampaign, CAMPAIGN_COST,
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
@@ -562,6 +563,28 @@ export default function Hanedan() {
           return (
             <>
               <SecTitle>{t("dyn.houses")}</SecTitle>
+              {p.age >= 16 && (() => {
+                const ep = state.enemyPlot;
+                const listened = p.listen_turn === state.turn;
+                const lcost = listenCost(state); const ccost = cutThreadCost(state);
+                if (ep && ep.known) {
+                  return (
+                    <View style={{ backgroundColor: "rgba(200,64,64,0.08)", borderWidth: 1, borderColor: "rgba(200,64,64,0.5)", borderLeftWidth: 3, borderLeftColor: C.blood, borderRadius: 10, padding: 12, marginBottom: 10 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.blood }}>{t("spy.threat").toUpperCase()}</Text>
+                      <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment, marginTop: 4 }}>{applyParams(t("spy.known"), [rivalHouseName(ep.nameIdx, lang)])}</Text>
+                      <Pressable disabled={p.money < ccost} onPress={() => { hap("advance"); apply((s) => cutThread(s)); }} style={{ marginTop: 8, paddingVertical: 9, borderRadius: 7, borderWidth: 1, borderColor: "rgba(200,64,64,0.6)", backgroundColor: "rgba(200,64,64,0.12)", alignItems: "center", opacity: p.money < ccost ? 0.4 : 1 }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.blood }}>{applyParams(t("spy.cut"), [ccost])}</Text>
+                      </Pressable>
+                    </View>
+                  );
+                }
+                return (
+                  <Pressable disabled={listened || p.money < lcost} onPress={() => { hap("tap"); apply((s) => listenWhispers(s)); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 10, marginBottom: 10, opacity: listened || p.money < lcost ? 0.45 : 1 }}>
+                    <GameIcon name="hood" size={15} color={C.parchmentMuted} />
+                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.parchmentMuted, flex: 1 }}>{applyParams(t(listened ? "spy.listened" : "spy.listen"), [lcost])}</Text>
+                  </Pressable>
+                );
+              })()}
               {state.plot && (() => {
                 const pl = state.plot!;
                 const hname = rivalHouseName(pl.nameIdx, lang);
