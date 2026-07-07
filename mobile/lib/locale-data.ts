@@ -142,7 +142,7 @@ export function careerTitleL(id: string, careerXp: number, lang: Lang): string {
 // ── NPC kişilik metinleri (world.ts'teki TRAITS/QUIRKS/GOALS ile birebir sıralı) ──
 // Oyun mantığı kanonik TR değeri kullanır; bunlar yalnız GÖSTERİM içindir.
 const TRAITS_TR = ["neşeli","ciddi","kibirli","cömert","dertli","yalnız","kurnaz","mert","dindar","hırslı","utangaç","sıcakkanlı"];
-const QUIRKS_TR = ["sürekli hava durumundan dert yanar","eski günleri anlatmayı sever","herkese lakap takar","az konuşur çok dinler","yüksek sesle güler","pazarlığa bayılır","komşularını çekiştirir","bir türküyü mırıldanır"];
+const QUIRKS_TR = ["sürekli hava durumundan dert yanar","eski günleri anlatmayı sever","herkese lakap takar","az konuşur çok dinler","yüksek sesle güler","pazarlığa bayılır","komşularını çekiştirir","bir türküyü mırıldanır","sözüne hep bir atasözü katar","cebinde kuru üzüm taşır, çocuklara dağıtır"];
 const GOALS_TR = ["bir dükkân açmanın hayalini kuruyor","kızını/oğlunu evermek istiyor","borçlarından kurtulmaya çalışıyor","hacca gitmeyi diliyor","toprak satın almak için biriktiriyor","ustabaşı olmak istiyor","küs olduğu kardeşiyle barışmak istiyor","bir ev yaptırmanın derdinde","kervan ticaretine atılmak istiyor","adını duyurmak istiyor"];
 const TRAITS_L: Record<Lang, string[]> = {
   tr: TRAITS_TR,
@@ -154,11 +154,11 @@ const TRAITS_L: Record<Lang, string[]> = {
 };
 const QUIRKS_L: Record<Lang, string[]> = {
   tr: QUIRKS_TR,
-  en: ["always complains about the weather","loves telling of the old days","gives everyone nicknames","speaks little, listens much","laughs out loud","loves to haggle","gossips about the neighbors","hums a folk tune"],
-  es: ["siempre se queja del clima","le encanta hablar de los viejos tiempos","les pone apodos a todos","habla poco y escucha mucho","ríe a carcajadas","le encanta regatear","critica a sus vecinos","tararea una tonada"],
-  pt: ["queixa-se sempre do tempo","adora falar dos velhos tempos","dá alcunhas a toda a gente","fala pouco e ouve muito","ri alto","adora regatear","fala mal dos vizinhos","cantarola uma toada"],
-  ar: ["يشكو الطقس دائمًا","يحبّ الحديث عن الأيّام الخوالي","يطلق الألقاب على الجميع","يقلّ كلامه ويكثر إصغاؤه","يضحك بصوت عالٍ","يعشق المساومة","يغتاب جيرانه","يدندن أغنية شعبيّة"],
-  ru: ["вечно жалуется на погоду","любит рассказывать о былом","всем раздаёт прозвища","мало говорит, много слушает","громко смеётся","обожает торговаться","судачит о соседях","напевает народную песню"],
+  en: ["always complains about the weather","loves telling of the old days","gives everyone nicknames","speaks little, listens much","laughs out loud","loves to haggle","gossips about the neighbors","hums a folk tune","peppers every remark with a proverb","keeps raisins in a pocket to hand out to children"],
+  es: ["siempre se queja del clima","le encanta hablar de los viejos tiempos","les pone apodos a todos","habla poco y escucha mucho","ríe a carcajadas","le encanta regatear","critica a sus vecinos","tararea una tonada","adereza cada frase con un refrán","lleva pasas en el bolsillo para repartir a los niños"],
+  pt: ["queixa-se sempre do tempo","adora falar dos velhos tempos","dá alcunhas a toda a gente","fala pouco e ouve muito","ri alto","adora regatear","fala mal dos vizinhos","cantarola uma toada","tempera cada frase com um provérbio","traz passas no bolso para dar às crianças"],
+  ar: ["يشكو الطقس دائمًا","يحبّ الحديث عن الأيّام الخوالي","يطلق الألقاب على الجميع","يقلّ كلامه ويكثر إصغاؤه","يضحك بصوت عالٍ","يعشق المساومة","يغتاب جيرانه","يدندن أغنية شعبيّة","يقرن كلامه دائما بمثل","يحمل زبيبا في جيبه يوزعه على الصغار"],
+  ru: ["вечно жалуется на погоду","любит рассказывать о былом","всем раздаёт прозвища","мало говорит, много слушает","громко смеётся","обожает торговаться","судачит о соседях","напевает народную песню","к каждому слову прибавляет пословицу","носит в кармане изюм и раздаёт его детям"],
 };
 const GOALS_L: Record<Lang, string[]> = {
   tr: GOALS_TR,
