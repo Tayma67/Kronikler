@@ -1719,7 +1719,7 @@ const GOVX: Record<Lang, Dict> = {
 // Hükümdarlık katmanı: otorite, dîvân fermanları, sefer, vali atama/azil, saray olayları. ar/ru: pasif/cinsiyetsiz.
 const CROWNX: Record<Lang, Dict> = {
   tr: {
-    "crown.title": "Hükümdarlık · Dîvân", "crown.authority": "Otorite", "crown.decrees": "Dîvân Fermanları", "crown.decreeWait": "%1 ay sonra",
+    "crown.title": "Hükümdarlık · Dîvân", "crown.scandal":"Hükümdarın %1 işine karıştığı kulaktan kulağa yayıldı; kadı susar, diyar konuşur (otorite −%2).","crown.authority": "Otorite", "crown.decrees": "Dîvân Fermanları", "crown.decreeWait": "%1 ay sonra",
     "crown.campaign": "Sefer", "crown.campaignBtn": "Sefere çık", "crown.odds": "Zafer şansı", "crown.noTargets": "Sefere çıkacak diyar kalmadı.",
     "crown.appointTitle": "Vali Atama", "crown.appointBtn": "Ata", "crown.dismissBtn": "Azlet", "crown.appointed": "Atanan Valiler", "crown.loyalty": "Sadakat", "crown.conquests": "İlhak Edilen Diyarlar", "crown.tribute": "haraç/ay",
     "crown.dn.adaletname": "Adaletnâme", "crown.dd.adaletname": "Adalet dağıt: otorite, şöhret ve şeref artar.",
@@ -1752,7 +1752,7 @@ const CROWNX: Record<Lang, Dict> = {
     "crown.dethroned": "İsyan tahtını devirdi; tacını yitirdin.", "crown.campaignWonShort": "Sefer zaferle bitti — diyar tâcına katıldı!", "crown.campaignLostShort": "Sefer bozguna uğradı; otoriten sarsıldı.",
   },
   en: {
-    "crown.title": "Sovereignty · Council", "crown.authority": "Authority", "crown.decrees": "Council Decrees", "crown.decreeWait": "in %1 mo",
+    "crown.title": "Sovereignty · Council", "crown.scandal":"Word spread that the sovereign had a hand in %1; the qadi stays silent, but the realm talks (authority −%2).","crown.authority": "Authority", "crown.decrees": "Council Decrees", "crown.decreeWait": "in %1 mo",
     "crown.campaign": "Campaign", "crown.campaignBtn": "March to war", "crown.odds": "Victory odds", "crown.noTargets": "No realms left to conquer.",
     "crown.appointTitle": "Appoint Governor", "crown.appointBtn": "Appoint", "crown.dismissBtn": "Dismiss", "crown.appointed": "Appointed Governors", "crown.loyalty": "Loyalty", "crown.conquests": "Annexed Realms", "crown.tribute": "tribute/mo",
     "crown.dn.adaletname": "Edict of Justice", "crown.dd.adaletname": "Dispense justice: authority, fame and honor rise.",
@@ -1785,7 +1785,7 @@ const CROWNX: Record<Lang, Dict> = {
     "crown.dethroned": "Revolt toppled your throne; you lost your crown.", "crown.campaignWonShort": "The campaign was won — the realm joined your crown!", "crown.campaignLostShort": "The campaign was routed; your authority was shaken.",
   },
   es: {
-    "crown.title": "Soberanía · Consejo", "crown.authority": "Autoridad", "crown.decrees": "Decretos del Consejo", "crown.decreeWait": "en %1 m",
+    "crown.title": "Soberanía · Consejo", "crown.scandal":"Se corrió la voz de que el soberano anduvo metido en %1; el cadí calla, pero el reino habla (autoridad −%2).","crown.authority": "Autoridad", "crown.decrees": "Decretos del Consejo", "crown.decreeWait": "en %1 m",
     "crown.campaign": "Campaña", "crown.campaignBtn": "Marchar a la guerra", "crown.odds": "Prob. de victoria", "crown.noTargets": "No quedan reinos por conquistar.",
     "crown.appointTitle": "Nombrar Gobernador", "crown.appointBtn": "Nombrar", "crown.dismissBtn": "Destituir", "crown.appointed": "Gobernadores Nombrados", "crown.loyalty": "Lealtad", "crown.conquests": "Reinos Anexados", "crown.tribute": "tributo/mes",
     "crown.dn.adaletname": "Edicto de Justicia", "crown.dd.adaletname": "Imparte justicia: suben autoridad, fama y honor.",
@@ -1818,7 +1818,7 @@ const CROWNX: Record<Lang, Dict> = {
     "crown.dethroned": "La revuelta derribó tu trono; perdiste tu corona.", "crown.campaignWonShort": "¡La campaña fue ganada — el reino se unió a tu corona!", "crown.campaignLostShort": "La campaña fue derrotada; tu autoridad se tambaleó.",
   },
   pt: {
-    "crown.title": "Soberania · Conselho", "crown.authority": "Autoridade", "crown.decrees": "Decretos do Conselho", "crown.decreeWait": "em %1 m",
+    "crown.title": "Soberania · Conselho", "crown.scandal":"Correu a voz de que o soberano andou metido em %1; o cádi cala, mas o reino fala (autoridade −%2).","crown.authority": "Autoridade", "crown.decrees": "Decretos do Conselho", "crown.decreeWait": "em %1 m",
     "crown.campaign": "Campanha", "crown.campaignBtn": "Marchar para a guerra", "crown.odds": "Prob. de vitória", "crown.noTargets": "Não restam reinos para conquistar.",
     "crown.appointTitle": "Nomear Governador", "crown.appointBtn": "Nomear", "crown.dismissBtn": "Destituir", "crown.appointed": "Governadores Nomeados", "crown.loyalty": "Lealdade", "crown.conquests": "Reinos Anexados", "crown.tribute": "tributo/mês",
     "crown.dn.adaletname": "Édito de Justiça", "crown.dd.adaletname": "Faz justiça: sobem autoridade, fama e honra.",
@@ -1851,7 +1851,7 @@ const CROWNX: Record<Lang, Dict> = {
     "crown.dethroned": "A revolta derrubou o teu trono; perdeste a tua coroa.", "crown.campaignWonShort": "A campanha foi vencida — o reino juntou-se à tua coroa!", "crown.campaignLostShort": "A campanha foi derrotada; a tua autoridade abalou-se.",
   },
   ar: {
-    "crown.title": "السلطنة · الديوان", "crown.authority": "السلطة", "crown.decrees": "فرمانات الديوان", "crown.decreeWait": "بعد %1 شهر",
+    "crown.title": "السلطنة · الديوان", "crown.scandal":"شاع أن الحاكم متورط في %1؛ يصمت القاضي وتتكلم الديار (الهيبة −%2).","crown.authority": "السلطة", "crown.decrees": "فرمانات الديوان", "crown.decreeWait": "بعد %1 شهر",
     "crown.campaign": "حملة", "crown.campaignBtn": "اخرج للحرب", "crown.odds": "حظّ النصر", "crown.noTargets": "لم يبقَ ديار للفتح.",
     "crown.appointTitle": "تعيين والٍ", "crown.appointBtn": "عيّن", "crown.dismissBtn": "اعزل", "crown.appointed": "الولاة المعيَّنون", "crown.loyalty": "الولاء", "crown.conquests": "الديار المضمومة", "crown.tribute": "خراج/شهر",
     "crown.dn.adaletname": "فرمان العدل", "crown.dd.adaletname": "إقامة العدل: ترتفع السلطة والشهرة والشرف.",
@@ -1884,7 +1884,7 @@ const CROWNX: Record<Lang, Dict> = {
     "crown.dethroned": "أطاح التمرّد بعرشك؛ ففقدت تاجك.", "crown.campaignWonShort": "انتُصر في الحملة — انضمّت الديار إلى تاجك!", "crown.campaignLostShort": "هُزمت الحملة؛ فاهتزّت سلطتك.",
   },
   ru: {
-    "crown.title": "Власть · Диван", "crown.authority": "Власть", "crown.decrees": "Указы дивана", "crown.decreeWait": "через %1 мес",
+    "crown.title": "Власть · Диван", "crown.scandal":"Разошёлся слух, что государь замешан в %1; кадий молчит, но край говорит (власть −%2).","crown.authority": "Власть", "crown.decrees": "Указы дивана", "crown.decreeWait": "через %1 мес",
     "crown.campaign": "Поход", "crown.campaignBtn": "Выступить в поход", "crown.odds": "Шанс победы", "crown.noTargets": "Не осталось земель для завоевания.",
     "crown.appointTitle": "Назначить наместника", "crown.appointBtn": "Назначить", "crown.dismissBtn": "Сместить", "crown.appointed": "Назначенные наместники", "crown.loyalty": "Верность", "crown.conquests": "Присоединённые земли", "crown.tribute": "дань/мес",
     "crown.dn.adaletname": "Указ о правосудии", "crown.dd.adaletname": "Вершить правосудие: растут власть, слава и честь.",

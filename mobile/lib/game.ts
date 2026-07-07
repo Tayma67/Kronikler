@@ -3761,8 +3761,16 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
 // Yakalanma cezasını uygula (kesinti sahnesinden veya doğrudan). Şiddete göre ceza + tanık + tohum.
 function crimeCaught(s: GameState, kind: CrimeKind) {
   const p = s.player; const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
-  // Ağır suç (sev>=3): kadı zindan hükmü verir — sev 3'te yazı tura, sev 4'te kesin (asker ocağı süreyi yarılar).
-  if (ct.sev >= 3 && !inJail(p) && (ct.sev >= 4 || Math.random() < 0.5)) {
+  // Taç sahibi kadıya değil tarihe hesap verir: zindan yerine meşruiyet bedeli (otorite + şeref),
+  // skandal diyara yayılır — otorite eridikçe mevcut isyan/iddiacı sistemi tahtı kendiliğinden sallar.
+  if (p.crowned) {
+    const drop = 6 + ct.sev * 2;
+    p.crownAuthority = clamp100(crownAuthorityOf(p) - drop);
+    p.honor = Math.max(0, p.honor - ct.sev);
+    push(s, "taht", `Hükümdarın ${ct.label.toLowerCase()} işine karıştığı kulaktan kulağa yayıldı; kadı susar, diyar konuşur (otorite −${drop}).`, "makro", true, { k: "crown.scandal", p: [{ cr: kind }, drop] });
+  }
+  // Ağır suç (sev>=3): kadı zindan hükmü verir — sev 3'te yazı tura, sev 4'te kesin (asker ocağı süreyi yarılar). Taçlı zindana düşmez.
+  if (!p.crowned && ct.sev >= 3 && !inJail(p) && (ct.sev >= 4 || Math.random() < 0.5)) {
     const ay = Math.max(1, Math.round((ct.sev - 1) * (p.faction === "asker" ? 0.5 : 1)));
     p.jail = { left: ay, kind };
     push(s, "suç", `Kadı hükmünü verdi: ${ay} ay zindan. Demir kapı ardında ay saymak da bir mekteptir.`, "kişisel", true, { k: "jail.sentenced", p: [ay] });
