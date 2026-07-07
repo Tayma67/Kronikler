@@ -72,7 +72,10 @@ export default function MpOyun() {
     if (mine && mine.events.length) {
       ns = applyTickEvents(ns, mine.events);
       const ym = realmYearMonth(lastTick.turn); // kişisel sonuçlar buharlaşmasın: ay damgalı kalıcı günlük (son 12)
-      setEvLines((prev) => [...mine.events.map((e) => `${ym.year}/${ym.month} · ` + pf(t(e.k), ...(e.p || []))), ...prev].slice(0, 12));
+      setEvLines((prev) => [...mine.events.map((e) => {
+        const big = e.k.startsWith("mp.sefer.") || e.k.startsWith("mp.award.") || e.k === "mp.reis.elected"; // siyasi büyük anlar günlükte de nişanlı
+        return `${big ? "❧ " : ""}${ym.year}/${ym.month} · ` + pf(t(e.k), ...(e.p || []));
+      }), ...prev].slice(0, 12));
     }
     apply(() => ns);
     setReadyLocal(false);
