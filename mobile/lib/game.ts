@@ -2237,6 +2237,10 @@ const WORLD_NEWS: string[] = [
   "%b'nde eski hamam yeniden açıldı; kubbe yine buhar tutuyor, çarşı keselenmiş geziyor.",
   "%b ile %b2 ortak kervan çıkarıyor; yol vergisi ikiye bölündü, tüccarların yüzü güldü.",
   "%b'nde bir çoban yıldırım düşen çınarın altından sağ çıktı; ahali ermiş diye fısıldaşıyor.",
+  "%b'nde genç bir hattat çarşı kapısına öyle bir yazı yazdı ki gelen geçen durup bakıyor; kadı bile hayrına bir kese bıraktı.",
+  "%b ile %b2 arasındaki geçitte kar erken eridi; kervanlar bu yıl bir ay erken yola koyuldu.",
+  "%b'nde bir kuyumcu çırağı ustasının kayıp yüzüğünü leylek yuvasında buldu; çarşı günlerdir bunu konuşuyor.",
+  "%b beyinin kızı çeyizini yetim kızlara dağıttı derler; adı türkü olup %b2 pazarına kadar ulaştı.",
 ];
 function worldNews(s: GameState) {
   const i1 = Math.floor(Math.random() * BEYLIKS.length);
