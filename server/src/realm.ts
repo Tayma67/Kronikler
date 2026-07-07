@@ -87,6 +87,7 @@ export class RealmDO {
       if (!this.snap.news) this.snap.news = [];
       if (!this.snap.offers) this.snap.offers = [];
       if (this.snap.venture === undefined) this.snap.venture = null;
+      if (this.snap.plots === undefined) this.snap.plots = [];
       this.snap.players.forEach((p) => { if (p.beylikId === undefined) p.beylikId = null; if (p.honor === undefined) p.honor = 0; if (p.traveling === undefined) p.traveling = false; if (p.married === undefined) p.married = false; });
       this.snap.v = PROTOCOL_VERSION;
     } else {
@@ -604,7 +605,7 @@ export class RealmDO {
     const once = (key: string) => { if (socOnce.has(key)) return false; socOnce.add(key); return true; };
     // "Seyahate Çık": seyahatteki kişiye DÜŞMANCA eylem (düello/casus/sabotaj/iftira/ayartma/suikast)
     // engellenir — kişi dokunulmaz. Beyliğine sefer (holdings) bundan etkilenmez.
-    const HOSTILE = new Set(["duel", "spy", "sabotage", "slander", "bribe", "assassinate", "captureDuel"]);
+    const HOSTILE = new Set(["duel", "spy", "sabotage", "slander", "bribe", "assassinate", "captureDuel", "joinPlot"]);
 
     for (const pid of order) for (const it of this.intents[pid]) {
       const tgtId = (it as { to?: string; on?: string }).to || (it as { to?: string; on?: string }).on;
@@ -616,6 +617,19 @@ export class RealmDO {
       }
       switch (it.k) {
         // — Destek & dostluk —
+        case "joinPlot": { // ortak kumpas: tahttaki beye karşı gizli ittifak (ayda bir/hedef; zincirli katılamaz)
+          const tb = it.to;
+          if (!tb || !aliveOther(pid, tb) || isCaptive(pid)) break;
+          if (!this.snap.beyliks.some((b) => b.beyId === tb)) break; // yalnız tahtta oturana kumpas kurulur
+          if (!once(`plot:${pid}:${tb}`)) break;
+          const plots = this.snap.plots || (this.snap.plots = []);
+          let pl = plots.find((x) => x.target === tb);
+          if (!pl) { pl = { target: tb, members: [], since: this.snap.turn }; plots.push(pl); }
+          if (pl.members.some((m) => m.id === pid)) break;
+          pl.members.push({ id: pid, name: pname(pid) });
+          ev(pid, "mp.plot.joined", [pname(tb), pl.members.length]);
+          break;
+        }
         case "joinCampaign": { // omuz sözü verildi — çözüm sefer bloğunda
           if (it.bey && it.bey !== pid && isAlive(it.bey)) ev(pid, "mp.sefer.pledged", [pname(it.bey)]);
           break;
@@ -876,6 +890,42 @@ export class RealmDO {
     }
 
     // ── Gözcü nöbeti bakımı: süresi dolan nöbet kapanır, sahibi haber alır. ──
+    // Ortak kumpas çözümü: 2+ üyeyle bir ay demlenen kumpas darbe gecesine döner; 3 ay tek kalan söner.
+    if (this.snap.plots && this.snap.plots.length) {
+      const keep: NonNullable<typeof this.snap.plots> = [];
+      for (const pl of this.snap.plots) {
+        const members = pl.members.filter((m) => isAlive(m.id));
+        const tgt = playerById(pl.target);
+        const seat = this.snap.beyliks.find((b) => b.beyId === pl.target);
+        if (!tgt || tgt.dead || !seat) continue; // hedef düştü ya da öldü: kumpas kendiliğinden dağılır
+        if (members.length >= 2 && this.snap.turn > pl.since) {
+          const watched = (this.snap.watches?.[pl.target] || 0) > this.snap.turn; // gözcü fısıltıları duyar
+          const combined = members.reduce((sum, m) => sum + (playerById(m.id)?.power || 0), 0);
+          const odds = Math.max(0.1, Math.min(0.85, combined / (combined + (tgt.power || 0) * 1.3 + seat.power * 0.5))) * (watched ? 0.5 : 1);
+          if (Math.random() < odds) {
+            const ranked = members.map((m) => playerById(m.id)).filter((x): x is NonNullable<typeof x> => !!x).sort((x, y) => (y.power || 0) - (x.power || 0));
+            const leader = ranked[0];
+            if (leader) {
+              seat.beyId = leader.id; seat.beyName = leader.name; seat.claimedTurn = this.snap.turn;
+              leader.beylikId = seat.id;
+              members.forEach((m) => { this.adjustHonor(m.id, -3); ev(m.id, "mp.plot.success", [seat.name, leader.name]); });
+              ev(pl.target, "mp.plot.deposed", [seat.name]);
+              this.snap.news = [...this.snap.news.slice(-9), { k: "mp.plot.news", p: [tgt.name, seat.name, leader.name], turn: this.snap.turn }];
+            }
+          } else {
+            members.forEach((m) => { this.adjustHonor(m.id, -8); this.adjustBond(m.id, pl.target, -40); ev(m.id, "mp.plot.failed", [tgt.name]); });
+            ev(pl.target, "mp.plot.survived", [members.length]);
+            this.snap.news = [...this.snap.news.slice(-9), { k: "mp.plot.exposedNews", p: [members.map((m) => m.name).join(", "), tgt.name], turn: this.snap.turn }];
+          }
+          continue; // patladı — defterden düşer
+        }
+        if (this.snap.turn - pl.since >= 3) { members.forEach((m) => ev(m.id, "mp.plot.fizzled", [tgt.name])); continue; }
+        pl.members = members;
+        keep.push(pl);
+      }
+      this.snap.plots = keep;
+    }
+
     if (this.snap.watches) {
       for (const wid of Object.keys(this.snap.watches)) {
         if (this.snap.watches[wid] <= this.snap.turn) { delete this.snap.watches[wid]; if (isAlive(wid)) ev(wid, "mp.watch.ended", []); }

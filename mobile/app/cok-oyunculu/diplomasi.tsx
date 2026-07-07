@@ -172,6 +172,9 @@ export default function Diplomasi() {
                     <Btn label={t("mp.sefer.backBtn")} onPress={() => act({ k: "joinCampaign", bey: x.id })} />
                     <Btn label={t("mp.hostage.captureBtn")} tone="blood" disabled={x.traveling || !x.online || pactShield} onPress={() => act({ k: "captureDuel", to: x.id })} />
                     {(snapshot.hostages || []).some((h) => h.captor === guestId && h.captive === x.id) && <Btn label={t("mp.hostage.releaseBtn")} onPress={() => act({ k: "releaseHostage" })} />}
+                    {snapshot.beyliks.some((b) => b.beyId === x.id) && ((snapshot.plots || []).some((pl) => pl.target === x.id && pl.members.some((m) => m.id === guestId))
+                      ? <Btn label={t("mp.plot.mine")} tone="dim" disabled onPress={() => {}} />
+                      : <Btn label={t("mp.plot.btn")} tone="blood" disabled={x.traveling || pactShield} onPress={() => act({ k: "joinPlot", to: x.id })} />)}
                   </View>
 
                   {/* Yardım */}

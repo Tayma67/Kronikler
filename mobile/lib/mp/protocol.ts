@@ -168,6 +168,7 @@ export interface RealmSnapshot {
   reis?: { id: string; name: string } | null; // seçilmiş Meclis Reisi (bir yıl görevde; v3+ opsiyonel)
   hostages?: { captor: string; captive: string; ask: number; since: number }[]; // rehine defteri (v3+ opsiyonel; 12 ay ödenmezse kaçar)
   watches?: Record<string, number>; // gözcü nöbeti: oyuncu → bitiş turu (v3+ opsiyonel)
+  plots?: { target: string; members: { id: string; name: string }[]; since: number }[]; // ortak kumpaslar (v3+ opsiyonel; istemci yalnız üyeye gösterir)
   econ: number;          // paylaşımlı ekonomi/enflasyon indeksi
   createdAt: number;
 }
@@ -221,7 +222,8 @@ export type SharedIntent =
   | { k: "mediateNpc"; npcId: string; player: string } // NPC ile bir oyuncunun arasını düzelt
   // ── Ortak girişim ──
   | { k: "ventureBack"; amount: number }            // kervan ortaklığına hisse koy (altın istemcide kesilir)
-  | { k: "raidVenture" };                           // ortak kervana pusu kur (çözüm gecesi baskın denenir)
+  | { k: "raidVenture" }                            // ortak kervana pusu kur (çözüm gecesi baskın denenir)
+  | { k: "joinPlot"; to: string };                  // tahttaki beye karşı ortak kumpasa katıl (gizli)
 
 // ── İstemci → Sunucu mesajları ──
 export type ClientMsg =
