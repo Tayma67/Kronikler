@@ -244,12 +244,24 @@ export default function Savas() {
             </View>
           );
         })()}
+        {(() => {
+          const won = Object.keys(p.enc_won || {});
+          if (!won.length) return null;
+          return (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 10 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.goldDim }}>{t("cb.legendBook")}</Text>
+              {won.map((id) => (
+                <Text key={id} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.goldBright }}>❧ {gt("enc." + id + ".t", id)}</Text>
+              ))}
+            </View>
+          );
+        })()}
         {ENCOUNTERS.filter((e) => !e.minFame || p.fame >= e.minFame).map((e) => {
           const tooStrong = e.power > pw + 8;
           return (
             <View key={e.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 10 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{gt("enc." + e.id + ".t", e.title)}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{gt("enc." + e.id + ".t", e.title)}{p.enc_won && p.enc_won[e.id] ? " ❧" : ""}</Text>
                 <Text style={{ fontFamily: F.display, fontSize: 11, color: tooStrong ? C.blood : C.goldDim }}>{t("cb.enemyPower")} {e.power}</Text>
               </View>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5, lineHeight: 18 }}>{gt("enc." + e.id + ".d", e.desc)}</Text>
