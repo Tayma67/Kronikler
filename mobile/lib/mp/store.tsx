@@ -45,7 +45,13 @@ export function MpProvider({ children }: { children: React.ReactNode }) {
 
   const onMessage = useCallback((m: ServerMsg) => {
     switch (m.t) {
-      case "welcome": setSnapshot(m.snapshot); setSaved(m.saved ?? null); setError(null); break;
+      case "welcome": {
+        setSnapshot(m.snapshot); setSaved(m.saved ?? null); setError(null);
+        // Meclis hafızası: yeni gelen son 12 sözü görür (canlı geçmiş varsa ezme — kopukluk sonrası tekrarlar çift düşmesin)
+        const log = m.snapshot.chatLog;
+        if (log && log.length) setChat((c) => (c.length ? c : log.map((l) => ({ from: l.from, fromName: l.fromName, text: l.text, at: l.at, scope: "all" as ChatScope }))));
+        break;
+      }
       case "snapshot": setSnapshot(m.snapshot); break;
       case "presence":
         setSnapshot((s) => s ? { ...s, players: m.players, phase: m.phase, tickDeadline: m.tickDeadline } : s);

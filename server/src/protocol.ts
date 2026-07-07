@@ -161,6 +161,7 @@ export interface RealmSnapshot {
   news: RealmNews[];     // diyar haberleri (NPC'lerden kozmetik akış — oyuna etkisi YOK)
   offers: Offer[];       // bekleyen el-sıkışma teklifleri (ittifak/dünür/borç/sığınma)
   venture?: VentureState | null; // aktif ortak girişim (v3+; eski sunucu göndermez → istemci UI'ı gizler)
+  chatLog?: { from: string; fromName: string; text: string; at: number }[]; // meclis hafızası: genel sohbetin son 12 satırı (v3+ opsiyonel; eski sunucu göndermez → istemci boş kabul eder)
   econ: number;          // paylaşımlı ekonomi/enflasyon indeksi
   createdAt: number;
 }

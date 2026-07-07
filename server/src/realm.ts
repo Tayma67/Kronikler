@@ -224,6 +224,8 @@ export class RealmDO {
         const scope: ChatScope = m.scope === "whisper" || m.scope === "beylik" ? m.scope : "all";
         const out: ServerMsg = { t: "chat", from: p.id, fromName: p.name, text, at: Date.now(), scope, to: m.to };
         if (scope === "all") {
+          // Meclis hafızası: sonradan gelen, son sözleri görür (fısıltı/beylik sızmaz — yalnız genel).
+          this.snap.chatLog = [...(this.snap.chatLog || []), { from: p.id, fromName: p.name, text, at: Date.now() }].slice(-12);
           this.broadcast(out);
         } else if (scope === "whisper" && m.to) {
           // yalnız gönderen + hedef görür
