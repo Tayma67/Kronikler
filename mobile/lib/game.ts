@@ -2390,13 +2390,14 @@ function caravanAttackChance(s: GameState): number {
   if (p.skills.trade >= 4) c -= 0.03;
   if (p.skills.trade >= 8) c -= 0.03;
   if (p.fear > 50) c -= 0.03;            // korkulan biri daha az gözü kara saldırı çeker
+  c -= (p.retinue || 0) * 0.02;          // maiyet kılıçları kervanla yürür — eşkıya iştahı kırılır
   if (s.wars.some((w) => w.turnsLeft > 0)) c += 0.08; // diyar savaştaysa yollar tehlikeli
   return Math.max(0.03, Math.min(0.4, c));
 }
 // Saldırı kaybı oranı (Vercel caravan._attack_outcome portu): savunma = güç×0.4 + dövüş×0.6.
 function caravanLossPct(s: GameState): number {
   const p = s.player;
-  const def = p.stats.strength * 0.4 + p.skills.combat * 0.6;
+  const def = p.stats.strength * 0.4 + p.skills.combat * 0.6 + (p.retinue || 0) * 1.5; // maiyet yağmada omuz verir
   if (def >= 12) return 0.10 + Math.random() * 0.20;  // direndin, az kaybettin
   if (def >= 6) return 0.30 + Math.random() * 0.30;   // yarısı gitti
   return 0.55 + Math.random() * 0.35;                  // güçsüz kaldın, çoğu gitti
@@ -2481,6 +2482,7 @@ export function launchCaravan(prev: GameState, amount: number): GameState {
   s.caravan = { invested: amount, dest, route, step: 0, lost: 0, good: arb?.good, spread: arb?.spread };
   const carried = arb ? { i: arb.good } : { i: "bugday" };
   push(s, "kervan", `${amount} akçelik kervan yola çıktı: ${route.join(" → ")}. ${route.length - 1} konak sürecek.`, "kişisel", false, { k: "evj.carLaunch", p: [amount, { route }, route.length - 1, carried] });
+  if ((p.retinue || 0) > 0) push(s, "maiyet", `Maiyetinden ${p.retinue} kılıç kervanla yola düştü; eşkıya iki kez düşünecek.`, "kişisel", false, { k: "evj.carGuarded", p: [p.retinue || 0] });
   return s;
 }
 
