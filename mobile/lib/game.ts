@@ -56,6 +56,7 @@ export interface Player {
   child_dream?: string; // çocukluk hayali (meslek domeni: combat/trade/crafting/social); reşitlikte meslek uyarsa ödül
   hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
   gamble_turn?: number; // zar meclisi ayda bir el — kasa avantajlı kumar gelir farm'ı olamaz
+  plot_wins?: number; // tamamlanan komplolar — Gölge Ustası başarımı ve entrika ustalığı izi
   last_crime_turn?: number; // son suç denemesi turu (ay başına tek deneme; risksiz spam önlenir)
   crime_wins?: number; // başarıyla tamamlanan suç sayısı — yeraltı namı; ağır işler bununla açılır (merdiven)
   governorships?: string[]; // valisi olunan şehirler
@@ -772,6 +773,7 @@ export interface GameState {
   dynastyOffers?: DynastyOffer[]; // dost hanelerden ittifak/evlilik teklifleri
   allied_houses?: string[]; // ittifak kurulan hanelerin id'leri
   feud?: { houseId: string; nameIdx: number; stage: number; heat: number; act_turn?: number } | null; // kan davası: tek aktif dava; ısı büyür, aşama tırmanır, NESLE GEÇER (continueAsHeir)
+  plot?: { kind: "leke" | "sabotaj" | "nifak"; houseId: string; nameIdx: number; stage: number; heat: number; helpers: number; started: number } | null; // entrika: tek aktif komplo; fısıltı birikir, açığa çıkabilir; ölümle düşer (vârise GEÇMEZ)
   epochNext?: number; // bir sonraki çağ olayının turu (legacy_system epoch_tick)
   pendingScene?: { kind: string; ctx: Record<string, string> } | null; // oyuncu seçimi bekleyen interaktif sahne (suç kesintisi vb.)
   micro?: { id: string } | null; // ay-içi mikro an: atlanabilir tek satırlık seçim (ertesi ay kendiliğinden kaybolur)
@@ -1887,6 +1889,7 @@ function tickDynasties(s: GameState, announce: boolean) {
   }
   // ── Kan davası tiki: tutuşma, ısı, tırmanma, aylık zarar. Dava sulh ya da meydan savaşıyla biter; bitmezse NESLE GEÇER. ──
   if (announce) tickFeud(s, rivals);
+  if (announce) tickPlot(s, rivals);
   // Düşman hane sabotajı: tutumu çok düşük bir hane oyuncunun mülküne el uzatır (gerçek zarar).
   if (announce && p.properties.length) {
     const foes = rivals.filter((h) => (h.tutum ?? 0) <= -25 && h.id !== s.feud?.houseId); // dava hanesi ayrı işlenir (tickFeud) — çifte sabotaj olmasın
@@ -1956,6 +1959,74 @@ function tickDynasties(s: GameState, announce: boolean) {
 }
 // ── Kan davası: nesiller boyu sürebilen tırmanmalı husumet. Aşamalar: 1 husumet → 2 sabotaj → 3 açık çatışma. ──
 const FEUD_STAGE2_HEAT = 25; const FEUD_STAGE3_HEAT = 55;
+// ── GÖLGE OYUNLARI: rakip haneye komplo — aylarca örülür, fısıltısı birikir, açığa çıkabilir. ──
+// Tasarım: tek aktif komplo; başlatmak ve el tutmak akçe ister; zekâ/eller/Gölge üyeliği hızlandırır.
+// Fısıltı 40'ı aşınca her ay artan ifşa riski: yakalanan itibar+şeref kaybeder, hane diş biler, kan
+// davası tutuşabilir; taçlıysa meşruiyet erir (D160 ilkesi). Ganimet yalnız sabotajda ve kısmen sıcak maldır.
+export const PLOT_COST = 60;
+export const PLOT_HELPER_COST = 40;
+export function plotCost(s: GameState): number { return Math.round(PLOT_COST * inflationFactor(s) * (s.player.faction === "golge" ? 0.5 : 1)); }
+export function plotHelperCost(s: GameState): number { return Math.round(PLOT_HELPER_COST * inflationFactor(s) * (s.player.faction === "golge" ? 0.5 : 1)); }
+export function startPlot(prev: GameState, houseId: string, kind: "leke" | "sabotaj" | "nifak"): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 16 || inJail(p) || s.plot) return s;
+  const h = ensureRivals(s).find((x) => x.id === houseId); if (!h) return s;
+  if ((s.allied_houses || []).includes(houseId)) return s; // müttefike komplo kurulmaz — önce ittifak bozulur
+  const cost = plotCost(s);
+  if (p.money < cost) return s;
+  p.money -= cost;
+  s.plot = { kind, houseId, nameIdx: h.nameIdx, stage: 0, heat: 0, helpers: 0, started: s.turn };
+  push(s, "entrika", `${h.name} aleyhine iplikler örülmeye başladı; bu iş sabır ve sessizlik ister.`, "kişisel", true, { k: "evj.plotStart", p: [{ hn: h.nameIdx }] });
+  return s;
+}
+export function hirePlotHelper(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  const pl = s.plot; if (!pl || p.dead || inJail(p) || pl.helpers >= 2) return s;
+  const cost = plotHelperCost(s);
+  if (p.money < cost) return s;
+  p.money -= cost; pl.helpers += 1;
+  push(s, "entrika", `Kesenin ağzı açıldı, işe bir el daha koşuldu; iş hızlanır ama fısıltı da çoğalır.`, "kişisel", false, { k: "evj.plotHelper" });
+  return s;
+}
+function tickPlot(s: GameState, rivals: RivalHouse[]) {
+  const pl = s.plot; const p = s.player;
+  if (!pl || p.dead) return;
+  const h = rivals.find((x) => x.id === pl.houseId);
+  if (!h) { s.plot = null; return; }
+  // İlerleme: zekâ, eller ve Gölge ağı
+  const prog = 0.30 + effStat(p, "intelligence") * 0.015 + pl.helpers * 0.12 + (p.faction === "golge" ? 0.08 : 0);
+  if (Math.random() < prog) pl.stage += 1;
+  // Fısıltı: iş büyüdükçe ve eller çoğaldıkça artar; Gölge iz siler
+  pl.heat += 3 + (pl.kind === "sabotaj" ? 3 : pl.kind === "nifak" ? 2 : 1) + pl.helpers - (p.faction === "golge" ? 1 : 0);
+  // İfşa: fısıltı 40'ı aşınca her ay artan risk
+  if (pl.heat > 40 && Math.random() * 100 < pl.heat - 40) {
+    s.plot = null;
+    p.reputation = Math.max(-100, p.reputation - 10); p.honor = Math.max(0, p.honor - 6);
+    h.tutum = Math.max(-100, (h.tutum ?? 0) - 30);
+    if (p.crowned) p.crownAuthority = clamp100(crownAuthorityOf(p) - 10); // taçlı entrikacının bedeli meşruiyet
+    if (!s.feud) s.feud = { houseId: h.id, nameIdx: h.nameIdx, stage: 1, heat: 20 }; // ifşa kan davası tutuşturabilir
+    push(s, "entrika", `Komplon açığa çıktı! ${h.name} gerçeği çarşıya döktü; adın entrikacıya çıktı, hane sana diş biliyor.`, "makro", true, { k: "evj.plotExposed", p: [{ hn: h.nameIdx }] });
+    return;
+  }
+  if (pl.stage >= 3) { // komplo tamam
+    s.plot = null;
+    p.plot_wins = (p.plot_wins || 0) + 1;
+    bumpNam(p, "zalim", 1); p.fear = Math.min(100, p.fear + 2);
+    if (pl.kind === "leke") {
+      h.power = Math.max(20, h.power - 10);
+      push(s, "entrika", `Ektiğin söylentiler kök saldı: ${h.name} çarşıda lekelendi, gücü sarsıldı. Kimse senin parmağını görmedi.`, "makro", true, { k: "evj.plotDone.leke", p: [{ hn: h.nameIdx }] });
+    } else if (pl.kind === "sabotaj") {
+      h.power = Math.max(20, h.power - 8);
+      const loot = Math.round((50 + Math.floor(Math.random() * 40)) * inflationFactor(s));
+      const hot = Math.round(loot * 0.4); const cash = loot - hot;
+      p.money += cash; p.hotGoods = (p.hotGoods || 0) + hot;
+      push(s, "entrika", `${h.name} kervanı gece pusuya düştü; mallar el değiştirdi (+${cash} akçe, ${hot} akçelik sıcak mal). Hane kayıplarını sayıyor.`, "makro", true, { k: "evj.plotDone.sabotaj", p: [{ hn: h.nameIdx }, cash, hot] });
+    } else {
+      h.power = Math.max(20, h.power - 6); h.pride = Math.max(0, (h.pride || 50) - 10);
+      push(s, "entrika", `Nifak tohumların yeşerdi: ${h.name} dostlarıyla bozuştu, kapısı yalnızlaştı. Perde arkasındaki eli kimse bilmiyor.`, "makro", true, { k: "evj.plotDone.nifak", p: [{ hn: h.nameIdx }] });
+    }
+  }
+}
 function tickFeud(s: GameState, rivals: RivalHouse[]) {
   const p = s.player;
   if (p.dead) return;
@@ -5093,6 +5164,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "seyyah",   name: "Seyyâh-ı Âlem",   desc: "25 farklı yerleşime ayak bas.",     icon: "map",          done: (s) => new Set([...(s.player.cities_visited || []), s.player.location_name]).size >= 25 },
   { id: "besmeslek",name: "On Parmakta Marifet", desc: "Bir ömürde 5 farklı meslek dene.", icon: "backpack",  done: (s) => new Set([...(s.player.professions_tried || []), s.player.profession].filter((x) => x !== "işsiz")).size >= 5 },
   { id: "yemintamam",name: "Yemin Tamam",      desc: "Kül Yemini destanını tamamla.",     icon: "scroll",       done: (s) => !!s.saga && s.saga.act >= 3 && s.saga.ch >= 5 },
+  { id: "golgeust", name: "Gölge Ustası",    desc: "Üç komployu ifşa olmadan tamamla.", icon: "hood",         done: (s) => (s.player.plot_wins || 0) >= 3 },
   { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
   { id: "bilge",    name: "Yaşlı Bilge",     desc: "70 yaşını gör.",                    icon: "prayer-beads", done: (s) => s.player.age >= 70 },
   { id: "imparator",name: "Mülk İmparatoru", desc: "8 mülke sahip ol.",                 icon: "castle",       done: (s) => s.player.properties.length >= 8 },

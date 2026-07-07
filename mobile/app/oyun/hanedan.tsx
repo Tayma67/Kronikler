@@ -14,6 +14,7 @@ import {
   PRESTIGE, prestigeCost, fundPrestige, MARKET_LEVER_MIN, marketLeverCost, canManipulateMarket, manipulateMarket,
   acceptDynastyOffer, declineDynastyOffer,
   feudPeaceCost, feudSuePeace, feudStrike, proposeToHouse, sendEnvoy, ENVOY_COST, demandTribute, inflationFactor,
+  startPlot, hirePlotHelper, plotCost, plotHelperCost,
   crownAuthorityOf, CROWN_DECREES, canIssueDecree, issueDecree, decreeCooldownLeft,
   campaignTargets, canLaunchCampaign, campaignOdds, launchCampaign, CAMPAIGN_COST,
   appointableCities, canAppointGovernor, appointGovernor, dismissGovernor, APPOINT_FEE, crownTribute,
@@ -561,6 +562,22 @@ export default function Hanedan() {
           return (
             <>
               <SecTitle>{t("dyn.houses")}</SecTitle>
+              {state.plot && (() => {
+                const pl = state.plot!;
+                const hname = rivalHouseName(pl.nameIdx, lang);
+                const hcost = plotHelperCost(state);
+                const canHelp = pl.helpers < 2 && p.money >= hcost;
+                return (
+                  <View style={{ backgroundColor: "rgba(123,79,175,0.08)", borderWidth: 1, borderColor: "rgba(123,79,175,0.45)", borderLeftWidth: 3, borderLeftColor: C.ink, borderRadius: 10, padding: 12, marginBottom: 10 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("plot.panel").toUpperCase()}</Text>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment, marginTop: 4 }}>{t("plot.kind." + pl.kind)} — {hname}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{applyParams(t("plot.stage"), [pl.stage])} · {applyParams(t("plot.heat"), [pl.heat])} · {applyParams(t("plot.helpers"), [pl.helpers])}</Text>
+                    <Pressable disabled={!canHelp} onPress={() => { hap("tap"); apply((s) => hirePlotHelper(s)); }} style={{ marginTop: 8, paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: canHelp ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: "rgba(201,168,76,0.08)", alignItems: "center", opacity: canHelp ? 1 : 0.4 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10.5, color: canHelp ? C.gold : C.parchmentMuted }}>{applyParams(t("plot.helper"), [hcost])}</Text>
+                    </Pressable>
+                  </View>
+                );
+              })()}
               {all.map((h, i) => (
                 <View key={h.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: h.mine ? "rgba(201,168,76,0.1)" : C.card, borderWidth: 1, borderColor: h.mine ? "rgba(201,168,76,0.45)" : C.border, borderRadius: 9, padding: 11, marginBottom: 7 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: C.goldDim, width: 24 }}>{i + 1}.</Text>
@@ -592,6 +609,15 @@ export default function Hanedan() {
                           <Pressable disabled={acted} onPress={() => { hap("tap"); apply((s) => proposeToHouse(s, h.id, "evlilik")); }} style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: acted ? C.border : "rgba(201,168,76,0.5)", opacity: acted ? 0.4 : 1 }}>
                             <Text style={{ fontFamily: F.display, fontSize: 8.5, color: acted ? C.parchmentMuted : C.gold }}>{t("dyn.propose.marry")}</Text>
                           </Pressable>
+                        )}
+                        {!state.plot && p.money >= plotCost(state) && (
+                          <View style={{ flexDirection: "row", gap: 3 }}>
+                            {(["leke", "sabotaj", "nifak"] as const).map((k) => (
+                              <Pressable key={k} onPress={() => { hap("tap"); apply((s) => startPlot(s, h.id, k)); }} style={{ flex: 1, paddingVertical: 4, paddingHorizontal: 4, borderRadius: 6, borderWidth: 1, borderColor: "rgba(123,79,175,0.5)", alignItems: "center" }}>
+                                <Text style={{ fontFamily: F.display, fontSize: 8, color: C.parchmentMuted }}>{t("plot.kind." + k)}</Text>
+                              </Pressable>
+                            ))}
+                          </View>
                         )}
                       </View>
                     );
