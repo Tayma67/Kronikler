@@ -18,7 +18,7 @@ Paket adı: `com.kronikler.app` · Kategori: Simülasyon / Rol Yapma · Yaş: PE
 
 Bir çocukluk yaşa: mektepte ders, sokakta oyun, ömürlük bir can yoldaşı — ya da bir düşman. Bir meslek tut: demirci ol şaheser dök, tüccar ol kervan yürüt, şifacı ol salgında adını duyur. Bir ocak kur: mizacı olan bir eş, bağ kurdukça büyüyen evlatlar, sofrasında dinlediğin torunlar.
 
-Sonra daha fazlasını iste: loncanda rütbe söktür, hanelerle ittifak kur, kan davanı büyüt ya da bitir. Tahta çık — divanında arzuhaller dinle, fermanınla iki köyü barıştır ya da hazineyi doldur. Beylikleri tek tâcın altında birleştir; adın "Cihangir" kalsın.
+Sonra daha fazlasını iste: loncanda rütbe söktür, hanelerle ittifak kur, kan davanı büyüt ya da bitir — kana bulanan dava Kan Defteri'ne yazılır, üç kuşak sürer; hüküm gecesi kıyım mı olur, dünürlük mü, torunun karar verir. Tahta çık — divanında arzuhaller dinle, fermanınla iki köyü barıştır ya da hazineyi doldur. Beylikleri tek tâcın altında birleştir; adın "Cihangir" kalsın.
 
 Ve bir yemin taşı: ölüm döşeğindeki bir ihtiyarın avucundan kül rengi bir mühür geçer eline — Kösedağ'da düşenlerin yemini. Üç perdelik Kül Yemini destanı bir ömre sığmayabilir; yarım kalan yemini vârisin tamamlar, ihanetin bedelini belki torunun öder.
 
