@@ -44,7 +44,7 @@ export default function Hanedan() {
   const { lang, t } = useI18n();
   const [settleName, setSettleName] = useState("");
   const [throneMsg, setThroneMsg] = useState<null | { ok: boolean; tick: number }>(null);
-  const [campMsg, setCampMsg] = useState<null | { ok: boolean; tick: number }>(null);
+  const [campMsg, setCampMsg] = useState<null | { ok: boolean; tick: number; key?: string }>(null);
   const baseRivals = useMemo(() => (state ? (state.rivals ?? generateDynasties(state.seed)) : []), [state?.seed, state?.rivals]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
@@ -60,7 +60,7 @@ export default function Hanedan() {
   const settleChk = canFoundSettlement(state);
 
   const doClaim = () => { hap("success"); const r = claimThrone(state); apply(() => r.state); setThroneMsg({ ok: r.success, tick: Date.now() }); };
-  const doCampaign = (id: string) => { hap("success"); const r = launchCampaign(state, id); apply(() => r.state); setCampMsg({ ok: r.success, tick: Date.now() }); };
+  const doCampaign = (id: string) => { hap("success"); const r = launchCampaign(state, id); apply(() => r.state); setCampMsg({ ok: r.success, tick: Date.now(), key: r.success ? "crown.campaignStartedShort" : undefined }); };
   const doFound = () => { if (!settleChk.ok || !settleName.trim()) return; hap("success"); apply((s) => foundSettlement(s, settleName)); setSettleName(""); };
   const setWill = (id: string) => { hap("tap"); apply((s) => { s.player.will_pref = id; return s; }); };
 
@@ -294,6 +294,14 @@ export default function Hanedan() {
                 </View>
                 {/* Sefer */}
                 <Text style={sub}>{t("crown.campaign").toUpperCase()}{targets.length ? ` · ${t("crown.odds")} %${Math.round(campaignOdds(state) * 100)} · ${CAMPAIGN_COST} ⚜` : ""}</Text>
+                {state.crownCampaign && (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 7, borderWidth: 1, borderColor: "rgba(200,64,64,0.5)", backgroundColor: "rgba(200,64,64,0.08)", borderRadius: 9, padding: 10, marginBottom: 8 }}>
+                    <GameIcon name="crossed-swords" size={13} color={C.ember} />
+                    <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchment, lineHeight: 17 }}>
+                      {applyParams(t("crown.cmp.band"), [t("beylik." + state.crownCampaign.beylikId), t(state.crownCampaign.month < 2 ? "crown.cmp.stage1" : "crown.cmp.stage2"), state.crownCampaign.edge])}
+                    </Text>
+                  </View>
+                )}
                 {targets.length ? (
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                     {targets.map((tg) => {
@@ -315,7 +323,7 @@ export default function Hanedan() {
                 ) : <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("crown.noTargets")}</Text>}
                 {campMsg && (
                   <Animated.View key={campMsg.tick} entering={FadeInDown.duration(260)} style={{ marginTop: 8, padding: 10, borderRadius: 9, borderWidth: 1, borderColor: campMsg.ok ? "rgba(127,166,106,0.5)" : "rgba(200,64,64,0.5)", backgroundColor: campMsg.ok ? "rgba(127,166,106,0.12)" : "rgba(200,64,64,0.12)" }}>
-                    <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: campMsg.ok ? C.sage : C.blood, lineHeight: 18 }}>{t(campMsg.ok ? "crown.campaignWonShort" : "crown.campaignLostShort")}</Text>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: campMsg.ok ? C.sage : C.blood, lineHeight: 18 }}>{t(campMsg.key || (campMsg.ok ? "crown.campaignWonShort" : "crown.campaignLostShort"))}</Text>
                   </Animated.View>
                 )}
                 {conquests.length > 0 && <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.sage, marginTop: 8 }}>{t("crown.conquests")}: {conquests.map((b) => t("beylik." + b)).join(", ")}</Text>}

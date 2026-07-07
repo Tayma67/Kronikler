@@ -779,6 +779,7 @@ export interface GameState {
   feud?: { houseId: string; nameIdx: number; stage: number; heat: number; act_turn?: number } | null; // kan davası: tek aktif dava; ısı büyür, aşama tırmanır, NESLE GEÇER (continueAsHeir)
   bloodline?: { houseId: string; nameIdx: number; gen: number; scene: string | null; path: string[]; opened: number; act_turn?: number } | null; // KAN DEFTERİ: dava kana bulanınca açılan nesiller aşan destan — VÂRİSE GEÇER (gen+1, devir sahnesi)
   succession?: { favored: string | null; rift: number } | null; // VERASET: gözde vâris ilanı — kardeş kırgınlığı birikir; ölümde meşruiyet etkisi (vârise taşınmaz)
+  crownCampaign?: { beylikId: string; month: number; edge: number } | null; // SEFER 2.0: üç aylık yürüyüş — ay ay ilerler, hüküm ayında zar atılır (vârise geçmez)
   plot?: { kind: "leke" | "sabotaj" | "nifak"; houseId: string; nameIdx: number; stage: number; heat: number; helpers: number; started: number } | null; // entrika: tek aktif komplo; fısıltı birikir, açığa çıkabilir; ölümle düşer (vârise GEÇMEZ)
   enemyPlot?: { houseId: string; nameIdx: number; kind: "leke" | "sabotaj"; stage: number; known: boolean } | null; // karşı entrika: bir hane oyuncu aleyhine örer; kulak tutarak keşfedilir, kesilmezse patlar
   enemyPlotCool?: number; // patlama/bozulma sonrası soğuma: bu turdan önce yeni düşman komplosu doğmaz
@@ -1745,6 +1746,7 @@ export function advance(prev: GameState, n = 1): GameState {
     }
     { const mf = monthlyFlavor(s, cal); push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k }); }
     if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 13 && chance(0.12)) s.micro = { id: MICRO_IDS[Math.floor(Math.random() * MICRO_IDS.length)] }; } // mikro an: yok sayılırsa ertesi ay kaybolur
+    crownCampaignTick(s); // Sefer 2.0: ordu her ay yol alır (yürüyüş → kuşatma → hüküm)
     if (i === n - 1) sagaTick(s); // Kül Yemini: destan sahnesi kapıları (düşen sahne panoda bekler, silinmez)
     if (i === n - 1) bloodlineTick(s); // Kan Defteri: nesil destanının sahne kapıları
     if (i === n - 1) successionTick(s); // Veraset: gözde ilanının kardeş sofrasındaki yankısı
@@ -6467,6 +6469,7 @@ export function campaignTargets(s: GameState): { id: string; name: string }[] {
 }
 export function canLaunchCampaign(s: GameState): boolean {
   if (inJail(s.player)) return false;
+  if (s.crownCampaign) return false; // ordu zaten yolda — ikinci tuğ çözülmez
   return !!s.player.crowned && !s.player.dead && s.player.money >= CAMPAIGN_COST && campaignTargets(s).length > 0;
 }
 export function campaignOdds(s: GameState): number {
@@ -6478,12 +6481,40 @@ export function launchCampaign(prev: GameState, beylikId: string): { state: Game
   const s = clone(prev); const p = s.player;
   if (!canLaunchCampaign(s) || !campaignTargets(s).some((tg) => tg.id === beylikId)) return { state: s, success: false };
   p.money -= CAMPAIGN_COST;
+  let edge = Math.min(6, (p.retinue || 0) * 2); // maiyet orduya omuz verir
   if ((s.allied_houses || []).length) {
     const ah = ensureRivals(s).find((x) => s.allied_houses!.includes(x.id));
-    if (ah) push(s, "taht", `${ah.name} sancağın altına atlılarını yolladı; ordun güçlendi.`, "kişisel", false, { k: "crown.allyAid", p: [{ hn: ah.nameIdx }] });
+    if (ah) { edge += 4; push(s, "taht", `${ah.name} sancağın altına atlılarını yolladı; ordun güçlendi.`, "kişisel", false, { k: "crown.allyAid", p: [{ hn: ah.nameIdx }] }); }
   }
-  const success = Math.random() < campaignOdds(s);
-  if (success) {
+  s.crownCampaign = { beylikId, month: 0, edge };
+  push(s, "taht", `Tuğlar çözüldü, davullar vuruldu: ordu yürüyüşe geçti. Hüküm üç ay sonra okunacak.`, "kişisel", true, { k: "crown.campaignStart", p: [{ bl: beylikId }] });
+  return { state: s, success: true };
+}
+// Sefer 2.0 ayı: yürüyüş (1), kuşatma (2), hüküm (3). Yol olayları ordu gücünü (edge) oynatır;
+// hüküm ayında campaignOdds + edge/100 ile zar atılır. Taç düşerse ordu dağılır.
+function crownCampaignTick(s: GameState) {
+  const c = s.crownCampaign; const p = s.player;
+  if (!c || p.dead) return;
+  if (!p.crowned) {
+    s.crownCampaign = null;
+    push(s, "taht", `Taç düşünce sefer ordusu dağıldı; tuğlar geri getirildi.`, "kişisel", false, { k: "crown.cmp.dissolved" });
+    return;
+  }
+  c.month += 1;
+  if (c.month === 1) {
+    if (chance(0.5)) { c.edge += 3; push(s, "taht", `Öncüler geçitleri tuttu, köyler erzak verdi; yürüyüş hızlandı.`, "kişisel", false, { k: "crown.cmp.road1" }); }
+    else { c.edge -= 2; push(s, "taht", `Yağmur yolları çamura çevirdi; arabalar geride kaldı.`, "kişisel", false, { k: "crown.cmp.road2" }); }
+    return;
+  }
+  if (c.month === 2) {
+    if (chance(0.5)) { c.edge += 4; push(s, "taht", `Lağımcılar surun altına indi; gedik an meselesi.`, "kişisel", false, { k: "crown.cmp.siege1" }); }
+    else { c.edge -= 3; p.health = Math.max(1, p.health - 4); push(s, "taht", `Ordugâha hastalık düştü; kuşatma gevşedi.`, "kişisel", false, { k: "crown.cmp.siege2" }); }
+    return;
+  }
+  const beylikId = c.beylikId;
+  s.crownCampaign = null;
+  const odds = Math.max(0.15, Math.min(0.92, campaignOdds(s) + c.edge / 100));
+  if (Math.random() < odds) {
     p.crownConquests = [...(p.crownConquests || []), beylikId];
     p.campaignsWon = (p.campaignsWon || 0) + 1;
     p.crownAuthority = clamp100(crownAuthorityOf(p) + 10);
@@ -6502,7 +6533,6 @@ export function launchCampaign(prev: GameState, beylikId: string): { state: Game
     const hurt = 6 + Math.floor(Math.random() * 10); p.health = Math.max(1, p.health - hurt);
     push(s, "taht", `Sefer bozguna uğradı; otoriten sarsıldı, yara aldın (−${hurt} sağlık).`, "kişisel", true, { k: "crown.campaignLose", p: [{ bl: beylikId }, hurt] });
   }
-  return { state: s, success };
 }
 
 // Vali atama/azil (hükümdar yetkisi): sadık vekil ata → haraç geliri; sadakat aşınır, azledebilirsin.
