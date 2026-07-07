@@ -146,6 +146,7 @@ export default function MpOyun() {
                 <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: C.parchmentMuted }}>{applyParams(t("mp.pulse.here"), [liveCount])}</Text>
                 {humans.slice(0, 6).map((x) => (
                   <View key={x.id} style={{ flexDirection: "row", alignItems: "center", gap: 3, borderWidth: 1, borderColor: x.online ? "rgba(127,166,106,0.5)" : C.border, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 6, opacity: x.online ? 1 : 0.55 }}>
+                    {snapshot.reis && snapshot.reis.id === x.id && <Text style={{ fontFamily: F.display, fontSize: 8, color: C.goldBright }}>⚜ {t("mp.reis.badge")}</Text>}
                     {!!x.laurel && <Text style={{ fontFamily: F.display, fontSize: 8, color: C.goldBright }}>❧ {t("mp.laurel." + x.laurel)}</Text>}
                     <Text style={{ fontFamily: F.display, fontSize: 9, color: x.id === guestId ? C.gold : x.online ? C.parchment : C.parchmentMuted }}>{x.name}{x.id === guestId ? t("mp.you") : ""}</Text>
                     {x.online && x.ready && <Text style={{ fontFamily: F.display, fontSize: 8, color: C.sage }}>{t("mp.pulse.ready")}</Text>}

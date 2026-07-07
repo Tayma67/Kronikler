@@ -143,6 +143,7 @@ export default function Diplomasi() {
                   <Text style={cap}>{t("mp.soc.capRivalry")}</Text>
                   <View style={rowWrap}>
                     <Btn label={t("mp.soc.duelBtn")} disabled={x.traveling || !x.online || pactShield} onPress={() => act({ k: "duel", to: x.id })} />
+                    <Btn label={t("mp.reis.voteBtn")} onPress={() => act({ k: "voteReis", target: x.id })} />
                   </View>
 
                   {/* Yardım */}

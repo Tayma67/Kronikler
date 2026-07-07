@@ -164,12 +164,15 @@ export interface RealmSnapshot {
   venture?: VentureState | null; // aktif ortak girişim (v3+; eski sunucu göndermez → istemci UI'ı gizler)
   chatLog?: { from: string; fromName: string; text: string; at: number }[]; // meclis hafızası: genel sohbetin son 12 satırı (v3+ opsiyonel; eski sunucu göndermez → istemci boş kabul eder)
   yearBase?: Record<string, { power: number; fame: number; honor: number }>; // yıllık ödül taban ölçümü (sunucu içi; v3+ opsiyonel)
+  reisVotes?: Record<string, string>; // oy defteri: oy veren → aday (yıl kapanışında sayılır; v3+ opsiyonel)
+  reis?: { id: string; name: string } | null; // seçilmiş Meclis Reisi (bir yıl görevde; v3+ opsiyonel)
   econ: number;          // paylaşımlı ekonomi/enflasyon indeksi
   createdAt: number;
 }
 
 // ── Paylaşımlı-durum eylemleri (yalnız tick'te otoriteli çözülür) ──
 export type SharedIntent =
+  | { k: "voteReis"; target: string } // Meclis Reisi oyu (yıl kapanışında sayılır; kendine oy geçersiz)
   | { k: "claimThrone" }
   | { k: "abdicate" }
   | { k: "setGuildTax"; guildId: string; tax: number }

@@ -562,6 +562,13 @@ export class RealmDO {
       }
       switch (it.k) {
         // — Destek & dostluk —
+        case "voteReis": { // oy defteri: son oy geçerli; kendine oy yazılmaz
+          if (it.target && it.target !== pid && isAlive(it.target)) {
+            this.snap.reisVotes = { ...(this.snap.reisVotes || {}), [pid]: it.target };
+            ev(pid, "mp.reis.voted", [playerById(it.target)?.name || ""]);
+          }
+          break;
+        }
         case "gift": { // altın gönderen istemcide kesildi; alıcıya kredi olayı
           if (!aliveOther(pid, it.to) || !(it.amount > 0)) break;
           const amt = Math.min(GIFT_MAX, Math.floor(it.amount));
@@ -743,9 +750,23 @@ export class RealmDO {
       crown(pick("power"), "bey");
       crown(pick("fame"), "yildiz");
       crown(pick("honor"), "alicenap");
-      const nb: Record<string, { power: number; fame: number; honor: number }> = {};
+      const nb: Record<string, { power: number; fame: number, honor: number }> = {};
       this.snap.players.forEach((x) => { nb[x.id] = { power: x.power, fame: x.fame, honor: x.honor }; });
       this.snap.yearBase = nb;
+      // ── Meclis Reisi sayımı: en çok oy (eşitlikte şerefi yüksek olan); oy defteri yeni yıl için temizlenir ──
+      const votes = this.snap.reisVotes || {};
+      const tally: Record<string, number> = {};
+      for (const voter of Object.keys(votes)) {
+        const tgt = votes[voter];
+        if (isAlive(voter) && isAlive(tgt)) tally[tgt] = (tally[tgt] || 0) + 1;
+      }
+      const cand = Object.keys(tally).sort((a, b) => (tally[b] - tally[a]) || ((playerById(b)?.honor || 0) - (playerById(a)?.honor || 0)));
+      if (cand.length) {
+        const w = playerById(cand[0])!;
+        this.snap.reis = { id: w.id, name: w.name };
+        this.snap.news = [...this.snap.news.slice(-9), { k: "mp.reis.elected", p: [w.name, tally[cand[0]]], turn: this.snap.turn }];
+      }
+      this.snap.reisVotes = {};
     }
 
     // saat ilerle + pencere/alarm sıfırla
