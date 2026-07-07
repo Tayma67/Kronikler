@@ -778,6 +778,7 @@ export interface GameState {
   allied_houses?: string[]; // ittifak kurulan hanelerin id'leri
   feud?: { houseId: string; nameIdx: number; stage: number; heat: number; act_turn?: number } | null; // kan davası: tek aktif dava; ısı büyür, aşama tırmanır, NESLE GEÇER (continueAsHeir)
   bloodline?: { houseId: string; nameIdx: number; gen: number; scene: string | null; path: string[]; opened: number; act_turn?: number } | null; // KAN DEFTERİ: dava kana bulanınca açılan nesiller aşan destan — VÂRİSE GEÇER (gen+1, devir sahnesi)
+  succession?: { favored: string | null; rift: number } | null; // VERASET: gözde vâris ilanı — kardeş kırgınlığı birikir; ölümde meşruiyet etkisi (vârise taşınmaz)
   plot?: { kind: "leke" | "sabotaj" | "nifak"; houseId: string; nameIdx: number; stage: number; heat: number; helpers: number; started: number } | null; // entrika: tek aktif komplo; fısıltı birikir, açığa çıkabilir; ölümle düşer (vârise GEÇMEZ)
   enemyPlot?: { houseId: string; nameIdx: number; kind: "leke" | "sabotaj"; stage: number; known: boolean } | null; // karşı entrika: bir hane oyuncu aleyhine örer; kulak tutarak keşfedilir, kesilmezse patlar
   enemyPlotCool?: number; // patlama/bozulma sonrası soğuma: bu turdan önce yeni düşman komplosu doğmaz
@@ -1745,6 +1746,7 @@ export function advance(prev: GameState, n = 1): GameState {
     if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 13 && chance(0.12)) s.micro = { id: MICRO_IDS[Math.floor(Math.random() * MICRO_IDS.length)] }; } // mikro an: yok sayılırsa ertesi ay kaybolur
     if (i === n - 1) sagaTick(s); // Kül Yemini: destan sahnesi kapıları (düşen sahne panoda bekler, silinmez)
     if (i === n - 1) bloodlineTick(s); // Kan Defteri: nesil destanının sahne kapıları
+    if (i === n - 1) successionTick(s); // Veraset: gözde ilanının kardeş sofrasındaki yankısı
     if (i === n - 1) { s.divan = null; if (!s.player.dead && s.player.crowned && chance(0.10)) s.divan = { id: DIVAN_IDS[Math.floor(Math.random() * DIVAN_IDS.length)] }; } // divan arzuhali: yalnız taç sahibine, yok sayılırsa düşer
     rollLifeEvents(s, cal);
     tickFactions(s, i === n - 1);
@@ -4281,6 +4283,8 @@ export function heirPreview(prev: GameState, heirName: string, willId = "esit"):
   if (edu) { const lvl = eduLevel(edu.weeks); if (lvl > 0) rep += lvl; }
   const bond = p.child_bond?.[heirName];
   if (bond != null) { if (bond >= 60) rep += 2; if (bond >= 85) points += 1; } // ilgiyle büyüyen evlat: ata bağı vârisin adını ve özgüvenini besler
+  const favP = prev.succession?.favored || null;
+  if (favP && p.children.includes(favP)) rep += heirName === favP ? 5 : -5; // veraset meşruiyeti (continueAsHeir paritesi)
   if (prev.saga && prev.saga.act >= 3 && prev.saga.ch >= 5) rep += 2; // Mühür Nişanı: tamamlanan Kül Yemini vârisi önceler (continueAsHeir paritesi)
   return { points, money, rep: Math.max(-100, Math.min(100, rep + legacyRep)) };
 }
@@ -4338,6 +4342,9 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   // Not: child_bond/child_time_turn vârise taşınmaz — vârisin kendi evlatlarıyla bağı sıfırdan kurulur (bilinçli).
   const heirBond = p.child_bond?.[heir];
   if (heirBond != null) { if (heirBond >= 60) startRep += 2; if (heirBond >= 85) startPoints += 1; }
+  // VERASET meşruiyeti: gözde tahta oturursa el üstünde, gözde dururken başkası oturursa gölgede başlar (heirPreview paritesi).
+  const favHeir = prev.succession?.favored || null;
+  if (favHeir && p.children.includes(favHeir)) startRep += heir === favHeir ? 5 : -5;
   const ancestor: DynastyRecord = {
     generation: p.generation, name: p.name, profession: p.profession,
     diedAge: p.age, fame: Math.round(p.fame), reputation: Math.round(p.reputation), faction: p.faction,
@@ -5054,6 +5061,43 @@ export function resolveBloodline(prev: GameState, choice: 0 | 1 | 2): GameState 
   const rtr = BL_R_TR[sc];
   push(s, "kan_defteri", rtr ? rtr[choice as 0 | 1] : "", "kişisel", true, { k: `bl.${sc}.r${choice}`, p: [{ hn: b.nameIdx }] });
   return s;
+}
+
+// ── VERASET KRİZİ: gözde vâris ilanı — sevgi bir yöne akarsa kırgınlık öbür yönde birikir. ──
+export function favorChild(prev: GameState, name: string): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 35 || p.children.length < 2 || !p.children.includes(name)) return s;
+  const cur = s.succession?.favored || null;
+  if (cur === name) return s;
+  if (!s.succession) s.succession = { favored: null, rift: 0 };
+  const others = p.children.filter((c) => c !== name);
+  if (!p.child_bond) p.child_bond = {};
+  p.child_bond[name] = Math.min(100, (p.child_bond[name] ?? 50) + 10);
+  for (const c of others) p.child_bond[c] = Math.max(0, (p.child_bond[c] ?? 50) - 6);
+  s.succession.rift = Math.min(100, s.succession.rift + 10 + 4 * Math.max(0, others.length - 1) + (cur ? 12 : 0));
+  if (cur) { p.honor = Math.max(0, p.honor - 2); push(s, "veraset", `Gözdeni değiştirdin: artık ${name}. Eski söz unutulmadı — sofrada gözler kaçışıyor.`, "kişisel", true, { k: "evj.succSwap", p: [name] }); }
+  else push(s, "veraset", `${name} adını gözde olarak andın; ocağın geleceği ona işaret edildi. Kardeş sofrasına bir sessizlik düştü.`, "kişisel", true, { k: "evj.succName", p: [name] });
+  s.succession.favored = name;
+  return s;
+}
+function successionTick(s: GameState) {
+  const su = s.succession; const p = s.player;
+  if (!su || !su.favored || p.dead || p.children.length < 2 || !p.children.includes(su.favored)) return;
+  const others = p.children.filter((c) => c !== su.favored);
+  if (!others.length) return;
+  if (su.rift >= 60 && chance(0.05)) { // büyük kriz: pay davası kadıya taşınır
+    const c = others[Math.floor(Math.random() * others.length)];
+    const cost = 80 + Math.floor(Math.random() * 80);
+    p.money = Math.max(0, p.money - cost); su.rift = 40;
+    if (!p.child_bond) p.child_bond = {}; p.child_bond[c] = Math.max(0, (p.child_bond[c] ?? 50) - 8);
+    p.reputation = Math.max(-100, p.reputation - 3);
+    push(s, "veraset", `${c} pay davasını kadıya taşıdı; ${cost} akçe ve bir parça itibarla kapandı. Sofra ikiye bölündü.`, "kişisel", true, { k: "evj.succCrisis", p: [c, cost] });
+  } else if (su.rift >= 25 && chance(0.07)) { // sitem: küçük ama iz bırakan
+    const c = others[Math.floor(Math.random() * others.length)];
+    su.rift = Math.max(0, su.rift - 8);
+    if (!p.child_bond) p.child_bond = {}; p.child_bond[c] = Math.max(0, (p.child_bond[c] ?? 50) - 4);
+    push(s, "veraset", `${c} sitem etti: 'Ben bu ocağın evladı değil miyim?' Sözü kısa, izi uzun oldu.`, "kişisel", false, { k: "evj.succSulk", p: [c] });
+  }
 }
 
 // ── Divan/Arzuhal: taç sahibinin huzuruna düşen dilekçeler — hükümdarlık soyut ferman menüsü değil, yüzü olan kararlar.

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, continueAsHeir, heirPreview, EDU_TRACKS, eduLevel, setChildEducation, childNature } from "../../lib/game";
+import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, continueAsHeir, heirPreview, EDU_TRACKS, eduLevel, setChildEducation, childNature, favorChild } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -84,7 +84,15 @@ export default function Nesil() {
               const invs = p.child_invests?.[c] || [];
               return (
                 <View key={c} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 10 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 14, color: C.gold, marginBottom: 8 }}>{c}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <Text style={{ flex: 1, fontFamily: F.display, fontSize: 14, color: C.gold }}>{c}{state.succession?.favored === c ? " ❧" : ""}</Text>
+                    {p.age >= 35 && p.children.length >= 2 && state.succession?.favored !== c && (
+                      <Pressable onPress={() => { hap("tap"); apply((s) => favorChild(s, c)); }} style={{ paddingVertical: 5, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)" }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.gold }}>{t("succ.favorBtn")}</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                  {state.succession?.favored === c && <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.goldDim, marginTop: -4, marginBottom: 8 }}>{t("succ.favoredLine")}</Text>}
                   {INVESTMENTS.map((inv) => {
                     const done = invs.includes(inv.id);
                     const afford = p.money >= inv.cost;
