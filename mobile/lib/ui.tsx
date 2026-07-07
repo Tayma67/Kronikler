@@ -201,9 +201,9 @@ export function DilemmaModal({ dilemma, onChoose }: { dilemma: Dilemma | null; o
 }
 
 // Sinematik mersiye / vefat ekranı — bir hayatın duygusal kapanışı.
-export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, professionLine, lines, close, hasHeir, onChronicle, onContinue }: {
+export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, professionLine, lines, close, hasHeir, onChronicle, onContinue, onReel }: {
   visible: boolean; name: string; epithet: string; bornYear: number; diedYear: number; age: number;
-  professionLine: string; lines: string[]; close: string; hasHeir: boolean; onChronicle: () => void; onContinue: () => void;
+  professionLine: string; lines: string[]; close: string; hasHeir: boolean; onChronicle: () => void; onContinue: () => void; onReel?: () => void;
 }) {
   const { t } = useI18n();
   const body = [professionLine, ...lines].filter(Boolean);
@@ -232,6 +232,13 @@ export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, p
               <Text style={{ fontFamily: F.display, fontSize: 10.5, letterSpacing: 1, color: C.gold }}>↗ {t("eul.share")}</Text>
             </Pressable>
           </Animated.View>
+          {onReel && (
+            <Animated.View entering={FadeIn.duration(700).delay(1850)} style={{ marginTop: 10 }}>
+              <Pressable onPress={onReel} style={{ paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", alignItems: "center" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 10.5, letterSpacing: 1, color: C.gold }}>❧ {t("eul.reel")}</Text>
+              </Pressable>
+            </Animated.View>
+          )}
           <Animated.View entering={FadeInUp.duration(700).delay(1900)} style={{ flexDirection: "row", gap: 10, marginTop: 14, alignSelf: "stretch" }}>
             <Pressable onPress={onChronicle} style={{ flex: 1, paddingVertical: 13, borderRadius: 9, borderWidth: 1, borderColor: C.borderHi, alignItems: "center" }}>
               <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchment }}>{t("eul.chronicle")}</Text>

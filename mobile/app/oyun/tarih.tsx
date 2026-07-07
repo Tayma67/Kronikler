@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, FlatList, Pressable, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useGame } from "../../lib/store";
 import { currentCalendar } from "../../lib/calendar";
 import { C, F } from "../../lib/theme";
@@ -20,6 +20,7 @@ export default function Tarih() {
   const { t, lang } = useI18n();
   // Hayat Şeridi: dönüm noktalarını kare kare oynatan sinema perdesi (-1 kapalı).
   const [cine, setCine] = useState(-1);
+  const { cine: cineParam } = useLocalSearchParams<{ cine?: string }>();
   const fade = useRef(new Animated.Value(0)).current;
   const marks = state ? state.history.filter((e) => e.landmark) : [];
   useEffect(() => {
@@ -30,6 +31,8 @@ export default function Tarih() {
     const tm = setTimeout(() => setCine((i) => (i >= 0 && i < marks.length - 1 ? i + 1 : -1)), 3800);
     return () => clearTimeout(tm);
   }, [cine]);
+  // Mersiyeden gelen davet: ?cine=1 perdeyi kendiliğinden açar (bir kez).
+  useEffect(() => { if (cineParam === "1" && marks.length) setCine(0); }, [cineParam]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   // FlatList (sanallaştırma): 250 kartı tek seferde değil görünür pencere kadar çizer — düşük-uç cihazda takılma biter.
   // Anahtar en yeni uçtan sayılır ki yeni girdi eklenince eski kartların anahtarı kaymasın.
