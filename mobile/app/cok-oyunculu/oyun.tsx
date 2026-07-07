@@ -39,6 +39,7 @@ export default function MpOyun() {
 
   const [ready, setReadyLocal] = useState(false);
   const [evLines, setEvLines] = useState<string[]>([]);
+  const [backDigest, setBackDigest] = useState<null | { lines: string[]; gold: number; n: number }>(null); // dönüş parşömeni: yokluğunda birikenler (bir kez gösterilir)
   const processedTurn = useRef(-1);
   const synced = useRef(false);
   const sRef = useRef<GameState | null>(s);
@@ -87,6 +88,7 @@ export default function MpOyun() {
   useEffect(() => {
     if (!missed || !missed.length || !guestId || !sRef.current) return;
     const ns = applyTickEvents(sRef.current, missed);
+    setBackDigest({ n: missed.length, gold: ns.player.money - sRef.current.player.money, lines: missed.slice(0, 8).map((e) => pf(t(e.k), ...(e.p || []))) });
     setEvLines((prev) => [...missed.map((e) => t("mp.whileAway") + " · " + pf(t(e.k), ...(e.p || []))), ...prev].slice(0, 12));
     apply(() => ns);
     clearMissed();
@@ -440,6 +442,34 @@ export default function MpOyun() {
           </>
         )}
       </ScrollView>
+
+      {/* Dönüş Parşömeni: yokluğunda birikenler tek bakışta (katılımda bir kez, kapatılabilir) */}
+      {backDigest && (
+        <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(5,3,1,0.78)", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <View style={{ width: "100%", maxWidth: 420, backgroundColor: "rgba(18,13,7,0.98)", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", borderRadius: 14, padding: 18 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <GameIcon name="scroll" size={16} color={C.gold} />
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("mp.back.title")}</Text>
+            </View>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 10 }}>{pf(t("mp.back.sub"), backDigest.n)}</Text>
+            {backDigest.lines.map((l, i) => (
+              <Text key={i} style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment, lineHeight: 19 }}>❧ {l}</Text>
+            ))}
+            {backDigest.n > backDigest.lines.length && (
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 4 }}>{pf(t("mp.back.more"), backDigest.n - backDigest.lines.length)}</Text>
+            )}
+            {backDigest.gold !== 0 && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10 }}>
+                <GameIcon name="coins" size={13} color={backDigest.gold > 0 ? C.sage : C.blood} />
+                <Text style={{ fontFamily: F.display, fontSize: 12, color: backDigest.gold > 0 ? C.sage : C.blood }}>{(backDigest.gold > 0 ? "+" : "") + backDigest.gold}</Text>
+              </View>
+            )}
+            <Pressable onPress={() => { hap("selection"); setBackDigest(null); }} style={{ alignSelf: "center", marginTop: 14, paddingVertical: 10, paddingHorizontal: 28, borderRadius: 9, backgroundColor: C.gold }}>
+              <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.inkOnGold }}>{t("mp.back.close")}</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
 
       {/* Alt: hazır oyu + senkron tick (Yaşa = ay-atla oyu) */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: insets.bottom + 10, paddingTop: 10, paddingHorizontal: 14, backgroundColor: "rgba(8,5,2,0.94)", borderTopWidth: 1, borderTopColor: C.borderHi, flexDirection: "row", alignItems: "center", gap: 10 }}>
