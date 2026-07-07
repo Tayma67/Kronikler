@@ -1554,6 +1554,7 @@ export function advance(prev: GameState, n = 1): GameState {
   // Bekleyen yakalanma sahnesinden (donanım-geri vb.) ay ilerleterek kaçılamaz:
   // sahne çözülmeden zaman akmaz — kaçmayı denemiş sayılırsın ("kaç" zorlanır).
   if (prev.pendingScene?.kind === "crime") prev = resolveCrimeScene(prev, "kac");
+  if (prev.pendingScene?.kind === "trial") prev = resolveTrial(prev, "boyun"); // duruşmadan kaçılmaz: gelmeyen gıyabında hüküm giyer
   const s = clone(prev);
   for (let i = 0; i < n; i++) {
     if (s.player.dead) break;
@@ -3864,8 +3865,14 @@ export function resolveCrimeScene(prev: GameState, choice: "saklan" | "rusvet" |
 }
 
 // Yakalanma cezasını uygula (kesinti sahnesinden veya doğrudan). Şiddete göre ceza + tanık + tohum.
-function crimeCaught(s: GameState, kind: CrimeKind) {
+function crimeCaught(s: GameState, kind: CrimeKind, direct = false) {
   const p = s.player; const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
+  // KADI DURUŞMASI: ağır suç (sev>=3) taçsız oyuncuyu önce mahkemeye çıkarır — ceza resolveTrial keser.
+  if (!direct && !p.crowned && ct.sev >= 3 && !inJail(p) && !s.pendingScene) {
+    s.pendingScene = { kind: "trial", ctx: { crime: kind } };
+    push(s, "suç_yakalandı", "Yakalandın! Zaptiye kolundan tuttu; kadı huzuruna çıkarılacaksın.", "kişisel", true, { k: "trial.opened", p: [{ cr: kind }] });
+    return;
+  }
   // Taç sahibi kadıya değil tarihe hesap verir: zindan yerine meşruiyet bedeli (otorite + şeref),
   // skandal diyara yayılır — otorite eridikçe mevcut isyan/iddiacı sistemi tahtı kendiliğinden sallar.
   if (p.crowned) {
@@ -3888,6 +3895,46 @@ function crimeCaught(s: GameState, kind: CrimeKind) {
   if (ct.sev >= 3 && Math.random() < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } });
   push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.`, "kişisel", true, { k: "evj.crimeCaught", p: [fine, extra >= 4 ? { sfx: "sfx.crimeHard" } : ""] });
   if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
+}
+
+// ── KADI DURUŞMASI: hüküm öncesi son söz — savunma, tanık ya da boyun. ──
+export function hasTrialWitness(s: GameState): boolean { return Object.values(s.relationships || {}).some((v) => (v as number) >= 55); }
+export function resolveTrial(prev: GameState, choice: "savun" | "tanik" | "boyun"): GameState {
+  const s = clone(prev); const p = s.player;
+  if (s.pendingScene?.kind !== "trial") return s;
+  const kind = (s.pendingScene.ctx?.crime as CrimeKind) || "yankesicilik";
+  const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
+  s.pendingScene = null;
+  if (choice === "tanik") {
+    const entries = Object.entries(s.relationships || {}).filter(([, v]) => (v as number) >= 55).sort((a, b) => (b[1] as number) - (a[1] as number));
+    if (!entries.length) { crimeCaught(s, kind, true); return s; } // tanık yoksa hüküm (UI düğmeyi kapatır)
+    const wid = entries[0][0];
+    s.relationships[wid] = Math.max(-100, (s.relationships[wid] as number) - 6); // tanıklık bir borçtur
+    if (Math.random() < 0.72) {
+      p.reputation = Math.max(-100, p.reputation - 2);
+      push(s, "suç", "Bir dostun kadı önünde lehine tanıklık etti; beraat ettin. Bu borç unutulmaz.", "kişisel", true, { k: "trial.witWin" });
+      return s;
+    }
+    push(s, "suç", "Tanığın sözü kadıyı kesmedi; hüküm okundu.", "kişisel", true, { k: "trial.witLose" });
+    crimeCaught(s, kind, true);
+    return s;
+  }
+  if (choice === "savun") {
+    const chanceW = Math.max(0.1, 0.32 + effStat(p, "charisma") * 0.03 + effStat(p, "intelligence") * 0.015 - ct.sev * 0.03);
+    gainSkill(s, "social", 4);
+    if (Math.random() < chanceW) {
+      const fine = Math.min(p.money, Math.round(ct.fine * 0.5 * inflationFactor(s)));
+      p.money -= fine; p.reputation = Math.max(-100, p.reputation - 4);
+      push(s, "suç", `Kendini öyle savundun ki kadı cezayı yarıya indirdi (${fine} akçe); zindan kapısı açılmadı.`, "kişisel", true, { k: "trial.defWin", p: [fine] });
+      return s;
+    }
+    push(s, "suç", "Savunman kadıyı yumuşatmadı; hüküm tam okundu.", "kişisel", true, { k: "trial.defLose" });
+    crimeCaught(s, kind, true);
+    return s;
+  }
+  p.honor = Math.min(100, p.honor + 1); // hükme boyun eğmek de bir duruştur
+  crimeCaught(s, kind, true);
+  return s;
 }
 
 // ── SARAY HEYETİ: tacın üç direği — vezir söz, hazinedar defter, casusbaşı kulak. ──
