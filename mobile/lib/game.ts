@@ -1455,6 +1455,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Kış güneşinde duvar dibine oturdun; sıcaklık iliklerine işledi, kimseyle konuşmadan bir öğle geçti.", k: "mem.winterSun" },
         { text: "Rüzgâr, gençliğinde yürüdüğün kervan yolunun toz kokusunu getirdi; dizlerin sızlasa da içinden yine düşmek geçti o yola.", k: "mem.oldRoad" },
         { text: "Çarşıda biri arkandan eski lakabınla seslendi; dönüp baktın, tanıyamadın — ama lakap tam yerine oturdu, gülümsedin.", k: "mem.oldNickname" },
+        { text: "Sandığın dibinden gençliğinde yazılmış bir mektup çıktı; kâğıt sararmış ama satırlar dünkü gibi. Kimseye göstermeden yerine koydun.", k: "mem.oldLetter" },
+        { text: "Çocukluğunun sokağından geçtin; o koca kapı meğer ne alçakmış. Kapı küçülmemiş, sen büyümüşsün.", k: "mem.lowDoor" },
       );
     }
     const m = rnd(mem); m.fn?.();
