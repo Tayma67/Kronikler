@@ -2,6 +2,19 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 232-236 eki (8 Temmuz, gece) — KUMPAS VE ŞEREF
+
+**Tek cümle (mağaza/what's new):**
+TR: "Çevrimiçi diyarda gece yarısı kapıları içeriden açan eller: tahtta oturan beye karşı ortak kumpas kurulabiliyor — iki el yetiyor, gözcüsü olmayan bey sabaha tahtsız uyanıyor; meclis defterine şeref sütunu, gizli işlere Gölge Defteri, diyarı birleştirene Tek Tuğ nişanı eklendi."
+EN: "In the online realm, hands now open the gates from within: a joint conspiracy can be raised against a seated bey — two hands suffice, and a bey without a watcher wakes up unseated; the assembly ledger gained an honor column, covert dealings a Shadow Ledger, and whoever unites the realm wears the One Banner."
+
+**Öne çıkanlar:**
+- **Ortak Kumpas (MP):** Diplomasiden tahttaki beye karşı gizli kumpasa katıl (zincirli katılamaz, müttefik/eş korunur). İkinci el gelip bir ay demlenince darbe gecesi: üyelerin toplam gücü beye ve sancak savunmasına karşı tartılır; başarıda en güçlü üye tahta oturur (herkese −3 şeref, haber elleri söylemez), bozulan kumpas adlarıyla çarşıya düşer (−8 şeref, bağ −40). Gözcü fısıltıları duyar: şans yarıya. Üç ay yalnız kalan kumpas söner.
+- **Şeref sütunu (MP):** Liderlik tablosunda güç ve şöhretin yanında şeref — eksiye düşen kırmızı, 40 üstü adaçayı yeşili. Kumpasların ve fidyelerin izi artık mecliste okunuyor.
+- **Gölge Defteri (MP):** Kervan pusun ve kumpas üyeliklerin diyar ekranında koyu şeritte hatırlatılır — yalnız sana görünür.
+- **Tek Tuğ + başarım onarımı (SP):** Diyarı tek tâcın altında birleştirene yeni nişan; ayrıca üç nişanın (Gölgeler Üstadı, Şafak Okundu, Defter Kapandı) adları başarım ekranında ham anahtar yerine gerçek adıyla görünür — kalıcı onarım.
+- **Rehber:** SSS'e ortak kumpas maddesi 6 dilde.
+
 ## Dalga 221-230 eki (8 Temmuz, gece) — BOĞAZDA PUSU, PERDEDE ÖMÜR
 
 **Tek cümle (mağaza/what's new):**
