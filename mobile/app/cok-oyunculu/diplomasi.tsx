@@ -80,6 +80,17 @@ export default function Diplomasi() {
           </View>
         ); })()}
 
+        {(() => { const until = snapshot.watches?.[guestId || ""] || 0; const left = until - snapshot.turn; return (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            {left > 0 ? (
+              <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11, color: C.sage }}>{pf(t("mp.watch.active"), left)}</Text>
+            ) : (
+              <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("mp.watch.pitch")}</Text>
+            )}
+            <Btn label={pf(t("mp.watch.hireBtn"), 250)} disabled={money < 250} onPress={() => act({ k: "hireWatch" }, 250)} />
+          </View>
+        ); })()}
+
         {/* Bana gelen teklifler */}
         {myOffers.length > 0 && (
           <>

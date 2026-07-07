@@ -663,7 +663,8 @@ export class RealmDO {
           const hsAll = this.snap.hostages || (this.snap.hostages = []);
           if (hsAll.some((h) => h.captive === it.to || h.captor === pid)) break; // tek rehine; zaten zincirli vurulamaz
           const meC = playerById(pid)!, foeC = playerById(it.to)!;
-          const iWin = Math.random() * (meC.power + foeC.power * 1.25 + 1) < meC.power; // savunan avantajlı
+          const defMult = (this.snap.watches?.[it.to] || 0) > this.snap.turn ? 1.6 : 1.25; // gözcü nöbetteyse sur yükselir
+          const iWin = Math.random() * (meC.power + foeC.power * defMult + 1) < meC.power; // savunan avantajlı
           if (iWin) {
             const ask = Math.max(150, Math.round(200 + foeC.power * 4));
             hsAll.push({ captor: pid, captive: it.to, ask, since: this.snap.turn });
@@ -695,16 +696,23 @@ export class RealmDO {
           ev(hr.captive, "mp.hostage.freedMercy", [pname(pid)]);
           break;
         }
+        case "hireWatch": { // gözcü nöbeti: 6 ay; yeniden tutmak süreyi tazeler
+          const wReg = this.snap.watches || (this.snap.watches = {});
+          wReg[pid] = this.snap.turn + 6;
+          ev(pid, "mp.watch.hired", []);
+          break;
+        }
         // — Entrika & ihanet (gizli, riskli; altın istemcide kesildi) —
         case "spy": {
           if (!aliveOther(pid, it.on)) break;
-          if (chance(0.7)) { const acts = (this.intents[it.on] || []).map((x) => x.k).slice(0, 4); ev(pid, "mp.soc.spyResult", [pname(it.on), acts.length ? acts.join(", ") : "—"]); }
+          const spyGuarded = (this.snap.watches?.[it.on] || 0) > this.snap.turn;
+          if (chance(spyGuarded ? 0.45 : 0.7)) { const acts = (this.intents[it.on] || []).map((x) => x.k).slice(0, 4); ev(pid, "mp.soc.spyResult", [pname(it.on), acts.length ? acts.join(", ") : "—"]); if (spyGuarded) ev(it.on, "mp.watch.spotted", [pname(pid)]); }
           else { ev(it.on, "mp.soc.spyCaught", [pname(pid)]); this.adjustBond(pid, it.on, -10); this.adjustHonor(pid, -3); }
           break;
         }
         case "sabotage": {
           if (!aliveOther(pid, it.on)) break;
-          if (chance(0.6)) { ev(it.on, "mp.soc.sabotaged", [pname(pid)]); this.adjustBond(pid, it.on, -15); }
+          if (chance((this.snap.watches?.[it.on] || 0) > this.snap.turn ? 0.35 : 0.6)) { ev(it.on, "mp.soc.sabotaged", [pname(pid)]); this.adjustBond(pid, it.on, -15); }
           else { ev(it.on, "mp.soc.sabotageCaught", [pname(pid)]); ev(pid, "mp.soc.plotFoiled", []); this.adjustBond(pid, it.on, -20); this.adjustHonor(pid, -8); }
           break;
         }
@@ -712,7 +720,8 @@ export class RealmDO {
           const foe = playerById(it.on);
           if (!aliveOther(pid, it.on) || !foe || foe.age < ASSASSINATE_MIN_AGE) break;
           // Bizi tutan + hedefi sevmeyen NPC'ler suikast şansını az da olsa artırır.
-          const odds = Math.max(0.1, Math.min(0.7, 0.35 - foe.power / 600 - Math.max(0, foe.honor) / 400 + this.npcSupport(pid, it.on) / 600));
+          let odds = Math.max(0.1, Math.min(0.7, 0.35 - foe.power / 600 - Math.max(0, foe.honor) / 400 + this.npcSupport(pid, it.on) / 600));
+          if ((this.snap.watches?.[it.on] || 0) > this.snap.turn) odds *= 0.5; // gözcü nöbette: hançer duvara çarpar
           if (chance(odds)) {
             // Çevrimdışı vekili sunucu doğrudan öldürür (istemcisi yok); çevrimiçide olay istemcide işler.
             if (foe && !foe.online) foe.dead = true;
@@ -822,6 +831,13 @@ export class RealmDO {
         this.snap.news = [...this.snap.news.slice(-9), { k: "mp.reis.elected", p: [w.name, tally[cand[0]]], turn: this.snap.turn }];
       }
       this.snap.reisVotes = {};
+    }
+
+    // ── Gözcü nöbeti bakımı: süresi dolan nöbet kapanır, sahibi haber alır. ──
+    if (this.snap.watches) {
+      for (const wid of Object.keys(this.snap.watches)) {
+        if (this.snap.watches[wid] <= this.snap.turn) { delete this.snap.watches[wid]; if (isAlive(wid)) ev(wid, "mp.watch.ended", []); }
+      }
     }
 
     // ── Rehine defteri bakımı: ölüm her zinciri çözer; 12 ay ödenmeyen fidyenin rehinesi kaçar. ──

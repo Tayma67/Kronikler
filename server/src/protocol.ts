@@ -167,6 +167,7 @@ export interface RealmSnapshot {
   reisVotes?: Record<string, string>; // oy defteri: oy veren → aday (yıl kapanışında sayılır; v3+ opsiyonel)
   reis?: { id: string; name: string } | null; // seçilmiş Meclis Reisi (bir yıl görevde; v3+ opsiyonel)
   hostages?: { captor: string; captive: string; ask: number; since: number }[]; // rehine defteri (v3+ opsiyonel; 12 ay ödenmezse kaçar)
+  watches?: Record<string, number>; // gözcü nöbeti: oyuncu → bitiş turu (v3+ opsiyonel)
   econ: number;          // paylaşımlı ekonomi/enflasyon indeksi
   createdAt: number;
 }
@@ -178,6 +179,7 @@ export type SharedIntent =
   | { k: "captureDuel"; to: string } // rehin düellosu: kazanan kaybedeni zincire vurur (savunan avantajlı)
   | { k: "payRansom" } // zincirdeki oyuncu fidyesini öder (bedel istemcide kesilir; rehinciye olayla kredi)
   | { k: "releaseHostage" } // rehinci merhamet eder: fidyesiz salıverir (+şeref)
+  | { k: "hireWatch" } // gözcü tut: 6 ay nöbet — suikast/sabotaj/casusluk/rehin girişimine karşı koruma (bedel istemcide)
   | { k: "claimThrone" }
   | { k: "abdicate" }
   | { k: "setGuildTax"; guildId: string; tax: number }
