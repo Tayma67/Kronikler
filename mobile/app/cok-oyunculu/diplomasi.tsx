@@ -71,6 +71,15 @@ export default function Diplomasi() {
         <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 1, color: C.gold, marginBottom: 2 }}>{t("mp.soc.title")}</Text>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 12 }}>{t("mp.soc.subtitle")}</Text>
 
+        {(() => { const h = (snapshot.hostages || []).find((x) => x.captive === guestId); if (!h) return null; const cap = snapshot.players.find((x) => x.id === h.captor); return (
+          <View style={{ borderWidth: 1, borderColor: "rgba(168,52,52,0.6)", backgroundColor: "rgba(168,52,52,0.10)", borderRadius: 9, padding: 12, marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, lineHeight: 18 }}>{pf(t("mp.hostage.banner"), cap?.name || "?", h.ask)}</Text>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+              <Btn label={pf(t("mp.hostage.payBtn"), h.ask)} disabled={money < h.ask} onPress={() => act({ k: "payRansom" }, h.ask)} />
+            </View>
+          </View>
+        ); })()}
+
         {/* Bana gelen teklifler */}
         {myOffers.length > 0 && (
           <>
@@ -150,6 +159,8 @@ export default function Diplomasi() {
                     <Btn label={t("mp.soc.duelBtn")} disabled={x.traveling || !x.online || pactShield} onPress={() => act({ k: "duel", to: x.id })} />
                     <Btn label={t("mp.reis.voteBtn")} onPress={() => act({ k: "voteReis", target: x.id })} />
                     <Btn label={t("mp.sefer.backBtn")} onPress={() => act({ k: "joinCampaign", bey: x.id })} />
+                    <Btn label={t("mp.hostage.captureBtn")} tone="blood" disabled={x.traveling || !x.online || pactShield} onPress={() => act({ k: "captureDuel", to: x.id })} />
+                    {(snapshot.hostages || []).some((h) => h.captor === guestId && h.captive === x.id) && <Btn label={t("mp.hostage.releaseBtn")} onPress={() => act({ k: "releaseHostage" })} />}
                   </View>
 
                   {/* Yardım */}

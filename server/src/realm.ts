@@ -300,6 +300,7 @@ export class RealmDO {
     // Meşruiyet şartı (SP throneRequirements ile aynı): yaş + güç + şöhret. Altın istemcide kesilir.
     const throneEligible = (p: PlayerPublic) => !p.dead && p.age >= THRONE_MIN_AGE && p.power >= THRONE_MIN_POWER && p.fame >= THRONE_MIN_FAME;
     const throneClaimers = order.filter((pid) => this.intents[pid].some((i) => i.k === "claimThrone"))
+      .filter((pid) => { if ((this.snap.hostages || []).some((h) => h.captive === pid)) { ev(pid, "mp.hostage.chained", []); return false; } return true; }) // zincirde taht istenmez
       .map((pid) => this.snap.players.find((p) => p.id === pid)).filter((p): p is PlayerPublic => !!p && !p.dead);
     throneClaimers.filter((p) => !throneEligible(p)).forEach((p) => ev(p.id, "mp.throne.notEligible"));
     const claimants = throneClaimers.filter(throneEligible);
@@ -460,6 +461,7 @@ export class RealmDO {
     // 4d) Beylikler arası sefer/savaş — bey hedef beyliğe yürür; muster (bey+üye+ocak) tartılır.
     for (const pid of order) for (const it of this.intents[pid]) {
       if (it.k !== "beylikCampaign") continue;
+      if ((this.snap.hostages || []).some((h) => h.captive === pid)) { ev(pid, "mp.hostage.chained", []); continue; } // zincirde sefer yok
       const attackerB = this.snap.beyliks.find((x) => x.beyId === pid);
       const target = this.snap.beyliks.find((x) => x.id === it.target);
       if (!attackerB || !target || target.id === attackerB.id) continue;
@@ -551,6 +553,7 @@ export class RealmDO {
     // ── 5) SOSYAL DOKU: destek / rekabet / entrika / yardım (oyuncular arası) ──
     const pname = (id: string) => playerById(id)?.name || "?";
     const aliveOther = (pid: string, other: string) => pid !== other && isAlive(pid) && isAlive(other);
+    const isCaptive = (q: string) => (this.snap.hostages || []).some((h) => h.captive === q);
     const chance = (p: number) => Math.random() < p;
     // ÜCRETSİZ aksiyonlar (vouch/duel) ayda bir kez/hedef ile sınırlı — buton spam'i ile
     // şöhret/şeref farmlanmasını önler. Bedelli aksiyonlarda altın istemcide zaten kesildiği
@@ -559,7 +562,7 @@ export class RealmDO {
     const once = (key: string) => { if (socOnce.has(key)) return false; socOnce.add(key); return true; };
     // "Seyahate Çık": seyahatteki kişiye DÜŞMANCA eylem (düello/casus/sabotaj/iftira/ayartma/suikast)
     // engellenir — kişi dokunulmaz. Beyliğine sefer (holdings) bundan etkilenmez.
-    const HOSTILE = new Set(["duel", "spy", "sabotage", "slander", "bribe", "assassinate"]);
+    const HOSTILE = new Set(["duel", "spy", "sabotage", "slander", "bribe", "assassinate", "captureDuel"]);
 
     for (const pid of order) for (const it of this.intents[pid]) {
       const tgtId = (it as { to?: string; on?: string }).to || (it as { to?: string; on?: string }).on;
@@ -645,12 +648,51 @@ export class RealmDO {
         }
         // — Rekabet —
         case "duel": {
+          if (isCaptive(pid)) { ev(pid, "mp.hostage.chained", []); break; } // zincirde kılıç çekilmez
           if (!aliveOther(pid, it.to) || !once(pid + "|duel|" + it.to)) break;
           const me = playerById(pid)!, foe = playerById(it.to)!;
           const iWin = Math.random() * (me.power + foe.power + 1) < me.power + 1;
           const w = iWin ? pid : it.to, l = iWin ? it.to : pid;
           ev(w, "mp.soc.duelWon", [pname(l)]); ev(l, "mp.soc.duelLost", [pname(w)]);
           this.adjustHonor(w, 4); this.adjustBond(pid, it.to, -6);
+          break;
+        }
+        case "captureDuel": { // rehin düellosu: kaybeden zincire vurulur — fidye pazarlığı başlar
+          if (isCaptive(pid)) { ev(pid, "mp.hostage.chained", []); break; }
+          if (!aliveOther(pid, it.to) || !once(pid + "|capture|" + it.to)) break;
+          const hsAll = this.snap.hostages || (this.snap.hostages = []);
+          if (hsAll.some((h) => h.captive === it.to || h.captor === pid)) break; // tek rehine; zaten zincirli vurulamaz
+          const meC = playerById(pid)!, foeC = playerById(it.to)!;
+          const iWin = Math.random() * (meC.power + foeC.power * 1.25 + 1) < meC.power; // savunan avantajlı
+          if (iWin) {
+            const ask = Math.max(150, Math.round(200 + foeC.power * 4));
+            hsAll.push({ captor: pid, captive: it.to, ask, since: this.snap.turn });
+            ev(pid, "mp.hostage.youTook", [pname(it.to), ask]); ev(it.to, "mp.hostage.youTaken", [pname(pid), ask]);
+            this.snap.news = [...this.snap.news.slice(-9), { k: "mp.hostage.newsTaken", p: [meC.name, foeC.name], turn: this.snap.turn }];
+            this.adjustBond(pid, it.to, -20);
+          } else {
+            ev(pid, "mp.hostage.failed", [pname(it.to)]); ev(it.to, "mp.hostage.escapedTry", [pname(pid)]);
+            this.adjustHonor(pid, -4); this.adjustBond(pid, it.to, -10);
+          }
+          break;
+        }
+        case "payRansom": { // fidye: bedel istemcide kesildi; altın rehinciye olayla kredi edilir
+          const hsP = this.snap.hostages || [];
+          const hp = hsP.find((x) => x.captive === pid);
+          if (!hp) break;
+          this.snap.hostages = hsP.filter((x) => x !== hp);
+          ev(hp.captor, "mp.hostage.ransomPaid", [pname(pid), hp.ask]);
+          ev(pid, "mp.hostage.freedPaid", [pname(hp.captor), hp.ask]);
+          break;
+        }
+        case "releaseHostage": { // merhamet: fidyesiz salıver — alicenaplık meclise yayılır
+          const hsR = this.snap.hostages || [];
+          const hr = hsR.find((x) => x.captor === pid);
+          if (!hr) break;
+          this.snap.hostages = hsR.filter((x) => x !== hr);
+          this.adjustHonor(pid, 6);
+          ev(pid, "mp.hostage.releasedMercy", [pname(hr.captive)]);
+          ev(hr.captive, "mp.hostage.freedMercy", [pname(pid)]);
           break;
         }
         // — Entrika & ihanet (gizli, riskli; altın istemcide kesildi) —
@@ -780,6 +822,22 @@ export class RealmDO {
         this.snap.news = [...this.snap.news.slice(-9), { k: "mp.reis.elected", p: [w.name, tally[cand[0]]], turn: this.snap.turn }];
       }
       this.snap.reisVotes = {};
+    }
+
+    // ── Rehine defteri bakımı: ölüm her zinciri çözer; 12 ay ödenmeyen fidyenin rehinesi kaçar. ──
+    if (this.snap.hostages && this.snap.hostages.length) {
+      const keepH: { captor: string; captive: string; ask: number; since: number }[] = [];
+      for (const h of this.snap.hostages) {
+        if (!isAlive(h.captor) || !isAlive(h.captive)) continue;
+        if (this.snap.turn - h.since >= 12) {
+          this.adjustHonor(h.captor, -3);
+          ev(h.captor, "mp.hostage.escapedAway", [pname(h.captive)]);
+          ev(h.captive, "mp.hostage.youEscaped", [pname(h.captor)]);
+          continue;
+        }
+        keepH.push(h);
+      }
+      this.snap.hostages = keepH;
     }
 
     // saat ilerle + pencere/alarm sıfırla
