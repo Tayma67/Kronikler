@@ -2,6 +2,21 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 148-165 paketi (7 Temmuz, gece) — BEŞ YENİ SİSTEM
+
+**Tek cümle (mağaza/what's new):**
+TR: "Diyar artık karşılık veriyor: rakip hanelere komplo kur (Gölge Oyunları), onların sana kurduğunu casusbaşınla yakala, kapına ulufeli muhafızlar al, tahtına vezir-hazinedar ata ve han köşesinde zar meclisine otur — beş yeni sistem, tek pakette."
+EN: "The realm now plays back: weave plots against rival houses (Shadow Games), catch theirs with your spymaster, hire a paid retinue, appoint a vizier and treasurer to your court, and sit at the dice circle — five new systems in one package."
+
+**Öne çıkanlar:**
+- **Gölge Oyunları (entrika):** Rakip haneye leke/sabotaj/nifak komplosu — aylarca örülür, fısıltısı birikir, ifşası yakar; ustası gölgede kalır. "Gölge Ustası" başarımı.
+- **Karşı Entrika:** Kin tutan haneler artık SANA komplo örüyor; çarşıda kulak tut, düğümü vaktinde kes — yoksa adın çamura, kesen deliğe.
+- **Maiyet:** En fazla üç ulufeli muhafız — savaşta omuz omuza, yolda haydutlara gözdağı; kese kuruyunca teker teker veda ederler.
+- **Saray Heyeti:** Taç sahibi vezir (otorite), hazinedar (mülk geliri) ve casusbaşı (anında istihbarat + kendi işlerinin fısıltısını siler) atıyor.
+- **Zar Meclisi:** Han köşesinde ayda bir el; kasa hep avantajlı — heyecan satar, servet satmaz; dadananın tekkeyle arası açılır.
+- **Kral hukukun üstünde, siyasetin altında:** Suçüstü yakalanan hükümdar zindana düşmüyor; meşruiyeti eriyor, skandalı diyara yayılıyor.
+- **Doku genişlemeleri:** Şenliklere 5. sahne, yol 17 yüz, mikro 18 an, dedikodu 26, selamlara ve anı göndermelerine üçüncü ağız, zindan aylarına güvercin, NPC huyları 10, SSS tekrar-koruması maddesi.
+
 ## Dalga 133-146 paketi (7 Temmuz, akşam)
 
 **Tek cümle (mağaza/what's new):**
