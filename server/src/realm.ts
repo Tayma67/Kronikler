@@ -468,7 +468,10 @@ export class RealmDO {
       // NPC desteği + LONCA destekçiliği seferi etkiler (loncalar kingmaker olur).
       const guildAtk = this.snap.guilds.filter((g) => g.backing === attackerB.id).reduce((s, g) => s + this.guildInfluence(g.id), 0);
       const guildDef = this.snap.guilds.filter((g) => g.backing === target.id).reduce((s, g) => s + this.guildInfluence(g.id), 0);
-      const atk = liveBeylikMuster(attackerB) + this.npcSupport(pid, target.beyId) + guildAtk, def = liveBeylikMuster(target) + guildDef;
+      // Ortak sefer: bu ay bu beye omuz verenlerin kişisel gücünün yarısı orduya katılır.
+      const pledges = order.filter((q) => q !== pid && (this.intents[q] || []).some((x) => x.k === "joinCampaign" && x.bey === pid));
+      const pledgePow = pledges.reduce((s2, q) => s2 + Math.round((playerById(q)?.power || 0) * 0.5), 0);
+      const atk = liveBeylikMuster(attackerB) + this.npcSupport(pid, target.beyId) + guildAtk + pledgePow, def = liveBeylikMuster(target) + guildDef;
       // Gerçekçi: kesin sonuç değil, güç oranıyla OLASILIK. Maliyet (altın) istemcide kesildi.
       const win = (Math.random() * (atk + def)) < atk;
       if (win) {
@@ -486,6 +489,12 @@ export class RealmDO {
         target.power = Math.round(target.power + 6); // savunma güçlendi
         ev(pid, "mp.beylik.campaignLost", [target.name]);
       }
+      // Omuz verenler: sonuç ne olursa olsun şeref kazanır (erdem), zaferde ganimet haberi düşer.
+      pledges.forEach((q) => {
+        const qp = playerById(q); if (!qp || qp.dead) return;
+        qp.honor = Math.min(100, qp.honor + 2);
+        ev(q, win ? "mp.sefer.joinedWin" : "mp.sefer.joinedLost", [target.name, playerById(pid)?.name || ""]);
+      });
     }
 
     // 4e) AYLIK BEYLİK VERGİSİ — bey bağlı üyelerden alır (gelir), üyeler öder (gider).
@@ -562,6 +571,10 @@ export class RealmDO {
       }
       switch (it.k) {
         // — Destek & dostluk —
+        case "joinCampaign": { // omuz sözü verildi — çözüm sefer bloğunda
+          if (it.bey && it.bey !== pid && isAlive(it.bey)) ev(pid, "mp.sefer.pledged", [pname(it.bey)]);
+          break;
+        }
         case "voteReis": { // oy defteri: son oy geçerli; kendine oy yazılmaz
           if (it.target && it.target !== pid && isAlive(it.target)) {
             this.snap.reisVotes = { ...(this.snap.reisVotes || {}), [pid]: it.target };

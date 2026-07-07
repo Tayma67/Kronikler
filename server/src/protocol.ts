@@ -173,6 +173,7 @@ export interface RealmSnapshot {
 // ── Paylaşımlı-durum eylemleri (yalnız tick'te otoriteli çözülür) ──
 export type SharedIntent =
   | { k: "voteReis"; target: string } // Meclis Reisi oyu (yıl kapanışında sayılır; kendine oy geçersiz)
+  | { k: "joinCampaign"; bey: string } // ortak sefer: bu ay o beyin seferine omuz ver (gücünün yarısı orduya)
   | { k: "claimThrone" }
   | { k: "abdicate" }
   | { k: "setGuildTax"; guildId: string; tax: number }
