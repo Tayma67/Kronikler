@@ -4963,13 +4963,15 @@ function sagaTick(s: GameState) {
 }
 // ── Divan/Arzuhal: taç sahibinin huzuruna düşen dilekçeler — hükümdarlık soyut ferman menüsü değil, yüzü olan kararlar.
 // Etki dengesi bilinçli: halkı kollamak keseden yer ama otorite/itibar getirir; keseyi kollamak nam bedeli öder (farm yok: an rastgele düşer).
-export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit", "kacak_asker", "iki_imam", "leke_surulen", "eski_silah_arkadasi", "kayip_kervan", "zindan_affi", "sel_bendi", "sahte_tanik", "kuru_kuyu", "mukerrer_bac"];
+export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit", "kacak_asker", "iki_imam", "leke_surulen", "eski_silah_arkadasi", "kayip_kervan", "zindan_affi", "sel_bendi", "sahte_tanik", "kuru_kuyu", "mukerrer_bac", "yanik_koy", "hekim_ucreti"];
 const DIVAN_R_TR: Record<string, [string, string]> = {
   kayip_kervan: ["Kese kervancıya, haber kervanlara ulaştı: 'O tacın gölgesinde mal güvende.' O yıl pazara üç kervan fazla geldi; adın yol boyunca anıldı.", "Kervancı boş keseyle döndü; hikâyesi hanlarda anlatıldı. Ertesi bahar bazı kervanlar komşu beyliğin yolunu tuttu — yol boştu, hanlar suskundu."],
   sel_bendi: ["Hazineden taş, köyden emek: bent bir mevsimde yükseldi. İlk yağmurda su hendekten aktı, tarlalar kurtuldu; bendin taşına tacın nişanı kazındı.", "Ferman imeceye çıktı: her hane bir sırt taşı. Bent yavaş yükseldi, söylene söylene — ama bittiğinde 'bizim bent' dediler; taç uzaktan izledi."],
   sahte_tanik: ["Dava yeniden görüldü; yalancı şahit çapraz sorguda çözüldü. Tarla dul kadına döndü, şahit teşhir edildi; divanın adı adaletle anıldı.", "Kese kabul edildi, dava kapandı; kadının duası yarım, zenginin selamı bol. Divan zengin kapısı oldu — fısıltısı çarşıya indi."],
   kuru_kuyu: ["Usta indi, kazma vurdu; üçüncü haftada su fışkırdı. Kuyunun bileziğine tacın yılı kazındı; mahalle çeşme başında duacın oldu.", "Ferman çıkmadı; su iki tepe ötede kaldı. Kadınların omzundaki sırıklar tacın adını her gün andı — hayırla değil."],
   mukerrer_bac: ["İki kapıdan biri mühürlendi; fazla alınan akçe kervancılara kese kese geri sayıldı. O yıl yolun lafı tek baç, temiz defter oldu.", "Şikâyet defterin arasında kayboldu; baç iki kapıda da alınmaya devam etti. Hazine şişti ama kervanlar yolu uzatıp komşu geçide döndü."],
+  yanik_koy: ["Kereste kağnılarla, tohum çuvallarla indi; bahara köy yeniden çatı tuttu. İlk hasadın ilk somunu saraya 'hakkın var' diye gönderildi.", "Köylü küllerini eşeledi; kimi akrabasına göçtü. Yanık direkler iki yıl yol kenarında kaldı — her geçen kervan tacın adını bir kez andı, hayırla değil."],
+  hekim_ucreti: ["Hekim kapı kapı gezdi; humma o mahallede kışın kırıldı. İyileşen her hasta duasında tacı andı; çarşıda 'derdi duyan hükümdar' dendi.", "Hekim varlıklı kapılara döndü; yoksul mahalle hummayla baş başa kaldı. Bahara mezarlıkta üç taze taş vardı — biri çocuk boyundaydı."],
   zindan_affi: ["Demir kapı açıldı; ana, oğlunun koluna yaslanıp dua ede ede uzaklaştı. Kadı kaşlarını çattı ama çarşı o hafta tacın merhametini konuştu.", "Ana sessizce çekildi; duası yarım kaldı. Zindanın düzeni bozulmadı — ama o kışı oğlan çıkardı mı, kimse sormadı."],
   kacak_asker: ["Sipahi diz çöküp kılıcını sana uzattı: 'Bu can artık senindir.' Ordugâhta kimi yumuşaklık dedi, kimi adalet — ama o sipahi bir daha hiçbir seferden kaçmadı.", "Ceza meydanda verildi; saflar sıklaştı, gözler soğudu. Düzen korkuyla kuruldu — korkuyla kurulan düzenin bekçisi çok gerek."],
   iki_imam: ["Minare yükseldi, kürsü kuruldu; ilk hutbede iki imam yan yana durdu ve adını hayırla andı. Cuma çıkışı çarşı senin sözünle çalkalandı.", "İmece kuruldu, taş taş üstüne kondu — yavaş ama onların eseri. Minarenin gölgesi uzun; senin adın o gölgede kısa kaldı."],
@@ -4993,6 +4995,8 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
   if (id === "sahte_tanik" && choice === 0 && p.money < 110) return s;
   if (id === "kuru_kuyu" && choice === 0 && p.money < 120) return s;
   if (id === "mukerrer_bac" && choice === 0 && p.money < 100) return s;
+  if (id === "yanik_koy" && choice === 0 && p.money < 160) return s;
+  if (id === "hekim_ucreti" && choice === 0 && p.money < 120) return s;
   s.divan = null;
   p.divan_resolved = (p.divan_resolved || 0) + 1; // adil hükümdar sayacı
   if (id === "su_kavgasi") {
@@ -5038,6 +5042,12 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
   } else if (id === "mukerrer_bac") {
     if (choice === 0) { p.money -= 100; p.honor = Math.min(100, p.honor + 4); p.reputation = Math.min(100, p.reputation + 3); p.crownAuthority = clamp100(crownAuthorityOf(p) + 3); bumpNam(p, "mert", 2); }
     else { p.money += 80; p.honor = Math.max(0, p.honor - 4); bumpNam(p, "zalim", 2); p.reputation = Math.max(-100, p.reputation - 4); }
+  } else if (id === "yanik_koy") {
+    if (choice === 0) { p.money -= 160; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); sowSeed(s, { kaynak: "divan_yanik_sukran", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { reputation: 6 } }); }
+    else { p.reputation = Math.max(-100, p.reputation - 3); p.crownAuthority = clamp100(crownAuthorityOf(p) - 2); bumpNam(p, "zalim", 1); }
+  } else if (id === "hekim_ucreti") {
+    if (choice === 0) { p.money -= 120; p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "comert", 2); bumpNam(p, "dindar", 1); sowSeed(s, { kaynak: "divan_hekim_duasi", hmin: 24, hmax: 72, agirlik: "kucuk", nesil: false, etki: { reputation: 5 } }); }
+    else { p.reputation = Math.max(-100, p.reputation - 2); p.honor = Math.max(0, p.honor - 2); }
   }
   const rtr = DIVAN_R_TR[id];
   push(s, "taht", rtr ? rtr[choice] : "", "kişisel", choice === 0, { k: `divan.${id}.r${choice}` });
