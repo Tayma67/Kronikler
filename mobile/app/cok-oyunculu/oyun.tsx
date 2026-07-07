@@ -35,7 +35,7 @@ export default function MpOyun() {
   const { name, gender } = useLocalSearchParams<{ name: string; gender?: string }>();
   const mpGender: "erkek" | "kadın" = gender === "kadın" ? "kadın" : "erkek";
   const { state: s, apply, mpMode, enterMp, exitMp } = useGame();
-  const { guestId, snapshot, lastTick, missed, clearMissed, setReady, sendIntent, syncPlayer, saved, saveState, setTravel } = useMp();
+  const { guestId, snapshot, lastTick, missed, clearMissed, setReady, sendIntent, syncPlayer, saved, saveState, setTravel, chat, sendChat } = useMp();
 
   const [ready, setReadyLocal] = useState(false);
   const [evLines, setEvLines] = useState<string[]>([]);
@@ -134,6 +134,40 @@ export default function MpOyun() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 110 }}>
+        {/* Canlı yoldaş şeridi: diyar bir liste değil, bir meclis — kim burada, kim ay bekliyor, son söz kimin */}
+        {(() => {
+          const humans = players.filter((x) => !x.dead);
+          const lastChat = chat.length ? chat[chat.length - 1] : null;
+          const NARAS: [string, string][] = [["selam", t("mp.nara.selam")], ["helal", t("mp.nara.helal")], ["meydan", t("mp.nara.meydan")], ["yardim", t("mp.nara.yardim")]];
+          return (
+            <View style={{ marginBottom: 12, borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", backgroundColor: "rgba(201,168,76,0.05)", borderRadius: 10, padding: 10 }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.sage }} />
+                <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: C.parchmentMuted }}>{applyParams(t("mp.pulse.here"), [liveCount])}</Text>
+                {humans.slice(0, 6).map((x) => (
+                  <View key={x.id} style={{ flexDirection: "row", alignItems: "center", gap: 3, borderWidth: 1, borderColor: x.online ? "rgba(127,166,106,0.5)" : C.border, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 6, opacity: x.online ? 1 : 0.55 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 9, color: x.id === guestId ? C.gold : x.online ? C.parchment : C.parchmentMuted }}>{x.name}{x.id === guestId ? t("mp.you") : ""}</Text>
+                    {x.online && x.ready && <Text style={{ fontFamily: F.display, fontSize: 8, color: C.sage }}>{t("mp.pulse.ready")}</Text>}
+                  </View>
+                ))}
+              </View>
+              {lastChat && (
+                <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 7 }}>
+                  <Text style={{ color: C.gold }}>{lastChat.fromName}: </Text>{lastChat.text}
+                </Text>
+              )}
+              {!p.dead && (
+                <View style={{ flexDirection: "row", gap: 6, marginTop: 8 }}>
+                  {NARAS.map(([k, label]) => (
+                    <Pressable key={k} onPress={() => { hap("tap"); sendChat(label); }} style={{ flex: 1, paddingVertical: 6, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", alignItems: "center" }}>
+                      <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 8.5, color: C.gold }}>{label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </View>
+          );
+        })()}
         {/* Ölüm → vâris (hayat döngüsü diyarda sürer) */}
         {p.dead && (
           <View style={{ marginBottom: 12, borderWidth: 1, borderColor: "rgba(200,64,64,0.5)", backgroundColor: "rgba(200,64,64,0.08)", borderRadius: 10, padding: 14 }}>
