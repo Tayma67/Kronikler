@@ -2,6 +2,17 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 207-214 eki (7 Temmuz, gece yarısı) — GÖZDE VE KADI
+
+**Tek cümle (mağaza/what's new):**
+TR: "Hanedanın kalbine iki yeni sistem: gözdeni ilan et — sevgi bir yöne akınca kırgınlık öbür yönde birikir, pay davası sofrayı böler; ve ağır suçun hükmü artık okunmadan son sözünü söylersin — kendini savun, dostunu tanık çağır ya da hükme boyun eğ."
+EN: "Two new systems at the dynasty's heart: name your favorite — when love flows one way, resentment pools the other, and inheritance claims split the table; and a heavy crime's sentence is no longer read without your last word — defend yourself, call a friend to testify, or bow to the judgment."
+
+**Öne çıkanlar:**
+- **Veraset Krizi (SP):** 35+ yaş ve 2+ evlatla gözdeni ilan et; gözdenin bağı büyür, kardeşlerin gönlünde kırgınlık birikir — sitem ve kadıya taşan pay davaları. Gözde tahta oturursa meşru (+5 itibar), gölgede kalan buruk (−5) başlar; heirPreview aynı hesabı önden gösterir.
+- **Kadı Duruşması (SP):** Ağır suçta yakalanınca üç yol: karizma+zekâ savunması (başarıda ceza yarıya, zindan yok), dost tanıklığı (beraat ama tanıklık borcu), hükme boyun (tam ceza, +1 şeref). Duruşmadan kaçan gıyabında hüküm giyer; taçlı kadıya değil tarihe hesap verir.
+- **Görünürlük cilaları:** Kan Defteri hanedan sayfasında (kuşak+hane+bekleyen sahne), ay parşömeni son üç olayı özetliyor, ilerleme düğmesi adını söylüyor, çalışma stillerinin takası yazıyor; SSS'e Kan Defteri + rehin + gözcü maddeleri.
+
 ## Dalga 201-205 paketi (7 Temmuz, gece) — KAN DEFTERİ VE ZİNCİR
 
 **Tek cümle (mağaza/what's new):**
