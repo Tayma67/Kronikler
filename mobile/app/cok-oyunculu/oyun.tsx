@@ -404,6 +404,15 @@ export default function MpOyun() {
                 ); })}
               </View>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 6, lineHeight: 14 }}>{t("mp.venture.hint")}</Text>
+              {v && !v.raider && mine === 0 && !p.dead && (
+                <Pressable onPress={() => { hap("selection"); intent({ k: "raidVenture" }); }} style={[miniBtnBlood, { marginTop: 8, alignSelf: "flex-start" as const }]}>
+                  <GameIcon name="hood" size={12} color={C.blood} />
+                  <Text style={miniTxtBlood}>{t("mp.venture.raidBtn")}</Text>
+                </Pressable>
+              )}
+              {v?.raider && (
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.blood, marginTop: 6 }}>{v.raider.id === guestId ? t("mp.venture.raidMine") : t("mp.venture.shadowHint")}</Text>
+              )}
             </View>
           );
         })()}

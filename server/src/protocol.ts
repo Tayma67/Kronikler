@@ -140,7 +140,7 @@ export interface RealmNews { k: string; p: (string | number)[]; turn: number; }
 // El sıkışma gerektiren teklif (ittifak/dünür/borç/sığınma) — hedef kabul/ret eder.
 export interface Offer { id: string; from: string; fromName: string; to: string; kind: "alliance" | "marriage" | "loan" | "asylum"; amount?: number; turn: number; }
 // Ortak girişim (kervan ortaklığı) — hisseler + vade. resolveTurn geldiğinde sunucu çözer.
-export interface VentureState { backers: { id: string; name: string; amount: number }[]; startedTurn: number; resolveTurn: number; }
+export interface VentureState { backers: { id: string; name: string; amount: number }[]; startedTurn: number; resolveTurn: number; raider?: { id: string; name: string } | null; }
 
 // ── Diyarın tam anlık görüntüsü (sunucu → istemci) ──
 export interface RealmSnapshot {
@@ -220,7 +220,8 @@ export type SharedIntent =
   | { k: "turnNpc"; npcId: string; against: string }// NPC'yi bir oyuncuya karşı kışkırt
   | { k: "mediateNpc"; npcId: string; player: string } // NPC ile bir oyuncunun arasını düzelt
   // ── Ortak girişim ──
-  | { k: "ventureBack"; amount: number };           // kervan ortaklığına hisse koy (altın istemcide kesilir)
+  | { k: "ventureBack"; amount: number }            // kervan ortaklığına hisse koy (altın istemcide kesilir)
+  | { k: "raidVenture" };                           // ortak kervana pusu kur (çözüm gecesi baskın denenir)
 
 // ── İstemci → Sunucu mesajları ──
 export type ClientMsg =

@@ -91,6 +91,8 @@ export function applyTickEvents(prev: GameState, events: TickEvent[]): GameState
       // mp.venture.backed → yalnız bilgilendirme (altın gönderilirken kesildi)
       case "mp.soc.giftGot": p.money += Number(e.p?.[1]) || 0; break;       // bağış aldın
       case "mp.hostage.ransomPaid": p.money += Number(e.p?.[1]) || 0; break; // fidye kesene düştü
+      case "mp.venture.raidLoot": p.money += Number(e.p?.[0]) || 0; p.fear = clamp100(p.fear + 3); break; // kervan baskını ganimeti
+      case "mp.venture.raided": p.money += Number(e.p?.[0]) || 0; break;                                  // soyulan kervandan kırık iade
       case "mp.soc.loanGot": p.money += Number(e.p?.[1]) || 0; break;       // borç aldın
       case "mp.soc.loanGave": p.money = Math.max(0, p.money - (Number(e.p?.[1]) || 0)); break; // borç verdin
       case "mp.soc.vouched": p.fame = clamp100(p.fame + (Number(e.p?.[1]) || 0)); break; // biri seni övdü (ölçekli)

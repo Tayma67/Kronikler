@@ -539,12 +539,28 @@ export class RealmDO {
     if (this.snap.venture && this.snap.turn >= this.snap.venture.resolveTurn) {
       const v = this.snap.venture; this.snap.venture = null;
       const n = v.backers.length;
+      const raider = v.raider && isAlive(v.raider.id) ? v.raider : null;
       if (n) {
-        const win = Math.random() < 0.8;
-        const coop = 1.05 + 0.10 * Math.min(4, n - 1); // 1 ortak ×1.05 … 5+ ortak ×1.45
-        for (const b of v.backers) {
-          if (win) ev(b.id, "mp.venture.win", [Math.round(b.amount * coop), n]);
-          else ev(b.id, "mp.venture.fail", [Math.round(b.amount * 0.5)]); // soyulan kervandan yarı iade
+        // Pusudaki oyuncu: ortaklardan birinin gözcüsü nöbetteyse baskın çok daha zor.
+        const watched = v.backers.some((b) => (this.snap.watches?.[b.id] || 0) > this.snap.turn);
+        if (raider && Math.random() < (watched ? 0.2 : 0.45)) {
+          const pool = v.backers.reduce((s, b) => s + b.amount, 0);
+          ev(raider.id, "mp.venture.raidLoot", [Math.round(pool * 0.6)]);
+          this.adjustHonor(raider.id, -5); // ganimet tatlı, leke kalıcı
+          for (const b of v.backers) ev(b.id, "mp.venture.raided", [Math.round(b.amount * 0.4)]); // maskeli baskın: kırık iade
+          this.snap.news = [...this.snap.news.slice(-9), { k: "mp.venture.raidNews", p: [], turn: this.snap.turn }];
+        } else {
+          if (raider) { // pusu bozuldu: kimlik diyara düşer, şeref yara alır
+            this.adjustHonor(raider.id, -8);
+            ev(raider.id, "mp.venture.raidCaught", []);
+            this.snap.news = [...this.snap.news.slice(-9), { k: "mp.venture.raidCaughtNews", p: [raider.name], turn: this.snap.turn }];
+          }
+          const win = Math.random() < 0.8;
+          const coop = 1.05 + 0.10 * Math.min(4, n - 1); // 1 ortak ×1.05 … 5+ ortak ×1.45
+          for (const b of v.backers) {
+            if (win) ev(b.id, "mp.venture.win", [Math.round(b.amount * coop), n]);
+            else ev(b.id, "mp.venture.fail", [Math.round(b.amount * 0.5)]); // soyulan kervandan yarı iade
+          }
         }
       }
     }
@@ -562,6 +578,18 @@ export class RealmDO {
       if (mine) mine.amount += add;
       else v.backers.push({ id: pid, name: playerById(pid)?.name || "?", amount: add });
       ev(pid, "mp.venture.backed", [add, v.resolveTurn - this.snap.turn]);
+    }
+
+    // Kervan pususu: ortak olmayan tek bir oyuncu boğaza yatar (ilk gelen kapar); çözüm gecesi zar atılır.
+    for (const pid of order) for (const it of this.intents[pid]) {
+      if (it.k !== "raidVenture") continue;
+      const v = this.snap.venture;
+      if (!v || v.raider) continue;                                              // pusu tek kişilik
+      if (v.backers.some((b) => b.id === pid)) continue;                         // kendi kervanını soyamazsın
+      if ((this.snap.hostages || []).some((h) => h.captive === pid)) continue;   // zincirdeki pusu kuramaz
+      if (!isAlive(pid)) continue;
+      v.raider = { id: pid, name: playerById(pid)?.name || "?" };
+      ev(pid, "mp.venture.raidSet", [v.resolveTurn - this.snap.turn]);
     }
 
     // ── 5) SOSYAL DOKU: destek / rekabet / entrika / yardım (oyuncular arası) ──
