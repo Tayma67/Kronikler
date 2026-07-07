@@ -1453,6 +1453,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Bir mezar taşı okudun; kendi faniliğini düşündün.", k: "mem.grave" },
         { text: "Eski defterleri karıştırırken gençliğinin el yazısına rastladın; harfler bile daha aceleciymiş o zamanlar.", k: "mem.oldHand" },
         { text: "Çıraklık ettiğin dükkânın önünden geçtin; içerideki yeni çırak sana ustaymışsın gibi baktı.", k: "mem.oldShop" },
+        { text: "Kuyu başında sıra bekleyen gençlerin şakalaşmasını dinledin; kovanın ipini hâlâ hepsinden iyi atıyorsun.", k: "mem.wellRope" },
       );
     } else {
       // 70+: ömrün son faslının kendi dokusu — şafak yalnızlığı, giden dostlar, nasırlı eller, destanlaşan ad
@@ -1465,6 +1466,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Gençken diktiğin ağacın gölgesinde soluklandın; ağaç da sen de sözünüzü tutmuşsunuz.", k: "mem.orchardShade", fn: () => { p.health = Math.min(100, p.health + 1); } },
         { text: "Bir sofrada anandan kalma bir tadı yakaladın; gözlerini kapatınca bir anlığına o mutfağa döndün.", k: "mem.motherTaste", fn: () => { p.hunger = Math.min(100, p.hunger + 2); } },
         { text: "Kış güneşinde duvar dibine oturdun; sıcaklık iliklerine işledi, kimseyle konuşmadan bir öğle geçti.", k: "mem.winterSun" },
+        { text: "Çocukken ezberlediğin duayı bir cenazede yine dudakların hatırladı; kelimeler seni, sen kelimeleri hiç bırakmamışsınız.", k: "mem.oldPrayer", fn: () => bumpNam(p, "dindar", 1) },
         { text: "Rüzgâr, gençliğinde yürüdüğün kervan yolunun toz kokusunu getirdi; dizlerin sızlasa da içinden yine düşmek geçti o yola.", k: "mem.oldRoad" },
         { text: "Çarşıda biri arkandan eski lakabınla seslendi; dönüp baktın, tanıyamadın — ama lakap tam yerine oturdu, gülümsedin.", k: "mem.oldNickname" },
         { text: "Sandığın dibinden gençliğinde yazılmış bir mektup çıktı; kâğıt sararmış ama satırlar dünkü gibi. Kimseye göstermeden yerine koydun.", k: "mem.oldLetter" },
