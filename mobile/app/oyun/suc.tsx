@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { doCrime, resolveCrimeScene, CrimeKind, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail } from "../../lib/game";
+import { doCrime, resolveCrimeScene, CrimeKind, fenceHotGoods, crimeUnlocked, crimeReq, underworldStanding, underworldTier, UNDERWORLD_TIERS, inJail, playDice } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -101,6 +101,27 @@ export default function Suc() {
             </Pressable>
           </View>
         )}
+
+        {state.player.age >= 16 && (() => {
+          const played = state.player.gamble_turn === state.turn;
+          const jailed = inJail(state.player);
+          return (
+            <View style={{ backgroundColor: "rgba(201,168,76,0.06)", borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 11, padding: 13, marginBottom: 12 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("dice.title").toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t(played ? "dice.done" : "dice.desc")}</Text>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 9 }}>
+                {[10, 25, 50].map((bet) => {
+                  const dis = played || jailed || state.player.money < bet;
+                  return (
+                    <Pressable key={bet} disabled={dis} onPress={() => { hap("advance"); apply((s) => playDice(s, bet)); }} style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.10)", alignItems: "center", opacity: dis ? 0.4 : 1 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: C.gold }}>{applyParams(t("dice.btn"), [bet])}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          );
+        })()}
 
         {state.player.age < 13 ? (
           <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted, textAlign: "center", marginTop: 10 }}>{t("suc.tooYoung")}</Text>

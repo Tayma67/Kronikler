@@ -55,6 +55,7 @@ export interface Player {
   child_friend?: { id: string; seed: number; gender: "erkek" | "kadın"; bond: number; feud?: number }; // oyun yoldaşı: oyunla büyüyen bağ; bağ güçlüyse ömürlük dost, dargınlık (feud) büyürse rakip olur
   child_dream?: string; // çocukluk hayali (meslek domeni: combat/trade/crafting/social); reşitlikte meslek uyarsa ödül
   hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
+  gamble_turn?: number; // zar meclisi ayda bir el — kasa avantajlı kumar gelir farm'ı olamaz
   last_crime_turn?: number; // son suç denemesi turu (ay başına tek deneme; risksiz spam önlenir)
   crime_wins?: number; // başarıyla tamamlanan suç sayısı — yeraltı namı; ağır işler bununla açılır (merdiven)
   governorships?: string[]; // valisi olunan şehirler
@@ -3783,6 +3784,28 @@ function crimeCaught(s: GameState, kind: CrimeKind) {
   if (ct.sev >= 3 && Math.random() < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } });
   push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.`, "kişisel", true, { k: "evj.crimeCaught", p: [fine, extra >= 4 ? { sfx: "sfx.crimeHard" } : ""] });
   if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
+}
+
+// Zar Meclisi (han köşesi kumarı): ayda bir el, kasa hep avantajlı — heyecan satar, servet satmaz.
+// Dinen hoş görülmez (dindar nam düşer); zar meclisinde ara sıra kavga çıkar.
+export function playDice(prev: GameState, bet: number): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 16 || inJail(p)) return s;
+  if (p.gamble_turn === s.turn) return s; // ayda tek el
+  const stake = Math.max(1, Math.min(Math.floor(bet), p.money));
+  if (stake <= 0 || p.money < stake) return s;
+  p.gamble_turn = s.turn;
+  bumpNam(p, "dindar", -1); // zar meclisine dadanan, tekke kapısından uzaklaşır
+  const win = Math.random() < 0.46; // kasa avantajı: uzun vadede kaybettirir (farm kapalı)
+  if (win) {
+    p.money += stake;
+    push(s, "gunluk", `Han köşesinde zarlar senin için döndü (+${stake} akçe); kalk tam vaktidir.`, "kişisel", false, { k: "evj.diceWin", p: [stake] });
+  } else {
+    p.money -= stake;
+    if (chance(0.08)) { p.health = Math.max(1, p.health - 3); push(s, "gunluk", `Zarlar döndü, kese gitti (−${stake} akçe); üstüne hile lafı açılınca meclis karıştı, yumruk yedin (−3 sağlık).`, "kişisel", false, { k: "evj.diceBrawl", p: [stake] }); }
+    else push(s, "gunluk", `Zarlar kasadan yana döndü (−${stake} akçe); zar meclisinin altın kuralı: kazanan hep han sahibi.`, "kişisel", false, { k: "evj.diceLose", p: [stake] });
+  }
+  return s;
 }
 
 // ── Fırsat: kabul edilince stat'a göre çözülür ──
