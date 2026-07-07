@@ -2,6 +2,18 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 215-219 eki (7 Temmuz, gece yarısı) — SANCAK EŞE, ZAMAN SUYA
+
+**Tek cümle (mağaza/what's new):**
+TR: "Çevrimiçi diyarda nikâh artık taht kadar ağır çekiyor: ölen beyin sancağı dünürlük bağıyla eşine geçiyor, iddia yarışı hiç açılmıyor; ilerleme düğmesini basılı tutan, bir olay kapıyı çalana dek ayları su gibi akıtıyor; gurbetten dönen bey de yokluğunda olan biteni tek parşömende okuyor."
+EN: "In the online realm, marriage now weighs as heavy as a throne: a fallen bey's banner passes to the spouse by the marriage bond, and no claim race ever opens; hold the advance button and the months flow like water until an event knocks; and a bey returning from afar reads everything that happened in a single scroll."
+
+**Öne çıkanlar:**
+- **Diyar Veraseti (MP):** Bir bey ölünce dünürlük paktıyla bağlı eşi hayattaysa sancak DOĞRUDAN ona geçer — diyar haberlerine düşer, iddia yarışı açılmaz. Eş yoksa eski akış: ocak NPC'ye döner, beylik iddiaya açılır. Evlilik ittifakı artık somut oyunsal sigorta.
+- **Olaya Dek İlerle (SP):** İlerleme düğmesine basılı tut — bekleyen sahne, mikro an, destan sahnesi, divan arzuhali ya da bir dönüm noktası düşene dek (en çok 6 ay) zaman akar. Açlık ya da sağlık kritiğe inerse akış kendini durdurur.
+- **Dönüş Parşömeni (MP):** Diyara dönüşte yokluğunda biriken hadiseler (hediye altını, fidye, düğün, veraset...) tam ekran parşömende listelenir; altın farkı yeşil/kırmızı yazar, tek dokunuşla meclise dönülür.
+- **Rehber diri (SSS):** Gözde evlat ve veraset krizi, kadı duruşmasının üç yolu ve diyar veraseti maddeleri 6 dilde rehbere işlendi.
+
 ## Dalga 207-214 eki (7 Temmuz, gece yarısı) — GÖZDE VE KADI
 
 **Tek cümle (mağaza/what's new):**
