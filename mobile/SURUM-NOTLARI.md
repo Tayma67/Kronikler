@@ -2,6 +2,23 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 133-146 paketi (7 Temmuz, akşam)
+
+**Tek cümle (mağaza/what's new):**
+TR: "Diyarın günlük hayatı koyulaştı: 15 mesleğin hepsi beş iş günlü, mektepte yeni dersler, çocukluğa yeni maceralar, selamlara üçüncü ağız, pazara iki yeni rüzgâr, divana iki arzuhal daha ve efsanelere üçüncü yüz — Bozkır Kurdu."
+EN: "Daily life grew richer: five work days for all 15 trades, new school lessons, new childhood adventures, a third voice for greetings, two new market winds, two more petitions at the divan and a third legend — the Steppe Wolf."
+
+**Öne çıkanlar:**
+- **Bozkır Kurdu:** Kösedağ'dan beri boyun eğmemiş ihtiyar akıncı beyi, adı duyulanları son bir cenge çağırıyor (şöhret 62+); yenene kılıcını uzatıyor.
+- **İş günleri tamam:** 15 mesleğin hepsi 5 varyantlı — paslı kilit, terazi davası, kanal nöbeti, geçit pususu, ilk denemede oturan kemik, sağır dedenin türküsü, gece feneriyle av, ikiz kuzular, yanan arşiv, ustanın yarım deseni…
+- **Divan 14 arzuhal:** Kuruyan kuyunun mahallesi ve iki kapıda baç ödeyen kervancılar; her kararın izi taht namında.
+- **Pazara iki rüzgâr:** Yaylada coşan arılar balı ucuzlatıyor; kesilen tuz yolu salamurayı pahalandırıyor.
+- **Mektep 11 olay:** Duvar haritasında ters akan nehri yakalayan göz ve gezgin âlime sorulan cesur soru.
+- **Çocukluğa iki macera:** Derede beş kere seken taş ve eski çeşmenin masala dönen silik yazısı.
+- **Selamlara üçüncü ağız:** Beş algı bandının her birine bir karşılama daha; sokak daha az kendini tekrar ediyor.
+- **Durgun aylara iki kıvılcım:** Fırıncının uzattığı sıcak uç ve duvar dibine konan serçe; ilk aylara iki yeni komşuluk anı.
+- **Lonca 4. hizmet + vitrin tazeleme:** Ocak görevlerinde dördüncü varyant; mağaza/basın kiti sayıları güncel.
+
 ## Dalga 120-132 paketi (7 Temmuz)
 
 **Tek cümle (mağaza/what's new):**
