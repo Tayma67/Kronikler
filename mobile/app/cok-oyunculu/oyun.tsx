@@ -117,6 +117,10 @@ export default function MpOyun() {
   const throneEligible = !p.dead && p.age >= THRONE_MIN_AGE && myPower >= THRONE_MIN_POWER && p.fame >= THRONE_MIN_FAME && p.money >= THRONE_COST;
   const canCampaign = !p.dead && p.money >= MP_CAMPAIGN_COST;
   const iAmBey = snapshot.beyliks.some((b) => b.beyId === guestId);
+  // Sunucu muster formülünün istemci tahmini (lonca desteği ve NPC desteği hariç — o yüzden "yaklaşık").
+  const musterOf = (b: (typeof snapshot.beyliks)[number]) => Math.round(b.power + ((players.find((x) => x.id === b.beyId && !x.dead)?.power || 0) * 0.5) + players.filter((x) => x.beylikId === b.id && !x.dead && x.id !== b.beyId).reduce((a2, x) => a2 + x.power * 0.25, 0) + (b.ocak ? 15 : 0));
+  const myBeylikOwn = snapshot.beyliks.find((b) => b.beyId === guestId) || null;
+  const myMuster = myBeylikOwn ? musterOf(myBeylikOwn) : 0;
   // Hedef beyle ittifak/dünürlük paktı varsa sunucu seferi reddeder (pactProtected) ve peşin kesilen altın yanar — tuşu baştan kapat.
   const pactWith = (otherId: string | null) => {
     if (!otherId || !guestId) return null;
@@ -328,6 +332,16 @@ export default function MpOyun() {
               <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>
                 {pf(t("mp.beylik.beyLine"), beyLabel)}{b.ocak ? " · " + pf(t("mp.beylik.ocakLine"), b.ocak) : ""}
               </Text>
+              {(() => {
+                const m = musterOf(b);
+                const showOdds = iAmBey && !isBey && myMuster > 0;
+                const odds = showOdds ? Math.round((100 * myMuster) / (myMuster + m)) : 0;
+                return (
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: showOdds ? (myMuster > m ? C.sage : C.ember) : C.parchmentDim, marginTop: 2 }}>
+                    {pf(t("mp.beylik.musterLine"), m)}{showOdds ? " · " + pf(t("mp.beylik.oddsLine"), odds) : ""}
+                  </Text>
+                );
+              })()}
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                 {!inThis && !isBey && (
                   <Pressable onPress={() => intent({ k: "joinBeylik", beylikId: b.id })} style={miniBtn}>
