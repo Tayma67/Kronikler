@@ -2330,6 +2330,10 @@ const WORLD_NEWS: string[] = [
   "%b ile %b2 arasındaki geçitte kar erken eridi; kervanlar bu yıl bir ay erken yola koyuldu.",
   "%b'nde bir kuyumcu çırağı ustasının kayıp yüzüğünü leylek yuvasında buldu; çarşı günlerdir bunu konuşuyor.",
   "%b beyinin kızı çeyizini yetim kızlara dağıttı derler; adı türkü olup %b2 pazarına kadar ulaştı.",
+  "%b'nde bir gece göğü kızıl aydınlandı; kimi yangın dedi, kimi kuyruklu yıldız — müneccimler hâlâ tartışıyor.",
+  "%b kadısı rüşvet alan mübaşiri meydan taşında teşhir etti; %b2 esnafı bile 'adalet oradaymış' diye söylendi.",
+  "%b'nde bu yıl bal öyle bol ki küpler yetmedi; fıçıcılar geceyi gündüze kattı.",
+  "%b ile %b2 arasında güvercin postası kuruldu derler; mektup üç günde değil üç saatte uçuyormuş.",
 ];
 function worldNews(s: GameState) {
   const i1 = Math.floor(Math.random() * BEYLIKS.length);
