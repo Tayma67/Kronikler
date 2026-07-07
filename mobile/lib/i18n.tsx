@@ -2556,7 +2556,7 @@ const FLAVX: Record<Lang, Dict> = {
     "mem.love": "İlk kez birine gönül kaptırdın; dilin tutuldu.", "mem.elder": "Bir ihtiyardan iki çift söz dinledin, aklına kazıdın.", "mem.friend": "Geç saatlere dek bir dostunla dertleştin.",
     "mem.graying": "Aynada ilk ak telini gördün; zaman akıp gidiyor.", "mem.spouseEve": "%1 ile sessiz bir akşam geçirdin; 'iyi ki varsın' dedin.", "mem.aloneEve": "Yalnız bir akşam, geçmişini düşündün.",
     "mem.childAsk": "%1 masum bir soru sordu; cevabını ararken sen de düşündün.", "mem.neighbor": "Bir komşuyla eski günleri yâd ettin.",
-    "mem.aches": "Dizlerin sızlıyor ama hatıraların zengin.", "mem.childStory": "%1'a gençlik hikâyelerini anlattın; gözleri parladı.", "mem.adviseYouth": "Gençlere akıl verdin; dinlediler mi, bilinmez.", "mem.grave": "Bir mezar taşı okudun; kendi faniliğini düşündün.",
+    "mem.aches": "Dizlerin sızlıyor ama hatıraların zengin.", "mem.childStory": "%1'a gençlik hikâyelerini anlattın; gözleri parladı.", "mem.adviseYouth": "Gençlere akıl verdin; dinlediler mi, bilinmez.", "mem.oldHand":"Eski defterleri karıştırırken gençliğinin el yazısına rastladın; harfler bile daha aceleciymiş o zamanlar.","mem.oldShop":"Çıraklık ettiğin dükkânın önünden geçtin; içerideki yeni çırak sana ustaymışsın gibi baktı.","mem.grave": "Bir mezar taşı okudun; kendi faniliğini düşündün.",
   },
   en: {
     "flav.kis1": "The cold bit hard; you warmed yourself by the hearth.", "flav.kis2": "Snow closed the roads; you stayed indoors.",
@@ -2570,7 +2570,7 @@ const FLAVX: Record<Lang, Dict> = {
     "mem.love": "You lost your heart to someone for the first time; your tongue tied.", "mem.elder": "You heeded an elder's few words and carved them into your mind.", "mem.friend": "You unburdened yourself to a friend late into the night.",
     "mem.graying": "You saw your first gray hair in the mirror; time slips by.", "mem.spouseEve": "You spent a quiet evening with %1; you said, 'I'm glad you're here.'", "mem.aloneEve": "A lonely evening; you dwelt on your past.",
     "mem.childAsk": "%1 asked an innocent question; seeking the answer, you pondered too.", "mem.neighbor": "You reminisced about old days with a neighbor.",
-    "mem.aches": "Your knees ache, but your memories are rich.", "mem.childStory": "You told %1 tales of your youth; their eyes lit up.", "mem.adviseYouth": "You counseled the young; whether they listened, who knows.", "mem.grave": "You read a gravestone and pondered your own mortality.",
+    "mem.aches": "Your knees ache, but your memories are rich.", "mem.childStory": "You told %1 tales of your youth; their eyes lit up.", "mem.adviseYouth": "You counseled the young; whether they listened, who knows.", "mem.oldHand":"Leafing through old ledgers you came upon your own young handwriting; even the letters were in more of a hurry back then.","mem.oldShop":"You passed the shop where you once apprenticed; the new apprentice inside looked at you as if you were a master.","mem.grave": "You read a gravestone and pondered your own mortality.",
   },
   es: {
     "flav.kis1": "El frío apretó; te calentaste junto al hogar.", "flav.kis2": "La nieve cerró los caminos; te quedaste en casa.",
@@ -2584,7 +2584,7 @@ const FLAVX: Record<Lang, Dict> = {
     "mem.love": "Perdiste el corazón por alguien por primera vez; se te trabó la lengua.", "mem.elder": "Atendiste las pocas palabras de un anciano y las grabaste en tu mente.", "mem.friend": "Te desahogaste con un amigo hasta entrada la noche.",
     "mem.graying": "Viste tu primera cana en el espejo; el tiempo se escurre.", "mem.spouseEve": "Pasaste una velada tranquila con %1; dijiste: 'qué bueno que estás'.", "mem.aloneEve": "Una velada solitaria; pensaste en tu pasado.",
     "mem.childAsk": "%1 hizo una pregunta inocente; buscando la respuesta, también reflexionaste.", "mem.neighbor": "Recordaste viejos tiempos con un vecino.",
-    "mem.aches": "Te duelen las rodillas, pero tus recuerdos son ricos.", "mem.childStory": "Le contaste a %1 historias de tu juventud; se le iluminaron los ojos.", "mem.adviseYouth": "Aconsejaste a los jóvenes; si escucharon, quién sabe.", "mem.grave": "Leíste una lápida y pensaste en tu propia mortalidad.",
+    "mem.aches": "Te duelen las rodillas, pero tus recuerdos son ricos.", "mem.childStory": "Le contaste a %1 historias de tu juventud; se le iluminaron los ojos.", "mem.adviseYouth": "Aconsejaste a los jóvenes; si escucharon, quién sabe.", "mem.oldHand":"Hojeando viejos cuadernos diste con tu letra de juventud; hasta las letras tenían más prisa entonces.","mem.oldShop":"Pasaste frente a la tienda donde fuiste aprendiz; el nuevo aprendiz te miró como si fueras un maestro.","mem.grave": "Leíste una lápida y pensaste en tu propia mortalidad.",
   },
   pt: {
     "flav.kis1": "O frio apertou; aqueceste-te junto à lareira.", "flav.kis2": "A neve fechou os caminhos; ficaste em casa.",
@@ -2598,7 +2598,7 @@ const FLAVX: Record<Lang, Dict> = {
     "mem.love": "Perdeste o coração por alguém pela primeira vez; a língua prendeu-se.", "mem.elder": "Deste ouvidos às poucas palavras de um ancião e gravaste-as na mente.", "mem.friend": "Desabafaste com um amigo até alta noite.",
     "mem.graying": "Viste o teu primeiro cabelo branco no espelho; o tempo escoa-se.", "mem.spouseEve": "Passaste um serão tranquilo com %1; disseste: 'ainda bem que existes'.", "mem.aloneEve": "Um serão solitário; pensaste no teu passado.",
     "mem.childAsk": "%1 fez uma pergunta inocente; ao buscar a resposta, também refletiste.", "mem.neighbor": "Recordaste velhos tempos com um vizinho.",
-    "mem.aches": "Os joelhos doem-te, mas as tuas memórias são ricas.", "mem.childStory": "Contaste a %1 histórias da tua juventude; os olhos dele brilharam.", "mem.adviseYouth": "Aconselhaste os jovens; se ouviram, quem sabe.", "mem.grave": "Leste uma lápide e pensaste na tua própria mortalidade.",
+    "mem.aches": "Os joelhos doem-te, mas as tuas memórias são ricas.", "mem.childStory": "Contaste a %1 histórias da tua juventude; os olhos dele brilharam.", "mem.adviseYouth": "Aconselhaste os jovens; se ouviram, quem sabe.", "mem.oldHand":"A folhear cadernos antigos deste com a tua letra de juventude; até as letras tinham mais pressa nesse tempo.","mem.oldShop":"Passaste diante da loja onde foste aprendiz; o novo aprendiz olhou-te como se fosses um mestre.","mem.grave": "Leste uma lápide e pensaste na tua própria mortalidade.",
   },
   ar: {
     "flav.kis1": "بردٌ قارس؛ ودفءٌ عند الموقد.", "flav.kis2": "أغلق الثلج الطرق؛ ولزومُ البيت.",
@@ -2612,7 +2612,7 @@ const FLAVX: Record<Lang, Dict> = {
     "mem.love": "أوّل تعلّقٍ بالقلب؛ وعقدةٌ في اللسان.", "mem.elder": "كلماتُ شيخٍ قليلة؛ رُسِخت في الذهن.", "mem.friend": "بوحٌ مع صديقٍ حتى عمق الليل.",
     "mem.graying": "أوّل شعرةٍ بيضاء في المرآة؛ والزمن يمضي.", "mem.spouseEve": "أمسيةٌ هادئة مع %1؛ وكلمةُ 'وجودك نعمة'.", "mem.aloneEve": "أمسيةٌ وحيدة؛ وتأمّلٌ في الماضي.",
     "mem.childAsk": "سأل %1 سؤالًا بريئًا؛ وفي البحث عن جوابه تأمّل.", "mem.neighbor": "ذكرى أيامٍ خَلَت مع جار.",
-    "mem.aches": "الركبتان تئنّان؛ لكنّ الذكريات غنيّة.", "mem.childStory": "حكاياتُ الصبا لـ%1؛ فلمعت عيناه.", "mem.adviseYouth": "نصحٌ للشباب؛ ومن يدري أأصغوا.", "mem.grave": "قراءةُ شاهد قبرٍ؛ وتأمّلٌ في الفناء.",
+    "mem.aches": "الركبتان تئنّان؛ لكنّ الذكريات غنيّة.", "mem.childStory": "حكاياتُ الصبا لـ%1؛ فلمعت عيناه.", "mem.adviseYouth": "نصحٌ للشباب؛ ومن يدري أأصغوا.", "mem.oldHand":"وأنت تقلب الدفاتر القديمة وقعت على خط يدك في الشباب؛ حتى الحروف كانت أعجل يومئذ.","mem.oldShop":"مررت أمام الدكان الذي تتلمذت فيه؛ فنظر إليك الصبي الجديد كأنك معلم.","mem.grave": "قراءةُ شاهد قبرٍ؛ وتأمّلٌ في الفناء.",
   },
   ru: {
     "flav.kis1": "Холод суров; ты греешься у очага.", "flav.kis2": "Снег закрыл дороги; ты сидишь дома.",
@@ -2626,7 +2626,7 @@ const FLAVX: Record<Lang, Dict> = {
     "mem.love": "Впервые сердце тянется к кому-то; язык немеет.", "mem.elder": "Несколько слов старика — и они врезаются в память.", "mem.friend": "До глубокой ночи ты делишься наболевшим с другом.",
     "mem.graying": "В зеркале — первый седой волос; время утекает.", "mem.spouseEve": "Тихий вечер с %1; ты говоришь: 'хорошо, что ты есть'.", "mem.aloneEve": "Одинокий вечер; ты думаешь о прошлом.",
     "mem.childAsk": "%1 задаёт наивный вопрос; ища ответ, задумываешься и ты.", "mem.neighbor": "С соседом вы вспоминаете былые дни.",
-    "mem.aches": "Колени ноют, но память богата.", "mem.childStory": "Ты рассказываешь %1 истории юности; глаза его загораются.", "mem.adviseYouth": "Ты наставляешь молодых; послушали ли — кто знает.", "mem.grave": "Надгробная надпись; мысль о собственной бренности.",
+    "mem.aches": "Колени ноют, но память богата.", "mem.childStory": "Ты рассказываешь %1 истории юности; глаза его загораются.", "mem.adviseYouth": "Ты наставляешь молодых; послушали ли — кто знает.", "mem.oldHand":"Среди старых тетрадей находится твой юношеский почерк; даже буквы тогда куда-то торопились.","mem.oldShop":"Мимо лавки, где прошло твоё ученичество, лежит дорога; новый подмастерье смотрит так, будто перед ним мастер.","mem.grave": "Надгробная надпись; мысль о собственной бренности.",
   },
 };
 

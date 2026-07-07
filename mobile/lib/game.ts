@@ -1443,6 +1443,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Dizlerin sızlıyor ama hatıraların zengin.", k: "mem.aches" },
         child ? { text: `${child}'a gençlik hikâyelerini anlattın; gözleri parladı.`, k: "mem.childStory", p: [child], fn: () => bumpNam(p, "dindar", 1) } : { text: "Gençlere akıl verdin; dinlediler mi, bilinmez.", k: "mem.adviseYouth", fn: () => bumpNam(p, "dindar", 1) },
         { text: "Bir mezar taşı okudun; kendi faniliğini düşündün.", k: "mem.grave" },
+        { text: "Eski defterleri karıştırırken gençliğinin el yazısına rastladın; harfler bile daha aceleciymiş o zamanlar.", k: "mem.oldHand" },
+        { text: "Çıraklık ettiğin dükkânın önünden geçtin; içerideki yeni çırak sana ustaymışsın gibi baktı.", k: "mem.oldShop" },
       );
     } else {
       // 70+: ömrün son faslının kendi dokusu — şafak yalnızlığı, giden dostlar, nasırlı eller, destanlaşan ad
