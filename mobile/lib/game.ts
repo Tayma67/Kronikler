@@ -4717,8 +4717,11 @@ export function tendChild(prev: GameState): GameState {
 }
 // ── Ay-içi mikro an: panoda beliren tek satırlık, atlanabilir seçim — "aynı üç buton" hissini kırar.
 // Etkiler bilinçli olarak minicik: iki seçenek de geçerli, farm yok (an rastgele düşer, ertesi ay kaybolur).
-export const MICRO_IDS = ["saganak", "sokak_kedisi", "cirak_tabla", "eski_turku", "yol_soran", "yildiz_gecesi", "nalbant_kivilcimi", "harman_yeli", "bekci_feneri", "kuyu_kovasi", "pazarci_terazisi", "kirlangic_yuvasi", "degirmen_tasi", "gurbet_mektubu", "firin_koru", "cesme_olugu", "kacan_esek", "dugun_davulu", "semerci_ciragi", "ikindi_golgesi"];
+export const MICRO_IDS = ["saganak", "sokak_kedisi", "cirak_tabla", "eski_turku", "yol_soran", "yildiz_gecesi", "nalbant_kivilcimi", "harman_yeli", "bekci_feneri", "kuyu_kovasi", "pazarci_terazisi", "kirlangic_yuvasi", "degirmen_tasi", "gurbet_mektubu", "firin_koru", "cesme_olugu", "kacan_esek", "dugun_davulu", "semerci_ciragi", "ikindi_golgesi", "kar_lapasi", "sahaf_tezgahi", "kopru_dilencisi"];
 const MICRO_R_TR: Record<string, [string, string]> = {
+  kar_lapasi: ["Kar savaşının ortasına daldın; yanaklar al al, yürek çocuk. Akşam yorgunluğu tatlıydı.", "Tandırın başında elini ısıttın; dışarıda cıvıltı, içeride köz. İkisi de kışın hakkı."],
+  sahaf_tezgahi: ["Sayfaları düzeltip taşla bastırdın; sahaf teşekkür yerine bir beyit okudu. İkiniz de kazandınız.", "Yüksek sesle bir beyit okudun; tezgâh önünde iki kişi durdu, biri cöngü satın aldı. Sahafın gözü güldü."],
+  kopru_dilencisi: ["Taşın üstüne çömelip dinledin: bir zamanlar kervan sahibiymiş. Hikâyenin sonunda tasına birkaç akçe düştü — başkalarından.", "Hırkanı omzuna bıraktın; ihtiyar gözlerini kapatıp uzun bir dua etti. Yağmur başladığında üşüyen sen değildin."],
   nalbant_kivilcimi: ["Alnını okşayıp kulağına bir şeyler mırıldandın; at duruldu. Nalbant 'eline sağlık' dedi.", "Ustanın çekiç ritmini çözdün: el, göz ve sabır — zanaat dediğin üçünün toplamı."],
   harman_yeli: ["Örtünün ucundan tuttun; harman kurtuldu. Komşu akşam kapına bir tas bulgur bıraktı.", "Rüzgârın savurduğu başakları topladın; akşam çorbasına bir avuç bereket."],
   bekci_feneri: ["Ocaktan kor uzattın; fener yeniden yandı. O gece sokağın uykusu senin korunla aydınlandı, bekçi duasını esirgemedi.", "Fitili kesip düzelttin; alev daha gür yandı. Bekçi 'usta elin varmış' diye söylendi."],
@@ -4766,6 +4769,9 @@ export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
   else if (id === "dugun_davulu") { if (choice === 0) { gainSkill(s, "social", 3); p.fame = Math.min(100, p.fame + 1); } else gainSkill(s, "social", 2); }
   else if (id === "semerci_ciragi") { if (choice === 0) { addStatXp(s, "strength", 3); gainSkill(s, "crafting", 2); } else { addStatXp(s, "intelligence", 3); gainSkill(s, "social", 1); } }
   else if (id === "ikindi_golgesi") { if (choice === 0) { gainSkill(s, "social", 3); addStatXp(s, "intelligence", 2); } else addStatXp(s, "stamina", 2); }
+  else if (id === "kar_lapasi") { if (choice === 0) { addStatXp(s, "stamina", 2); p.health = Math.min(100, p.health + 1); } else p.hunger = Math.min(100, p.hunger + 2); }
+  else if (id === "sahaf_tezgahi") { if (choice === 0) addStatXp(s, "intelligence", 2); else gainSkill(s, "social", 2); }
+  else if (id === "kopru_dilencisi") { if (choice === 0) { gainSkill(s, "social", 2); bumpNam(p, "comert", 1); } else { bumpNam(p, "comert", 1); p.reputation = Math.min(100, p.reputation + 1); } }
   const rtr = MICRO_R_TR[id];
   push(s, "gunluk", rtr ? rtr[choice] : "", "kişisel", false, { k: `micro.${id}.r${choice}` });
   return s;
