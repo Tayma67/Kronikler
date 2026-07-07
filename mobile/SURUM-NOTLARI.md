@@ -2,6 +2,18 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 201-205 paketi (7 Temmuz, gece) — KAN DEFTERİ VE ZİNCİR
+
+**Tek cümle (mağaza/what's new):**
+TR: "Çok oyunculuda insanın her hâli masada: rakibini rehin al, fidye pazarlığı yap ya da merhametle salıver; kapına gözcü dik, hançeri ve casusu duvara çarptır. Tek oyunculuda ise kana bulanan dava artık soy defterine yazılıyor — Kan Defteri üç kuşak sürüyor ve hüküm gecesi kıyım, dünürlük ya da bedelle kapanıyor."
+EN: "Multiplayer now holds every human move: take a rival hostage, haggle the ransom or release them in mercy; post a watcher at your door and let daggers and spies hit the wall. In single player, a feud steeped in blood is written into the line itself — the Blood Ledger spans three generations, and on the night of judgment it closes in slaughter, kinship, or a price."
+
+**Öne çıkanlar:**
+- **Rehin & Fidye (MP):** Rehin düellosunu kazanan kaybedeni zincire vurur; fidye ödenene dek sefer, kılıç ve taht kapalı. Merhametle salıvermek şeref getirir; 12 ay ödenmeyen fidyenin rehinesi surdan iple iner.
+- **Gözcü Nöbeti (MP):** 250 akçeye altı ay koruma — suikast şansı yarıya, sabotajcı yakalanır, casus başarsa bile fark edilir, rehin girişimi sura çarpar. Entrika artık simetrik.
+- **KAN DEFTERİ (SP, amiral gemisi):** Kan davası kana bulanınca soy defteri açılır. Kan Yazısı yemini, İlk Bedel baskını ya da kadı yolu; defter vârise geçer — sürdür ya da ocakta yak. İkinci kuşak çarşıda gölgesini ölçer, üçüncü kuşak hüküm gecesinde kıyım / dünürlük / bedel seçer. "Defter Kapandı" başarımı üç kuşağın sabrına.
+- **His katmanı (SP):** Beceri seviye atlamaları artık kutlanıyor; zindan kapısı ve kronik hastalık ağır dokunuyor; Kan Defteri açılırken çan çalıyor.
+
 ## Dalga 193-200 eki (7 Temmuz, gece) — İKİ YÜZÜNCÜ DALGA
 
 **Tek cümle (mağaza/what's new):**
