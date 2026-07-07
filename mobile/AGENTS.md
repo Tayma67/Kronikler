@@ -35,6 +35,10 @@ Aşağıdaki kurallar geçmiş oturumlarda kullanıcıyla kesinleşti; **tartı�
    - Simde `p.age` ile birlikte `p.base_age` da set edilir.
    - `gainSkill` doğrudan `p.skills`'e değil `p.skill_xp[key]`'e yazar (merakli ×1.15) — assert'ler `skill_xp` üzerinde `>=` ile.
 5. **Smoke:** `node scripts/_smoke/run.cjs` → "HATA: 0" şart. (~15-25 dk sürer; normaldir, asılı değildir.)
+   **Kadans (kullanıcı kararı, 7 Temmuz):** smoke HER dalgada koşulmaz — 4-5 dalgada bir kontrol noktası
+   olarak VE her APK tetiklemesinden önce koşulur (APK'ya giren kod smoke'suz yayınlanmaz). Ara dalgalarda
+   hedefli sim + tsc + bundle + checker + migrate yeterlidir. Smoke kontrol noktası patlarsa suçlu,
+   son smoke'tan bu yana giren dalgalardadır — hedefli simlerle daralt.
 6. `node scripts/_smoke/migrate-check.cjs` (eski kayıt göçü).
 7. **Checker:** `node scripts/_smoke/i18n-icon-check.cjs` → "SONUÇ: 20 sorun kategorisi" (taban; artarsa yeni sorun var demektir).
 8. Depo kökünden commit + `git push -u origin apk` (ağ hatasında 2s/4s/8s/16s geri çekilmeli 5 deneme).
