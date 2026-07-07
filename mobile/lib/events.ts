@@ -992,6 +992,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
           { label: "Sıranı çocuğa ver", delta: { reputation: 2, nam: { comert: 1 } }, result: "Sıranı küçük bir çocuğa verdin; yumurta çatladığında sanki sen kazanmış gibi sevindin." },
         ],
       },
+      {
+        id: "fest_nevruz_5", icon: "party", title: "Bahar Salıncağı",
+        text: "Nevruz'da meydandaki ulu dala urgan atılmış, salıncak kurulmuş; büyük küçük sıraya girmiş, urganı çekecek güçlü kol aranıyor.",
+        when: (p) => p.age >= 14,
+        choices: [
+          { label: "Urganı sen çek", delta: { reputation: 2, nam: { comert: 1 } }, result: "Akşama dek salıncak salladın; çocuk kahkahaları meydanı doldurdu, kolun düştü ama gönlün şen." },
+          { label: "Sıraya gir, doyasıya sallan", delta: { fame: 1 }, result: "Göğe değecek gibi sallandın; bir an her şey hafifledi — Nevruz dediğin bu." },
+        ],
+      },
     ],
   },
   {
@@ -1051,6 +1060,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
           { label: "Sofraya kuzu bağışla", delta: { money: -15, fame: 2, nam: { comert: 2 } }, result: "Kazana kuzu düştü; imece sofrası bayram sofrasına döndü, dualar peş peşe geldi." },
         ],
       },
+      {
+        id: "fest_hasat_5", icon: "wheat", title: "Son Araba",
+        text: "Harmandan dönen son araba yolda dingilini kırdı; akşam iniyor, saplar yolda kalmış.",
+        when: (p) => p.age >= 14,
+        choices: [
+          { label: "Omuz ver, arabayı kurtar", delta: { reputation: 2, nam: { mert: 1 } }, result: "Dingil bağlandı, saplar ambara girdi; arabacı hakkını helal etti, harman tam kapandı." },
+          { label: "Köye haber sal", delta: { reputation: 1 }, result: "Köyden el geldi, yük paylaşıldı; sen koşturan ayak oldun, adın anıldı." },
+        ],
+      },
     ],
   },
   {
@@ -1108,6 +1126,15 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
         choices: [
           { label: "Helvayı sen kavur", delta: { reputation: 2 }, result: "Kaşığı devrettiğinde helva kokusu sokağa taşmıştı; eline sağlık sesleri geceyi ısıttı." },
           { label: "Kavrulurken hikâye anlat", delta: { fame: 2 }, result: "Helva dönerken sen de bir hikâye döndürdün; kaşık durdu, kulaklar sende kaldı." },
+        ],
+      },
+      {
+        id: "fest_kis_5", icon: "flame", title: "Kar Feneri",
+        text: "Kış meclisine gelenler için yol zifiri karanlık; ihtiyarlar mescit yolunda fener eksikliğinden yakınıyor.",
+        when: (p) => p.age >= 14,
+        choices: [
+          { label: "Fenerini yol boyuna as", delta: { money: -6, honor: 2, nam: { dindar: 1 } }, result: "Fenerin geceyi böldü; meclise gelen her ihtiyar kapıda sana dua etti." },
+          { label: "Kapı kapı fenerci topla", delta: { reputation: 2 }, result: "Beş kapıdan beş fener çıktı; yol ışıl ışıl, meclis her zamankinden kalabalıktı." },
         ],
       },
     ],
