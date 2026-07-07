@@ -45,6 +45,8 @@ Ve bir yemin taşı: ölüm döşeğindeki bir ihtiyarın avucundan kül rengi b
 6. Savaş karşılaşması (Kara Alp) — anlatılı sonuç
 7. Hanedan ekranı — ittifaklar, kan davası
 8. Başarımlar — ilerleme çubukları
+9. Hayat Şeridi perdesi — bir dönüm noktası karesi (sinema hissi)
+10. MP diplomasi — rehin/pusu/gözcü kartları (insani etkileşim vaadi)
 
 Çekim notu: koyu tema doğal; durum çubuğunu gizle; TR ve EN ayrı set (mağaza yerelleştirmesi başına yüklenir).
 
