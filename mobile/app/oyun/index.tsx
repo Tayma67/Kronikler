@@ -762,9 +762,17 @@ export default function Dashboard() {
         <ScrollView style={{ flex: 1, backgroundColor: "#221808" }} contentContainerStyle={{ padding: 12 }}>
           {/* "Bu ay" özeti: son ilerlemede 2+ gelişme düştüyse sayısı + işaret açıklaması (çok olaylı aylar sessizce kaybolmasın) */}
           {freshMark && (
-            <Animated.View entering={FadeInDown.duration(240)} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(224,188,90,0.08)", borderWidth: 1, borderColor: "rgba(224,188,90,0.4)", borderRadius: 9, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 10 }}>
-              <GameIcon name="hourglass" size={13} color={C.goldBright} />
-              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, letterSpacing: 0.5, color: C.goldBright }}>{applyParams(t("dash.monthDigest"), [freshMark.n])}</Text>
+            <Animated.View entering={FadeInDown.duration(240)} style={{ backgroundColor: "rgba(224,188,90,0.08)", borderWidth: 1, borderColor: "rgba(224,188,90,0.4)", borderRadius: 9, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 10 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <GameIcon name="hourglass" size={13} color={C.goldBright} />
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, letterSpacing: 0.5, color: C.goldBright }}>{applyParams(t("dash.monthDigest"), [freshMark.n])}</Text>
+              </View>
+              {/* Ay parşömeni: sayı değil hikâye — bu ayın son 3 gelişmesi tek satırlık özetlerle (kaybolan aylar bitti) */}
+              {state.history.slice(freshMark.from).slice(-3).map((e, i) => (
+                <Text key={i} numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchment, marginTop: i === 0 ? 6 : 3 }}>
+                  • {renderEvt(e.k, e.text, e.p, lang, t, state.player.gender === "kadın")}
+                </Text>
+              ))}
             </Animated.View>
           )}
           <Animated.View key={tab} entering={FadeIn.duration(220)}>
