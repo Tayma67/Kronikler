@@ -8,6 +8,7 @@ import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
 import { useGame } from "../../lib/store";
+import { advanceUntilEvent } from "../../lib/game";
 import { StatDeltaOverlay } from "../../lib/feel";
 import { Ambiance } from "../../lib/fx";
 import { hap } from "../../lib/haptics";
@@ -20,7 +21,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 
 // Nav ortasında yükseltilmiş yuvarlak "Ayı İlerle" düğmesi (Karakter ↔ İlişkiler arası).
 function AdvanceFab({ bottom }: { bottom: number }) {
-  const { state, doAdvance, mpMode } = useGame();
+  const { state, doAdvance, mpMode, apply } = useGame();
   const { t } = useI18n();
   const pulse = useSharedValue(1);
   useEffect(() => {
@@ -41,8 +42,10 @@ function AdvanceFab({ bottom }: { bottom: number }) {
         </View>
         <Animated.View style={style}>
           <Pressable
-            accessibilityRole="button" accessibilityLabel={t("a11y.advance")}
+            accessibilityRole="button" accessibilityLabel={t("a11y.advance")} accessibilityHint={t("adv.ffHint")}
             onPress={() => { hap("advance"); playAdvance(); doAdvance(1); }}
+            onLongPress={() => { hap("success"); playAdvance(); apply((s) => advanceUntilEvent(s, 6)); }}
+            delayLongPress={420}
             style={{
               width: 60, height: 60, borderRadius: 30, backgroundColor: C.gold,
               alignItems: "center", justifyContent: "center",
@@ -55,6 +58,7 @@ function AdvanceFab({ bottom }: { bottom: number }) {
         </Animated.View>
         {/* Çekirdek eylem ikon-only kalmasın: mikro etiket (a11y metniyle aynı anahtar) */}
         <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1.2, color: C.goldDim, marginTop: 3, textTransform: "uppercase" }}>{t("a11y.advance")}</Text>
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 7.5, color: C.parchmentMuted, marginTop: 1 }}>{t("adv.ffHint")}</Text>
       </View>
     </View>
   );

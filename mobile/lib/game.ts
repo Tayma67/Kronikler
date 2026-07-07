@@ -5777,6 +5777,21 @@ export function beginArc(prev: GameState, id: string): GameState {
   return s;
 }
 // Aktif yayda bir seçim yap: etkiyi uygula, sahneyi ilerlet ya da bitir.
+// Sonraki olaya kadar ilerle: karar isteyen bir şey (bekleyen sahne, mikro an, destan sahnesi,
+// divan arzuhali) ya da bir dönüm noktası düşene dek zamanı akıt — en çok maxAy ay.
+// Güvenlik: açlık/sağlık kritiğe inerse durur; oyuncu ekranı izlemeden eriyip ölmesin.
+export function advanceUntilEvent(prev: GameState, maxAy = 6): GameState {
+  let s = prev;
+  for (let i = 0; i < maxAy; i++) {
+    s = advance(s, 1);
+    const p = s.player;
+    if (p.dead) break;
+    if (s.pendingScene || s.micro || s.saga?.scene || (p.crowned && s.divan)) break;
+    if (p.hunger <= 30 || p.health <= 40) break;
+    if (s.history.some((e) => e.landmark && e.day >= s.turn)) break;
+  }
+  return s;
+}
 export function advanceArc(prev: GameState, choiceIdx: number, loc?: { result?: string; endLabel?: string }): GameState {
   const s = clone(prev);
   if (s.player.dead || !s.story.active) return s; // ceset hikâye ilerletemez (kazanç mirasa sızıyordu)
