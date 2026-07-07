@@ -1781,6 +1781,8 @@ export function advance(prev: GameState, n = 1): GameState {
         "Yolcular tuhaf haberler getiriyor; ay dönmeden öğrenirsin.",
         "İçine bir his düştü — bu ay bitmeden kapın çalınabilir.",
         "Ufukta toz bulutu; haberi yakında gelir.",
+        "Kahvede yanındaki masada bir cümle yarım kaldı: adın geçti, gerisini duyamadın.",
+        "Rüzgâr uzaktan bir davul sesi getirdi; kimse nereden geldiğini kestiremedi.",
       ];
       const fi = Math.floor(Math.random() * FIS.length);
       push(s, "fisilti", FIS[fi], "kişisel", false, { k: "fis." + fi });
