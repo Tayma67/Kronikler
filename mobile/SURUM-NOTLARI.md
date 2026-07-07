@@ -2,6 +2,20 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 170-175 paketi (7 Temmuz, gece) — MECLİSTE SİYASET, YOLDA KILIÇ
+
+**Tek cümle (mağaza/what's new):**
+TR: "Çok oyunculu meclis siyasete döndü: yıl kapanışında üç defne dağıtılıyor, beyler aralarından bir Meclis Reisi seçiyor, dosta 'seferine omuz ver' diyebiliyorsun; tek oyunculuda ise maiyetin artık kervanını koruyor ve kuyumcu tezgâhında dört yeni takı parlıyor."
+EN: "The multiplayer hall turned political: three laurels are awarded at year's end, the beys elect a Speaker among themselves, and you can back a friend's campaign; in single player your retinue now guards your caravan and four new jewels shine at the jeweler's stall."
+
+**Öne çıkanlar:**
+- **Yıllık Diyar Ödülleri (MP):** Her oyun yılı kapanışında meclis üç defne dağıtır — gücünü en çok büyüten *Yılın Beyi*, adı dilden dile dolaşan *Yılın Yıldızı*, eli açık ve sözünde duran *Yılın Alicenabı*. Nişan bir yıl ad yanında taşınır.
+- **Meclis Reisi (MP):** Diplomasi ekranından yıl boyunca oy ver (kendine oy geçersiz, son oy sayılır); kapanışta en çok oy — eşitlikte en yüksek şeref — reis olur, nişanını bir yıl taşır.
+- **Ortak Sefer (MP):** Bir beyin seferine "omuz ver" — gücünün yarısı onun ordusuyla yürür; zaferde ganimet haberi, her hâlükârda tutulan sözün şerefi. İşbirliği de ihanet kadar taktik artık.
+- **Rakip paneli (MP):** Meclis şeridi güç sıralamasında hemen önündeki beyi gösterir — güç ve şöhret kafa kafaya; zirvedeysen herkesin seni kovaladığını bilirsin.
+- **Maiyet kervanı korur (SP):** Kapındaki kılıçlar kervanla yürür — pusu iştahı kılıç başına kırılır, yağmada omuz verirler; pazarda görünür ipucu.
+- **Takı yuvası (SP):** Akik yüzük, kehribar tespih, gümüş gerdanlık, altın bilezik — kıyafetin yanına ayrı yuva; göz alır, itibar taşır. Zırh kuşananın parıltısı yine sönük.
+
 ## Dalga 166-168 eki (7 Temmuz, gece) — DİYAR MECLİS OLDU
 
 **Tek cümle (mağaza/what's new):**
