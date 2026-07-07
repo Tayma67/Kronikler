@@ -102,7 +102,7 @@ export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr"): strin
     tatsiz_konu: "dlg.cb.sour", rahatsizlik: "dlg.cb.sour",
   };
   const k = map[memTur]; if (!k) return "";
-  const key = Math.random() < 0.5 ? k : k + "2"; // her göndermenin iki varyantı — uzun oyunda ezber kırılır
+  const vi = Math.floor(Math.random() * 3); const key = vi === 0 ? k : k + (vi + 1); // her göndermenin üç varyantı — uzun oyunda ezber kırılır
   return tFor(lang, key).replace("%n", npc.name.split(" ")[0]);
 }
 
