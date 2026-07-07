@@ -57,6 +57,7 @@ export interface Player {
   hotGoods?: number; // satılmamış sıcak mal değeri (büyük soygunlardan; eritilmesi riskli)
   gamble_turn?: number; // zar meclisi ayda bir el — kasa avantajlı kumar gelir farm'ı olamaz
   plot_wins?: number; // tamamlanan komplolar — Gölge Ustası başarımı ve entrika ustalığı izi
+  retinue?: number; // maiyet: ulufeli muhafız (0-3) — savaş gücü + yol caydırıcılığı; ulufe ödenmezse dağılır
   last_crime_turn?: number; // son suç denemesi turu (ay başına tek deneme; risksiz spam önlenir)
   crime_wins?: number; // başarıyla tamamlanan suç sayısı — yeraltı namı; ağır işler bununla açılır (merdiven)
   governorships?: string[]; // valisi olunan şehirler
@@ -1890,6 +1891,7 @@ function tickDynasties(s: GameState, announce: boolean) {
   // ── Kan davası tiki: tutuşma, ısı, tırmanma, aylık zarar. Dava sulh ya da meydan savaşıyla biter; bitmezse NESLE GEÇER. ──
   if (announce) tickFeud(s, rivals);
   if (announce) tickPlot(s, rivals);
+  if (announce) tickRetinue(s);
   // Düşman hane sabotajı: tutumu çok düşük bir hane oyuncunun mülküne el uzatır (gerçek zarar).
   if (announce && p.properties.length) {
     const foes = rivals.filter((h) => (h.tutum ?? 0) <= -25 && h.id !== s.feud?.houseId); // dava hanesi ayrı işlenir (tickFeud) — çifte sabotaj olmasın
@@ -3222,7 +3224,7 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
     push(s, "yolculuk", `Kervana katılıp ${dest}'e rahatça vardın.`, "kişisel", false, { k: "evj.carJoin", p: [{ pl: dest }] });
   } else if (route === "patika") {
     p.hunger = Math.max(0, p.hunger - 7); p.location_name = dest; markVisit(p, dest);
-    const ambush = Math.random() < Math.max(0.08, 0.3 - combatPower(p) * 0.012);
+    const ambush = Math.random() < retinueGuardMult(p) * Math.max(0.08, 0.3 - combatPower(p) * 0.012);
     if (ambush) {
       const hurt = 8 + Math.floor(Math.random() * 10) - armorDefense(p);
       const loss = Math.min(p.money, 5 + Math.floor(Math.random() * 15));
@@ -3236,7 +3238,7 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
     p.hunger = Math.max(0, p.hunger - 4); p.location_name = dest; markVisit(p, dest);
     // At hızlı: pusu nadir, baskına uğrasan da dörtnala sıyrılırsın.
     const ambush = Math.random() < Math.max(0.03, 0.12 - combatPower(p) * 0.01);
-    if (ambush && Math.random() < 0.18) { // nadiren atını kaybedersin — yoldaşını yitirmek gibi
+    if (ambush && Math.random() < retinueGuardMult(p) * 0.18) { // nadiren atını kaybedersin — yoldaşını yitirmek gibi
       const hn = p.horse_name || ""; p.horse = false; p.horse_name = undefined;
       p.health = Math.max(1, p.health - (5 + Math.floor(Math.random() * 6)));
       push(s, "yolculuk", `Haydutlar atın ${hn}'ı elinden aldı; ${dest}'e yaya, gönlün buruk vardın.`, "kişisel", true, { k: "horse.lost", p: [hn, { pl: dest }] });
@@ -3855,6 +3857,39 @@ function crimeCaught(s: GameState, kind: CrimeKind) {
   if (ct.sev >= 3 && Math.random() < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } });
   push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.`, "kişisel", true, { k: "evj.crimeCaught", p: [fine, extra >= 4 ? { sfx: "sfx.crimeHard" } : ""] });
   if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
+}
+
+// ── MAİYET: ulufeli muhafız birliği — kılıç kiralanır, sadakat ulufeyle ayakta durur. ──
+export function retinueGuardMult(p: Player): number { return Math.max(0.25, 1 - (p.retinue || 0) * 0.25); } // her kılıç pusu iştahını %25 kırar
+export const RETINUE_MAX = 3;
+export const RETINUE_HIRE = 35;
+export const RETINUE_WAGE = 10;
+export function retinueHireCost(s: GameState): number { return Math.round(RETINUE_HIRE * inflationFactor(s)); }
+export function retinueWage(s: GameState): number { return Math.round(RETINUE_WAGE * inflationFactor(s)) * (s.player.retinue || 0); }
+export function hireGuard(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 16 || inJail(p)) return s;
+  if ((p.retinue || 0) >= RETINUE_MAX) return s;
+  const cost = retinueHireCost(s);
+  if (p.money < cost) return s;
+  p.money -= cost; p.retinue = (p.retinue || 0) + 1;
+  push(s, "maiyet", `Kapına bir muhafız aldın (${p.retinue}. kılıç); ulufesi ay be ay kesenden çıkacak.`, "kişisel", false, { k: "evj.guardHire", p: [p.retinue] });
+  return s;
+}
+export function dismissGuards(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !(p.retinue || 0)) return s;
+  p.retinue = 0;
+  push(s, "maiyet", `Maiyetini dağıttın; muhafızlar helalleşip kapından ayrıldı.`, "kişisel", false, { k: "evj.guardDismiss" });
+  return s;
+}
+function tickRetinue(s: GameState) {
+  const p = s.player;
+  const n = p.retinue || 0; if (!n || p.dead) return;
+  const wage = retinueWage(s);
+  if (p.money >= wage) { p.money -= wage; return; } // ulufe sessizce işler (ayrı satır kalabalığı yapmaz)
+  p.retinue = n - 1; // kese boş: her ay bir kılıç gider
+  push(s, "maiyet", `Ulufe ödenmedi; bir muhafız kuşağını toplayıp ayrıldı (kalan ${p.retinue}).`, "kişisel", false, { k: "evj.guardLeave", p: [p.retinue] });
 }
 
 // Zar Meclisi (han köşesi kumarı): ayda bir el, kasa hep avantajlı — heyecan satar, servet satmaz.
@@ -4944,6 +4979,7 @@ export function combatPower(p: Player): number {
   if (w?.twoHanded) weaponPw = Math.round(weaponPw * 1.32); // çift elli silah daha sert vurur (kalkan feda edilir)
   pw += weaponPw || ((p.inventory["bicak"] || 0) > 0 ? 4 : 0); // kalite-ölçekli silah, yoksa elindeki bıçak
   if (p.faction === "asker") pw += 3;
+  pw += (p.retinue || 0) * 3; // maiyet omuz omuza çarpışır
   if (p.childhood === "canli") pw += 2; // canlı çocukluk: ömür boyu dinç beden
   if (p.temperament === "yigit") pw += 1; // yiğit mizaç: doğuştan cenkçi damar
   if (hasPerk(p, "cevik")) pw += 3;

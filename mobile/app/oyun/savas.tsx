@@ -4,7 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, startBattleAttempt, inflationFactor } from "../../lib/game";
+import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail } from "../../lib/game";
 import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
 import { playVictory } from "../../lib/sound";
 import { GameIcon } from "../../lib/icons";
@@ -221,6 +221,29 @@ export default function Savas() {
             </Pressable>
           </View>
         )}
+        {p.age >= 16 && (() => {
+          const n = p.retinue || 0;
+          const hcost = retinueHireCost(state);
+          const wage = retinueWage(state);
+          const canHire = n < RETINUE_MAX && p.money >= hcost && !inJail(p);
+          return (
+            <View style={{ backgroundColor: "rgba(127,166,106,0.06)", borderWidth: 1, borderColor: "rgba(127,166,106,0.35)", borderRadius: 11, padding: 13, marginBottom: 12 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("ret.title").toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchment, marginTop: 4 }}>{applyParams(t("ret.status"), [n, RETINUE_MAX])}{n > 0 ? " · " + applyParams(t("ret.wage"), [wage]) : ""}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 2 }}>{t("ret.desc")}</Text>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 9 }}>
+                <Pressable disabled={!canHire} onPress={() => { hap("tap"); apply((s) => hireGuard(s)); }} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1, borderColor: canHire ? "rgba(127,166,106,0.5)" : C.border, alignItems: "center", opacity: canHire ? 1 : 0.4 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10.5, color: canHire ? C.sage : C.parchmentMuted }}>{applyParams(t("ret.hire"), [hcost])}</Text>
+                </Pressable>
+                {n > 0 && (
+                  <Pressable onPress={() => { hap("tap"); apply((s) => dismissGuards(s)); }} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1, borderColor: C.border, alignItems: "center" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.parchmentMuted }}>{t("ret.dismiss")}</Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          );
+        })()}
         {ENCOUNTERS.filter((e) => !e.minFame || p.fame >= e.minFame).map((e) => {
           const tooStrong = e.power > pw + 8;
           return (
