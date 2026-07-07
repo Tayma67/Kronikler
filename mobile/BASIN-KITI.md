@@ -35,7 +35,7 @@ the end of the story: your oaths, your feuds, and your unfinished saga pass to y
 | Diller | TR, EN, ES, PT, AR, RU |
 | Bağlantı | Tamamen çevrimdışı (isteğe bağlı MP diyarı — BETA, kendi sunucunla) |
 | Motor | React Native / Expo; tek kişilik geliştirme |
-| İçerik | 100+ ikilem, 16 sahnelik ana destan + 3 kuşaklık Kan Defteri, çift yönlü entrika, veraset krizi, kadı duruşması, saray heyeti, maiyet, takı yuvası, 15 meslek, 5 lonca, 16 arzuhal, 20 mikro an, 42 yerleşim; MP: defneler, reis seçimi, ortak sefer, rehin & fidye, gözcü nöbeti, kervan pususu, diyar veraseti |
+| İçerik | 100+ ikilem, 16 sahnelik ana destan + 3 kuşaklık Kan Defteri, çift yönlü entrika, veraset krizi, kadı duruşması, saray heyeti, maiyet, takı yuvası, 15 meslek, 5 lonca, 16 arzuhal, 20 mikro an, 42 yerleşim; MP: defneler, reis seçimi, ortak sefer, rehin & fidye, gözcü nöbeti, kervan pususu, ortak kumpas (saray darbesi), diyar veraseti |
 | İndirme | github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk |
 
 ## Hikâye kancaları (röportaj/haber açıları)

@@ -35,6 +35,7 @@ Ve bir yemin taşı: ölüm döşeğindeki bir ihtiyarın avucundan kül rengi b
 1. TR: "Bir ömür değil, bir soy" / EN: "Not one life — a lineage"
 2. TR: "Divanda ferman senin" / EN: "The divan awaits your decree"
 3. TR: "Tamamen çevrimdışı" / EN: "Fully offline"
+4. TR: "Gerçek oyuncularla entrika" / EN: "Intrigue with real players"
 
 ## Ekran görüntüsü çekim planı (8 kare, telefonda TR + EN)
 1. Ana pano — genç karakter, İlk Adımlar kartı açık (onboarding hissi)
