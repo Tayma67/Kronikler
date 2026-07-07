@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { View, Pressable } from "react-native";
+import { View, Pressable, Text } from "react-native";
 import Svg, { Defs, RadialGradient, Stop, Rect } from "react-native-svg";
 import { useEffect } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
@@ -53,6 +53,8 @@ function AdvanceFab({ bottom }: { bottom: number }) {
             <GameIcon name="ilerle" size={26} color={C.inkOnGold} />
           </Pressable>
         </Animated.View>
+        {/* Çekirdek eylem ikon-only kalmasın: mikro etiket (a11y metniyle aynı anahtar) */}
+        <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1.2, color: C.goldDim, marginTop: 3, textTransform: "uppercase" }}>{t("a11y.advance")}</Text>
       </View>
     </View>
   );
