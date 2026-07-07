@@ -157,6 +157,19 @@ export default function MpOyun() {
                   <Text style={{ color: C.gold }}>{lastChat.fromName}: </Text>{lastChat.text}
                 </Text>
               )}
+              {!p.dead && me && (() => {
+                const ranked = players.filter((x) => !x.dead).sort((a2, b2) => b2.power - a2.power);
+                const myIdx = ranked.findIndex((x) => x.id === guestId);
+                const ahead = myIdx > 0 ? ranked[myIdx - 1] : null;
+                if (!ahead) return (
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.goldBright, marginTop: 7 }}>{t("mp.rival.top")}</Text>
+                );
+                return (
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 7 }}>
+                    {applyParams(t("mp.rival.line"), [ahead.name])} <Text style={{ color: C.gold }}>{t("mp.rival.power")} {myPower}/{ahead.power} · {t("mp.rival.fame")} {Math.round(p.fame)}/{ahead.fame}</Text>
+                  </Text>
+                );
+              })()}
               {!p.dead && (
                 <View style={{ flexDirection: "row", gap: 6, marginTop: 8 }}>
                   {NARAS.map(([k, label]) => (
