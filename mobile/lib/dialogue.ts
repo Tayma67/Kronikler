@@ -20,7 +20,9 @@ export interface ConvResult { line: string; moodDelta: number; relDelta: number;
 // Algı selamı: halkın seni görüşü (feared/beloved...) sohbet açılışına yansır. Anahtar yoksa boş döner (ham anahtar sızmaz).
 export function perceptionGreeting(lang: Lang, key: string): string {
   const base = "pp.greet." + key;
-  if (Math.random() < 0.5) { const alt = tFor(lang, base + ".b"); if (alt !== base + ".b") return alt; } // ikinci ağız: aynı algının farklı selamı
+  const roll = Math.random(); // üç ağız: aynı algının farklı selamları
+  if (roll < 0.34) { const alt = tFor(lang, base + ".c"); if (alt !== base + ".c") return alt; }
+  if (roll < 0.67) { const alt = tFor(lang, base + ".b"); if (alt !== base + ".b") return alt; }
   const v = tFor(lang, base); return v === base ? "" : v;
 }
 
