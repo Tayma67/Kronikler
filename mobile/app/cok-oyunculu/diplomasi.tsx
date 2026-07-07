@@ -118,6 +118,11 @@ export default function Diplomasi() {
                 <Text style={{ fontFamily: F.display, fontSize: 12, color: C.goldDim, width: 18 }}>{i + 1}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: open ? C.gold : C.parchment }}>{x.name}{x.crowned ? " ♔" : ""}</Text>
+                  {(snapshot.reis?.id === x.id || !!x.laurel) && (
+                    <Text style={{ fontFamily: F.display, fontSize: 8.5, color: C.goldBright }}>
+                      {snapshot.reis?.id === x.id ? "⚜ " + t("mp.reis.badge") : ""}{snapshot.reis?.id === x.id && x.laurel ? " · " : ""}{x.laurel ? "❧ " + t("mp.laurel." + x.laurel) : ""}
+                    </Text>
+                  )}
                   <Text style={{ fontFamily: F.serif, fontSize: 10.5, color: C.parchmentMuted }}>
                     {pf(t("mp.soc.metrics"), x.power, x.fame, x.age)}{pt ? " · " + pt : ""}{ht ? " · " + ht : ""}
                   </Text>
