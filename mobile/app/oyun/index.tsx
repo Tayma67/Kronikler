@@ -661,6 +661,21 @@ export default function Dashboard() {
         );
       })()}
 
+      {/* Sefer şeridi — ordu yoldayken her ay göz önünde (hanedan ekranına köprü) */}
+      {!p.dead && state.crownCampaign && (() => {
+        const cc = state.crownCampaign!;
+        return (
+          <Pressable onPress={() => { hap("tap"); router.push("/oyun/hanedan"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(200,64,64,0.55)", borderLeftWidth: 3, borderLeftColor: C.ember, backgroundColor: "rgba(200,64,64,0.08)" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <GameIcon name="crossed-swords" size={13} color={C.ember} />
+              <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, lineHeight: 17 }}>
+                {applyParams(t("crown.cmp.band"), [t("beylik." + cc.beylikId), t(cc.month < 2 ? "crown.cmp.stage1" : "crown.cmp.stage2"), cc.edge])}
+              </Text>
+            </View>
+          </Pressable>
+        );
+      })()}
+
       {/* Divan arzuhali — taç sahibine huzura çıkan dilekçeci (yok sayılırsa ertesi ay düşer) */}
       {!p.dead && p.crowned && state.divan && (() => {
         const d = state.divan!;
