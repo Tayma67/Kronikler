@@ -39,6 +39,36 @@ export function StatDeltaOverlay() {
   const childCount = useRef<number>(-1);
   const wasDead = useRef<boolean | null>(null);
 
+  // Zindana giriş — demir kapı sessiz kapanmasın: ağır dokunuş.
+  const wasJailed = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!state) return;
+    const j = !!(state.player.jail && (state.player.jail.left || 0) > 0);
+    if (wasJailed.current === null || gen.current !== state.player.generation) { wasJailed.current = j; return; }
+    if (j && !wasJailed.current) { hap("heavy"); playTap(); }
+    wasJailed.current = j;
+  }, [state?.player.jail?.left, state?.player.generation]);
+
+  // Kronik hastalık başlangıcı — bedene yerleşen gölge: ağır dokunuş.
+  const hadChronic = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!state) return;
+    const c = !!state.player.chronic;
+    if (hadChronic.current === null || gen.current !== state.player.generation) { hadChronic.current = c; return; }
+    if (c && !hadChronic.current) hap("heavy");
+    hadChronic.current = c;
+  }, [state?.player.chronic, state?.player.generation]);
+
+  // Kan Defteri açılışı — soyun kaderi değişiyor: çan + ağır dokunuş.
+  const hadBloodline = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!state) return;
+    const b = !!state.bloodline;
+    if (hadBloodline.current === null) { hadBloodline.current = b; return; }
+    if (b && !hadBloodline.current) { hap("heavy"); playToll(); }
+    hadBloodline.current = b;
+  }, [!!state?.bloodline]);
+
   // Vefat — en ağır an: kutlama değil, kül tonu ve ağır dokunuş (ölüm sessiz geçmesin).
   useEffect(() => {
     if (!state) return;
@@ -115,6 +145,10 @@ export function StatDeltaOverlay() {
     { path: "fame",           icon: "crown", color: C.ink,   label: t("soc.fame.l"), min: 1 },
     { path: "stat_points",    icon: "star",  color: C.gold,  label: t("char.points"), min: 1 },
     { path: "health",         icon: "saglik", color: C.blood, label: t("char.health"), min: 4, onlyDrop: true },
+    { path: "skills.combat",  icon: "crossed-swords", color: C.ember, label: t("skill.combat"), min: 1 },
+    { path: "skills.trade",   icon: "coins", color: C.gold,  label: t("skill.trade"), min: 1 },
+    { path: "skills.crafting",icon: "anvil", color: C.azure, label: t("skill.crafting"), min: 1 },
+    { path: "skills.social",  icon: "speaker", color: C.sage, label: t("skill.social"), min: 1 },
     { path: "nam.comert",     icon: "leaf", color: "#7FA66A", label: t("nam.comert"), min: 1 },
     { path: "nam.zalim",      icon: "skull", color: C.roseDim, label: t("nam.zalim"), min: 1 },
     { path: "nam.capkin",     icon: "lyre", color: "#C77BA6", label: t("nam.capkin"), min: 1 },
