@@ -4339,7 +4339,7 @@ export function spendWithSpouse(prev: GameState): GameState {
   p.spouse_bond = Math.min(100, p.spouse_bond + bondGain);
   p.health = Math.min(100, p.health + 2); p.hunger = Math.max(0, p.hunger - 3);
   const sn: EvtParam = p.spouse_seed != null ? { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] } : (p.spouse_name || "");
-  push(s, "evlilik", `${p.spouse_name || "Eşin"} ile baş başa bir gün geçirdiniz; bağınız pekişti.`, "kişisel", false, { k: "evj.spouseTime2." + miz, p: [sn] });
+  push(s, "evlilik", `${p.spouse_name || "Eşin"} ile baş başa bir gün geçirdiniz; bağınız pekişti.`, "kişisel", false, { k: (Math.random() < 0.5 ? "evj.spouseTime2." : "evj.spouseTime3.") + miz, p: [sn] });
   return s;
 }
 // Evlatlarınla ilgilen: en küçüğün yaşına göre bir sahne — soy isim listesi değil, büyüyen hayatlar (turda tek).
