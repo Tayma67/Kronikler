@@ -25,6 +25,13 @@ export default function Harita() {
   }
 
   const myBeylikId = snapshot.players.find((p) => p.id === guestId)?.beylikId ?? null;
+  // Beyle aramdaki pakt (varsa) — sefer kararı haritadan verilirken paktlar görünür olsun.
+  const pactWithBey = (beyId: string | null) => {
+    if (!beyId || !guestId || beyId === guestId) return null;
+    const [x, y] = guestId < beyId ? [guestId, beyId] : [beyId, guestId];
+    const pact = snapshot.bonds.find((b) => b.a === x && b.b === y)?.pact ?? null;
+    return pact === "alliance" ? t("mp.soc.pactAlly") : pact === "marriage" ? t("mp.soc.pactKin") : pact === "war" ? t("mp.soc.pactWar") : null;
+  };
   const beyById = (id: string | null) => (id ? snapshot.players.find((p) => p.id === id) : null);
   // Sunucu muster formülünün istemci tahmini (oyun ekranındakiyle aynı; lonca/NPC desteği hariç).
   const musterOf = (b: (typeof snapshot.beyliks)[number]) => Math.round(b.power + ((snapshot.players.find((x) => x.id === b.beyId && !x.dead)?.power || 0) * 0.5) + snapshot.players.filter((x) => x.beylikId === b.id && !x.dead && x.id !== b.beyId).reduce((a2, x) => a2 + x.power * 0.25, 0) + (b.ocak ? 15 : 0));
@@ -57,7 +64,7 @@ export default function Harita() {
                   {inThis && <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: C.gold }}>{t("mp.map.youHere")}</Text>}
                 </View>
                 <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: bey ? C.gold : C.parchmentMuted, marginTop: 6 }}>
-                  {pf(t("mp.beylik.beyLine"), beyLabel)}
+                  {pf(t("mp.beylik.beyLine"), beyLabel)}{(() => { const pt2 = pactWithBey(b.beyId); return pt2 ? " · " + pt2 : ""; })()}
                 </Text>
                 <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>
                   {pf(t("mp.beylik.powerLine"), b.power)} · {pf(t("mp.beylik.musterLine"), musterOf(b))} · {pf(t("mp.map.tax"), b.tax)}{b.ocak ? " · " + pf(t("mp.beylik.ocakLine"), b.ocak) : ""}
