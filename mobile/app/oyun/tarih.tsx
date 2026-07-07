@@ -1,4 +1,5 @@
-import { View, Text, FlatList, Pressable } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { View, Text, FlatList, Pressable, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -7,6 +8,8 @@ import { C, F } from "../../lib/theme";
 import { useI18n, renderEvt, applyParams } from "../../lib/i18n";
 import { BackLabel, PageHeader } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
+import { isReduceMotion } from "../../lib/perf";
+import { hap } from "../../lib/haptics";
 
 // Büyük an tipleri → ikon (kroniğin gözle taranabilir kilometre taşları).
 const BIG_ICON: Record<string, string> = { taht: "crown", kan_davası: "crossed-swords", nesil_devri: "banner", "savaş_zafer": "trophy", "mülk_yangın": "flame", evlilik: "ring", "doğum": "baby", "ölüm": "tombstone" };
@@ -15,6 +18,18 @@ export default function Tarih() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state } = useGame();
   const { t, lang } = useI18n();
+  // Hayat Şeridi: dönüm noktalarını kare kare oynatan sinema perdesi (-1 kapalı).
+  const [cine, setCine] = useState(-1);
+  const fade = useRef(new Animated.Value(0)).current;
+  const marks = state ? state.history.filter((e) => e.landmark) : [];
+  useEffect(() => {
+    if (cine < 0) return;
+    fade.setValue(0);
+    Animated.timing(fade, { toValue: 1, duration: isReduceMotion() ? 0 : 700, useNativeDriver: true }).start();
+    if (isReduceMotion()) return; // sade mod: otomatik akış yok, dokunarak ilerlenir
+    const tm = setTimeout(() => setCine((i) => (i >= 0 && i < marks.length - 1 ? i + 1 : -1)), 3800);
+    return () => clearTimeout(tm);
+  }, [cine]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   // FlatList (sanallaştırma): 250 kartı tek seferde değil görünür pencere kadar çizer — düşük-uç cihazda takılma biter.
   // Anahtar en yeni uçtan sayılır ki yeni girdi eklenince eski kartların anahtarı kaymasın.
@@ -28,7 +43,15 @@ export default function Tarih() {
         data={events}
         keyExtractor={(_, i) => String(events.length - i)}
         contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}
-        ListHeaderComponent={<PageHeader kicker={t("scr.tarih")} title={t("scr.tarih")} />}
+        ListHeaderComponent={<View>
+          <PageHeader kicker={t("scr.tarih")} title={t("scr.tarih")} />
+          {marks.length >= 3 && (
+            <Pressable onPress={() => { hap("selection"); setCine(0); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start", paddingVertical: 9, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.08)", marginBottom: 12 }}>
+              <GameIcon name="hourglass" size={14} color={C.gold} />
+              <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.gold }}>{t("cine.btn")}</Text>
+            </Pressable>
+          )}
+        </View>}
         initialNumToRender={16}
         windowSize={7}
         removeClippedSubviews
@@ -63,6 +86,29 @@ export default function Tarih() {
           );
         }}
       />
+      {/* Sinema perdesi: dokunuş sonraki kare; son kare veya Kapat perdeyi indirir */}
+      {cine >= 0 && cine < marks.length && (() => {
+        const e = marks[cine];
+        const cal = currentCalendar(e.day);
+        const icon = BIG_ICON[e.type] || "scroll";
+        return (
+          <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(5,3,1,0.97)" }}>
+            <Pressable onPress={() => { hap("selection"); setCine((i) => (i < marks.length - 1 ? i + 1 : -1)); }} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 30 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 3, color: C.goldDim, marginBottom: 26 }}>{t("cine.title").toUpperCase()}</Text>
+              <Animated.View style={{ opacity: fade, alignItems: "center", gap: 18, maxWidth: 460 }}>
+                <GameIcon name={icon} size={46} color={C.gold} />
+                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("cal.month." + cal.month_no).toUpperCase()} {cal.year}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 17, lineHeight: 27, color: C.parchment, textAlign: "center" }}>{renderEvt(e.k, e.text, e.p, lang, t, state.player.gender === "kadın")}</Text>
+              </Animated.View>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.goldDim, marginTop: 30 }}>{applyParams(t("cine.progress"), [cine + 1, marks.length])}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 5 }}>{t("cine.tapHint")}</Text>
+            </Pressable>
+            <Pressable onPress={() => setCine(-1)} style={{ position: "absolute", top: insets.top + 10, right: 16, paddingVertical: 7, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: C.border, backgroundColor: "rgba(255,255,255,0.04)" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10.5, letterSpacing: 1, color: C.parchmentMuted }}>{t("cine.close")}</Text>
+            </Pressable>
+          </View>
+        );
+      })()}
     </View>
   );
 }
