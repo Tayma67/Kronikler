@@ -162,6 +162,14 @@ export default function MpOyun() {
                   <Text style={{ color: C.gold }}>{lastChat.fromName}: </Text>{lastChat.text}
                 </Text>
               )}
+              {(snapshot.v || 0) >= 3 && (() => {
+                const left = 12 - (snapshot.turn % 12);
+                return (
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: left <= 2 ? C.goldBright : C.parchmentDim, marginTop: 6 }}>
+                    {pf(t("mp.yearCountdown"), left)}
+                  </Text>
+                );
+              })()}
               {!p.dead && me && (() => {
                 const ranked = players.filter((x) => !x.dead).sort((a2, b2) => b2.power - a2.power);
                 const myIdx = ranked.findIndex((x) => x.id === guestId);
