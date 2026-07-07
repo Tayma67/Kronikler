@@ -3412,11 +3412,13 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
       const cf = p.child_friend;
       if (before < 50 && cf.bond >= 50) { key = "child.friend.close"; push(s, "cocukluk", "Yoldaşınla aranızdaki bağ pekişti; sırdaş oldunuz.", "kişisel", true, { k: "child.friend.close", p: [{ fn: [cf.seed, cf.gender] }] }); }
       else if (Math.random() < 0.35) { // küçük ortak macera (oyunu çeşitlendirir)
-        const adv = Math.floor(Math.random() * 4);
+        const adv = Math.floor(Math.random() * 6);
         if (adv === 0) { addStatXp(s, "intelligence", 4); chips.push({ label: "Zekâ ↑", col: "#6FA0C0" }); key = "child.adv.nest"; push(s, "cocukluk", "Yoldaşınla bir kuş yuvası buldunuz; saatlerce izleyip merak ettiniz.", "kişisel", false, { k: "child.adv.nest", p: [{ fn: [cf.seed, cf.gender] }] }); }
         else if (adv === 1) { addStatXp(s, "stamina", 4); p.health = Math.min(100, p.health + 3); chips.push({ label: "Dayanıklılık ↑", col: "#C9A84C" }); key = "child.adv.hide"; push(s, "cocukluk", "Saklambaçta sokağın bütün köşelerini avucunuzun içi gibi öğrendiniz.", "kişisel", false, { k: "child.adv.hide" }); }
         else if (adv === 2) { const coin = 2 + Math.floor(Math.random() * 6); p.money += coin; chips.push({ label: `+${coin} akçe`, col: "#E0BC5A" }); key = "child.adv.find"; push(s, "cocukluk", "Yıkık bir duvarın dibinde eski bir akçe buldunuz; paylaştınız.", "kişisel", false, { k: "child.adv.find", p: [coin] }); }
-        else { cf.bond = Math.min(100, cf.bond + 5); bumpNam(p, "mert", 2); chips.push({ label: "Bağ ↑↑", col: "#C0556B" }); key = "child.adv.bully"; push(s, "cocukluk", "Bir kabadayı yolunuzu kesti; yoldaşınla sırt sırta verip göğüs gerdiniz, bağınız perçinlendi.", "kişisel", true, { k: "child.adv.bully", p: [{ fn: [cf.seed, cf.gender] }] }); }
+        else if (adv === 3) { cf.bond = Math.min(100, cf.bond + 5); bumpNam(p, "mert", 2); chips.push({ label: "Bağ ↑↑", col: "#C0556B" }); key = "child.adv.bully"; push(s, "cocukluk", "Bir kabadayı yolunuzu kesti; yoldaşınla sırt sırta verip göğüs gerdiniz, bağınız perçinlendi.", "kişisel", true, { k: "child.adv.bully", p: [{ fn: [cf.seed, cf.gender] }] }); }
+        else if (adv === 4) { addStatXp(s, "stamina", 3); gainSkill(s, "social", 3); chips.push({ label: "Dayanıklılık ↑", col: "#C9A84C" }); key = "child.adv.stone"; push(s, "cocukluk", "Dere kenarında taş sektirme yarışına tutuştunuz; senin taşın beş kere sekti, zafer nârası attınız.", "kişisel", false, { k: "child.adv.stone", p: [{ fn: [cf.seed, cf.gender] }] }); }
+        else { addStatXp(s, "intelligence", 4); chips.push({ label: "Zekâ ↑", col: "#6FA0C0" }); key = "child.adv.fountain"; push(s, "cocukluk", "Eski çeşmenin taşındaki silik yazıyı sökmeye çalıştınız; yarısını okudun, gerisini masal edip anlattın.", "kişisel", false, { k: "child.adv.fountain" }); }
       }
       else { key = "child.oyun"; push(s, "cocukluk", "Yoldaşınla sokakta oyun oynadınız; soluk soluğa ama mutlu.", "kişisel", false, { k: "child.oyun" }); }
     }
