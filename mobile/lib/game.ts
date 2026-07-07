@@ -1723,7 +1723,7 @@ export function advance(prev: GameState, n = 1): GameState {
       jp.hunger = Math.max(jp.hunger, 35); jp.health = Math.max(1, jp.health - 1);
       jp.jail!.left -= 1;
       if (jp.jail!.left <= 0) { jp.jail = null; jp.jail_freed = (jp.jail_freed || 0) + 1; jp.reputation = Math.max(-100, jp.reputation - 1); push(s, "suç", `Cezan doldu; zindan kapısı gün ışığına açıldı. Diyar seni unutmamış ama gözler bir süre üstünde.`, "kişisel", true, { k: "jail.released" }); }
-      else push(s, "suç", `Zindanda bir ay daha geçti; duvara bir çentik daha.`, "kişisel", false, { k: "jail.month", p: [jp.jail!.left] });
+      else { const JAIL_M_TR = ["Zindanda bir ay daha geçti; duvara bir çentik daha.", "Mazgaldan bir güvercin süzüldü; kırıntını paylaştın, gün biraz kısaldı.", "Yan hücrenin ihtiyarı duvara vura vura eski bir türkü tıklattı; sen de tempo tuttun."]; const jmi = Math.floor(Math.random() * JAIL_M_TR.length); push(s, "suç", JAIL_M_TR[jmi], "kişisel", false, { k: jmi === 0 ? "jail.month" : "jail.month" + jmi, p: [jp.jail!.left] }); }
     }
     { const mf = monthlyFlavor(s, cal); push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k }); }
     if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 13 && chance(0.12)) s.micro = { id: MICRO_IDS[Math.floor(Math.random() * MICRO_IDS.length)] }; } // mikro an: yok sayılırsa ertesi ay kaybolur
