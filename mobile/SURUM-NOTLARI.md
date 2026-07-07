@@ -2,6 +2,19 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 221-230 eki (8 Temmuz, gece) — BOĞAZDA PUSU, PERDEDE ÖMÜR
+
+**Tek cümle (mağaza/what's new):**
+TR: "Çevrimiçi diyarda ortak kervana artık pusu kurulabiliyor — gözcüsü olan ortak baskını savuşturuyor, bozulan pusunun sahibi çarşıda ilan ediliyor; kronikte Hayat Şeridi açıldı: bir ömrün dönüm noktaları sinema perdesinde kare kare akıyor; hükümdar seferi de üç aylık gerçek bir yürüyüşe dönüştü — geçitler, lağımcılar, ordugâh hastalığı hükmün terazisinde."
+EN: "In the online realm the joint caravan can now be ambushed — a backer with a watcher foils the raid, and a foiled ambusher is named in the bazaar; the chronicle gained the Reel of a Life: a lifetime's turning points play frame by frame on a cinema screen; and the sovereign's campaign became a true three-month march — passes, sappers and camp sickness all weigh on the verdict."
+
+**Öne çıkanlar:**
+- **Kervan Pususu (MP):** Ortak olmayan oyuncu boğaza yatar (tek pusucu, zincirli kuramaz); başarıda havuzun %60'ı maskeliye, ortaklara kırık iade ve anonim haber; gözcülü ortak baskın şansını sert düşürür, bozulan pusu kimliği diyara ilan eder. Kervan kartında gölge iması karşı-oyun çağrısıdır.
+- **Hayat Şeridi (SP):** Kronikten ya da mersiyeden tek dokunuş — dönüm noktaları tam ekran, solarak akan karelerle oynar; sade modda dokunarak ilerler. Ölümün ödülü: kendi hayat filmin.
+- **Sefer 2.0 (SP):** Tuğ çözülünce ordu üç ay yürür: yürüyüş (geçit/çamur), kuşatma (lağımcı/salgın), hüküm (birikmiş ordu gücü zar üstünde). Maiyet ve müttefik hane orduya baştan güç katar; taç düşerse ordu dağılır. Pano ve hanedan ekranında kırmızı sefer şeridi.
+- **Veraset görünürlüğü (MP):** Kendi beylik kartında meşru vâris satırı — dünürlük eşi adıyla yazar, eşsiz beyin sancağının boşa düşeceği uyarısı erken gelir.
+- **Doku:** 3 yeni mikro an (ilk karın lapası, sahafın cöngü, köprü dilencisi — havuz 23), SSS'e pusu + sefer maddeleri, basın kiti ve mağaza kancaları diri.
+
 ## Dalga 215-219 eki (7 Temmuz, gece yarısı) — SANCAK EŞE, ZAMAN SUYA
 
 **Tek cümle (mağaza/what's new):**
