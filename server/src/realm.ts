@@ -289,11 +289,25 @@ export class RealmDO {
     }
     for (const g of this.snap.guilds) if (g.leaderId && !isAlive(g.leaderId)) g.leaderId = null;
     for (const pr of this.snap.provinces) if (pr.governorId && !isAlive(pr.governorId)) pr.governorId = null;
-    // Ölen bey: beylik boşalır (NPC ocağa döner), iddiaya yeniden açılır.
+    // Ölen bey: dünürlük bağı varsa sancak EŞE geçer (veraset); yoksa boşalır ve iddiaya açılır.
     for (const b of this.snap.beyliks) if (b.beyId && !isAlive(b.beyId)) {
+      const deadId = b.beyId;
       const heirless = this.snap.players.filter((p) => p.beylikId === b.id && !p.dead);
-      b.beyId = null; b.beyName = null; b.power = NPC_BEYLIK_POWER; b.ocak = NPC_OCAK_BY_BEYLIK[b.id] || null;
-      heirless.forEach((p) => ev(p.id, "mp.beylik.beyDied", [b.name]));
+      const widow = this.snap.bonds
+        .filter((d) => d.pact === "marriage" && (d.a === deadId || d.b === deadId))
+        .map((d) => (d.a === deadId ? d.b : d.a))
+        .map((id) => this.snap.players.find((p) => p.id === id))
+        .find((p) => !!p && !p.dead);
+      if (widow) { // meşru vâris: sancak dünürlük bağıyla eşe geçer
+        b.beyId = widow.id; b.beyName = widow.name; b.claimedTurn = this.snap.turn;
+        widow.beylikId = b.id;
+        ev(widow.id, "mp.veraset.youInherit", [b.name]);
+        heirless.forEach((p) => { if (p.id !== widow.id) ev(p.id, "mp.veraset.widowRules", [b.name, widow.name]); });
+        this.snap.news = [...this.snap.news.slice(-9), { k: "mp.veraset.news", p: [widow.name, b.name], turn: this.snap.turn }];
+      } else {
+        b.beyId = null; b.beyName = null; b.power = NPC_BEYLIK_POWER; b.ocak = NPC_OCAK_BY_BEYLIK[b.id] || null;
+        heirless.forEach((p) => ev(p.id, "mp.beylik.beyDied", [b.name]));
+      }
     }
 
     // 1) TAHT: boş ya da çekişmeli ise en yüksek güçlü iddiacı kazanır.
