@@ -2,6 +2,23 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 120-132 paketi (7 Temmuz)
+
+**Tek cümle (mağaza/what's new):**
+TR: "Diyar kalabalıklaştı: divana iki yeni arzuhal, yollara iki yeni yüz, şenliklere dördüncü sahneler, çarşıya yeni fısıltılar ve haberler, loncalara dördüncü hizmet, ihtiyarlığa yeni anılar ve geç yaşa iki vicdan sınavı."
+EN: "The realm grew fuller: two new petitions at the divan, two new faces on the roads, fourth scenes for the festivals, fresh whispers and news in the bazaar, a fourth duty for every guild, new old-age memories and two late-life tests of conscience."
+
+**Öne çıkanlar:**
+- **Divan 12 arzuhal:** Selin yıktığı bent (hazineden onarım mı, ahaliye mi bırakmak) ve yalancı şahit (tazminatlı adalet mi, susup kese mi) — her karar taht namına iz bırakıyor.
+- **Geç-oyun ikilemleri:** 60+ yaşa iki vicdan sınavı — kuruyan mahalle çeşmesi ve eski defter borcunun mirasçısı.
+- **Şenliklere dördüncü sahne:** Nevruz'da yumurta tokuşu, harman sonunda imece kepçesi, kış meclisinde helva gecesi.
+- **Yola iki yeni yüz:** Devrilen kovanların arıcısına dumanla yardım (zekâ) ve topal atlı süvariye nal (zekâ) — kazançlar enflasyona bağlı, tur-kilitli.
+- **Mikro an 16:** Fırından köz isteyen çocuk ve yosun tutan çeşme oluğu.
+- **Lonca günleri çeşitlendi:** Beş ocağın hepsine dördüncü hizmet — kalp akçe ayıklamaktan kaçakçı geçidi kapatmaya (yalnız anlatı; denge değişmedi).
+- **Çarşı ve diyar konuşuyor:** Dedikodu havuzu 22'ye (hamam türküsü, harita kâğıdı, bölüşülen ekmek, gömülen küp), dünya haberi 28'e (çarşı kapısındaki yazı, erken eriyen geçit karı, leylek yuvasındaki yüzük, türkü olan çeyiz) çıktı.
+- **İhtiyarlık anıları 10:** Kervan yolu kokusu ve çarşıda eski lakabıyla seslenilmek.
+- **Doğrulama kadansı:** Uzun smoke artık 4-5 dalgada bir kontrol noktası + her APK öncesi; ara dalgalar hedefli sim + tip/dil bekçileriyle iniyor (sevkiyat hızı arttı, APK kalite kapısı değişmedi).
+
 ## Dalga 109-119 paketi (6 Temmuz, gece)
 
 **Tek cümle (mağaza/what's new):**
