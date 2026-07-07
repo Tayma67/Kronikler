@@ -85,6 +85,7 @@ export interface Player {
   battle_turn?: number; // bu ay taktik savaşa/düelloya girildi mi (tur başına tek — para/beceri/itibar farmı önlenir; work/war ile aynı desen)
   battle_award_turn?: number; // bu ay dövüş sonucu uygulandı mı (giriş kilidi battle_turn'e taşındı; ödülün tek-seferliği bu alanla korunur)
   enc_won?: Record<string, true>; // yenilen efsane karşılaşmaların izi (başarımlar okur; opsiyonel — eski kayıt kırılmaz)
+  bloodline_end?: string; // Kan Defteri'nin kapanış biçimi: kiyim/dunurluk/bedel (başarım okur; opsiyonel)
   festival_turn?: number; // bu ayın şenlik sahnesi çözüldü mü (şenlikler sabit aylarda yılda bir döner — ödülleri farmlanamaz)
   apprentice?: { id: string; name: string; months: number; skill: keyof Skills }; // usta çağında yanına alınan çırak (tek seferde bir; hikmet aktarımı)
   apprentice_turn?: number; // bu ay çırakla çalışıldı mı (ayda bir ders — ilişki/beceri farmı önlenir)
@@ -4986,17 +4987,21 @@ function sagaTick(s: GameState) {
 // ── KAN DEFTERİ (Kanlı Miras): kan davası kana bulanınca açılan, nesiller aşan destan. ──
 // Sahneler panoda bekler (destan acele ettirmez); defter vârise geçer, her kuşak bir perde.
 // Farm yok: sahneler tek seferlik, ödüller küçük; yakmak da sürdürmek de kalıcı iz bırakır.
-export const BL_CHOICES: Record<string, number> = { bl_yemin: 2, bl_bedel: 2, bl_devir: 2 };
-export const BL_COST: Record<string, number[]> = { bl_bedel: [120, 0] };
-const BL_R_TR: Record<string, [string, string]> = {
+export const BL_CHOICES: Record<string, number> = { bl_yemin: 2, bl_bedel: 2, bl_devir: 2, bl_golge: 2, bl_hukum: 3 };
+export const BL_COST: Record<string, number[]> = { bl_bedel: [120, 0], bl_hukum: [300, 0, 0] };
+const BL_R_TR: Record<string, string[]> = {
   bl_yemin: ["Parmağını kestin, ilk sayfaya kanla bir ad yazdın. Ocaktaki köz o gece hiç sönmedi; ev halkı sabah gözlerine bakamadı.", "İlk sayfaya kan değil niyet yazdın: 'Bu defter sulhla kapanacak.' Yemin ağır; ama şerefin o gece bir karış büyüdü."],
   bl_bedel: ["Ambar gece boşaldı; kağnılar şafaktan önce döndü. Defterin ilk sayfasındaki adın yanına bir çentik atıldı — hane bunu unutmayacak.", "Kadı davayı dinledi, tazminata hükmetti; çarşı 'kan yerine mühür' dedi. Defter sayfası temiz kaldı — ama yemin hâlâ orada duruyor."],
   bl_devir: ["Defteri kendi sandığına koydun; o ad artık senin de gecelerine misafir. Soyun yemini omzunda.", "Atadan kalan kan defterini ocağa attın; alevler eski hesapları yuttu."],
+  bl_golge: ["Meydanda karşı karşıya geldiniz; kılıçlar konuşmadan gözler konuştu. Geri adım atmadın — çarşı iki soyun gölgesini bir daha ölçtü.", "Davalı hanenin gencini sofrana oturttun; ekmek bölüşüldü, defter o akşam sayfa çevirmedi. İki ihtiyar bunu duyunca ağladı derler."],
+  bl_hukum: ["Üç kuşağın hesabı bir gecede görüldü: hanenin ocağı söndürüldü, adamları dağıtıldı. Defter kapandı — ama mürekkebi kan; diyar adını korkuyla anıyor.", "İki soy bir sofrada buluştu; defter dünürlükle kapandı. Üç kuşağın yemini bir düğün türküsünde eridi — diyar bunu yıllarca anlattı.", "Hane bedeli gümüşle ödedi; defterin son sayfasına 'ödendi' yazıldı. Kan dökülmedi, söz tutuldu — iki kapı da rahat uyudu."],
 };
 function bloodlineTick(s: GameState) {
   const b = s.bloodline; if (!b || b.scene || s.player.dead) return;
   const gap = s.turn - (b.act_turn ?? b.opened);
   if (b.gen === 1 && b.path.includes("yemin") && !b.path.some((x) => x.startsWith("bedel")) && gap >= 8 && chance(0.35)) b.scene = "bl_bedel";
+  else if (b.gen === 2 && b.path.some((x) => x.startsWith("devam")) && !b.path.some((x) => x.startsWith("golge")) && gap >= 10 && chance(0.3)) b.scene = "bl_golge";
+  else if (b.gen >= 3 && gap >= 10 && chance(0.3)) b.scene = "bl_hukum"; // üç kuşak doldu: hüküm vakti
 }
 export function resolveBloodline(prev: GameState, choice: 0 | 1 | 2): GameState {
   const s = clone(prev); const p = s.player;
@@ -5012,6 +5017,30 @@ export function resolveBloodline(prev: GameState, choice: 0 | 1 | 2): GameState 
   } else if (sc === "bl_bedel") {
     if (choice === 0) { p.money -= 120; const loot = 180 + Math.floor(Math.random() * 80); p.money += loot; b.path.push("bedel_kan"); bumpNam(p, "zalim", 2); p.fear = Math.min(100, p.fear + 4); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.min(100, s.feud.heat + 12); if (h) h.tutum = Math.max(-100, (h.tutum ?? 0) - 15); }
     else { b.path.push("bedel_kadi"); p.reputation = Math.min(100, p.reputation + 4); p.honor = Math.min(100, p.honor + 2); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.max(0, s.feud.heat - 8); }
+  } else if (sc === "bl_golge") {
+    if (choice === 0) { b.path.push("golge_meydan"); p.fame = Math.min(100, p.fame + 4); p.fear = Math.min(100, p.fear + 3); p.health = Math.max(1, p.health - 5); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.min(100, s.feud.heat + 8); }
+    else { b.path.push("golge_sofra"); p.honor = Math.min(100, p.honor + 3); if (h) h.tutum = Math.min(100, (h.tutum ?? 0) + 10); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.max(0, s.feud.heat - 10); }
+  } else if (sc === "bl_hukum") { // ÜÇ KUŞAĞIN HÜKMÜ — defter bu sahneyle kapanır
+    const rtrH = BL_R_TR[sc];
+    if (choice === 0) { // Kıyım: ocak söndürülür — güç kırılır, korku büyür, şeref yanar
+      p.money -= 300;
+      if (h) { h.power = Math.max(1, Math.round(h.power * 0.5)); h.tutum = -100; }
+      p.fear = Math.min(100, p.fear + 8); bumpNam(p, "zalim", 4); p.honor = Math.max(0, p.honor - 6);
+      p.bloodline_end = "kiyim";
+    } else if (choice === 1) { // Dünürlük: iki soy bir sofrada — ittifak ve şeref
+      if (h) { h.tutum = Math.min(100, (h.tutum ?? 0) + 40); if (!s.allied_houses) s.allied_houses = []; if (!s.allied_houses.includes(h.id)) s.allied_houses.push(h.id); }
+      p.honor = Math.min(100, p.honor + 6); bumpNam(p, "comert", 2); p.reputation = Math.min(100, p.reputation + 4);
+      p.bloodline_end = "dunurluk";
+    } else { // Bedel: gümüşle kapanış — söz tutuldu
+      p.money += 400;
+      if (h) h.tutum = Math.min(100, (h.tutum ?? 0) + 10);
+      p.honor = Math.min(100, p.honor + 2);
+      p.bloodline_end = "bedel";
+    }
+    s.feud = null; // dava her hâlükârda kapanır
+    push(s, "kan_defteri", (rtrH && rtrH[choice]) || "", "kişisel", true, { k: `bl.bl_hukum.r${choice}`, p: [{ hn: b.nameIdx }] });
+    s.bloodline = null;
+    return s;
   } else if (sc === "bl_devir") {
     if (choice === 0) { b.path.push("devam" + b.gen); p.fear = Math.min(100, p.fear + 2); bumpNam(p, "mert", 1); }
     else { // defteri yak: destan kapanır — şeref kalır, hane bunu duyar
@@ -5418,6 +5447,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "yemintamam",name: "Yemin Tamam",      desc: "Kül Yemini destanını tamamla.",     icon: "scroll",       done: (s) => !!s.saga && s.saga.act >= 3 && s.saga.ch >= 5 },
   { id: "golgeust", name: "Gölge Ustası",    desc: "Üç komployu ifşa olmadan tamamla.", icon: "hood",         done: (s) => (s.player.plot_wins || 0) >= 3 },
   { id: "safakoku", name: "Şafak Okundu",    desc: "Gölge Okçusu'nu yen.",              icon: "bow",          done: (s) => !!(s.player.enc_won && s.player.enc_won.golge_okcusu) },
+  { id: "kandefteri",name: "Defter Kapandı",   desc: "Üç kuşak süren Kan Defteri'ni hükme bağla.", icon: "scroll",  done: (s) => !!s.player.bloodline_end },
   { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
   { id: "bilge",    name: "Yaşlı Bilge",     desc: "70 yaşını gör.",                    icon: "prayer-beads", done: (s) => s.player.age >= 70 },
   { id: "imparator",name: "Mülk İmparatoru", desc: "8 mülke sahip ol.",                 icon: "castle",       done: (s) => s.player.properties.length >= 8 },
