@@ -3070,7 +3070,7 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
   if (Math.random() >= chance) return;
   const test = (stat: keyof Stats, per = 0.05, base = 0.4) => Math.random() < Math.min(0.9, base + effStat(p, stat) * per);
   // Kervan rotası güvenli/sosyal olaylara yönelir; diğerleri tüm havuzu çeker. At sahibine özel olay eklenir.
-  const pool = route === "kervan" ? ["han", "yolcu", "tuccar", "kutsal", "kayipcocuk", "atnali"] : ["han", "yolcu", "tuccar", "firtina", "gecit", "kervanf", "kutsal", "izler", "coban", "harabe", "kopru", "devrikyuk", "kayipcocuk", "arikovani", "atnali"];
+  const pool = route === "kervan" ? ["han", "yolcu", "tuccar", "kutsal", "kayipcocuk", "atnali", "dervis"] : ["han", "yolcu", "tuccar", "firtina", "gecit", "kervanf", "kutsal", "izler", "coban", "harabe", "kopru", "devrikyuk", "kayipcocuk", "arikovani", "atnali", "dervis", "siginak"];
   if (p.horse) pool.push("atli"); // atlıya yol başka görünür
   const ev = pool[Math.floor(Math.random() * pool.length)];
   if (ev === "han") {
@@ -3122,9 +3122,15 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
   } else if (ev === "atnali") {
     if (test("intelligence", 0.05, 0.42)) { const pay = Math.round((6 + Math.floor(Math.random() * 7)) * inflationFactor(s)); p.money += pay; p.reputation = Math.min(100, p.reputation + 1); push(s, "yolculuk", `Yol kenarında topal atıyla kalakalmış süvarinin nalını çakıp düzelttin; avucuna akçe sıkıştırıp yola koyuldu (+${pay}).`, "kişisel", false, { k: "evj.trShoeWin", p: [pay] }); }
     else { p.hunger = Math.max(0, p.hunger - 3); push(s, "yolculuk", "Huysuz at nal tutturmadı; süvariyle yarım saat uğraşıp terledin, at yine topal, sen yine yolda.", "kişisel", false, { k: "evj.trShoeLose" }); }
+  } else if (ev === "dervis") {
+    if (test("charisma", 0.05, 0.45)) { p.health = Math.min(100, p.health + 3); bumpNam(p, "dindar", 1); push(s, "yolculuk", "Yolda bir gezgin dervişe yoldaş oldun; anlattığı kıssa içindeki düğümü çözdü, ayrılırken duasını aldın.", "kişisel", false, { k: "evj.trDervisWin" }); }
+    else push(s, "yolculuk", "Gezgin derviş suskun çıktı; fersah boyu yalnız ayak sesleriniz konuştu. Yine de kötü yoldaş değildi.", "kişisel", false, { k: "evj.trDervisLose" });
   } else if (ev === "kayipcocuk") {
     if (test("charisma", 0.05, 0.5)) { p.reputation = Math.min(100, p.reputation + 2); bumpNam(p, "mert", 1); push(s, "yolculuk", "Yol kenarında ağlayan, yolunu şaşırmış bir çocuk buldun; elinden tutup köyüne ulaştırdın. Anası kapıda dua etti.", "kişisel", false, { k: "evj.trChildWin" }); }
     else push(s, "yolculuk", "Yolunu şaşırmış bir çocuğa yaklaştın ama ürküp kaçtı; neyse ki az ileride köylüler buldu.", "kişisel", false, { k: "evj.trChildLose" });
+  } else if (ev === "siginak") {
+    if (test("intelligence", 0.05, 0.45)) { p.hunger = Math.min(100, p.hunger + 6); push(s, "yolculuk", "Gök bir anda karardı; kaya kovuğunu ilk sen gördün, bir yolcuyla kuru kaldınız. Azığından çörek ikram etti.", "kişisel", false, { k: "evj.trShelterWin" }); }
+    else { p.health = Math.max(1, p.health - 2); push(s, "yolculuk", "Sağanak açıkta yakaladı; sırılsıklam vardın, akşama kadar titredin (−2 sağlık).", "kişisel", false, { k: "evj.trShelterLose" }); }
   } else if (ev === "atli") {
     if (test("stamina", 0.05, 0.5)) { p.fame = Math.min(100, p.fame + 2); bumpNam(p, "mert", 1); push(s, "yolculuk", `Yolda bir atlıyla yarıştınız; ${p.horse_name || "atın"} rüzgâr gibi uçtu, adın yol boyu anlatıldı.`, "kişisel", false, { k: "evj.trRaceWin", p: [p.horse_name || ""] }); }
     else push(s, "yolculuk", "Yolda bir atlıyla yarıştınız; tozunu yuttun ama iyi koşturdun.", "kişisel", false, { k: "evj.trRaceLose" });
