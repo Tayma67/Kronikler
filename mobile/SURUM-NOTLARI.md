@@ -2,6 +2,18 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 166-168 eki (7 Temmuz, gece) — DİYAR MECLİS OLDU
+
+**Tek cümle (mağaza/what's new):**
+TR: "Çok oyunculu diyar artık bir meclis gibi hissettiriyor: oyun ekranında canlı yoldaş şeridi (kim burada, kim hazır), son söz satırı, tek dokunuş naralar ve sonradan gelenin okuduğu meclis hafızası."
+EN: "The multiplayer realm now feels like a gathering: a live companions strip (who is here, who is ready), the last word on screen, one-tap battle cries, and a hall memory that latecomers can read."
+
+**Öne çıkanlar:**
+- **Yoldaş şeridi:** Diyar oyun ekranının tepesinde canlı: çevrimiçi beyler, hazır oyları, senin adın altınla.
+- **Naralar:** "Selamünaleyküm! · Helal olsun! · Meydan okuyorum! · Yardım gerek!" — tek dokunuş, herkes anında görür.
+- **Meclis hafızası:** Genel sohbetin son 12 sözü diyarda saklanır; sonradan gelen sohbetin ortasına doğar (sunucu otomatik yayında).
+- **Belgeler:** SSS'e beş yeni sistemin üç sorusu, basın kitine "diyar sana karşı da oynuyor" kancası.
+
 ## Dalga 148-165 paketi (7 Temmuz, gece) — BEŞ YENİ SİSTEM
 
 **Tek cümle (mağaza/what's new):**
