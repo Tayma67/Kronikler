@@ -345,6 +345,16 @@ export default function MpOyun() {
               <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 2 }}>
                 {pf(t("mp.beylik.beyLine"), beyLabel)}{b.ocak ? " · " + pf(t("mp.beylik.ocakLine"), b.ocak) : ""}
               </Text>
+              {isBey && (() => {
+                const mb = snapshot.bonds.find((x) => x.pact === "marriage" && (x.a === guestId || x.b === guestId));
+                const wid = mb ? (mb.a === guestId ? mb.b : mb.a) : null;
+                const w = wid ? players.find((x) => x.id === wid && !x.dead) : null;
+                return (
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: w ? C.sage : C.parchmentDim, marginTop: 2 }}>
+                    {w ? pf(t("mp.beylik.heirLine"), w.name) : t("mp.beylik.noHeirLine")}
+                  </Text>
+                );
+              })()}
               {(() => {
                 const m = musterOf(b);
                 const showOdds = iAmBey && !isBey && myMuster > 0;
