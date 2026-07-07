@@ -82,6 +82,7 @@ export interface PlayerPublic {
   online: boolean;
   ready: boolean;        // bu ay için "ay atla" oyu
   dead: boolean;
+  laurel?: string | null; // yıllık diyar ödülü nişanı: bey/yildiz/alicenap (v3+ opsiyonel; yıl kapanışında sunucu dağıtır)
 }
 
 // ── Paylaşımlı kurumlar ──
@@ -162,6 +163,7 @@ export interface RealmSnapshot {
   offers: Offer[];       // bekleyen el-sıkışma teklifleri (ittifak/dünür/borç/sığınma)
   venture?: VentureState | null; // aktif ortak girişim (v3+; eski sunucu göndermez → istemci UI'ı gizler)
   chatLog?: { from: string; fromName: string; text: string; at: number }[]; // meclis hafızası: genel sohbetin son 12 satırı (v3+ opsiyonel; eski sunucu göndermez → istemci boş kabul eder)
+  yearBase?: Record<string, { power: number; fame: number; honor: number }>; // yıllık ödül taban ölçümü (sunucu içi; v3+ opsiyonel)
   econ: number;          // paylaşımlı ekonomi/enflasyon indeksi
   createdAt: number;
 }

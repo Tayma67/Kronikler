@@ -728,6 +728,26 @@ export class RealmDO {
       this.snap.news = [...this.snap.news.slice(-8), ...fresh];
     }
 
+    // ── Yıllık Diyar Ödülleri: yıl kapanışında en çok yükselenler ilan edilir — rekabetin nabzı. ──
+    if ((this.snap.turn + 1) % 12 === 0) {
+      const base = this.snap.yearBase || {};
+      const alive = this.snap.players.filter((x) => !x.dead);
+      const delta = (x: PlayerPublic, k: "power" | "fame" | "honor") => x[k] - (base[x.id] ? base[x.id][k] : x[k]);
+      const pick = (k: "power" | "fame" | "honor") => alive.filter((x) => delta(x, k) > 0).sort((a, b) => delta(b, k) - delta(a, k))[0] || null;
+      this.snap.players.forEach((x) => { x.laurel = null; }); // eski defneler solar — her yıl yeniden kazanılır
+      const crown = (w: PlayerPublic | null, kind: string) => {
+        if (!w) return;
+        w.laurel = kind;
+        this.snap.news = [...this.snap.news.slice(-9), { k: "mp.award." + kind, p: [w.name], turn: this.snap.turn }];
+      };
+      crown(pick("power"), "bey");
+      crown(pick("fame"), "yildiz");
+      crown(pick("honor"), "alicenap");
+      const nb: Record<string, { power: number; fame: number; honor: number }> = {};
+      this.snap.players.forEach((x) => { nb[x.id] = { power: x.power, fame: x.fame, honor: x.honor }; });
+      this.snap.yearBase = nb;
+    }
+
     // saat ilerle + pencere/alarm sıfırla
     this.snap.turn += 1;
     this.snap.players.forEach((p) => { p.ready = false; });
