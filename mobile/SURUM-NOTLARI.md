@@ -2,6 +2,18 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 193-200 eki (7 Temmuz, gece) — İKİ YÜZÜNCÜ DALGA
+
+**Tek cümle (mağaza/what's new):**
+TR: "İki yüzüncü dalga: savaş meydanına Efsane Defteri kuruldu — yendiğin efsaneler yaprak yaprak sıralanıyor, Gölge Okçusu'nu deviren 'Şafak Okundu' nişanı takıyor; lobide meclisin daveti, haritada paktların rozeti, diyar akışında yılın manşetleri."
+EN: "The two hundredth wave: a Book of Legends now stands on the battlefield — the legends you defeat line up leaf by leaf, and whoever fells the Shadow Archer wears 'The Dawn Was Read'; the hall's invitation greets you in the lobby, pact badges mark the map, and the year's headlines shine in the realm feed."
+
+**Öne çıkanlar:**
+- **Efsane Defteri + Şafak Okundu (SP):** Karşılaşma zaferleri artık kalıcı iz bırakır; Gölge Okçusu zaferi başarımla taçlanır.
+- **MP cilaları:** Lobiye davet satırı (beylik kur, omuz ver, reis seçil), haritada pakt rozetleri, defne/reis manşetleri ve kişisel günlükte yaprak nişanları.
+- **Doku:** İlk ay iyilikleri 7 çeşit, kişisel fısıltılar 8 işaret; basın kiti ve bilgi kartı diri.
+- **Konveyör mührü:** D128'den D200'e tek günde 73 dalga — 9 tam sistem, hepsi 300-hayat smoke ve hedefli simlerle doğrulanıp yayınlandı.
+
 ## Dalga 183-192 paketi (7 Temmuz, gece) — ÇARŞI DOLU, GÖLGE PUSUDA
 
 **Tek cümle (mağaza/what's new):**
