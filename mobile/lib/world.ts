@@ -8,7 +8,7 @@ const QUIRKS = ["sürekli hava durumundan dert yanar","eski günleri anlatmayı 
 // NPC'nin peşinde olduğu hayat hedefi (söylenti ve sohbete renk katar).
 const GOALS = ["bir dükkân açmanın hayalini kuruyor","kızını/oğlunu evermek istiyor","borçlarından kurtulmaya çalışıyor","hacca gitmeyi diliyor","toprak satın almak için biriktiriyor","ustabaşı olmak istiyor","küs olduğu kardeşiyle barışmak istiyor","bir ev yaptırmanın derdinde","kervan ticaretine atılmak istiyor","adını duyurmak istiyor"];
 export type WClass = "hizli" | "kesici" | "ezici" | "delici" | "menzilli";
-export interface Item { id: string; name: string; icon: string; buy: number; sell: number; kind: "yiyecek" | "esya" | "silah" | "zirh" | "kalkan" | "baslik" | "eldiven" | "ayakkabi" | "kiyafet"; heal?: number; feed?: number; power?: number; defense?: number; charisma?: number; prestige?: number; wclass?: WClass; twoHanded?: boolean; }
+export interface Item { id: string; name: string; icon: string; buy: number; sell: number; kind: "yiyecek" | "esya" | "silah" | "zirh" | "kalkan" | "baslik" | "eldiven" | "ayakkabi" | "kiyafet" | "taki"; heal?: number; feed?: number; power?: number; defense?: number; charisma?: number; prestige?: number; wclass?: WClass; twoHanded?: boolean; }
 
 const AD_E = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim","Osman","Yusuf","Murat","Kerem","Emre","Cihan","Barış","Tolga","Mert"];
 const AD_K = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif","Nur","Reyhan","Cansu","Derya","Sevda","Pınar","Gül","Nazlı","Hande"];
@@ -197,6 +197,11 @@ export const ITEMS: Record<string, Item> = {
   yun_cubbe:    { id: "yun_cubbe",    name: "Yün Cübbe",    icon: "wool", buy: 64,  sell: 26,  kind: "kiyafet", charisma: 1, prestige: 3 },
   resmi_kaftan: { id: "resmi_kaftan", name: "Resmi Kaftan", icon: "wool", buy: 130, sell: 52,  kind: "kiyafet", charisma: 2, prestige: 6 },
   ipek_kaftan:  { id: "ipek_kaftan",  name: "İpek Kaftan",  icon: "wool", buy: 330, sell: 132, kind: "kiyafet", charisma: 4, prestige: 12 },
+  // Takı (ayrı yuva — kıyafetle birlikte taşınır; göz alır, itibar taşır)
+  akik_yuzuk:      { id: "akik_yuzuk",      name: "Akik Yüzük",       icon: "ring",         buy: 60,  sell: 24,  kind: "taki", charisma: 0, prestige: 2 },
+  kehribar_tespih: { id: "kehribar_tespih", name: "Kehribar Tespih",  icon: "prayer-beads", buy: 110, sell: 44,  kind: "taki", charisma: 1, prestige: 3 },
+  gumus_gerdanlik: { id: "gumus_gerdanlik", name: "Gümüş Gerdanlık",  icon: "gems",         buy: 220, sell: 88,  kind: "taki", charisma: 2, prestige: 5 },
+  altin_bilezik:   { id: "altin_bilezik",   name: "Altın Bilezik",    icon: "medal",        buy: 450, sell: 180, kind: "taki", charisma: 3, prestige: 8 },
 };
 
 // Her yerleşimin bir geçim uzmanlığı vardır; o gruptaki mallar yerel üretimle ucuzlar.

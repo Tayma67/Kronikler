@@ -13,8 +13,9 @@ import { GameIcon } from "../../lib/icons";
 import { BackLabel } from "../../lib/ui";
 
 // Pazar malı ikonu — eşya türüne göre (emoji yerine GameIcon).
-function marketItemIcon(g: { kind?: string; heal?: number; feed?: number }): string {
+function marketItemIcon(g: { kind?: string; heal?: number; feed?: number; icon?: string }): string {
   switch (g.kind) {
+    case "taki": return g.icon || "gems";
     case "silah": return "silah";
     case "kalkan": return "kite";
     case "zirh": return "shield";
@@ -35,7 +36,7 @@ const STALLS = [
   { kinds: ["esya"], icon: "menu", key: "paz.stall.goods", tone: C.gold },
   { kinds: ["silah"], icon: "silah", key: "paz.stall.arms", tone: C.ember },
   { kinds: ["zirh", "kalkan", "baslik", "eldiven", "ayakkabi"], icon: "shield", key: "paz.stall.armor", tone: C.azure },
-  { kinds: ["kiyafet"], icon: "wool", key: "paz.stall.attire", tone: C.ink },
+  { kinds: ["kiyafet", "taki"], icon: "wool", key: "paz.stall.attire", tone: C.ink },
 ] as const;
 
 // Vercel "Panel" — başlık (ikon + ad + ton) + gövde.

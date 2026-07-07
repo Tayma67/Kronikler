@@ -5152,11 +5152,14 @@ export function martialLoad(p: Player): number {
 // Kuşanılı kıyafetin sosyal katkısı (karizma + itibar/prestij). Kalite kademesiyle ölçeklenir,
 // cenk yükü (zırh/kalkan/miğfer) zarafeti gizlediği için kırpılır.
 export function attireScore(p: Player): { charisma: number; prestige: number } {
-  const id = p.equipped?.kiyafet;
-  if (!id) return { charisma: 0, prestige: 0 };
-  const it = ITEMS[id]; const m = equippedQualityMult(p, "kiyafet");
-  const damp = 1 - 0.7 * martialLoad(p); // tam zırhta sosyal katkı %70 kırpılır
-  return { charisma: Math.round((it?.charisma || 0) * m * damp), prestige: Math.round((it?.prestige || 0) * m * damp) };
+  const damp = 1 - 0.7 * martialLoad(p); // tam zırhta sosyal katkı %70 kırpılır (zırh kaftanı da takıyı da gizler)
+  let cha = 0, pre = 0;
+  for (const sl of ["kiyafet", "taki"] as EquipSlot[]) {
+    const id = p.equipped?.[sl]; if (!id) continue;
+    const it = ITEMS[id]; const m = equippedQualityMult(p, sl);
+    cha += (it?.charisma || 0) * m; pre += (it?.prestige || 0) * m;
+  }
+  return { charisma: Math.round(cha * damp), prestige: Math.round(pre * damp) };
 }
 // Sosyal varlık: karizma (kıyafet dahil) eksi cenk yükü cezası. Silahlı/zırhlı biri divanda,
 // düğünde, flörtte çekici değil tehditkâr/heybetli durur — bu yüzden ikna gücü düşer.
@@ -6534,11 +6537,11 @@ export function equippedQualityMult(p: Player, slot: EquipSlot): number { return
 export const QUALITY_LABEL: Record<QualityTier, string> = { kusurlu: "kusurlu", siradan: "sıradan", iyi: "iyi", usta_isi: "usta işi" };
 
 // Kuşanılabilir tüm slotlar. silah=el, kalkan=öbür el, zirh=gövde, baslik=baş, eldiven=el, ayakkabi=ayak, kiyafet=giysi (sosyal).
-export type EquipSlot = "silah" | "kalkan" | "zirh" | "baslik" | "eldiven" | "ayakkabi" | "kiyafet";
-export const EQUIP_SLOTS: EquipSlot[] = ["silah", "kalkan", "zirh", "baslik", "eldiven", "ayakkabi", "kiyafet"];
+export type EquipSlot = "silah" | "kalkan" | "zirh" | "baslik" | "eldiven" | "ayakkabi" | "kiyafet" | "taki";
+export const EQUIP_SLOTS: EquipSlot[] = ["silah", "kalkan", "zirh", "baslik", "eldiven", "ayakkabi", "kiyafet", "taki"];
 export const COMBAT_SLOTS: EquipSlot[] = ["silah", "kalkan", "zirh", "baslik", "eldiven", "ayakkabi"];
 export const DEFENSE_SLOTS: EquipSlot[] = ["zirh", "kalkan", "baslik", "eldiven", "ayakkabi"];
-const EQUIP_KINDS = new Set<string>(["silah", "kalkan", "zirh", "baslik", "eldiven", "ayakkabi", "kiyafet"]);
+const EQUIP_KINDS = new Set<string>(["silah", "kalkan", "zirh", "baslik", "eldiven", "ayakkabi", "kiyafet", "taki"]);
 export function slotOfKind(kind: string): EquipSlot | null { return EQUIP_KINDS.has(kind) ? (kind as EquipSlot) : null; }
 
 const QUALITY_GOODS = new Set(["bicak", "hancer", "kilic", "celik_kilic", "yatagan", "savas_balta", "gurz", "mizrak", "yay", "kalkan", "buyuk_kalkan", "deri_zirh", "pamuk_zirh", "zincir_zirh", "plaka_zirh", "demir_migfer", "tolga", "iksir"]);

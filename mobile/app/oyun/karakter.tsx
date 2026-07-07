@@ -147,6 +147,7 @@ function itemIcon(it: any): string {
   if (it.kind === "eldiven") return "fist";
   if (it.kind === "ayakkabi") return "boot";
   if (it.kind === "kiyafet") return "wool";
+  if (it.kind === "taki") return it.icon || "gems";
   if (it.heal) return "saglik";
   if (it.feed) return "ye";
   return "menu";
@@ -521,6 +522,25 @@ export default function Karakter() {
                         </Pressable>
                       ) : null}
                     </View>
+                    {(() => {
+                      const jid = p.equipped?.taki;
+                      return (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 11, marginTop: 9 }}>
+                          <View style={{ width: 46, height: 46, borderRadius: 11, backgroundColor: jid ? GBG : "transparent", borderWidth: 1, borderColor: jid ? GB : C.border, alignItems: "center", justifyContent: "center" }}>
+                            <GameIcon name={jid ? (ITEMS[jid]?.icon || "gems") : "gems"} size={23} color={jid ? C.gold : C.parchmentMuted} />
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: jid ? C.parchment : C.parchmentMuted }}>{jid ? t("it." + jid) : t("char.jewelryNone")}</Text>
+                            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 1 }}>{t("char.jewelryHint")}</Text>
+                          </View>
+                          {jid ? (
+                            <Pressable onPress={() => apply((s) => unequipItem(s, "taki"))} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: 6, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)" }}>
+                              <Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.blood }}>{t("misc.remove")}</Text>
+                            </Pressable>
+                          ) : null}
+                        </View>
+                      );
+                    })()}
                     {/* Sosyal varlık dökümü: karizma + kıyafet − cenk yükü */}
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginTop: 11, paddingTop: 11, borderTopWidth: 1, borderTopColor: C.border }}>
                       <GameIcon name="karizma" size={13} color={C.gold} />
@@ -542,7 +562,7 @@ export default function Karakter() {
               ) : (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                   {inv.map((k) => {
-                    const it = ITEMS[k]; const usable = it && (it.feed || it.heal); const equipable = it && ["silah", "kalkan", "zirh", "baslik", "eldiven", "ayakkabi", "kiyafet"].includes(it.kind);
+                    const it = ITEMS[k]; const usable = it && (it.feed || it.heal); const equipable = it && ["silah", "kalkan", "zirh", "baslik", "eldiven", "ayakkabi", "kiyafet", "taki"].includes(it.kind);
                     const useHelps = !!it && ((!!it.feed && p.hunger < 100) || (!!it.heal && p.health < 100)); // doluyken kullan butonu pasif
                     return (
                       <View key={k} style={{ width: "48%", backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 10, gap: 8 }}>
