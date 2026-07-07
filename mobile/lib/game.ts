@@ -2870,12 +2870,14 @@ export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   if (QUALITY_GOODS.has(itemId)) takeQualityUnit(p, itemId); // hediye verilen kaliteli mal inv_q'da öksüz kalmasın
   p.inventory[itemId] -= 1; if (p.inventory[itemId] <= 0) delete p.inventory[itemId];
   const generous = npc.trait === "cömert" ? 4 : 0;
-  s.relationships[npc.id] = Math.min(100, (s.relationships[npc.id] || 0) + 12 + generous);
-  ns.mood = Math.max(-100, Math.min(100, ns.mood + 14));
+  const jewel = ITEMS[itemId]?.kind === "taki" ? 8 : 0; // takı göz alır: hediyenin gönüldeki yeri başka
+  s.relationships[npc.id] = Math.min(100, (s.relationships[npc.id] || 0) + 12 + generous + jewel);
+  ns.mood = Math.max(-100, Math.min(100, ns.mood + 14 + (jewel ? 6 : 0)));
   ns.memories.push(`${ITEMS[itemId]?.name || "Bir hediye"} hediye ettin.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   remember(s, npc, (ITEMS[itemId]?.buy || 0) >= 25 ? "comert_hediye" : "hediye");
-  push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`, "kişisel", false, { k: "evj.gift", p: [npc.name, { i: itemId }] });
+  if (jewel) push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir takı"} taktın; gözleri parladı, eli uzun süre üstünde gezindi.`, "kişisel", false, { k: "evj.giftJewel", p: [npc.name, { i: itemId }] });
+  else push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`, "kişisel", false, { k: "evj.gift", p: [npc.name, { i: itemId }] });
   return s;
 }
 
