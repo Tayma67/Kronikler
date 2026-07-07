@@ -84,6 +84,7 @@ export interface Player {
   craft_turn?: number; // bu ay zanaat işlendi mi (tur başına tek — beceri/kalite-satış farmı önlenir)
   battle_turn?: number; // bu ay taktik savaşa/düelloya girildi mi (tur başına tek — para/beceri/itibar farmı önlenir; work/war ile aynı desen)
   battle_award_turn?: number; // bu ay dövüş sonucu uygulandı mı (giriş kilidi battle_turn'e taşındı; ödülün tek-seferliği bu alanla korunur)
+  enc_won?: Record<string, true>; // yenilen efsane karşılaşmaların izi (başarımlar okur; opsiyonel — eski kayıt kırılmaz)
   festival_turn?: number; // bu ayın şenlik sahnesi çözüldü mü (şenlikler sabit aylarda yılda bir döner — ödülleri farmlanamaz)
   apprentice?: { id: string; name: string; months: number; skill: keyof Skills }; // usta çağında yanına alınan çırak (tek seferde bir; hikmet aktarımı)
   apprentice_turn?: number; // bu ay çırakla çalışıldı mı (ayda bir ders — ilişki/beceri farmı önlenir)
@@ -5266,6 +5267,7 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
     p.money += reward; p.fame = Math.min(100, p.fame + e.fame); p.honor = Math.min(100, p.honor + e.honor);
     p.fear = Math.min(100, p.fear + Math.round(e.fame / 2));
     bumpNam(p, "mert", 6);
+    if (!p.enc_won) p.enc_won = {}; p.enc_won[e.id] = true; // efsane defterine yaz
     const floor = hasPerk(p, "yilmaz") ? 5 : 1;
     p.health = Math.max(floor, Math.min(Math.round(finalHp), p.health)); // zafer canı giriş canını aşamaz (15-19 canla girip 20 ile çıkma kapalı)
     maybeInjure(s, false);
@@ -5362,6 +5364,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "besmeslek",name: "On Parmakta Marifet", desc: "Bir ömürde 5 farklı meslek dene.", icon: "backpack",  done: (s) => new Set([...(s.player.professions_tried || []), s.player.profession].filter((x) => x !== "işsiz")).size >= 5 },
   { id: "yemintamam",name: "Yemin Tamam",      desc: "Kül Yemini destanını tamamla.",     icon: "scroll",       done: (s) => !!s.saga && s.saga.act >= 3 && s.saga.ch >= 5 },
   { id: "golgeust", name: "Gölge Ustası",    desc: "Üç komployu ifşa olmadan tamamla.", icon: "hood",         done: (s) => (s.player.plot_wins || 0) >= 3 },
+  { id: "safakoku", name: "Şafak Okundu",    desc: "Gölge Okçusu'nu yen.",              icon: "bow",          done: (s) => !!(s.player.enc_won && s.player.enc_won.golge_okcusu) },
   { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
   { id: "bilge",    name: "Yaşlı Bilge",     desc: "70 yaşını gör.",                    icon: "prayer-beads", done: (s) => s.player.age >= 70 },
   { id: "imparator",name: "Mülk İmparatoru", desc: "8 mülke sahip ol.",                 icon: "castle",       done: (s) => s.player.properties.length >= 8 },
