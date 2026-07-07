@@ -776,6 +776,7 @@ export interface GameState {
   dynastyOffers?: DynastyOffer[]; // dost hanelerden ittifak/evlilik teklifleri
   allied_houses?: string[]; // ittifak kurulan hanelerin id'leri
   feud?: { houseId: string; nameIdx: number; stage: number; heat: number; act_turn?: number } | null; // kan davası: tek aktif dava; ısı büyür, aşama tırmanır, NESLE GEÇER (continueAsHeir)
+  bloodline?: { houseId: string; nameIdx: number; gen: number; scene: string | null; path: string[]; opened: number; act_turn?: number } | null; // KAN DEFTERİ: dava kana bulanınca açılan nesiller aşan destan — VÂRİSE GEÇER (gen+1, devir sahnesi)
   plot?: { kind: "leke" | "sabotaj" | "nifak"; houseId: string; nameIdx: number; stage: number; heat: number; helpers: number; started: number } | null; // entrika: tek aktif komplo; fısıltı birikir, açığa çıkabilir; ölümle düşer (vârise GEÇMEZ)
   enemyPlot?: { houseId: string; nameIdx: number; kind: "leke" | "sabotaj"; stage: number; known: boolean } | null; // karşı entrika: bir hane oyuncu aleyhine örer; kulak tutarak keşfedilir, kesilmezse patlar
   enemyPlotCool?: number; // patlama/bozulma sonrası soğuma: bu turdan önce yeni düşman komplosu doğmaz
@@ -1742,6 +1743,7 @@ export function advance(prev: GameState, n = 1): GameState {
     { const mf = monthlyFlavor(s, cal); push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k }); }
     if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 13 && chance(0.12)) s.micro = { id: MICRO_IDS[Math.floor(Math.random() * MICRO_IDS.length)] }; } // mikro an: yok sayılırsa ertesi ay kaybolur
     if (i === n - 1) sagaTick(s); // Kül Yemini: destan sahnesi kapıları (düşen sahne panoda bekler, silinmez)
+    if (i === n - 1) bloodlineTick(s); // Kan Defteri: nesil destanının sahne kapıları
     if (i === n - 1) { s.divan = null; if (!s.player.dead && s.player.crowned && chance(0.10)) s.divan = { id: DIVAN_IDS[Math.floor(Math.random() * DIVAN_IDS.length)] }; } // divan arzuhali: yalnız taç sahibine, yok sayılırsa düşer
     rollLifeEvents(s, cal);
     tickFactions(s, i === n - 1);
@@ -2060,7 +2062,13 @@ function tickFeud(s: GameState, rivals: RivalHouse[]) {
   h.tutum = Math.min(h.tutum ?? -45, -45); // dava sürerken husumet tabanı: tutum kendiliğinden yumuşamaz
   f.heat = Math.min(100, f.heat + 1 + (h.trait === "kindar" ? 1 : 0));
   if (f.stage < 2 && f.heat >= FEUD_STAGE2_HEAT) { f.stage = 2; push(s, "kan_davası", `${h.name} ile dava büyüdü: artık laf değil, mal mülk hedefte.`, "makro", true, { k: "evj.feud.stage2", p: [{ hn: h.nameIdx }] }); }
-  else if (f.stage < 3 && f.heat >= FEUD_STAGE3_HEAT) { f.stage = 3; push(s, "kan_davası", `${h.name} ile dava kana bulandı: adamları silahlandı, yollar güvensiz.`, "makro", true, { k: "evj.feud.stage3", p: [{ hn: h.nameIdx }] }); }
+  else if (f.stage < 3 && f.heat >= FEUD_STAGE3_HEAT) {
+    f.stage = 3; push(s, "kan_davası", `${h.name} ile dava kana bulandı: adamları silahlandı, yollar güvensiz.`, "makro", true, { k: "evj.feud.stage3", p: [{ hn: h.nameIdx }] });
+    if (!s.bloodline) { // KAN DEFTERİ açılır: bu dava artık bir ömrün değil, bir soyun meselesi
+      s.bloodline = { houseId: f.houseId, nameIdx: f.nameIdx, gen: 1, scene: "bl_yemin", path: [], opened: s.turn };
+      push(s, "kan_defteri", `Kan defteri açıldı: ${h.name} ile hesap soy defterine yazıldı.`, "makro", true, { k: "bl.opened", p: [{ hn: f.nameIdx }] });
+    }
+  }
   // Aylık zarar: aşamaya göre sertleşir (olasılıklı — her ay değil).
   if (f.stage === 1 && Math.random() < 0.14) {
     p.reputation = Math.max(-100, p.reputation - 2);
@@ -4344,6 +4352,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, relationships: {}, dynasty, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
     feud: prev.feud ? { houseId: prev.feud.houseId, nameIdx: prev.feud.nameIdx, stage: prev.feud.stage, heat: Math.round(prev.feud.heat / 2) } : undefined,
+    bloodline: prev.bloodline ? { ...prev.bloodline, gen: prev.bloodline.gen + 1, scene: "bl_devir", act_turn: 0, opened: Math.max(0, prev.bloodline.opened - prev.turn), path: [...prev.bloodline.path] } : undefined, // KAN DEFTERİ vârise geçer: yeni kuşak, devir sahnesi
     // İttifaklar da nesle geçer (kan davası geçiyorsa el sıkışma da geçer — hanedanlar arası bağ kişisel değil hanevidir).
     allied_houses: prev.allied_houses ? [...prev.allied_houses] : undefined,
     // Hanedan hafızası vârise geçer: ataların tamamladığı yaylar bayrak olarak kalır, az da olsa anlatı momentumu verir.
@@ -4974,6 +4983,50 @@ function sagaTick(s: GameState) {
     gap >= 12;
   if (gate2 && chance(0.3)) sg.scene = SAGA2_IDS[sg.ch];
 }
+// ── KAN DEFTERİ (Kanlı Miras): kan davası kana bulanınca açılan, nesiller aşan destan. ──
+// Sahneler panoda bekler (destan acele ettirmez); defter vârise geçer, her kuşak bir perde.
+// Farm yok: sahneler tek seferlik, ödüller küçük; yakmak da sürdürmek de kalıcı iz bırakır.
+export const BL_CHOICES: Record<string, number> = { bl_yemin: 2, bl_bedel: 2, bl_devir: 2 };
+export const BL_COST: Record<string, number[]> = { bl_bedel: [120, 0] };
+const BL_R_TR: Record<string, [string, string]> = {
+  bl_yemin: ["Parmağını kestin, ilk sayfaya kanla bir ad yazdın. Ocaktaki köz o gece hiç sönmedi; ev halkı sabah gözlerine bakamadı.", "İlk sayfaya kan değil niyet yazdın: 'Bu defter sulhla kapanacak.' Yemin ağır; ama şerefin o gece bir karış büyüdü."],
+  bl_bedel: ["Ambar gece boşaldı; kağnılar şafaktan önce döndü. Defterin ilk sayfasındaki adın yanına bir çentik atıldı — hane bunu unutmayacak.", "Kadı davayı dinledi, tazminata hükmetti; çarşı 'kan yerine mühür' dedi. Defter sayfası temiz kaldı — ama yemin hâlâ orada duruyor."],
+  bl_devir: ["Defteri kendi sandığına koydun; o ad artık senin de gecelerine misafir. Soyun yemini omzunda.", "Atadan kalan kan defterini ocağa attın; alevler eski hesapları yuttu."],
+};
+function bloodlineTick(s: GameState) {
+  const b = s.bloodline; if (!b || b.scene || s.player.dead) return;
+  const gap = s.turn - (b.act_turn ?? b.opened);
+  if (b.gen === 1 && b.path.includes("yemin") && !b.path.some((x) => x.startsWith("bedel")) && gap >= 8 && chance(0.35)) b.scene = "bl_bedel";
+}
+export function resolveBloodline(prev: GameState, choice: 0 | 1 | 2): GameState {
+  const s = clone(prev); const p = s.player;
+  const b = s.bloodline; if (!b || !b.scene || p.dead) return s;
+  const sc = b.scene;
+  const cost = BL_COST[sc]?.[choice] || 0;
+  if (cost > 0 && p.money < cost) return s;
+  b.scene = null; b.act_turn = s.turn;
+  const h = ensureRivals(s).find((x) => x.id === b.houseId);
+  if (sc === "bl_yemin") {
+    if (choice === 0) { b.path.push("yemin"); p.fear = Math.min(100, p.fear + 3); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.min(100, s.feud.heat + 10); bumpNam(p, "mert", 2); }
+    else { b.path.push("sulh"); p.honor = Math.min(100, p.honor + 3); }
+  } else if (sc === "bl_bedel") {
+    if (choice === 0) { p.money -= 120; const loot = 180 + Math.floor(Math.random() * 80); p.money += loot; b.path.push("bedel_kan"); bumpNam(p, "zalim", 2); p.fear = Math.min(100, p.fear + 4); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.min(100, s.feud.heat + 12); if (h) h.tutum = Math.max(-100, (h.tutum ?? 0) - 15); }
+    else { b.path.push("bedel_kadi"); p.reputation = Math.min(100, p.reputation + 4); p.honor = Math.min(100, p.honor + 2); if (s.feud && s.feud.houseId === b.houseId) s.feud.heat = Math.max(0, s.feud.heat - 8); }
+  } else if (sc === "bl_devir") {
+    if (choice === 0) { b.path.push("devam" + b.gen); p.fear = Math.min(100, p.fear + 2); bumpNam(p, "mert", 1); }
+    else { // defteri yak: destan kapanır — şeref kalır, hane bunu duyar
+      p.honor = Math.min(100, p.honor + 5);
+      if (h) h.tutum = Math.min(100, (h.tutum ?? 0) + 12);
+      push(s, "kan_defteri", "Atadan kalan kan defterini ocağa attın; alevler eski hesapları yuttu.", "kişisel", true, { k: "bl.bl_devir.r1" });
+      s.bloodline = null;
+      return s;
+    }
+  }
+  const rtr = BL_R_TR[sc];
+  push(s, "kan_defteri", rtr ? rtr[choice as 0 | 1] : "", "kişisel", true, { k: `bl.${sc}.r${choice}`, p: [{ hn: b.nameIdx }] });
+  return s;
+}
+
 // ── Divan/Arzuhal: taç sahibinin huzuruna düşen dilekçeler — hükümdarlık soyut ferman menüsü değil, yüzü olan kararlar.
 // Etki dengesi bilinçli: halkı kollamak keseden yer ama otorite/itibar getirir; keseyi kollamak nam bedeli öder (farm yok: an rastgele düşer).
 export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit", "kacak_asker", "iki_imam", "leke_surulen", "eski_silah_arkadasi", "kayip_kervan", "zindan_affi", "sel_bendi", "sahte_tanik", "kuru_kuyu", "mukerrer_bac", "yanik_koy", "hekim_ucreti"];
