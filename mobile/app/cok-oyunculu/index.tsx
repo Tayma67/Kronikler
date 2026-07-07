@@ -62,6 +62,7 @@ export default function MpLobby() {
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: insets.bottom + 40 }}>
         <PageHeader kicker={t("mp.title")} title={t("mp.title")} sub={t("mp.subtitle")} />
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 6, lineHeight: 17 }}>{t("mp.pitch")}</Text>
 
         {/* Sunucu durumu */}
         {!serverReady && (
