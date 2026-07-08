@@ -4,12 +4,12 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail, tendPet } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider, ScreenFresk } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { playWater } from "../../lib/sound";
 import { placeName, professionNameL, careerTitleL } from "../../lib/locale-data";
@@ -314,6 +314,22 @@ export default function Karakter() {
                     <Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.blood, letterSpacing: 0.5 }}>{t("chr." + p.chronic.k)}</Text>
                   </View>
                 )}
+              </View>
+            );
+          })()}
+          {!p.dead && !!p.pet && (() => {
+            const done = p.pet_turn === state.turn;
+            const yil = Math.floor(Math.max(0, state.turn - p.pet.born) / 12);
+            return (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8, padding: 9, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: "rgba(201,168,76,0.05)" }}>
+                <GameIcon name="wool" size={14} color={C.gold} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment }}>{p.pet.n} · {t("char.pet")}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted }}>{yil < 1 ? t("char.petNew") : applyParams(t("char.petYears"), [yil])} · {t("char.petBond")} {p.pet.bond}</Text>
+                </View>
+                <Pressable disabled={done} onPress={() => { hap("tap"); apply((s) => tendPet(s)); }} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: done ? C.border : "rgba(201,168,76,0.5)", backgroundColor: done ? C.bg : "rgba(201,168,76,0.1)", opacity: done ? 0.5 : 1 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10, color: done ? C.parchmentMuted : C.gold, letterSpacing: 0.5 }}>{done ? t("char.petDone") : t("char.petTend")}</Text>
+                </Pressable>
               </View>
             );
           })()}

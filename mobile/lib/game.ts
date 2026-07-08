@@ -132,6 +132,9 @@ export interface Player {
   sira_gunu_year?: number; // şıra günü yapılan yıl (güzde yılda bir; bağ şenliği farmı kapalı)
   hamam_turn?: number; // ayda bir hamam sefası (sağlık/sosyal farmı kapalı)
   tas_turn?: number; // ayda bir sadaka taşı (adsız hayır; şeref farmı kapalı)
+  pet?: { n: string; born: number; bond: number } | null; // ocak kedisi: kapıya kendi gelen yoldaş (adı, geldiği tur, bağ 0-100)
+  pet_turn?: number; // ayda bir sevme (bağ farmı kapalı)
+  cat_bff?: boolean; // başarım izi: kediyle bağ 80 sınırını aştı (ömürde bir kez)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -1671,6 +1674,22 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       p.money = Math.max(0, p.money - ceza);
       p.reputation = Math.max(-100, p.reputation - 2);
       push(s, "ticaret", `Çarşı denetiminde terazine kusur bulundu; kadı ${ceza} akçe ceza kesti, mübaşir kapıya kırmızı mühür vurdu.`, "kişisel", false, { k: "evj.tartiFail", p: [ceza] });
+    }
+  }
+  // ── Ocak kedisi: bir gün kapının önünde belirir; kovulmazsa ocağın yoldaşı olur — yıllar sonra vedası da gerçek ──
+  if (!p.dead && !p.pet && p.age >= 10 && !inJail(p) && chance(0.015)) {
+    const adlar = ["Duman", "Pamuk", "Sarman", "Tekir", "Boncuk", "Fındık", "Zeytin", "Kömür"];
+    const ad = adlar[Math.floor(Math.random() * adlar.length)];
+    p.pet = { n: ad, born: s.turn, bond: 10 };
+    push(s, "gunluk", `Kapının önünde sırılsıklam bir kedi yavrusu duruyordu; bir tas süt koydun, sabah hâlâ oradaydı. Ocağın artık bir yoldaşı var: ${ad}.`, "kişisel", true, { k: "evj.catArrive", p: [ad] });
+  } else if (!p.dead && p.pet) {
+    if (s.turn - p.pet.born > 150 && chance(0.05)) {
+      push(s, "gunluk", `${p.pet.n} sabah ocağın başındaki minderde kıvrılmış gibiydi; ama artık nefes almıyordu. Yıllarca dizin dibinden ayrılmayan yoldaş, bahçedeki badem ağacının altında uyuyor.`, "kişisel", true, { k: "evj.catGone", p: [p.pet.n] });
+      p.pet = null; // ocak bir süre boş kalır; belki bir gün kapıya bir yavru daha gelir
+    } else if (chance(0.03)) {
+      if (chance(0.5)) push(s, "gunluk", `${p.pet.n} sabah eşiğe bir fare bırakmıştı; hediyesini ciddiyetle sundu, ciddiyetle teşekkür edildi.`, "kişisel", false, { k: "evj.catMoment1", p: [p.pet.n] });
+      else push(s, "gunluk", `Gece ocağın közü sönerken ${p.pet.n} dizlere kıvrıldı; mırıltı odayı doldurdu, dünyanın telaşı kapının dışında kaldı.`, "kişisel", false, { k: "evj.catMoment2", p: [p.pet.n] });
+      p.pet.bond = Math.min(100, p.pet.bond + 1);
     }
   }
   // ── Tanrı misafiri: evi/konağı olanın kapısı ara sıra yolcuya açılır — hediye, övgü ya da uzak diyar hikâyesi kalır ──
@@ -4851,6 +4870,11 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     ns.player.reputation = Math.max(-100, Math.min(100, ns.player.reputation + 2));
     ns.history.push({ day: 0, type: "destan", text: "Kuşağında atalarının kül rengi mührü: Kül Yemini bu hanede tamamlandı. Kapılar sana bir karış daha açık.", scope: "kişisel", landmark: false, k: "saga.echo", p: [] });
   }
+  // Ocak kedisi ocakla kalır: yoldaş vârise geçer (born tur-rebase; bağ yarıdan — kedi yeni ele zamanla alışır)
+  if (p.pet) {
+    ns.player.pet = { n: p.pet.n, born: p.pet.born - prev.turn, bond: Math.max(5, Math.round(p.pet.bond / 2)) };
+    ns.history.push({ day: 0, type: "nesil_devri", text: `${p.pet.n} yeni sahibine alışmak için birkaç gün nazlandı; sonra bir akşam gelip dizine kıvrıldı. Ocak aynı ocak.`, scope: "kişisel", landmark: false, k: "evj.catHeir", p: [p.pet.n] });
+  }
   return ns;
 }
 
@@ -6129,6 +6153,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "sulheden",  name: "Sulh Eden",        desc: "Amansız hasmınla barış yap.",         icon: "prayer-beads",done: (s) => !!s.player.peace_made },
   { id: "multezim",  name: "Mültezim",         desc: "Bir şehrin vergi iltizamını al.",     icon: "scroll",      done: (s) => !!s.player.iltizam_done },
   { id: "ceyizacan", name: "Çeyiz Açan",       desc: "Bir evladın çeyiz sandığını aç.",     icon: "gems",        done: (s) => !!s.player.dowry_given },
+  { id: "ocakyoldasi", name: "Ocak Yoldaşı",   desc: "Kedinle bağın 80 sınırını aşsın.",    icon: "wool",        done: (s) => !!s.player.cat_bff },
   { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
   { id: "bilge",    name: "Yaşlı Bilge",     desc: "70 yaşını gör.",                    icon: "prayer-beads", done: (s) => s.player.age >= 70 },
   { id: "imparator",name: "Mülk İmparatoru", desc: "8 mülke sahip ol.",                 icon: "castle",       done: (s) => s.player.properties.length >= 8 },
@@ -6728,6 +6753,20 @@ export function visitHamam(prev: GameState): GameState {
   gainSkill(s, "social", 4);
   if (chance(0.35)) { p.reputation = Math.min(100, p.reputation + 1); push(s, "sohbet", `Hamamda keselendin (−${cost} akçe); kubbenin altında bir fısıltı da yakaladın — çarşıdan önce senin kulağında.`, "kişisel", false, { k: "evj.hamam2", p: [cost] }); }
   else push(s, "gunluk", `Hamama gittin (−${cost} akçe); kese, buhar, iki tas su — beden gevşedi, gönül durulandı.`, "kişisel", false, { k: "evj.hamam", p: [cost] });
+  return s;
+}
+export function tendPet(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !p.pet || inJail(p)) return s;
+  if (p.pet_turn === s.turn) return s; // ayda bir: bağ sevgiyle, sevgi zamanla büyür
+  p.pet_turn = s.turn;
+  p.pet.bond = Math.min(100, p.pet.bond + 4);
+  p.health = Math.min(100, p.health + 1);
+  if (!p.cat_bff && p.pet.bond >= 80) {
+    p.cat_bff = true;
+    push(s, "gunluk", `${p.pet.n} artık kapıdan girilmeden ayak sesini tanıyor; bu evde kimin hane reisi olduğu ona sorulsa cevap belli.`, "kişisel", true, { k: "evj.catBff", p: [p.pet.n] });
+  } else if (chance(0.5)) push(s, "gunluk", `Kucağına aldın; ${p.pet.n} gözlerini kısıp mırladı — gün ne getirirse getirsin, bu ev iyi bir ev.`, "kişisel", false, { k: "evj.catTend", p: [p.pet.n] });
+  else push(s, "gunluk", `Bir yün yumağı yuvarlandı; yarım saat boyunca evin en mühim meselesi o yumaktı. ${p.pet.n} sonunda muzaffer, yumak mağlup.`, "kişisel", false, { k: "evj.catTend2", p: [p.pet.n] });
   return s;
 }
 export function healerCost(s: GameState): number { return Math.round(25 * inflationFactor(s)); }
