@@ -3,10 +3,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { beginArc, advanceArc } from "../../lib/game";
-import { arcById, availableArcs } from "../../lib/arcs";
+import { arcById, availableArcs, ARCS } from "../../lib/arcs";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { BackLabel, PageHeader, Panel, SectionHead } from "../../lib/ui";
 
 export default function Hikayeler() {
@@ -56,6 +56,17 @@ export default function Hikayeler() {
             ))}
           </>
         )}
+
+        {(() => {
+          const availIds = new Set(avail.map((x) => x.id));
+          const waiting = ARCS.filter((x) => !st.completed.includes(x.id) && !availIds.has(x.id) && x.id !== (st.active?.id || "")).length;
+          if (!waiting) return null;
+          return (
+            <View style={{ borderWidth: 1, borderColor: C.border, borderStyle: "dashed" as const, borderRadius: 10, padding: 12, marginBottom: 12, opacity: 0.85 }}>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, lineHeight: 17 }}>{applyParams(t("hik.waiting"), [waiting])}</Text>
+            </View>
+          );
+        })()}
 
         {st.completed.length > 0 && (
           <Panel title={t("hik.completed")} tone={C.sage} noPad>
