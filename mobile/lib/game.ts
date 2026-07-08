@@ -2663,7 +2663,7 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
         (p.capstones = p.capstones || []).push(p.profession);
         p.fame = Math.min(100, p.fame + 6); p.honor = Math.min(100, p.honor + 4);
         const odul = Math.round(60 * inflationFactor(s)); p.money += odul;
-        push(s, "terfi", `Mesleğinin zirvesine vardın: ${pr.tiers[after]} olarak adın diyarda anılıyor; lonca şerefine bir kese açtı (+${odul} akçe).`, "kişisel", true, { k: "evj.capstone", p: [{ c: [p.profession, p.career_xp] }, odul] });
+        { const cv2 = chance(0.5); push(s, "terfi", cv2 ? `Tezgâha girdiğinde bütün çıraklar ayağa kalktı: artık ${pr.tiers[after]} sensin. Lonca reisi keseyi uzatırken gözlerini kaçırdı — ustalık önünde herkes çıraktır (+${odul} akçe).` : `Mesleğinin zirvesine vardın: ${pr.tiers[after]} olarak adın diyarda anılıyor; lonca şerefine bir kese açtı (+${odul} akçe).`, "kişisel", true, { k: cv2 ? "evj.capstone2" : "evj.capstone", p: [{ c: [p.profession, p.career_xp] }, odul] }); }
       }
     }
   }
