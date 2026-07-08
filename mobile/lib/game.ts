@@ -145,6 +145,7 @@ export const EDU_TRACKS: EduTrack[] = [
   { id: "savas",   label: "Savaş Yolu",   icon: "crossed-swords", weekly: 3, stat: "strength", skill: "combat" },
   { id: "zanaat",  label: "Zanaat Yolu",  icon: "anvil",          weekly: 2, skill: "crafting" },
   { id: "ticaret", label: "Ticaret Yolu", icon: "coins",          weekly: 2, stat: "charisma", skill: "trade" },
+  { id: "kelam",   label: "Kelam Yolu",   icon: "speaker",        weekly: 2, skill: "social" },
 ];
 // Biriken ay sayısı → bonus kademesi: <10 ay etkisiz, ~6 ayda +1 (max +3). Vercel apply_child_bonus hizası.
 export function eduLevel(weeks: number): number { return weeks < 10 ? 0 : Math.max(1, Math.min(3, Math.floor(weeks / 26))); }
