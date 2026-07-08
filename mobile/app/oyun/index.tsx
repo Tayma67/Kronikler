@@ -725,6 +725,16 @@ export default function Dashboard() {
         if (p.horse_pawn) chips.push({ icon: "hourglass", label: applyParams(t("dash.fx.rehin"), [Math.max(0, p.horse_pawn.until - state.turn)]) });
         const fal = (p.properties || []).find((pr) => pr.fallow_until !== undefined);
         if (fal) chips.push({ icon: "leaf", label: applyParams(t("dash.fx.nadas"), [Math.max(0, (fal.fallow_until ?? 0) - state.turn)]) });
+        // Ufukta: yaklaşan güzel şeyler — beklenti oyuncuyu yarınki aya çağırır
+        if ((p.dowry_chest || 0) > 0 && p.child_meta?.length) {
+          const yakin = p.child_meta.map((cm) => 216 - (state.turn - cm.born)).filter((k) => k > 0).sort((a, b) => a - b)[0];
+          if (yakin !== undefined) chips.push({ icon: "gems", label: yakin >= 12 ? applyParams(t("dash.fx.ceyizYil"), [Math.ceil(yakin / 12)]) : applyParams(t("dash.fx.ceyizAy"), [yakin]) });
+        }
+        if ((p.properties || []).some((pr) => pr.type === "bag") && (p.sira_gunu_year ?? -1) !== Math.floor(state.turn / 12)) {
+          const kalanBag = cal.month_no <= 8 ? 9 - cal.month_no : cal.month_no === 12 ? 9 : 0;
+          if (kalanBag > 0) chips.push({ icon: "amphora", label: applyParams(t("dash.fx.bagbozumu"), [kalanBag]) });
+        }
+        if (cal.season === "Sonbahar" && (p.winter_stock_until ?? 0) < state.turn) chips.push({ icon: "wheat", label: t("dash.fx.kisBos") });
         if (!chips.length) return null;
         return (
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginHorizontal: 12, marginTop: 8 }}>
