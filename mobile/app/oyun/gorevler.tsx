@@ -28,6 +28,10 @@ export default function Gorevler() {
     const war = playerWar(state);
     if (war) tasks.push({ icon: "crossed-swords", title: t("gv.war.t"), sub: t("gv.war.s"), to: "/oyun/orgutler" });
     if (nemesisEncounter(state)) tasks.push({ icon: "skull", title: t("gv.nemesis.t"), sub: t("gv.nemesis.s"), to: "/oyun/savas", urgent: true });
+    if (state.pendingScene?.kind === "trial") tasks.push({ icon: "scroll", title: t("gv.trial.t"), sub: t("gv.trial.s"), to: "/oyun/suc", urgent: true });
+    if (state.bloodline?.scene) tasks.push({ icon: "skull", title: t("gv.blood.t"), sub: t("gv.blood.s"), to: "/oyun/", urgent: true });
+    if (state.saga?.scene) tasks.push({ icon: "scroll-open", title: t("gv.saga.t"), sub: t("gv.saga.s"), to: "/oyun/" });
+    if (state.crownCampaign) tasks.push({ icon: "crossed-swords", title: t("gv.cmp.t"), sub: t("gv.cmp.s"), to: "/oyun/hanedan" });
     if (state.caravan) tasks.push({ icon: "scales", title: t("gv.caravan.t"), sub: t("gv.caravan.s").replace("%s", state.caravan.dest), to: "/oyun/pazar" });
     if (!p.faction && p.age >= 13) tasks.push({ icon: "crown", title: t("gv.guild.t"), sub: t("gv.guild.s"), to: "/oyun/orgutler" });
     if (!p.married && p.age >= 18) tasks.push({ icon: "ring", title: t("gv.marry.t"), sub: t("gv.marry.s"), to: "/oyun/iliskiler" });
