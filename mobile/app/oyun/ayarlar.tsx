@@ -6,7 +6,7 @@ import Constants from "expo-constants";
 import { useGame, exportSaveText } from "../../lib/store";
 import { useI18n } from "../../lib/i18n";
 import { LANGS } from "../../lib/locale-data";
-import { isSoundEnabled, setSoundEnabled, playTap } from "../../lib/sound";
+import { isSoundEnabled, setSoundEnabled, isMusicEnabled, setMusicEnabled, playTap } from "../../lib/sound";
 import { isHapticsEnabled, setHapticsEnabled, hap } from "../../lib/haptics";
 import { isReduceMotion, setReduceMotion } from "../../lib/perf";
 import { C, F } from "../../lib/theme";
@@ -18,6 +18,8 @@ export default function Ayarlar() {
   const { t, lang, setLang } = useI18n();
   const [sound, setSound] = useState(isSoundEnabled());
   const toggleSound = async (v: boolean) => { setSound(v); await setSoundEnabled(v); if (v) playTap(); };
+  const [music, setMusicState] = useState(isMusicEnabled());
+  const toggleMusic = async (v: boolean) => { setMusicState(v); await setMusicEnabled(v); };
   const [haptics, setHaptics] = useState(isHapticsEnabled());
   const toggleHaptics = async (v: boolean) => { setHaptics(v); await setHapticsEnabled(v); if (v) hap("selection"); };
   const [reduceM, setReduceM] = useState(isReduceMotion());
@@ -87,6 +89,13 @@ export default function Ayarlar() {
             <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.soundDesc")}</Text>
           </View>
           <Switch value={sound} onValueChange={toggleSound} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={sound ? C.gold : "#8a7a55"} />
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("settings.music")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("settings.musicDesc")}</Text>
+          </View>
+          <Switch value={music} onValueChange={toggleMusic} trackColor={{ false: "#3a2f1c", true: "rgba(201,168,76,0.6)" }} thumbColor={music ? C.gold : "#8a7a55"} />
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
           <View style={{ flex: 1 }}>

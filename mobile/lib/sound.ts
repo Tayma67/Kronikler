@@ -1,5 +1,6 @@
 // İnce ses efektleri (çevrimdışı, paket içi WAV). Varsayılan KAPALI; ayarlardan açılır.
 import { createAudioPlayer, type AudioPlayer } from "expo-audio";
+import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const KEY = "kronikler_sound_v1";
@@ -9,6 +10,34 @@ let advance: AudioPlayer | null = null;
 let zafer: AudioPlayer | null = null;
 let can: AudioPlayer | null = null;
 let cingirak: AudioPlayer | null = null;
+
+// ── Arka plan müziği: Kervan Yolu teması (prosedürel, paket içi, 48 sn dikişsiz döngü). Ayrı anahtar; varsayılan AÇIK. ──
+const MKEY = "kronikler_music_v1";
+let musicEnabled = true;
+let music: AudioPlayer | null = null;
+export async function loadMusicSetting(): Promise<boolean> {
+  try { const v = await AsyncStorage.getItem(MKEY); musicEnabled = v !== "0"; } catch {}
+  if (musicEnabled) startMusic();
+  return musicEnabled;
+}
+export function isMusicEnabled(): boolean { return musicEnabled; }
+export async function setMusicEnabled(on: boolean): Promise<void> {
+  musicEnabled = on;
+  try { await AsyncStorage.setItem(MKEY, on ? "1" : "0"); } catch {}
+  if (on) startMusic(); else stopMusic();
+}
+export function startMusic() {
+  try {
+    if (!music) { music = createAudioPlayer(require("../assets/sfx/muzik.wav")); music.loop = true; music.volume = 0.32; }
+    music.play();
+  } catch {}
+}
+export function stopMusic() { try { music?.pause(); } catch {} }
+// Uygulama arka plana geçince müzik susar, dönünce kaldığı yerden sürer.
+AppState.addEventListener("change", (st) => {
+  if (!musicEnabled) return;
+  try { if (st === "active") music?.play(); else music?.pause(); } catch {}
+});
 
 export async function loadSoundSetting(): Promise<boolean> {
   try { const v = await AsyncStorage.getItem(KEY); enabled = v === "1"; } catch {}

@@ -10,7 +10,7 @@ import { GameProvider } from "../lib/store";
 import { MpProvider } from "../lib/mp/store";
 import { LanguageProvider } from "../lib/i18n";
 import { LoadingScreen } from "../lib/fx";
-import { loadSoundSetting } from "../lib/sound";
+import { loadSoundSetting, loadMusicSetting } from "../lib/sound";
 import { loadHapticsSetting } from "../lib/haptics";
 import { loadReduceMotion } from "../lib/perf";
 import { C } from "../lib/theme";
@@ -30,7 +30,7 @@ export default function RootLayout() {
   });
   const [fontTimeout, setFontTimeout] = useState(false);
   useEffect(() => { const t = setTimeout(() => setFontTimeout(true), 6000); return () => clearTimeout(t); }, []);
-  useEffect(() => { loadSoundSetting(); loadHapticsSetting(); loadReduceMotion(); }, []);
+  useEffect(() => { loadSoundSetting(); loadMusicSetting(); loadHapticsSetting(); loadReduceMotion(); }, []);
   if (!loaded && !fontError && !fontTimeout) {
     return <LoadingScreen />;
   }
