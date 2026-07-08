@@ -2423,6 +2423,19 @@ function tickEconomy(s: GameState, announce: boolean) {
     const ev = MARKET_EVENTS[Math.floor(Math.random() * MARKET_EVENTS.length)];
     s.marketEvent = { goods: ev.goods, mult: ev.mult, until: s.turn + ev.months, key: ev.key };
     if (announce) push(s, "piyasa", ev.text, "makro", false, { k: "mev." + ev.key });
+    // Hasat olayı mülke uğrar: bağ bozumu bağ sahibine, bereketli kırkım tarla sahibine tek seferlik pay bırakır.
+    if (announce && !s.player.dead) {
+      const harvestProp: Record<string, string> = { bagbozumu: "bag", kirkimzamani: "tarla", bolluk: "tarla" };
+      const pt = harvestProp[ev.key];
+      if (pt) {
+        const owned = s.player.properties.filter((pr) => pr.type === pt).length;
+        if (owned > 0) {
+          const pay = Math.round(owned * 18 * inflationFactor(s));
+          s.player.money += pay;
+          push(s, "piyasa", `Hasat olayı senin ${owned} mülküne de uğradı; pay keseye düştü (+${pay} akçe).`, "kişisel", false, { k: "evj.harvestShare", p: [owned, pay] });
+        }
+      }
+    }
   }
 }
 
