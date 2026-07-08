@@ -2,6 +2,20 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 372-379 eki (8 Temmuz, öğle) — ÇARŞININ KULAĞI
+
+**Tek cümle (mağaza/what's new):**
+TR: "Çarşının kulağı büyüdü: 52 fısıltı, 23 pazar mevsimi (yayla peyniri ucuzlatır, bağlı tekneler pahalandırır), hasımın altı oyunu (karalama türküsü, sözsüz bakış), loncalarda yedinci gün; çocukluğa dere bendi ile salıncak ipi geldi (37 mikro an), terfi, sokak tası ve kapıyı çalan hikâye artık iki ağızla anlatılıyor."
+EN: "The bazaar's ear grew: 52 whispers, 23 market seasons (highland cheese cheapens, tied-up boats raise prices), six nemesis plays (a mocking ditty, a wordless stare), a seventh guild day; childhood gained a stream dam and a swing rope (37 micro-moments), and promotions, the street bowl and the story at the door now speak with two voices."
+
+**Öne çıkanlar:**
+- **Fısıltı 48→52:** kırık kiremitten yıldız sayan komşu, sofradaki fazla kaşık, hamamda herkesin bildiği sır, minare gölgesiyle açılan dükkân.
+- **Pazar 21→23:** yayla dönüşü peynir bolluğu (ucuzlatır), fırtınada bağlı kalan tekneler (pahalandırır).
+- **Hasım 4→6 oyun:** çarşıda karalama türküsü (itibar kemirir), pazarda sözsüz bakış (iz bırakır).
+- **Çocukluk anları 5→7:** derede taş bent (su ustası adı bir yaz kalır), çınara salıncak ipi (kayıkçı düğümü).
+- **İkinci sesler:** terfi, sokak yemeği ve kapıyı çalan hikâye — üç sık satır daha çift ağızlı.
+- **İrili ufaklı:** loncalara 7. görev metni, komşu sohbetine 7. hâl; rehber ve vitrin sayıları tazelendi (37 mikro an, 52 fısıltı).
+
 ## Dalga 361-370 eki (8 Temmuz, öğle) — KIRK YAMALI VE ALTINCI GÜN
 
 **Tek cümle (mağaza/what's new):**
