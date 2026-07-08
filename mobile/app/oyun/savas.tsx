@@ -274,6 +274,17 @@ export default function Savas() {
             </View>
           );
         })}
+        {(() => {
+          const locked = ENCOUNTERS.filter((e) => e.minFame && p.fame < e.minFame).sort((x, y) => (x.minFame || 0) - (y.minFame || 0))[0];
+          if (!locked) return null;
+          return (
+            <View style={{ borderWidth: 1, borderColor: C.border, borderStyle: "dashed" as const, borderRadius: 10, padding: 12, marginBottom: 10, opacity: 0.85 }}>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, lineHeight: 17 }}>
+                {applyParams(t("cb.legendTeaser"), [locked.minFame || 0])}
+              </Text>
+            </View>
+          );
+        })()}
       </ScrollView>
     </View>
   );
