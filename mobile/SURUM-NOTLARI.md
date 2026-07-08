@@ -2,6 +2,19 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 299-311 eki (8 Temmuz, sabah) — DİYARIN SESLERİ
+
+**Tek cümle (mağaza/what's new):**
+TR: "Diyar daha canlı konuşuyor: 26. yay Göçmen Kafilesi sur dibinde (kapı mı, yol mu?), kırk nişan toplayana Nişan Avcısı (87. başarım), sohbetin on beş kapısına ve yıl karnesine üçüncü ağız; komşulara yeni muratlar, huylar ve mizaçlar; nüfusa 36 ad, tavlaya 4 at, diyara 2 hane; MP nabız kartında artık ensendeki rakip de soluk soluğa görünüyor."
+EN: "The realm speaks livelier: arc 26, The Displaced Caravan, camps under the walls (the gate, or the road?); gather forty badges for The Badge Hunter (87th); a third voice for all fifteen talk intents and the year ledger; new dreams, habits and temperaments for the neighbors; 36 names, 4 horses and 2 houses more; and in multiplayer the rival at your heels now breathes on the pulse card."
+
+**Öne çıkanlar:**
+- **Göçmen Kafilesi (SP, 26. yay, 30+):** kafileye kapı mı açılır yol mu gösterilir — loncalarla kefalet pazarlığı, kış ortasında vicdan sahnesi.
+- **Nişan Avcısı (87. başarım):** defter kendine baktı — kırk nişanı toplayana meta-nişan.
+- **Üçüncü ağızlar:** sohbetin 15 niyeti, spontane satırlar ve yıl karnesi artık üçer sesli; mersiyeye gezgin ve zanaat satırları eklendi.
+- **Canlı diyar:** NPC muratları 12 (memleket özlemi, çırağa dükkân), tikler 12, mizaçlar 14; kişi adları 6 kültürde 18+18, at adları 14, rakip haneler 14.
+- **MP:** nabız kartında ensendeki rakip — güç farkı 8'in altına inince 'ara daralıyor' uyarısı.
+
 ## Dalga 287-297 eki (8 Temmuz, sabah) — KÖZ VE YILDIZ
 
 **Tek cümle (mağaza/what's new):**
