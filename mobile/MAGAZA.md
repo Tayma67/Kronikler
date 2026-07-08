@@ -16,7 +16,7 @@ Paket adı: `com.kronikler.app` · Kategori: Simülasyon / Rol Yapma · Yaş: PE
 
 **Kronikler: Küllerin Mirası** — 1247 Anadolu'sunda doğar, yaşar, ölür ve vârisinle devam edersin.
 
-Bir çocukluk yaşa: mektepte ders, sokakta oyun, ömürlük bir can yoldaşı — ya da bir düşman. Bir meslek tut: demirci ol şaheser dök, tüccar ol kervan yürüt, şifacı ol salgında adını duyur. Bir ocak kur: mizacı olan bir eş, bağ kurdukça büyüyen evlatlar, sofrasında dinlediğin torunlar.
+Bir çocukluk yaşa: mektepte ders, sokakta oyun, ömürlük bir can yoldaşı — ya da bir düşman. Bir meslek tut: demirci ol şaheser dök, tüccar ol kervan yürüt, şifacı ol salgında adını duyur. Bir ocak kur: mizacı olan bir eş, bağ kurdukça büyüyen evlatlar, sofrasında dinlediğin torunlar. Kapına yağmurlu bir gece sığınan yavru kediyi ocağına al, komşu çobanın avucuna tutuşturduğu köpekle patikada pusuyu boz — huyu, ömrü ve vedası kendine özgü iki yoldaş; ikisi de vârisin dizinde nöbeti sürdürür.
 
 Sonra daha fazlasını iste: loncanda rütbe söktür, hanelerle ittifak kur, kan davanı büyüt ya da bitir — kana bulanan dava Kan Defteri'ne yazılır, üç kuşak sürer; hüküm gecesi kıyım mı olur, dünürlük mü, torunun karar verir. Tahta çık — divanında arzuhaller dinle, fermanınla iki köyü barıştır ya da hazineyi doldur. Beylikleri tek tâcın altında birleştir; adın "Cihangir" kalsın.
 
