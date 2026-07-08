@@ -5427,7 +5427,7 @@ export function hostFeast(prev: GameState): GameState {
   p.money -= cost; p.feast_turn = s.turn; p.fame = Math.min(100, p.fame + fame); p.reputation = Math.min(100, p.reputation + rep);
   gainSkill(s, "social", 5); bumpNam(p, "comert", 8);
   const why = recognition(s) > 0.5 ? " Tanınan biri olduğundan ziyafetin çok konuşuldu." : "";
-  push(s, "sosyal", `Köye bir ziyafet verdin; adın dilden dile dolaştı.${why}`, "kişisel", true, { k: "evj.feast", p: [recognition(s) > 0.5 ? { sfx: "sfx.feastWhy" } : ""] });
+  { const fv = chance(0.5); push(s, "sosyal", fv ? `Sofralar meydana kuruldu; kazanlar kaynadı, türküler gece yarısını buldu.${why}` : `Köye bir ziyafet verdin; adın dilden dile dolaştı.${why}`, "kişisel", true, { k: fv ? "evj.feast2" : "evj.feast", p: [recognition(s) > 0.5 ? { sfx: "sfx.feastWhy" } : ""] }); }
   return s;
 }
 
