@@ -4252,6 +4252,8 @@ export function opportunitiesFor(s: GameState): Opportunity[] {
     { key: "gece_sali", minAge: 14, title: "Gece Salı", desc: "Irmaktan gece inen kereste salına kılavuzluk et.", reward: 44, risk: 0.55, stat: "stamina" },
     { key: "harman_bekcisi", minAge: 13, title: "Harman Bekçiliği", desc: "Geceyi harman başında geçir, kuş ve hırsız sokma.", reward: 26, risk: 0.35, stat: "stamina" },
     { key: "kitabe_yazisi", minAge: 15, title: "Kitabe Yazısı", desc: "Caminin silinen kitabesini eski kayıttan yeniden yaz.", reward: 34, risk: 0.4, stat: "intelligence" },
+    { key: "buz_kesimi", minAge: 14, title: "Buz Kesimi", desc: "Kış gölünden konak kileri için buz kes.", reward: 36, risk: 0.45, stat: "strength" },
+    { key: "panayir_tellali", minAge: 13, title: "Panayır Tellallığı", desc: "Panayır boyunca tellallık et, kalabalığı meydana topla.", reward: 28, risk: 0.3, stat: "charisma" },
   ];
   const seed = (s.turn * 2654435761) >>> 0;
   const eligible = pool.filter((o) => !o.minAge || s.player.age >= o.minAge); // çocuğa çocuk işi: yaşına uymayan fırsat hiç gösterilmez
