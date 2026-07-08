@@ -132,7 +132,7 @@ export interface Player {
   sira_gunu_year?: number; // şıra günü yapılan yıl (güzde yılda bir; bağ şenliği farmı kapalı)
   hamam_turn?: number; // ayda bir hamam sefası (sağlık/sosyal farmı kapalı)
   tas_turn?: number; // ayda bir sadaka taşı (adsız hayır; şeref farmı kapalı)
-  pet?: { n: string; born: number; bond: number } | null; // ocak kedisi: kapıya kendi gelen yoldaş (adı, geldiği tur, bağ 0-100)
+  pet?: { n: string; born: number; bond: number; huy?: string; span?: number; away_until?: number; old?: boolean } | null; // ocak kedisi: ad, geliş turu, bağ 0-100, huy (avci/sokulgan/tembel/nazli), ömür (ay, kediye özgü), kayıp dönüş turu, yaşlılık işareti görüldü mü
   pet_turn?: number; // ayda bir sevme (bağ farmı kapalı)
   cat_bff?: boolean; // başarım izi: kediyle bağ 80 sınırını aştı (ömürde bir kez)
   gov_run_turn?: number; // ayda tek valilik adaylığı
@@ -1676,20 +1676,47 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       push(s, "ticaret", `Çarşı denetiminde terazine kusur bulundu; kadı ${ceza} akçe ceza kesti, mübaşir kapıya kırmızı mühür vurdu.`, "kişisel", false, { k: "evj.tartiFail", p: [ceza] });
     }
   }
-  // ── Ocak kedisi: bir gün kapının önünde belirir; kovulmazsa ocağın yoldaşı olur — yıllar sonra vedası da gerçek ──
+  // ── Ocak kedisi: kapıya kendi gelen yoldaş — huyu, ömrü, işi ve vedası kendine özgü ──
   if (!p.dead && !p.pet && p.age >= 10 && !inJail(p) && chance(0.015)) {
     const adlar = ["Duman", "Pamuk", "Sarman", "Tekir", "Boncuk", "Fındık", "Zeytin", "Kömür"];
+    const huylar = ["avci", "sokulgan", "tembel", "nazli"];
     const ad = adlar[Math.floor(Math.random() * adlar.length)];
-    p.pet = { n: ad, born: s.turn, bond: 10 };
+    p.pet = { n: ad, born: s.turn, bond: 10, huy: huylar[Math.floor(Math.random() * huylar.length)], span: 132 + Math.floor(Math.random() * 61) }; // ömür 11-16 yıl: her kedininki kendine
     push(s, "gunluk", `Kapının önünde sırılsıklam bir kedi yavrusu duruyordu; bir tas süt koydun, sabah hâlâ oradaydı. Ocağın artık bir yoldaşı var: ${ad}.`, "kişisel", true, { k: "evj.catArrive", p: [ad] });
   } else if (!p.dead && p.pet) {
-    if (s.turn - p.pet.born > 150 && chance(0.05)) {
-      push(s, "gunluk", `${p.pet.n} sabah ocağın başındaki minderde kıvrılmış gibiydi; ama artık nefes almıyordu. Yıllarca dizin dibinden ayrılmayan yoldaş, bahçedeki badem ağacının altında uyuyor.`, "kişisel", true, { k: "evj.catGone", p: [p.pet.n] });
+    const pet = p.pet;
+    if (pet.span === undefined) { pet.span = 132 + Math.floor(Math.random() * 61); pet.huy = ["avci", "sokulgan", "tembel", "nazli"][Math.floor(Math.random() * 4)]; } // eski kayıt: huy ve ömür sonradan bilinir
+    const yasAy = s.turn - pet.born;
+    if (pet.away_until !== undefined) {
+      // Kayıp kedi: vakti gelince döner — kediler gider ama ocağı unutmaz
+      if (s.turn >= pet.away_until) {
+        pet.away_until = undefined;
+        pet.bond = Math.min(100, pet.bond + 2);
+        push(s, "gunluk", `Kaç gündür görünmeyen ${pet.n} bir akşam hiçbir şey olmamış gibi eşikte belirdi; biraz kirli, biraz mağrur. Nerede olduğunu yalnız o biliyor.`, "kişisel", false, { k: "evj.catBack", p: [pet.n] });
+      }
+    } else if (yasAy > pet.span && chance(0.08)) {
+      push(s, "gunluk", `${pet.n} sabah ocağın başındaki minderde kıvrılmış gibiydi; ama artık nefes almıyordu. Yıllarca dizin dibinden ayrılmayan yoldaş, bahçedeki badem ağacının altında uyuyor.`, "kişisel", true, { k: "evj.catGone", p: [pet.n] });
       p.pet = null; // ocak bir süre boş kalır; belki bir gün kapıya bir yavru daha gelir
+    } else if (!pet.old && yasAy > pet.span - 24) {
+      pet.old = true; // yaşlılık kapıyı bir kez çalar: veda sessizce haber verilir
+      push(s, "gunluk", `${pet.n} eskisi gibi sıçrayamıyor; burnunun ucu ağardı, günün çoğu ocak başında geçiyor. Kedilerin de akşamı var.`, "kişisel", false, { k: "evj.catOld", p: [pet.n] });
+    } else if (chance(0.008)) {
+      pet.away_until = s.turn + 1 + Math.floor(Math.random() * 2); // 1-2 ay ortalıkta yok: kediler kimseye hesap vermez
+      push(s, "gunluk", `${pet.n} iki gündür ortalarda yok; tası dolu, minderi boş. Kapı her gıcırdadığında dönüp bakıyorsun.`, "kişisel", false, { k: "evj.catLost", p: [pet.n] });
+    } else if (chance(pet.huy === "avci" ? 0.06 : 0.03)) {
+      p.hunger = Math.min(100, p.hunger + 2); // fare kilere inemedi: kışlık zahire yerinde
+      push(s, "gunluk", `Kilerde fare izi yok; ${pet.n} gece nöbetini ciddiye alıyor. Zahire olduğu gibi duruyor, un çuvalları delinmedi.`, "kişisel", false, { k: "evj.catPantry", p: [pet.n] });
+    } else if (p.health < 45 && chance(pet.huy === "sokulgan" ? 0.12 : 0.07)) {
+      p.health = Math.min(100, p.health + 2);
+      push(s, "gunluk", `Hasta yattığın günlerde ${pet.n} yorganın ucundan ayrılmadı; sıcaklığı ilaç gibi, mırıltısı dua gibi.`, "kişisel", false, { k: "evj.catComfort", p: [pet.n] });
+    } else if (p.children.length > 0 && chance(0.04)) {
+      const kucuk = p.children[p.children.length - 1];
+      if (p.child_bond) p.child_bond[kucuk] = Math.min(100, (p.child_bond[kucuk] || 0) + 1);
+      push(s, "gunluk", `Avludan kahkaha yükseldi: ${pet.n} bir ipin peşinde, çocuklar onun peşinde. Ev dediğin biraz da bu gürültü.`, "kişisel", false, { k: "evj.catKids", p: [pet.n] });
     } else if (chance(0.03)) {
-      if (chance(0.5)) push(s, "gunluk", `${p.pet.n} sabah eşiğe bir fare bırakmıştı; hediyesini ciddiyetle sundu, ciddiyetle teşekkür edildi.`, "kişisel", false, { k: "evj.catMoment1", p: [p.pet.n] });
-      else push(s, "gunluk", `Gece ocağın közü sönerken ${p.pet.n} dizlere kıvrıldı; mırıltı odayı doldurdu, dünyanın telaşı kapının dışında kaldı.`, "kişisel", false, { k: "evj.catMoment2", p: [p.pet.n] });
-      p.pet.bond = Math.min(100, p.pet.bond + 1);
+      if (chance(0.5)) push(s, "gunluk", `${pet.n} sabah eşiğe bir fare bırakmıştı; hediyesini ciddiyetle sundu, ciddiyetle teşekkür edildi.`, "kişisel", false, { k: "evj.catMoment1", p: [pet.n] });
+      else push(s, "gunluk", `Gece ocağın közü sönerken ${pet.n} dizlere kıvrıldı; mırıltı odayı doldurdu, dünyanın telaşı kapının dışında kaldı.`, "kişisel", false, { k: "evj.catMoment2", p: [pet.n] });
+      pet.bond = Math.min(100, pet.bond + 1);
     }
   }
   // ── Tanrı misafiri: evi/konağı olanın kapısı ara sıra yolcuya açılır — hediye, övgü ya da uzak diyar hikâyesi kalır ──
@@ -4872,7 +4899,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   }
   // Ocak kedisi ocakla kalır: yoldaş vârise geçer (born tur-rebase; bağ yarıdan — kedi yeni ele zamanla alışır)
   if (p.pet) {
-    ns.player.pet = { n: p.pet.n, born: p.pet.born - prev.turn, bond: Math.max(5, Math.round(p.pet.bond / 2)) };
+    ns.player.pet = { n: p.pet.n, born: p.pet.born - prev.turn, bond: Math.max(5, Math.round(p.pet.bond / 2)), huy: p.pet.huy, span: p.pet.span, old: p.pet.old };
     ns.history.push({ day: 0, type: "nesil_devri", text: `${p.pet.n} yeni sahibine alışmak için birkaç gün nazlandı; sonra bir akşam gelip dizine kıvrıldı. Ocak aynı ocak.`, scope: "kişisel", landmark: false, k: "evj.catHeir", p: [p.pet.n] });
   }
   return ns;
@@ -6759,8 +6786,9 @@ export function tendPet(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || !p.pet || inJail(p)) return s;
   if (p.pet_turn === s.turn) return s; // ayda bir: bağ sevgiyle, sevgi zamanla büyür
+  if (p.pet.away_until !== undefined) return s; // kayıp kedi sevilemez — dönmesini bekleyeceksin
   p.pet_turn = s.turn;
-  p.pet.bond = Math.min(100, p.pet.bond + 4);
+  p.pet.bond = Math.min(100, p.pet.bond + (p.pet.huy === "sokulgan" ? 5 : p.pet.huy === "nazli" ? 3 : 4)); // sokulgan koşarak gelir, nazlı nazını çektirir
   p.health = Math.min(100, p.health + 1);
   if (!p.cat_bff && p.pet.bond >= 80) {
     p.cat_bff = true;

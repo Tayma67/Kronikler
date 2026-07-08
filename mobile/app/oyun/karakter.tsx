@@ -318,14 +318,15 @@ export default function Karakter() {
             );
           })()}
           {!p.dead && !!p.pet && (() => {
-            const done = p.pet_turn === state.turn;
+            const away = p.pet.away_until !== undefined;
+            const done = p.pet_turn === state.turn || away;
             const yil = Math.floor(Math.max(0, state.turn - p.pet.born) / 12);
             return (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8, padding: 9, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: "rgba(201,168,76,0.05)" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8, padding: 9, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: "rgba(201,168,76,0.05)", opacity: away ? 0.7 : 1 }}>
                 <GameIcon name="wool" size={14} color={C.gold} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment }}>{p.pet.n} · {t("char.pet")}</Text>
-                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted }}>{yil < 1 ? t("char.petNew") : applyParams(t("char.petYears"), [yil])} · {t("char.petBond")} {p.pet.bond}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment }}>{p.pet.n} · {t("char.pet")} · {t("char.huy." + (p.pet.huy || "tembel"))}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: away ? C.blood : C.parchmentMuted }}>{away ? t("char.petAway") : `${yil < 1 ? t("char.petNew") : applyParams(t("char.petYears"), [yil])} · ${t("char.petBond")} ${p.pet.bond}`}</Text>
                 </View>
                 <Pressable disabled={done} onPress={() => { hap("tap"); playPurr(); apply((s) => tendPet(s)); }} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: done ? C.border : "rgba(201,168,76,0.5)", backgroundColor: done ? C.bg : "rgba(201,168,76,0.1)", opacity: done ? 0.5 : 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 10, color: done ? C.parchmentMuted : C.gold, letterSpacing: 0.5 }}>{done ? t("char.petDone") : t("char.petTend")}</Text>
