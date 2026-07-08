@@ -119,6 +119,7 @@ export interface Player {
   dilemma_turn?: number; // ikilem sonucu turda bir kez uygulanır (çift tık / yarış koruması)
   prestige_turn?: number; // ayda tek hayrat işi (hekim/imaret spam'ı kapalı)
   reconcile_turn?: number; // ayda tek barış girişimi (hasım keseyle ay boyu sağılamaz)
+  train_turn?: number; // ayda tek talim dersi (beceri farmı kapalı)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -2561,6 +2562,20 @@ function bestCaravanRoute(s: GameState, origin: string): { dest: string; good: s
 }
 // Kervan gönder: en kârlı şehirler-arası rotayı bul, çok konaklı yol kur, her ay bir konak ilerlesin.
 export function caravanPremium(amount: number): number { return Math.round(amount / 8); } // lonca kefaleti primi: sekizde bir
+// Talim hocası: emekli bir sipahiden ders — akçe gider, kılıç eli sağlamlaşır. Ayda bir ders (farm yok).
+export function trainCost(s: GameState): number { return Math.round(45 * inflationFactor(s)); }
+export function trainCombat(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 14 || inJail(p)) return s;
+  const cost = trainCost(s);
+  if (p.money < cost || p.train_turn === s.turn) return s;
+  p.train_turn = s.turn;
+  p.money -= cost;
+  gainSkill(s, "combat", 9);
+  addStatXp(s, "strength", 2);
+  { const tv2 = chance(0.5); push(s, "talim", tv2 ? `İhtiyar sipahi kalkanı indirtene kadar vurdu; akşam kolun ağrıdı, kılıcın hafifledi (−${cost} akçe).` : `Talim meydanında emekli sipahiden ders aldın; bileğin sertleşti (−${cost} akçe).`, "kişisel", false, { k: tv2 ? "evj.trained2" : "evj.trained", p: [cost] }); }
+  return s;
+}
 export function launchCaravan(prev: GameState, amount: number, insured = false): GameState {
   const s = clone(prev); const p = s.player;
   const prim = insured ? caravanPremium(amount) : 0;

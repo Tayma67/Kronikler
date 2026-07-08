@@ -4,7 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail } from "../../lib/game";
+import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, trainCombat, trainCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail } from "../../lib/game";
 import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
 import { playVictory } from "../../lib/sound";
 import { GameIcon } from "../../lib/icons";
@@ -232,6 +232,19 @@ export default function Savas() {
             })()}
           </View>
         )}
+        {p.age >= 14 && (() => {
+          const tcost = trainCost(state);
+          const canTrain = p.money >= tcost && p.train_turn !== state.turn && !p.dead;
+          return (
+            <View style={{ backgroundColor: "rgba(224,188,90,0.05)", borderWidth: 1, borderColor: "rgba(224,188,90,0.3)", borderRadius: 11, padding: 13, marginBottom: 12 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("cb.trainTitle").toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{t("cb.trainDesc")}</Text>
+              <Pressable disabled={!canTrain} onPress={() => { hap("tap"); apply((s) => trainCombat(s)); }} style={{ alignSelf: "flex-start", marginTop: 9, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 7, borderWidth: 1, borderColor: canTrain ? "rgba(224,188,90,0.5)" : C.border, backgroundColor: canTrain ? "rgba(224,188,90,0.12)" : "transparent", opacity: canTrain ? 1 : 0.4 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 10.5, color: canTrain ? C.gold : C.parchmentMuted }}>{applyParams(t("cb.train"), [tcost])}</Text>
+              </Pressable>
+            </View>
+          );
+        })()}
         {p.age >= 16 && (() => {
           const n = p.retinue || 0;
           const hcost = retinueHireCost(state);
