@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, buyPrice, sellItem, launchCaravan, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
+import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { useI18n } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
@@ -61,6 +61,7 @@ export default function Pazar() {
   const { state, apply } = useGame();
   const { lang, t } = useI18n();
   const [barg, setBarg] = useState<null | { id: string; icon: string; name: string; base: number; price: number; patience: number; msg: string; done: boolean; sell?: boolean }>(null);
+  const [sigorta, setSigorta] = useState(false);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const econ = state.econ || 1;
@@ -206,12 +207,16 @@ export default function Pazar() {
             <>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginBottom: 9 }}>{t("paz.caravanHint")}</Text>
               {!!(p.retinue || 0) && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.sage, marginBottom: 9, marginTop: -4 }}>{t("paz.caravanGuard").replace("%c", String(p.retinue || 0))}</Text>}
+              <Pressable onPress={() => { hap("tap"); setSigorta(!sigorta); }} style={{ flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 9 }}>
+                <View style={{ width: 15, height: 15, borderRadius: 4, borderWidth: 1, borderColor: sigorta ? "rgba(127,166,106,0.8)" : C.border, backgroundColor: sigorta ? "rgba(127,166,106,0.35)" : "transparent", alignItems: "center", justifyContent: "center" }}>{sigorta && <GameIcon name="shield" size={9} color={C.sage} />}</View>
+                <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 10.5, color: sigorta ? C.sage : C.parchmentMuted }}>{t("paz.caravanInsure")}</Text>
+              </Pressable>
               <View style={{ flexDirection: "row", gap: 8 }}>
-                {CARAVAN_AMOUNTS.map((amt) => (
-                  <Pressable key={amt} disabled={p.money < amt || p.age < 13} onPress={() => { hap('advance'); apply((s) => launchCaravan(s, amt)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: (p.money < amt || p.age < 13) ? C.border : "rgba(224,90,48,0.5)", backgroundColor: (p.money < amt || p.age < 13) ? C.bg : "rgba(224,90,48,0.12)" }}>
-                    <Text style={{ fontFamily: F.display, fontSize: 12, color: p.money < amt ? C.parchmentMuted : C.ember }}>{amt}⚜</Text>
+                {CARAVAN_AMOUNTS.map((amt) => { const tot = amt + (sigorta ? caravanPremium(amt) : 0); const dis = p.money < tot || p.age < 13; return (
+                  <Pressable key={amt} disabled={dis} onPress={() => { hap('advance'); apply((s) => launchCaravan(s, amt, sigorta)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: dis ? C.border : "rgba(224,90,48,0.5)", backgroundColor: dis ? C.bg : "rgba(224,90,48,0.12)" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 12, color: dis ? C.parchmentMuted : C.ember }}>{amt}⚜{sigorta ? ` +${caravanPremium(amt)}` : ""}</Text>
                   </Pressable>
-                ))}
+                ); })}
               </View>
             </>
           )}

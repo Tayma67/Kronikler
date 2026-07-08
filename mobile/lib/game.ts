@@ -771,7 +771,7 @@ export interface GameState {
   mpRealm?: boolean; // çok oyuncu: beylik hakimiyeti SUNUCUDA → yerel ocak-beylik savaşı bastırılır (paralel gerçeklik olmaz)
   rivals?: RivalHouse[]; // rakip hanedanların yaşayan gücü (zamanla değişir + hamle yapar)
   pretender?: { houseId: string; strength: number } | null; // taht iddiacısı: taçtayken beliren rakip hanedan — bastır ya da uzlaş, yoksa iç savaş
-  caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number; good?: string; spread?: number } | null;
+  caravan: { invested: number; dest: string; route?: string[]; step?: number; lost?: number; returnTurn?: number; good?: string; spread?: number; insured?: boolean } | null;
   econ: number; // piyasa çarpanı (kıtlık>1, bolluk<1)
   settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
   marketEvent?: { goods: string[]; mult: number; until: number; key: string } | null; // geçici piyasa olayı
@@ -2493,6 +2493,7 @@ function tickCaravan(s: GameState) {
     const lost = Math.round(c.invested * caravanLossPct(s));
     c.invested -= lost; c.lost = (c.lost ?? 0) + lost;
     { const rv2 = chance(0.5); push(s, "kervan", rv2 ? `Gece konağında oklar uçtu; ${route[c.step]} yakınında yükün bir kısmı eşkıyaya kaldı (${lost} akçe). Sürücüler sağ — mal gider, can kalır.` : `Kervan ${route[c.step]} yakınında eşkıyaya uğradı! ${lost} akçelik mal yağmalandı.`, "kişisel", true, { k: rv2 ? "evj.carRaid2" : "evj.carRaid", p: [{ pl: route[c.step] }, lost] }); }
+    if (c.insured && lost > 0) { const geri = Math.round((lost * 2) / 3); p.money += geri; push(s, "kervan", `Lonca kefaleti işledi: yağma kaybının üçte ikisi keseye geri döndü (+${geri} akçe).`, "kişisel", false, { k: "evj.carInsPay", p: [geri] }); }
     if (c.invested <= 0) {
       push(s, "kervan", "Kervan tümüyle yağmalandı; elde bir şey kalmadı.", "kişisel", true, { k: "evj.carLost" });
       s.caravan = null;
@@ -2553,9 +2554,11 @@ function bestCaravanRoute(s: GameState, origin: string): { dest: string; good: s
   return best;
 }
 // Kervan gönder: en kârlı şehirler-arası rotayı bul, çok konaklı yol kur, her ay bir konak ilerlesin.
-export function launchCaravan(prev: GameState, amount: number): GameState {
+export function caravanPremium(amount: number): number { return Math.round(amount / 8); } // lonca kefaleti primi: sekizde bir
+export function launchCaravan(prev: GameState, amount: number, insured = false): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.age < 13 || inJail(p) || s.caravan || amount <= 0 || p.money < amount) return s; // hücreden kervan donatılmaz
+  const prim = insured ? caravanPremium(amount) : 0;
+  if (p.dead || p.age < 13 || inJail(p) || s.caravan || amount <= 0 || p.money < amount + prim) return s; // hücreden kervan donatılmaz; kefalet primi peşin
   const origin = p.location_name;
   const others = LOCATIONS.filter((l) => l !== origin);
   if (others.length === 0) return s;
@@ -2568,8 +2571,9 @@ export function launchCaravan(prev: GameState, amount: number): GameState {
   const waypoints: string[] = [];
   for (let i = 0; i < nwp; i++) waypoints.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   const route = [origin, ...waypoints, dest];
-  p.money -= amount;
-  s.caravan = { invested: amount, dest, route, step: 0, lost: 0, good: arb?.good, spread: arb?.spread };
+  p.money -= amount + prim;
+  s.caravan = { invested: amount, dest, route, step: 0, lost: 0, good: arb?.good, spread: arb?.spread, insured };
+  if (insured) push(s, "kervan", `Tüccarlar Loncası kervana kefil oldu; prim peşin ödendi (−${prim} akçe). Yağmada kaybın üçte ikisi lonca kesesinden döner.`, "kişisel", false, { k: "evj.carInsured", p: [prim] });
   const carried = arb ? { i: arb.good } : { i: "bugday" };
   { const cl2 = chance(0.5); push(s, "kervan", cl2 ? `Develer sabah ezanında çöktürüldü, denkler bağlandı; ${amount} akçelik yük yolda: ${route.join(" → ")}. ${route.length - 1} konak sürecek.` : `${amount} akçelik kervan yola çıktı: ${route.join(" → ")}. ${route.length - 1} konak sürecek.`, "kişisel", false, { k: cl2 ? "evj.carLaunch2" : "evj.carLaunch", p: [amount, { route }, route.length - 1, carried] }); }
   if ((p.retinue || 0) > 0) push(s, "maiyet", `Maiyetinden ${p.retinue} kılıç kervanla yola düştü; eşkıya iki kez düşünecek.`, "kişisel", false, { k: "evj.carGuarded", p: [p.retinue || 0] });
