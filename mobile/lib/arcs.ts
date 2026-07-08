@@ -11,6 +11,26 @@ export interface Arc {
 
 export const ARCS: Arc[] = [
   {
+    id: "panayir_pehlivani", title: "Panayır Pehlivanı", icon: "fist",
+    blurb: "Başpehlivan meydanda dönüyor: 'Er yok mu?' Gözler sende.",
+    when: (p) => p.age >= 18,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Panayır meydanında başpehlivan Kel Aliş kispetiyle tur atıyor: 'Bu diyarda el ense çekecek er kalmadı mı?' Davul sustu; kalabalık yol açıp sana baktı.", choices: [
+        { label: "Kispeti kuşan, meydana çık", result: "Yağ döküldü, kispet kuşanıldı; davul yeniden vurdu. Kel Aliş güldü: 'Adın ne yiğit?' — 'Güreşten sonra söylerim.'", delta: {}, next: "s2" },
+        { label: "Alkışla yetin", result: "Alkışladın; başkası çıktı, üç dakikada yere geldi. İçinde bir yer 'ya ben çıksaydım' dedi; sustu ama unutmadı.", delta: {}, next: "end" },
+      ]},
+      s2: { id: "s2", text: "El ense çekilirken kenardan bir bahisçi göz kırptı: 'İkinci oyunda kendini bırak, kese senin.' Aliş'in avucu ensende, kararı meydan bekliyor.", choices: [
+        { label: "Açık güreş — oyunu meydanda al", result: "Kel Aliş'i yenemedin ama üç kez çevirdin; başpehlivan elini havaya kaldırdı: 'Bu yiğidin sırtı gelecek yıl yere gelmez.' Meydan adını öğrendi.", delta: { fame: 5, reputation: 3, honor: 2 }, next: "end" },
+        { label: "Bahisçinin işaretiyle oyna", result: "İkinci oyunda dizin 'sürçtü'; kese avucuna sıkıştırıldı. Davul sustuğunda alkış sana değildi — ve Aliş'in bakışı keseyi deldi geçti.", delta: { money: 60, honor: -4 }, next: "s2b" },
+      ]},
+      s2b: { id: "s2b", text: "Gece kese cebinde ağır; panayır dağılırken Aliş çadırının önünde durdu: 'Güreş kaybedilir evlat. Meydan satılmaz.' Sonra sırtını döndü.", choices: [
+        { label: "Keseyi meydan sadakasına bırak", result: "Kese sabah namazında meydan çeşmesinin taşında bulundu; kimin bıraktığını Aliş bildi, kimseye söylemedi. Ertesi panayır seni kispetle bekledi.", delta: { money: -60, honor: 5, reputation: 2 }, next: "end" },
+        { label: "Cebe at, unut", result: "Kese harcandı, alkış unutuldu sanıldı. Ama her davul sesinde ensen ısındı; bazı borçlar akçeyle ödenmiyor.", delta: { fear: 1 }, next: "end" },
+      ]},
+    },
+  },
+  {
     id: "gocmen_kafilesi", title: "Göçmen Kafilesi", icon: "walk",
     blurb: "Yerinden edilmiş bir kafile surların dibine çadır kurdu; kadı senden söz bekliyor.",
     when: (p) => p.age >= 30,
