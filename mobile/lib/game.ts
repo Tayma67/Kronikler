@@ -1398,7 +1398,15 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     p.spouse_bond = Math.min(100, (p.spouse_bond ?? 40) + 3);
     p.health = Math.min(100, p.health + 1 + Math.round((p.spouse_bond || 0) / 50));
     const sp: EvtParam = p.spouse_seed != null ? { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] } : (p.spouse_name || "");
-    push(s, "evlilik", `${p.spouse_name || "Eşin"} ile ${years}. yılınız: ocağınızın ateşi hâlâ sıcak.`, "kişisel", false, { k: "evj.anniv", p: [sp, years] });
+    const nm = p.spouse_name || "Eşin";
+    const bnd = p.spouse_bond ?? 40;
+    if (years === 1) push(s, "evlilik", `${nm} ile ilk yılınız doldu: acemi bir ocak, taze bir düzen; sofrada iki kaşığın yeri artık belli.`, "kişisel", false, { k: "evj.anniv1", p: [sp, years] });
+    else if (years === 10) push(s, "evlilik", `${nm} ile onuncu yıl: bolluk da geçti kıtlık da; ocağın taşı is tuttu, hikâye tuttu. Artık yarım cümle yetiyor.`, "kişisel", true, { k: "evj.anniv10", p: [sp, years] });
+    else if (years === 25) push(s, "evlilik", `${nm} ile çeyrek asır: saçlara ak, avluya torun sesi düştü. Bu ocaktan artık bir soy ısınıyor.`, "kişisel", true, { k: "evj.anniv25", p: [sp, years] });
+    else if (years === 40) push(s, "evlilik", `${nm} ile kırk yıl: iki isim tek nefes oldu. Mahalle sizi ayrı ayrı değil, birlikte anıyor; ocağınız köyün masalı.`, "kişisel", true, { k: "evj.anniv40", p: [sp, years] });
+    else if (bnd >= 70) push(s, "evlilik", `${nm} ile bir yıl daha: akşamları hâlâ ilk günkü gibi konuşacak şey buluyorsunuz. Ateş odunla değil, muhabbetle yanıyor.`, "kişisel", false, { k: "evj.annivW", p: [sp, years] });
+    else if (bnd < 30) push(s, "evlilik", `${nm} ile bir yıl daha kapandı: sofra kuruldu, söz az edildi. Ocak yanıyor yanmasına — ısıtmıyor. Belki biraz ilgi ister.`, "kişisel", false, { k: "evj.annivC", p: [sp, years] });
+    else push(s, "evlilik", `${nm} ile ${years}. yılınız: ocağınızın ateşi hâlâ sıcak.`, "kişisel", false, { k: "evj.anniv", p: [sp, years] });
   }
   // ── Evlat kilometre taşları: doğumu kayıtlı evlatlar büyürken birer kez anılır — soy sadece isim listesi değil, büyüyen hayatlar ──
   if (!p.dead && p.child_meta?.length) {
