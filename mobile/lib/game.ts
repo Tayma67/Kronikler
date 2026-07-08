@@ -1452,6 +1452,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Aynada ilk ak telini gördün; zaman akıp gidiyor.", k: "mem.graying" },
         p.married && p.spouse_name ? { text: `${p.spouse_name} ile sessiz bir akşam geçirdin; 'iyi ki varsın' dedin.`, k: "mem.spouseEve", p: [p.spouse_name] } : { text: "Yalnız bir akşam, geçmişini düşündün.", k: "mem.aloneEve" },
         child ? { text: `${child} masum bir soru sordu; cevabını ararken sen de düşündün.`, k: "mem.childAsk", p: [child] } : { text: "Bir komşuyla eski günleri yâd ettin.", k: "mem.neighbor" },
+        { text: "Elinin bir alışkanlığında ilk ustanı yakaladın; usta çoktan gitti, huyu sende kalmış.", k: "mem.masterHabit" },
       );
     } else if (p.age < 70) {
       mem.push(
@@ -1463,6 +1464,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Kuyu başında sıra bekleyen gençlerin şakalaşmasını dinledin; kovanın ipini hâlâ hepsinden iyi atıyorsun.", k: "mem.wellRope" },
         { text: "Sandıktan babadan kalma bir alet çıktı; sapındaki çentikler senin çentiklerinle aynı yerde.", k: "mem.fatherTool" },
         { text: "Pazarda birine senin adınla seslendiler; dönüp baktın — kundakta bir bebekmiş. Adın büyümeye başladı bile.", k: "mem.namesake", fn: () => { p.fame = Math.min(100, p.fame + 1); } },
+        { text: "Harman yerinde gençlerin taş kaldırmasını seyrettin; biri taşı tam gençliğindeki gibi omuzluyor.", k: "mem.harvestRace" },
+        { text: "Mahalle çeşmesinin taşında çocukken kazıdığın harf duruyor; yıllar silmemiş.", k: "mem.carvedInit" },
       );
     } else {
       // 70+: ömrün son faslının kendi dokusu — şafak yalnızlığı, giden dostlar, nasırlı eller, destanlaşan ad
