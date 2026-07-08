@@ -2,6 +2,18 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 313-321 eki (8 Temmuz, sabah) — YAMAÇTAKİ BAĞ
+
+**Tek cümle (mağaza/what's new):**
+TR: "Tapu defterine altıncı kalem yazıldı: yamaçtaki BAĞ (4000 akçe, iki işçi) — üstelik hasat olayları artık tapuya uğruyor: bağ bozumu bağ sahibine, bereketli yıl tarla sahibine pay bırakıyor; divan 22 arzuhale çıktı (sınırdaki cevizin hükmü atasözü oldu), ikilem 108, fısıltı 44, manşet 40, aile görevi 20."
+EN: "A sixth deed enters the ledger: the hillside VINEYARD (4000 akçe, two workers) — and harvest events now visit your deeds: the vintage leaves a share to vineyard owners, the bountiful year to field owners; the divan grew to 22 petitions (the walnut ruling became a proverb), dilemmas 108, whispers 44, headlines 40, family quests 20."
+
+**Öne çıkanlar:**
+- **Bağ (SP, 6. mülk):** ev ile dükkân arası basamak — 4000 akçe, +55 gelir, 2 işçi yuvası; vitrin 3+3 sarmalı düzene geçti.
+- **Hasat payı (SP):** bağ bozumu/bereketli kırkım/bolluk olayları ilgili mülk sahibine tek seferlik pay bırakır (mülk başına ~18 akçe, enflasyonla).
+- **Divan 20→22:** Sınırdaki Ceviz (hükmü atasözü olur) ve Sahipsiz Sandık (tellal mı, hazine mi — tohumlu).
+- **Havuzlar:** ikilem 106→108 (düşen kese, bağdaki çocuk), fısıltı 40→44, manşet 38→40, 70+ anısı 15→17 (ilk adım, tesbih ipi), aile görevi 18→20 (Dört Yol Gören, Gönül Dostu).
+
 ## Dalga 299-311 eki (8 Temmuz, sabah) — DİYARIN SESLERİ
 
 **Tek cümle (mağaza/what's new):**
