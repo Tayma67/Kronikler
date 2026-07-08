@@ -11,6 +11,24 @@ export interface Dilemma {
 
 export const DILEMMAS: Dilemma[] = [
   {
+    id: "gece_misafiri", icon: "house", title: "Gece Misafiri",
+    text: "Fırtınalı gece kapın çalındı: sırılsıklam bir yolcu, tanımadığın bir yüz. 'Han dolu, dam akıyor' diyor; rüzgâr lafını bölüyor.",
+    when: (p) => p.age >= 16,
+    choices: [
+      { label: "Kapıyı aç, ocağın başına al", delta: { honor: 3, reputation: 1 }, result: "Yolcu ısındı, sabah dua edip gitti. Bir hafta sonra handa bir yabancı hesabını ödedi: 'O geceki ekmeğin karşılığı' dedi." },
+      { label: "Kapıyı açma, hanın yolunu göster", delta: { honor: -2, fear: 1 }, result: "Yolcu karanlığa yollandı; sabah komşular fırtınada kapı kapı dolaşan adamı konuşuyordu. Gözler bir an sana kaydı." },
+    ],
+  },
+  {
+    id: "son_soz", icon: "tombstone", title: "Son Söz",
+    text: "Eski bir hasmın ölüm döşeğindeymiş; adamları kapına geldi: 'Seni çağırıyor. Helallik istiyor.' Aranızdaki defter eski ama kapanmamış.",
+    when: (p) => p.age >= 60,
+    choices: [
+      { label: "Git, helalleş", delta: { honor: 4 }, result: "Başucuna oturdun; iki eski düşman güldü de ağladı da. Adam üç gün sonra göçtü; cenazesinde ön safta sen vardın." },
+      { label: "Gitme; defter çoktan kapandı de", delta: { honor: -3, fear: 1 }, result: "Gitmedin. Adam göçtü; helalleşmenin cevabı sende kaldı — vermesi artık mümkün değil, taşıması senin." },
+    ],
+  },
+  {
     id: "yarim_ekmek", icon: "bread", title: "Yarım Ekmek",
     text: "Fırın kapanırken son ekmeği sen kaptın; arkandaki ırgat elleri boş kaldı. 'Evde dört boğaz var' dedi, sesi yorgundu.",
     when: (p) => p.age >= 20,
