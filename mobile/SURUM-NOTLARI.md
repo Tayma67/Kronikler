@@ -2,6 +2,17 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 391-399 eki (8 Temmuz, öğle) — TAŞ UNUTMAZ
+
+**Tek cümle (mağaza/what's new):**
+TR: "Dörtyüzüncü dalgaya girerken defter kabarık: üç yeni nişan (Yedi İklim, Çok Yüzlü, Gönül Halkası — 91 başarım), komşulara iki yeni murat ve iki yeni huy; savaşın, tahtın, haccın, vakfın, anıtın, imaretin ve hekimin büyük anları artık iki ağızla anlatılıyor — imza su verir, taş unutmaz."
+EN: "Entering the four hundredth wave the ledger is full: three new badges (Seven Climes, Of Many Trades, Circle of Hearts — 91 achievements), two new dreams and two new quirks for the neighbors; and the great moments of war, throne, pilgrimage, endowment, monument, soup kitchen and physician now speak with two voices — the signature gives water, the stone does not forget."
+
+**Öne çıkanlar:**
+- **Üç nişan (91 başarım):** Yedi İklim (10 yerleşim), Çok Yüzlü (6 meslek), Gönül Halkası (5 can dostu).
+- **Canlanan komşular:** iki yeni murat (babadan kalma bağı yeşertmek, yetimi çırak almak) ve iki yeni huy (kuşlara ekmek ufalamak, eşiği günde iki kez süpürmek) — 6 dilde hizalı.
+- **Büyük anların ikinci sesleri (SP):** savaş başlar tellal davuluyla, biter kınına dönen kılıçla; tahtta ilk ferman 'kimse aç yatmasın'; hacdan hurma ve zemzemle dönülür; vakfiye taşa yazılır, anıtın kaidesi konuşur, imaretin aşı biter bereketi kalır, hekim nabzı defter gibi okur; atanın çırağı ilk kazancını ustasının ocağına getirir.
+
 ## Dalga 381-389 eki (8 Temmuz, öğle) — SAZIN VE ŞERBETİN SESİ
 
 **Tek cümle (mağaza/what's new):**
