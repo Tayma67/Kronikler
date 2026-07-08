@@ -27,7 +27,7 @@ function report(cat, msg) { problems++; console.log(`[${cat}] ${msg}`); }
 const union = new Set();
 for (const l of LANGS) for (const k of Object.keys(DICTS[l])) union.add(k);
 for (const l of LANGS) {
-  const missing = [...union].filter((k) => !(k in DICTS[l]) && !k.endsWith(".f") && !(l === "tr" && k.startsWith("dil.")));
+  const missing = [...union].filter((k) => !(k in DICTS[l]) && !k.endsWith(".f") && !(l === "tr" && (k.startsWith("dil.") || k.startsWith("arc.")))); // arc.* TR metni arcs.ts'te satır içi (gt fallback)
   if (missing.length) report("DIL-EKSIK", `${l}: ${missing.length} anahtar eksik → ${missing.slice(0, 40).join(", ")}${missing.length > 40 ? " …" : ""}`);
 }
 // dil.* anahtarları tr dışındaki 5 dilde birbiriyle tam mı? (tr hariç kendi aralarında)
@@ -41,7 +41,7 @@ for (const l of LANGS) {
 }
 
 // ── B) Placeholder tutarlılığı: her anahtarın %N kümesi dillerde aynı olmalı ──
-function phSet(str) { const s = new Set(); for (const m of str.matchAll(/%(\d+)/g)) s.add(m[1]); return [...s].sort().join(","); }
+function phSet(str) { const s = new Set(); for (const m of str.matchAll(/%([1-9])(?!\.?\d)/g)) s.add(m[1]); return [...s].sort().join(","); } // %25 / %2.5 gibi yüzdeler yer tutucu sayılmaz
 for (const k of union) {
   const sets = new Map();
   for (const l of LANGS) { const v = DICTS[l][k]; if (v != null) sets.set(l, phSet(v)); }
@@ -70,13 +70,13 @@ for (const f of srcFiles) {
   const rel = path.relative(ROOT, f);
   // NOT: `"önek." + değişken` dinamik anahtarları elemek için kapanış tırnağından sonra + gelmemeli
   // k: "anahtar"  (push olayları / TickEvent)
-  for (const m of txt.matchAll(/\bk:\s*"([a-zA-Z0-9_.]+)"(?!\s*\+)/g)) if (!usedKeys.has(m[1])) usedKeys.set(m[1], rel);
+  for (const m of txt.matchAll(/\bk:\s*"([a-zA-Z0-9_.]+)"(?!\s*\+)/g)) if (m[1].includes(".") && !usedKeys.has(m[1])) usedKeys.set(m[1], rel); // noktasız k: motor kimliğidir (intent/aktivite), i18n anahtarı değil
   // t("anahtar") / tFor(lang, "anahtar")
   for (const m of txt.matchAll(/\bt\(\s*"([a-zA-Z0-9_.]+)"(?!\s*\+)/g)) if (!usedKeys.has(m[1])) usedKeys.set(m[1], rel);
   for (const m of txt.matchAll(/\btFor\(\s*[a-zA-Z_.]+,\s*"([a-zA-Z0-9_.]+)"(?!\s*\+)/g)) if (!usedKeys.has(m[1])) usedKeys.set(m[1], rel);
 }
 const missingUsed = [];
-for (const [k, where] of usedKeys) if (!(k in DICTS.tr) && !k.startsWith("dil.")) missingUsed.push(`${k} (${where})`);
+for (const [k, where] of usedKeys) if (!union.has(k) && !k.startsWith("dil.") && !k.startsWith("arc.")) missingUsed.push(`${k} (${where})`); // arc/dil TR-inline; varlık denetimi birleşik kümede
 if (missingUsed.length) report("KULLANILAN-YOK", `${missingUsed.length} anahtar sözlükte yok:\n  ${missingUsed.join("\n  ")}`);
 
 // ── D) GameIcon adları çözülüyor mu? (GameIcon: ICON[name] || name → ICON_PATHS; bulunamazsa SESSİZCE null döner) ──

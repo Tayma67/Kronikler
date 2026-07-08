@@ -40,7 +40,7 @@ Aşağıdaki kurallar geçmiş oturumlarda kullanıcıyla kesinleşti; **tartı�
    hedefli sim + tsc + bundle + checker + migrate yeterlidir. Smoke kontrol noktası patlarsa suçlu,
    son smoke'tan bu yana giren dalgalardadır — hedefli simlerle daralt.
 6. `node scripts/_smoke/migrate-check.cjs` (eski kayıt göçü).
-7. **Checker:** `node scripts/_smoke/i18n-icon-check.cjs` → "SONUÇ: 20 sorun kategorisi" (taban; artarsa yeni sorun var demektir).
+7. **Checker:** `node scripts/_smoke/i18n-icon-check.cjs` → "SONUÇ: TEMİZ (0 sorun)" (taban D445 ile sıfırlandı; TEK sorun bile çıkarsa yeni hata var demektir).
 8. Depo kökünden commit + `git push -u origin apk` (ağ hatasında 2s/4s/8s/16s geri çekilmeli 5 deneme).
 
 **Senkron bekçisi (yaşanmış olay):** uzak yürütme konteyneri ara sıra ESKİ bir çalışma-kopyası anlık
