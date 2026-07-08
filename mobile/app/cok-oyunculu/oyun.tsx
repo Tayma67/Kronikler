@@ -179,13 +179,26 @@ export default function MpOyun() {
                 const ranked = players.filter((x) => !x.dead).sort((a2, b2) => b2.power - a2.power);
                 const myIdx = ranked.findIndex((x) => x.id === guestId);
                 const ahead = myIdx > 0 ? ranked[myIdx - 1] : null;
+                const behind = myIdx >= 0 && myIdx + 1 < ranked.length ? ranked[myIdx + 1] : null;
+                const hot = !!(behind && myPower - behind.power <= 8);
+                const behindLine = hot && behind ? (
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: 2 }}>
+                    {applyParams(t("mp.rival.behind"), [behind.name, myPower, behind.power])}
+                  </Text>
+                ) : null;
                 if (!ahead) return (
-                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.goldBright, marginTop: 7 }}>{t("mp.rival.top")}</Text>
+                  <View style={{ marginTop: 7 }}>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.goldBright }}>{t("mp.rival.top")}</Text>
+                    {behindLine}
+                  </View>
                 );
                 return (
-                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 7 }}>
-                    {applyParams(t("mp.rival.line"), [ahead.name])} <Text style={{ color: C.gold }}>{t("mp.rival.power")} {myPower}/{ahead.power} · {t("mp.rival.fame")} {Math.round(p.fame)}/{ahead.fame}</Text>
-                  </Text>
+                  <View style={{ marginTop: 7 }}>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>
+                      {applyParams(t("mp.rival.line"), [ahead.name])} <Text style={{ color: C.gold }}>{t("mp.rival.power")} {myPower}/{ahead.power} · {t("mp.rival.fame")} {Math.round(p.fame)}/{ahead.fame}</Text>
+                    </Text>
+                    {behindLine}
+                  </View>
                 );
               })()}
               {!p.dead && (
