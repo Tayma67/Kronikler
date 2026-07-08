@@ -5697,6 +5697,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "anitkuran", name: "Anıt Diktiren",   desc: "Görkemli bir anıt diktir.",         icon: "banner",       done: (s) => !!s.player.legacy?.anit },
   { id: "hanedanservet",name:"Hazine Sahibi", desc: "Servetin 100.000 akçeyi aşsın.",    icon: "gems",         done: (s) => s.player.money >= 100000 },
 ];
+// Meta-nişan: defterin kendisine bakar — dizi kapandıktan sonra eklenir (öz-atıf literalde kurulamaz).
+ACHIEVEMENTS.push({ id: "nisanavcisi", name: "Nişan Avcısı", desc: "Kırk nişanı bir defterde topla.", icon: "trophy", done: (s) => ACHIEVEMENTS.filter((a) => a.id !== "nisanavcisi" && a.done(s)).length >= 40 });
+
 export function achievementsOf(s: GameState): { a: Achievement; done: boolean }[] {
   return ACHIEVEMENTS.map((a) => ({ a, done: a.done(s) }));
 }
