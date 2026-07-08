@@ -2353,6 +2353,9 @@ const WORLD_NEWS: string[] = [
   "%b kadısı rüşvet alan mübaşiri meydan taşında teşhir etti; %b2 esnafı bile 'adalet oradaymış' diye söylendi.",
   "%b'nde bu yıl bal öyle bol ki küpler yetmedi; fıçıcılar geceyi gündüze kattı.",
   "%b ile %b2 arasında güvercin postası kuruldu derler; mektup üç günde değil üç saatte uçuyormuş.",
+  "Gökte kuyruklu bir yıldız belirdi; %b müneccimleri hayır, %b2 hocaları şer diyor — halk ikisini de dinliyor.",
+  "%b ile %b2, sınır ırmağına ortak köprü kuruyor; iki beyin ustaları aynı iskelede çalışıyor.",
+  "%b meydanındaki üç yüz yıllık çınar gece devrildi; kütüğünden yüz yıllık nal, ok ucu ve bir nişan yüzüğü çıktı.",
 ];
 function worldNews(s: GameState) {
   const i1 = Math.floor(Math.random() * BEYLIKS.length);
