@@ -2,6 +2,17 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 341-349 eki (8 Temmuz, sabah) — SESLERİN DEVAMI
+
+**Tek cümle (mağaza/what's new):**
+TR: "İkinci sesler günlüğün derinine indi: ustalık eseri, hediye, mülk büyütme, ibadet, mektebin dört dersi, hekim ziyareti, kervan yağması, meslek değişimi ve hanelere giden elçi — hepsi artık dönüşümlü iki ağızla anlatılıyor; uzun bir ömürde aynı cümleyi iki kez üst üste okumak zorlaştı."
+EN: "The second voices reached deeper into the journal: the masterwork, gifts, property upgrades, worship, all four school lessons, the healer's visit, caravan raids, changing trades and the envoy sent to rival houses — each now told in two rotating voices; reading the same sentence twice in a row got harder over a long life."
+
+**Öne çıkanlar:**
+- **İkinci sesler, ikinci paket (SP):** 9 satır ailesi daha çift ağızlı — ustalık eseri, hediye verme, mülk büyütme/onarım övgüsü, ibadet, mektep derslerinin dördü, hekim ziyareti, kervan yağması, meslek değişimi.
+- **Elçinin ikinci sesi (SP):** hediye sandığıyla giden elçi bazen üç gün ağırlanıp karşı hediyeyle döner — buz kırılmaz ama çatlar.
+- Tüm yeni satırlar 6 dilde; zar hangi ağzı seçerse seçsin anlam ve etki birebir aynı.
+
 ## Dalga 331-339 eki (8 Temmuz, sabah) — İKİNCİ SESLER
 
 **Tek cümle (mağaza/what's new):**
