@@ -127,6 +127,7 @@ export interface Player {
   winter_stock_until?: number; // kışlık kiler dolu (hangi tura kadar) — kış açlığı hafif geçer
   horse_pawn?: { n: string; amount: number; until: number }; // sarrafta rehinli at (adı, alınan akçe, son kurtarma turu)
   peace_made?: boolean; iltizam_done?: boolean; dowry_given?: boolean; // başarım izleri: hasımla sulh, iltizam alımı, çeyiz açılışı (tek seferlik bayraklar)
+  pension_seen?: boolean; pension_accum?: number; // ocak harçlığı: duyuru bir kez, yıllık döküm için birikeç
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -1567,6 +1568,20 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       p.health = Math.max(1, p.health - 1);
       if (chance(0.08)) { const w = 4 + Math.floor(Math.random() * 3); p.health = Math.max(1, p.health - w); push(s, "hastalik", `Eski öksürük alevlendi; birkaç gün nefessiz kaldın (−${w} sağlık).`, "kişisel", false, { k: "evj.chronicFlare", p: [w] }); }
     }
+  }
+  // ── Ocak harçlığı: 60 yaşını aşan Kıdemli lonca üyesine ocaktan aylık emeklilik (yıllık dökümü kronikte) ──
+  if (!p.dead && p.age >= 60 && p.faction && factionRankIndex(p.faction_standing[p.faction] || 0) >= 2) {
+    const harclik = Math.round(6 * inflationFactor(s));
+    p.money += harclik;
+    p.pension_accum = (p.pension_accum || 0) + harclik;
+    if (!p.pension_seen) {
+      p.pension_seen = true;
+      push(s, "örgüt", `Ocak meclisi karar aldı: kıdemine hürmeten her ay ocak harçlığı bağlandı. İlk kese kapına geldi (+${harclik} akçe).`, "kişisel", true, { k: "evj.pensionStart", p: [harclik] });
+    }
+  }
+  if (!p.dead && (p.pension_accum || 0) > 0 && s.turn > 0 && s.turn % 12 === 0) {
+    push(s, "örgüt", `Bu yıl ocak harçlığı ${p.pension_accum} akçe tuttu; kıdemin sofraya ekmek oldu.`, "kişisel", false, { k: "evj.pensionYear", p: [p.pension_accum || 0] });
+    p.pension_accum = 0;
   }
   // ── Vergi iltizamı: tahsildarlar aylık pay getirir; kimi ay ahali diretir, tahsilat boşa çıkar ──
   if (!p.dead && (p.iltizam_until ?? 0) > s.turn) {
