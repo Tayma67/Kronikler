@@ -67,7 +67,7 @@ const TR: FaqSection[] = [
   {
     icon: "compass", title: "Fırsatlar & İkilemler",
     items: [
-      { q: "Olaylar kendini tekrar ediyor mu?", a: "Havuzlar her sürümde genişliyor: divanda 20 arzuhal, 31 mikro an, her meslekte 5 iş günü, 40 çarşı fısıltısı, 35 dünya haberi ve 15 efsane karşılaşması. Ayrıca yakın geçmişte gördüğün ikilemler bir süre tekrar gelmez — tekrar koruması var." },
+      { q: "Olaylar kendini tekrar ediyor mu?", a: "Havuzlar her sürümde genişliyor: divanda 22 arzuhal, 31 mikro an, her meslekte 5 iş günü, 40 çarşı fısıltısı, 35 dünya haberi ve 15 efsane karşılaşması. Ayrıca yakın geçmişte gördüğün ikilemler bir süre tekrar gelmez — tekrar koruması var." },
       { q: "Ekrana çıkan fırsat/ikilem nedir?", a: "Ayı ilerletirken ara sıra bir fırsat (üstlen/vazgeç) ya da bir ikilem (seçim) çıkar. Fırsatlar ödül-risk taşır; gereken özelliğin yüksekse başarı şansın artar." },
       { q: "Görevler ekranı ne için?", a: "Bekleyen önemli işleri (özellik puanı dağıt, hüner seç, evlen, loncaya katıl, savaş, vâris...) tek listede toplar ve ilgili ekrana götürür. Altında 'Aile Görevleri' paneli de vardır." },
     ],
@@ -209,7 +209,7 @@ const EN: FaqSection[] = [
   {
     icon: "compass", title: "Opportunities & Dilemmas",
     items: [
-      { q: "Do events repeat themselves?", a: "The pools grow with every release: 20 petitions at the divan, 31 micro-moments, 5 work days per trade, 40 bazaar whispers, 35 world news items and 15 legend encounters. Dilemmas you saw recently are also held back for a while — there is repeat protection." },
+      { q: "Do events repeat themselves?", a: "The pools grow with every release: 22 petitions at the divan, 31 micro-moments, 5 work days per trade, 40 bazaar whispers, 35 world news items and 15 legend encounters. Dilemmas you saw recently are also held back for a while — there is repeat protection." },
       { q: "What are the pop-ups?", a: "While advancing, an opportunity (take/pass) or a dilemma (choice) occasionally appears. Opportunities carry reward and risk; a higher relevant attribute improves your odds." },
       { q: "What is the Tasks screen for?", a: "It gathers pending important matters (spend stat points, pick a perk, marry, join a guild, war, heir...) in one list and takes you to the right screen. It also has a 'Family Milestones' panel below." },
     ],
@@ -352,7 +352,7 @@ const ES: FaqSection[] = [
   {
     icon: "compass", title: "Oportunidades y Dilemas",
     items: [
-      { q: "¿Se repiten los eventos?", a: "Las reservas crecen con cada versión: 20 peticiones en el diván, 31 micro-momentos, 5 jornadas por oficio, 40 susurros del bazar, 35 noticias del mundo y 15 encuentros legendarios. Además, los dilemas recientes se retienen un tiempo: hay protección contra repeticiones." },
+      { q: "¿Se repiten los eventos?", a: "Las reservas crecen con cada versión: 22 peticiones en el diván, 31 micro-momentos, 5 jornadas por oficio, 40 susurros del bazar, 35 noticias del mundo y 15 encuentros legendarios. Además, los dilemas recientes se retienen un tiempo: hay protección contra repeticiones." },
       { q: "¿Qué son las oportunidades/dilemas que aparecen en pantalla?", a: "Al avanzar el mes, de vez en cuando surge una oportunidad (aceptar/dejar pasar) o un dilema (elección). Las oportunidades traen recompensa y riesgo; si el atributo requerido es alto, sube tu opción de éxito." },
       { q: "¿Para qué sirve la pantalla de Tareas?", a: "Reúne en una sola lista los asuntos pendientes importantes (repartir puntos de atributo, elegir un don, casarte, unirte a un gremio, la guerra, el heredero...) y te lleva a la pantalla correspondiente. Debajo tiene además el panel de 'Misiones de Familia'." },
     ],
@@ -494,7 +494,7 @@ const PT: FaqSection[] = [
   {
     icon: "compass", title: "Oportunidades & Dilemas",
     items: [
-      { q: "Os eventos repetem-se?", a: "As reservas crescem a cada versão: 20 petições no divã, 31 micro-momentos, 5 jornadas por ofício, 40 sussurros do bazar, 35 notícias do mundo e 15 encontros lendários. Além disso, os dilemas recentes ficam retidos por um tempo — há proteção contra repetição." },
+      { q: "Os eventos repetem-se?", a: "As reservas crescem a cada versão: 22 petições no divã, 31 micro-momentos, 5 jornadas por ofício, 40 sussurros do bazar, 35 notícias do mundo e 15 encontros lendários. Além disso, os dilemas recentes ficam retidos por um tempo — há proteção contra repetição." },
       { q: "O que são as oportunidades/dilemas que aparecem no ecrã?", a: "Ao avançares o mês, de vez em quando surge uma oportunidade (aceitar/recusar) ou um dilema (escolha). As oportunidades trazem recompensa e risco; se o atributo exigido estiver alto, as tuas hipóteses de êxito aumentam." },
       { q: "Para que serve o ecrã de Tarefas?", a: "Reúne numa só lista os assuntos importantes pendentes (distribuir pontos de atributo, escolher um dote, casar, entrar numa guilda, guerra, herdeiro...) e leva-te ao ecrã certo. Em baixo tem também o painel de 'Marcos Familiares'." },
     ],
@@ -636,7 +636,7 @@ const AR: FaqSection[] = [
   {
     icon: "compass", title: "الفرص والمعضلات",
     items: [
-      { q: "هل تتكرر الأحداث؟", a: "التجمعات تتسع مع كل إصدار: 20 عريضة في الديوان، 31 لحظة صغيرة، 5 أيام عمل لكل مهنة، 40 همسة سوق، 35 خبرا من العالم و15 مواجهة أسطورية. كما أن المعضلات التي رأيتها مؤخرا تحجب فترة — هناك حماية من التكرار." },
+      { q: "هل تتكرر الأحداث؟", a: "التجمعات تتسع مع كل إصدار: 22 عريضة في الديوان، 31 لحظة صغيرة، 5 أيام عمل لكل مهنة، 40 همسة سوق، 35 خبرا من العالم و15 مواجهة أسطورية. كما أن المعضلات التي رأيتها مؤخرا تحجب فترة — هناك حماية من التكرار." },
       { q: "ما الفرصة/المعضلة التي تظهر على الشاشة؟", a: "أثناء تقديم الشهر تظهر بين الحين والآخر فرصة (تولَّ/انصرف) أو معضلة (اختيار). الفرص تحمل مكافأة ومخاطرة؛ وكلّما علت الصفة المطلوبة زادت فرصة نجاحك." },
       { q: "لِمَ شاشة المهام؟", a: "تجمع الأعمال المهمّة المعلّقة (وزّع نقاط الصفات، اختر موهبة، تزوّج، انضمّ إلى نقابة، الحرب، الوريث...) في قائمة واحدة وتأخذك إلى الشاشة المعنيّة. وتحتها أيضًا لوحة «مهامّ العائلة»." },
     ],
@@ -778,7 +778,7 @@ const RU: FaqSection[] = [
   {
     icon: "compass", title: "Возможности и дилеммы",
     items: [
-      { q: "Повторяются ли события?", a: "Пулы растут с каждым выпуском: 20 прошений в диване, 31 микро-моментов, 5 рабочих дней у каждого ремесла, 40 базарных шёпотов, 35 мировых новостей и 15 легендарных встреч. А недавние дилеммы на время придерживаются — есть защита от повторов." },
+      { q: "Повторяются ли события?", a: "Пулы растут с каждым выпуском: 22 прошений в диване, 31 микро-моментов, 5 рабочих дней у каждого ремесла, 40 базарных шёпотов, 35 мировых новостей и 15 легендарных встреч. А недавние дилеммы на время придерживаются — есть защита от повторов." },
       { q: "Что за возможности и дилеммы на экране?", a: "Пока ты продвигаешь месяц, порой выпадает возможность (взяться/отказаться) или дилемма (выбор). Возможности несут награду и риск; чем выше нужное свойство, тем больше шанс успеха." },
       { q: "Для чего экран задач?", a: "Он собирает важные ожидающие дела (распределить очки свойств, выбрать умение, жениться, вступить в гильдию, война, наследник...) в один список и ведёт на нужный экран. Ниже есть и панель «Семейные вехи»." },
     ],

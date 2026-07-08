@@ -5254,8 +5254,16 @@ function successionTick(s: GameState) {
 
 // ── Divan/Arzuhal: taç sahibinin huzuruna düşen dilekçeler — hükümdarlık soyut ferman menüsü değil, yüzü olan kararlar.
 // Etki dengesi bilinçli: halkı kollamak keseden yer ama otorite/itibar getirir; keseyi kollamak nam bedeli öder (farm yok: an rastgele düşer).
-export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit", "kacak_asker", "iki_imam", "leke_surulen", "eski_silah_arkadasi", "kayip_kervan", "zindan_affi", "sel_bendi", "sahte_tanik", "kuru_kuyu", "mukerrer_bac", "yanik_koy", "hekim_ucreti", "degirmen_kavgasi", "veba_soylenti", "koprucu_borcu", "gece_bekcisi"];
+export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit", "kacak_asker", "iki_imam", "leke_surulen", "eski_silah_arkadasi", "kayip_kervan", "zindan_affi", "sel_bendi", "sahte_tanik", "kuru_kuyu", "mukerrer_bac", "yanik_koy", "hekim_ucreti", "degirmen_kavgasi", "veba_soylenti", "koprucu_borcu", "gece_bekcisi", "sinir_cevizi", "sahipsiz_sandik"];
 const DIVAN_R_TR: Record<string, [string, string]> = {
+  sinir_cevizi: [
+    "Ağacın gövdesi kimin toprağındaysa ceviz onun, dalları kimin damına sarkıyorsa gölgesi onun dedin; iki komşu güldü, dava bitti. Hükmün atasözü gibi dilden dile gezdi.",
+    "Ağaç davasını uzattıkça uzattın; sonunda ceviz mahkeme harcına gitti, iki komşu da küs kaldı. Kazanan yalnız defterdi.",
+  ],
+  sahipsiz_sandik: [
+    "Sandığı mühürletip tellal çağırttın: 'Sahibi çıksın.' Üç hafta sonra bir dul kadın nişanını söyleyip sandığı aldı; duası tahtından kıymetliydi.",
+    "Sandık gece hazineye taşındı; içindekiler deftere 'buluntu' yazıldı. Kimse sormadı ama kervansarayın hancısı seni her görüşte başka yöne baktı.",
+  ],
   koprucu_borcu: [
     "Fazla alınan geçiş paralarını hazineden ödettin; köprücünün beratını yenileyip haddini bildirdin. Kervanlar rahat geçti, adın adil kaldı.",
     "Köprücünün yanında durdun, kesilen fazlalıktan pay aldın; köprüden geçen herkes başını öne eğdi ama içinden başka şey saydı.",
@@ -5365,6 +5373,12 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
   } else if (id === "gece_bekcisi") {
     if (choice === 0) { p.money -= 100; p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "comert", 2); sowSeed(s, { kaynak: "divan_bekci_duasi", hmin: 24, hmax: 72, agirlik: "kucuk", nesil: false, etki: { reputation: 5 } }); }
     else { p.crownAuthority = clamp100(crownAuthorityOf(p) + 1); p.reputation = Math.max(-100, p.reputation - 2); }
+  } else if (id === "sinir_cevizi") {
+    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "mert", 2); }
+    else { p.money += 60; p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); bumpNam(p, "zalim", 1); }
+  } else if (id === "sahipsiz_sandik") {
+    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 3); p.reputation = Math.min(100, p.reputation + 3); p.honor = Math.min(100, p.honor + 3); bumpNam(p, "mert", 1); sowSeed(s, { kaynak: "divan_sandik_sahibi", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { money: 150, reputation: 4 } }); }
+    else { p.money += 140; p.honor = Math.max(0, p.honor - 5); bumpNam(p, "zalim", 2); sowSeed(s, { kaynak: "divan_sandik_kirgin", hmin: 48, hmax: 140, agirlik: "buyuk", nesil: true, etki: { reputation: -7 } }); }
   }
   const rtr = DIVAN_R_TR[id];
   push(s, "taht", rtr ? rtr[choice] : "", "kişisel", choice === 0, { k: `divan.${id}.r${choice}` });
