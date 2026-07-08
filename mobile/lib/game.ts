@@ -1896,7 +1896,7 @@ function tickFactions(s: GameState, announce: boolean) {
     } else if (sn.tension >= 100 && sn.contender) {
       s.wars.push({ a: sn.holder, b: sn.contender, turnsLeft: 4 + Math.floor(Math.random() * 4), aScore: 0, bScore: 0, prize: sn.id });
       sn.tension = 55;
-      if (announce) push(s, "ocak_savasi", `${factionById(sn.holder)?.name} ile ${factionById(sn.contender)?.name}, ${beylikName(sn.id)} için savaşa tutuştu!`, "makro", true, { k: "evj.warStart", p: [{ fc: sn.holder }, { fc: sn.contender! }, { bl: sn.id }] });
+      if (announce) { const ws2 = chance(0.5); push(s, "ocak_savasi", ws2 ? `Tellal davulu üç kez vurdu: ${beylikName(sn.id)} toprağı için ${factionById(sn.holder)?.name} ile ${factionById(sn.contender)?.name} kılıç çekti. Analar kapı önünde sustu.` : `${factionById(sn.holder)?.name} ile ${factionById(sn.contender)?.name}, ${beylikName(sn.id)} için savaşa tutuştu!`, "makro", true, { k: ws2 ? "evj.warStart2" : "evj.warStart", p: [{ fc: sn.holder }, { fc: sn.contender! }, { bl: sn.id }] }); }
     } else if (!sn.contender) {
       sn.tension = Math.max(0, sn.tension - 2); // rakip yoksa gerilim yavaşça söner
     }
@@ -2338,7 +2338,7 @@ function tickWars(s: GameState, announce: boolean) {
         if (announce) push(s, "ocak_savasi", flipped ? `${wf?.name}, ${beylikName(w.prize)}'ni ele geçirdi!` : `${wf?.name}, ${beylikName(w.prize)} üzerindeki hakimiyetini korudu.`, "makro", true, flipped ? { k: "evj.prizeWin", p: [{ fc: winner }, { bl: w.prize }] } : { k: "evj.prizeHold", p: [{ fc: winner }, { bl: w.prize }] });
       }
     } else if (announce) {
-      push(s, "ocak_savasi", `Savaş sona erdi: ${wf?.name} üstün geldi.`, "makro", true, { k: "evj.warEnd", p: [{ fc: winner }] });
+      { const we2 = chance(0.5); push(s, "ocak_savasi", we2 ? `Kılıçlar kınına döndü; sancak ${wf?.name} elinde kaldı. Pazar yerine önce sükût, sonra fiyatlar döndü.` : `Savaş sona erdi: ${wf?.name} üstün geldi.`, "makro", true, { k: we2 ? "evj.warEnd2" : "evj.warEnd", p: [{ fc: winner }] }); }
     }
     // Oyuncu kazanan tarafın üyesiyse itibar
     if (s.player.faction === winner) { s.player.faction_standing[winner] = (s.player.faction_standing[winner] || 0) + 8; s.player.fame = Math.min(100, s.player.fame + 4); }
