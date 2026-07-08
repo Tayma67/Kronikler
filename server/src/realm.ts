@@ -14,7 +14,8 @@ import {
   THRONE_MIN_AGE, THRONE_MIN_POWER, THRONE_MIN_FAME,
   Bond, Offer, PactType, GIFT_MAX, ASSASSINATE_MIN_AGE,
   NpcPublic, NpcBond, RealmNews,
-  PROTOCOL_VERSION, MAX_PLAYERS, TICK_TIMEOUT_MS, TICK_SOFT_MS, readyToTick,
+  PROTOCOL_VERSION,
+  MP_FEAT_LEVEL, MAX_PLAYERS, TICK_TIMEOUT_MS, TICK_SOFT_MS, readyToTick,
   VENTURE_MIN_STAKE, VENTURE_MAX_STAKE, VENTURE_TICKS,
 } from "./protocol";
 
@@ -83,6 +84,7 @@ export class RealmDO {
       if (!this.snap.bonds) this.snap.bonds = [];
       if (!this.snap.npcs) this.snap.npcs = generateNpcs(this.snap.seed);
       if (!this.snap.npcBonds) this.snap.npcBonds = [];
+      if (!this.snap.feat || this.snap.feat < MP_FEAT_LEVEL) this.snap.feat = MP_FEAT_LEVEL; // eski diyar kaydına yetenek bayrağı
       this.snap.guilds.forEach((g) => { if (g.leaderName === undefined) g.leaderName = null; if (g.backing === undefined) g.backing = null; });
       if (!this.snap.news) this.snap.news = [];
       if (!this.snap.offers) this.snap.offers = [];
@@ -100,7 +102,7 @@ export class RealmDO {
         throne: { holderId: null, holderName: null, claimedTurn: 0 },
         guilds: GUILD_IDS.map((id) => ({ id, leaderId: null, leaderName: null, tax: 10, closed: false, backing: null } as GuildState)),
         provinces: [], beyliks: defaultBeyliks(), bonds: [],
-        npcs: generateNpcs(seedVal), npcBonds: [], news: [], offers: [], venture: null, econ: 1, createdAt: now,
+        npcs: generateNpcs(seedVal), npcBonds: [], news: [], offers: [], venture: null, econ: 1, createdAt: now, feat: MP_FEAT_LEVEL,
       };
       await this.persist();
     }
@@ -639,6 +641,36 @@ export class RealmDO {
             this.snap.reisVotes = { ...(this.snap.reisVotes || {}), [pid]: it.target };
             ev(pid, "mp.reis.voted", [playerById(it.target)?.name || ""]);
           }
+          break;
+        }
+        case "letter": { // menzil mektubu: kalıp selam — kalıcı olay + bağ (aynı tick aynı kişiye tek)
+          if (!aliveOther(pid, it.to)) break;
+          const tpl = Math.max(0, Math.min(5, Math.floor(it.tpl || 0)));
+          if (!once(pid + "|letter|" + it.to)) break;
+          ev(it.to, "mp.soc.letterGot" + tpl, [pname(pid)]);
+          ev(pid, "mp.soc.letterSent", [pname(it.to)]);
+          this.adjustBond(pid, it.to, 4);
+          break;
+        }
+        case "feastAll": { // diyar şöleni: bedel istemcide kesildi; tüm canlı oyunculara bağ + davet olayı
+          if (!once(pid + "|feastAll")) break;
+          let davetli = 0;
+          for (const q of this.snap.players) {
+            if (q.id === pid || q.dead) continue;
+            ev(q.id, "mp.soc.feastInv", [pname(pid)]);
+            this.adjustBond(pid, q.id, 3);
+            davetli++;
+          }
+          this.adjustHonor(pid, 2);
+          ev(pid, "mp.soc.feastDone", [davetli]);
+          break;
+        }
+        case "condole": { // başsağlığı: taziye — bağ + şeref (aynı kişiye nesli başına bir)
+          if (!aliveOther(pid, it.to)) break;
+          if (!once(pid + "|condole|" + it.to + "|" + (playerById(it.to)?.generation || 0))) break;
+          ev(it.to, "mp.soc.condoleGot", [pname(pid)]);
+          ev(pid, "mp.soc.condoleSent", [pname(it.to)]);
+          this.adjustBond(pid, it.to, 6); this.adjustHonor(pid, 1);
           break;
         }
         case "gift": { // altın gönderen istemcide kesildi; alıcıya kredi olayı

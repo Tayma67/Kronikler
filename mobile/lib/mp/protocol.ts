@@ -15,6 +15,7 @@
 // ──────────────────────────────────────────────────────────────────────────
 
 export const PROTOCOL_VERSION = 3;
+export const MP_FEAT_LEVEL = 4; // insani doku seviyesi (mektup/şölen/başsağlığı) — sürümden bağımsız yetenek bayrağı
 export const MAX_PLAYERS = 10;           // bir diyardaki insan slotu (kalanı NPC doldurur)
 export const TICK_TIMEOUT_MS = 5 * 60 * 1000; // çoğunluk olmazsa otomatik ay atlama tavanı
 export const TICK_SOFT_MS = 90 * 1000;         // en az bir oyuncu hazırsa bekleme bu kadara iner (2 kişilik diyarda 5 dk çile bitti)
@@ -150,6 +151,7 @@ export interface RealmSnapshot {
   seed: number;          // deterministik NPC/dünya dolgusu için
   turn: number;          // paylaşımlı ay sayacı (diyar başlangıcından beri)
   phase: "open" | "ticking";
+  feat?: number;         // sunucu yetenek seviyesi (4+: mektup/şölen/başsağlığı) — eski sunucu boş bırakır, istemci düğmeleri gizler
   tickDeadline: number;  // epoch ms — otomatik tick anı
   players: PlayerPublic[];
   throne: ThroneState;
@@ -223,7 +225,11 @@ export type SharedIntent =
   // ── Ortak girişim ──
   | { k: "ventureBack"; amount: number }            // kervan ortaklığına hisse koy (altın istemcide kesilir)
   | { k: "raidVenture" }                            // ortak kervana pusu kur (çözüm gecesi baskın denenir)
-  | { k: "joinPlot"; to: string };                  // tahttaki beye karşı ortak kumpasa katıl (gizli)
+  | { k: "joinPlot"; to: string }                   // tahttaki beye karşı ortak kumpasa katıl (gizli)
+  // ── İnsani doku (feat 4) — eski sunucu bilinmeyen türü sessizce yok sayar; istemci feat kapısıyla düğmeleri gizler ──
+  | { k: "letter"; to: string; tpl: number }        // menzil mektubu: hazır kalıp selam (0-5) — kalıcı olay + bağ
+  | { k: "feastAll" }                               // diyar şöleni: tüm canlı oyunculara bağ + olay (bedel istemcide; tick başına bir)
+  | { k: "condole"; to: string };                   // başsağlığı: yası olan oyuncuya taziye — bağ + şeref
 
 // ── İstemci → Sunucu mesajları ──
 export type ClientMsg =

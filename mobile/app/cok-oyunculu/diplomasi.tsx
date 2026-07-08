@@ -58,6 +58,7 @@ export default function Diplomasi() {
   const pactShield = bond?.pact === "alliance" || bond?.pact === "marriage";
   // Sunucudaki MP onuru (adjustHonor) yereldeki tek-oyunculu onurdan ayrıdır — başlıkta herkesle aynı gerçeği göster.
   const myHonor = snapshot.players.find((x) => x.id === guestId)?.honor ?? p.honor ?? 0;
+  const featOk = (snapshot.feat ?? 3) >= 4; // eski sunucuda insani doku düğmeleri gizli (bilinmeyen tür orada sessiz yiter)
   const targetInOtherBeylik = target && target.beylikId && target.beylikId !== myBeylikId && !snapshot.beyliks.some((b) => b.beyId === target.id);
 
   return (
@@ -125,6 +126,14 @@ export default function Diplomasi() {
           </>
         ) : null; })()}
 
+        {/* Diyar şöleni — herkese bağ, sana şeref (feat 4) */}
+        {featOk && (
+          <Pressable disabled={money < 100} onPress={() => act({ k: "feastAll" }, 100)} style={{ flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: money >= 100 ? "rgba(201,168,76,0.45)" : C.border, backgroundColor: money >= 100 ? "rgba(201,168,76,0.08)" : C.card, borderRadius: 9, padding: 11, marginTop: 6, marginBottom: 4, opacity: money >= 100 ? 1 : 0.5 }}>
+            <GameIcon name="party" size={14} color={C.gold} />
+            <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11.5, color: C.gold }}>{pf(t("mp.soc.feastBtn"), 100)}</Text>
+          </Pressable>
+        )}
+
         {/* Sıralama / haneler */}
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 6, marginBottom: 8 }}>{t("mp.soc.standings")}</Text>
         {others.length === 0 && <Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted }}>{t("mp.empty")}</Text>}
@@ -158,6 +167,8 @@ export default function Diplomasi() {
                     <Btn label={pf(t("mp.soc.giftBtn"), 500)} disabled={!x.online || money < 500} onPress={() => act({ k: "gift", to: x.id, amount: 500 }, 500)} />
                     <Btn label={pf(t("mp.soc.giftBtn"), 2000)} disabled={!x.online || money < 2000} onPress={() => act({ k: "gift", to: x.id, amount: 2000 }, 2000)} />
                     <Btn label={t("mp.soc.vouchBtn")} onPress={() => act({ k: "vouch", to: x.id })} />
+                    {featOk && <Btn label={t("mp.soc.letterBtn")} onPress={() => act({ k: "letter", to: x.id, tpl: Math.floor(Math.random() * 6) })} />}
+                    {featOk && <Btn label={t("mp.soc.condoleBtn")} onPress={() => act({ k: "condole", to: x.id })} />}
                     {!hasPact && <Btn label={t("mp.soc.allyBtn")} onPress={() => act({ k: "proposeAlliance", to: x.id })} />}
                     {!hasPact && x.gender !== p.gender && !x.married && !p.married && <Btn label={t("mp.soc.kinBtn")} onPress={() => act({ k: "proposeMarriage", to: x.id })} />}
                     {iAmBey && <Btn label={t("mp.soc.asylumBtn")} onPress={() => act({ k: "offerAsylum", to: x.id })} />}
