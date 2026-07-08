@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, trainCombat, trainCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail } from "../../lib/game";
 import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
-import { playVictory } from "../../lib/sound";
+import { playVictory, playWarDrum, playClash, playDefeat } from "../../lib/sound";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -56,8 +56,8 @@ export default function Savas() {
 
   const nemEnc = nemesisEncounter(state);
   // Ay hakkı girişte yanar (çekirdek kilidi): kaybederken ekrandan kaçıp bedelsiz tekrar denenemez.
-  const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); setBs(startBattle(p, { ...e, title: gt("enc." + e.id + ".t", e.title) })); setApplied(false); setFloats([]); apply((s) => startBattleAttempt(s)); };
-  const beginNemesis = () => { if (!nemEnc) return; setEncId("nemesis"); setBs(startBattle(p, nemEnc)); setApplied(false); setFloats([]); apply((s) => startBattleAttempt(s)); };
+  const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); playWarDrum(); setBs(startBattle(p, { ...e, title: gt("enc." + e.id + ".t", e.title) })); setApplied(false); setFloats([]); apply((s) => startBattleAttempt(s)); };
+  const beginNemesis = () => { if (!nemEnc) return; setEncId("nemesis"); playWarDrum(); setBs(startBattle(p, nemEnc)); setApplied(false); setFloats([]); apply((s) => startBattleAttempt(s)); };
   const play = (mv: Move) => {
     if (!bs || bs.over) return;
     const next = stepBattle(bs, p, mv, stance);
@@ -67,6 +67,7 @@ export default function Savas() {
     if (dE > 0) adds.push({ id: fid.current++, value: `-${dE}`, color: C.ember, left: 235, top: 44 });
     if (dY > 0) adds.push({ id: fid.current++, value: `-${dY}`, color: C.blood, left: 30, top: 2 });
     if (dE > 0) setSlashKey((k) => k + 1);
+    if (dE > 0 || dY > 0) playClash(); // çelik konuştu — kim vurduysa çınlama aynı
     if (adds.length) {
       setFloats((f) => [...f.slice(-3), ...adds]);
       hap(dY > 0 ? "advance" : "tap");
@@ -76,7 +77,7 @@ export default function Savas() {
   };
   const finish = () => {
     if (bs && !applied) {
-      if (bs.won) playVictory();
+      if (bs.won) playVictory(); else playDefeat();
       if (encId === "nemesis") apply((s) => applyNemesisOutcome(s, bs.won, bs.playerHp));
       else apply((s) => applyBattleOutcome(s, encId, bs.won, bs.playerHp));
       setApplied(true);

@@ -10,6 +10,9 @@ let advance: AudioPlayer | null = null;
 let zafer: AudioPlayer | null = null;
 let can: AudioPlayer | null = null;
 let cingirak: AudioPlayer | null = null;
+let kilic: AudioPlayer | null = null;
+let davul: AudioPlayer | null = null;
+let yenilgi: AudioPlayer | null = null;
 
 // ── Arka plan müziği: Kervan Yolu teması (prosedürel, paket içi, 48 sn dikişsiz döngü). Ayrı anahtar; varsayılan AÇIK. ──
 const MKEY = "kronikler_music_v1";
@@ -56,6 +59,9 @@ function ensure() {
     if (!zafer) zafer = createAudioPlayer(require("../assets/sfx/zafer.wav"));
     if (!can) can = createAudioPlayer(require("../assets/sfx/can.wav"));
     if (!cingirak) cingirak = createAudioPlayer(require("../assets/sfx/cingirak.wav"));
+    if (!kilic) kilic = createAudioPlayer(require("../assets/sfx/kilic.wav"));
+    if (!davul) davul = createAudioPlayer(require("../assets/sfx/davul.wav"));
+    if (!yenilgi) yenilgi = createAudioPlayer(require("../assets/sfx/yenilgi.wav"));
   } catch {}
 }
 function fire(p: AudioPlayer | null) {
@@ -69,3 +75,7 @@ export function playFanfare() { if (!enabled) return; ensure(); fire(zafer); }
 export function playVictory() { if (!enabled) return; ensure(); fire(zafer); }
 export function playToll() { if (!enabled) return; ensure(); fire(can); }
 export function playChime() { if (!enabled) return; ensure(); fire(cingirak); }
+// Savaş sesleri: giriş davulu, çelik çınlaması, yenilgi gümbürtüsü — meydanın kendi dili.
+export function playWarDrum() { if (!enabled) return; ensure(); fire(davul); }
+export function playClash() { if (!enabled) return; ensure(); fire(kilic); }
+export function playDefeat() { if (!enabled) return; ensure(); fire(yenilgi); }
