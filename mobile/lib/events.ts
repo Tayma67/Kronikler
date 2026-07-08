@@ -11,6 +11,33 @@ export interface Dilemma {
 
 export const DILEMMAS: Dilemma[] = [
   {
+    id: "kuyu_sirasi", icon: "house", title: "Kuyu Sırası",
+    text: "Kurak yazda mahalle kuyusu sırayla çekiliyor; senin gece sıranı zengin komşu satın almak istiyor — bahçesi susuz kalmasın diye.",
+    when: (p) => p.age >= 16,
+    choices: [
+      { label: "Sırayı sat", delta: { money: 15, honor: -2 }, result: "Akçe cebe, kova komşuya. Onun gülleri açtı, senin testin yarım kaldı; çeşme başında kimse bir şey demedi ama herkes biliyordu." },
+      { label: "Sıra herkesin sırası", delta: { honor: 3 }, result: "Komşu dudak büktü, kese kapandı. Ama kuraklık bitene dek çeşme başında sana selam ilk verildi." },
+    ],
+  },
+  {
+    id: "tuz_yolu", icon: "coins", title: "Tuz Yolu",
+    text: "Tuz kervanı kestirme diye tarlanın içinden geçmek istiyor; kervanbaşı bedel sayıyor ama tekerler ekini çiğneyecek.",
+    when: (p) => p.age >= 35,
+    choices: [
+      { label: "Geçit ver, bedeli al", delta: { money: 30, reputation: -2 }, result: "Kervan geçti, kese doldu; ardında iki iz kaldı — biri tarlada, biri komşuların dilinde." },
+      { label: "Yolu sınırdan dolandır", delta: { reputation: 2, honor: 2 }, result: "Kervanbaşı homurdanıp saptı; ekin ayakta kaldı. Hasatta o kervanbaşı tuzun hasını önce senin kapına indirdi." },
+    ],
+  },
+  {
+    id: "iki_yetim", icon: "scroll-open", title: "İki Yetim",
+    text: "İki yetim kardeş, dedelerinin bağ tapusu için kapında — belge sende emanet. Okuryazar olan ağabey, defteri kendine okutmak için bahşiş fısıldıyor.",
+    when: (p) => p.age >= 58,
+    choices: [
+      { label: "Belgeyi ikisine de açıkla", delta: { honor: 3, reputation: 2 }, result: "Tapu yüksek sesle okundu, bağ ikiye bölündü. Küçük kardeş kapıdan çıkarken elini öptü; bahşişten kıymetli." },
+      { label: "Bahşişi al, defteri ağabeye oku", delta: { money: 20, honor: -3 }, result: "Defter fısıltıyla okundu, bağın iyi yarısı ağabeye yazıldı. Küçüğün payına taşlık düştü; sana da uykusuz bir iki gece." },
+    ],
+  },
+  {
     id: "genc_seyyar", icon: "coins", title: "Seyyarın Sandığı",
     text: "Bir seyyar, kervandan 'düşmüş' malları yarı fiyatına fısıldıyor. Kâr kapıda — menşei sorma, diyor.",
     when: (p) => p.age >= 16,
