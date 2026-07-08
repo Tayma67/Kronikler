@@ -1496,7 +1496,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     const m = rnd(mem); m.fn?.();
     push(s, p.age < 13 ? "cocukluk" : "gunluk", m.text, "kişisel", false, { k: m.k, p: m.p });
   }
-  if (chance(0.05)) { const g = 5 + Math.floor(Math.random() * 20); p.money += g; push(s, "gunluk", `Yolda ${g} akçe buldun.`, "kişisel", false, { k: "evj.foundCoin", p: [g] }); }
+  if (chance(0.05)) { const g = 5 + Math.floor(Math.random() * 20); p.money += g; const fv = chance(0.5); push(s, "gunluk", fv ? `Heybenin dibinde unutulmuş ${g} akçe çıktı; ne zaman düştüğünü kimse bilmiyor.` : `Yolda ${g} akçe buldun.`, "kişisel", false, { k: fv ? "evj.foundCoin2" : "evj.foundCoin", p: [g] }); }
   if (chance(0.04)) {
     p.health = Math.max(0, p.health - 12); push(s, "hastalik", "Hastalandın, birkaç gün yatakta kaldın.", "kişisel", false, { k: "evj.sick" });
     // Düşkün bünyede hastalık yerleşebilir: kronik öksürük — hekim tedavisi ister, kendiliğinden geçmez.
