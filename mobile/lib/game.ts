@@ -1524,12 +1524,14 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (!p.dead && p.age >= 14 && s.story) {
     if (s.story.nemesis && chance(0.10)) {
       const n = s.story.nemesis;
-      const nemIdx = Math.floor(Math.random() * 4);
+      const nemIdx = Math.floor(Math.random() * 6);
       let txt: string; let nemP: EvtParam[];
       if (nemIdx === 0) { p.reputation = Math.max(-100, p.reputation - 4); txt = `${n.name} arkandan kuyunu kazıyor; itibarın sarsıldı.`; nemP = [n.name]; }
       else if (nemIdx === 1) { const loss = Math.min(p.money, 8); p.money -= loss; txt = `${n.name}'ın adamları malına dokundu (−${loss} akçe).`; nemP = [n.name, loss]; }
       else if (nemIdx === 2) { p.health = Math.max(1, p.health - 5); txt = `${n.name} pusu kurdu; sıyrıklarla kurtuldun.`; nemP = [n.name]; }
-      else { txt = `${n.name} bir tehdit daha yolladı; hesap görülmeyi bekliyor.`; nemP = [n.name]; }
+      else if (nemIdx === 3) { txt = `${n.name} bir tehdit daha yolladı; hesap görülmeyi bekliyor.`; nemP = [n.name]; }
+      else if (nemIdx === 4) { p.reputation = Math.max(-100, p.reputation - 2); txt = `${n.name} çarşıda adını karalayan bir türkü tutturmuş; gülüşmeler kulağına kadar geldi.`; nemP = [n.name]; }
+      else { txt = `${n.name} pazarda yolunu kesti; tek söz etmeden yüzüne baktı ve geçti. Bütün gün o bakışı düşündün.`; nemP = [n.name]; }
       s.story.tension = Math.min(100, s.story.tension + 3);
       push(s, "nemesis", txt, "kişisel", false, { k: "evj.nem" + nemIdx, p: nemP });
     } else if (!s.story.nemesis && chance(0.03)) {
