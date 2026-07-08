@@ -32,6 +32,8 @@ export default function Gorevler() {
     if (state.bloodline?.scene) tasks.push({ icon: "skull", title: t("gv.blood.t"), sub: t("gv.blood.s"), to: "/oyun/", urgent: true });
     if (state.saga?.scene) tasks.push({ icon: "scroll-open", title: t("gv.saga.t"), sub: t("gv.saga.s"), to: "/oyun/" });
     if (state.crownCampaign) tasks.push({ icon: "crossed-swords", title: t("gv.cmp.t"), sub: t("gv.cmp.s"), to: "/oyun/hanedan" });
+    if (state.divan) tasks.push({ icon: "scales", title: t("gv.divan.t"), sub: t("gv.divan.s"), to: "/oyun/", urgent: true });
+    if (state.micro) tasks.push({ icon: "hourglass", title: t("gv.micro.t"), sub: t("gv.micro.s"), to: "/oyun/" });
     if (state.caravan) tasks.push({ icon: "scales", title: t("gv.caravan.t"), sub: t("gv.caravan.s").replace("%s", state.caravan.dest), to: "/oyun/pazar" });
     if (!p.faction && p.age >= 13) tasks.push({ icon: "crown", title: t("gv.guild.t"), sub: t("gv.guild.s"), to: "/oyun/orgutler" });
     if (!p.married && p.age >= 18) tasks.push({ icon: "ring", title: t("gv.marry.t"), sub: t("gv.marry.s"), to: "/oyun/iliskiler" });
