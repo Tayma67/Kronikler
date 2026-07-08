@@ -2,6 +2,18 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 381-389 eki (8 Temmuz, öğle) — SAZIN VE ŞERBETİN SESİ
+
+**Tek cümle (mağaza/what's new):**
+TR: "Yirmi dokuzuncu yay meydanda: DİLSİZ OZAN — saz konuşur, defter tanıklık eder; ikilem 112 (fırtınadaki kapı, ölüm döşeğinden çağrı), dünya haberi 44 (yankı taşı, yıldız takvimi) ve büyük anların ikinci sesleri: düğün, doğum, torun, iyileşme, zirve, hane kabulü, kervan çıkışı — hepsi artık iki ağızla anlatılıyor."
+EN: "The twenty-ninth arc stands in the square: THE MUTE BARD — the saz speaks and the notebook bears witness; dilemmas 112 (a knock in the storm, a call from the deathbed), world news 44 (the echo stone, the star calendar), and the great moments now have second voices: wedding, birth, grandchild, healing, career summit, house pacts and caravan departures all speak in two tongues."
+
+**Öne çıkanlar:**
+- **Dilsiz Ozan (SP, 29. yay, 20+):** ezgi kimin — sazın mı, defterin mi? Defter açılırsa iki usta birden alkışlanır; açılmazsa ozan gece kapına gelir, sazını bir geceliğine emanet eder.
+- **İki vicdan sınavı:** fırtınalı gecede çalınan kapı (16+), eski hasmın ölüm döşeğinden çağrısı (60+) — defter ya helalleşerek kapanır ya taşınarak.
+- **Büyük anların ikinci sesleri (SP):** düğünde davul üç gün susmaz, beşik baş köşeye kurulur, torunun adını dede fısıldar, sargı çözülür, çıraklar ayağa kalkar, kapıda şerbet içilir, develer sabah ezanında çöktürülür.
+- **Diyar:** dünya haberi 42→44 (geçitte yankı taşı, iki beyliğin ortak yıldız takvimi).
+
 ## Dalga 372-379 eki (8 Temmuz, öğle) — ÇARŞININ KULAĞI
 
 **Tek cümle (mağaza/what's new):**
