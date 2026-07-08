@@ -2,6 +2,17 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 331-339 eki (8 Temmuz, sabah) — İKİNCİ SESLER
+
+**Tek cümle (mağaza/what's new):**
+TR: "Günlüğün en sık satırları artık iki ağızlı: buluntu akçe, hastalık, ziyafet, sadaka, tapu alımı, mülk onarımı, at alımı ve iş sonuçları — hepsi dönüşümlü iki cümleyle konuşuyor; kervan da yağmasız aylarda konak molası anlatıyor, rehbere bağ ve Kelam Yolu maddeleri eklendi."
+EN: "The journal's most frequent lines now speak with two voices: found coins, sickness, the feast, alms, deed purchases, repairs, buying a horse and job outcomes all rotate between two sentences; the caravan tells of waystation rests on raid-free months, and the guide gained vineyard and Way of Words entries."
+
+**Öne çıkanlar:**
+- **İkinci sesler (SP):** 9 sık satır dönüşümlü çift cümle — uzun ömürlerde günlük ezber olmaz (buluntu, hastalık, ziyafet, sadaka, tapu, onarım, at, iş kazancı/kaybı).
+- **Kervan konak molası (SP):** yağmasız ara aylarda %30 bir yaşam satırı — çöken develer, tazelenen urgan, handa tokuşan haberler (kâr/risk değişmez).
+- **SSS:** bağ mülkü + hasat payı ve Kelam Yolu maddeleri 6 dilde eklendi.
+
 ## Dalga 323-329 eki (8 Temmuz, sabah) — DAVUL VE KELAM
 
 **Tek cümle (mağaza/what's new):**
