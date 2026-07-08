@@ -5445,7 +5445,7 @@ export function giveAlms(prev: GameState): GameState {
   p.money -= cost; p.alms_turn = s.turn; p.honor = Math.min(100, p.honor + honor); p.reputation = Math.min(100, p.reputation + rep);
   gainSkill(s, "social", 5);
   bumpNam(p, "comert", 6); bumpNam(p, "dindar", 5);
-  push(s, "sosyal", "Yoksullara sadaka dağıttın; vicdanın hafifledi, şerefin yükseldi.", "kişisel", false, { k: "evj.alms" });
+  { const av = chance(0.5); push(s, "sosyal", av ? "Kapı kapı dolaşmadın; çeşme başına oturdun, gelen aldı. Kimseyi eğdirmeden vermek de bir hünerdir." : "Yoksullara sadaka dağıttın; vicdanın hafifledi, şerefin yükseldi.", "kişisel", false, { k: av ? "evj.alms2" : "evj.alms" }); }
   return s;
 }
 
