@@ -2,6 +2,18 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 266-269 eki (8 Temmuz, sabah) — MÜHÜRLÜ KESE
+
+**Tek cümle (mağaza/what's new):**
+TR: "Yeni bir hikâye yayı açıldı: ölen kuyumcunun mühürlü kesesi sende, kapında iki 'oğul' — Kuyumcunun Emaneti (30+, 23. yay); sefer bozgununda artık maiyet de kan veriyor (muhafız kaybı %35), kilitli efsaneler sessiz değil — hanlarda fısıldanan efsane, gereken şöhreti söylüyor."
+EN: "A new story arc opens: the dead goldsmith's sealed pouch is in your keeping and two 'sons' stand at your door — The Goldsmith's Trust (30+, arc 23); a routed campaign now bleeds your retinue too (35% guard loss), and locked legends are no longer silent — the legend whispered in the inns names the fame it demands."
+
+**Öne çıkanlar:**
+- **Kuyumcunun Emaneti (SP, yeni yay):** Nişan sorusu doğru vârisi bulur (belge + sadakat ücreti); kadı yolu ihtiyatlıdır; yanlış ele verilen kese ya kesenden ödenir ya vicdandan.
+- **Bozgunun yoklaması (SP):** Sefer yenilgisinde muhafızlardan biri %35 ihtimalle geri dönmez — maiyetin gücü bedava değil.
+- **Efsane iması (SP):** Savaş ekranının dibinde kesik çizgili bir kart: adı sır, eşiği açık — Cansız Bey'e giden merdiven hissediliyor.
+- **Vitrin:** mağaza uzun açıklaması ve bilgi kartı sabah sayımıyla eş.
+
 ## Dalga 259-264 eki (8 Temmuz, sabah) — PAZARIN NABZI, YOLUN DİLİ
 
 **Tek cümle (mağaza/what's new):**
