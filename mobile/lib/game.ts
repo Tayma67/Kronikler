@@ -2651,7 +2651,7 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
   if (pr) {
     const after = careerTier(pr, p.career_xp);
     if (after > tierBefore) {
-      push(s, "terfi", `Yükseldin: artık ${pr.tiers[after]}!`, "kişisel", true, { k: "evj.promote", p: [{ c: [p.profession, p.career_xp] }] });
+      { const pv2 = chance(0.5); push(s, "terfi", pv2 ? `Ustalar önünde adın bir kademe yukarı yazıldı: artık ${pr.tiers[after]}! Tezgâhta yerin de selamın da değişti.` : `Yükseldin: artık ${pr.tiers[after]}!`, "kişisel", true, { k: pv2 ? "evj.promote2" : "evj.promote", p: [{ c: [p.profession, p.career_xp] }] }); }
       // Zirveye İLK varış: mesleğin taçlanma anı — meslek başına ömürde bir kez (farm yok: kariyer sıfırlanıp yeniden tırmanılsa da tekrar düşmez).
       if (after === pr.tiers.length - 1 && !(p.capstones || []).includes(p.profession)) {
         (p.capstones = p.capstones || []).push(p.profession);
@@ -2777,7 +2777,7 @@ export function eat(prev: GameState): GameState {
   const foodId = Object.keys(p.inventory).find((id) => p.inventory[id] > 0 && ITEMS[id]?.feed);
   if (foodId) { const it = ITEMS[foodId]; p.inventory[foodId] -= 1; if (p.inventory[foodId] <= 0) delete p.inventory[foodId]; p.hunger = Math.min(100, p.hunger + (it.feed || 20) + bonus); push(s, "gunluk", `${it.name} yedin.`, "kişisel", false, { k: "evj.eat", p: [{ i: foodId }] }); return s; }
   if (p.money < 2) { push(s, "gunluk", "Yemek alacak akçen yok.", "kişisel", false, { k: "evj.noFood" }); return s; }
-  p.money -= 2; p.hunger = Math.min(100, p.hunger + 25 + bonus); push(s, "gunluk", "Sokaktan karnını doyurdun (2 akçe).", "kişisel", false, { k: "evj.eatStreet" });
+  p.money -= 2; p.hunger = Math.min(100, p.hunger + 25 + bonus); { const sv2 = chance(0.5); push(s, "gunluk", sv2 ? "İki akçeye tezgâhtan sıcak bir tas: kokusu sokağı, buğusu seni doyurdu." : "Sokaktan karnını doyurdun (2 akçe).", "kişisel", false, { k: sv2 ? "evj.eatStreet2" : "evj.eatStreet" }); }
   return s;
 }
 
