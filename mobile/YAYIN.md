@@ -48,3 +48,8 @@ Kalan izinler: `INTERNET`, `VIBRATE`, `MODIFY_AUDIO_SETTINGS`, `FOREGROUND_SERVI
 5. **Paylaşım linki:** `https://github.com/Tayma67/Kronikler/releases/download/apk-latest/Kronikler.apk` — kalıcıdır, her build'de en günceli verir.
 6. **MP (opsiyonel):** Sunucu güncellemesi için `cd server && npx wrangler deploy` (canlı v2'de kaldıysa MP BETA eski protokolde çalışır; SP etkilenmez).
 7. **Kalıcı imza (opsiyonel, Play Store öncesi şart):** `keytool -genkeypair -v -keystore kronikler.keystore -alias kronikler -keyalg RSA -keysize 2048 -validity 10000` → GitHub Secrets'a `KEYSTORE_BASE64` + `KEYSTORE_PASSWORD` → sonraki build otomatik kalıcı imzalı. İmza değişimi mevcut kurulumlara "kaldır-yeniden kur" gerektirir; geniş dağıtımdan ÖNCE yapılmalı.
+
+## Mağaza görselleri
+
+- **Öne çıkan görsel (feature graphic, 1024×500):** `mobile/store/feature-graphic.png` — hazır, doğrudan Play Console > Mağaza girişi > Grafikler alanına yüklenir. Kaynağı repo içi fresk + Cinzel; istenirse `store/` altında yeniden üretilebilir.
+- Ekran görüntüleri: cihazdan alınmalı (min 2 adet, 16:9 veya 9:16). Önerilen sahneler: pano (hero + şerit), savaş meydanı, harita, nesil ekranı, pazar.
