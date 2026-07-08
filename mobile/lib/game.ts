@@ -4205,9 +4205,9 @@ export function resolveOpportunity(prev: GameState, opp: Opportunity, forced?: b
     if (hasPerk(p, "keskin_goz")) reward = Math.round(reward * 1.3);
     p.money += reward; p.reputation = Math.min(100, p.reputation + 4);
     gainSkill(s, opp.stat === "strength" ? "combat" : opp.stat === "charisma" ? "social" : "trade", 7);
-    push(s, "görev_tamamlandı", `"${opp.title}" görevini başardın (+${reward} akçe).`, "kişisel", true, { k: "evj.oppWin", p: [{ opp: opp.key }, reward] });
+    { const ov = chance(0.5); push(s, "görev_tamamlandı", ov ? `"${opp.title}" işi tamamlandı; alın teri keseye akçe oldu (+${reward}).` : `"${opp.title}" görevini başardın (+${reward} akçe).`, "kişisel", true, { k: ov ? "evj.oppWin2" : "evj.oppWin", p: [{ opp: opp.key }, reward] }); }
   }
-  else { p.reputation = Math.max(-100, p.reputation - 3); push(s, "görev_başarısız", `"${opp.title}" görevinde başarısız oldun.`, "kişisel", false, { k: "evj.oppLose", p: [{ opp: opp.key }] }); }
+  else { p.reputation = Math.max(-100, p.reputation - 3); const ol = chance(0.5); push(s, "görev_başarısız", ol ? `"${opp.title}" işi ters gitti; emek yandı, ders deftere yazıldı.` : `"${opp.title}" görevinde başarısız oldun.`, "kişisel", false, { k: ol ? "evj.oppLose2" : "evj.oppLose", p: [{ opp: opp.key }] }); }
   return s;
 }
 
