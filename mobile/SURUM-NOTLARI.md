@@ -2,6 +2,22 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 421-428 eki (8 Temmuz, gece) — TOPRAK VE DEFTER (MÜLK YÖNETİMİ)
+
+**Tek cümle (mağaza/what's new):**
+TR: "Mülkler artık yönetiliyor: kapıya BEKÇİ (yağma üçte bire iner), tarlaya NADAS (bir yıl dinlenen toprak iki yıl bereket verir), konağa KÂHYA (yıpranan mülkü sen duymadan onartır), bağa ŞIRA GÜNÜ (güzde küpler şarapla dolar), altmışını aşan kıdemliye OCAK HARÇLIĞI ve panoda süreli işlerin nabzını tutan AKTİF İŞLER ŞERİDİ; vâris devrinde nadasın takvimi de artık ince hesapla kurulur."
+EN: "Estates are now managed: a WATCHMAN at the gate (raids drop to a third), FALLOW for the field (a year of rest yields two years of plenty), a STEWARD for the manor (repairs before you hear of it), PRESSING DAY for the vineyard (autumn fills the jars with wine), a GUILD STIPEND for seniors past sixty and a dashboard STRIP tracking timed affairs; and on succession the fallow calendar is now reckoned properly."
+
+**Öne çıkanlar:**
+- **Mülk bekçisi (SP):** aylık küçük ücretle yağma olasılığı ×0.35, yangın adaylığı yarıdan aza — düşük güvenlikli şehirde mülk tutmanın cevabı.
+- **Nadas (SP):** tarla bir yıl gelir vermez, karşılığında bakım +20 ve 24 ay ×1.5 verim; bereketli tarla yeniden nadasa yatmaz.
+- **Kâhya (SP):** iki ve daha çok mülkü olana vekilharç — bakımı 60 altına düşen mülkü kendi kesenden onartır, kese ücrete yetmezse helallik alıp gider.
+- **Şıra günü (SP):** güzde bağ sahibi yılda bir bağ bozar: bağ kademesi kadar testi şarap, itibar ve ocak bağı.
+- **Ocak harçlığı (SP):** 60 yaşını aşan Kıdemli (rütbe 2+) lonca üyesine aylık emeklilik; yıllık dökümü kronikte.
+- **Aktif işler şeridi:** tezgâh, iltizam, kiler, at rehini ve nadasın kalan ayları panoda tek şeritte.
+- **Devir ince hesabı:** tur bazlı mülk damgaları (nadas/bereket) vârisin sıfırdan başlayan takvimine yeniden tabanlanır; bayat damga temizlenir.
+- Rehber (SSS) mülk adetlerini 6 dilde anlatıyor.
+
 ## Dalga 411-419 eki (8 Temmuz, akşam) — KESENİN VE KİLERİN HESABI (SİSTEM PAKETİ II)
 
 **Tek cümle (mağaza/what's new):**
