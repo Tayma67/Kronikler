@@ -21,6 +21,7 @@ let nal: AudioPlayer | null = null;
 let dugun: AudioPlayer | null = null;
 let ney: AudioPlayer | null = null;
 let su: AudioPlayer | null = null;
+let mirilti: AudioPlayer | null = null;
 
 // ── Arka plan müziği: Kervan Yolu teması (prosedürel, paket içi, 48 sn dikişsiz döngü). Ayrı anahtar; varsayılan AÇIK. ──
 const MKEY = "kronikler_music_v1";
@@ -82,6 +83,7 @@ function ensure() {
     if (!dugun) dugun = createAudioPlayer(require("../assets/sfx/dugun.wav"));
     if (!ney) ney = createAudioPlayer(require("../assets/sfx/ney.wav"));
     if (!su) su = createAudioPlayer(require("../assets/sfx/su.wav"));
+    if (!mirilti) mirilti = createAudioPlayer(require("../assets/sfx/mirilti.wav"));
   } catch {}
 }
 function fire(p: AudioPlayer | null) {
@@ -106,3 +108,4 @@ export function playHooves() { if (!enabled) return; ensure(); fire(nal); }    /
 export function playWedding() { if (!enabled) return; ensure(); fire(dugun); } // düğün: zurna-davul oyun havası
 export function playNey() { if (!enabled) return; ensure(); fire(ney); }       // ibadet/tekke: ney nefesi
 export function playWater() { if (!enabled) return; ensure(); fire(su); }      // hamam: tas suyu, mermer yankısı
+export function playPurr() { if (!enabled) return; ensure(); fire(mirilti); }  // ocak kedisi: mırıltı

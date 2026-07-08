@@ -11,7 +11,7 @@ import { Portre, ProgressBar, GoldDivider, ScreenFresk } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
-import { playWater } from "../../lib/sound";
+import { playWater, playPurr } from "../../lib/sound";
 import { placeName, professionNameL, careerTitleL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 
@@ -327,7 +327,7 @@ export default function Karakter() {
                   <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchment }}>{p.pet.n} · {t("char.pet")}</Text>
                   <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted }}>{yil < 1 ? t("char.petNew") : applyParams(t("char.petYears"), [yil])} · {t("char.petBond")} {p.pet.bond}</Text>
                 </View>
-                <Pressable disabled={done} onPress={() => { hap("tap"); apply((s) => tendPet(s)); }} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: done ? C.border : "rgba(201,168,76,0.5)", backgroundColor: done ? C.bg : "rgba(201,168,76,0.1)", opacity: done ? 0.5 : 1 }}>
+                <Pressable disabled={done} onPress={() => { hap("tap"); playPurr(); apply((s) => tendPet(s)); }} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: done ? C.border : "rgba(201,168,76,0.5)", backgroundColor: done ? C.bg : "rgba(201,168,76,0.1)", opacity: done ? 0.5 : 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 10, color: done ? C.parchmentMuted : C.gold, letterSpacing: 0.5 }}>{done ? t("char.petDone") : t("char.petTend")}</Text>
                 </Pressable>
               </View>
