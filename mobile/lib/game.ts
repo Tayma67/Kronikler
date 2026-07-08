@@ -2955,7 +2955,7 @@ export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   remember(s, npc, (ITEMS[itemId]?.buy || 0) >= 25 ? "comert_hediye" : "hediye");
   if (jewel) push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir takı"} taktın; gözleri parladı, eli uzun süre üstünde gezindi.`, "kişisel", false, { k: "evj.giftJewel", p: [npc.name, { i: itemId }] });
-  else push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`, "kişisel", false, { k: "evj.gift", p: [npc.name, { i: itemId }] });
+  else { const gv = chance(0.5); push(s, "sohbet", gv ? `${npc.name} hediyeni evirip çevirdi, sonra bağrına bastı: "Bunu hak edecek ne yaptım?"` : `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`, "kişisel", false, { k: gv ? "evj.gift2" : "evj.gift", p: [npc.name, { i: itemId }] }); }
   return s;
 }
 
