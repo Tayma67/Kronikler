@@ -1826,6 +1826,8 @@ export function advance(prev: GameState, n = 1): GameState {
         "Kapının altından mühürsüz bir kâğıt süzüldü: tek satır, yarısı silik — 'hazır ol' okunuyor gibi.",
         "Hamamda ihtiyar bir ses: 'Bu ayın suyu başka akıyor' — kimse dönüp bakmadı, sen baktın.",
         "Sokak köpekleri gece aynı yöne havladı; bekçi 'bir şey geçti' dedi, ne olduğunu söyleyemedi.",
+        "Değirmenin taşı gece kendi kendine döndü derler; un yok, buğday yok — yalnız ses.",
+        "Çarşı kapısındaki dilenci bugün sadaka almadı; 'bugün sıra bende' deyip avucundakini dağıttı, kimse anlamadı.",
       ];
       const fi = Math.floor(Math.random() * FIS.length);
       push(s, "fisilti", FIS[fi], "kişisel", false, { k: "fis." + fi });
