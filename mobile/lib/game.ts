@@ -3179,7 +3179,7 @@ export const TRAVEL_ROUTES: { id: TravelRoute; label: string; desc: string }[] =
 ];
 // At satın alma — bir kez; hızlı/güvenli "at ile" yolculuğunu açar.
 export const HORSE_COST = 200;
-export const HORSE_NAMES = ["Doru", "Yağız", "Kır", "Al", "Boz", "Demir", "Rüzgâr", "Yıldız", "Şahin", "Karayel"];
+export const HORSE_NAMES = ["Doru", "Yağız", "Kır", "Al", "Boz", "Demir", "Rüzgâr", "Yıldız", "Şahin", "Karayel", "Poyraz", "Kınalı", "Ceylan", "Tayfun"];
 export function buyHorse(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.horse || p.money < HORSE_COST) return s; // çocuğa at satılmaz
