@@ -1261,7 +1261,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         const gift = Math.round(25 * inflationFactor(s));
         p.money += gift;
         s.relationships[ustaId] = Math.max(-100, Math.min(100, (s.relationships[ustaId] || 0) + 20));
-        push(s, "çıraklık", `${who.name} kapını çaldı: atanın yetiştirdiği usta, "Ustamın ocağına borçluyum" deyip hediyesini bıraktı (+${gift} akçe).`, "kişisel", true, { k: "evj.apr.legacy", p: [who.name, gift] });
+        { const al2 = chance(0.5); push(s, "çıraklık", al2 ? `Çarşıda ${who.name} yolunu kesti: atanın çırağıymış. Elindeki hediye kendi tezgâhının ilk meyvesiydi — "İlk kazanç, ustamın ocağına" dedi (+${gift} akçe).` : `${who.name} kapını çaldı: atanın yetiştirdiği usta, "Ustamın ocağına borçluyum" deyip hediyesini bıraktı (+${gift} akçe).`, "kişisel", true, { k: al2 ? "evj.apr.legacy2" : "evj.apr.legacy", p: [who.name, gift] }); }
       }
     }
   }
