@@ -6580,6 +6580,10 @@ function crownCampaignTick(s: GameState) {
     p.reputation = Math.max(-100, p.reputation - 6);
     const hurt = 6 + Math.floor(Math.random() * 10); p.health = Math.max(1, p.health - hurt);
     push(s, "taht", `Sefer bozguna uğradı; otoriten sarsıldı, yara aldın (−${hurt} sağlık).`, "kişisel", true, { k: "crown.campaignLose", p: [{ bl: beylikId }, hurt] });
+    if ((p.retinue || 0) > 0 && chance(0.35)) { // bozgunda maiyet de kan verir
+      p.retinue = (p.retinue || 0) - 1;
+      push(s, "taht", `Bozgunun tozu dinince yoklama yapıldı: muhafızlarından biri geri dönmedi.`, "kişisel", false, { k: "crown.cmp.guardFallen" });
+    }
   }
 }
 
