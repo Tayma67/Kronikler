@@ -11,6 +11,26 @@ export interface Arc {
 
 export const ARCS: Arc[] = [
   {
+    id: "kuyumcu_emaneti", title: "Kuyumcunun Emaneti", icon: "gems",
+    blurb: "Ölen kuyumcunun mühürlü kesesi sende; kapında iki mirasçı.",
+    when: (p) => p.age >= 30,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Komşun kuyumcu ölüm döşeğinde mühürlü bir kese bıraktı: 'Gurbetteki oğluma ver, başkasına değil.' Cenazeden bir hafta sonra kapına iki adam geldi; ikisi de 'oğluyum' diyor.", choices: [
+        { label: "Acele etme; oğlanın nişanını sor", result: "Keseyi göğsüne bastırıp ikisini de içeri aldın: 'Oturun. Babanızı bana anlatın.'", delta: { honor: 2 }, next: "s2" },
+        { label: "Gürbüz olana ver, kurtul", result: "Keseyi uzattın; adam teşekkür bile etmeden gitti. İçinde bir yer 'acele ettin' diye fısıldıyor.", delta: { honor: -4, fear: 1 }, next: "s2b" },
+      ]},
+      s2: { id: "s2", text: "Sordun: 'Babanın sana çocukken bıraktığı nişan neydi?' Biri sustu, kem küm etti; öteki gülümsedi: 'Nişan değil, iz — kulağımın ardındaki yanık. Ocağından kor düşmüştü.'", choices: [
+        { label: "Keseyi iz sahibine ver", result: "Mühür oğlunun elinde kırıldı: içinden bir çıraklık belgesi ve iki altın çıktı. Altınları sana uzattı: 'Emanete sadakatin ücreti.'", delta: { money: 20, honor: 6, reputation: 4 }, next: "end" },
+        { label: "Yine de kadıya taşı", result: "Kadı da aynı izi buldu; hüküm senin gördüğünün aynısıydı. Mahkeme harcı keseden çıktı ama adın 'ihtiyatlı' diye anıldı.", delta: { honor: 3, reputation: 2 }, next: "end" },
+      ]},
+      s2b: { id: "s2b", text: "Keseyi verdiğin adam bir hafta içinde şehirden kayboldu. Gerçek oğul kapına geldi; elinde babasının son mektubu: 'Emaneti komşuma bıraktım.' Gözlerine bakmak zor.", choices: [
+        { label: "Zararı kendi kesenden öde", result: "Altın gitti ama yüz kaldı. Oğlan parayı almak istemedi; sen dayattın. Kapıdan çıkarken 'babam yanılmamış' dedi — bu, altından pahalıydı.", delta: { money: -60, honor: 4 }, next: "end" },
+        { label: "'Elimden bir şey gelmez' de", result: "Oğlan tek söz etmeden gitti. Çarşıda kimse yüzüne vurmadı ama kuyumcunun kapısı önünden geçerken adımların hâlâ hızlanıyor.", delta: { honor: -6, reputation: -5 }, next: "end" },
+      ]},
+    },
+  },
+  {
     id: "kan_davasi", title: "Kan Davası", icon: "crossed-swords",
     blurb: "Bir husumet, gölgen gibi peşine takıldı.",
     when: (p) => p.age >= 16 && (p.fear >= 10 || p.reputation < 0),
