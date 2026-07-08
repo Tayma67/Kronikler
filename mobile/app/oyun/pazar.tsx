@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
+import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, pawnHorse, redeemHorse, horsePawnValue, horseRedeemCost, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { currentCalendar } from "../../lib/calendar";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -312,6 +312,28 @@ export default function Pazar() {
                   ) : (
                     <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentDim }}>{t("paz.noCash")}</Text>
                   )}
+                </>
+              ) : null}
+              {/* At rehini: sarraf atı rehin alır — hızlı akçe, altı ayda kurtarılmazsa yular el değiştirir */}
+              {(p.horse || p.horse_pawn) ? (
+                <>
+                  <View style={{ height: 1, backgroundColor: C.border, marginVertical: 11 }} />
+                  <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentDim, textTransform: "uppercase", marginBottom: 6 }}>{t("paz.horsePawn")}</Text>
+                  {p.horse_pawn && !p.horse ? (() => {
+                    const rc = horseRedeemCost(p); const canR = p.money >= rc;
+                    return (
+                      <>
+                        <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginBottom: 6 }}>{applyParams(t("paz.horsePawned"), [p.horse_pawn.n, Math.max(0, p.horse_pawn.until - state.turn)])}</Text>
+                        <Pressable disabled={!canR} onPress={() => { hap("tap"); apply((s) => redeemHorse(s)); }} style={{ alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 15, borderRadius: 7, borderWidth: 1, borderColor: canR ? "rgba(127,166,106,0.5)" : C.border, backgroundColor: canR ? "rgba(127,166,106,0.12)" : "transparent", opacity: canR ? 1 : 0.4 }}>
+                          <Text style={{ fontFamily: F.display, fontSize: 10.5, color: canR ? C.sage : C.parchmentMuted }}>{applyParams(t("paz.horseRedeem"), [rc])}</Text>
+                        </Pressable>
+                      </>
+                    );
+                  })() : p.horse ? (
+                    <Pressable onPress={() => { hap("tap"); apply((s) => pawnHorse(s)); }} style={{ alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 15, borderRadius: 7, borderWidth: 1, borderColor: "rgba(224,90,48,0.5)", backgroundColor: "rgba(224,90,48,0.1)" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.ember }}>{applyParams(t("paz.horsePawnBtn"), [p.horse_name || "", horsePawnValue(state)])}</Text>
+                    </Pressable>
+                  ) : null}
                 </>
               ) : null}
               {/* Emanet (safekeeping): âtıl serveti sarrafta sakla — yağma/hırsızlıktan emin, küçük getiri */}

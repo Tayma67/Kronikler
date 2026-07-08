@@ -125,6 +125,7 @@ export interface Player {
   stall_until?: number; stall_loc?: string; // pazar tezgâhı: hangi tura kadar, hangi şehirde (kira gider, satış oranı artar)
   iltizam_until?: number; iltizam_loc?: string; // vergi iltizamı: hangi tura kadar, hangi şehir (peşin ödenir, aylık tahsilat + huzursuzluk riski)
   winter_stock_until?: number; // kışlık kiler dolu (hangi tura kadar) — kış açlığı hafif geçer
+  horse_pawn?: { n: string; amount: number; until: number }; // sarrafta rehinli at (adı, alınan akçe, son kurtarma turu)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -1558,6 +1559,12 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     const il = p.iltizam_loc || p.location_name;
     p.iltizam_until = undefined; p.iltizam_loc = undefined;
     push(s, "ticaret", `${il} iltizamının yılı doldu; defter kapandı, mühür geri verildi.`, "kişisel", false, { k: "evj.iltizamOut", p: [{ pl: il }] });
+  }
+  // ── Rehin süresi dolan at sarrafın malı olur (acı ama defter defterdir) ──
+  if (!p.dead && p.horse_pawn && p.horse_pawn.until === s.turn) {
+    const hn = p.horse_pawn.n;
+    p.horse_pawn = undefined;
+    push(s, "ticaret", `Rehin süresi doldu: ${hn} artık sarrafın malı. Tavla boş, yürek buruk.`, "kişisel", true, { k: "evj.horseForfeit", p: [hn] });
   }
   // ── Pazar tezgâhı süresi dolunca kalkar (kira yenilemek oyuncunun elinde) ──
   if (!p.dead && p.stall_until === s.turn) {
@@ -3355,6 +3362,31 @@ export const TRAVEL_ROUTES: { id: TravelRoute; label: string; desc: string }[] =
 // At satın alma — bir kez; hızlı/güvenli "at ile" yolculuğunu açar.
 export const HORSE_COST = 200;
 export const HORSE_NAMES = ["Doru", "Yağız", "Kır", "Al", "Boz", "Demir", "Rüzgâr", "Yıldız", "Şahin", "Karayel", "Poyraz", "Kınalı", "Ceylan", "Tayfun", "Turna", "Bulut"];
+// At rehini: sarraf atı rehin alır — hızlı akçe; altı ay içinde %25 fazlasıyla kurtarılmazsa yular sarrafın olur.
+export function horsePawnValue(s: GameState): number { return Math.round(HORSE_COST * 0.6 * inflationFactor(s)); }
+export function horseRedeemCost(p: Player): number { return Math.round((p.horse_pawn?.amount || 0) * 1.25); }
+export function pawnHorse(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !p.horse || p.horse_pawn || inJail(p)) return s;
+  const amount = horsePawnValue(s);
+  const hn = p.horse_name || "";
+  p.horse = false; p.horse_name = undefined;
+  p.horse_pawn = { n: hn, amount, until: s.turn + 6 };
+  p.money += amount;
+  push(s, "ticaret", `${hn} sarrafın tavlasına rehin bırakıldı (+${amount} akçe); altı ay içinde kurtarılmazsa yular el değiştirir.`, "kişisel", false, { k: "evj.horsePawn", p: [hn, amount] });
+  return s;
+}
+export function redeemHorse(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !p.horse_pawn || p.horse || inJail(p)) return s;
+  const cost = horseRedeemCost(p);
+  if (p.money < cost) return s;
+  p.money -= cost;
+  const hn = p.horse_pawn.n;
+  p.horse = true; p.horse_name = hn; p.horse_pawn = undefined;
+  push(s, "ticaret", `${hn} rehinden kurtarıldı (−${cost} akçe); yular yine senin elinde, kişneme yine senin avlunda.`, "kişisel", false, { k: "evj.horseRedeem", p: [hn, cost] });
+  return s;
+}
 export function buyHorse(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.horse || p.money < HORSE_COST) return s; // çocuğa at satılmaz
