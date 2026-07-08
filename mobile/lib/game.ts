@@ -3372,7 +3372,7 @@ export function changeProfession(prev: GameState, prof: string): GameState {
   if (p.profession !== "işsiz" && !p.professions_tried.includes(p.profession)) p.professions_tried.push(p.profession);
   p.profession = prof; p.career_xp = 0;
   if (!p.professions_tried.includes(prof)) p.professions_tried.push(prof);
-  push(s, "meslek_değişimi", `${professionById(prof)?.name || cap(prof)} mesleğine geçtin — yeniden en alttan.`, "kişisel", true, { k: "evj.profSwitch", p: [{ pr: prof }] });
+  { const pv2 = chance(0.5); push(s, "meslek_değişimi", pv2 ? `Eski önlük çiviye asıldı; ${(professionById(prof)?.name || cap(prof)).toLowerCase()} tezgâhında ilk gün. Herkes bir zamanlar çıraktı.` : `${professionById(prof)?.name || cap(prof)} mesleğine geçtin — yeniden en alttan.`, "kişisel", true, { k: pv2 ? "evj.profSwitch2" : "evj.profSwitch", p: [{ pr: prof }] }); }
   return s;
 }
 
