@@ -2480,7 +2480,7 @@ function tickCaravan(s: GameState) {
   if (Math.random() < caravanAttackChance(s) * (c.step < last ? 1 : 0.5)) {
     const lost = Math.round(c.invested * caravanLossPct(s));
     c.invested -= lost; c.lost = (c.lost ?? 0) + lost;
-    push(s, "kervan", `Kervan ${route[c.step]} yakınında eşkıyaya uğradı! ${lost} akçelik mal yağmalandı.`, "kişisel", true, { k: "evj.carRaid", p: [{ pl: route[c.step] }, lost] });
+    { const rv2 = chance(0.5); push(s, "kervan", rv2 ? `Gece konağında oklar uçtu; ${route[c.step]} yakınında yükün bir kısmı eşkıyaya kaldı (${lost} akçe). Sürücüler sağ — mal gider, can kalır.` : `Kervan ${route[c.step]} yakınında eşkıyaya uğradı! ${lost} akçelik mal yağmalandı.`, "kişisel", true, { k: rv2 ? "evj.carRaid2" : "evj.carRaid", p: [{ pl: route[c.step] }, lost] }); }
     if (c.invested <= 0) {
       push(s, "kervan", "Kervan tümüyle yağmalandı; elde bir şey kalmadı.", "kişisel", true, { k: "evj.carLost" });
       s.caravan = null;
