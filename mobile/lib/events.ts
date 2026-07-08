@@ -11,6 +11,24 @@ export interface Dilemma {
 
 export const DILEMMAS: Dilemma[] = [
   {
+    id: "dusen_kese", icon: "coins", title: "Düşen Kese",
+    text: "Handa bir yolcu kalkarken kuşağından kesesi düştü; kimse görmedi — senden başka. Yolcu kapıya yürüyor.",
+    when: (p) => p.age >= 14,
+    choices: [
+      { label: "Koşup keseyi ver", delta: { honor: 3, reputation: 2 }, result: "Yolcu keseyi göğsüne bastırdı: 'Bu para bir yetimin çeyiziydi.' Adını sordu; vermedin. O gece han senin hikâyenle uyudu." },
+      { label: "Ayağınla üstüne bas, bekle", delta: { money: 25, honor: -4 }, result: "Yolcu gitti, kese kaldı. Akçe keseden çıktı ama kesenin kokusu üstüne sindi; handa biri seni görmüş meğer." },
+    ],
+  },
+  {
+    id: "bag_cocugu", icon: "leaf", title: "Bağdaki Çocuk",
+    text: "Kuytudaki bağda bir çocuk yakaladın: koynunda iki salkım, gözünde korku. 'Anam hasta, canı üzüm istedi' diyor.",
+    when: (p) => p.age >= 35,
+    choices: [
+      { label: "Bir salkım da sen kes, yolla", delta: { honor: 3, reputation: 1 }, result: "Çocuğun koynuna bir salkım daha koydun: 'Anana selam söyle.' Ertesi hafta kapında bir çömlek turşu duruyordu — kimin bıraktığı belliydi." },
+      { label: "Kulağından tutup babasına götür", delta: { fear: 2, reputation: -1 }, result: "Baba çocuğu payladı, sana diş gösterdi. Bağdan artık kimse üzüm çalmıyor; ama selamını alan da azaldı." },
+    ],
+  },
+  {
     id: "kuyu_sirasi", icon: "house", title: "Kuyu Sırası",
     text: "Kurak yazda mahalle kuyusu sırayla çekiliyor; senin gece sıranı zengin komşu satın almak istiyor — bahçesi susuz kalmasın diye.",
     when: (p) => p.age >= 16,
