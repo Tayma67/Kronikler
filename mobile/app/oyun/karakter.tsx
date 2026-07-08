@@ -11,6 +11,7 @@ import { Portre, ProgressBar, GoldDivider, ScreenFresk } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
+import { playWater } from "../../lib/sound";
 import { placeName, professionNameL, careerTitleL } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 
@@ -302,7 +303,7 @@ export default function Karakter() {
                   <Text style={{ fontFamily: F.display, fontSize: 10, color: dis ? C.parchmentMuted : C.sage, letterSpacing: 0.5 }}>{seen ? t("char.healerDone") : `${t("char.healer")} · ${cost}⚜`}</Text>
                 </Pressable>
                 {(() => { const hseen = p.hamam_turn === state.turn; const hcost = hamamCost(state); const hdis = hseen || p.money < hcost; return (
-                  <Pressable disabled={hdis} onPress={() => { hap("tap"); apply((s) => visitHamam(s)); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: hdis ? C.border : "rgba(122,162,196,0.5)", backgroundColor: hdis ? C.bg : "rgba(122,162,196,0.08)", opacity: hdis ? 0.45 : 1 }}>
+                  <Pressable disabled={hdis} onPress={() => { hap("tap"); playWater(); apply((s) => visitHamam(s)); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: hdis ? C.border : "rgba(122,162,196,0.5)", backgroundColor: hdis ? C.bg : "rgba(122,162,196,0.08)", opacity: hdis ? 0.45 : 1 }}>
                     <GameIcon name="bucket" size={12} color={hdis ? C.parchmentMuted : C.parchment} />
                     <Text style={{ fontFamily: F.display, fontSize: 10, color: hdis ? C.parchmentMuted : C.parchment, letterSpacing: 0.5 }}>{hseen ? t("char.hamamDone") : `${t("char.hamam")} · ${hcost}⚜`}</Text>
                   </Pressable>

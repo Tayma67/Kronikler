@@ -6,7 +6,7 @@ import { useGame } from "./store";
 import { socialTierIndex } from "./game";
 import { useI18n } from "./i18n";
 import { hap } from "./haptics";
-import { playFanfare, playTap, playToll, playChime, playVictory, playLullaby } from "./sound";
+import { playFanfare, playTap, playToll, playChime, playVictory, playLullaby, playWedding } from "./sound";
 import { C, F } from "./theme";
 import { GameIcon } from "./icons";
 
@@ -110,7 +110,7 @@ export function StatDeltaOverlay() {
     if (!state) return;
     const m = !!state.player.married;
     if (wasMarried.current === null || gen.current !== state.player.generation) { wasMarried.current = m; return; }
-    if (m && !wasMarried.current) { setWed({ name: state.player.spouse_name || "", tick: Date.now() }); hap("success"); playFanfare(); setTimeout(() => setWed(null), 2800); }
+    if (m && !wasMarried.current) { setWed({ name: state.player.spouse_name || "", tick: Date.now() }); hap("success"); playWedding(); setTimeout(() => setWed(null), 2800); }
     wasMarried.current = m;
   }, [state?.player.married, state?.player.generation]);
 

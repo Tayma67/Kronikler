@@ -18,6 +18,9 @@ let kese: AudioPlayer | null = null;
 let ninni: AudioPlayer | null = null;
 let saz: AudioPlayer | null = null;
 let nal: AudioPlayer | null = null;
+let dugun: AudioPlayer | null = null;
+let ney: AudioPlayer | null = null;
+let su: AudioPlayer | null = null;
 
 // ── Arka plan müziği: Kervan Yolu teması (prosedürel, paket içi, 48 sn dikişsiz döngü). Ayrı anahtar; varsayılan AÇIK. ──
 const MKEY = "kronikler_music_v1";
@@ -76,6 +79,9 @@ function ensure() {
     if (!ninni) ninni = createAudioPlayer(require("../assets/sfx/ninni.wav"));
     if (!saz) saz = createAudioPlayer(require("../assets/sfx/saz.wav"));
     if (!nal) nal = createAudioPlayer(require("../assets/sfx/nal.wav"));
+    if (!dugun) dugun = createAudioPlayer(require("../assets/sfx/dugun.wav"));
+    if (!ney) ney = createAudioPlayer(require("../assets/sfx/ney.wav"));
+    if (!su) su = createAudioPlayer(require("../assets/sfx/su.wav"));
   } catch {}
 }
 function fire(p: AudioPlayer | null) {
@@ -97,3 +103,6 @@ export function playCoin() { if (!enabled) return; ensure(); fire(kese); }
 export function playLullaby() { if (!enabled) return; ensure(); fire(ninni); } // doğum: müzik kutusu motifi
 export function playSaz() { if (!enabled) return; ensure(); fire(saz); }       // ikilem kapıyı çaldı: mızrap vurgusu
 export function playHooves() { if (!enabled) return; ensure(); fire(nal); }    // yolculuk: dörtnala
+export function playWedding() { if (!enabled) return; ensure(); fire(dugun); } // düğün: zurna-davul oyun havası
+export function playNey() { if (!enabled) return; ensure(); fire(ney); }       // ibadet/tekke: ney nefesi
+export function playWater() { if (!enabled) return; ensure(); fire(su); }      // hamam: tas suyu, mermer yankısı

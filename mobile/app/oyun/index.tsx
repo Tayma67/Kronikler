@@ -15,7 +15,7 @@ import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, Eulog
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
-import { playTap, playChime, playSaz } from "../../lib/sound";
+import { playTap, playChime, playSaz, playNey } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
 
@@ -482,7 +482,7 @@ export default function Dashboard() {
           { k: "yuruyus", icon: "firsatlar", label: t("adult.act.yuruyus") },
           { k: "ibadet", icon: "prayer-beads", label: t("adult.act.ibadet") },
         ];
-        const onAdult = (k: AdultAct) => { if (!can) return; hap("tap"); const r = adultAction(state, k); if (!r.blocked) apply(() => r.state); };
+        const onAdult = (k: AdultAct) => { if (!can) return; hap("tap"); const r = adultAction(state, k); if (!r.blocked) { if (k === "ibadet") playNey(); apply(() => r.state); } };
         return (
           <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(111,160,192,0.3)", backgroundColor: "rgba(111,160,192,0.05)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
@@ -518,7 +518,7 @@ export default function Dashboard() {
           { k: "ani", icon: "roman", label: t("elder.act.ani") },
           { k: "tekke", icon: "prayer-beads", label: t("elder.act.tekke") },
         ];
-        const onElder = (k: ElderAct) => { if (!can) return; hap("tap"); const r = elderAction(state, k); if (!r.blocked) apply(() => r.state); };
+        const onElder = (k: ElderAct) => { if (!can) return; hap("tap"); const r = elderAction(state, k); if (!r.blocked) { if (k === "tekke") playNey(); apply(() => r.state); } };
         return (
           <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(123,79,175,0.3)", backgroundColor: "rgba(123,79,175,0.06)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
