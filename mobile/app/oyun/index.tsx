@@ -587,6 +587,9 @@ export default function Dashboard() {
         if (p.horse_pawn) chips.push({ icon: "hourglass", label: applyParams(t("dash.fx.rehin"), [Math.max(0, p.horse_pawn.until - state.turn)]) });
         const fal = (p.properties || []).find((pr) => pr.fallow_until !== undefined);
         if (fal) chips.push({ icon: "leaf", label: applyParams(t("dash.fx.nadas"), [Math.max(0, (fal.fallow_until ?? 0) - state.turn)]) });
+        // Yoldaşların akşamı: yaşlanan kedi/köpek sessizce hatırlatılır — veda sürpriz olmasın
+        if (p.pet?.old) chips.push({ icon: "wool", label: applyParams(t("dash.fx.petOld"), [p.pet.n]) });
+        if (p.dog?.old) chips.push({ icon: "sheep", label: applyParams(t("dash.fx.dogOld"), [p.dog.n]) });
         // Ufukta: yaklaşan güzel şeyler — beklenti oyuncuyu yarınki aya çağırır
         if ((p.dowry_chest || 0) > 0 && p.child_meta?.length) {
           const yakin = p.child_meta.map((cm) => 216 - (state.turn - cm.born)).filter((k) => k > 0).sort((a, b) => a - b)[0];
