@@ -1747,7 +1747,7 @@ export function advance(prev: GameState, n = 1): GameState {
       else { const JAIL_M_TR = ["Zindanda bir ay daha geçti; duvara bir çentik daha.", "Mazgaldan bir güvercin süzüldü; kırıntını paylaştın, gün biraz kısaldı.", "Yan hücrenin ihtiyarı duvara vura vura eski bir türkü tıklattı; sen de tempo tuttun."]; const jmi = Math.floor(Math.random() * JAIL_M_TR.length); push(s, "suç", JAIL_M_TR[jmi], "kişisel", false, { k: jmi === 0 ? "jail.month" : "jail.month" + jmi, p: [jp.jail!.left] }); }
     }
     { const mf = monthlyFlavor(s, cal); push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k }); }
-    if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 13 && chance(0.12)) s.micro = { id: MICRO_IDS[Math.floor(Math.random() * MICRO_IDS.length)] }; } // mikro an: yok sayılırsa ertesi ay kaybolur
+    if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 6 && chance(0.12)) { const mp = s.player.age >= 13 ? MICRO_IDS : MICRO_KID_IDS; s.micro = { id: mp[Math.floor(Math.random() * mp.length)] }; } } // mikro an: yok sayılırsa ertesi ay kaybolur (çocuğa çocuk anı)
     crownCampaignTick(s); // Sefer 2.0: ordu her ay yol alır (yürüyüş → kuşatma → hüküm)
     if (i === n - 1) sagaTick(s); // Kül Yemini: destan sahnesi kapıları (düşen sahne panoda bekler, silinmez)
     if (i === n - 1) bloodlineTick(s); // Kan Defteri: nesil destanının sahne kapıları
@@ -4727,7 +4727,11 @@ export function tendChild(prev: GameState): GameState {
 // ── Ay-içi mikro an: panoda beliren tek satırlık, atlanabilir seçim — "aynı üç buton" hissini kırar.
 // Etkiler bilinçli olarak minicik: iki seçenek de geçerli, farm yok (an rastgele düşer, ertesi ay kaybolur).
 export const MICRO_IDS = ["saganak", "sokak_kedisi", "cirak_tabla", "eski_turku", "yol_soran", "yildiz_gecesi", "nalbant_kivilcimi", "harman_yeli", "bekci_feneri", "kuyu_kovasi", "pazarci_terazisi", "kirlangic_yuvasi", "degirmen_tasi", "gurbet_mektubu", "firin_koru", "cesme_olugu", "kacan_esek", "dugun_davulu", "semerci_ciragi", "ikindi_golgesi", "kar_lapasi", "sahaf_tezgahi", "kopru_dilencisi"];
+export const MICRO_KID_IDS = ["misket_meydani", "leylek_yuvasi", "kagit_gemi"]; // 6-12 yaş bandının kendi anları
 const MICRO_R_TR: Record<string, [string, string]> = {
+  misket_meydani: ["Dizüstü çöküp nişan aldın; üç misket kazandın, birini en küçüğe verdin. Meydanın ustası şapkasını çıkardı.", "Duvar dibinden seyrettin; ustanın bilek hilesini gözünle çaldın. Sıra sana gelince hazır olacaksın."],
+  leylek_yuvasi: ["Sevinç çığlığına sen de katıldın; leylek kanat çırptı, mahalle güldü. Bahar hep birlikte karşılanınca daha erken gelir.", "Sessizce izledin: leylek üç dal taşıdı, ikisini düşürdü, yine taşıdı. İçinden 'demek böyle yapılıyor' dedin."],
+  kagit_gemi: ["Gemin iki bendi aştı, üçüncüde devrildi — ama en uzağa giden oydu. Çocuklar adını 'kaptan' koydu.", "Taş ve çamurla küçük bir bent kurdun; su birikti, gemiler yeni havuzda yarıştı. Mimarı unutulmadı."],
   kar_lapasi: ["Kar savaşının ortasına daldın; yanaklar al al, yürek çocuk. Akşam yorgunluğu tatlıydı.", "Tandırın başında elini ısıttın; dışarıda cıvıltı, içeride köz. İkisi de kışın hakkı."],
   sahaf_tezgahi: ["Sayfaları düzeltip taşla bastırdın; sahaf teşekkür yerine bir beyit okudu. İkiniz de kazandınız.", "Yüksek sesle bir beyit okudun; tezgâh önünde iki kişi durdu, biri cöngü satın aldı. Sahafın gözü güldü."],
   kopru_dilencisi: ["Taşın üstüne çömelip dinledin: bir zamanlar kervan sahibiymiş. Hikâyenin sonunda tasına birkaç akçe düştü — başkalarından.", "Hırkanı omzuna bıraktın; ihtiyar gözlerini kapatıp uzun bir dua etti. Yağmur başladığında üşüyen sen değildin."],
@@ -4781,6 +4785,9 @@ export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
   else if (id === "kar_lapasi") { if (choice === 0) { addStatXp(s, "stamina", 2); p.health = Math.min(100, p.health + 1); } else p.hunger = Math.min(100, p.hunger + 2); }
   else if (id === "sahaf_tezgahi") { if (choice === 0) addStatXp(s, "intelligence", 2); else gainSkill(s, "social", 2); }
   else if (id === "kopru_dilencisi") { if (choice === 0) { gainSkill(s, "social", 2); bumpNam(p, "comert", 1); } else { bumpNam(p, "comert", 1); p.reputation = Math.min(100, p.reputation + 1); } }
+  else if (id === "misket_meydani") { if (choice === 0) { addStatXp(s, "intelligence", 2); gainSkill(s, "social", 1); } else addStatXp(s, "intelligence", 2); }
+  else if (id === "leylek_yuvasi") { if (choice === 0) { p.health = Math.min(100, p.health + 1); gainSkill(s, "social", 1); } else addStatXp(s, "intelligence", 2); }
+  else if (id === "kagit_gemi") { if (choice === 0) gainSkill(s, "social", 2); else { gainSkill(s, "crafting", 1); addStatXp(s, "intelligence", 1); } }
   const rtr = MICRO_R_TR[id];
   push(s, "gunluk", rtr ? rtr[choice] : "", "kişisel", false, { k: `micro.${id}.r${choice}` });
   return s;
