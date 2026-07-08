@@ -1054,6 +1054,25 @@ export const DILEMMAS: Dilemma[] = [
       { label: "İki karışı hediye say", delta: { money: -15, reputation: 6, nam: { comert: 2 } }, result: "'Duvar senin olsun, gölgesi bize yeter' dedin. Söz mahallede dolaştı; iki karış toprak, iki kat hayır dua getirdi." },
     ],
   },
+  // ── Yoldaşlara tepki veren ikilemler: köpeği/kedisi olanın kapısını dünya başka çalar ──
+  {
+    id: "tavuk_davasi", icon: "scales", title: "Tavuk Davası",
+    text: "Komşu kapıda, kucağında boynu bükük bir tavuk: sabah senin köpeğin kümese dalmış. Köpeğin avlunun köşesinde suçlu suçlu kuyruk sallıyor; komşunun gözü sende.",
+    when: (p) => !!p.dog && p.age >= 14,
+    choices: [
+      { label: "Bedelini öde, gönlünü al", delta: { money: -8, honor: 3, reputation: 1 }, result: "Tavuğun bedelini saydın, üstüne bir özür koydun. Komşu akşam kapıya bir sepet yumurta bıraktı: kavga tavuktan çıkar, dostluk insandan." },
+      { label: "Kanıt yok — inkâr et", delta: { honor: -3, reputation: -2 }, result: "Gören yok deyip kapıyı kapadın. Komşu bir daha selam vermedi; o akşam köpeğin kapıda, sen içerideydin — ikinizin de kulakları düşüktü." },
+    ],
+  },
+  {
+    id: "iki_evin_kedisi", icon: "house", title: "İki Evin Kedisi",
+    text: "Mahalleden bir çocuk ağlayarak geldi: senin diye sevdiğin kedi onlarınmış; meğer aylardır iki evde birden yaşıyormuş. Kedi ikinizin ortasına oturmuş, umursamaz, patisini yalıyor.",
+    when: (p) => !!p.pet,
+    choices: [
+      { label: "Kediyi çocuğa bırak", delta: { honor: 2, reputation: 1 }, result: "Çocuk kediyi kucaklayıp gitti; üç gün sonra kedi pencerende belirdi. Kediler sahibini kendi seçer — artık iki evi, iki tası var; çocukla da kapıda selamınız." },
+      { label: "Bu ev onun evi, de", delta: { honor: -1 }, result: "Çocuk dudağı titreyerek gitti. Kedi o gece yine kayboldu; iki gün sonra bıyıkları tuzlu döndü. Kimseye sormadan iki evi birden idare ediyor; sen bilmiyormuş gibi yapıyorsun." },
+    ],
+  },
 ];
 
 // ── Şenlikler: yılın nabzı — sabit aylarda dönen mevsim sahneleri. ──
