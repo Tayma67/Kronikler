@@ -15,7 +15,7 @@ import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, Eulog
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
-import { playTap, playChime } from "../../lib/sound";
+import { playTap, playChime, playSaz } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
 
@@ -168,7 +168,7 @@ export default function Dashboard() {
         if (fest) { setDilemma(fest); playChime(); }
         else {
           const roll = Math.random();
-          if (roll < 0.28) { const d = pickDilemma(state); if (d) setDilemma(d); }
+          if (roll < 0.28) { const d = pickDilemma(state); if (d) { setDilemma(d); playSaz(); } }
           else if (roll < 0.50) { const list = opportunitiesFor(state); if (list.length) setOpp(list[Math.floor(Math.random() * list.length)]); }
         }
       }

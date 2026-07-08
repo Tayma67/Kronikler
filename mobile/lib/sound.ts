@@ -15,6 +15,9 @@ let kilic: AudioPlayer | null = null;
 let davul: AudioPlayer | null = null;
 let yenilgi: AudioPlayer | null = null;
 let kese: AudioPlayer | null = null;
+let ninni: AudioPlayer | null = null;
+let saz: AudioPlayer | null = null;
+let nal: AudioPlayer | null = null;
 
 // ── Arka plan müziği: Kervan Yolu teması (prosedürel, paket içi, 48 sn dikişsiz döngü). Ayrı anahtar; varsayılan AÇIK. ──
 const MKEY = "kronikler_music_v1";
@@ -70,6 +73,9 @@ function ensure() {
     if (!davul) davul = createAudioPlayer(require("../assets/sfx/davul.wav"));
     if (!yenilgi) yenilgi = createAudioPlayer(require("../assets/sfx/yenilgi.wav"));
     if (!kese) kese = createAudioPlayer(require("../assets/sfx/kese.wav"));
+    if (!ninni) ninni = createAudioPlayer(require("../assets/sfx/ninni.wav"));
+    if (!saz) saz = createAudioPlayer(require("../assets/sfx/saz.wav"));
+    if (!nal) nal = createAudioPlayer(require("../assets/sfx/nal.wav"));
   } catch {}
 }
 function fire(p: AudioPlayer | null) {
@@ -88,3 +94,6 @@ export function playWarDrum() { if (!enabled) return; ensure(); fire(davul); }
 export function playClash() { if (!enabled) return; ensure(); fire(kilic); }
 export function playDefeat() { if (!enabled) return; ensure(); fire(yenilgi); }
 export function playCoin() { if (!enabled) return; ensure(); fire(kese); }
+export function playLullaby() { if (!enabled) return; ensure(); fire(ninni); } // doğum: müzik kutusu motifi
+export function playSaz() { if (!enabled) return; ensure(); fire(saz); }       // ikilem kapıyı çaldı: mızrap vurgusu
+export function playHooves() { if (!enabled) return; ensure(); fire(nal); }    // yolculuk: dörtnala

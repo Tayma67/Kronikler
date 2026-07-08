@@ -6,7 +6,7 @@ import { useGame } from "./store";
 import { socialTierIndex } from "./game";
 import { useI18n } from "./i18n";
 import { hap } from "./haptics";
-import { playFanfare, playTap, playToll, playChime, playVictory } from "./sound";
+import { playFanfare, playTap, playToll, playChime, playVictory, playLullaby } from "./sound";
 import { C, F } from "./theme";
 import { GameIcon } from "./icons";
 
@@ -119,7 +119,7 @@ export function StatDeltaOverlay() {
     if (!state) return;
     const list = state.player.children || [];
     if (childCount.current < 0 || gen.current !== state.player.generation) { childCount.current = list.length; return; }
-    if (list.length > childCount.current) { setBirth({ name: list[list.length - 1] || "", tick: Date.now() }); hap("success"); playChime(); setTimeout(() => setBirth(null), 2600); }
+    if (list.length > childCount.current) { setBirth({ name: list[list.length - 1] || "", tick: Date.now() }); hap("success"); playLullaby(); setTimeout(() => setBirth(null), 2600); }
     childCount.current = list.length;
   }, [state?.player.children?.length]);
 
