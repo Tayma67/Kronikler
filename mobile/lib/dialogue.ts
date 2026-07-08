@@ -44,43 +44,43 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
   const pick = (base: string, n: number) => { const i = Math.floor(Math.random() * n); return L(i === 0 ? base : base + (i + 1)); };
 
   if (intent === "hosbes") {
-    const line = hitch ? L("dlg.hosbes.hitch") : rt === "yabancı" ? pick("dlg.hosbes.stranger", 2) : pick("dlg.hosbes.warm", 2);
+    const line = hitch ? L("dlg.hosbes.hitch") : rt === "yabancı" ? pick("dlg.hosbes.stranger", 3) : pick("dlg.hosbes.warm", 3);
     return { line, moodDelta: hitch ? 2 : 5, relDelta: hitch ? 2 : 4, memory: L("dlg.hosbes.m") };
   }
   if (intent === "iltifat") {
     const backfire = t === "kibirli" || t === "ciddi" || mt === "küs";
-    if (backfire) return { line: pick("dlg.iltifat.bad", 2), moodDelta: -3, relDelta: -2, memory: L("dlg.iltifat.bad.m") };
+    if (backfire) return { line: pick("dlg.iltifat.bad", 3), moodDelta: -3, relDelta: -2, memory: L("dlg.iltifat.bad.m") };
     const gain = 5 + Math.floor(charisma);
-    return { line: pick("dlg.iltifat.good", 2), moodDelta: 8, relDelta: gain, memory: L("dlg.iltifat.good.m") };
+    return { line: pick("dlg.iltifat.good", 3), moodDelta: 8, relDelta: gain, memory: L("dlg.iltifat.good.m") };
   }
   if (intent === "dert") {
     const opens = t === "dertli" || t === "yalnız" || t === "sıcakkanlı" || rt !== "yabancı";
-    if (!opens) return { line: pick("dlg.dert.closed", 2), moodDelta: 1, relDelta: 2, memory: L("dlg.dert.closed.m") };
-    return { line: pick("dlg.dert.open", 2), moodDelta: 10, relDelta: 8, memory: L("dlg.dert.open.m") };
+    if (!opens) return { line: pick("dlg.dert.closed", 3), moodDelta: 1, relDelta: 2, memory: L("dlg.dert.closed.m") };
+    return { line: pick("dlg.dert.open", 3), moodDelta: 10, relDelta: 8, memory: L("dlg.dert.open.m") };
   }
   if (intent === "is") {
     const pn = professionNameL(npc.profession, lang);
-    const line = (hitch ? pick("dlg.is.cold", 2) : pick("dlg.is.warm", 2)).replace("%p", pn);
+    const line = (hitch ? pick("dlg.is.cold", 3) : pick("dlg.is.warm", 3)).replace("%p", pn);
     return { line, moodDelta: hitch ? 1 : 4, relDelta: hitch ? 1 : 3, memory: L("dlg.is.m") };
   }
   if (intent === "aile") {
     const opens = rt !== "yabancı" || t === "sıcakkanlı" || t === "dertli";
-    if (!opens) return { line: pick("dlg.aile.closed", 2), moodDelta: 1, relDelta: 1, memory: L("dlg.aile.closed.m") };
-    return { line: pick("dlg.aile.open", 2), moodDelta: 6, relDelta: 5, memory: L("dlg.aile.open.m") };
+    if (!opens) return { line: pick("dlg.aile.closed", 3), moodDelta: 1, relDelta: 1, memory: L("dlg.aile.closed.m") };
+    return { line: pick("dlg.aile.open", 3), moodDelta: 6, relDelta: 5, memory: L("dlg.aile.open.m") };
   }
   if (intent === "dunya") {
-    return { line: pick("dlg.dunya.line", 2), moodDelta: 3, relDelta: 3, memory: L("dlg.dunya.m") };
+    return { line: pick("dlg.dunya.line", 3), moodDelta: 3, relDelta: 3, memory: L("dlg.dunya.m") };
   }
   if (intent === "hedef") {
-    const line = pick("dlg.hedef.line", 2).replace("%g", goalL(npc.goal, lang));
+    const line = pick("dlg.hedef.line", 3).replace("%g", goalL(npc.goal, lang));
     return { line, moodDelta: rt === "yabancı" ? 2 : 7, relDelta: rt === "yabancı" ? 2 : 6, memory: L("dlg.hedef.m") };
   }
   // şaka
   const likes = t === "neşeli" || t === "sıcakkanlı";
   const dislikes = t === "ciddi" || t === "dindar" || t === "kibirli";
-  if (dislikes && mt !== "neşeli") return { line: pick("dlg.saka.bad", 2), moodDelta: -4, relDelta: -3, memory: L("dlg.saka.bad.m") };
-  if (likes) return { line: pick("dlg.saka.good", 2), moodDelta: 12, relDelta: 7, memory: L("dlg.saka.good.m") };
-  return { line: pick("dlg.saka.mild", 2), moodDelta: 5, relDelta: 4, memory: L("dlg.saka.mild.m") };
+  if (dislikes && mt !== "neşeli") return { line: pick("dlg.saka.bad", 3), moodDelta: -4, relDelta: -3, memory: L("dlg.saka.bad.m") };
+  if (likes) return { line: pick("dlg.saka.good", 3), moodDelta: 12, relDelta: 7, memory: L("dlg.saka.good.m") };
+  return { line: pick("dlg.saka.mild", 3), moodDelta: 5, relDelta: 4, memory: L("dlg.saka.mild.m") };
 }
 
 // NPC bazen kendi gündemini açar (Vercel _spontaneous_line). Ruh haline/hedefe göre; boş dönebilir.
