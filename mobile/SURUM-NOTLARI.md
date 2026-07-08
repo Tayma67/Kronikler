@@ -2,6 +2,21 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 431-449 eki (8 Temmuz, gece) — SESİN VE SURETİN ÇAĞI (GÖRSEL-İŞİTSEL PAKET)
+
+**Tek cümle (mağaza/what's new):**
+TR: "Oyun artık görülüyor ve duyuluyor: arka planda KERVAN YOLU MÜZİĞİ (48 saniyelik dikişsiz döngü, arka planda kendiliğinden susar), 17 ekranda kısık ışıklı FRESK DOKUSU, savaş meydanında davul-kılıç-yenilgi sesleri, düğünde ZURNA-DAVUL, zikirde NEY NEFESİ, hamamda TAS SUYU, yolculukta NAL SESİ ve beşikte NİNNİ; menzil mektubuna günlükten TEK DOKUNUŞLA CEVAP; mağaza çeyizi (öne çıkan görsel, 512'lik ikon, iki dilli gizlilik politikası) yayına hazır — hamamda sohbet, sadaka taşında adsız sevap, tanrı misafiri ve kadı terazisi de bu kervanla geldi."
+EN: "The game can now be seen and heard: a CARAVAN ROAD theme in the background (48-second seamless loop, silent when backgrounded), a dim FRESCO texture across 17 screens, war drums-steel-defeat on the battlefield, ZURNA AND DRUM at weddings, a NEY BREATH at prayer, BASIN WATER at the bathhouse, HOOFBEATS on the road and a LULLABY at the cradle; ONE-TAP REPLIES to realm letters from the journal; the store trousseau (feature graphic, 512 icon, bilingual privacy policy) ready for launch — bathhouse talk, the alms stone's nameless merit, the unbidden guest and the qadi's scales came with this caravan too."
+
+**Öne çıkanlar:**
+- **Arka plan müziği:** prosedürel "Kervan Yolu" teması — pes dem, ud tınılı arpej, uzak davul; dikişsiz döngü. Uygulama arka plana geçince susar, dönünce sürer; sade modda (düşük RAM) varsayılan kapalı — pil dostu.
+- **Fresk dokusu:** ana menü freski kısık ışıkla (opasite 0.1) 17 ekranın ardında — pano, pazar, mülkler, karakter, hanedan, kronik... Sade modda çizilmez.
+- **Ses evreni 16 efekte çıktı:** savaş (cenk davulu, çelik çınlaması, yenilgi gümbürtüsü), kese şıngırtısı, ikilemde mızrap, beşikte ninni, yolda dörtnala; bu dalgalarla düğüne zurna-davul havası, zikre/tekkeye ney nefesi, hamama tas suyu eklendi.
+- **Mektuba cevap (MP):** menzilden gelen mektup günlükte gönderenin adını taşır; tek dokunuşla karşılık yollanır (feat 4+ sunucu ister).
+- **Gündelik ritüeller (SP):** hamam ziyareti (sağlık + sohbet, bazen kulağa fısıltı), sadaka taşı (kimse görmeden bırakılan akçe — yalnız şeref işler, nam-itibar işlemez), tanrı misafiri (ev sahibine hediye/övgü/hikâye) ve kadı terazisi (dükkân sahibine dürüstlük sınavı).
+- **Mağaza çeyizi:** 1024×500 öne çıkan görsel, 512×512 ikon, TR+EN gizlilik politikası (`store/GIZLILIK.md`) — Play Console alanlarına doğrudan girilebilir.
+- **Denetim tabanı sıfırlandı:** i18n/ikon denetçisi artık "TEMİZ (0 sorun)" der; tek sorun bile yeni hata demektir.
+
 ## Dalga 421-428 eki (8 Temmuz, gece) — TOPRAK VE DEFTER (MÜLK YÖNETİMİ)
 
 **Tek cümle (mağaza/what's new):**
