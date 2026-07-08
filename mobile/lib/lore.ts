@@ -50,7 +50,7 @@ export function rumors(turn: number, seed: number, lang: Lang = "tr", roster?: {
   for (let i = 0; i < n; i++) {
     const npc = npcs[Math.floor(r() * npcs.length)];
     // Bazen NPC'nin hayat hedefine dair, bazen yerelleşmiş genel dedikodu (çocukların hedefi yok → genel).
-    const body = npc.goal && r() < 0.45 ? `${npc.name} ${goalL(npc.goal, lang)}.` : tFor(lang, `gossip.${Math.floor(r() * 44)}`).replace("%n", npc.name);
+    const body = npc.goal && r() < 0.45 ? `${npc.name} ${goalL(npc.goal, lang)}.` : tFor(lang, `gossip.${Math.floor(r() * 48)}`).replace("%n", npc.name);
     out.push({ id: `rumor_${turn}_${i}`, kind: "dedikodu", title: npc.name, body });
   }
   return out;
