@@ -176,7 +176,7 @@ export function effStat(p: Player, key: keyof Stats): number {
   return Math.max(0, base - pen);
 }
 // Mülk: konuma bağlı (loc) + kondisyon (cond 0..100) + kademe (level 1..3). Gelir refah×kondisyon×kademe.
-export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number }[]; }
+export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number }[]; tenant?: boolean; }
 export const PROP_MAX_LEVEL = 3;
 export function propUpgradeCost(pr: Property): number { return Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * (pr.level || 1) * 0.8); }
 export function upgradeProperty(prev: GameState, index: number): GameState {
@@ -331,6 +331,15 @@ export function childNature(name: string, generation: number): string {
 }
 // ── Mülk-işçi (NPC istihdamı) ekonomisi — Vercel property_system.py portu ──
 // Bir mülkün işçi alabileceği yer sayısı: tip slotu + her kademe için +1.
+// Ev kiracısı: kiraya ver/çıkar. Kiralık ev kira getirir (0.7 → 1.25) ama hızlı yıpranır ve kiracı ara sıra aksatır.
+export function setTenant(prev: GameState, index: number, on: boolean): GameState {
+  const s = clone(prev); const p = s.player; const pr = p.properties[index];
+  if (!pr || pr.type !== "ev" || p.dead || !!pr.tenant === on) return s;
+  pr.tenant = on;
+  if (on) push(s, "mülk", `${pr.loc}'daki ev kiraya verildi; her ay kira işler, ev de yıpranır.`, "kişisel", false, { k: "evj.tenantIn", p: [{ pl: pr.loc }] });
+  else push(s, "mülk", `${pr.loc}'daki evin kiracısı çıkarıldı; anahtar yine senin cebinde.`, "kişisel", false, { k: "evj.tenantOut", p: [{ pl: pr.loc }] });
+  return s;
+}
 export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); }
 // Yaşayan dünya kadrosu: deterministik temel (isim dile göre çözülür) + kalıcı evrim katmanı (ölüm/yaş/doğum).
 // Kadro büyüklüğü yerleşim tipine göre: şehir kalabalık, köy tenha (canlı dünya hissi).
@@ -1667,14 +1676,16 @@ export function advance(prev: GameState, n = 1): GameState {
       const typeMult = pr.type === "tarla" ? ({ "İlkbahar": 1.0, "Yaz": 1.15, "Sonbahar": 1.7, "Kış": 0.25 }[cal.season] ?? 1)
         : pr.type === "dukkan" ? (1 + effProsp / 300)
         : pr.type === "han" ? (0.6 + (effProsp + effSec) / 250)  // han: yolcu trafiği refah+güvenlikle artar
-        : pr.type === "ev" ? 0.7 : 1;
+        : pr.type === "ev" ? (pr.tenant ? 1.25 : 0.7) : 1; // kiracılı ev kira getirir
       // Piyasa mevsimi tapuya işler: kuraklık tarlayı/bağı kurutur; kıtlıkta ve bollukta değirmenin çarkı hız keser/kesmez.
       const me = s.marketEvent && (s.marketEvent.until ?? 0) > s.turn ? s.marketEvent.key : null;
       const mevMult = me === "kuraklik" ? (pr.type === "tarla" ? 0.6 : pr.type === "bag" ? 0.7 : 1)
         : me === "kithasat" ? (pr.type === "tarla" ? 0.7 : pr.type === "degirmen" ? 1.15 : 1)
         : me === "bolluk" ? (pr.type === "tarla" ? 1.1 : pr.type === "degirmen" ? 1.2 : 1)
         : 1;
-      inc += base * condProspLevel * typeMult * mevMult;
+      const rentSkip = pr.type === "ev" && pr.tenant && chance(0.04); // kiracı ara sıra aksatır
+      if (rentSkip) { if (i === n - 1) push(s, "mülk", `${pr.loc}'daki evin kiracısı bu ay kirayı aksattı; "hasat gelince" dedi, kapıyı yavaş kapattı.`, "kişisel", false, { k: "evj.tenantSkip", p: [{ pl: pr.loc }] }); }
+      else inc += base * condProspLevel * typeMult * mevMult;
       if (pr.type === "ev" && (pr.level || 1) >= 2 && chance(0.04)) s.player.reputation = Math.min(100, s.player.reputation + 1); // köklü ev → itibar damlası
       // İşçi ekonomisi: çalışan NPC'ler üretimi artırır ama ücret ister.
       const w = propWorkerStats(s, pr, base, condProspLevel);
@@ -1682,7 +1693,7 @@ export function advance(prev: GameState, n = 1): GameState {
       // Mülk defteri: yıllık net (gelir − ücret) geçmişi (Vercel property ledger; şeffaflık).
       if (i === n - 1 && s.turn > 0 && s.turn % 12 === 0) { pr.ledger = pr.ledger || []; pr.ledger.push({ y: Math.floor(s.turn / 12), net: Math.round((base * condProspLevel * typeMult * mevMult + w.gross - w.wage) * pmult) }); if (pr.ledger.length > 6) pr.ledger = pr.ledger.slice(-6); }
       const y = propYield(s, pr); if (y) { const sm = pr.type === "tarla" ? ({ "İlkbahar": 0.6, "Yaz": 1.0, "Sonbahar": 1.8, "Kış": 0.2 }[cal.season] ?? 1) : 1; const q = Math.round(y.qty * sm); if (q > 0) produced[y.good] = (produced[y.good] || 0) + q; } // işçi emeği → gerçek hammadde (tarla mevsimlik)
-      if (pr.cond > 40 && chance(0.2)) pr.cond -= 1;                                   // zamanla aşınma
+      if (pr.cond > 40 && chance(pr.type === "ev" && pr.tenant ? 0.35 : 0.2)) pr.cond -= 1; // zamanla aşınma (kiracılı ev daha hızlı yıpranır)
       if (effSec < 30 && chance(0.02 + (effSec < 10 ? 0.03 : 0))) {                    // düşük güvenlikte (eşkıya/yangın olayı kötüleştirir) yağma
         pr.cond = Math.max(20, pr.cond - 15);
         if (i === n - 1) push(s, "mülk_yagma", `${PROPERTY_TYPES[pr.type]?.name || "Mülkün"} (${pr.loc}) yağmaya uğradı; onarım gerek.`, "kişisel", false, { k: "evj.propRaid", p: [{ pt2: pr.type }, { pl: pr.loc }] });
