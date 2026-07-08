@@ -4619,7 +4619,7 @@ export function doFactionTask(prev: GameState, id: string): GameState {
 // Kıvılcım kartları (Vercel story_director _draw_spark): durgunlukta küçük bir an dünyayı hatırlatır.
 function sparkCard(s: GameState) {
   const p = s.player;
-  const card = rnd(["yabanci", "eskidost", "kese", "yolcu", "firin", "serce", "ruya", "usta", "mektup"]);
+  const card = rnd(["yabanci", "eskidost", "kese", "yolcu", "firin", "serce", "ruya", "usta", "mektup", "cesme", "yildiz"]);
   if (card === "yabanci") { p.reputation = Math.min(100, p.reputation + 1); push(s, "fisilti", "Bir yabancı yolda iki çift laf edip bir haber bıraktı.", "kişisel", false, { k: "spark.yabanci" }); }
   else if (card === "eskidost") { gainSkill(s, "social", 6); push(s, "sohbet", "Eski bir dost çıkageldi; hâl hatır sorup gönlünü ferahlattın.", "kişisel", false, { k: "spark.eskidost" }); }
   else if (card === "kese") { const g = 5 + Math.floor(Math.random() * 9); p.money += g; push(s, "gunluk", `Yolda küçük bir kese buldun (+${g} akçe).`, "kişisel", false, { k: "spark.kese", p: [g] }); }
@@ -4628,6 +4628,8 @@ function sparkCard(s: GameState) {
   else if (card === "serce") { p.health = Math.min(100, p.health + 1); push(s, "gunluk", "Duvar dibinde soluklanırken bir serçe yanı başına kondu; bir süre ikiniz de sessizce dünyayı seyrettiniz.", "kişisel", false, { k: "spark.serce" }); }
   else if (card === "usta") { gainSkill(s, "crafting", 6); push(s, "gunluk", "Bir ustanın tezgâhı başında elini uzun uzun seyrettin; bakarak da öğreniliyor.", "kişisel", false, { k: "spark.usta" }); }
   else if (card === "mektup") { addStatXp(s, "intelligence", 1); p.reputation = Math.min(100, p.reputation + 1); push(s, "gunluk", "Okuması olmayan bir komşuya gelen mektubu okudun; iki satır yazı, iki kelime dua kazandırdı.", "kişisel", false, { k: "spark.mektup" }); }
+  else if (card === "cesme") { p.honor = Math.min(100, p.honor + 1); push(s, "gunluk", "Çeşme başında bir ihtiyarın testisini doldurup evine kadar taşıdın; kapıda iki dua aldın — biri sana, biri soyuna.", "kişisel", false, { k: "spark.cesme" }); }
+  else if (card === "yildiz") { addStatXp(s, "intelligence", 1); push(s, "gunluk", "Damda serinlerken yıldız saydın; biri kaydı, içinden bir dilek geçti. Kimseye söylemedin — söylenirse tutmazmış.", "kişisel", false, { k: "spark.yildiz" }); }
   else { push(s, "gunluk", "Gece tuhaf bir rüya gördün; sabaha içinde bir his kaldı.", "kişisel", false, { k: "spark.ruya" }); }
   if (s.story) s.story.lull = 0;
 }
