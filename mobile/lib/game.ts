@@ -1809,6 +1809,8 @@ export function advance(prev: GameState, n = 1): GameState {
         "Rüzgâr uzaktan bir davul sesi getirdi; kimse nereden geldiğini kestiremedi.",
         "Gece bekçisi feneriyle iki kez kapının önünden geçti; sanki bir şey söyleyecekti, vazgeçti.",
         "Pazarda bir falcı avucuna bakmadan yüzüne baktı: 'Senin ayın dolu' deyip yürüdü.",
+        "Pencere pervazına bir güvercin kondu, ayağında iplik izi; kuş uçtu, iz aklında kaldı.",
+        "Kapının altından mühürsüz bir kâğıt süzüldü: tek satır, yarısı silik — 'hazır ol' okunuyor gibi.",
       ];
       const fi = Math.floor(Math.random() * FIS.length);
       push(s, "fisilti", FIS[fi], "kişisel", false, { k: "fis." + fi });
