@@ -2391,6 +2391,8 @@ const WORLD_NEWS: string[] = [
   "%b ile %b2 kâtipleri ortak bir kervan sözlüğü yazıyor: kırk dilin pazarlık sözü tek deftere iniyor.",
   "%b kalesinin burcuna bir çift şahin yuva yaptı; bekçiler kuşları saymadan nöbet devri yapmıyor.",
   "%b külhanında közlenen kestanenin kokusu %b2 pazarında anılıyor; külhancı 'tarif mezara gelir benimle' diyor.",
+  "%b geçidindeki yankı taşına ad söyleyenin sesi üç kere dönermiş; kervancılar sıraya girmiş, geçit gecikmeli işliyor.",
+  "%b ile %b2 müneccimleri ortak bir yıldız takvimi bastırdı; iki pazarın panayır günleri artık çakışmıyor.",
 ];
 function worldNews(s: GameState) {
   const i1 = Math.floor(Math.random() * BEYLIKS.length);
