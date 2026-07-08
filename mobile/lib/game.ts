@@ -1641,7 +1641,7 @@ export function advance(prev: GameState, n = 1): GameState {
     if (s.player.injuries?.length) {
       for (const inj of s.player.injuries) if (!inj.permanent) inj.weeks_left -= 1;
       const healed = s.player.injuries.filter((inj) => !inj.permanent && inj.weeks_left <= 0);
-      if (healed.length && i === n - 1) push(s, "iyilesme", `Yaraların iyileşti: ${healed.map((h) => h.label).join(", ")}.`, "kişisel", false, { k: "evj.heal", p: [{ wds: healed.map((h) => Math.max(0, INJURY_POOL.findIndex((w) => w.label === h.label))) }] });
+      if (healed.length && i === n - 1) { const hv2 = chance(0.5); push(s, "iyilesme", hv2 ? `Sargılar çözüldü; ${healed.map((h) => h.label).join(", ")} artık yalnız hatıra. Beden unutur, defter unutmaz.` : `Yaraların iyileşti: ${healed.map((h) => h.label).join(", ")}.`, "kişisel", false, { k: hv2 ? "evj.heal2" : "evj.heal", p: [{ wds: healed.map((h) => Math.max(0, INJURY_POOL.findIndex((w) => w.label === h.label))) }] }); }
       s.player.injuries = s.player.injuries.filter((inj) => inj.permanent || inj.weeks_left > 0);
     }
     // Mülk pasif geliri — KONUMA (şehir refahı) + KONDİSYONA göre; düşük güvenlikte yağma + aşınma
