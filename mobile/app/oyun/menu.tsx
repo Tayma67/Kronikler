@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Alert, ScrollView } from "react-native";
+import { View, Text, Pressable, Alert, ScrollView, ImageBackground } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -69,7 +69,8 @@ export default function Menu() {
     ]);
   };
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 18, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 90 }}>
+    <ImageBackground source={require("../../assets/yeni_oyun_bg.png")} resizeMode="cover" imageStyle={{ opacity: 0.13 }} style={{ flex: 1, backgroundColor: C.bg }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 90 }}>
       {/* Başlık */}
       <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1.5, textAlign: "center" }}>{t("menu.title")}</Text>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, textAlign: "center", marginTop: 2 }}>{t("app.subtitle")}</Text>
@@ -124,5 +125,6 @@ export default function Menu() {
       </Pressable>
       )}
     </ScrollView>
+    </ImageBackground>
   );
 }
