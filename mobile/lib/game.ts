@@ -1752,6 +1752,9 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     } else if (!dog.old && yasAy > dog.span - 24) {
       dog.old = true;
       push(s, "gunluk", `${dog.n} artık kervan geçse de yerinden güç kalkıyor; gözleri buğulu ama kulakları hâlâ kapıda. Sadık olan yaşlanır, vazgeçmez.`, "kişisel", false, { k: "evj.dogOld", p: [dog.n] });
+    } else if (chance(0.025)) {
+      if (chance(0.5)) push(s, "gunluk", `${dog.n} ocak başında uyurken patileri seğirdi, boğuk boğuk hırladı; rüyasında ya bir sürüyü topluyor ya bir kurdu kovalıyordu. Uyanınca mahcup esnedi.`, "kişisel", false, { k: "evj.dogDream", p: [dog.n] });
+      else push(s, "gunluk", `Sağanağın ortasında ${dog.n} eve dalıp silkelendi; yarısı duvara, yarısı sana. Islak köpek kokusu akşama dek ocak başından çıkmadı.`, "kişisel", false, { k: "evj.dogRain", p: [dog.n] });
     } else if (chance(0.03)) {
       push(s, "gunluk", `Gece yarısı ${dog.n} bir kez havladı, sonra sustu; sabah kapının önünde yabancı ayak izleri vardı — içeri girmemiş.`, "kişisel", false, { k: "evj.dogWatch", p: [dog.n] });
       dog.bond = Math.min(100, dog.bond + 1);
