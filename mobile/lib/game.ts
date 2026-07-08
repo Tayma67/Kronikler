@@ -833,6 +833,8 @@ export const MARKET_EVENTS: { key: string; goods: string[]; mult: number; months
   { key: "madendam", goods: ["demir", "bicak", "kilic", "zincir_zirh"], mult: 0.7, months: 4, text: "Yeni maden damarı: demir ve demir işi ucuzladı." },
   { key: "balbolluk", goods: ["bal", "sifa"], mult: 0.75, months: 3, text: "Yaylada arılar coştu: bal bollaştı, macunlar ucuzladı." },
   { key: "tuzyolu", goods: ["et", "balik", "peynir"], mult: 1.3, months: 3, text: "Tuz yolu kesildi: salamura ve kışlık pahalandı." },
+  { key: "dugunmev", goods: ["akik_yuzuk", "kehribar_tespih", "gumus_gerdanlik", "altin_bilezik", "ipek_kaftan"], mult: 1.35, months: 3, text: "Düğün mevsimi: takı ve kaftan kapışılıyor." },
+  { key: "balikakin", goods: ["balik", "corba"], mult: 0.7, months: 2, text: "Nehirde balık akını: tezgâhlar dolu, fiyat dibe indi." },
 ];
 // Bir malın anlık fiyat çarpanı: mevsim × aktif piyasa olayı × ARZ-TALEP (NPC meslekleri) × oyuncu baskısı.
 export function goodPriceMult(s: GameState, goodId: string): number {
