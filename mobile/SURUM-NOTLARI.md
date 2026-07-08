@@ -2,6 +2,20 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 351-359 eki (8 Temmuz, öğle) — KÜL VE KIVILCIM
+
+**Tek cümle (mağaza/what's new):**
+TR: "Yirmi sekizinci yay bir yangınla açılıyor: YANIK DEĞİRMEN (25+) — kül soğur, soru kalır: kim yaktı? Havuzlar da taştı: 48 çarşı fısıltısı, 42 dünya haberi, 110 ikilem, 35 mikro an, 22 aile görevi, 19 ihtiyarlık anısı, 11 kıvılcım kartı; yol, tezgâh ve zekât satırları artık iki ağızla konuşuyor."
+EN: "The twenty-eighth arc opens with a fire: THE BURNED MILL (25+) — the ash cools, the question remains: who set it? The pools overflowed too: 48 bazaar whispers, 42 world news, 110 dilemmas, 35 micro-moments, 22 family quests, 19 old-age memories, 11 spark cards; the road, the workbench and the alms lines now speak with two voices."
+
+**Öne çıkanlar:**
+- **Yanık Değirmen (SP, 28. yay, 25+):** izi sür ya da değirmeni ayağa kaldır; katran izi fırıncının ambarına, gece nöbeti komşu vadinin değirmencisine çıkar. Sus payı alan o değirmenin ekmeğini yiyemez.
+- **İki vicdan sınavı:** fırının son ekmeği ikiye bölünür mü (20+), gençlikte seni aldatan eski rakibe kapı açılır mı (50+).
+- **İki mikro an:** erik dalına konan oğul arısı, tıkanan bostan arkı — kavga suya karışır, akar gider.
+- **İkinci sesler:** en sık üç satır daha çift ağızlı — yolculuk, aylık çalışma, zekât.
+- **Aile defteri 22 görev:** Sohbet Ehli (sosyal 6) ve Yedi Yol Gören (7 yerleşim).
+- **İrili ufaklı:** fısıltı 44→48 (hazine kazısı, kırk yıllık turşu, ters nal, boş mektup), dünya haberi 40→42 (burçtaki şahinler, külhan kestanesi), 70+ anısı 17→19 (yorganın söküğü, kahvedeki seki), kıvılcım 9→11 (çeşme testisi, kayan yıldız); rehber sayıları tazelendi.
+
 ## Dalga 341-349 eki (8 Temmuz, sabah) — SESLERİN DEVAMI
 
 **Tek cümle (mağaza/what's new):**
