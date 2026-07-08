@@ -4307,6 +4307,11 @@ export function eulogy(s: GameState): { epithet: string; lines: EulLine[]; close
   // Sadık dostlar: bir ömür boyu kurulan bağlar ardından ağlar
   const loyalN = Object.values(s.relationships || {}).filter((v) => (v as number) >= 50).length;
   if (loyalN > 0) lines.push({ k: "eul.friends", p: [loyalN] });
+  // Yol ve zanaat da mirastır: çok gezen handa, çok deneyen tezgâhta anılır.
+  const seenN = new Set([...(p.cities_visited || []), p.location_name]).size;
+  if (seenN >= 10) lines.push({ k: "eul.traveled", p: [seenN] });
+  const profN = new Set([...(p.professions_tried || []), p.profession].filter((x) => x !== "işsiz")).size;
+  if (profN >= 4) lines.push({ k: "eul.trades", p: [profN] });
   return { epithet: deathEpithet(s), lines, close: dynastyNote(p) };
 }
 

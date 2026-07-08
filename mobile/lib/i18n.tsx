@@ -2424,7 +2424,7 @@ const EULX: Record<Lang, Dict> = {
     "eul.familySpouse": "%1 ile bir ocak kurdu, %2 evlat yetiştirdi.",
     "eul.familyChildren": "%1 evlat yetiştirdi; soyu devam edecek.",
     "eul.noHeir": "Soyunu sürdürecek bir evlat bırakmadı; hikâyesi onunla kapandı.",
-    "eul.friends": "Ardından %1 sadık dost ağladı; sofrasında kurulan bağlar mezarına dek geldi.","eul.grandchildren": "%1 torun gördü; soyunun filizlendiğine şahit oldu.",
+    "eul.traveled":"%1 yerleşime ayak bastı; adı hanlarda hâlâ selamla anılır.","eul.trades":"%1 ayrı zanaatta ter döktü; her tezgâhta bir izi kaldı.","eul.friends": "Ardından %1 sadık dost ağladı; sofrasında kurulan bağlar mezarına dek geldi.","eul.grandchildren": "%1 torun gördü; soyunun filizlendiğine şahit oldu.",
   },
   en: {
     "eul.fameHigh": "Their name was known across the realm, spoken of at every table.",
@@ -2444,7 +2444,7 @@ const EULX: Record<Lang, Dict> = {
     "eul.familySpouse": "They built a home with %1 and raised %2 child(ren).",
     "eul.familyChildren": "They raised %1 child(ren); their line will go on.",
     "eul.noHeir": "They left no child to continue their line; their story closed with them.",
-    "eul.friends": "%1 loyal friend(s) wept at their passing; bonds forged at their table followed them to the grave.","eul.grandchildren": "They saw %1 grandchild(ren); they witnessed their line flower.",
+    "eul.traveled":"Set foot in %1 settlements; the name is still greeted in the inns.","eul.trades":"Sweated at %1 different trades; every bench keeps a trace.","eul.friends": "%1 loyal friend(s) wept at their passing; bonds forged at their table followed them to the grave.","eul.grandchildren": "They saw %1 grandchild(ren); they witnessed their line flower.",
   },
   es: {
     "eul.fameHigh": "Su nombre se conocía por todo el reino, se mencionaba en las mesas.",
@@ -2464,7 +2464,7 @@ const EULX: Record<Lang, Dict> = {
     "eul.familySpouse": "Formó un hogar con %1 y crió %2 hijo(s).",
     "eul.familyChildren": "Crió %1 hijo(s); su linaje continuará.",
     "eul.noHeir": "No dejó hijo que continuara su linaje; su historia se cerró ahí.",
-    "eul.friends": "%1 amigo(s) leal(es) lloraron su partida; los lazos de su mesa lo acompañaron hasta la tumba.","eul.grandchildren": "Vio %1 nieto(s); fue testigo de cómo florecía su linaje.",
+    "eul.traveled":"Pisó %1 poblaciones; su nombre aún se saluda en las posadas.","eul.trades":"Sudó en %1 oficios distintos; en cada banco quedó una huella.","eul.friends": "%1 amigo(s) leal(es) lloraron su partida; los lazos de su mesa lo acompañaron hasta la tumba.","eul.grandchildren": "Vio %1 nieto(s); fue testigo de cómo florecía su linaje.",
   },
   pt: {
     "eul.fameHigh": "O seu nome era conhecido por todo o reino, mencionado às mesas.",
@@ -2484,7 +2484,7 @@ const EULX: Record<Lang, Dict> = {
     "eul.familySpouse": "Formou um lar com %1 e criou %2 filho(s).",
     "eul.familyChildren": "Criou %1 filho(s); a sua linhagem continuará.",
     "eul.noHeir": "Não deixou filho que continuasse a linhagem; a sua história fechou-se aí.",
-    "eul.friends": "%1 amigo(s) leal(is) choraram a sua partida; os laços da sua mesa acompanharam-no até à cova.","eul.grandchildren": "Viu %1 neto(s); foi testemunha do florescer da sua linhagem.",
+    "eul.traveled":"Pisou %1 povoações; o nome ainda é saudado nas estalagens.","eul.trades":"Suou em %1 ofícios diferentes; em cada bancada ficou um rasto.","eul.friends": "%1 amigo(s) leal(is) choraram a sua partida; os laços da sua mesa acompanharam-no até à cova.","eul.grandchildren": "Viu %1 neto(s); foi testemunha do florescer da sua linhagem.",
   },
   ar: {
     "eul.fameHigh": "ذاع صيته في أنحاء الديار، وتُذكر سيرته على الموائد.",
@@ -2504,7 +2504,7 @@ const EULX: Record<Lang, Dict> = {
     "eul.familySpouse": "أسّس بيتًا مع %1 وربّى %2 من الأبناء.",
     "eul.familyChildren": "ربّى %1 من الأبناء؛ ونسله سيمتدّ.",
     "eul.noHeir": "لم يترك ولدًا يمدّ نسله؛ فطُويت حكايته معه.",
-    "eul.friends": "بكاه %1 من الأصدقاء الأوفياء؛ روابطُ مائدته رافقته إلى القبر.","eul.grandchildren": "رأى %1 من الأحفاد؛ وشهد نسله يزهر.",
+    "eul.traveled":"وطئت قدمه %1 من الديار؛ وما يزال اسمه يحيا في الخانات.","eul.trades":"عرق في %1 من الحرف؛ وفي كل منضدة بقي له أثر.","eul.friends": "بكاه %1 من الأصدقاء الأوفياء؛ روابطُ مائدته رافقته إلى القبر.","eul.grandchildren": "رأى %1 من الأحفاد؛ وشهد نسله يزهر.",
   },
   ru: {
     "eul.fameHigh": "Имя его знали по всей державе, поминали за столами.",
@@ -2524,7 +2524,7 @@ const EULX: Record<Lang, Dict> = {
     "eul.familySpouse": "Он создал дом с %1 и вырастил детей: %2.",
     "eul.familyChildren": "Он вырастил детей: %1; род его продолжится.",
     "eul.noHeir": "Он не оставил ребёнка, чтобы продолжить род; его история закрылась с ним.",
-    "eul.friends": "Его оплакивали верные друзья: %1; узы, скреплённые за его столом, дошли с ним до могилы.","eul.grandchildren": "Он увидел внуков: %1; стал свидетелем того, как цветёт его род.",
+    "eul.traveled":"Ступал в %1 поселений; имя до сих пор встречают поклоном на постоялых дворах.","eul.trades":"Проливал пот в %1 разных ремёслах; на каждом верстаке остался след.","eul.friends": "Его оплакивали верные друзья: %1; узы, скреплённые за его столом, дошли с ним до могилы.","eul.grandchildren": "Он увидел внуков: %1; стал свидетелем того, как цветёт его род.",
   },
 };
 
