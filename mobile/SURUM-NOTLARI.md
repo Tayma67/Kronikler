@@ -2,6 +2,20 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 401-409 eki (8 Temmuz, öğle) — ÇARKLAR DÖNÜYOR (SİSTEM PAKETİ)
+
+**Tek cümle (mağaza/what's new):**
+TR: "Bu paket kural getiriyor: hasmınla BARIŞ yolu (kese ve dil dökülür), kervana LONCA KEFALETİ (prim sekizde bir, yağma kaybının üçte ikisi döner), eve KİRACI (kira yüksek, yıpranma hızlı, aksama riski), TALİM MEYDANI (ayda bir paralı kılıç dersi), piyasa mevsimleri artık TAPUYA da işliyor (kuraklık tarlayı/bağı vurur, kıtlıkta değirmen kazanır) ve iki yeni davranışlı mizaç: sabırlı ile aceleci."
+EN: "This pack ships rules: a PEACE path with your nemesis (purse and words), GUILD SURETY for caravans (an eighth premium, two thirds of raid loss returned), a TENANT for your house (high rent, faster wear, skip risk), a TRAINING GROUND (one paid sword lesson a month), market seasons now reaching DEEDS (drought hurts fields and vineyards, scarcity feeds the mill) and two new living temperaments: patient and hasty."
+
+**Öne çıkanlar:**
+- **Hasımla barış (SP):** savaş ekranında ikinci yol — hediye kesesi gider (enflasyonlu), karizma+şeref şansı artırır; kabulde defter helalleşmeyle kapanır, redde gerilim büyür. Ayda bir girişim.
+- **Kervan kefaleti (SP):** pazarda sigorta anahtarı — prim 1/8 peşin; her yağmada kaybın 2/3'ü lonca kesesinden geri döner.
+- **Ev kiracısı (SP):** mülk kartında Kiraya Ver/Çıkar — kira geliri boş evin yaklaşık iki katı; ev hızlı yıpranır, kiracı bazen "hasat gelince" der.
+- **Talim meydanı (SP):** emekli sipahiden ayda bir ders — akçe gider, savaş becerisi ve güç işler.
+- **Mevsim tapuda (SP):** kuraklık tarla ×0.6 / bağ ×0.7; kıtlıkta tarla düşer ama değirmen ×1.15, bollukta değirmen ×1.2 — kıt hasat ayrıca değirmen sahibine tek seferlik pay bırakır.
+- **Canlanan mizaçlar:** sabırlı yabancıya bile derdini açar; aceleci hoşbeşi yarıda keser. Rehbere yeni sistemler maddesi 6 dilde eklendi.
+
 ## Dalga 391-399 eki (8 Temmuz, öğle) — TAŞ UNUTMAZ
 
 **Tek cümle (mağaza/what's new):**
