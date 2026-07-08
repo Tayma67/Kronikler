@@ -4805,9 +4805,17 @@ export function tendChild(prev: GameState): GameState {
 }
 // ── Ay-içi mikro an: panoda beliren tek satırlık, atlanabilir seçim — "aynı üç buton" hissini kırar.
 // Etkiler bilinçli olarak minicik: iki seçenek de geçerli, farm yok (an rastgele düşer, ertesi ay kaybolur).
-export const MICRO_IDS = ["saganak", "sokak_kedisi", "cirak_tabla", "eski_turku", "yol_soran", "yildiz_gecesi", "nalbant_kivilcimi", "harman_yeli", "bekci_feneri", "kuyu_kovasi", "pazarci_terazisi", "kirlangic_yuvasi", "degirmen_tasi", "gurbet_mektubu", "firin_koru", "cesme_olugu", "kacan_esek", "dugun_davulu", "semerci_ciragi", "ikindi_golgesi", "kar_lapasi", "sahaf_tezgahi", "kopru_dilencisi", "hamal_dengi", "tandir_dumani", "at_nali", "camasir_ipi", "sira_kazani"];
+export const MICRO_IDS = ["saganak", "sokak_kedisi", "cirak_tabla", "eski_turku", "yol_soran", "yildiz_gecesi", "nalbant_kivilcimi", "harman_yeli", "bekci_feneri", "kuyu_kovasi", "pazarci_terazisi", "kirlangic_yuvasi", "degirmen_tasi", "gurbet_mektubu", "firin_koru", "cesme_olugu", "kacan_esek", "dugun_davulu", "semerci_ciragi", "ikindi_golgesi", "kar_lapasi", "sahaf_tezgahi", "kopru_dilencisi", "hamal_dengi", "tandir_dumani", "at_nali", "camasir_ipi", "sira_kazani", "ogul_arisi", "tikali_arik"];
 export const MICRO_KID_IDS = ["misket_meydani", "leylek_yuvasi", "kagit_gemi", "agac_ucurtmasi", "kuzu_sayimi"]; // 6-12 yaş bandının kendi anları
 const MICRO_R_TR: Record<string, [string, string]> = {
+  ogul_arisi: [
+    "Duman tüttü, sepet dala kalktı; oğul vızıltıyla içeri aktı. Arıcı ilk balı senin adına ayırdı.",
+    "Kol açıp kalabalığı gerilettin; ne sokan oldu ne ezilen. Arıcı işini bitirince şapkasını sana salladı.",
+  ],
+  tikali_arik: [
+    "Dizlere kadar çamura girip yaprak ve dal yığınını söktün; su hendekte yeniden şarkısını buldu. İki komşu bir ağızdan sağ ol dedi.",
+    "Suyu ikiye bölen taşı beraber koydunuz; nöbetleşe sulama sözü verildi. Kavga suya karıştı, aktı gitti.",
+  ],
   camasir_ipi: [
     "Rüzgâra karşı koşup savrulanları tek tek topladın; yaşmaklar, gömlekler kollarında bir deste bulut gibiydi. Komşu kapıda gülerek karşıladı.",
     "Kapı kapı dolaşıp 'sizinki hangisi' diye sordun; çamaşırlar sahiplerini buldu, mahalle bir öğle boyu bunu konuştu.",
@@ -4897,6 +4905,8 @@ export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
   else if (id === "at_nali") { if (choice === 0) gainSkill(s, "crafting", 2); else addStatXp(s, "stamina", 3); }
   else if (id === "camasir_ipi") { if (choice === 0) addStatXp(s, "stamina", 2); else { gainSkill(s, "social", 2); bumpNam(p, "comert", 1); } }
   else if (id === "sira_kazani") { if (choice === 0) addStatXp(s, "strength", 2); else { gainSkill(s, "social", 2); p.reputation = Math.min(100, p.reputation + 1); } }
+  else if (id === "ogul_arisi") { if (choice === 0) { addStatXp(s, "stamina", 2); gainSkill(s, "crafting", 1); } else { gainSkill(s, "social", 2); p.reputation = Math.min(100, p.reputation + 1); } }
+  else if (id === "tikali_arik") { if (choice === 0) { addStatXp(s, "strength", 2); addStatXp(s, "stamina", 1); } else { gainSkill(s, "social", 2); bumpNam(p, "comert", 1); } }
   else if (id === "misket_meydani") { if (choice === 0) { addStatXp(s, "intelligence", 2); gainSkill(s, "social", 1); } else addStatXp(s, "intelligence", 2); }
   else if (id === "leylek_yuvasi") { if (choice === 0) { p.health = Math.min(100, p.health + 1); gainSkill(s, "social", 1); } else addStatXp(s, "intelligence", 2); }
   else if (id === "kagit_gemi") { if (choice === 0) gainSkill(s, "social", 2); else { gainSkill(s, "crafting", 1); addStatXp(s, "intelligence", 1); } }
