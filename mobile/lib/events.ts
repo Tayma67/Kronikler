@@ -11,6 +11,24 @@ export interface Dilemma {
 
 export const DILEMMAS: Dilemma[] = [
   {
+    id: "yarim_ekmek", icon: "bread", title: "Yarım Ekmek",
+    text: "Fırın kapanırken son ekmeği sen kaptın; arkandaki ırgat elleri boş kaldı. 'Evde dört boğaz var' dedi, sesi yorgundu.",
+    when: (p) => p.age >= 20,
+    choices: [
+      { label: "Ekmeği ikiye böl", delta: { honor: 3, reputation: 2 }, result: "Yarım ekmek ikram değil ortaklıktı; ırgat ertesi gün tezgâhına bir avuç leblebi bıraktı. Yarımın bereketi bütünden çok tuttu." },
+      { label: "Kendi hakkın, yürü", delta: { honor: -2, fear: 1 }, result: "Ekmek sıcaktı, yol kısaydı; ama fırın önündeki bakış sofrana kadar geldi. O akşam kimse afiyet olsun demedi." },
+    ],
+  },
+  {
+    id: "eski_rakip", icon: "coins", title: "Eski Rakip",
+    text: "Gençliğinde seni pazarda aldatan eski rakibin kapında; eli titriyor: 'Oğlum hasta, kimsem kalmadı. Borç istemeye yüzüm yok ama geldim.'",
+    when: (p) => p.age >= 50,
+    choices: [
+      { label: "Eskiyi anma, borç ver (−60)", delta: { money: -60, honor: 4 }, result: "Keseyi uzatırken 'faizi yok, vadesi yok' dedin. Adam kapıdan çıkarken otuz yıllık yük de omzundan indi — seninki de." },
+      { label: "Kapıyı yüzüne kapa", delta: { honor: -3, fear: 1 }, result: "Kapı kapandı; içerisi ısınmadı. Gece boyunca kapının ardındaki ayak sesini dinledin — gitmişti, ama sesi kalmıştı." },
+    ],
+  },
+  {
     id: "dusen_kese", icon: "coins", title: "Düşen Kese",
     text: "Handa bir yolcu kalkarken kuşağından kesesi düştü; kimse görmedi — senden başka. Yolcu kapıya yürüyor.",
     when: (p) => p.age >= 14,
