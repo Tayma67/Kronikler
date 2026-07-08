@@ -1491,6 +1491,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Mahalle çocuklarına yıldızların adlarını gösterdin; sen de onları bir ihtiyardan öğrenmiştin — yıldızlar hiç yaşlanmamış.", k: "mem.sameStars" },
         { text: "Avluda bir bebek ilk adımını senin dizine tutunarak attı; iki adım o yürüdü, üç adım senin yüreğin.", k: "mem.firstStep" },
         { text: "Tesbihin ipini yenilerken taşları saydın: kırk taş, kırk yılın duası. İpi bağlarken elin hiç titremedi.", k: "mem.beadString" },
+        { text: "Anadan kalma yorganın söküğünü kendi elinle diktin; iğne yavaştı ama ilmek sağlam. Yorgan bir ömür daha ısıtır.", k: "mem.quiltStitch", fn: () => { p.health = Math.min(100, p.health + 1); } },
+        { text: "Kahvede her gün oturduğun sekide bu sabah bir genç vardı; kalkıp yer verdi. Seki senden çok alışkanlığınındı.", k: "mem.emptyChair" },
       );
     }
     const m = rnd(mem); m.fn?.();
