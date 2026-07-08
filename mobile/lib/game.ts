@@ -4240,9 +4240,11 @@ function dynastyNote(p: Player): string {
   if (p.properties.length >= 3) return "mulk";
   if (p.fear >= 50) return "korkulan";
   if (p.children.length >= 3) return "kalabalik";
+  if ((p.cities_visited?.length || 0) >= 8) return "gezgin";
+  if ((p.stats?.intelligence || 0) >= 9) return "alim";
   return "sade";
 }
-const DYNNOTE_TR: Record<string, string> = { destan: "Adı destanlara karıştı.", saygin: "Diyarda saygın bir isimdi.", mulk: "Geride büyük bir mülk bıraktı.", korkulan: "Korkulan bir isimdi.", kalabalik: "Kalabalık bir soy bıraktı.", sade: "Sade bir hayat sürdü." };
+const DYNNOTE_TR: Record<string, string> = { destan: "Adı destanlara karıştı.", saygin: "Diyarda saygın bir isimdi.", mulk: "Geride büyük bir mülk bıraktı.", korkulan: "Korkulan bir isimdi.", kalabalik: "Kalabalık bir soy bıraktı.", gezgin: "Yolların adamı sayıldı; her handa bir hatırası kaldı.", alim: "Aklıyla anıldı; sözü meclislerde tartıldı.", sade: "Sade bir hayat sürdü." };
 
 // ── Mersiye: bir hayat biterken kişiye özel kapanış ──
 export interface Eulogy { epithet: string; lines: string[]; close: string; }
