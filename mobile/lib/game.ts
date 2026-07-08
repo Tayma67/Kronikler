@@ -3496,19 +3496,19 @@ export function studySubject(prev: GameState, id: string): StudyResult {
   if (id === "din") {
     bumpNam(p, "dindar", 4); chips.push({ label: "Dindar +4", col: "#9C7BC4", k: "chip.dindar", p: ["+4"] });
     if (lucky) { p.honor = Math.min(100, p.honor + 2); chips.push({ label: "Şeref +2", col: "#7FA66A", k: "chip.honor", p: ["+2"] }); key = "ev.study.din.l"; push(s, "mektep", "Dini ilimler okudun; gönlün huzur buldu.", "kişisel", false, { k: key }); }
-    else { key = "ev.study.din.p"; push(s, "mektep", "Mektepte dua ve hikmet dinledin.", "kişisel", false, { k: key }); }
+    else { const dv = chance(0.5); key = dv ? "ev.study.din.p2" : "ev.study.din.p"; push(s, "mektep", dv ? "Hoca kıssayı yarıda kesti: \"Gerisini siz düşünün.\" Yol boyu düşündün." : "Mektepte dua ve hikmet dinledin.", "kişisel", false, { k: key }); }
   } else if (id === "matematik") {
     if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 5); } // al-sat XP: tur başına tek (buğday al-sat döngüsüyle beceri farmı kapatıldı); chips.push({ label: "Ticaret +5", col: "#C9A84C", k: "chip.trade", p: ["+5"] });
     if (statBonus && !seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.matematik.l"; push(s, "mektep", "Hesap çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
-    else { addStatXp(s, "intelligence", 6); key = "ev.study.matematik.p"; push(s, "mektep", "Rakamlarla boğuştun.", "kişisel", false, { k: key }); }
+    else { addStatXp(s, "intelligence", 6); const dv = chance(0.5); key = dv ? "ev.study.matematik.p2" : "ev.study.matematik.p"; push(s, "mektep", dv ? "Çarpım yanlış çıktı, hoca değneği rahleye vurdu; ikinci hesapta rakamlar hizaya geldi." : "Rakamlarla boğuştun.", "kişisel", false, { k: key }); }
   } else if (id === "edebiyat") {
     gainSkill(s, "social", 5); chips.push({ label: "Sosyal +5", col: "#C9A84C", k: "chip.social", p: ["+5"] });
     if (statBonus && !seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.edebiyat.l"; push(s, "mektep", "Edebiyat çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
-    else { addStatXp(s, "charisma", 6); key = "ev.study.edebiyat.p"; push(s, "mektep", "Beyitler ezberledin.", "kişisel", false, { k: key }); }
+    else { addStatXp(s, "charisma", 6); const dv = chance(0.5); key = dv ? "ev.study.edebiyat.p2" : "ev.study.edebiyat.p"; push(s, "mektep", dv ? "Bir beyit diline takıldı; eve dönene dek mırıldandın." : "Beyitler ezberledin.", "kişisel", false, { k: key }); }
   } else {
     gainSkill(s, "combat", 5); chips.push({ label: "Savaş +5", col: "#C9A84C", k: "chip.combat", p: ["+5"] });
     if (statBonus && !seasoned) { p.stat_points += 1; chips.push({ label: "Özellik Puanı +1", col: "#E0BC5A", k: "chip.statpt" }); key = "ev.study.beden.l"; push(s, "mektep", "Beden çalıştın; bir özellik puanı kazandın.", "kişisel", false, { k: key }); }
-    else { addStatXp(s, "strength", 6); key = "ev.study.beden.p"; push(s, "mektep", "Ter döktün, güçlendin.", "kişisel", false, { k: key }); }
+    else { addStatXp(s, "strength", 6); const dv = chance(0.5); key = dv ? "ev.study.beden.p2" : "ev.study.beden.p"; push(s, "mektep", dv ? "Avluda koşu vardı; sonuncu gelmedin — bu da bir başlangıç." : "Ter döktün, güçlendin.", "kişisel", false, { k: key }); }
   }
   // ── Ders-içi olay (Vercel school.py ders olayları): %40, stat testli; "cesur" sonuç anlatılır ──
   if (chance(0.4)) {
