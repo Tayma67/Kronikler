@@ -9,7 +9,7 @@ import { PlayerPublic, ChatScope } from "../../lib/mp/protocol";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, ScreenFresk } from "../../lib/ui";
 
 const REALM_BASE_YEAR = 1247;
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
@@ -50,7 +50,7 @@ export default function Diyar() {
   const month = (turn % 12) + 1;
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <Pressable onPress={() => { leave(); router.back(); }}><BackLabel /></Pressable>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -167,7 +167,7 @@ export default function Diyar() {
           </Pressable>
         </View>
       </View>
-    </View>
+    </ScreenFresk>
   );
 }
 

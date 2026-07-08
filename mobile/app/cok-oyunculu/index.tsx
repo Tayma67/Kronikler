@@ -8,7 +8,7 @@ import { getServerUrl, setServerUrl, getSavedName, setSavedName, getHttpBase, ge
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader } from "../../lib/ui";
+import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 
@@ -56,7 +56,7 @@ export default function MpLobby() {
   const serverReady = !!serverUrl;
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
@@ -159,6 +159,6 @@ export default function MpLobby() {
           </Pressable>
         </Pressable>
       </Modal>
-    </View>
+    </ScreenFresk>
   );
 }

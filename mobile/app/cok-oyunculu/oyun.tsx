@@ -12,7 +12,7 @@ import { newGame, advance, continueAsHeir, GameState, beylikName } from "../../l
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, ScreenFresk } from "../../lib/ui";
 
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 
@@ -143,7 +143,7 @@ export default function MpOyun() {
   const doReady = () => { if (p.dead) return; hap("tap"); const v = !ready; setReadyLocal(v); setReady(v); if (guestId) syncPlayer(mePublic(guestId, s, v)); };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 10 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
@@ -563,7 +563,7 @@ export default function MpOyun() {
           <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: ready ? C.sage : C.inkOnGold }}>{ready ? t("mp.ready") + " ✓" : t("mp.ready")}</Text>
         </Pressable>
       </View>
-    </View>
+    </ScreenFresk>
   );
 }
 

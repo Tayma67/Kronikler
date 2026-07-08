@@ -6,7 +6,7 @@ import { useMp } from "../../lib/mp/store";
 import { BEYLIKS } from "../../lib/game";
 import { C, F } from "../../lib/theme";
 import { hap } from "../../lib/haptics";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, ScreenFresk } from "../../lib/ui";
 
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 const toneOf = (id: string) => BEYLIKS.find((b) => b.id === id)?.tone || C.gold;
@@ -37,7 +37,7 @@ export default function Harita() {
   const musterOf = (b: (typeof snapshot.beyliks)[number]) => Math.round(b.power + ((snapshot.players.find((x) => x.id === b.beyId && !x.dead)?.power || 0) * 0.5) + snapshot.players.filter((x) => x.beylikId === b.id && !x.dead && x.id !== b.beyId).reduce((a2, x) => a2 + x.power * 0.25, 0) + (b.ocak ? 15 : 0));
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 10 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
@@ -86,6 +86,6 @@ export default function Harita() {
 
         <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentDim, marginTop: 4, textAlign: "center" }}>{t("mp.map.hint")}</Text>
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

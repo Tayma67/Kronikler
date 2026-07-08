@@ -10,7 +10,7 @@ import { SharedIntent, Bond, PlayerPublic, SPY_COST, SABOTAGE_COST, ASSASSINATE_
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, ScreenFresk } from "../../lib/ui";
 
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 
@@ -62,7 +62,7 @@ export default function Diplomasi() {
   const targetInOtherBeylik = target && target.beylikId && target.beylikId !== myBeylikId && !snapshot.beyliks.some((b) => b.beyId === target.id);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted }}>{pf(t("mp.soc.myHonor"), Math.round(myHonor))} · {money} {t("mp.soc.coin")}</Text>
@@ -257,7 +257,7 @@ export default function Diplomasi() {
           );
         })}
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }
 
