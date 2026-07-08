@@ -45,7 +45,8 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
 
   if (intent === "hosbes") {
     const line = hitch ? L("dlg.hosbes.hitch") : rt === "yabancı" ? pick("dlg.hosbes.stranger", 3) : pick("dlg.hosbes.warm", 3);
-    return { line, moodDelta: hitch ? 2 : 5, relDelta: hitch ? 2 : 4, memory: L("dlg.hosbes.m") };
+    const host = t === "misafirperver" ? 2 : 0; // misafirperver kapıdan çevirmez: hoşbeş onda daha çok ısıtır
+    return { line, moodDelta: (hitch ? 2 : 5) + host, relDelta: (hitch ? 2 : 4) + host, memory: L("dlg.hosbes.m") };
   }
   if (intent === "iltifat") {
     const backfire = t === "kibirli" || t === "ciddi" || mt === "küs";
@@ -102,6 +103,7 @@ export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr"): strin
     tatsiz_konu: "dlg.cb.sour", rahatsizlik: "dlg.cb.sour",
   };
   const k = map[memTur]; if (!k) return "";
+  if (npc.trait === "unutkan" && Math.random() < 0.5) return ""; // unutkan dünkü sohbeti bugün hatırlamayabilir
   const vi = Math.floor(Math.random() * 3); const key = vi === 0 ? k : k + (vi + 1); // her göndermenin üç varyantı — uzun oyunda ezber kırılır
   return tFor(lang, key).replace("%n", npc.name.split(" ")[0]);
 }
