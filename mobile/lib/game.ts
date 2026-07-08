@@ -123,6 +123,7 @@ export interface Player {
   friend_aid_turn?: number; // dost yardımının damgası (iki yılda bir; dar gün farm'ı kapalı)
   dowry_chest?: number; // evlatlar için biriken çeyiz sandığı (yalnız gider; evlat yetişkin olunca açılır, kalan vârise olduğu gibi geçer)
   stall_until?: number; stall_loc?: string; // pazar tezgâhı: hangi tura kadar, hangi şehirde (kira gider, satış oranı artar)
+  iltizam_until?: number; iltizam_loc?: string; // vergi iltizamı: hangi tura kadar, hangi şehir (peşin ödenir, aylık tahsilat + huzursuzluk riski)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -1545,6 +1546,17 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       if (chance(0.08)) { const w = 4 + Math.floor(Math.random() * 3); p.health = Math.max(1, p.health - w); push(s, "hastalik", `Eski öksürük alevlendi; birkaç gün nefessiz kaldın (−${w} sağlık).`, "kişisel", false, { k: "evj.chronicFlare", p: [w] }); }
     }
   }
+  // ── Vergi iltizamı: tahsildarlar aylık pay getirir; kimi ay ahali diretir, tahsilat boşa çıkar ──
+  if (!p.dead && (p.iltizam_until ?? 0) > s.turn) {
+    const il = p.iltizam_loc || p.location_name;
+    if (chance(0.08)) { p.reputation = Math.max(-100, p.reputation - 2); push(s, "ticaret", `${il} ahalisi bu ay vergiye diretti; tahsildarların eli boş döndü, adın dilde dolaştı.`, "kişisel", false, { k: "evj.iltizamUnrest", p: [{ pl: il }] }); }
+    else { const gelir = Math.round((22 + cityInfo(il, placeKind(il)).prosperity * 0.35) * inflationFactor(s)); p.money += gelir; push(s, "ticaret", `${il} iltizamından aylık tahsilat geldi (+${gelir} akçe).`, "kişisel", false, { k: "evj.iltizamPay", p: [{ pl: il }, gelir] }); }
+  }
+  if (!p.dead && p.iltizam_until === s.turn) {
+    const il = p.iltizam_loc || p.location_name;
+    p.iltizam_until = undefined; p.iltizam_loc = undefined;
+    push(s, "ticaret", `${il} iltizamının yılı doldu; defter kapandı, mühür geri verildi.`, "kişisel", false, { k: "evj.iltizamOut", p: [{ pl: il }] });
+  }
   // ── Pazar tezgâhı süresi dolunca kalkar (kira yenilemek oyuncunun elinde) ──
   if (!p.dead && p.stall_until === s.turn) {
     const sl = p.stall_loc || p.location_name;
@@ -2598,6 +2610,19 @@ function bestCaravanRoute(s: GameState, origin: string): { dest: string; good: s
 }
 // Kervan gönder: en kârlı şehirler-arası rotayı bul, çok konaklı yol kur, her ay bir konak ilerlesin.
 // Pazar tezgâhı: 3 aylık kira — akçe gider, kiralanan şehirde satışlar %20 kârlı olur. Kira yenilenebilir ama üst üste binmez.
+// Vergi iltizamı: şehrin bir yıllık vergi tahsilatını peşin satın al. Refah yüksekse kârlı; ara ara ahali diretir, tahsilat boşa çıkar.
+export function iltizamCost(s: GameState): number { return Math.round(360 * inflationFactor(s)); }
+export function buyIltizam(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 25 || inJail(p) || p.fame < 35) return s; // iltizam ihalesi ancak adı bilinen birine verilir
+  if ((p.iltizam_until ?? 0) > s.turn) return s; // mevcut iltizam bitmeden yenisi alınmaz
+  const cost = iltizamCost(s);
+  if (p.money < cost) return s;
+  p.money -= cost;
+  p.iltizam_until = s.turn + 12; p.iltizam_loc = p.location_name;
+  push(s, "ticaret", `${p.location_name} vergisinin iltizamını bir yıllığına aldın (−${cost} akçe); tahsildarlar artık senin adına gezecek.`, "kişisel", true, { k: "evj.iltizamIn", p: [{ pl: p.location_name }, cost] });
+  return s;
+}
 export function stallCost(s: GameState): number { return Math.round(24 * inflationFactor(s)); }
 export function stallActive(s: GameState): boolean { const p = s.player; return (p.stall_until ?? 0) > s.turn && p.stall_loc === p.location_name; }
 export function rentStall(prev: GameState): GameState {

@@ -2,9 +2,9 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { placeKind, recognition, publicPerception, atHome, regionOf, defaultRealm, factionById, beylikName, citySpecialtyIdx } from "../../lib/game";
+import { placeKind, recognition, publicPerception, atHome, regionOf, defaultRealm, factionById, beylikName, citySpecialtyIdx, buyIltizam, iltizamCost } from "../../lib/game";
 import { cityInfo } from "../../lib/world";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
@@ -36,7 +36,7 @@ function InfoRow({ label, value, last }: { label: string; value: string; last?: 
 export default function Sehir() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { state } = useGame();
+  const { state, apply } = useGame();
   const { lang, t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
@@ -93,6 +93,25 @@ export default function Sehir() {
             return <InfoRow label={t("realm.holder")} value={`${beylikName(regionOf(here))} · ${f ? t("fac." + f.id + ".n") : "—"}`} last />;
           })()}
         </View>
+
+        {/* Vergi iltizamı — şehrin bir yıllık tahsilatını peşin al (geç oyun para kararı) */}
+        {p.age >= 25 && p.fame >= 35 && (
+          <View style={{ backgroundColor: "rgba(201,168,76,0.05)", borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 12, padding: 13, marginBottom: 16 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("city.iltizam").toUpperCase()}</Text>
+            {(p.iltizam_until ?? 0) > state.turn ? (
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.sage, marginTop: 4 }}>{applyParams(t("city.iltizamActive"), [placeName(p.iltizam_loc || "", lang), (p.iltizam_until ?? 0) - state.turn])}</Text>
+            ) : (
+              <>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{t("city.iltizamDesc")}</Text>
+                {(() => { const ic = iltizamCost(state); const can = p.money >= ic && !p.dead; return (
+                  <Pressable disabled={!can} onPress={() => { hap("tap"); apply((s) => buyIltizam(s)); }} style={{ alignSelf: "flex-start", marginTop: 8, paddingVertical: 8, paddingHorizontal: 15, borderRadius: 7, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: can ? "rgba(201,168,76,0.12)" : "transparent", opacity: can ? 1 : 0.4 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: can ? C.gold : C.parchmentMuted }}>{applyParams(t("city.iltizamBuy"), [ic])}</Text>
+                  </Pressable>
+                ); })()}
+              </>
+            )}
+          </View>
+        )}
 
         {/* Diyarı gez */}
         <Pressable onPress={() => { hap("tap"); router.push("/oyun/harita"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "rgba(201,168,76,0.07)", borderWidth: 1, borderColor: "rgba(201,168,76,0.35)", borderRadius: 12, padding: 14 }}>
