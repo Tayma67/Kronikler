@@ -2,6 +2,22 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 471-480 eki (9 Temmuz, şafağa karşı) — BAĞLARIN DERİNLİĞİ
+
+**Tek cümle (mağaza/what's new):**
+TR: "Ocaktaki bağlar derinleşti: kedi kışın köpeğin sırtında uyur, çanağın tahtı kimde ikisi de bilir; yolculuktan dönene şehir kapısında koşan köpek, nazlanan kedi ya da ateşte çorba bekleten eş çıkar; köpeğin kümese daldığı sabah ve iki evde birden yaşayan kedinin sırrı vicdanına sorulur; yıldönümleri artık tek cümle değil — ilk yılın acemi ocağından kırk yılın tek nefesine, araları eş bağının sıcaklığı doldurur; can dost testiyle kapıya gelir, hasta kapısına çorba gider; at tımarda omza yaslanır; dedikodu bile artık iki ağızdan anlatılır."
+EN: "Bonds run deeper at the hearth: the cat winters on the dog's back and both know who owns the bowl's throne; whoever returns from the road is met at the gate by a running dog, an aloof cat or soup waiting on the fire; the morning the dog raided the coop and the secret of the cat living in two houses are put to your conscience; anniversaries are no longer one sentence — from the first year's clumsy hearth to the fortieth's single breath, with warm or cold years in between by the bond; a true friend arrives with a jug, soup travels to a sick friend's door; the horse leans on your shoulder at grooming; even gossip now comes in two tellings."
+
+**Öne çıkanlar:**
+- **İki yoldaş bir ocakta:** kedi ve köpek aynı hanedeyse ortak anlar — kış gecesi sırt sırta uyku, çanak hiyerarşisi, ikiye bölünen gece nöbeti.
+- **Ocağa dönüş:** vardığın şehirde evin varsa eşik seni tanır — kapıya koşan köpek, affetmiş görünmemeye çalışan kedi, ateşte çorba bekleten eş, ya da sessiz ama senin olan ev.
+- **Yoldaş ikilemleri:** Tavuk Davası (köpeğin kümese daldı — bedelini öde ya da inkâr et) ve İki Evin Kedisi (meğer kedi aylardır iki evde yaşıyormuş).
+- **Yıldönümü kilometre taşları:** 1. yılın acemi düzeni, 10. yılın yarım cümlesi, 25. yılın torun sesi, 40. yılın tek nefesi; ara yıllar eş bağına göre sıcak ya da soğuk.
+- **Can dost ocak başında:** testiyle gelen akşam misafiri, hasta kapısına giden çorba, çarşıda aynı anda gülünen eski şaka.
+- **Atın yoldaşlığı:** tımarda omza yaslanan baş, yola çağıran kişneme, yele tarama nöbetindeki çocuklar.
+- **Dedikodunun ikinci ağzı:** altı söylenti türü artık iki türlü anlatılıyor; 'mert yürek' kadın oyuncular için de doğru cümleyle.
+- **Denetim atölyesi:** smoke artık anlık görüntü üzerinde ve dört çekirdekte — 20 dakika 6'ya indi, geliştirme denetim beklemez.
+
 ## Dalga 455-470 eki (8 Temmuz, gece yarısı) — OCAĞIN YOLDAŞLARI VE TEST TERZİLİĞİ
 
 **Tek cümle (mağaza/what's new):**
