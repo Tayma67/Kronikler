@@ -46,7 +46,8 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
   if (intent === "hosbes") {
     const line = hitch ? L("dlg.hosbes.hitch") : rt === "yabancı" ? pick("dlg.hosbes.stranger", 3) : pick("dlg.hosbes.warm", 3);
     const host = t === "misafirperver" ? 2 : 0; // misafirperver kapıdan çevirmez: hoşbeş onda daha çok ısıtır
-    return { line, moodDelta: (hitch ? 2 : 5) + host, relDelta: (hitch ? 2 : 4) + host, memory: L("dlg.hosbes.m") };
+    const rush = t === "aceleci" ? 2 : 0; // aceleci hoşbeşi yarıda keser: kazanım kısılır
+    return { line, moodDelta: Math.max(0, (hitch ? 2 : 5) + host - rush), relDelta: Math.max(0, (hitch ? 2 : 4) + host - rush), memory: L("dlg.hosbes.m") };
   }
   if (intent === "iltifat") {
     const backfire = t === "kibirli" || t === "ciddi" || mt === "küs";
@@ -55,7 +56,7 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
     return { line: pick("dlg.iltifat.good", 3), moodDelta: 8, relDelta: gain, memory: L("dlg.iltifat.good.m") };
   }
   if (intent === "dert") {
-    const opens = t === "dertli" || t === "yalnız" || t === "sıcakkanlı" || rt !== "yabancı";
+    const opens = t === "dertli" || t === "yalnız" || t === "sıcakkanlı" || t === "sabırlı" || rt !== "yabancı";
     if (!opens) return { line: pick("dlg.dert.closed", 3), moodDelta: 1, relDelta: 2, memory: L("dlg.dert.closed.m") };
     return { line: pick("dlg.dert.open", 3), moodDelta: 10, relDelta: 8, memory: L("dlg.dert.open.m") };
   }

@@ -141,16 +141,16 @@ export function careerTitleL(id: string, careerXp: number, lang: Lang): string {
 
 // ── NPC kişilik metinleri (world.ts'teki TRAITS/QUIRKS/GOALS ile birebir sıralı) ──
 // Oyun mantığı kanonik TR değeri kullanır; bunlar yalnız GÖSTERİM içindir.
-const TRAITS_TR = ["neşeli","ciddi","kibirli","cömert","dertli","yalnız","kurnaz","mert","dindar","hırslı","utangaç","sıcakkanlı","misafirperver","unutkan"];
+const TRAITS_TR = ["neşeli","ciddi","kibirli","cömert","dertli","yalnız","kurnaz","mert","dindar","hırslı","utangaç","sıcakkanlı","misafirperver","unutkan","sabırlı","aceleci"];
 const QUIRKS_TR = ["sürekli hava durumundan dert yanar","eski günleri anlatmayı sever","herkese lakap takar","az konuşur çok dinler","yüksek sesle güler","pazarlığa bayılır","komşularını çekiştirir","bir türküyü mırıldanır","sözüne hep bir atasözü katar","cebinde kuru üzüm taşır, çocuklara dağıtır","gölgeye bakıp vakti şaşmaz bilir","selamı herkese adıyla verir","gördüğü her kuşa ekmek ufalar","eşiğini günde iki kez süpürür"];
 const GOALS_TR = ["bir dükkân açmanın hayalini kuruyor","kızını/oğlunu evermek istiyor","borçlarından kurtulmaya çalışıyor","hacca gitmeyi diliyor","toprak satın almak için biriktiriyor","ustabaşı olmak istiyor","küs olduğu kardeşiyle barışmak istiyor","bir ev yaptırmanın derdinde","kervan ticaretine atılmak istiyor","adını duyurmak istiyor","yıllardır görmediği memleketini görmek istiyor","çırağını kendi dükkânına kavuşturmak istiyor","babasından kalma bağı yeniden yeşertmek istiyor","bir yetimi yanına çırak almak istiyor"];
 const TRAITS_L: Record<Lang, string[]> = {
   tr: TRAITS_TR,
-  en: ["cheerful","serious","arrogant","generous","troubled","lonely","cunning","valiant","pious","ambitious","shy","warm-hearted","hospitable","forgetful"],
-  es: ["alegre","serio","arrogante","generoso","atribulado","solitario","astuto","valiente","devoto","ambicioso","tímido","afable","hospitalario","olvidadizo"],
-  pt: ["alegre","sério","arrogante","generoso","atribulado","solitário","astuto","valente","devoto","ambicioso","tímido","afável","hospitaleiro","esquecido"],
-  ar: ["مرح","جادّ","متكبّر","كريم","مهموم","وحيد","ماكر","شجاع","تقيّ","طموح","خجول","ودود","مضياف","نساء للأمور"],
-  ru: ["весёлый","серьёзный","надменный","щедрый","удручённый","одинокий","хитрый","доблестный","набожный","честолюбивый","застенчивый","душевный","хлебосольный","забывчивый"],
+  en: ["cheerful","serious","arrogant","generous","troubled","lonely","cunning","valiant","pious","ambitious","shy","warm-hearted","hospitable","forgetful","patient","hasty"],
+  es: ["alegre","serio","arrogante","generoso","atribulado","solitario","astuto","valiente","devoto","ambicioso","tímido","afable","hospitalario","olvidadizo","paciente","apresurado"],
+  pt: ["alegre","sério","arrogante","generoso","atribulado","solitário","astuto","valente","devoto","ambicioso","tímido","afável","hospitaleiro","esquecido","paciente","apressado"],
+  ar: ["مرح","جادّ","متكبّر","كريم","مهموم","وحيد","ماكر","شجاع","تقيّ","طموح","خجول","ودود","مضياف","نساء للأمور","صبور","عجول"],
+  ru: ["весёлый","серьёзный","надменный","щедрый","удручённый","одинокий","хитрый","доблестный","набожный","честолюбивый","застенчивый","душевный","хлебосольный","забывчивый","терпеливый","торопливый"],
 };
 const QUIRKS_L: Record<Lang, string[]> = {
   tr: QUIRKS_TR,
