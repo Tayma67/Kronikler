@@ -2487,7 +2487,19 @@ function tickCaravan(s: GameState) {
       return;
     }
   }
-  if (c.step < last) return; // hâlâ yolda
+  if (c.step < last) {
+    // Konak molası: yağmasız ayda ara sıra yolun sesi duyulur (salt anlatı — kâr/risk değişmez).
+    if (Math.random() < 0.3) {
+      const CAR_STOP_TR = [
+        `Kervan ${route[c.step]} konağında geceledi; develer çöktü, ateş yandı — yol yarın yine yol.`,
+        `${route[c.step]} konağında yükler elden geçti; bir urgan tazelendi, bir nal çakıldı.`,
+        `${route[c.step]} hanında kervancılar haber tokuşturdu; senin yükün de dilden dile bir selam taşıdı.`,
+      ];
+      const vi = Math.floor(Math.random() * 3);
+      push(s, "kervan", CAR_STOP_TR[vi], "kişisel", false, { k: "evj.carStop" + (vi ? String(vi + 1) : ""), p: [{ pl: route[c.step] }] });
+    }
+    return; // hâlâ yolda
+  }
   // Varış: hayatta kalan sermaye üzerinden kâr çöz — fiyat farkı (arbitraj) kârı belirler.
   // spread = malın hedefteki/çıkıştaki fiyat endeksi (1 = fark yok, >1 kârlı, <1 zarar). Eski kayıt: spread yoksa 1.
   const spread = c.spread ?? (c.good ? cityGoodPriceIndex(s, c.dest, c.good) / Math.max(0.5, cityGoodPriceIndex(s, route[0], c.good)) : 1.2);
