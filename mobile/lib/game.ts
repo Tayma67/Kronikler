@@ -122,6 +122,7 @@ export interface Player {
   train_turn?: number; // ayda tek talim dersi (beceri farmı kapalı)
   friend_aid_turn?: number; // dost yardımının damgası (iki yılda bir; dar gün farm'ı kapalı)
   dowry_chest?: number; // evlatlar için biriken çeyiz sandığı (yalnız gider; evlat yetişkin olunca açılır, kalan vârise olduğu gibi geçer)
+  stall_until?: number; stall_loc?: string; // pazar tezgâhı: hangi tura kadar, hangi şehirde (kira gider, satış oranı artar)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -1544,6 +1545,12 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       if (chance(0.08)) { const w = 4 + Math.floor(Math.random() * 3); p.health = Math.max(1, p.health - w); push(s, "hastalik", `Eski öksürük alevlendi; birkaç gün nefessiz kaldın (−${w} sağlık).`, "kişisel", false, { k: "evj.chronicFlare", p: [w] }); }
     }
   }
+  // ── Pazar tezgâhı süresi dolunca kalkar (kira yenilemek oyuncunun elinde) ──
+  if (!p.dead && p.stall_until === s.turn) {
+    const sl = p.stall_loc || p.location_name;
+    p.stall_until = undefined; p.stall_loc = undefined;
+    push(s, "ticaret", `${sl} çarşısındaki tezgâhın kirası doldu; kepengi indirip anahtarı kâhyaya bıraktın.`, "kişisel", false, { k: "evj.stallOut", p: [{ pl: sl }] });
+  }
   // ── Dar günde dost eli: can dostun (ilişki 70+) yoksulluğu duyar; iki yılda bir kesesini açar ──
   if (!p.dead && p.age >= 16 && p.money < 15 && Object.values(s.relationships || {}).some((v) => v >= 70) && (p.friend_aid_turn === undefined || s.turn - p.friend_aid_turn >= 24) && chance(0.25)) {
     p.friend_aid_turn = s.turn;
@@ -2590,6 +2597,20 @@ function bestCaravanRoute(s: GameState, origin: string): { dest: string; good: s
   return best;
 }
 // Kervan gönder: en kârlı şehirler-arası rotayı bul, çok konaklı yol kur, her ay bir konak ilerlesin.
+// Pazar tezgâhı: 3 aylık kira — akçe gider, kiralanan şehirde satışlar %20 kârlı olur. Kira yenilenebilir ama üst üste binmez.
+export function stallCost(s: GameState): number { return Math.round(24 * inflationFactor(s)); }
+export function stallActive(s: GameState): boolean { const p = s.player; return (p.stall_until ?? 0) > s.turn && p.stall_loc === p.location_name; }
+export function rentStall(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13 || inJail(p)) return s;
+  if ((p.stall_until ?? 0) > s.turn) return s; // tezgâh zaten kurulu — kira üst üste binmez
+  const cost = stallCost(s);
+  if (p.money < cost) return s;
+  p.money -= cost;
+  p.stall_until = s.turn + 3; p.stall_loc = p.location_name;
+  push(s, "ticaret", `${p.location_name} çarşısında üç aylığına tezgâh kiraladın (−${cost} akçe); malın artık göz önünde, pazarlığın güçlü.`, "kişisel", false, { k: "evj.stallIn", p: [{ pl: p.location_name }, cost] });
+  return s;
+}
 export function caravanPremium(amount: number): number { return Math.round(amount / 8); } // lonca kefaleti primi: sekizde bir
 // Talim hocası: emekli bir sipahiden ders — akçe gider, kılıç eli sağlamlaşır. Ayda bir ders (farm yok).
 // Çeyiz sandığı: evlatlar için akçe biriktir (yalnız gider — farm yok). Evlat yetişkin olunca sandık açılır; kalan vârise olduğu gibi geçer.
@@ -2942,6 +2963,7 @@ export function sellItem(prev: GameState, id: string): GameState {
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
   let sell = Math.max(1, Math.round(marketPrice(g.sell, s.econ) * goodPriceMult(s, id) * QUALITY_MULT[tier])); // 0 akçeye satış/envanter sızıntısı önlenir (diğer fiyat fonksiyonlarıyla tutarlı)
   if (hasPerk(p, "dilbaz")) sell = Math.round(sell * 1.25);
+  if (stallActive(s)) sell = Math.round(sell * 1.2); // tezgâh sahibinin malı göz önünde: satış kârlı
   p.money += sell; addTradePressure(s, p.location_name, id, -0.045); // satış yerel arzı artırır → fiyat düşer
   if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 5); } // al-sat XP: tur başına tek (buğday al-sat döngüsüyle beceri farmı kapatıldı);
   const qNote = tier !== "siradan" ? ` (${QUALITY_LABEL[tier]})` : "";
@@ -2968,6 +2990,7 @@ export function negotiatedSell(prev: GameState, id: string, price: number): Game
   p.inventory[id] -= 1; if (p.inventory[id] <= 0) delete p.inventory[id];
   let earn = Math.max(1, Math.round(price * QUALITY_MULT[tier]));
   if (hasPerk(p, "dilbaz")) earn = Math.round(earn * 1.25);
+  if (stallActive(s)) earn = Math.round(earn * 1.2); // tezgâh pazarlıkta da geçer
   p.money += earn; addTradePressure(s, p.location_name, id, -0.045);
   if (p.trade_xp_turn !== s.turn) { p.trade_xp_turn = s.turn; gainSkill(s, "trade", 6); }
   push(s, "ticaret", `Pazarlıkla ${g.name} sattın (+${earn} akçe).`, "kişisel", false, { k: "evj.sellHaggle", p: [{ i: id }, earn] });

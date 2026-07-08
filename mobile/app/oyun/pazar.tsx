@@ -3,9 +3,9 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
+import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, rentStall, stallCost, stallActive, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
@@ -174,6 +174,25 @@ export default function Pazar() {
             <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{mev.text}</Text>
           </View>
         )}
+
+        {/* Pazar tezgâhı */}
+        <View style={{ backgroundColor: "rgba(201,168,76,0.05)", borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("paz.stall").toUpperCase()}</Text>
+          {(p.stall_until ?? 0) > state.turn ? (
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: stallActive(state) ? C.sage : C.parchmentMuted, marginTop: 4 }}>
+              {applyParams(t(stallActive(state) ? "paz.stallActive" : "paz.stallAway"), [placeName(p.stall_loc || "", lang), (p.stall_until ?? 0) - state.turn])}
+            </Text>
+          ) : (
+            <>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{t("paz.stallDesc")}</Text>
+              {(() => { const sc = stallCost(state); const can = p.money >= sc && p.age >= 13 && !p.dead; return (
+                <Pressable disabled={!can} onPress={() => { hap("tap"); apply((s) => rentStall(s)); }} style={{ alignSelf: "flex-start", marginTop: 8, paddingVertical: 8, paddingHorizontal: 15, borderRadius: 7, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: can ? "rgba(201,168,76,0.12)" : "transparent", opacity: can ? 1 : 0.4 }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 10.5, color: can ? C.gold : C.parchmentMuted }}>{applyParams(t("paz.stallRent"), [sc])}</Text>
+                </Pressable>
+              ); })()}
+            </>
+          )}
+        </View>
 
         {/* Kervan paneli */}
         <Panel title={t("paz.caravanTitle")} icon="camel" tone={C.ember}>
