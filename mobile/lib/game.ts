@@ -124,6 +124,7 @@ export interface Player {
   dowry_chest?: number; // evlatlar için biriken çeyiz sandığı (yalnız gider; evlat yetişkin olunca açılır, kalan vârise olduğu gibi geçer)
   stall_until?: number; stall_loc?: string; // pazar tezgâhı: hangi tura kadar, hangi şehirde (kira gider, satış oranı artar)
   iltizam_until?: number; iltizam_loc?: string; // vergi iltizamı: hangi tura kadar, hangi şehir (peşin ödenir, aylık tahsilat + huzursuzluk riski)
+  winter_stock_until?: number; // kışlık kiler dolu (hangi tura kadar) — kış açlığı hafif geçer
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -1245,6 +1246,7 @@ function die(s: GameState, text: string, loc?: { k: string; p?: EvtParam[] }) {
 function monthlyFlavor(s: GameState, cal: CalendarInfo): { k: string; text: string } {
   const child = s.player.age < 13; const pool: { k: string; text: string }[] = [];
   if (cal.season === "Kış") pool.push({ k: "flav.kis1", text: "Soğuk sert geçti; ocağın başında ısındın." }, { k: "flav.kis2", text: "Kar yolları kapadı, evde kaldın." }, { k: "flav.kis3", text: "Uzun kış gecesinde bir hikâye dinledin; soba çıtırdadı." });
+  if (cal.season === "Kış" && (s.player.winter_stock_until ?? 0) >= s.turn) pool.push({ k: "flav.kis4", text: "Dışarıda tipi, içeride dolu kiler: kavurma tavada, odun sobada. Kış bu evden alacağını alamadı." });
   if (cal.season === "İlkbahar") pool.push({ k: "flav.ilk1", text: "Tarlalar yeşerdi, içine umut düştü." }, { k: "flav.ilk2", text: "Kuşlar döndü; köy canlandı." }, { k: "flav.ilk3", text: "İlk yağmur toprağı uyandırdı; ıslak yollarda yürüdün." });
   if (cal.season === "Yaz") pool.push({ k: "flav.yaz1", text: "Sıcak günlerde gölgede dinlendin." }, { k: "flav.yaz2", text: "Hasada yardım ettin." }, { k: "flav.yaz3", text: "Çeşme başında serinleyip komşularla hâl hatır sordun." });
   if (cal.season === "Sonbahar") pool.push({ k: "flav.son1", text: "Yapraklar döküldü; kışa hazırlık başladı." }, { k: "flav.son2", text: "Pazarda son ürünler satıldı." }, { k: "flav.son3", text: "Bağ bozumu telaşı; sepetler üzümle doldu." });
@@ -1676,9 +1678,10 @@ export function advance(prev: GameState, n = 1): GameState {
     const child = s.player.age < 13;
     // Çocuğu ailesi besler: açlık daha yavaş düşer ve dipte aile karnını doyurur.
     const seasonMult = ({ "İlkbahar": 1.0, "Yaz": 1.1, "Sonbahar": 0.9, "Kış": 1.3 } as Record<string, number>)[cal.season] ?? 1; // 4 mevsim eğrisi (Vercel season_hunger_mult)
+    const seasonMultEff = cal.season === "Kış" && (s.player.winter_stock_until ?? 0) >= s.turn ? 0.95 : seasonMult; // dolu kiler: kış açlığı yaz gibi geçer
     const stamReduce = child ? 0 : Math.min(0.3, effStat(s.player, "stamina") * 0.03); // dayanıklılık açlığı yavaşlatır (Vercel stamina_hunger_reduction)
     const tutumluReduce = !child && hasPerk(s.player, "tutumlu") ? 0.15 : 0; // tutumlu: kıt kanaat geçinir — açlık daha yavaş düşer
-    const drop = Math.max(child ? 2 : 3, Math.round((child ? 4 : 8) * seasonMult * (1 - Math.min(0.45, stamReduce + tutumluReduce))));
+    const drop = Math.max(child ? 2 : 3, Math.round((child ? 4 : 8) * seasonMultEff * (1 - Math.min(0.45, stamReduce + tutumluReduce))));
     s.player.hunger = Math.max(0, s.player.hunger - drop);
     if (child && s.player.hunger < 30) s.player.hunger = Math.min(100, s.player.hunger + 20); // anne-baba sofrası
     if (s.player.hunger < 20 && !child) s.player.health = Math.max(0, s.player.health - 6);
@@ -2611,6 +2614,21 @@ function bestCaravanRoute(s: GameState, origin: string): { dest: string; good: s
 // Kervan gönder: en kârlı şehirler-arası rotayı bul, çok konaklı yol kur, her ay bir konak ilerlesin.
 // Pazar tezgâhı: 3 aylık kira — akçe gider, kiralanan şehirde satışlar %20 kârlı olur. Kira yenilenebilir ama üst üste binmez.
 // Vergi iltizamı: şehrin bir yıllık vergi tahsilatını peşin satın al. Refah yüksekse kârlı; ara ara ahali diretir, tahsilat boşa çıkar.
+// Kışlık kiler: güzden odun, kavurma ve bulgur istifle (yalnız gider). Dolu kilerle kış açlığı yaz gibi geçer.
+export function winterStockCost(s: GameState): number { return Math.round(20 * inflationFactor(s)); }
+export function stockWinter(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  const season = currentCalendar(s.turn).season;
+  if (p.dead || p.age < 16 || inJail(p)) return s;
+  if (season !== "Sonbahar" && season !== "Kış") return s; // kışlık güzden istiflenir
+  if ((p.winter_stock_until ?? 0) >= s.turn) return s; // kiler zaten dolu
+  const cost = winterStockCost(s);
+  if (p.money < cost) return s;
+  p.money -= cost;
+  p.winter_stock_until = s.turn + 6; // önümüzdeki kışı uçtan uca kapsar
+  push(s, "gunluk", `Kışlık kileri doldurdun (−${cost} akçe): odun istifi, kavurma küpü, bulgur çuvalı. Kar ne zaman isterse gelsin.`, "kişisel", false, { k: "evj.winterStock", p: [cost] });
+  return s;
+}
 export function iltizamCost(s: GameState): number { return Math.round(360 * inflationFactor(s)); }
 export function buyIltizam(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;

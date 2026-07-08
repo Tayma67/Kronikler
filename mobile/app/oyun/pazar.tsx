@@ -3,8 +3,9 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, rentStall, stallCost, stallActive, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
+import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
+import { currentCalendar } from "../../lib/calendar";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { hap } from "../../lib/haptics";
@@ -193,6 +194,30 @@ export default function Pazar() {
             </>
           )}
         </View>
+
+        {/* Kışlık kiler — güz/kış aylarında görünür */}
+        {(() => {
+          const season = currentCalendar(state.turn).season;
+          if (season !== "Sonbahar" && season !== "Kış") return null;
+          const stocked = (p.winter_stock_until ?? 0) >= state.turn;
+          const wc = winterStockCost(state);
+          const can = !stocked && p.money >= wc && p.age >= 16 && !p.dead;
+          return (
+            <View style={{ backgroundColor: "rgba(122,162,196,0.06)", borderWidth: 1, borderColor: "rgba(122,162,196,0.3)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("paz.winter").toUpperCase()}</Text>
+              {stocked ? (
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.sage, marginTop: 4 }}>{t("paz.winterFull")}</Text>
+              ) : (
+                <>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{t("paz.winterDesc")}</Text>
+                  <Pressable disabled={!can} onPress={() => { hap("tap"); apply((s) => stockWinter(s)); }} style={{ alignSelf: "flex-start", marginTop: 8, paddingVertical: 8, paddingHorizontal: 15, borderRadius: 7, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: can ? "rgba(201,168,76,0.12)" : "transparent", opacity: can ? 1 : 0.4 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: can ? C.gold : C.parchmentMuted }}>{applyParams(t("paz.winterBuy"), [wc])}</Text>
+                  </Pressable>
+                </>
+              )}
+            </View>
+          );
+        })()}
 
         {/* Kervan paneli */}
         <Panel title={t("paz.caravanTitle")} icon="camel" tone={C.ember}>
