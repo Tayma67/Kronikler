@@ -2569,7 +2569,7 @@ export function launchCaravan(prev: GameState, amount: number): GameState {
   p.money -= amount;
   s.caravan = { invested: amount, dest, route, step: 0, lost: 0, good: arb?.good, spread: arb?.spread };
   const carried = arb ? { i: arb.good } : { i: "bugday" };
-  push(s, "kervan", `${amount} akçelik kervan yola çıktı: ${route.join(" → ")}. ${route.length - 1} konak sürecek.`, "kişisel", false, { k: "evj.carLaunch", p: [amount, { route }, route.length - 1, carried] });
+  { const cl2 = chance(0.5); push(s, "kervan", cl2 ? `Develer sabah ezanında çöktürüldü, denkler bağlandı; ${amount} akçelik yük yolda: ${route.join(" → ")}. ${route.length - 1} konak sürecek.` : `${amount} akçelik kervan yola çıktı: ${route.join(" → ")}. ${route.length - 1} konak sürecek.`, "kişisel", false, { k: cl2 ? "evj.carLaunch2" : "evj.carLaunch", p: [amount, { route }, route.length - 1, carried] }); }
   if ((p.retinue || 0) > 0) push(s, "maiyet", `Maiyetinden ${p.retinue} kılıç kervanla yola düştü; eşkıya iki kez düşünecek.`, "kişisel", false, { k: "evj.carGuarded", p: [p.retinue || 0] });
   return s;
 }
