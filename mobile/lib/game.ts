@@ -6255,7 +6255,7 @@ export function claimThrone(prev: GameState): { state: GameState; success: boole
     p.crownAuthority = 72; // tahta yeni çıkan hükümdarın başlangıç otoritesi
     p.fame = Math.min(100, p.fame + 25); p.reputation = Math.min(100, p.reputation + 15);
     bumpNam(p, "mert", 6);
-    push(s, "taht", `Tahta çıktın! Bundan böyle ${p.surname || p.name} Hanedanı diyara hükmediyor.`, "kişisel", true, { k: "ev.throne.win" });
+    { const tw2 = chance(0.5); push(s, "taht", tw2 ? `Kubbede üç gün mum yandı, kapılarda üç gün aş kaynadı: taht artık ${p.surname || p.name} Hanedanı'nın. İlk ferman: kimse aç yatmasın.` : `Tahta çıktın! Bundan böyle ${p.surname || p.name} Hanedanı diyara hükmediyor.`, "kişisel", true, { k: tw2 ? "ev.throne.win2" : "ev.throne.win" }); }
   } else {
     p.reputation = Math.max(-100, p.reputation - 30); p.fame = Math.max(0, p.fame - 15);
     p.fear = Math.min(100, p.fear + 10); p.health = Math.max(1, p.health - 25);
