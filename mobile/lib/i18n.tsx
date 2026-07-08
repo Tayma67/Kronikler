@@ -2424,7 +2424,7 @@ const EULX: Record<Lang, Dict> = {
     "eul.familySpouse": "%1 ile bir ocak kurdu, %2 evlat yetiştirdi.",
     "eul.familyChildren": "%1 evlat yetiştirdi; soyu devam edecek.",
     "eul.noHeir": "Soyunu sürdürecek bir evlat bırakmadı; hikâyesi onunla kapandı.",
-    "eul.storyArcs":"Ardında %1 tamamlanmış hikâye bıraktı; adı geçince biri hep 'dur, onu ben anlatayım' der.","eul.legends":"%1 efsaneyi kendi gözüyle görüp yendi; artık kendisi de onlardan biri.","eul.traveled":"%1 yerleşime ayak bastı; adı hanlarda hâlâ selamla anılır.","eul.trades":"%1 ayrı zanaatta ter döktü; her tezgâhta bir izi kaldı.","eul.friends": "Ardından %1 sadık dost ağladı; sofrasında kurulan bağlar mezarına dek geldi.","eul.grandchildren": "%1 torun gördü; soyunun filizlendiğine şahit oldu.",
+    "eul.storyArcs":"Ardında %1 tamamlanmış hikâye bıraktı; adı geçince biri hep 'dur, onu ben anlatayım' der.","eul.legends":"%1 efsaneyi kendi gözüyle görüp yendi; artık kendisi de onlardan biri.","eul.traveled":"%1 yerleşime ayak bastı; adı hanlarda hâlâ selamla anılır.","eul.trades":"%1 ayrı zanaatta ter döktü; her tezgâhta bir izi kaldı.","eul.friends": "Ardından %1 sadık dost ağladı; sofrasında kurulan bağlar mezarına dek geldi.", "eul.cat": "Ocağının kedisi %1, boş minderin başında üç akşam bekledi; kediler unutmaz, yalnız sessiz yas tutar.", "eul.dog": "Kapısının bekçisi %1, avludan üç gün çıkmadı; sadakat sahibinden uzun yaşadı.", "eul.companions": "Ocağında iki yoldaş kaldı: %1 minderde, %2 eşikte — ikisi de gözleri kapıda.","eul.grandchildren": "%1 torun gördü; soyunun filizlendiğine şahit oldu.",
   },
   en: {
     "eul.fameHigh": "Their name was known across the realm, spoken of at every table.",
@@ -2444,7 +2444,7 @@ const EULX: Record<Lang, Dict> = {
     "eul.familySpouse": "They built a home with %1 and raised %2 child(ren).",
     "eul.familyChildren": "They raised %1 child(ren); their line will go on.",
     "eul.noHeir": "They left no child to continue their line; their story closed with them.",
-    "eul.storyArcs":"Left behind %1 finished stories; whenever the name comes up, someone always says wait, let me tell that one.","eul.legends":"Saw %1 legends face to face and defeated them; now counted among them.","eul.traveled":"Set foot in %1 settlements; the name is still greeted in the inns.","eul.trades":"Sweated at %1 different trades; every bench keeps a trace.","eul.friends": "%1 loyal friend(s) wept at their passing; bonds forged at their table followed them to the grave.","eul.grandchildren": "They saw %1 grandchild(ren); they witnessed their line flower.",
+    "eul.storyArcs":"Left behind %1 finished stories; whenever the name comes up, someone always says wait, let me tell that one.","eul.legends":"Saw %1 legends face to face and defeated them; now counted among them.","eul.traveled":"Set foot in %1 settlements; the name is still greeted in the inns.","eul.trades":"Sweated at %1 different trades; every bench keeps a trace.","eul.friends": "%1 loyal friend(s) wept at their passing; bonds forged at their table followed them to the grave.", "eul.cat": "The hearth cat %1 kept watch by the empty cushion for three evenings; cats do not forget, they only grieve in silence.", "eul.dog": "The keeper of the gate, %1, did not leave the yard for three days; loyalty outlived its master.", "eul.companions": "Two companions remained at the hearth: %1 on the cushion, %2 on the threshold — both with eyes fixed on the door.","eul.grandchildren": "They saw %1 grandchild(ren); they witnessed their line flower.",
   },
   es: {
     "eul.fameHigh": "Su nombre se conocía por todo el reino, se mencionaba en las mesas.",
@@ -2464,7 +2464,7 @@ const EULX: Record<Lang, Dict> = {
     "eul.familySpouse": "Formó un hogar con %1 y crió %2 hijo(s).",
     "eul.familyChildren": "Crió %1 hijo(s); su linaje continuará.",
     "eul.noHeir": "No dejó hijo que continuara su linaje; su historia se cerró ahí.",
-    "eul.storyArcs":"Dejó %1 historias terminadas; cuando sale su nombre, alguien siempre dice espera, esa la cuento yo.","eul.legends":"Vio %1 leyendas cara a cara y las venció; ahora se cuenta entre ellas.","eul.traveled":"Pisó %1 poblaciones; su nombre aún se saluda en las posadas.","eul.trades":"Sudó en %1 oficios distintos; en cada banco quedó una huella.","eul.friends": "%1 amigo(s) leal(es) lloraron su partida; los lazos de su mesa lo acompañaron hasta la tumba.","eul.grandchildren": "Vio %1 nieto(s); fue testigo de cómo florecía su linaje.",
+    "eul.storyArcs":"Dejó %1 historias terminadas; cuando sale su nombre, alguien siempre dice espera, esa la cuento yo.","eul.legends":"Vio %1 leyendas cara a cara y las venció; ahora se cuenta entre ellas.","eul.traveled":"Pisó %1 poblaciones; su nombre aún se saluda en las posadas.","eul.trades":"Sudó en %1 oficios distintos; en cada banco quedó una huella.","eul.friends": "%1 amigo(s) leal(es) lloraron su partida; los lazos de su mesa lo acompañaron hasta la tumba.", "eul.cat": "El gato del hogar, %1, veló tres tardes junto al cojín vacío; los gatos no olvidan, solo guardan luto en silencio.", "eul.dog": "El guardián del portón, %1, no salió del patio en tres días; la lealtad sobrevivió a su dueño.", "eul.companions": "Dos compañeros quedaron junto al hogar: %1 en el cojín, %2 en el umbral — ambos con los ojos puestos en la puerta.","eul.grandchildren": "Vio %1 nieto(s); fue testigo de cómo florecía su linaje.",
   },
   pt: {
     "eul.fameHigh": "O seu nome era conhecido por todo o reino, mencionado às mesas.",
@@ -2484,7 +2484,7 @@ const EULX: Record<Lang, Dict> = {
     "eul.familySpouse": "Formou um lar com %1 e criou %2 filho(s).",
     "eul.familyChildren": "Criou %1 filho(s); a sua linhagem continuará.",
     "eul.noHeir": "Não deixou filho que continuasse a linhagem; a sua história fechou-se aí.",
-    "eul.storyArcs":"Deixou %1 histórias terminadas; quando o nome aparece, alguém diz sempre espera, essa conto eu.","eul.legends":"Viu %1 lendas cara a cara e venceu-as; agora conta-se entre elas.","eul.traveled":"Pisou %1 povoações; o nome ainda é saudado nas estalagens.","eul.trades":"Suou em %1 ofícios diferentes; em cada bancada ficou um rasto.","eul.friends": "%1 amigo(s) leal(is) choraram a sua partida; os laços da sua mesa acompanharam-no até à cova.","eul.grandchildren": "Viu %1 neto(s); foi testemunha do florescer da sua linhagem.",
+    "eul.storyArcs":"Deixou %1 histórias terminadas; quando o nome aparece, alguém diz sempre espera, essa conto eu.","eul.legends":"Viu %1 lendas cara a cara e venceu-as; agora conta-se entre elas.","eul.traveled":"Pisou %1 povoações; o nome ainda é saudado nas estalagens.","eul.trades":"Suou em %1 ofícios diferentes; em cada bancada ficou um rasto.","eul.friends": "%1 amigo(s) leal(is) choraram a sua partida; os laços da sua mesa acompanharam-no até à cova.", "eul.cat": "O gato da lareira, %1, velou três tardes junto à almofada vazia; os gatos não esquecem, apenas guardam luto em silêncio.", "eul.dog": "O guardião do portão, %1, não saiu do pátio durante três dias; a lealdade sobreviveu ao dono.", "eul.companions": "Dois companheiros ficaram junto à lareira: %1 na almofada, %2 na soleira — ambos de olhos postos na porta.","eul.grandchildren": "Viu %1 neto(s); foi testemunha do florescer da sua linhagem.",
   },
   ar: {
     "eul.fameHigh": "ذاع صيته في أنحاء الديار، وتُذكر سيرته على الموائد.",
@@ -2504,7 +2504,7 @@ const EULX: Record<Lang, Dict> = {
     "eul.familySpouse": "أسّس بيتًا مع %1 وربّى %2 من الأبناء.",
     "eul.familyChildren": "ربّى %1 من الأبناء؛ ونسله سيمتدّ.",
     "eul.noHeir": "لم يترك ولدًا يمدّ نسله؛ فطُويت حكايته معه.",
-    "eul.storyArcs":"خلف وراءه %1 حكاية مكتملة؛ وكلما ذكر الاسم قال أحدهم: مهلا، هذه أرويها أنا.","eul.legends":"رأى %1 من الأساطير وجها لوجه وهزمها؛ وصار الآن واحدا منها.","eul.traveled":"وطئت قدمه %1 من الديار؛ وما يزال اسمه يحيا في الخانات.","eul.trades":"عرق في %1 من الحرف؛ وفي كل منضدة بقي له أثر.","eul.friends": "بكاه %1 من الأصدقاء الأوفياء؛ روابطُ مائدته رافقته إلى القبر.","eul.grandchildren": "رأى %1 من الأحفاد؛ وشهد نسله يزهر.",
+    "eul.storyArcs":"خلف وراءه %1 حكاية مكتملة؛ وكلما ذكر الاسم قال أحدهم: مهلا، هذه أرويها أنا.","eul.legends":"رأى %1 من الأساطير وجها لوجه وهزمها؛ وصار الآن واحدا منها.","eul.traveled":"وطئت قدمه %1 من الديار؛ وما يزال اسمه يحيا في الخانات.","eul.trades":"عرق في %1 من الحرف؛ وفي كل منضدة بقي له أثر.","eul.friends": "بكاه %1 من الأصدقاء الأوفياء؛ روابطُ مائدته رافقته إلى القبر.", "eul.cat": "قط الموقد %1 سهر ثلاث أمسيات عند الوسادة الخالية؛ القطط لا تنسى، إنما تحزن بصمت.", "eul.dog": "حارس الباب %1 لم يغادر الفناء ثلاثة أيام؛ الوفاء عاش بعد صاحبه.", "eul.companions": "بقي عند الموقد رفيقان: %1 على الوسادة و%2 على العتبة — وكلاهما عيناه على الباب.","eul.grandchildren": "رأى %1 من الأحفاد؛ وشهد نسله يزهر.",
   },
   ru: {
     "eul.fameHigh": "Имя его знали по всей державе, поминали за столами.",
@@ -2524,7 +2524,7 @@ const EULX: Record<Lang, Dict> = {
     "eul.familySpouse": "Он создал дом с %1 и вырастил детей: %2.",
     "eul.familyChildren": "Он вырастил детей: %1; род его продолжится.",
     "eul.noHeir": "Он не оставил ребёнка, чтобы продолжить род; его история закрылась с ним.",
-    "eul.storyArcs":"После него осталось %1 завершённых историй; стоит прозвучать имени, кто-нибудь непременно скажет: постой, эту расскажу я.","eul.legends":"Видел %1 легенд лицом к лицу и одолел их; теперь и сам среди них.","eul.traveled":"Ступал в %1 поселений; имя до сих пор встречают поклоном на постоялых дворах.","eul.trades":"Проливал пот в %1 разных ремёслах; на каждом верстаке остался след.","eul.friends": "Его оплакивали верные друзья: %1; узы, скреплённые за его столом, дошли с ним до могилы.","eul.grandchildren": "Он увидел внуков: %1; стал свидетелем того, как цветёт его род.",
+    "eul.storyArcs":"После него осталось %1 завершённых историй; стоит прозвучать имени, кто-нибудь непременно скажет: постой, эту расскажу я.","eul.legends":"Видел %1 легенд лицом к лицу и одолел их; теперь и сам среди них.","eul.traveled":"Ступал в %1 поселений; имя до сих пор встречают поклоном на постоялых дворах.","eul.trades":"Проливал пот в %1 разных ремёслах; на каждом верстаке остался след.","eul.friends": "Его оплакивали верные друзья: %1; узы, скреплённые за его столом, дошли с ним до могилы.", "eul.cat": "Кот очага %1 три вечера сторожил пустую подушку; кошки не забывают — они лишь горюют молча.", "eul.dog": "Страж ворот %1 три дня не выходил со двора; верность пережила хозяина.", "eul.companions": "У очага остались двое: %1 на подушке, %2 на пороге — оба с глазами, обращёнными к двери.","eul.grandchildren": "Он увидел внуков: %1; стал свидетелем того, как цветёт его род.",
   },
 };
 

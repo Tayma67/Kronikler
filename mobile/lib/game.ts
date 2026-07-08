@@ -4781,6 +4781,10 @@ export function eulogy(s: GameState): { epithet: string; lines: EulLine[]; close
   // Sadık dostlar: bir ömür boyu kurulan bağlar ardından ağlar
   const loyalN = Object.values(s.relationships || {}).filter((v) => (v as number) >= 50).length;
   if (loyalN > 0) lines.push({ k: "eul.friends", p: [loyalN] });
+  // Yoldaşlar da yasa durur: bağı yüksek kedi/köpek mersiyede anılır
+  if (p.pet && p.pet.bond >= 50 && p.dog && p.dog.bond >= 50) lines.push({ k: "eul.companions", p: [p.pet.n, p.dog.n] });
+  else if (p.dog && p.dog.bond >= 50) lines.push({ k: "eul.dog", p: [p.dog.n] });
+  else if (p.pet && p.pet.bond >= 50) lines.push({ k: "eul.cat", p: [p.pet.n] });
   // Yol ve zanaat da mirastır: çok gezen handa, çok deneyen tezgâhta anılır.
   const seenN = new Set([...(p.cities_visited || []), p.location_name]).size;
   if (seenN >= 10) lines.push({ k: "eul.traveled", p: [seenN] });
