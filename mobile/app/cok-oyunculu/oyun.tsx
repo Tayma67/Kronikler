@@ -18,6 +18,7 @@ const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i
 
 // MP'de oynanabilen kişisel ekranlar (hepsi useGame() = MP karakteri üstünde çalışır)
 const LIFE_SCREENS: { path: string; icon: string; key: string }[] = [
+  { path: "/oyun/karakter", icon: "karakter", key: "tab.character" },
   { path: "/oyun/meslek", icon: "anvil", key: "scr.meslek" },
   { path: "/oyun/mektep", icon: "scroll", key: "scr.mektep" },
   { path: "/oyun/beceriler", icon: "star", key: "scr.beceriler" },
