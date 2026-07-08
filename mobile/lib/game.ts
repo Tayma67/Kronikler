@@ -1570,7 +1570,8 @@ export function advance(prev: GameState, n = 1): GameState {
       if (pl.yr_money === undefined) pl.yr_money = pl.money;
       else {
         const d = pl.money - pl.yr_money;
-        const key = d > 20 ? "evj.yearUp" : d < -20 ? "evj.yearDown" : "evj.yearFlat";
+        const v2 = chance(0.5) ? "2" : ""; // ikinci ağız: aynı muhasebe, başka cümle
+        const key = (d > 20 ? "evj.yearUp" : d < -20 ? "evj.yearDown" : "evj.yearFlat") + v2;
         push(s, "yıl_dönümü", `${pl.age} yaşına bastın. Bu yıl kesen ${d >= 0 ? "+" : "−"}${Math.abs(d)} akçe değişti.`, "kişisel", true, { k: key, p: [pl.age, Math.abs(d)] });
         pl.yr_money = pl.money;
       }
