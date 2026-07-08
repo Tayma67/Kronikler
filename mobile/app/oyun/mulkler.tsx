@@ -222,14 +222,14 @@ export default function Mulkler() {
           })}
         </Panel>
 
-        {/* Bu şehirde satın al — 5 tip illüstrasyonlu */}
+        {/* Bu şehirde satın al — 6 tip illüstrasyonlu (sarmalı: dar ekranda 3+3) */}
         <Panel title={`${t("mulk.buyHere")} · ${placeName(here, lang)}`}>
-          <View style={{ flexDirection: "row", gap: 6 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             {Object.entries(PROPERTY_TYPES).map(([id, ty]) => {
               const cost = propBuyCost(state, id);
               const can = p.money >= cost;
               return (
-                <View key={id} style={{ flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, overflow: "hidden" }}>
+                <View key={id} style={{ flexBasis: "31%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, overflow: "hidden" }}>
                   <Image source={mulkImage(id)} style={{ width: "100%", height: 42 }} resizeMode="cover" />
                   <View style={{ paddingHorizontal: 3, paddingTop: 4, paddingBottom: 5, alignItems: "center" }}>
                     <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 8.5, color: C.parchment }}>{t("pt." + id)}</Text>
