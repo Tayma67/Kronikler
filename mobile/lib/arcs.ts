@@ -11,6 +11,26 @@ export interface Arc {
 
 export const ARCS: Arc[] = [
   {
+    id: "yanik_degirmen", title: "Yanık Değirmen", icon: "flame",
+    blurb: "Köyün değirmeni gece kül oldu; un yok, suçlu çok.",
+    when: (p) => p.age >= 25,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Vadinin değirmeni gece yandı; sabah köy meydanında un çuvalları yerine kül kokusu vardı. Değirmenci Musa suskun; 'borcuna yaktı' diyen diyene. Kadı seni kenara çekti: 'Ya izi sür, ya değirmeni ayağa kaldır — köy unsuz kışa giremez.'", choices: [
+        { label: "İzleri kendin sür", result: "Küle diz çöküp baktın: taş dibinde katran izi, kapı sürgüsü dışarıdan kırık. Musa borcuna yakmadı — birisi geceyi seçmiş. Meydanda ilk kez biri 'belki de suçsuzdur' dedi.", delta: {}, next: "s2" },
+        { label: "Değirmeni ayağa kaldır (−80)", result: "Keresteyi sen verdin, taşı köy çekti; altı haftada çark yeniden döndü. İlk unun ilk somunu senin kapına bırakıldı — ama 'kim yaktı' sorusu köyün üstünde asılı kaldı.", delta: { money: -80, honor: 4 }, next: "s2b" },
+      ]},
+      s2: { id: "s2", text: "Katran izi seni fırıncı Bekir'in ambarına götürdü: fıçının biri eksik. Tam kadıya gidecekken Bekir'in çırağı yolunu kesti; sesi titriyor: 'Ustam değil... ben. Fener devrildi, korktum, kaçtım. Yemin ederim kasıt yok.'", choices: [
+        { label: "Çırağı al, kadıya doğruyu çıkar", result: "Çırak kadı huzurunda dilini yutmadan anlattı; kaza hükmü çıktı, tazmin fırın kârından bölündü. Musa'nın adı temizlendi — meydanda sana ilk selamı o verdi.", delta: { honor: 5, reputation: 3 }, next: "end" },
+        { label: "Bekir'in sus payını al, dosya kapansın", result: "Bekir'in kesesi ağırdı, sözü kısa: 'Kül soğudu, karıştırma.' Dosya kapandı; Musa'nın sırtındaki leke kaldı. Un yine öğütülüyor ama sen o değirmenden ekmek yiyemiyorsun.", delta: { money: 70, honor: -5, fear: 1 }, next: "end" },
+      ]},
+      s2b: { id: "s2b", text: "Yeni çark dönerken Musa eski taşın kırığını temele gömdü: 'Unutmayalım diye.' Sonra sana döndü: 'Değirmeni kaldırdın, sağ ol. Ama adım hâlâ küllü. Bir gece nöbet tut benimle — yakan geri gelir, derler.'", choices: [
+        { label: "Geceyi değirmende bekle", result: "Üçüncü gece ayak sesi geldi: elinde yağ tenekesiyle komşu vadinin değirmencisi — müşteri kaçıyordu diye kıymış. Kadıya teslim edildi; Musa'nın adı meydanda yıkandı.", delta: { fame: 5, reputation: 4 }, next: "end" },
+        { label: "Fısıltı zamanla ölür, karışma", result: "Nöbete kalmadın; kundakçı da dönmedi. Fısıltı öldü ölmesine — ama Musa selamı artık başını kaldırmadan veriyor.", delta: { reputation: -2 }, next: "end" },
+      ]},
+    },
+  },
+  {
     id: "panayir_pehlivani", title: "Panayır Pehlivanı", icon: "fist",
     blurb: "Başpehlivan meydanda dönüyor: 'Er yok mu?' Gözler sende.",
     when: (p) => p.age >= 18,
