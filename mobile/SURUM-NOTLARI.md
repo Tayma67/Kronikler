@@ -2,6 +2,24 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 455-470 eki (8 Temmuz, gece yarısı) — OCAĞIN YOLDAŞLARI VE TEST TERZİLİĞİ
+
+**Tek cümle (mağaza/what's new):**
+TR: "Kapıya bir gün sırılsıklam bir yavru kedi gelir: huyu, ömrü, kaybolup dönüşü ve vedası kendine özgü OCAK KEDİSİ; komşu çobanın tutuşturduğu ÇOBAN KÖPEĞİ patikada pusuyu havlayıp bozar, sahibinin tabutu ardından yürür — ikisi de vârise kalır. Müzik MIZRAPLI TELLE yeniden bestelendi; ana sayfa HAYAT GÜNLÜĞÜNE teslim; ikilemlere YAZGI PAYI (aynı seçim herkeste aynı izi bırakmaz, bedeni güç taşır); haritada beş beylik işareti parmağa cevap verir, altın halka BURADASIN der; kulüpte hoca omzuna el koyar, akran ekmeğini bölüşür; çok oyunculuda odalar yalnız KODLA açılır, kod tek dokunuşla paylaşılır, ay 'AYI İLERLET · 2/5' sayacıyla ilerler ve kişisel ekranlardan DİYARA DÖN şeridi kaybolmayı imkânsız kılar."
+EN: "One day a soaked kitten appears at your door: the HEARTH CAT with its own temperament, lifespan, disappearances and farewell; the SHEPHERD DOG pressed into your arms breaks bandit ambushes with a bark and walks behind its keeper's coffin — both pass to your heir. The music is RECOMPOSED with plucked strings; the home screen belongs to the LIFE LOG; dilemmas carry a SHARE OF FATE (the same choice leaves different marks, strength bears the cost); five tappable beylik markers and a golden YOU ARE HERE ring on the map; at the club the master lays a hand on your shoulder and a peer shares his bread; in multiplayer realms open only BY CODE, the code shares in one tap, the month advances with an 'ADVANCE · 2/5' counter and a BACK TO THE REALM strip makes getting lost impossible."
+
+**Öne çıkanlar:**
+- **Ocak Kedisi (SP+MP):** satın alınmaz, kapıya gelir. Dört huy (avcı kileri korur, sokulgan hastayı sarar, tembel, nazlı), kediye özgü 11-16 yıl ömür, yaşlılık işareti, ara sıra kaybolup mağrur dönüş, vârise huyu ve kalan ömrüyle geçiş; mırıltısı gerçek, 95. başarım "Ocak Yoldaşı".
+- **Çoban Köpeği (SP+MP):** komşu çoban yavru bırakır. Patikada pusu %35 havlamayla bozulur, gece kapı nöbeti, çocukları sırtında taşır; 10-13 yıl ömür; sahibi ölünce tabutun ardından yürür, nöbeti vârisin dizinde sürdürür; 96. başarım "Kapı Yoldaşı".
+- **Müzik v2:** "Kervan Yolu" mızraplı tel senteziyle yeniden — saz cümleleri, pes dem, seyrek tef; 72 sn dikişsiz.
+- **Pano düzeni:** hedef kartı kalktı, uğraş panelleri aksiyonların yanına indi — günlük sayfanın gövdesi (BitLife akışı).
+- **Yazgı payı:** ikilem bedelleri ±%25 zarla kişiselleşir; fiziksel bedeli güç statı hafifletir.
+- **Harita:** beş beylik işareti tıklanır; bulunduğun beylikte altın "buradasın" halkası.
+- **Kulüp dokusu:** her meşke ikinci ağız + hoca/akran anları (hoca bağı ve hüner işler).
+- **Çok oyunculu terziliği:** açık oda listesi kalktı (yalnız kodla), kod serlevhada ve tek dokunuşla paylaşılır, "Ayı İlerlet · x/y" sayacı, hazır oyu sunucu gerçeğinden, kişisel ekranlarda "Diyara Dön" şeridi, günlükten mektuba tek dokunuş cevap.
+- **Ufukta şeridi:** çeyiz sandığının açılışına, bağbozumuna kalan süre ve kilersiz kış uyarısı panoda.
+- **Derleme hattı:** önbellek + paralel kalite kapısı — güncellemeler artık daha hızlı yayınlanır.
+
 ## Dalga 431-449 eki (8 Temmuz, gece) — SESİN VE SURETİN ÇAĞI (GÖRSEL-İŞİTSEL PAKET)
 
 **Tek cümle (mağaza/what's new):**
