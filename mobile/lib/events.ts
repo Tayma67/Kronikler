@@ -857,7 +857,7 @@ export const DILEMMAS: Dilemma[] = [
     ],
   },
   {
-    id: "cocuk_kus", icon: "leaf", title: "Kanadı Kırık Kuş",
+    id: "cocuk_kus_kuscu", icon: "leaf", title: "Kanadı Kırık Kuş",
     text: "Dere kenarında kanadı kırık bir kuş buldun; kuşçu 'üç akçe veririm' diyor.",
     when: (p) => p.age >= 7 && p.age < 13,
     choices: [
