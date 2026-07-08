@@ -4715,6 +4715,12 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const netWealth = Math.max(0, (p.money + (p.deposit || 0)) - (p.debt || 0)); // ödenmemiş borç mirastan düşülür (borç ölümle silinmez)
   const inheritMoney = Math.floor(netWealth * will.frac) + 20; // emanet de mirasa dahil
   const props = p.properties.slice(0, Math.max(1, Math.ceil(p.properties.length * will.frac))); // vasiyet oranı mülke de işler; kalan hisseler kardeşlere ve vakfa dağılır (boş listede güvenli)
+  // Tur-bazlı mülk damgaları vârisin sıfırdan başlayan takvimine yeniden tabanlanır (devir rebase):
+  // nadas/bereket süresi kaldığı yerden sürer; süresi geçmiş damga temizlenir. (Kiracı ve bekçi tur bağımsız — olduğu gibi kalır.)
+  for (const pr of props) {
+    if (pr.fallow_until !== undefined) pr.fallow_until = Math.max(1, pr.fallow_until - prev.turn);
+    if (pr.fertile_until !== undefined) { const kalan = pr.fertile_until - prev.turn; if (kalan > 0) pr.fertile_until = kalan; else pr.fertile_until = undefined; }
+  }
   const gen = p.generation + 1;
   const surname = p.surname;
   // Kalıcı görkem eserleri vârise geçer (oyunun kendi vaadi: "nesiller boyu sürecek") — hekim ve hac kişiseldir, kalmaz.
