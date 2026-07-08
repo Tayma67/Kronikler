@@ -2383,6 +2383,8 @@ const WORLD_NEWS: string[] = [
   "%b yolundaki menzil taşları bir gecede yenilendi; taşçıyı gören yok, %b2 kervancıları yollar kısaldı diye söyleniyor.",
   "%b köprüsünün ortasında bir bebek doğdu; iki beylik de 'bizim toprakta doğdu' diye tatlı bir çekişmede — %b2 beyi beşik yolladı bile.",
   "%b ile %b2 kâtipleri ortak bir kervan sözlüğü yazıyor: kırk dilin pazarlık sözü tek deftere iniyor.",
+  "%b kalesinin burcuna bir çift şahin yuva yaptı; bekçiler kuşları saymadan nöbet devri yapmıyor.",
+  "%b külhanında közlenen kestanenin kokusu %b2 pazarında anılıyor; külhancı 'tarif mezara gelir benimle' diyor.",
 ];
 function worldNews(s: GameState) {
   const i1 = Math.floor(Math.random() * BEYLIKS.length);
