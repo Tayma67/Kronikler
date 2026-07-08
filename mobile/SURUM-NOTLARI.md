@@ -2,6 +2,17 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 259-264 eki (8 Temmuz, sabah) — PAZARIN NABZI, YOLUN DİLİ
+
+**Tek cümle (mağaza/what's new):**
+TR: "Pazar iki yeni nabız kazandı — düğün mevsimi takıyı uçuruyor, nehirdeki balık akını tezgâhı ucuzlatıyor; yol iki hikâye daha öğrendi — eskicinin kırık tekeri ve sisli vadinin oyunu; çarşıya üç fısıltı, orta yaşa iki anı, kervan ipucuna pusu uyarısı eklendi."
+EN: "The market gained two new pulses — wedding season sends jewelry soaring, the river's fish run floors the stalls; the road learned two more tales — the tinker's broken wheel and the foggy valley's trick; three whispers joined the bazaar, two memories joined middle age, and the caravan hint now warns of ambush."
+
+**Öne çıkanlar:**
+- **Pazar nabızları:** Düğün mevsimi (takı ve kaftan ×1.35, 3 ay) ve balık akını (balık ×0.7, 2 ay) — ekonomi 19 olaylı.
+- **Yol hikâyeleri 19:** eskicinin tekeri (güç; dua + akçe + cömert nam) ve sisli vadi (zekâ; kestirme ya da kaybolan gün) — eskici kervan rotasında da.
+- **Doku:** çarşı fısıltısı 36 (surdaki ıslık, ikiz buzağı, sazanın karnındaki yüzük), orta yaş anıları 8 (baba yadigârı alet, kundakta büyüyen ad), kervan ipucunda pusu dürüstlüğü, bilgi kartı terazisi güncel.
+
 ## Dalga 251-257 eki (8 Temmuz, şafak) — KÜÇÜK HAYATIN SESİ
 
 **Tek cümle (mağaza/what's new):**
