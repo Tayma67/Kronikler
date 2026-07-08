@@ -6349,9 +6349,12 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string, 
     if (seedKey) s.recent_dilemmas = [...(s.recent_dilemmas || []), seedKey.split(":")[0]].slice(-6); // tekrar koruması: görülen ikilem bir süre havuza dönmez
   }
   if (delta.money) p.money = Math.max(0, p.money + delta.money);
-  if (delta.health) p.health = clampStat(p.health + delta.health);
+  // Yazgı payı (test bulgusu): aynı seçim herkeste aynı sonucu doğurmasın — sağlık/itibar bedeli ±%25 zarla oynar,
+  // bedenî bedeli güç statı hafifletir (para metinde açıkça yazıldığı için zarsız kalır).
+  const jit = (v: number) => { const r = Math.round(v * (0.75 + Math.random() * 0.5)); return v > 0 ? Math.max(1, r) : Math.min(-1, r); };
+  if (delta.health) { let hv = jit(delta.health); if (hv < 0) hv = Math.min(-1, hv + Math.floor(effStat(p, "strength") / 4)); p.health = clampStat(p.health + hv); }
   if (delta.hunger) p.hunger = clampStat(p.hunger + delta.hunger);
-  if (delta.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + delta.reputation));
+  if (delta.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + jit(delta.reputation)));
   if (delta.honor) p.honor = clampStat(p.honor + delta.honor);
   if (delta.fear) p.fear = clampStat(p.fear + delta.fear);
   if (delta.fame) p.fame = clampStat(p.fame + delta.fame);
