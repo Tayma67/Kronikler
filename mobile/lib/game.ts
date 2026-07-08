@@ -183,7 +183,7 @@ export function effStat(p: Player, key: keyof Stats): number {
   return Math.max(0, base - pen);
 }
 // Mülk: konuma bağlı (loc) + kondisyon (cond 0..100) + kademe (level 1..3). Gelir refah×kondisyon×kademe.
-export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number }[]; tenant?: boolean; }
+export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number }[]; tenant?: boolean; guard?: boolean; }
 export const PROP_MAX_LEVEL = 3;
 export function propUpgradeCost(pr: Property): number { return Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * (pr.level || 1) * 0.8); }
 export function upgradeProperty(prev: GameState, index: number): GameState {
@@ -345,6 +345,15 @@ export function setTenant(prev: GameState, index: number, on: boolean): GameStat
   pr.tenant = on;
   if (on) push(s, "mülk", `${pr.loc}'daki ev kiraya verildi; her ay kira işler, ev de yıpranır.`, "kişisel", false, { k: "evj.tenantIn", p: [{ pl: pr.loc }] });
   else push(s, "mülk", `${pr.loc}'daki evin kiracısı çıkarıldı; anahtar yine senin cebinde.`, "kişisel", false, { k: "evj.tenantOut", p: [{ pl: pr.loc }] });
+  return s;
+}
+// Mülk bekçisi: aylık ücret (4 akçe taban, enflasyonlu) karşılığı yağma olasılığı üçte bire, yangın riski yarıdan aza iner.
+export function setGuard(prev: GameState, index: number, on: boolean): GameState {
+  const s = clone(prev); const p = s.player; const pr = p.properties[index];
+  if (!pr || p.dead || !!pr.guard === on) return s;
+  pr.guard = on;
+  if (on) push(s, "mülk", `${pr.loc}'daki mülke bekçi tutuldu; sopası duvara dayalı, gözü sokakta.`, "kişisel", false, { k: "evj.guardIn", p: [{ pl: pr.loc }] });
+  else push(s, "mülk", `${pr.loc}'daki mülkün bekçisi bırakıldı; kapı yine kendi başına.`, "kişisel", false, { k: "evj.guardOut", p: [{ pl: pr.loc }] });
   return s;
 }
 export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[pr.type]?.slots || 0) + ((pr.level || 1) - 1); }
@@ -1738,17 +1747,18 @@ export function advance(prev: GameState, n = 1): GameState {
       // İşçi ekonomisi: çalışan NPC'ler üretimi artırır ama ücret ister.
       const w = propWorkerStats(s, pr, base, condProspLevel);
       inc += w.gross; wages += w.wage;
+      if (pr.guard) wages += 4; // bekçi ücreti (enflasyon çarpanı aşağıda tüm ücretlere uygulanır)
       // Mülk defteri: yıllık net (gelir − ücret) geçmişi (Vercel property ledger; şeffaflık).
       if (i === n - 1 && s.turn > 0 && s.turn % 12 === 0) { pr.ledger = pr.ledger || []; pr.ledger.push({ y: Math.floor(s.turn / 12), net: Math.round((base * condProspLevel * typeMult * mevMult + w.gross - w.wage) * pmult) }); if (pr.ledger.length > 6) pr.ledger = pr.ledger.slice(-6); }
       const y = propYield(s, pr); if (y) { const sm = pr.type === "tarla" ? ({ "İlkbahar": 0.6, "Yaz": 1.0, "Sonbahar": 1.8, "Kış": 0.2 }[cal.season] ?? 1) : 1; const q = Math.round(y.qty * sm); if (q > 0) produced[y.good] = (produced[y.good] || 0) + q; } // işçi emeği → gerçek hammadde (tarla mevsimlik)
       if (pr.cond > 40 && chance(pr.type === "ev" && pr.tenant ? 0.35 : 0.2)) pr.cond -= 1; // zamanla aşınma (kiracılı ev daha hızlı yıpranır)
-      if (effSec < 30 && chance(0.02 + (effSec < 10 ? 0.03 : 0))) {                    // düşük güvenlikte (eşkıya/yangın olayı kötüleştirir) yağma
+      if (effSec < 30 && chance((0.02 + (effSec < 10 ? 0.03 : 0)) * (pr.guard ? 0.35 : 1))) { // düşük güvenlikte yağma (bekçili mülkte üçte bire iner)
         pr.cond = Math.max(20, pr.cond - 15);
         if (i === n - 1) push(s, "mülk_yagma", `${PROPERTY_TYPES[pr.type]?.name || "Mülkün"} (${pr.loc}) yağmaya uğradı; onarım gerek.`, "kişisel", false, { k: "evj.propRaid", p: [{ pt2: pr.type }, { pl: pr.loc }] });
       }
       // Katastrofik kayıp: mahallede AKTİF yangın olayı varken çok düşük olasılıkla mülk tümüyle kül olur.
       // Diyardaki tek geri-alınamaz mülki kayıp: oyuncu düşük güvenlikli şehirde mülk tutmanın gerçek riskini hisseder.
-      if (!burnPr && i === n - 1 && locEventsAt(s, pr.loc || s.player.location_name).includes("yangin") && chance(0.012)) burnPr = pr;
+      if (!burnPr && i === n - 1 && locEventsAt(s, pr.loc || s.player.location_name).includes("yangin") && chance(pr.guard ? 0.005 : 0.012)) burnPr = pr; // bekçi kıvılcımı erken görür
     }
     if (burnPr) {
       const bi = s.player.properties.indexOf(burnPr);

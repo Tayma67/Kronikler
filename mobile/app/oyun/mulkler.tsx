@@ -4,7 +4,7 @@ import Svg, { Polyline, Polygon, Defs, LinearGradient, Stop, Rect } from "react-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant } from "../../lib/game";
+import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard } from "../../lib/game";
 import { placeName, professionNameL } from "../../lib/locale-data";
 import { mulkImage, MULK_BOS, MULK_HERO } from "../../lib/assets";
 import { C, F } from "../../lib/theme";
@@ -183,6 +183,9 @@ export default function Mulkler() {
                           <Text style={actTxt(false)}>{pr.tenant ? t("mulk.rentEnd") : t("mulk.rentOut")}</Text>
                         </Pressable>
                       )}
+                      <Pressable onPress={() => { hap("tap"); apply((s) => setGuard(s, i, !pr.guard)); }} style={actBtn(false)}>
+                        <Text style={actTxt(false)}>{pr.guard ? t("mulk.guardOff") : t("mulk.guardOn")}</Text>
+                      </Pressable>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
                         <GameIcon name="iliskiler" size={11} color={C.parchmentMuted} />
                         <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("mulk.workers").toUpperCase()} {hired.length}/{slots}</Text>
