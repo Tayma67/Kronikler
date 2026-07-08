@@ -2,6 +2,17 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 251-257 eki (8 Temmuz, şafak) — KÜÇÜK HAYATIN SESİ
+
+**Tek cümle (mağaza/what's new):**
+TR: "Çocukluk artık ay içinde de konuşuyor: misket çizgisi, minaredeki leylek ve arktaki kâğıt gemiler 6-12 yaşın kendi anları oldu; görev defteri duruşmayı, kan defterini, destanı ve seferi görür oldu; ocaklara beşinci iş, fırsat defterine iki kapı, yaş gününe ikinci ağız eklendi."
+EN: "Childhood now speaks within the month too: the marbles line, the stork on the minaret and paper boats in the ditch became ages 6-12's own moments; the task ledger now sees the trial, the Blood Ledger, the saga and the campaign; a fifth job joined each guild, two doors joined the opportunity book, and the birthday gained a second voice."
+
+**Öne çıkanlar:**
+- **Çocukluk mikro anları (SP):** 13 yaş altı bugüne dek hiç mikro an görmüyordu — artık 6-12 bandının üç kendi anı var; yetişkin anları çocuğa düşmez.
+- **Görev defteri 4 göz:** bekleyen duruşma (acil), panoda bekleyen Kan Defteri sahnesi (acil), Kül Yemini sahnesi ve süren sefer artık listede.
+- **Doku:** lonca görevlerine beşinci anlatı (iskeleyle pazarlık, cami şamdanı, elçi kalkanı, hamam tütsüsü, sessiz tanık), fırsat havuzu 20 (değirmen çarkı, müneccim rakamları), yaş günü muhasebesi iki ağız, MP pakt kalkanı nedeni kartta, SSS'e Hayat Şeridi + Dönüş Parşömeni.
+
 ## Dalga 240-249 eki (8 Temmuz, şafağa karşı) — GEÇİDİN AĞZINDA CANSIZ BEY
 
 **Tek cümle (mağaza/what's new):**
