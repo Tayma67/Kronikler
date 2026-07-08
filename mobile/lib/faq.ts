@@ -154,6 +154,7 @@ const TR: FaqSection[] = [
       { q: "Müzik ve ses efektleri nereden açılır?", a: "Ayarlar ekranından ikisi ayrı ayrı yönetilir. Arka plan müziği (Kervan Yolu teması) varsayılan açıktır; ses efektleri varsayılan kapalıdır. Müzik uygulama arka plana geçince kendiliğinden susar, dönünce kaldığı yerden sürer." },
       { q: "Sade mod nedir? Pilimi korur mu?", a: "Sade mod tüm sürekli animasyonları, ekran arkalarındaki fresk dokusunu ve müziğin varsayılanını kapatır — düşük RAM'li cihazlarda kendiliğinden açılır, Ayarlar'dan elle de yönetilir. Oyun olay güdümlüdür: arka planda zamanlayıcı koşmaz, pil dostudur." },
       { q: "Oyun veri topluyor mu?", a: "Hayır. Hesap yok, reklam yok, izleme yok; kayıtlar yalnız cihazında durur. Çevrimiçi Diyar'a kendi isteğinle katılırsan yalnız karakter adın ve oyun değerlerin aynı diyardaki oyunculara gösterilir — kimliğinle eşleştirilmez." },
+      { q: "Ocak kedisi nedir, nasıl edinilir?", a: "Satın alınmaz: 10 yaşından sonra bir gün kapının önünde bir yavru belirir, süt koyarsan kalır. Her kedinin kendi adı, huyu (avcı, sokulgan, tembel, nazlı) ve kendi ömrü (11-16 yıl) vardır. Ayda bir sevebilirsin; avcısı kileri fareden korur, sokulganı hasta günlerinde yanından ayrılmaz, çocuklarla oynayıp bağ kurar. Ara sıra birkaç ay kaybolur — kediler kimseye hesap vermez, ama ocağı unutmaz. Yaşlanınca haber verir, vakti gelince bahçedeki badem ağacının altına uğurlanır. Sen ölürsen kedi ocakta kalır: vârisine geçer." },
     ],
   },
 ];
@@ -309,6 +310,7 @@ const EN: FaqSection[] = [
       { q: "Where do I turn on music and sound effects?", a: "Both are managed separately in Settings. Background music (the Caravan Road theme) is on by default; sound effects are off by default. Music goes silent when the app is backgrounded and resumes when you return." },
       { q: "What is reduced mode? Does it save battery?", a: "Reduced mode turns off all continuous animations, the fresco texture behind screens and the music default — it enables itself on low-RAM devices and can be toggled in Settings. The game is event-driven: no timers run in the background, so it is battery-friendly." },
       { q: "Does the game collect data?", a: "No. No account, no ads, no tracking; saves live only on your device. If you voluntarily join the online Realm, only your character name and in-game values are shown to players in the same realm — never linked to your identity." },
+      { q: "What is the hearth cat and how do I get one?", a: "You cannot buy one: some day after age 10 a kitten appears at your door, and if you set out milk it stays. Every cat has its own name, temperament (hunter, affectionate, lazy, aloof) and its own lifespan (11-16 years). You can pet it once a month; a hunter guards the pantry from mice, an affectionate one never leaves your side on sick days, and cats play with your children and build bonds. Now and then it vanishes for a month or two — cats answer to no one, but they never forget the hearth. It gives notice when it grows old, and when the time comes it is laid to rest beneath the almond tree. If you die, the cat stays with the hearth: it passes to your heir." },
     ],
   },
 ];
@@ -465,6 +467,7 @@ const ES: FaqSection[] = [
       { q: "¿Dónde activo la música y los efectos de sonido?", a: "Ambos se gestionan por separado en Ajustes. La música de fondo (el tema del Camino de Caravanas) viene activada; los efectos vienen desactivados. La música se silencia al pasar la app a segundo plano y se reanuda al volver." },
       { q: "¿Qué es el modo sencillo? ¿Ahorra batería?", a: "El modo sencillo apaga las animaciones continuas, la textura de fresco tras las pantallas y el valor por defecto de la música — se activa solo en dispositivos con poca RAM y también se ajusta a mano. El juego es por eventos: no corren temporizadores en segundo plano, cuida la batería." },
       { q: "¿El juego recopila datos?", a: "No. Sin cuenta, sin anuncios, sin rastreo; las partidas viven solo en tu dispositivo. Si te unes por voluntad al Reino en línea, solo tu nombre de personaje y tus valores de juego se muestran a los jugadores del mismo reino — nunca se vinculan a tu identidad." },
+      { q: "¿Qué es el gato del hogar y cómo se consigue?", a: "No se compra: algún día después de los 10 años un gatito aparece en tu puerta, y si le pones leche se queda. Cada gato tiene su nombre, su carácter (cazador, mimoso, perezoso, arisco) y su propia vida (11-16 años). Puedes acariciarlo una vez al mes; el cazador guarda la despensa de los ratones, el mimoso no se aparta de ti en los días de enfermedad, y juega con tus hijos creando vínculos. De vez en cuando desaparece un mes o dos — los gatos no rinden cuentas, pero nunca olvidan el hogar. Avisa cuando envejece y, llegada la hora, descansa bajo el almendro. Si mueres, el gato se queda con el hogar: pasa a tu heredero." },
     ],
   },
 ];
@@ -620,6 +623,7 @@ const PT: FaqSection[] = [
       { q: "Onde ativo a música e os efeitos sonoros?", a: "Os dois são geridos separadamente nos Ajustes. A música de fundo (o tema da Estrada das Caravanas) vem ativada; os efeitos vêm desativados. A música silencia quando o app vai para segundo plano e retoma quando você volta." },
       { q: "O que é o modo simples? Poupa bateria?", a: "O modo simples desliga as animações contínuas, a textura de afresco atrás das telas e o padrão da música — ativa-se sozinho em aparelhos com pouca RAM e também se ajusta manualmente. O jogo é orientado a eventos: nenhum temporizador roda em segundo plano, poupa bateria." },
       { q: "O jogo coleta dados?", a: "Não. Sem conta, sem anúncios, sem rastreamento; os salvamentos vivem só no seu aparelho. Se você entrar por vontade própria no Reino online, apenas o nome do personagem e os valores de jogo aparecem aos jogadores do mesmo reino — nunca vinculados à sua identidade." },
+      { q: "O que é o gato da lareira e como consegui-lo?", a: "Não se compra: um dia, depois dos 10 anos, um filhote aparece à sua porta, e se você puser leite ele fica. Cada gato tem seu nome, seu temperamento (caçador, carinhoso, preguiçoso, arisco) e sua própria vida (11-16 anos). Você pode acariciá-lo uma vez por mês; o caçador guarda a despensa dos ratos, o carinhoso não sai do seu lado nos dias de doença, e ele brinca com seus filhos criando vínculos. De vez em quando some por um mês ou dois — gatos não devem satisfações, mas nunca esquecem a lareira. Avisa quando envelhece e, chegada a hora, descansa sob a amendoeira. Se você morrer, o gato fica com a lareira: passa ao seu herdeiro." },
     ],
   },
 ];
@@ -775,6 +779,7 @@ const AR: FaqSection[] = [
       { q: "من أين تُفعَّل الموسيقى والمؤثرات الصوتية؟", a: "يُدار الاثنان كلٌّ على حدة من الإعدادات. موسيقى الخلفية (لحن طريق القوافل) مفعّلة افتراضيا؛ والمؤثرات معطّلة افتراضيا. تصمت الموسيقى حين ينتقل التطبيق إلى الخلفية وتستأنف عند العودة." },
       { q: "ما الوضع المبسّط؟ وهل يحافظ على البطارية؟", a: "يوقف الوضع المبسّط كل الحركات المستمرة ونقش الجدارية خلف الشاشات والإعداد الافتراضي للموسيقى — يعمل تلقائيا على الأجهزة ذات الذاكرة المنخفضة ويُضبط يدويا من الإعدادات. اللعبة قائمة على الأحداث: لا مؤقتات تعمل في الخلفية، فهي رفيقة بالبطارية." },
       { q: "هل تجمع اللعبة بيانات؟", a: "لا. لا حساب ولا إعلانات ولا تتبّع؛ والحفظ يبقى على جهازك وحده. وإن انضممت بمحض إرادتك إلى الديار المتصلة فلا يظهر للاعبي الديار نفسها إلا اسم شخصيتك وقيم اللعب — ولا تُربط بهويتك أبدا." },
+      { q: "ما قط الموقد وكيف يُقتنى؟", a: "لا يُشترى: يوما ما بعد سن العاشرة تظهر هريرة أمام بابك، وإن وضعت لها حليبا بقيت. لكل قط اسمه وطبعه (صياد، ودود، كسول، متمنّع) وعمره الخاص (11-16 سنة). يمكنك ملاطفته مرة في الشهر؛ الصياد يحرس المؤونة من الفئران، والودود لا يفارقك في أيام المرض، ويلعب مع أطفالك فتنشأ الألفة. يختفي أحيانا شهرا أو شهرين — القطط لا تُحاسب، لكنها لا تنسى الموقد. يُنذر حين يشيخ، وحين يحين الوقت يُوارى تحت شجرة اللوز. وإن متّ بقي القط مع الموقد: ينتقل إلى وريثك." },
     ],
   },
 ];
@@ -930,6 +935,7 @@ const RU: FaqSection[] = [
       { q: "Где включаются музыка и звуковые эффекты?", a: "И то и другое настраивается отдельно в разделе настроек. Фоновая музыка (тема Караванного пути) включена по умолчанию; эффекты по умолчанию выключены. Музыка смолкает, когда приложение уходит в фон, и продолжается по возвращении." },
       { q: "Что такое упрощённый режим? Бережёт ли он батарею?", a: "Упрощённый режим отключает постоянные анимации, фресковую текстуру за экранами и музыку по умолчанию — он сам включается на устройствах с малым объёмом памяти и настраивается вручную. Игра событийная: в фоне не крутятся таймеры, батарея расходуется бережно." },
       { q: "Собирает ли игра данные?", a: "Нет. Ни аккаунта, ни рекламы, ни слежки; сохранения живут только на устройстве. При добровольном входе в сетевые Края другим игрокам тех же Краёв видны лишь имя персонажа и игровые значения — с личностью они не связываются." },
+      { q: "Что такое кот у очага и как его завести?", a: "Его нельзя купить: однажды после 10 лет у двери появляется котёнок, и если поставить молоко — он останется. У каждого кота своё имя, свой нрав (охотник, ласковый, ленивый, своенравный) и свой срок жизни (11-16 лет). Раз в месяц его можно приласкать; охотник стережёт кладовую от мышей, ласковый не отходит в дни болезни, а с детьми кот играет и укрепляет узы. Иногда он пропадает на месяц-другой — кошки никому не отчитываются, но очаг не забывают. Состарившись, он даст знать, а когда придёт срок — упокоится под миндальным деревом. Если вы умрёте, кот останется у очага: перейдёт к наследнику." },
     ],
   },
 ];
