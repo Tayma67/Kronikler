@@ -2,6 +2,18 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 287-297 eki (8 Temmuz, sabah) — KÖZ VE YILDIZ
+
+**Tek cümle (mağaza/what's new):**
+TR: "Zirveye iki yeni sınav dikildi: közün başında bekleyen on beşinci efsane Yanık Yüzlü (şöhret 92, Son Kor nişanı) ve yirmi beşinci yay Son Sefer — Halil'in son kervanında yıldızı senin gözün okuyor; ayrıca beş loncaya altıncı iş, yola iki hikâye, çarşıya iki nabız, çocukluğa iki an, mezar taşına iki hüküm eklendi."
+EN: "Two new trials crown the late game: the fifteenth legend, the Burned Face, waits by the embers (fame 92, The Last Ember badge), and the twenty-fifth arc, The Last Caravan, puts the star-reading in your hands on Halil's final road; plus a sixth job for all five guilds, two road tales, two market pulses, two childhood moments and two new epitaphs."
+
+**Öne çıkanlar:**
+- **Yanık Yüzlü (SP, 15. efsane):** Kösedağ'dan yüzü yanık çıkan ihtiyar sipahinin son yemini — diyarın en büyük adını bekliyor (minFame 92); yenene Son Kor nişanı (86. başarım).
+- **Son Sefer (SP, 25. yay, 50+):** Halil'in son kervanı — tuz gölü geçidinde yıldızı sen okursun; azık kavgasında ekmeğini bölmek de sana kalır.
+- **Görev defteri:** bekleyen arzuhal ve sokaktaki mikro an artık Görevler'de hatırlatılıyor.
+- **İrili ufaklı:** lonca 6. iş varyantları, yol havuzuna sazlık + menzil ulağı, pazara göçmen kafilesi + bereketli kırkım, mesleksize hamallık + konak bahçesi, kıvılcım destesi 9, çocukluğa uçurtma + kuzu sayımı (31 mikro an), anı havuzlarına usta huyu + harman taşı + çeşme harfi, kitabeye gezgin + alim.
+
 ## Dalga 274-285 eki (8 Temmuz, sabah) — ÇARŞININ DİLİ
 
 **Tek cümle (mağaza/what's new):**
