@@ -3217,7 +3217,7 @@ export function buyHorse(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.horse || p.money < HORSE_COST) return s; // çocuğa at satılmaz
   p.money -= HORSE_COST; p.horse = true; p.horse_name = rnd(HORSE_NAMES); p.reputation = Math.min(100, p.reputation + 2);
-  push(s, "yolculuk", `${p.horse_name} adında sağlam bir at aldın; artık yollar daha kısa ve emniyetli.`, "kişisel", true, { k: "horse.named", p: [p.horse_name] });
+  { const hv = chance(0.5); push(s, "yolculuk", hv ? `${p.horse_name} ilk gece tavlada huysuzlandı, sabaha avucundan yem yedi; yol arkadaşlığı böyle başlar.` : `${p.horse_name} adında sağlam bir at aldın; artık yollar daha kısa ve emniyetli.`, "kişisel", true, { k: hv ? "horse.named2" : "horse.named", p: [p.horse_name] }); }
   return s;
 }
 // ── Yol olayları (Vercel travel_rework.py portu) — otomatik stat-testli, mevcut akışa additif ──
@@ -4263,7 +4263,7 @@ export function repairProperty(prev: GameState, index: number): GameState {
   if (p.dead || !pr || pr.cond >= 100) return s;
   const cost = repairCost(pr); if (p.money < cost) return s;
   p.money -= cost; pr.cond = 100;
-  push(s, "mülk", `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) onarıldı (−${cost} akçe).`, "kişisel", false, { k: "evj.propRepair", p: [{ pt2: pr.type }, { pl: pr.loc }, cost] });
+  { const rv = chance(0.5); push(s, "mülk", rv ? `Usta kalfasıyla gelip ${pr.loc}'daki ${(PROPERTY_TYPES[pr.type]?.name || "mülk").toLowerCase()} damını, direğini elden geçirdi (−${cost} akçe); "on yıl daha gider" dedi.` : `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) onarıldı (−${cost} akçe).`, "kişisel", false, { k: rv ? "evj.propRepair2" : "evj.propRepair", p: [{ pt2: pr.type }, { pl: pr.loc }, cost] }); }
   return s;
 }
 
