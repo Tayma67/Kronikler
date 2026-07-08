@@ -5496,6 +5496,7 @@ export const ENCOUNTERS: Encounter[] = [
   { id: "golge_okcusu", title: "Gölge Okçusu", desc: "Kimse yüzünü görmedi; okları hep şafakta, hep tek atışta konuşur. Hana bir pusula bırakmış: adın yazılı.", power: 28, reward: 260, fame: 36, honor: 22, danger: 54, minFame: 78 },
   { id: "cansiz_bey", title: "Cansız Bey", desc: "Kara zırhın içi boş derler: mızrak işlemez, kılıç seker. Yüz yıldır her efsaneyi gömdü — şimdi geçidin ağzında seni bekliyor.", power: 30, reward: 300, fame: 40, honor: 24, danger: 58, minFame: 85 },
   { id: "yanik_yuzlu", title: "Yanık Yüzlü", desc: "Kösedağ'dan yüzü yanık çıkan ihtiyar sipahi son yeminini kuşanmış: 'Beni ancak diyarın en büyük adı gömer.' Közün başında seni bekliyor.", power: 32, reward: 340, fame: 44, honor: 26, danger: 62, minFame: 92 },
+  { id: "kirk_yamali", title: "Kırk Yamalı", desc: "Kırk yamalı hırkasının her yaması yenilmiş bir meydan ustasından derler. Asasıyla gezer, kimseyi aramaz — bulunur. Şimdi senin meydanında dikiliyor.", power: 34, reward: 380, fame: 48, honor: 28, danger: 66, minFame: 96 },
 ];
 // Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
 export function combatPower(p: Player): number {
@@ -5736,6 +5737,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "boszirh",  name: "Zırhın İçi",      desc: "Cansız Bey'i yen.",                  icon: "shield",      done: (s) => !!(s.player.enc_won && s.player.enc_won.cansiz_bey) },
   { id: "kissahan", name: "Kıssahan",        desc: "Beş hikâye yayını tamamla.",          icon: "scroll-open", done: (s) => (s.story?.completed?.length || 0) >= 5 },
   { id: "sonkor",   name: "Son Kor",         desc: "Yanık Yüzlü'yü yen.",                 icon: "flame",       done: (s) => !!(s.player.enc_won && s.player.enc_won.yanik_yuzlu) },
+  { id: "kirkbirinci", name: "Kırk Birinci Yama", desc: "Kırk Yamalı'yı yen.",              icon: "hood",        done: (s) => !!(s.player.enc_won && s.player.enc_won.kirk_yamali) },
   { id: "kandefteri",name: "Defter Kapandı",   desc: "Üç kuşak süren Kan Defteri'ni hükme bağla.", icon: "scroll",  done: (s) => !!s.player.bloodline_end },
   { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
   { id: "bilge",    name: "Yaşlı Bilge",     desc: "70 yaşını gör.",                    icon: "prayer-beads", done: (s) => s.player.age >= 70 },
