@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, inJail } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
@@ -301,6 +301,12 @@ export default function Karakter() {
                   <GameIcon name="healing" size={12} color={dis ? C.parchmentMuted : C.sage} />
                   <Text style={{ fontFamily: F.display, fontSize: 10, color: dis ? C.parchmentMuted : C.sage, letterSpacing: 0.5 }}>{seen ? t("char.healerDone") : `${t("char.healer")} · ${cost}⚜`}</Text>
                 </Pressable>
+                {(() => { const hseen = p.hamam_turn === state.turn; const hcost = hamamCost(state); const hdis = hseen || p.money < hcost; return (
+                  <Pressable disabled={hdis} onPress={() => { hap("tap"); apply((s) => visitHamam(s)); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: hdis ? C.border : "rgba(122,162,196,0.5)", backgroundColor: hdis ? C.bg : "rgba(122,162,196,0.08)", opacity: hdis ? 0.45 : 1 }}>
+                    <GameIcon name="bucket" size={12} color={hdis ? C.parchmentMuted : C.parchment} />
+                    <Text style={{ fontFamily: F.display, fontSize: 10, color: hdis ? C.parchmentMuted : C.parchment, letterSpacing: 0.5 }}>{hseen ? t("char.hamamDone") : `${t("char.hamam")} · ${hcost}⚜`}</Text>
+                  </Pressable>
+                ); })()}
                 {!!p.chronic && (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: "rgba(160,48,42,0.45)", backgroundColor: "rgba(160,48,42,0.08)" }}>
                     <GameIcon name="skull" size={11} color={C.blood} />

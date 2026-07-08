@@ -130,6 +130,7 @@ export interface Player {
   pension_seen?: boolean; pension_accum?: number; // ocak harçlığı: duyuru bir kez, yıllık döküm için birikeç
   kahya?: boolean; // vekilharç tutuldu mu (aylık ücret; yıpranan mülkü kendiliğinden onartır)
   sira_gunu_year?: number; // şıra günü yapılan yıl (güzde yılda bir; bağ şenliği farmı kapalı)
+  hamam_turn?: number; // ayda bir hamam sefası (sağlık/sosyal farmı kapalı)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -6678,6 +6679,22 @@ export function upgradeEstate(prev: GameState): GameState {
 // Toplam fon hiç budanmaz; mersiyeye, hanedan kütüğüne ve vârisin başlangıç itibarına akar.
 export const VAKIF_DONATE_AMOUNTS = [1000, 5000, 25000] as const;
 // ── HEKİM ZİYARETİ: akçeyle tedavi (tur başına tek). Kronik hastalığı iyileştirme şansı taşır — sağlık pasif sayı olmaktan çıkar. ──
+// Hamam sefası: ayda bir kese-buhar ritüeli — beden gevşer, dil çözülür; %35 ihtimalle kubbeden bir fısıltı da düşer.
+export function hamamCost(s: GameState): number { return Math.round(6 * inflationFactor(s)); }
+export function visitHamam(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13 || inJail(p)) return s;
+  if (p.hamam_turn === s.turn) return s; // ayda bir sefa
+  const cost = hamamCost(s);
+  if (p.money < cost) return s;
+  p.hamam_turn = s.turn;
+  p.money -= cost;
+  p.health = Math.min(100, p.health + 3);
+  gainSkill(s, "social", 4);
+  if (chance(0.35)) { p.reputation = Math.min(100, p.reputation + 1); push(s, "sohbet", `Hamamda keselendin (−${cost} akçe); kubbenin altında bir fısıltı da yakaladın — çarşıdan önce senin kulağında.`, "kişisel", false, { k: "evj.hamam2", p: [cost] }); }
+  else push(s, "gunluk", `Hamama gittin (−${cost} akçe); kese, buhar, iki tas su — beden gevşedi, gönül durulandı.`, "kişisel", false, { k: "evj.hamam", p: [cost] });
+  return s;
+}
 export function healerCost(s: GameState): number { return Math.round(25 * inflationFactor(s)); }
 export function visitHealer(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
