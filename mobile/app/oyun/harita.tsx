@@ -81,7 +81,7 @@ export default function Harita() {
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 100 }}>
 
-        {/* Hero harita */}
+        {/* Hero harita — beylik işaretleri tıklanır; oyuncunun bulunduğu beylik altın halkayla "buradasın" der */}
         <View style={{ borderRadius: 14, overflow: "hidden", borderWidth: 1.5, borderColor: C.borderHi, marginBottom: 8 }}>
           <ImageBackground source={MAP_HERO} resizeMode="cover" style={{ width: "100%", aspectRatio: 1.5, justifyContent: "flex-start" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingTop: 9, paddingBottom: 20, backgroundColor: "rgba(13,9,5,0.0)" }}>
@@ -89,6 +89,19 @@ export default function Harita() {
               <Text style={{ fontFamily: F.display, fontSize: 15, letterSpacing: 3, color: C.parchment, textShadowColor: "#000", textShadowRadius: 8 }}>{t("scr.harita").toUpperCase()}</Text>
               <Text style={{ color: C.goldDim, fontSize: 13 }}>☙</Text>
             </View>
+            {BEYLIKS.map((b) => {
+              const POS: Record<string, { x: number; y: number }> = { aksehir: { x: 24, y: 30 }, yenisehir: { x: 50, y: 28 }, gumushisar: { x: 73, y: 26 }, demirhan: { x: 30, y: 62 }, karahisar: { x: 63, y: 62 } };
+              const pos = POS[b.id]; if (!pos) return null;
+              const on = b.id === sel; const home = b.id === myRegion;
+              return (
+                <Pressable key={b.id} onPress={() => setSel(b.id)} hitSlop={10}
+                  style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y}%`, alignItems: "center", transform: [{ translateX: -9 }] }}>
+                  <View style={{ width: home ? 20 : 16, height: home ? 20 : 16, borderRadius: 10, backgroundColor: b.tone, borderWidth: on || home ? 2.5 : 1.5, borderColor: home ? C.goldBright : on ? C.gold : "rgba(13,9,5,0.85)", shadowColor: "#000", shadowOpacity: 0.7, shadowRadius: 4, elevation: 5 }} />
+                  <Text style={{ fontFamily: F.display, fontSize: 7.5, letterSpacing: 0.5, color: on || home ? C.goldBright : C.parchment, marginTop: 2, textShadowColor: "#000", textShadowRadius: 6 }}>{b.name.split(" ")[0].toUpperCase()}</Text>
+                  {home && <Text style={{ fontFamily: F.display, fontSize: 6.5, letterSpacing: 0.5, color: C.goldBright, textShadowColor: "#000", textShadowRadius: 6 }}>● {t("diyar.hereNow").toUpperCase()}</Text>}
+                </Pressable>
+              );
+            })}
           </ImageBackground>
         </View>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, textAlign: "center", marginBottom: 4 }}>{t("map.hint")}</Text>
