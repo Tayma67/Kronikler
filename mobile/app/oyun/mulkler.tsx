@@ -4,7 +4,7 @@ import Svg, { Polyline, Polygon, Defs, LinearGradient, Stop, Rect } from "react-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard } from "../../lib/game";
+import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard, setFallow } from "../../lib/game";
 import { placeName, professionNameL } from "../../lib/locale-data";
 import { mulkImage, MULK_BOS, MULK_HERO } from "../../lib/assets";
 import { C, F } from "../../lib/theme";
@@ -186,6 +186,18 @@ export default function Mulkler() {
                       <Pressable onPress={() => { hap("tap"); apply((s) => setGuard(s, i, !pr.guard)); }} style={actBtn(false)}>
                         <Text style={actTxt(false)}>{pr.guard ? t("mulk.guardOff") : t("mulk.guardOn")}</Text>
                       </Pressable>
+                      {pr.type === "tarla" && (() => {
+                        const resting = pr.fallow_until !== undefined;
+                        const fertile = (pr.fertile_until ?? 0) > state.turn;
+                        const lbl = resting ? t("mulk.fallowLeft").replace("%1", String(Math.max(0, (pr.fallow_until ?? 0) - state.turn)))
+                          : fertile ? t("mulk.fertileLeft").replace("%1", String((pr.fertile_until ?? 0) - state.turn))
+                          : t("mulk.fallow");
+                        return (
+                          <Pressable disabled={resting || fertile} onPress={() => { hap("tap"); apply((s) => setFallow(s, i)); }} style={actBtn(false)}>
+                            <Text style={actTxt(false)}>{lbl}</Text>
+                          </Pressable>
+                        );
+                      })()}
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
                         <GameIcon name="iliskiler" size={11} color={C.parchmentMuted} />
                         <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("mulk.workers").toUpperCase()} {hired.length}/{slots}</Text>

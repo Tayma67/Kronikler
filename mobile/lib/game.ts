@@ -183,7 +183,7 @@ export function effStat(p: Player, key: keyof Stats): number {
   return Math.max(0, base - pen);
 }
 // Mülk: konuma bağlı (loc) + kondisyon (cond 0..100) + kademe (level 1..3). Gelir refah×kondisyon×kademe.
-export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number }[]; tenant?: boolean; guard?: boolean; }
+export interface Property { type: string; loc: string; cond: number; level?: number; workers?: string[]; ledger?: { y: number; net: number }[]; tenant?: boolean; guard?: boolean; fallow_until?: number; fertile_until?: number; }
 export const PROP_MAX_LEVEL = 3;
 export function propUpgradeCost(pr: Property): number { return Math.round((PROPERTY_TYPES[pr.type]?.cost || 100) * (pr.level || 1) * 0.8); }
 export function upgradeProperty(prev: GameState, index: number): GameState {
@@ -345,6 +345,15 @@ export function setTenant(prev: GameState, index: number, on: boolean): GameStat
   pr.tenant = on;
   if (on) push(s, "mülk", `${pr.loc}'daki ev kiraya verildi; her ay kira işler, ev de yıpranır.`, "kişisel", false, { k: "evj.tenantIn", p: [{ pl: pr.loc }] });
   else push(s, "mülk", `${pr.loc}'daki evin kiracısı çıkarıldı; anahtar yine senin cebinde.`, "kişisel", false, { k: "evj.tenantOut", p: [{ pl: pr.loc }] });
+  return s;
+}
+// Nadas: tarla bir yıl dinlendirilir — gelir kesilir, yıl dolunca toprak canlanır (+20 bakım, 24 ay ×1.5 verim).
+export function setFallow(prev: GameState, index: number): GameState {
+  const s = clone(prev); const p = s.player; const pr = p.properties[index];
+  if (!pr || pr.type !== "tarla" || p.dead) return s;
+  if (pr.fallow_until !== undefined || (pr.fertile_until ?? 0) > s.turn) return s; // dinlenen ya da bereketli tarla yeniden nadasa yatmaz
+  pr.fallow_until = s.turn + 12;
+  push(s, "mülk", `${pr.loc}'daki tarla nadasa bırakıldı; bir yıl sürülmeyecek, toprak soluklanacak.`, "kişisel", false, { k: "evj.fallowIn", p: [{ pl: pr.loc }] });
   return s;
 }
 // Mülk bekçisi: aylık ücret (4 akçe taban, enflasyonlu) karşılığı yağma olasılığı üçte bire, yangın riski yarıdan aza iner.
@@ -1740,16 +1749,23 @@ export function advance(prev: GameState, n = 1): GameState {
         : me === "kithasat" ? (pr.type === "tarla" ? 0.7 : pr.type === "degirmen" ? 1.15 : 1)
         : me === "bolluk" ? (pr.type === "tarla" ? 1.1 : pr.type === "degirmen" ? 1.2 : 1)
         : 1;
+      // Nadas: dinlenen tarla gelir vermez; yıl dolunca toprak canlanır (+20 bakım, 24 ay bereket ×1.5).
+      if (pr.type === "tarla" && pr.fallow_until !== undefined && s.turn >= pr.fallow_until) {
+        pr.fertile_until = pr.fallow_until + 24; pr.fallow_until = undefined;
+        pr.cond = Math.min(100, pr.cond + 20);
+        if (i === n - 1) push(s, "mülk", `${pr.loc}'daki tarlanın nadası doldu; toprak dinlendi, kara toprak kokusu tarlaya bereket muştuluyor.`, "kişisel", false, { k: "evj.fallowEnd", p: [{ pl: pr.loc }] });
+      }
+      const nadasMult = pr.type === "tarla" ? (pr.fallow_until !== undefined ? 0 : (pr.fertile_until ?? 0) > s.turn ? 1.5 : 1) : 1;
       const rentSkip = pr.type === "ev" && pr.tenant && chance(0.04); // kiracı ara sıra aksatır
       if (rentSkip) { if (i === n - 1) push(s, "mülk", `${pr.loc}'daki evin kiracısı bu ay kirayı aksattı; "hasat gelince" dedi, kapıyı yavaş kapattı.`, "kişisel", false, { k: "evj.tenantSkip", p: [{ pl: pr.loc }] }); }
-      else inc += base * condProspLevel * typeMult * mevMult;
+      else inc += base * condProspLevel * typeMult * mevMult * nadasMult;
       if (pr.type === "ev" && (pr.level || 1) >= 2 && chance(0.04)) s.player.reputation = Math.min(100, s.player.reputation + 1); // köklü ev → itibar damlası
       // İşçi ekonomisi: çalışan NPC'ler üretimi artırır ama ücret ister.
       const w = propWorkerStats(s, pr, base, condProspLevel);
       inc += w.gross; wages += w.wage;
       if (pr.guard) wages += 4; // bekçi ücreti (enflasyon çarpanı aşağıda tüm ücretlere uygulanır)
       // Mülk defteri: yıllık net (gelir − ücret) geçmişi (Vercel property ledger; şeffaflık).
-      if (i === n - 1 && s.turn > 0 && s.turn % 12 === 0) { pr.ledger = pr.ledger || []; pr.ledger.push({ y: Math.floor(s.turn / 12), net: Math.round((base * condProspLevel * typeMult * mevMult + w.gross - w.wage) * pmult) }); if (pr.ledger.length > 6) pr.ledger = pr.ledger.slice(-6); }
+      if (i === n - 1 && s.turn > 0 && s.turn % 12 === 0) { pr.ledger = pr.ledger || []; pr.ledger.push({ y: Math.floor(s.turn / 12), net: Math.round((base * condProspLevel * typeMult * mevMult * nadasMult + w.gross - w.wage) * pmult) }); if (pr.ledger.length > 6) pr.ledger = pr.ledger.slice(-6); }
       const y = propYield(s, pr); if (y) { const sm = pr.type === "tarla" ? ({ "İlkbahar": 0.6, "Yaz": 1.0, "Sonbahar": 1.8, "Kış": 0.2 }[cal.season] ?? 1) : 1; const q = Math.round(y.qty * sm); if (q > 0) produced[y.good] = (produced[y.good] || 0) + q; } // işçi emeği → gerçek hammadde (tarla mevsimlik)
       if (pr.cond > 40 && chance(pr.type === "ev" && pr.tenant ? 0.35 : 0.2)) pr.cond -= 1; // zamanla aşınma (kiracılı ev daha hızlı yıpranır)
       if (effSec < 30 && chance((0.02 + (effSec < 10 ? 0.03 : 0)) * (pr.guard ? 0.35 : 1))) { // düşük güvenlikte yağma (bekçili mülkte üçte bire iner)
