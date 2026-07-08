@@ -1760,7 +1760,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // ── İki yoldaş bir ocakta: kedi ile köpek aynı evde — biri içerinin, biri dışarının nöbetçisi ──
   if (!p.dead && p.pet && p.dog && !inJail(p) && chance(0.03)) {
     const dr = Math.random();
-    if (dr < 0.34) push(s, "gunluk", `Kış gecesi közün başında ${p.dog.n} boylu boyunca serildi; ${p.pet.n} hiç tereddüt etmeden sırtına kıvrıldı. Kapının bekçisiyle ocağın sultanı tek yürek gibi soluyor.`, "kişisel", false, { k: "evj.duo1", p: [p.pet.n, p.dog.n] });
+    if (dr < 0.34 && cal.season === "Kış") push(s, "gunluk", `Kış gecesi közün başında ${p.dog.n} boylu boyunca serildi; ${p.pet.n} hiç tereddüt etmeden sırtına kıvrıldı. Kapının bekçisiyle ocağın sultanı tek yürek gibi soluyor.`, "kişisel", false, { k: "evj.duo1", p: [p.pet.n, p.dog.n] });
+    else if (dr < 0.34) push(s, "gunluk", `Öğle sıcağında ${p.dog.n} dut ağacının gölgesine serildi; ${p.pet.n} biraz ötede, gölgenin en serin karışını çoktan kapmıştı. İkisi de tek gözü açık uyuyor.`, "kişisel", false, { k: "evj.duo4", p: [p.pet.n, p.dog.n] });
     else if (dr < 0.67) push(s, "gunluk", `Çanak ${p.dog.n} için doluydu; ${p.pet.n} hiç acele etmeden gelip önce kendi payını yedi. Koca köpek homurdanmadan bekledi — evde taht kimin, ikisi de biliyor.`, "kişisel", false, { k: "evj.duo2", p: [p.pet.n, p.dog.n] });
     else { p.pet.bond = Math.min(100, p.pet.bond + 1); p.dog.bond = Math.min(100, p.dog.bond + 1); push(s, "gunluk", `Gece ${p.dog.n} avluda bir kez havladı; ${p.pet.n} pencere içinde kulaklarını dikti. Biri dışarının, biri içerinin nöbetçisi — ev iki yoldaşa emanet.`, "kişisel", false, { k: "evj.duo3", p: [p.pet.n, p.dog.n] }); }
   }
