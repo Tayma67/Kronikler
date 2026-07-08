@@ -120,6 +120,7 @@ export interface Player {
   prestige_turn?: number; // ayda tek hayrat işi (hekim/imaret spam'ı kapalı)
   reconcile_turn?: number; // ayda tek barış girişimi (hasım keseyle ay boyu sağılamaz)
   train_turn?: number; // ayda tek talim dersi (beceri farmı kapalı)
+  friend_aid_turn?: number; // dost yardımının damgası (iki yılda bir; dar gün farm'ı kapalı)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -1532,6 +1533,13 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       p.health = Math.max(1, p.health - 1);
       if (chance(0.08)) { const w = 4 + Math.floor(Math.random() * 3); p.health = Math.max(1, p.health - w); push(s, "hastalik", `Eski öksürük alevlendi; birkaç gün nefessiz kaldın (−${w} sağlık).`, "kişisel", false, { k: "evj.chronicFlare", p: [w] }); }
     }
+  }
+  // ── Dar günde dost eli: can dostun (ilişki 70+) yoksulluğu duyar; iki yılda bir kesesini açar ──
+  if (!p.dead && p.age >= 16 && p.money < 15 && Object.values(s.relationships || {}).some((v) => v >= 70) && (p.friend_aid_turn === undefined || s.turn - p.friend_aid_turn >= 24) && chance(0.25)) {
+    p.friend_aid_turn = s.turn;
+    const aid = Math.round(30 * inflationFactor(s));
+    p.money += aid;
+    push(s, "sohbet", `Dar günün duyulmuş: bir can dostun kapına un çuvalı ve bir kese bıraktı (+${aid} akçe). "Dost dar günde belli olur" deyip oturmadı bile.`, "kişisel", true, { k: "evj.friendAid", p: [aid] });
   }
   // ── Nemesis dünyada yaşıyor: musallat olur; yoksa derin bir husumet amansız hasma dönüşebilir ──
   if (!p.dead && p.age >= 14 && s.story) {
