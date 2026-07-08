@@ -11,6 +11,26 @@ export interface Arc {
 
 export const ARCS: Arc[] = [
   {
+    id: "son_sefer", title: "Son Sefer", icon: "camel",
+    blurb: "Kırk yıllık kervanbaşı son yoluna denk bir arkadaş arıyor.",
+    when: (p) => p.age >= 50,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Yaşlı kervanbaşı Halil kapında: 'Kırk yıl yol yedim, gözüm artık yıldızı eskisi gibi seçmiyor. Tuz gölünün ötesine son bir gidiş — bana denk bir yoldaş gerek. Senden başkasına güvenmem.'", choices: [
+        { label: "Yüke omuz ver, yola çık (−40)", result: "Azık dendi, deve dendi, kese açıldı. Şafakta iki ihtiyar gölge kervanın önüne düştü; arkadan biri 'yolunuz açık olsun' diye seslendi.", delta: { money: -40 }, next: "s2" },
+        { label: "'Yol artık senin değil' de, uğurla", result: "Halil güldü: 'Doğru dersin de, yol beni bırakmıyor.' Kervan tozunun ardından baktın; zil sesi uzun süre kulağından gitmedi.", delta: { honor: 2 }, next: "end" },
+      ]},
+      s2: { id: "s2", text: "Tuz gölü geçidinde gece bastırdı, bulut yıldızı örttü. Halil dizginini sana uzattı: 'Ben okurdum, artık sen oku. Kuzeyi bul, yoksa sabaha tuzun ortasında kalırız.'", choices: [
+        { label: "Bulut yarığından yıldızı oku", result: "Demirkazık bir an göründü, o an yetti. Kervan şafakta öte kıyının hanına ulaştı; dönüş yükü kâr, Halil'in yüzü aydınlıktı: 'Son seferim doğru elde bitti.'", delta: { money: 120, fame: 6, reputation: 4 }, next: "end" },
+        { label: "Riske girme; geceyi bekle", result: "Kervan çöktü, ateş yakıldı. Sabah yol bulundu ama pazar yarı dağılmıştı; kâr küçüldü. Halil omzuna dokundu: 'Sağ vardık ya — gerisi hikâye.'", delta: { money: 60, honor: 4 }, next: "s2b" },
+      ]},
+      s2b: { id: "s2b", text: "Dönüş yolunda azık azaldı; genç deveci payını çoktan bitirmiş, kimseye söyleyememiş. Halil görmezden geliyor — karar senin.", choices: [
+        { label: "Kendi payından böl", result: "Ekmeğini ikiye böldün; deveci gözlerini kaçırarak aldı. Şehre girerken Halil herkesin içinde seni gösterdi: 'Yol arkadaşı böyle olur.'", delta: { money: -20, honor: 6, reputation: 4 }, next: "end" },
+        { label: "Herkes payına katlansın", result: "Kural kuraldı; kimse aç ölmedi ama o iki gün kimse türkü de söylemedi. Şehir kapısında deveci yolunu ayırdı; vedası kısa oldu.", delta: { honor: -2, fear: 1 }, next: "end" },
+      ]},
+    },
+  },
+  {
     id: "issiz_han", title: "Issız Han", icon: "house",
     blurb: "Uzak akrabadan miras: yol üstünde kapısı çivili bir han.",
     when: (p) => p.age >= 40,
