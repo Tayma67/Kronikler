@@ -1476,6 +1476,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Çarşıda biri arkandan eski lakabınla seslendi; dönüp baktın, tanıyamadın — ama lakap tam yerine oturdu, gülümsedin.", k: "mem.oldNickname" },
         { text: "Sandığın dibinden gençliğinde yazılmış bir mektup çıktı; kâğıt sararmış ama satırlar dünkü gibi. Kimseye göstermeden yerine koydun.", k: "mem.oldLetter" },
         { text: "Çocukluğunun sokağından geçtin; o koca kapı meğer ne alçakmış. Kapı küçülmemiş, sen büyümüşsün.", k: "mem.lowDoor" },
+        { text: "Gençliğinde bileğini bükemediğin rakibinle çeşme başında karşılaştın; iki ihtiyar, bir taş sekide gülüşüp helalleştiniz.", k: "mem.oldRival", fn: () => { p.honor = Math.min(100, p.honor + 1); } },
+        { text: "Mahalle çocuklarına yıldızların adlarını gösterdin; sen de onları bir ihtiyardan öğrenmiştin — yıldızlar hiç yaşlanmamış.", k: "mem.sameStars" },
       );
     }
     const m = rnd(mem); m.fn?.();
