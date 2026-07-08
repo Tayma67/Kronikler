@@ -5309,8 +5309,16 @@ function successionTick(s: GameState) {
 
 // ── Divan/Arzuhal: taç sahibinin huzuruna düşen dilekçeler — hükümdarlık soyut ferman menüsü değil, yüzü olan kararlar.
 // Etki dengesi bilinçli: halkı kollamak keseden yer ama otorite/itibar getirir; keseyi kollamak nam bedeli öder (farm yok: an rastgele düşer).
-export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit", "kacak_asker", "iki_imam", "leke_surulen", "eski_silah_arkadasi", "kayip_kervan", "zindan_affi", "sel_bendi", "sahte_tanik", "kuru_kuyu", "mukerrer_bac", "yanik_koy", "hekim_ucreti", "degirmen_kavgasi", "veba_soylenti", "koprucu_borcu", "gece_bekcisi", "sinir_cevizi", "sahipsiz_sandik"];
+export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit", "kacak_asker", "iki_imam", "leke_surulen", "eski_silah_arkadasi", "kayip_kervan", "zindan_affi", "sel_bendi", "sahte_tanik", "kuru_kuyu", "mukerrer_bac", "yanik_koy", "hekim_ucreti", "degirmen_kavgasi", "veba_soylenti", "koprucu_borcu", "gece_bekcisi", "sinir_cevizi", "sahipsiz_sandik", "iki_dugun", "yanlis_damga"];
 const DIVAN_R_TR: Record<string, [string, string]> = {
+  iki_dugun: [
+    "Günü ikiye böldün: öğlen bir düğün, akşam öteki; davul ikisinde de sustu susmadı. İki gelin alayı yolda karşılaşınca birbirine şerbet ikram etti.",
+    "Davul kesesi büyüğe gitti; öbür düğün türküyü el çırparak söyledi. Şenlik oldu olmasına ama alkışların bir kısmı sana ters baktı.",
+  ],
+  yanlis_damga: [
+    "Defter düzeltildi, kâtibin bir aylığı kesildi; çiftçi tarlasına, mühür yerine döndü. 'Defter şaşar, divan şaşmaz' sözü o hafta çıktı.",
+    "Defter defterdir dedin; tarla yazılana kaldı. Çiftçi divandan çıkarken kapıya bir avuç toprak bıraktı: 'Bari bu benim olsun.' O avuç toprak dilden dile büyüdü.",
+  ],
   sinir_cevizi: [
     "Ağacın gövdesi kimin toprağındaysa ceviz onun, dalları kimin damına sarkıyorsa gölgesi onun dedin; iki komşu güldü, dava bitti. Hükmün atasözü gibi dilden dile gezdi.",
     "Ağaç davasını uzattıkça uzattın; sonunda ceviz mahkeme harcına gitti, iki komşu da küs kaldı. Kazanan yalnız defterdi.",
@@ -5434,6 +5442,12 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
   } else if (id === "sahipsiz_sandik") {
     if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 3); p.reputation = Math.min(100, p.reputation + 3); p.honor = Math.min(100, p.honor + 3); bumpNam(p, "mert", 1); sowSeed(s, { kaynak: "divan_sandik_sahibi", hmin: 24, hmax: 96, agirlik: "orta", nesil: false, etki: { money: 150, reputation: 4 } }); }
     else { p.money += 140; p.honor = Math.max(0, p.honor - 5); bumpNam(p, "zalim", 2); sowSeed(s, { kaynak: "divan_sandik_kirgin", hmin: 48, hmax: 140, agirlik: "buyuk", nesil: true, etki: { reputation: -7 } }); }
+  } else if (id === "iki_dugun") {
+    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 3); p.reputation = Math.min(100, p.reputation + 3); bumpNam(p, "mert", 1); }
+    else { p.money += 50; p.honor = Math.max(0, p.honor - 3); p.reputation = Math.max(-100, p.reputation - 2); bumpNam(p, "zalim", 1); }
+  } else if (id === "yanlis_damga") {
+    if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "mert", 2); }
+    else { p.honor = Math.max(0, p.honor - 5); p.reputation = Math.max(-100, p.reputation - 4); bumpNam(p, "zalim", 2); sowSeed(s, { kaynak: "divan_damga_magduru", hmin: 36, hmax: 120, agirlik: "buyuk", nesil: true, etki: { reputation: -6 } }); }
   }
   const rtr = DIVAN_R_TR[id];
   push(s, "taht", rtr ? rtr[choice] : "", "kişisel", choice === 0, { k: `divan.${id}.r${choice}` });
