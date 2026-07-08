@@ -3198,7 +3198,7 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
   if (Math.random() >= chance) return;
   const test = (stat: keyof Stats, per = 0.05, base = 0.4) => Math.random() < Math.min(0.9, base + effStat(p, stat) * per);
   // Kervan rotası güvenli/sosyal olaylara yönelir; diğerleri tüm havuzu çeker. At sahibine özel olay eklenir.
-  const pool = route === "kervan" ? ["han", "yolcu", "tuccar", "kutsal", "kayipcocuk", "atnali", "dervis", "eskici"] : ["han", "yolcu", "tuccar", "firtina", "gecit", "kervanf", "kutsal", "izler", "coban", "harabe", "kopru", "devrikyuk", "kayipcocuk", "arikovani", "atnali", "dervis", "siginak", "eskici", "sislivadi"];
+  const pool = route === "kervan" ? ["han", "yolcu", "tuccar", "kutsal", "kayipcocuk", "atnali", "dervis", "eskici", "menzilci"] : ["han", "yolcu", "tuccar", "firtina", "gecit", "kervanf", "kutsal", "izler", "coban", "harabe", "kopru", "devrikyuk", "kayipcocuk", "arikovani", "atnali", "dervis", "siginak", "eskici", "sislivadi", "sazlik", "menzilci"];
   if (p.horse) pool.push("atli"); // atlıya yol başka görünür
   const ev = pool[Math.floor(Math.random() * pool.length)];
   if (ev === "han") {
@@ -3243,6 +3243,14 @@ function rollTravelEvent(s: GameState, route: TravelRoute) {
     // Sisli vadi: yönü okuyan kestirmeyi bulur; şaşıran saatlerce dolanır.
     if (test("intelligence", 0.06, 0.42)) { addStatXp(s, "intelligence", 2); push(s, "yolculuk", "Vadiyi sis bastı; yosunun yönünden kuzeyi bulup kestirmeden çıktın.", "kişisel", false, { k: "evj.trFogWin" }); }
     else { p.hunger = Math.max(0, p.hunger - 6); push(s, "yolculuk", "Sisin içinde aynı kayayı üç kez gördün; vadiden çıktığında gün bitmişti.", "kişisel", false, { k: "evj.trFogLose" }); }
+  } else if (ev === "sazlik") {
+    // Sazlığa saplanan yük atı: omuz veren dua ve akçe alır; beceremeyen çamurla döner.
+    if (test("strength", 0.05, 0.48)) { const pay = Math.round((5 + Math.floor(Math.random() * 7)) * inflationFactor(s)); p.money += pay; bumpNam(p, "comert", 1); push(s, "yolculuk", `Sazlığa saplanan yük atını sürücüsüyle birlikte çekip çıkardın; dua ve birkaç akçe aldın (+${pay}).`, "kişisel", false, { k: "evj.trReedWin", p: [pay] }); }
+    else { p.hunger = Math.max(0, p.hunger - 5); push(s, "yolculuk", "Atı çamurdan çekeyim derken kendin dizine kadar battın; hayvan kendi kendine çıktı, sen çamurla döndün.", "kişisel", false, { k: "evj.trReedLose" }); }
+  } else if (ev === "menzilci") {
+    // Attan düşen menzil ulağı: mektubu yetiştiren posta ücretini ve itibarı alır.
+    if (test("stamina", 0.05, 0.45)) { const pay = Math.round((7 + Math.floor(Math.random() * 9)) * inflationFactor(s)); p.money += pay; p.reputation = Math.min(100, p.reputation + 1); push(s, "yolculuk", `Attan düşen menzil ulağının mektubunu bir sonraki hana sen yetiştirdin; posta ücreti sana kaldı (+${pay}).`, "kişisel", false, { k: "evj.trCourierWin", p: [pay] }); }
+    else push(s, "yolculuk", "Ulağın mektubunu yetiştireyim derken yolu uzattın; han kapanmıştı, mektup sabahı bekledi.", "kişisel", false, { k: "evj.trCourierLose" });
   } else if (ev === "harabe") {
     if (test("intelligence", 0.05, 0.38)) { const loot = Math.round((10 + Math.floor(Math.random() * 18)) * inflationFactor(s)); p.money += loot; push(s, "yolculuk", `Eski bir kervansaray harabesini kolaçan ettin; taşların arasından unutulmuş bir kese çıktı (+${loot} akçe).`, "kişisel", true, { k: "evj.trRuinWin", p: [loot] }); }
     else push(s, "yolculuk", "Eski bir harabeyi kolaçan ettin; örümcek ağından başka bir şey çıkmadı.", "kişisel", false, { k: "evj.trRuinLose" });
