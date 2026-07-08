@@ -4253,7 +4253,7 @@ export function buyProperty(prev: GameState, type: string): GameState {
   const cost = propBuyCost(s, type);
   if (!t || p.dead || p.money < cost) return s;
   p.money -= cost; p.properties.push({ type, loc: p.location_name, cond: 100 });
-  push(s, "mülk_alım", `${p.location_name}'de ${t.name} satın aldın. Adına bir tapu daha.`, "kişisel", true, { k: "evj.propBuy", p: [{ pl: p.location_name }, { pt2: type }] });
+  { const pv = chance(0.5); push(s, "mülk_alım", pv ? `Anahtar avucuna düştü; ${p.location_name}'deki ${t.name.toLowerCase()} artık senin. Eşik ilk kez senin adınla aşıldı.` : `${p.location_name}'de ${t.name} satın aldın. Adına bir tapu daha.`, "kişisel", true, { k: pv ? "evj.propBuy2" : "evj.propBuy", p: [{ pl: p.location_name }, { pt2: type }] }); }
   return s;
 }
 // Onarım bedeli (eksik kondisyonla orantılı).
