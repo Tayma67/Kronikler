@@ -17,7 +17,7 @@ function goodIcon(g: any): string {
   }
   if (g?.heal) return "saglik"; if (g?.feed || g?.kind === "yiyecek") return "ye"; return "menu";
 }
-import { BackLabel } from "../../../lib/ui";
+import { BackLabel, ScreenFresk } from "../../../lib/ui";
 import { playHooves } from "../../../lib/sound";
 
 const KIND_KEY: Record<string, string> = { "şehir": "sehir", "kale": "kale", "köy": "koy" };
@@ -43,7 +43,7 @@ export default function DiyarDetay() {
   const goods = marketGoods(locSeed(name)).slice(0, 4);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
+    <ScreenFresk><ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
       <Pressable onPress={() => router.back()} style={{ marginBottom: 12 }}><BackLabel /></Pressable>
       <Text style={{ fontFamily: F.display, fontSize: 24, color: C.parchment, letterSpacing: 1 }}>{placeName(name, lang)}</Text>
       <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 1 }}>{t("kind." + KIND_KEY[kind])} · {info.population.toLocaleString("tr")} {t("diyar.pop")}</Text>
@@ -243,6 +243,6 @@ export default function DiyarDetay() {
           )}
         </>
       )}
-    </ScrollView>
+    </ScrollView></ScreenFresk>
   );
 }

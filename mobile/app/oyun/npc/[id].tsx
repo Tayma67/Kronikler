@@ -11,7 +11,7 @@ import { INTENTS, moodKey } from "../../../lib/dialogue";
 import { topMemories } from "../../../lib/npc-mind";
 import { professionNameL, traitL, quirkL, goalL } from "../../../lib/locale-data";
 import { ITEMS, npcSocialGraph, TieKind } from "../../../lib/world";
-import { Portre, BackLabel } from "../../../lib/ui";
+import { Portre, BackLabel, ScreenFresk } from "../../../lib/ui";
 import { GameIcon } from "../../../lib/icons";
 import { C, F } from "../../../lib/theme";
 
@@ -107,7 +107,7 @@ export default function NpcDetail() {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 14, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
+    <ScreenFresk><ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 14, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>
       <Pressable onPress={() => router.back()} style={{ marginBottom: 12 }}><BackLabel /></Pressable>
 
       {/* ── Profil kartı ── */}
@@ -326,6 +326,6 @@ export default function NpcDetail() {
           ))}
         </View>
       )}
-    </ScrollView>
+    </ScrollView></ScreenFresk>
   );
 }
