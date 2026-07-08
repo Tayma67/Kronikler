@@ -2,6 +2,19 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 361-370 eki (8 Temmuz, öğle) — KIRK YAMALI VE ALTINCI GÜN
+
+**Tek cümle (mağaza/what's new):**
+TR: "On altıncı efsane meydanda: KIRK YAMALI — hırkasının her yaması yenilmiş bir ustadan; onu yenene Kırk Birinci Yama nişanı (88 başarım). Divan 24 arzuhale çıktı (bir davula iki düğün, yanlış damga), her mesleğin iş defterine altıncı gün yazıldı, yola çoban ateşi ve ham ahlat düştü, fırsat 26, komşu ağzı 7 hâl, mersiye artık hikâyeleri ve efsaneleri de sayıyor."
+EN: "The sixteenth legend stands in the square: THE FORTY-PATCHED — every patch on his cloak from a defeated master; whoever beats him earns the Forty-First Patch (88 achievements). The divan grew to 24 petitions (two weddings one drum, the wrong seal), a sixth day entered every trade ledger, a shepherd fire and unripe wild pears joined the road, odd jobs 26, neighbors speak in 7 moods, and the eulogy now counts stories and legends too."
+
+**Öne çıkanlar:**
+- **Kırk Yamalı (SP, 16. efsane, nam 96+):** asalı derviş — kazanana hırka, kaybedene üç dokunuş ve bir hafta susan meydan. Başarım: Kırk Birinci Yama.
+- **Divan 22→24:** İki Düğün Bir Davul (günü ikiye böl ya da keseye sat) ve Yanlış Damga (defter şaşar, divan şaşmaz — ya da mağdurun avuç toprağı dilden dile büyür).
+- **Altıncı gün (SP):** 15 mesleğin hepsi + gündelikçi havuzu birer yeni iş sahnesi aldı — yanık körük derisi, alacaklı defteri, dolu bulutu, dönek rüzgâr, yıkık sur, kazandaki mantar, kopan tel, mühürlü emanet, kurşun yürekli külçe, kıyıdaki dev balık, minber basamağı, tuz yalağı, sönen maya, iki dilli suret, güve yeniği, kayıp eşek.
+- **Yol ve pazar:** yol havuzu 23 (gece çoban ateşi, ham ahlat), fırsat 26 (buz kesimi, panayır tellallığı).
+- **İrili ufaklı:** mersiyeye hikâye ve efsane satırları, hanedan kapanışına USTA notu, tavlaya Turna ile Bulut (16 ad), komşu sohbetine üç yeni hâl (pazar kısmeti, büyük dert, avuçtaki nasır).
+
 ## Dalga 351-359 eki (8 Temmuz, öğle) — KÜL VE KIVILCIM
 
 **Tek cümle (mağaza/what's new):**
