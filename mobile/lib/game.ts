@@ -5588,6 +5588,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "safakoku", name: "Şafak Okundu",    desc: "Gölge Okçusu'nu yen.",              icon: "bow",          done: (s) => !!(s.player.enc_won && s.player.enc_won.golge_okcusu) },
   { id: "birlesik", name: "Tek Tuğ",         desc: "Diyarı tek tâcın altında birleştir.", icon: "banner",      done: (s) => (s.player.crownConquests?.length || 0) >= 4 },
   { id: "boszirh",  name: "Zırhın İçi",      desc: "Cansız Bey'i yen.",                  icon: "shield",      done: (s) => !!(s.player.enc_won && s.player.enc_won.cansiz_bey) },
+  { id: "kissahan", name: "Kıssahan",        desc: "Beş hikâye yayını tamamla.",          icon: "scroll-open", done: (s) => (s.story?.completed?.length || 0) >= 5 },
   { id: "kandefteri",name: "Defter Kapandı",   desc: "Üç kuşak süren Kan Defteri'ni hükme bağla.", icon: "scroll",  done: (s) => !!s.player.bloodline_end },
   { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
   { id: "bilge",    name: "Yaşlı Bilge",     desc: "70 yaşını gör.",                    icon: "prayer-beads", done: (s) => s.player.age >= 70 },
