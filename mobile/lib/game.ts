@@ -1776,6 +1776,17 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     p.money += aid;
     push(s, "sohbet", `Dar günün duyulmuş: bir can dostun kapına un çuvalı ve bir kese bıraktı (+${aid} akçe). "Dost dar günde belli olur" deyip oturmadı bile.`, "kişisel", true, { k: "evj.friendAid", p: [aid] });
   }
+  // ── Can dost ocak başında: ilişki 70+ bir dostla sıradan ama besleyen anlar — servet değil, sohbet ──
+  if (!p.dead && p.age >= 16 && !inJail(p) && chance(0.05)) {
+    const dostlar = rosterAt(s, p.location_name).filter((n2) => (s.relationships?.[n2.id] ?? 0) >= 70 && n2.alive !== false);
+    if (dostlar.length) {
+      const dn = rnd(dostlar).name;
+      const fr = Math.random();
+      if (fr < 0.34) { gainSkill(s, "social", 3); push(s, "sohbet", `Akşam kapı çalındı: ${dn}, koltuğunda bir testi, dilinde iki hikâye. Ocak başında gece kısaldı; dert bölüşüldü, yarı yarıya hafifledi.`, "kişisel", false, { k: "evj.dost1", p: [dn] }); }
+      else if (fr < 0.67) { p.honor = Math.min(100, p.honor + 1); push(s, "sohbet", `${dn} yataklara düşmüş diye duydun; bir tas sıcak çorbayla kapısını çaldın. Ayrılırken elini sıkı sıkı tuttu: dost dediğin, gelenmiş.`, "kişisel", false, { k: "evj.dost2", p: [dn] }); }
+      else push(s, "sohbet", `Çarşıda ${dn} ile göz göze geldiniz; eski bir şakaya ikiniz de aynı anda güldünüz. Etraftakiler anlamadı, ikiniz bildiniz — dostluk biraz da bu.`, "kişisel", false, { k: "evj.dost3", p: [dn] });
+    }
+  }
   // ── Nemesis dünyada yaşıyor: musallat olur; yoksa derin bir husumet amansız hasma dönüşebilir ──
   if (!p.dead && p.age >= 14 && s.story) {
     if (s.story.nemesis && chance(0.10)) {
