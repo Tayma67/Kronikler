@@ -1,8 +1,9 @@
 // Çekirdek oyun döngüsünü + tüm oyuncu aksiyonlarını headless koşturur (runtime smoke testi).
-const g = require("/tmp/kronikler-game-bundle.cjs");
+const g = require(process.env.SMOKE_BUNDLE || "/tmp/kronikler-game-bundle.cjs"); // SMOKE_BUNDLE: anlık-görüntü paketi (paralel koşucu)
+const LIVES = parseInt(process.env.SMOKE_LIVES || "300", 10);
 const R = (a) => a[Math.floor(Math.random() * a.length)];
 let errors = 0; const died = [];
-for (let i = 0; i < 300; i++) {
+for (let i = 0; i < LIVES; i++) {
   try {
     let s = g.newGame("Sim", "Test", Math.random() < 0.5 ? "erkek" : "kadın");
     let guard = 0;
@@ -44,5 +45,6 @@ for (let i = 0; i < 300; i++) {
   } catch (e) { errors++; if (errors <= 5) console.log("DÖNGÜ HATASI:", e.message); }
 }
 died.sort((a,b)=>a-b);
-console.log(`300 hayat × tüm aksiyonlar · HATA: ${errors} · ölüm yaşı medyan ${died[150]} (min ${died[0]} / max ${died[died.length-1]})`);
+if (process.env.SMOKE_JSON) console.log("SMOKE_JSON:" + JSON.stringify({ errors, died }));
+else console.log(`${LIVES} hayat × tüm aksiyonlar · HATA: ${errors} · ölüm yaşı medyan ${died[Math.floor(died.length / 2)]} (min ${died[0]} / max ${died[died.length - 1]})`);
 process.exit(errors > 0 ? 1 : 0);
