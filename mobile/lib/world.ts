@@ -270,15 +270,15 @@ export function cityInfo(name: string, kind: string, lang: Lang = "tr"): CityInf
 
 // Rakip hanedanlar — diyarın güç odakları (deterministik). nameIdx = kültürel havuz indeksi.
 export interface RivalHouse { id: string; name: string; nameIdx: number; power: number; pride: number; trait: string; tutum?: number; }
-const HOUSE_NAMES = ["Karaoğulları","Akhanlılar","Demiroğulları","Şahinoğulları","Bozkurtlar","Yıldızoğulları","Çelikhanlar","Aslanoğulları","Toprakoğulları","Gümüşhanlılar","Kayıoğulları","Doğanoğulları"];
+const HOUSE_NAMES = ["Karaoğulları","Akhanlılar","Demiroğulları","Şahinoğulları","Bozkurtlar","Yıldızoğulları","Çelikhanlar","Aslanoğulları","Toprakoğulları","Gümüşhanlılar","Kayıoğulları","Doğanoğulları","Çınaroğulları","Tunçhanlar"];
 // Hanedan adları seçilen dilin kültürüne göre (index-index TR ile eşleşir).
 const HOUSE_POOLS: Record<Lang, string[]> = {
   tr: HOUSE_NAMES,
-  en: ["Blackmane","Ironhold","Falconcrest","Greywolf","Starhaven","Steelborn","Lionheart","Earthford","Silverhall","Hawkwind","Oakenshield","Ravenscar"],
-  es: ["Casa Cuervo","Casa Halcón","Casa de Hierro","Casa Lobo","Casa Estrella","Casa Acero","Casa León","Casa Tierra","Casa Plata","Casa Águila","Casa Roble","Casa Toro"],
-  pt: ["Casa Corvo","Casa Falcão","Casa do Ferro","Casa Lobo","Casa Estrela","Casa Aço","Casa Leão","Casa Terra","Casa Prata","Casa Águia","Casa Carvalho","Casa Touro"],
-  ar: ["بنو غُراب","آل الصقر","بنو الحديد","بنو الذئب","آل النجم","بنو الفولاذ","آل الأسد","بنو الأرض","آل الفضّة","بنو النسر","آل البلّوط","بنو الثور"],
-  ru: ["Воронцовы","Соколовы","Железновы","Волковы","Звездины","Стальновы","Львовы","Земцовы","Серебровы","Орловы","Дубовы","Турановы"],
+  en: ["Blackmane","Ironhold","Falconcrest","Greywolf","Starhaven","Steelborn","Lionheart","Earthford","Silverhall","Hawkwind","Oakenshield","Ravenscar","Elmswood","Bronzegate"],
+  es: ["Casa Cuervo","Casa Halcón","Casa de Hierro","Casa Lobo","Casa Estrella","Casa Acero","Casa León","Casa Tierra","Casa Plata","Casa Águila","Casa Roble","Casa Toro","Casa Olmo","Casa Bronce"],
+  pt: ["Casa Corvo","Casa Falcão","Casa do Ferro","Casa Lobo","Casa Estrela","Casa Aço","Casa Leão","Casa Terra","Casa Prata","Casa Águia","Casa Carvalho","Casa Touro","Casa Olmo","Casa Bronze"],
+  ar: ["بنو غُراب","آل الصقر","بنو الحديد","بنو الذئب","آل النجم","بنو الفولاذ","آل الأسد","بنو الأرض","آل الفضّة","بنو النسر","آل البلّوط","بنو الثور","بنو الدلب","آل البرونز"],
+  ru: ["Воронцовы","Соколовы","Железновы","Волковы","Звездины","Стальновы","Львовы","Земцовы","Серебровы","Орловы","Дубовы","Турановы","Вязовы","Бронзовы"],
 };
 // Hanedanın seçilen dildeki adı.
 export function houseName(nameIdx: number, lang: Lang = "tr"): string {
