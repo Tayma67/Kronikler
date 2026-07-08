@@ -2751,7 +2751,7 @@ export function professionAction(prev: GameState): GameState {
     if (crit) {
       reward = Math.round(reward * 1.8); p.fame = Math.min(100, p.fame + 3); p.career_xp += 1;
       p.money += reward;
-      push(s, "çalışma", `Mesleğinde bir ustalık eseri ortaya koydun; nâmın diyara yayıldı (+${reward} akçe).`, "kişisel", true, { k: "prof.actCrit", p: [reward] });
+      { const cv = chance(0.5); push(s, "çalışma", cv ? `Elinden çıkan iş dilden dile gezdi; ustalar bile "kim yaptı" diye sordu (+${reward} akçe).` : `Mesleğinde bir ustalık eseri ortaya koydun; nâmın diyara yayıldı (+${reward} akçe).`, "kişisel", true, { k: cv ? "prof.actCrit2" : "prof.actCrit", p: [reward] }); }
     } else {
       p.money += reward;
       push(s, "çalışma", `Mesleğinde göz dolduran bir iş başardın (+${reward} akçe).`, "kişisel", true, { k: "prof.act." + p.profession + ".win", p: [reward] });
