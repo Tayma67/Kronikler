@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, ScrollView, ActivityIndicator, Share } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -242,10 +242,16 @@ export default function MpOyun() {
           </View>
         )}
 
-        {/* Dünya saati */}
+        {/* Dünya saati + diyar kodu — kod bilen girer: iri, göz önünde, tek dokunuşla paylaşılır (test isteği) */}
         <View style={{ alignItems: "center", marginBottom: 8 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 3, color: C.goldDim }}>{t("mp.realm")} · {snapshot.realmId}</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 17, color: C.gold, marginTop: 3 }}>{t("mp.year")} {year} · {t("mp.month")} {month}</Text>
+          <Pressable onPress={() => { hap("tap"); Share.share({ message: applyParams(t("mp.shareMsg"), [snapshot.realmId]) }).catch(() => {}); }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 9, borderWidth: 1.5, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.08)", borderRadius: 9, paddingVertical: 6, paddingHorizontal: 14 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 16, letterSpacing: 5, color: C.gold }}>{snapshot.realmId}</Text>
+            <View style={{ width: 1, height: 16, backgroundColor: "rgba(201,168,76,0.4)" }} />
+            <GameIcon name="scroll" size={12} color={C.goldDim} />
+            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: C.goldDim }}>{t("mp.codeShare").toUpperCase()}</Text>
+          </Pressable>
+          <Text style={{ fontFamily: F.display, fontSize: 17, color: C.gold, marginTop: 6 }}>{t("mp.year")} {year} · {t("mp.month")} {month}</Text>
           <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 2 }}>
             {snapshot.throne.holderName ? pf(t("mp.throneHolder"), snapshot.throne.holderName) : t("mp.throneEmpty")}
           </Text>
