@@ -2,6 +2,17 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 271-273 eki (8 Temmuz, sabah) — HANIN KAPISI
+
+**Tek cümle (mağaza/what's new):**
+TR: "Yeni bir hikâye yayı: yol üstündeki ıssız hanın kapısı gıcırdıyor — Issız Han (40+, 24. yay); hikâyeler ekranı artık vaktini bekleyen yayların sayısını fısıldıyor, beş yayı bitiren anlatıcıya da Kıssahan nişanı takılıyor (85. başarım)."
+EN: "A new story arc: the door of the forsaken inn creaks on the road — The Forsaken Inn (40+, arc 24); the stories screen now whispers how many arcs still await their hour, and finishing five arcs pins The Storyteller badge on the teller (85th achievement)."
+
+**Öne çıkanlar:**
+- **Issız Han (SP, yeni yay):** Kapısı kilitli hanın anahtarı ya keseden çıkar ya emekten; içeride bulunan, gösterene şöhret, saklayana vicdan borcu bırakır.
+- **Vakti bekleyen yaylar (SP):** Hikâyeler ekranının dibinde kesik çizgili bir ima — kaç yayın yaş, şöhret ya da gönül beklediği görünür; 24 yaylık kütüphanenin derinliği hissedilir.
+- **Kıssahan (SP, yeni başarım):** Beş hikâye yayını tamamlayan, ateş başının anlatıcısı sayılır — defter artık onu da tutuyor.
+
 ## Dalga 266-269 eki (8 Temmuz, sabah) — MÜHÜRLÜ KESE
 
 **Tek cümle (mağaza/what's new):**
