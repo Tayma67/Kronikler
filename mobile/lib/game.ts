@@ -1661,6 +1661,18 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     p.stall_until = undefined; p.stall_loc = undefined;
     push(s, "ticaret", `${sl} çarşısındaki tezgâhın kirası doldu; kepengi indirip anahtarı kâhyaya bıraktın.`, "kişisel", false, { k: "evj.stallOut", p: [{ pl: sl }] });
   }
+  // ── Kadı terazisi: dükkân sahibine seyrek çarşı denetimi — şeref yüksekse alnının akıyla, düşükse ceza keserek ──
+  if (!p.dead && p.properties.some((pr2) => pr2.type === "dukkan") && chance(0.03)) {
+    if (p.honor >= 45 || chance(0.5)) {
+      p.reputation = Math.min(100, p.reputation + 2);
+      push(s, "ticaret", `Kadının adamları çarşıyı denetledi; senin terazin dirhemi dirhemine çıktı. Mübaşir defterine iki hoş satır yazdı.`, "kişisel", false, { k: "evj.tartiOk" });
+    } else {
+      const ceza = Math.round(20 * inflationFactor(s));
+      p.money = Math.max(0, p.money - ceza);
+      p.reputation = Math.max(-100, p.reputation - 2);
+      push(s, "ticaret", `Çarşı denetiminde terazine kusur bulundu; kadı ${ceza} akçe ceza kesti, mübaşir kapıya kırmızı mühür vurdu.`, "kişisel", false, { k: "evj.tartiFail", p: [ceza] });
+    }
+  }
   // ── Tanrı misafiri: evi/konağı olanın kapısı ara sıra yolcuya açılır — hediye, övgü ya da uzak diyar hikâyesi kalır ──
   if (!p.dead && p.age >= 18 && ((p.estate || 0) >= 1 || p.properties.some((pr2) => pr2.type === "ev")) && chance(0.045)) {
     const gr = Math.random();
