@@ -11,7 +11,7 @@ import { placeName } from "../../lib/locale-data";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, ScreenFresk } from "../../lib/ui";
 
 // Pazar malı ikonu — eşya türüne göre (emoji yerine GameIcon).
 function marketItemIcon(g: { kind?: string; heal?: number; feed?: number; icon?: string }): string {
@@ -148,7 +148,7 @@ export default function Pazar() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <Coin v={p.money} />
@@ -522,6 +522,6 @@ export default function Pazar() {
           })()}
         </View>
       </Modal>
-    </View>
+    </ScreenFresk>
   );
 }

@@ -1,4 +1,4 @@
-import { View, Image, Modal, Text, Pressable, TextInput, ViewStyle, StyleProp, TextStyle, Share } from "react-native";
+import { View, Image, ImageBackground, Modal, Text, Pressable, TextInput, ViewStyle, StyleProp, TextStyle, Share } from "react-native";
 import { useEffect, useState, useRef } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, useDerivedValue, withTiming, withSpring, withRepeat, withSequence, ZoomIn, FadeIn, FadeInUp, FadeInDown } from "react-native-reanimated";
 import { portreImage } from "./assets";
@@ -443,5 +443,14 @@ export function Panel({ title, icon, tone = C.gold, right, children, noPad, dela
       ) : null}
       <View style={noPad ? undefined : { padding: 12 }}>{children}</View>
     </Animated.View>
+  );
+}
+
+// Ekran freski: ana menü freski kısık ışıkla (opasite 0.1) arkadan bakar — düz zeminlere derinlik, okunurluğa dokunmadan.
+export function ScreenFresk({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
+  return (
+    <ImageBackground source={require("../assets/yeni_oyun_bg.png")} resizeMode="cover" imageStyle={{ opacity: 0.1 }} style={[{ flex: 1, backgroundColor: C.bg }, style]}>
+      {children}
+    </ImageBackground>
   );
 }

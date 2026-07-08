@@ -12,7 +12,7 @@ import { useI18n, applyParams } from "../../lib/i18n";
 import { currentCalendar } from "../../lib/calendar";
 import { hap } from "../../lib/haptics";
 import { GameIcon } from "../../lib/icons";
-import { BackLabel, Panel, Portre } from "../../lib/ui";
+import { BackLabel, Panel, Portre, ScreenFresk } from "../../lib/ui";
 
 // Mülk gelirini seviyeye göre hesapla (Vercel property_system ile aynı: taban × (1 + (seviye-1)*0.5)).
 function propIncome(type: string, level: number): number {
@@ -58,7 +58,7 @@ export default function Mulkler() {
   const condColor = (c: number) => (c >= 75 ? C.sage : c >= 45 ? C.gold : C.blood);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <ScreenFresk>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}>
         {/* ── Hero afişi ── */}
         <ImageBackground source={MULK_HERO} style={{ width: "100%", height: 182 }} resizeMode="cover">
@@ -303,6 +303,6 @@ export default function Mulkler() {
         </Panel>
         </View>
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }
