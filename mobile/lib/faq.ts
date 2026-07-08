@@ -148,6 +148,14 @@ const TR: FaqSection[] = [
       { q: "Ölürsem ya da mührü satarsam ne olur?", a: "Destan vârisine geçer; kaldığı yerden devam eder. Mührü Karakuş'a satarsan ihanet dalına girersin: kapılar, mührü geri alıp kefaret ödemeden açılmaz. Destanı tamamlayan Yemin Tamam başarımını alır; sonraki vârisler Mühür Nişanı ile (+2 itibar) doğar." },
     ],
   },
+  {
+    icon: "lyre", title: "Ses, Görüntü & Gizlilik",
+    items: [
+      { q: "Müzik ve ses efektleri nereden açılır?", a: "Ayarlar ekranından ikisi ayrı ayrı yönetilir. Arka plan müziği (Kervan Yolu teması) varsayılan açıktır; ses efektleri varsayılan kapalıdır. Müzik uygulama arka plana geçince kendiliğinden susar, dönünce kaldığı yerden sürer." },
+      { q: "Sade mod nedir? Pilimi korur mu?", a: "Sade mod tüm sürekli animasyonları, ekran arkalarındaki fresk dokusunu ve müziğin varsayılanını kapatır — düşük RAM'li cihazlarda kendiliğinden açılır, Ayarlar'dan elle de yönetilir. Oyun olay güdümlüdür: arka planda zamanlayıcı koşmaz, pil dostudur." },
+      { q: "Oyun veri topluyor mu?", a: "Hayır. Hesap yok, reklam yok, izleme yok; kayıtlar yalnız cihazında durur. Çevrimiçi Diyar'a kendi isteğinle katılırsan yalnız karakter adın ve oyun değerlerin aynı diyardaki oyunculara gösterilir — kimliğinle eşleştirilmez." },
+    ],
+  },
 ];
 
 const EN: FaqSection[] = [
@@ -293,6 +301,14 @@ const EN: FaqSection[] = [
       { q: "What is the Ash Oath and how does it begin?", a: "The game's main story, spanning generations. In the first years after you turn 13, the village elder summons you to a deathbed and entrusts an ash-grey seal. Accept and the saga begins; step back and the seal knocks once more, two years later." },
       { q: "Can I miss a scene? Where do I see my progress?", a: "You cannot miss one: saga scenes wait on the main board in the gold-framed Ash Oath card and never vanish. Your current act and scene count are shown in the Ash Oath band on the character card." },
       { q: "What happens if I die, or sell the seal?", a: "The saga passes to your heir and continues where it left off. Selling the seal to Karakus opens the betrayal branch: no gate opens until the seal is won back and atonement is paid. Completing the saga grants The Oath Fulfilled achievement; later heirs are born with the Seal Token (+2 standing)." },
+    ],
+  },
+  {
+    icon: "lyre", title: "Sound, Visuals & Privacy",
+    items: [
+      { q: "Where do I turn on music and sound effects?", a: "Both are managed separately in Settings. Background music (the Caravan Road theme) is on by default; sound effects are off by default. Music goes silent when the app is backgrounded and resumes when you return." },
+      { q: "What is reduced mode? Does it save battery?", a: "Reduced mode turns off all continuous animations, the fresco texture behind screens and the music default — it enables itself on low-RAM devices and can be toggled in Settings. The game is event-driven: no timers run in the background, so it is battery-friendly." },
+      { q: "Does the game collect data?", a: "No. No account, no ads, no tracking; saves live only on your device. If you voluntarily join the online Realm, only your character name and in-game values are shown to players in the same realm — never linked to your identity." },
     ],
   },
 ];
@@ -443,6 +459,14 @@ const ES: FaqSection[] = [
       { q: "Que pasa si muero o vendo el sello?", a: "La saga pasa a tu heredero y continua donde quedo. Vender el sello a Karakus abre la rama de la traicion: ninguna puerta se abre hasta recobrarlo y pagar la expiacion. Completar la saga otorga el logro Juramento Cumplido; los herederos posteriores nacen con la Insignia del Sello (+2 de reputacion)." },
     ],
   },
+  {
+    icon: "lyre", title: "Sonido, Imagen y Privacidad",
+    items: [
+      { q: "¿Dónde activo la música y los efectos de sonido?", a: "Ambos se gestionan por separado en Ajustes. La música de fondo (el tema del Camino de Caravanas) viene activada; los efectos vienen desactivados. La música se silencia al pasar la app a segundo plano y se reanuda al volver." },
+      { q: "¿Qué es el modo sencillo? ¿Ahorra batería?", a: "El modo sencillo apaga las animaciones continuas, la textura de fresco tras las pantallas y el valor por defecto de la música — se activa solo en dispositivos con poca RAM y también se ajusta a mano. El juego es por eventos: no corren temporizadores en segundo plano, cuida la batería." },
+      { q: "¿El juego recopila datos?", a: "No. Sin cuenta, sin anuncios, sin rastreo; las partidas viven solo en tu dispositivo. Si te unes por voluntad al Reino en línea, solo tu nombre de personaje y tus valores de juego se muestran a los jugadores del mismo reino — nunca se vinculan a tu identidad." },
+    ],
+  },
 ];
 
 const PT: FaqSection[] = [
@@ -588,6 +612,14 @@ const PT: FaqSection[] = [
       { q: "O que e o Juramento de Cinza e como comeca?", a: "A historia principal do jogo, que atravessa geracoes. Nos primeiros anos depois dos 13, o anciao da aldeia chama-te ao seu leito e confia-te um selo cinzento. Se o aceitares, a saga comeca; se recuares, o selo bate a porta mais uma vez, dois anos depois." },
       { q: "Posso perder uma cena? Onde vejo o meu progresso?", a: "Nao podes: as cenas esperam no painel, no cartao dourado do Juramento de Cinza, e nunca desaparecem. O ato atual e as cenas vencidas aparecem na faixa do juramento na ficha de personagem." },
       { q: "O que acontece se eu morrer ou vender o selo?", a: "A saga passa ao teu herdeiro e continua de onde parou. Vender o selo a Karakus abre o ramo da traicao: nenhuma porta se abre ate o recuperares e pagares a expiacao. Completar a saga da a conquista Juramento Cumprido; os herdeiros seguintes nascem com a Insignia do Selo (+2 de reputacao)." },
+    ],
+  },
+  {
+    icon: "lyre", title: "Som, Imagem e Privacidade",
+    items: [
+      { q: "Onde ativo a música e os efeitos sonoros?", a: "Os dois são geridos separadamente nos Ajustes. A música de fundo (o tema da Estrada das Caravanas) vem ativada; os efeitos vêm desativados. A música silencia quando o app vai para segundo plano e retoma quando você volta." },
+      { q: "O que é o modo simples? Poupa bateria?", a: "O modo simples desliga as animações contínuas, a textura de afresco atrás das telas e o padrão da música — ativa-se sozinho em aparelhos com pouca RAM e também se ajusta manualmente. O jogo é orientado a eventos: nenhum temporizador roda em segundo plano, poupa bateria." },
+      { q: "O jogo coleta dados?", a: "Não. Sem conta, sem anúncios, sem rastreamento; os salvamentos vivem só no seu aparelho. Se você entrar por vontade própria no Reino online, apenas o nome do personagem e os valores de jogo aparecem aos jogadores do mesmo reino — nunca vinculados à sua identidade." },
     ],
   },
 ];
@@ -737,6 +769,14 @@ const AR: FaqSection[] = [
       { q: "ماذا يحدث إن متّ أو بعت الختم؟", a: "تنتقل الملحمة إلى وريثك وتستمر من حيث توقفت. بيع الختم لقره قوش يفتح فرع الخيانة: لا يُفتح باب حتى يُستردّ الختم وتُدفع الكفّارة. ومن يُتمّ الملحمة ينال إنجاز اليمين التام؛ ويولد الورثة اللاحقون بنيشان الختم (+2 سمعة)." },
     ],
   },
+  {
+    icon: "lyre", title: "الصوت والصورة والخصوصية",
+    items: [
+      { q: "من أين تُفعَّل الموسيقى والمؤثرات الصوتية؟", a: "يُدار الاثنان كلٌّ على حدة من الإعدادات. موسيقى الخلفية (لحن طريق القوافل) مفعّلة افتراضيا؛ والمؤثرات معطّلة افتراضيا. تصمت الموسيقى حين ينتقل التطبيق إلى الخلفية وتستأنف عند العودة." },
+      { q: "ما الوضع المبسّط؟ وهل يحافظ على البطارية؟", a: "يوقف الوضع المبسّط كل الحركات المستمرة ونقش الجدارية خلف الشاشات والإعداد الافتراضي للموسيقى — يعمل تلقائيا على الأجهزة ذات الذاكرة المنخفضة ويُضبط يدويا من الإعدادات. اللعبة قائمة على الأحداث: لا مؤقتات تعمل في الخلفية، فهي رفيقة بالبطارية." },
+      { q: "هل تجمع اللعبة بيانات؟", a: "لا. لا حساب ولا إعلانات ولا تتبّع؛ والحفظ يبقى على جهازك وحده. وإن انضممت بمحض إرادتك إلى الديار المتصلة فلا يظهر للاعبي الديار نفسها إلا اسم شخصيتك وقيم اللعب — ولا تُربط بهويتك أبدا." },
+    ],
+  },
 ];
 
 const RU: FaqSection[] = [
@@ -882,6 +922,14 @@ const RU: FaqSection[] = [
       { q: "Что такое Клятва пепла и как она начинается?", a: "Главная история игры, длящаяся поколениями. В первые годы после 13 лет старейшина деревни зовёт к своему ложу и вверяет пепельно-серую печать. Принять — и сага начнётся; отступить — и печать постучит ещё один раз, два года спустя." },
       { q: "Можно ли пропустить сцену? Где виден прогресс?", a: "Пропустить нельзя: сцены саги ждут на главном экране в золотой карточке Клятвы пепла и не исчезают. Текущий акт и число пройденных сцен показаны в полосе клятвы на карточке персонажа." },
       { q: "Что будет, если умереть или продать печать?", a: "Сага переходит к наследнику и продолжается с того же места. Продажа печати Карагушу открывает ветвь предательства: ни одни ворота не откроются, пока печать не возвращена и не уплачено искупление. Завершившему сагу — достижение Клятва исполнена; последующие наследники рождаются со знаком печати (+2 репутации)." },
+    ],
+  },
+  {
+    icon: "lyre", title: "Звук, изображение и приватность",
+    items: [
+      { q: "Где включаются музыка и звуковые эффекты?", a: "И то и другое настраивается отдельно в разделе настроек. Фоновая музыка (тема Караванного пути) включена по умолчанию; эффекты по умолчанию выключены. Музыка смолкает, когда приложение уходит в фон, и продолжается по возвращении." },
+      { q: "Что такое упрощённый режим? Бережёт ли он батарею?", a: "Упрощённый режим отключает постоянные анимации, фресковую текстуру за экранами и музыку по умолчанию — он сам включается на устройствах с малым объёмом памяти и настраивается вручную. Игра событийная: в фоне не крутятся таймеры, батарея расходуется бережно." },
+      { q: "Собирает ли игра данные?", a: "Нет. Ни аккаунта, ни рекламы, ни слежки; сохранения живут только на устройстве. При добровольном входе в сетевые Края другим игрокам тех же Краёв видны лишь имя персонажа и игровые значения — с личностью они не связываются." },
     ],
   },
 ];
