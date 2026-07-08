@@ -28,7 +28,7 @@ export default function Hikayeler() {
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: insets.bottom + 90 }}>
-        <PageHeader kicker={t("scr.hikayeler")} title={t("scr.hikayeler")} />
+        <PageHeader kicker={t("scr.hikayeler")} title={t("scr.hikayeler")} sub={applyParams(t("hik.progress"), [st.completed.length, ARCS.length])} />
 
         {active && stage ? (
           <Panel title={gt("arc." + active.id + ".t", active.title)} tone={C.gold}>
