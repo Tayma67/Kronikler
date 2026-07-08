@@ -11,6 +11,24 @@ export interface Dilemma {
 
 export const DILEMMAS: Dilemma[] = [
   {
+    id: "emanet_kese", icon: "coins", title: "Emanet Kese",
+    text: "Bir yolcu geçen bahar sana ağzı mühürlü bir kese emanet edip yola düştü; dönmedi. Bugün kapına kardeşiyim diyen biri geldi — yüzü benziyor ama anlattığı tarif tutmuyor.",
+    when: (p) => p.age >= 30,
+    choices: [
+      { label: "Keseyi teslim et", delta: { honor: 4 }, result: "Keseyi verdin. Adam mührü kırınca içinden çıkan mektupta senin adın yazılıydı: kardeşim gelirse tereddütsüz ver, o yüzden sana bıraktım. Emanete hıyanet etmeyenin adı keseden ağır tartar." },
+      { label: "Kanıt iste, keseyi bekle", delta: { honor: -1, reputation: 1 }, result: "Adamı boş çevirdin; üç hafta sonra elinde kadı mührüyle döndü, keseyi öyle aldı. Kimse sana kötü diyemedi ama kapıda bekletilen bakış aklından çıkmadı." },
+    ],
+  },
+  {
+    id: "kuyudaki_oglak", icon: "bucket", title: "Kuyudaki Oğlak",
+    text: "Komşunun oğlağı kör kuyuya düştü; meleme sesi taş duvarlarda yankılanıyor. Başına toplananlar birbirine bakıyor — ip senin elinde, kuyu dar ve karanlık.",
+    when: (p) => p.age >= 16,
+    choices: [
+      { label: "İpi beline dola, kuyuya in", delta: { honor: 3, health: -2 }, result: "Dizlerin sıyrıldı ama oğlak kucağında çıktın; alkışlar kuyudan derindi. Komşu akşam kapına bir tas süt bıraktı — kuyu karanlıktı, hatırası aydınlık." },
+      { label: "İpi uzat, başkası insin", delta: { reputation: -1 }, result: "İp elden ele dolaştı, sonunda bir çoban çocuğu indi. Oğlak kurtuldu; herkes çocuğu övdü. İpin sahibi olduğunu hatırlayan az oldu." },
+    ],
+  },
+  {
     id: "gece_misafiri", icon: "house", title: "Gece Misafiri",
     text: "Fırtınalı gece kapın çalındı: sırılsıklam bir yolcu, tanımadığın bir yüz. 'Han dolu, dam akıyor' diyor; rüzgâr lafını bölüyor.",
     when: (p) => p.age >= 16,
