@@ -716,6 +716,28 @@ export default function Dashboard() {
         );
       })()}
 
+      {/* Aktif işler şeridi — süreli sistemlerin kalan ayları (tezgâh, iltizam, kiler, rehin, nadas) */}
+      {!p.dead && (() => {
+        const chips: { icon: string; label: string }[] = [];
+        if ((p.stall_until ?? 0) > state.turn) chips.push({ icon: "banner", label: applyParams(t("dash.fx.stall"), [(p.stall_until ?? 0) - state.turn]) });
+        if ((p.iltizam_until ?? 0) > state.turn) chips.push({ icon: "scales", label: applyParams(t("dash.fx.iltizam"), [(p.iltizam_until ?? 0) - state.turn]) });
+        if ((p.winter_stock_until ?? 0) >= state.turn) chips.push({ icon: "wheat", label: applyParams(t("dash.fx.kiler"), [(p.winter_stock_until ?? 0) - state.turn]) });
+        if (p.horse_pawn) chips.push({ icon: "hourglass", label: applyParams(t("dash.fx.rehin"), [Math.max(0, p.horse_pawn.until - state.turn)]) });
+        const fal = (p.properties || []).find((pr) => pr.fallow_until !== undefined);
+        if (fal) chips.push({ icon: "leaf", label: applyParams(t("dash.fx.nadas"), [Math.max(0, (fal.fallow_until ?? 0) - state.turn)]) });
+        if (!chips.length) return null;
+        return (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginHorizontal: 12, marginTop: 8 }}>
+            {chips.map((c, i) => (
+              <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 4, paddingHorizontal: 9, borderRadius: 12, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: "rgba(201,168,76,0.06)" }}>
+                <GameIcon name={c.icon} size={11} color={C.goldDim} />
+                <Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.parchmentMuted }}>{c.label}</Text>
+              </View>
+            ))}
+          </View>
+        );
+      })()}
+
       {/* Kervan yolculuğu (bağlam) — çok-adımlı rota ilerlemesi */}
       {!p.dead && state.caravan?.route && (
         <Pressable onPress={() => { hap("tap"); router.push("/oyun/pazar"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(224,90,48,0.4)", backgroundColor: "rgba(224,90,48,0.08)" }}>
