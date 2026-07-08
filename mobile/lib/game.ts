@@ -305,7 +305,7 @@ export function giveZekat(prev: GameState): GameState {
   const z = zekatDue(s); p.money -= z; p.last_zekat = s.turn;
   bumpNam(p, "dindar", 5); bumpNam(p, "comert", 5);
   p.reputation = Math.min(100, p.reputation + 3); p.fame = Math.min(100, p.fame + 1);
-  push(s, "bagis", `Malının zekâtını verdin (${z} akçe yoksula); gönlün ferahladı, eli açık diye anıldın.`, "kişisel", true, { k: "evj.zekat", p: [z] });
+  { const zv2 = chance(0.5); push(s, "bagis", zv2 ? `Kesenin hakkı ayrıldı: ${z} akçe yoksulun avucuna aktı; dualar kapına birikti.` : `Malının zekâtını verdin (${z} akçe yoksula); gönlün ferahladı, eli açık diye anıldın.`, "kişisel", true, { k: zv2 ? "evj.zekat2" : "evj.zekat", p: [z] }); }
   return s;
 }
 // Eş mizacı (tohumdan, deterministik): evli hayat anlarının sıklığını/etkisini renklendirir, eşi birey yapar.
@@ -2642,7 +2642,7 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
   } else {
     p.money += earn;
     if (style === "kaytarici") p.health = Math.min(100, p.health + 2);
-    push(s, "çalışma", `${careerTitle(p.profession, p.career_xp - 1)} olarak çalıştın, ${earn} akçe kazandın.`, "kişisel", false, { k: "evj.work", p: [{ c: [p.profession, p.career_xp - 1] }, earn] });
+    { const wv2 = chance(0.5); push(s, "çalışma", wv2 ? `${careerTitle(p.profession, p.career_xp - 1)} olarak ter döktün; ay sonunda avucunda ${earn} akçe vardı.` : `${careerTitle(p.profession, p.career_xp - 1)} olarak çalıştın, ${earn} akçe kazandın.`, "kişisel", false, { k: wv2 ? "evj.work2" : "evj.work", p: [{ c: [p.profession, p.career_xp - 1] }, earn] }); }
   }
   if (pr) {
     const after = careerTier(pr, p.career_xp);
@@ -3198,7 +3198,7 @@ export function travelTo(prev: GameState, dest: string): GameState {
   if (p.dead || dest === p.location_name) return s;
   markVisit(p, p.location_name); // kalkış noktası da sayılır (doğduğun yerleşim kaybolmasın)
   p.location_name = dest; markVisit(p, dest); p.hunger = Math.max(0, p.hunger - 5);
-  push(s, "yolculuk", `${dest} yerleşimine gittin.`, "kişisel", false, { k: "evj.travel", p: [{ pl: dest }] });
+  { const tv2 = chance(0.5); push(s, "yolculuk", tv2 ? `Yol seni ${dest} kapısına bıraktı; heybende iki beyliğin tozu var.` : `${dest} yerleşimine gittin.`, "kişisel", false, { k: tv2 ? "evj.travel2" : "evj.travel", p: [{ pl: dest }] }); }
   return s;
 }
 
@@ -3356,7 +3356,7 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
     }
   } else {
     p.hunger = Math.max(0, p.hunger - 5); p.location_name = dest; markVisit(p, dest);
-    push(s, "yolculuk", `Ana yoldan ${dest} yerleşimine gittin.`, "kişisel", false, { k: "evj.travel", p: [{ pl: dest }] });
+    { const tv2 = chance(0.5); push(s, "yolculuk", tv2 ? `Ana yol seni ${dest} kapısına bıraktı; heybende iki beyliğin tozu var.` : `Ana yoldan ${dest} yerleşimine gittin.`, "kişisel", false, { k: tv2 ? "evj.travel2" : "evj.travel", p: [{ pl: dest }] }); }
   }
   if (!p.dead) rollTravelEvent(s, route); // yol olayları (han/yolcu/tüccar/fırtına/geçit/kervan) — artık etkin
   return s;
