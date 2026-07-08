@@ -1595,6 +1595,9 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Anadan kalma yorganın söküğünü kendi elinle diktin; iğne yavaştı ama ilmek sağlam. Yorgan bir ömür daha ısıtır.", k: "mem.quiltStitch", fn: () => { p.health = Math.min(100, p.health + 1); } },
         { text: "Kahvede her gün oturduğun sekide bu sabah bir genç vardı; kalkıp yer verdi. Seki senden çok alışkanlığınındı.", k: "mem.emptyChair" },
       );
+      // yoldaşıyla yaşlananın anısı da yoldaşlıdır
+      if (p.pet) mem.push({ text: `İkindi uykusuna yattın; ${p.pet.n} göğsüne kuruldu. İkiniz de yaşlandınız — mırıltısı eskisinden yavaş, sana eskisinden yakın.`, k: "mem.oldCat", p: [p.pet.n] });
+      if (p.dog) mem.push({ text: `Kapı önünde taşa oturdun; ${p.dog.n} başını dizine koydu. İkiniz de aynı yöne baktınız — geçen kervanlara değil, geçen yıllara.`, k: "mem.oldDog", p: [p.dog.n] });
     }
     const m = rnd(mem); m.fn?.();
     push(s, p.age < 13 ? "cocukluk" : "gunluk", m.text, "kişisel", false, { k: m.k, p: m.p });
