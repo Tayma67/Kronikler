@@ -1,4 +1,4 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { View, Pressable, Text } from "react-native";
 import Svg, { Defs, RadialGradient, Stop, Rect } from "react-native-svg";
 import { useEffect } from "react";
@@ -110,6 +110,8 @@ function GlobalBackdrop({ bottom }: { bottom: number }) {
 export default function OyunLayout() {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
+  const { mpMode } = useGame();
+  const router = useRouter();
   return (
     <View style={{ flex: 1 }}>
       <Tabs screenOptions={{
@@ -154,6 +156,13 @@ export default function OyunLayout() {
       <NavOrnament bottom={60 + insets.bottom} />
       <AdvanceFab bottom={insets.bottom} />
       <StatDeltaOverlay />
+      {/* MP'deyken kişisel ekranlar SP kabuğunda açılır — oyuncu diyardan koptuğunu sanmasın: dönüş şeridi hep üstte (test bulgusu) */}
+      {mpMode && (
+        <Pressable onPress={() => { hap("tap"); router.back(); }} style={{ position: "absolute", top: insets.top + 4, alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 5, paddingHorizontal: 13, borderRadius: 14, borderWidth: 1, borderColor: "rgba(111,160,192,0.65)", backgroundColor: "rgba(8,14,20,0.92)" }}>
+          <GameIcon name="banner" size={11} color={C.frost} />
+          <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.2, color: C.frost }}>{t("mp.backToRealm").toUpperCase()}</Text>
+        </Pressable>
+      )}
     </View>
   );
 }

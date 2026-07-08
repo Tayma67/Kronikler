@@ -38,7 +38,12 @@ export default function MpOyun() {
   const { state: s, apply, mpMode, enterMp, exitMp } = useGame();
   const { guestId, snapshot, lastTick, missed, clearMissed, setReady, sendIntent, syncPlayer, saved, saveState, setTravel, chat, sendChat } = useMp();
 
-  const [ready, setReadyLocal] = useState(false);
+  // Hazır oyu SUNUCU gerçeğinden okunur (snapshot.me.ready); yerel değer yalnız iyimser geçiş içindir.
+  // (Test bulgusu: yerel tutulunca çık-gel/yeniden bağlanmada düğme sunucuyla ters düşüyordu.)
+  const [readyOpt, setReadyOpt] = useState<boolean | null>(null);
+  const meReady = !!snapshot?.players.find((x) => x.id === guestId)?.ready;
+  const ready = readyOpt !== null ? readyOpt : meReady;
+  useEffect(() => { setReadyOpt(null); }, [meReady]); // sunucu ne derse o — iyimser değer görevini bitirince çekilir
   // Günlük satırı yapısal: mektup olayları gönderen adını taşır ki tek dokunuşla cevap yazılabilsin.
   const [evLines, setEvLines] = useState<{ tx: string; letterFrom?: string; replied?: boolean }[]>([]);
   const [backDigest, setBackDigest] = useState<null | { lines: string[]; gold: number; n: number }>(null); // dönüş parşömeni: yokluğunda birikenler (bir kez gösterilir)
@@ -82,7 +87,7 @@ export default function MpOyun() {
       }), ...prev].slice(0, 12));
     }
     apply(() => ns);
-    setReadyLocal(false);
+    setReadyOpt(null);
     syncPlayer(mePublic(guestId, ns, false));
     saveState(JSON.stringify(ns)); // her ay sonunda sunucuya yedekle → çıkıp girince aynı karaktere devam
   }, [lastTick]);
@@ -141,7 +146,7 @@ export default function MpOyun() {
   const intent = (i: SharedIntent) => { hap("tap"); sendIntent(i); };
   // Paylaşımlı siyasi eylemin kişisel maliyetini (altın) yerelde kes — sunucu çekişmeyi çözer.
   const spend = (cost: number) => apply((prev) => { const ns: GameState = JSON.parse(JSON.stringify(prev)); ns.player.money = Math.max(0, ns.player.money - cost); return ns; });
-  const doReady = () => { if (p.dead) return; hap("tap"); const v = !ready; setReadyLocal(v); setReady(v); if (guestId) syncPlayer(mePublic(guestId, s, v)); };
+  const doReady = () => { if (p.dead) return; hap("tap"); const v = !ready; setReadyOpt(v); setReady(v); if (guestId) syncPlayer(mePublic(guestId, s, v)); };
 
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>
@@ -561,7 +566,7 @@ export default function MpOyun() {
           )}
         </View>
         <Pressable disabled={p.dead} onPress={doReady} style={{ paddingVertical: 13, paddingHorizontal: 26, borderRadius: 9, borderWidth: 1, borderColor: ready ? "rgba(127,166,106,0.7)" : "rgba(201,168,76,0.6)", backgroundColor: ready ? "rgba(127,166,106,0.16)" : C.gold, opacity: p.dead ? 0.4 : 1 }}>
-          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: ready ? C.sage : C.inkOnGold }}>{ready ? t("mp.ready") + " ✓" : t("mp.ready")}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: ready ? C.sage : C.inkOnGold }}>{ready ? `✓ ${readyCount}/${liveCount}` : `${t("mp.ready")} · ${readyCount}/${liveCount}`}</Text>
         </Pressable>
       </View>
     </ScreenFresk>

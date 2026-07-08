@@ -4,13 +4,11 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../lib/i18n";
 import { useMp } from "../../lib/mp/store";
-import { getServerUrl, setServerUrl, getSavedName, setSavedName, getHttpBase, getTutorialSeen, setTutorialSeen } from "../../lib/mp/config";
+import { getServerUrl, setServerUrl, getSavedName, setSavedName, getTutorialSeen, setTutorialSeen } from "../../lib/mp/config";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
-
-const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 
 // Kısa diyar kodu üret (paylaşılabilir). Kimlik amaçlı; deterministik olması gerekmez.
 function newRealmCode(): string {
@@ -28,21 +26,11 @@ export default function MpLobby() {
   const [serverDraft, setServerDraft] = useState("");
   const [name, setName] = useState("");
   const [joinCode, setJoinCode] = useState("");
-  const [rooms, setRooms] = useState<{ realmId: string; name: string; count: number }[]>([]);
-  const [loadingRooms, setLoadingRooms] = useState(false);
   const [showTut, setShowTut] = useState(false);
 
   useEffect(() => { getServerUrl().then((u) => { setUrl(u); setServerDraft(u); }); getSavedName().then(setName); getTutorialSeen().then((seen) => { if (!seen) setShowTut(true); }); }, []);
   const dismissTut = () => { setShowTut(false); setTutorialSeen(); };
-
-  // Açık diyarları çek (kod paylaşmadan tıkla-katıl).
-  const refreshRooms = async () => {
-    setLoadingRooms(true);
-    try { const b = await getHttpBase(); const r = await fetch(b + "/realms"); const j = await r.json(); setRooms(Array.isArray(j?.realms) ? j.realms : []); }
-    catch { setRooms([]); }
-    finally { setLoadingRooms(false); }
-  };
-  useEffect(() => { if (serverUrl) refreshRooms(); }, [serverUrl]);
+  // Açık diyar listesi bilinçli kaldırıldı (test geri bildirimi): diyara yalnız KODLA girilir.
 
   const [gender, setGender] = useState<"erkek" | "kadın">("erkek"); // MP karakteri de SP gibi cinsiyet seçer (dişil dil desteği dahil)
   const saveServer = async () => { hap("tap"); await setServerUrl(serverDraft.trim()); setUrl(serverDraft.trim()); };
@@ -116,27 +104,8 @@ export default function MpLobby() {
           </Pressable>
         </View>
 
-        {/* Açık Diyarlar — kod paylaşmadan tıkla-katıl */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 22 }}>
-          <View style={{ flex: 1, height: 1, backgroundColor: C.border }} />
-          <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 2, color: C.goldDim }}>{t("mp.openRealms").toUpperCase()}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={t("a11y.refresh")} onPress={() => { hap("tap"); refreshRooms(); }} hitSlop={8}><GameIcon name="ilerle" size={13} color={C.goldDim} /></Pressable>
-          <View style={{ flex: 1, height: 1, backgroundColor: C.border }} />
-        </View>
-        {loadingRooms ? (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}><ActivityIndicator color={C.goldDim} /><Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>{t("mp.connecting")}</Text></View>
-        ) : rooms.length === 0 ? (
-          <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim, marginTop: 12, textAlign: "center" }}>{t("mp.noOpenRealms")}</Text>
-        ) : rooms.map((r) => (
-          <Pressable key={r.realmId} disabled={!serverReady} onPress={() => go(r.realmId)} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8, paddingVertical: 11, paddingHorizontal: 13, borderRadius: 9, borderWidth: 1, borderColor: C.border, backgroundColor: C.card }}>
-            <GameIcon name="iliskiler" size={15} color={C.frost} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1, color: C.parchment }}>{r.name}</Text>
-              <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{r.realmId} · {pf(t("mp.realmPlayers"), r.count)}</Text>
-            </View>
-            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.frost }}>{t("mp.joinRealm")}</Text>
-          </Pressable>
-        ))}
+        {/* Açık diyar listesi bilinçli kaldırıldı (test geri bildirimi): diyarlar yalnız KODLA paylaşılır —
+            yabancı odalar listelenip kafa karıştırmaz; kod bilen dostlar arasında oynanır. */}
 
         {status === "connecting" && <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 18 }}><ActivityIndicator color={C.gold} /><Text style={{ fontFamily: F.serifItalic, color: C.parchmentMuted }}>{t("mp.connecting")}</Text></View>}
         {error && <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.blood, marginTop: 16 }}>{error}</Text>}
