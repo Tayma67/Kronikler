@@ -129,6 +129,7 @@ export interface Player {
   peace_made?: boolean; iltizam_done?: boolean; dowry_given?: boolean; // başarım izleri: hasımla sulh, iltizam alımı, çeyiz açılışı (tek seferlik bayraklar)
   pension_seen?: boolean; pension_accum?: number; // ocak harçlığı: duyuru bir kez, yıllık döküm için birikeç
   kahya?: boolean; // vekilharç tutuldu mu (aylık ücret; yıpranan mülkü kendiliğinden onartır)
+  sira_gunu_year?: number; // şıra günü yapılan yıl (güzde yılda bir; bağ şenliği farmı kapalı)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -347,6 +348,22 @@ export function setTenant(prev: GameState, index: number, on: boolean): GameStat
   pr.tenant = on;
   if (on) push(s, "mülk", `${pr.loc}'daki ev kiraya verildi; her ay kira işler, ev de yıpranır.`, "kişisel", false, { k: "evj.tenantIn", p: [{ pl: pr.loc }] });
   else push(s, "mülk", `${pr.loc}'daki evin kiracısı çıkarıldı; anahtar yine senin cebinde.`, "kişisel", false, { k: "evj.tenantOut", p: [{ pl: pr.loc }] });
+  return s;
+}
+// Şıra günü: güzde bağ sahibi yılda bir kez bağ bozar — küpe şarap girer (bağ kademesi kadar), ocak bağı tazelenir.
+export function siraGunu(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  const yil = Math.floor(s.turn / 12);
+  const bags = p.properties.filter((pr) => pr.type === "bag");
+  if (p.dead || inJail(p) || bags.length === 0) return s;
+  if (currentCalendar(s.turn).season !== "Sonbahar") return s; // şıra güzde sıkılır
+  if (p.sira_gunu_year === yil) return s; // yılda bir şenlik
+  p.sira_gunu_year = yil;
+  const adet = bags.reduce((acc, pr) => acc + (pr.level || 1), 0);
+  p.inventory.sarap = (p.inventory.sarap || 0) + adet;
+  p.reputation = Math.min(100, p.reputation + 2);
+  if (p.married && p.spouse_bond !== undefined) p.spouse_bond = Math.min(100, p.spouse_bond + 2);
+  push(s, "gunluk", `Şıra günü: bağda salkımlar sıkıldı, ayaklar mora boyandı; küpe ${adet} testi şarap girdi, komşular türküyle döndü.`, "kişisel", false, { k: "evj.siraGunu", p: [adet] });
   return s;
 }
 // Kâhya: aylık ücretli vekilharç — bakımı 60 altına düşen mülkü kendi kesenden onartır; kese ücrete yetmezse hizmeti bırakır.

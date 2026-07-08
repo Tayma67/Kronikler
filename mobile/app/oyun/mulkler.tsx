@@ -4,11 +4,12 @@ import Svg, { Polyline, Polygon, Defs, LinearGradient, Stop, Rect } from "react-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard, setFallow, hireKahya, fireKahya, kahyaWage } from "../../lib/game";
+import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard, setFallow, hireKahya, fireKahya, kahyaWage, siraGunu } from "../../lib/game";
 import { placeName, professionNameL } from "../../lib/locale-data";
 import { mulkImage, MULK_BOS, MULK_HERO } from "../../lib/assets";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
+import { currentCalendar } from "../../lib/calendar";
 import { hap } from "../../lib/haptics";
 import { GameIcon } from "../../lib/icons";
 import { BackLabel, Panel, Portre } from "../../lib/ui";
@@ -109,6 +110,26 @@ export default function Mulkler() {
         </View>
 
         {/* Mülklerim */}
+        {(() => {
+          const bags = p.properties.filter((pr) => pr.type === "bag");
+          if (!bags.length || currentCalendar(state.turn).season !== "Sonbahar") return null;
+          const done = p.sira_gunu_year === Math.floor(state.turn / 12);
+          return (
+            <View style={{ backgroundColor: "rgba(127,166,106,0.06)", borderWidth: 1, borderColor: "rgba(127,166,106,0.35)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.sage }}>{t("mulk.sira").toUpperCase()}</Text>
+              {done ? (
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{t("mulk.siraDone")}</Text>
+              ) : (
+                <>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{t("mulk.siraDesc")}</Text>
+                  <Pressable onPress={() => { hap("success"); apply((s) => siraGunu(s)); }} style={{ alignSelf: "flex-start", marginTop: 8, paddingVertical: 8, paddingHorizontal: 15, borderRadius: 7, borderWidth: 1, borderColor: "rgba(127,166,106,0.5)", backgroundColor: "rgba(127,166,106,0.12)" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.sage }}>{t("mulk.siraBtn")}</Text>
+                  </Pressable>
+                </>
+              )}
+            </View>
+          );
+        })()}
         {p.properties.length >= 2 && (
           <View style={{ backgroundColor: "rgba(201,168,76,0.05)", borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
             <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("mulk.kahya").toUpperCase()}</Text>
