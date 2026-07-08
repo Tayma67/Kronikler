@@ -1488,6 +1488,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Çocukluğunun sokağından geçtin; o koca kapı meğer ne alçakmış. Kapı küçülmemiş, sen büyümüşsün.", k: "mem.lowDoor" },
         { text: "Gençliğinde bileğini bükemediğin rakibinle çeşme başında karşılaştın; iki ihtiyar, bir taş sekide gülüşüp helalleştiniz.", k: "mem.oldRival", fn: () => { p.honor = Math.min(100, p.honor + 1); } },
         { text: "Mahalle çocuklarına yıldızların adlarını gösterdin; sen de onları bir ihtiyardan öğrenmiştin — yıldızlar hiç yaşlanmamış.", k: "mem.sameStars" },
+        { text: "Avluda bir bebek ilk adımını senin dizine tutunarak attı; iki adım o yürüdü, üç adım senin yüreğin.", k: "mem.firstStep" },
+        { text: "Tesbihin ipini yenilerken taşları saydın: kırk taş, kırk yılın duası. İpi bağlarken elin hiç titremedi.", k: "mem.beadString" },
       );
     }
     const m = rnd(mem); m.fn?.();
