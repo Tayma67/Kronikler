@@ -11,6 +11,26 @@ export interface Arc {
 
 export const ARCS: Arc[] = [
   {
+    id: "dilsiz_ozan", title: "Dilsiz Ozan", icon: "lyre",
+    blurb: "Dilsiz bir ozan sazıyla konuşuyor; bir ihtiyar 'ezgi ustamındı' diye ortaya atıldı.",
+    when: (p) => p.age >= 20,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Meydanda dilsiz bir ozan sazıyla konuşuyor; çalması taş yürekleri bile ıslatıyor. Derken yaşlı bir adam ortaya atıldı: 'Bu ezgi rahmetli ustamın! Bu adam ölü sandığından nağme çalıyor!'", choices: [
+        { label: "Sazı sustur, iki tarafı dinle", result: "Elini kaldırdın; saz sustu, meydan sustu. Ozan gözleriyle konuştu, ihtiyar diliyle — ikisinin de hakkı bir dinleyiş istiyordu.", delta: {}, next: "s2" },
+        { label: "Meydanı yatıştır, herkesi evine yolla", result: "Kalabalığı dağıttın; ne ozan suçlandı ne ihtiyar haklandı. Meydan sakinledi ama soru meydanda kaldı: ezgi kimin?", delta: { honor: 2 }, next: "end" },
+      ]},
+      s2: { id: "s2", text: "Ozan sazını göğsüne bastırdı; ihtiyar diretti: 'Defterini açsın! Ustam ezgilerini deftere yazar, kenarına nişanını koraldı.' Kalabalık nefesini tuttu; karar senin.", choices: [
+        { label: "Defteri açtır", result: "Defter açıldı: kenarda ustanın nişanı, altında bir satır — 'Sesini yitiren öğrencime; ezgim onun dilinde yaşasın.' İhtiyar sazın karşısında ağladı; meydan iki ustayı birden alkışladı.", delta: { honor: 4, reputation: 3, fame: 3 }, next: "end" },
+        { label: "Sazın hakkı sazındır de, dağıt", result: "Hükmü kestirip attın: 'Ezgi çalanın dilinde yaşar.' Kimi baş salladı, kimi homurdandı; ihtiyar defter defter diye söylenerek gitti.", delta: { fame: 2, honor: -2 }, next: "s2b" },
+      ]},
+      s2b: { id: "s2b", text: "Gece ozan kapına geldi; koynundan yıpranmış bir defter çıkarıp bir sayfayı gösterdi: ustanın el yazısı, kenarında nişanı. Sonra sazını sana uzattı — bir geceliğine emanet.", choices: [
+        { label: "Emaneti kabul et, sabah geri ver", result: "Sabah sazı geri verdin; ozan üç nota çaldı — adının heceleri. O günden sonra meydandan her geçişinde o üç nota duyulur oldu.", delta: { reputation: 3, honor: 3 }, next: "end" },
+        { label: "Sazı alma, duayla uğurla", result: "Sazı almadın; ozan başıyla selamlayıp yola düştü. Ertesi yıl bir kervancı haber getirdi: ozan artık iki sazla geziyormuş — birinin adı senin adınmış.", delta: { honor: 1 }, next: "end" },
+      ]},
+    },
+  },
+  {
     id: "yanik_degirmen", title: "Yanık Değirmen", icon: "flame",
     blurb: "Köyün değirmeni gece kül oldu; un yok, suçlu çok.",
     when: (p) => p.age >= 25,
