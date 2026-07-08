@@ -2443,12 +2443,13 @@ function tickEconomy(s: GameState, announce: boolean) {
     if (announce) push(s, "piyasa", ev.text, "makro", false, { k: "mev." + ev.key });
     // Hasat olayı mülke uğrar: bağ bozumu bağ sahibine, bereketli kırkım tarla sahibine tek seferlik pay bırakır.
     if (announce && !s.player.dead) {
-      const harvestProp: Record<string, string> = { bagbozumu: "bag", kirkimzamani: "tarla", bolluk: "tarla" };
+      const harvestProp: Record<string, string> = { bagbozumu: "bag", kirkimzamani: "tarla", bolluk: "tarla", kithasat: "degirmen" }; // kıtlıkta un pahalanır: öğütme ücreti değirmenciye döner
       const pt = harvestProp[ev.key];
       if (pt) {
         const owned = s.player.properties.filter((pr) => pr.type === pt).length;
         if (owned > 0) {
-          const pay = Math.round(owned * 18 * inflationFactor(s));
+          const per = pt === "degirmen" ? 34 : 18; // değirmen pahalı mülk: payı da büyük
+          const pay = Math.round(owned * per * inflationFactor(s));
           s.player.money += pay;
           push(s, "piyasa", `Hasat olayı senin ${owned} mülküne de uğradı; pay keseye düştü (+${pay} akçe).`, "kişisel", false, { k: "evj.harvestShare", p: [owned, pay] });
         }
