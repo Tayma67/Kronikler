@@ -1808,7 +1808,7 @@ export function advance(prev: GameState, n = 1): GameState {
         const a = rnd(avail);
         s.story.active = { id: a.id, stage: a.start };
         s.story.tension = Math.max(0, s.story.tension - 4); s.story.lull = 0;
-        push(s, "hikaye_basladi", `Bir hikâye kapını çaldı: "${a.title}". (Hikâyelerim'den sürdür.)`, "kişisel", true, { k: "evj.arcKnock", p: [a.title] });
+        { const kv2 = chance(0.5); push(s, "hikaye_basladi", kv2 ? `Çarşıda bir söz kulağına takıldı; ucu sana çıkıyor: "${a.title}". (Hikâyelerim'den sürdür.)` : `Bir hikâye kapını çaldı: "${a.title}". (Hikâyelerim'den sürdür.)`, "kişisel", true, { k: kv2 ? "evj.arcKnock2" : "evj.arcKnock", p: [a.title] }); }
       } else if ((s.story.lull || 0) >= 4 && chance(0.35)) { sparkCard(s); } // durgunlukta kıvılcım kartı (Vercel _draw_spark)
     }
     // İlk aylarda yeni oyuncuya garantili olumlu an (tempo: önce kazandır)
