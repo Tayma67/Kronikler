@@ -2,6 +2,18 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 240-249 eki (8 Temmuz, şafağa karşı) — GEÇİDİN AĞZINDA CANSIZ BEY
+
+**Tek cümle (mağaza/what's new):**
+TR: "Diyarın dokusu şafağa karşı da işlendi: divana değirmen kavgası ve veba fısıltısı düştü, çarşıya üç yeni fısıltı, hayata üç yeni ikilem, ilk aylara iki yeni iyilik; ömrün son faslına iki anı — ve geçidin ağzında yeni bir efsane belirdi: içi boş kara zırh, Cansız Bey. Devirenin nişanı hazır: Zırhın İçi."
+EN: "The realm's fabric grew toward dawn: a millrace feud and plague whispers reached the divan, three new whispers hit the bazaar, three new dilemmas entered life, two kindnesses joined the early months, two memories crowned old age — and a new legend appeared at the mouth of the pass: the hollow black armor, the Lifeless Bey. The medal for felling it awaits: Inside the Armor."
+
+**Öne çıkanlar:**
+- **Cansız Bey (SP, 14. efsane):** minFame 85 — oyunun en yüksek eşikli karşılaşması; zaferde 300 akçe + "Zırhın İçi" nişanı, yenilgide karda uzaklaşan tek sıra ayak izi.
+- **Divan 18 arzuhal:** Değirmen Kavgası (su nöbeti fermanı) ve Veba Söylentisi (hekim heyeti / kapıları kapat); ayrıca tüm arzuhallerin kese kapıları artık düğmede de dürüst.
+- **Üç yeni ikilem:** Seyyarın Sandığı (16+), Çırağın Hatası (25+), Kütük Payı (55+) — vicdan her yaşta sınavda.
+- **Doku:** çarşı fısıltısı 33, dünya haberi 35, kişisel işaret 10, komşu iyiliği 9, ihtiyar anısı +2 (çeşmede helalleşme, yıldız adları), SSS rakamları gerçeğe eş, MP lobi daveti pusu/kumpas/veraset çağına güncellendi.
+
 ## Dalga 232-236 eki (8 Temmuz, gece) — KUMPAS VE ŞEREF
 
 **Tek cümle (mağaza/what's new):**
