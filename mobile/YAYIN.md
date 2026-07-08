@@ -27,9 +27,10 @@ Kalan izinler: `INTERNET`, `VIBRATE`, `MODIFY_AUDIO_SETTINGS`, `FOREGROUND_SERVI
 - [ ] **Google Play Developer hesabı** (tek seferlik 25$).
 - [ ] **Uygulama imzalama:** EAS "Google Play App Signing" ile uyumlu; ilk yüklemede yönergeleri izle.
 - [ ] **Mağaza listesi:** başlık, kısa+uzun açıklama (Türkçe), kategori (Oyun > Rol Yapma / Simülasyon), içerik derecesi anketi.
-- [ ] **Görseller:** 512×512 uygulama ikonu, 1024×500 öne çıkan görsel, en az 2 telefon ekran görüntüsü (oyunu çalıştırıp al).
-- [ ] **Gizlilik politikası URL'si** (zorunlu). Oyun çevrimdışı/veri toplamıyor → basit bir "veri toplanmaz" politikası yeterli.
-- [ ] **Data safety formu:** "Veri toplanmıyor / paylaşılmıyor" (oyun tamamen offline, AsyncStorage cihazda).
+- [x] **Görseller:** 512×512 uygulama ikonu → `mobile/store/icon-512.png` (hazır) · 1024×500 öne çıkan görsel → `mobile/store/feature-graphic.png` (hazır) · en az 2 telefon ekran görüntüsü (oyunu çalıştırıp al — sende).
+- [x] **Gizlilik politikası:** `mobile/store/GIZLILIK.md` (TR+EN, hazır). URL olarak GitHub sayfası kullanılabilir:
+  `https://github.com/Tayma67/Kronikler/blob/apk/mobile/store/GIZLILIK.md` — Play Console'daki "Privacy policy" alanına bu link yapıştırılır.
+- [ ] **Data safety formu:** "Veri toplanmıyor / paylaşılmıyor" (oyun tamamen offline, AsyncStorage cihazda). MP BETA'ya girenler için "app functionality" amaçlı geçici oyun-içi durum paylaşımı işaretlenebilir — GIZLILIK.md'deki MP maddesiyle uyumlu.
 - [ ] **Hedef API seviyesi:** EAS varsayılanı güncel Play gereksinimini karşılar.
 
 ## Sürüm
@@ -37,7 +38,7 @@ Kalan izinler: `INTERNET`, `VIBRATE`, `MODIFY_AUDIO_SETTINGS`, `FOREGROUND_SERVI
 
 ## Notlar
 - Oyun tamamen **çevrimdışı**; sunucu/hesap gerektirmez, kayıt AsyncStorage'da (`kronikler_save_v1`).
-- Ses varsayılan **kapalı** (Ayarlar'dan açılır).
+- Ses efektleri varsayılan **kapalı** (Ayarlar'dan açılır); arka plan müziği varsayılan **açık** (sade modda/düşük RAM cihazda varsayılan kapalı, arka planda otomatik susar).
 
 ## Yayın Günü Kontrol Listesi (son 24 saat)
 
