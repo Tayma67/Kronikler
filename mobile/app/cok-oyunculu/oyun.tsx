@@ -38,7 +38,8 @@ export default function MpOyun() {
   const { guestId, snapshot, lastTick, missed, clearMissed, setReady, sendIntent, syncPlayer, saved, saveState, setTravel, chat, sendChat } = useMp();
 
   const [ready, setReadyLocal] = useState(false);
-  const [evLines, setEvLines] = useState<string[]>([]);
+  // Günlük satırı yapısal: mektup olayları gönderen adını taşır ki tek dokunuşla cevap yazılabilsin.
+  const [evLines, setEvLines] = useState<{ tx: string; letterFrom?: string; replied?: boolean }[]>([]);
   const [backDigest, setBackDigest] = useState<null | { lines: string[]; gold: number; n: number }>(null); // dönüş parşömeni: yokluğunda birikenler (bir kez gösterilir)
   const processedTurn = useRef(-1);
   const synced = useRef(false);
@@ -75,7 +76,8 @@ export default function MpOyun() {
       const ym = realmYearMonth(lastTick.turn); // kişisel sonuçlar buharlaşmasın: ay damgalı kalıcı günlük (son 12)
       setEvLines((prev) => [...mine.events.map((e) => {
         const big = e.k.startsWith("mp.sefer.") || e.k.startsWith("mp.award.") || e.k === "mp.reis.elected"; // siyasi büyük anlar günlükte de nişanlı
-        return `${big ? "❧ " : ""}${ym.year}/${ym.month} · ` + pf(t(e.k), ...(e.p || []));
+        const tx = `${big ? "❧ " : ""}${ym.year}/${ym.month} · ` + pf(t(e.k), ...(e.p || []));
+        return e.k.startsWith("mp.soc.letterGot") && e.p?.[0] ? { tx, letterFrom: String(e.p[0]) } : { tx };
       }), ...prev].slice(0, 12));
     }
     apply(() => ns);
@@ -89,7 +91,10 @@ export default function MpOyun() {
     if (!missed || !missed.length || !guestId || !sRef.current) return;
     const ns = applyTickEvents(sRef.current, missed);
     setBackDigest({ n: missed.length, gold: ns.player.money - sRef.current.player.money, lines: missed.slice(0, 8).map((e) => pf(t(e.k), ...(e.p || []))) });
-    setEvLines((prev) => [...missed.map((e) => t("mp.whileAway") + " · " + pf(t(e.k), ...(e.p || []))), ...prev].slice(0, 12));
+    setEvLines((prev) => [...missed.map((e) => {
+      const tx = t("mp.whileAway") + " · " + pf(t(e.k), ...(e.p || []));
+      return e.k.startsWith("mp.soc.letterGot") && e.p?.[0] ? { tx, letterFrom: String(e.p[0]) } : { tx };
+    }), ...prev].slice(0, 12));
     apply(() => ns);
     clearMissed();
     syncPlayer(mePublic(guestId, ns, false));
@@ -250,7 +255,24 @@ export default function MpOyun() {
         {evLines.length > 0 && (
           <View style={{ marginTop: 10, borderWidth: 1, borderColor: "rgba(111,160,192,0.4)", backgroundColor: "rgba(111,160,192,0.08)", borderRadius: 9, padding: 10 }}>
             <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: "rgba(111,160,192,0.9)", marginBottom: 5 }}>{t("mp.log").toUpperCase()}</Text>
-            {evLines.map((l, i) => <Text key={i} style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: i < 3 ? C.parchment : C.parchmentMuted, lineHeight: 18 }}>• {l}</Text>)}
+            {evLines.map((l, i) => {
+              // Mektuba tek dokunuşla cevap: gönderenin adı o anki mecliste tek kişiye çıkıyorsa düğme belirir (feat 4+ sunucu ister).
+              const sender = l.letterFrom && ((snapshot.feat ?? 3) >= 4) && !l.replied
+                ? (snapshot.players || []).filter((x) => x.name === l.letterFrom && x.id !== guestId)
+                : [];
+              return (
+                <View key={i}>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: i < 3 ? C.parchment : C.parchmentMuted, lineHeight: 18 }}>• {l.tx}</Text>
+                  {sender.length === 1 && (
+                    <Pressable onPress={() => { hap("tap"); sendIntent({ k: "letter", to: sender[0].id, tpl: Math.floor(Math.random() * 6) }); setEvLines((prev) => prev.map((x, j) => (j === i ? { ...x, replied: true } : x))); }}
+                      style={{ alignSelf: "flex-start", marginLeft: 12, marginTop: 2, marginBottom: 3, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 7, borderWidth: 1, borderColor: "rgba(111,160,192,0.5)", backgroundColor: "rgba(111,160,192,0.1)" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 1, color: C.frost }}>{t("mp.soc.replyBtn")}</Text>
+                    </Pressable>
+                  )}
+                  {l.letterFrom && l.replied && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.sage, marginLeft: 12, marginBottom: 3 }}>{t("mp.soc.replied")}</Text>}
+                </View>
+              );
+            })}
           </View>
         )}
 
