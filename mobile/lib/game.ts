@@ -1661,6 +1661,13 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     p.stall_until = undefined; p.stall_loc = undefined;
     push(s, "ticaret", `${sl} çarşısındaki tezgâhın kirası doldu; kepengi indirip anahtarı kâhyaya bıraktın.`, "kişisel", false, { k: "evj.stallOut", p: [{ pl: sl }] });
   }
+  // ── Tanrı misafiri: evi/konağı olanın kapısı ara sıra yolcuya açılır — hediye, övgü ya da uzak diyar hikâyesi kalır ──
+  if (!p.dead && p.age >= 18 && ((p.estate || 0) >= 1 || p.properties.some((pr2) => pr2.type === "ev")) && chance(0.045)) {
+    const gr = Math.random();
+    if (gr < 0.5) { const g2 = Math.round(8 * inflationFactor(s)); p.money += g2; p.honor = Math.min(100, p.honor + 1); push(s, "sohbet", `Bir yolcu gece kapını çaldı; sofranı açtın, sabah heybesinden bir kese çıkarıp bıraktı (+${g2} akçe). Tanrı misafiri eli boş çıkmaz.`, "kişisel", false, { k: "evj.guest1", p: [g2] }); }
+    else if (gr < 0.8) { p.reputation = Math.min(100, p.reputation + 2); push(s, "sohbet", `Geçen ay ağırladığın yolcu her konakta senin sofranı anlatmış; adın misafirperver diye yayıldı.`, "kişisel", false, { k: "evj.guest2" }); }
+    else { gainSkill(s, "social", 5); push(s, "sohbet", `Konuğun uzak diyarlardan hikâyelerle geldi; ocak başında geceyi kısalttınız, dünyan bir karış genişledi.`, "kişisel", false, { k: "evj.guest3" }); }
+  }
   // ── Dar günde dost eli: can dostun (ilişki 70+) yoksulluğu duyar; iki yılda bir kesesini açar ──
   if (!p.dead && p.age >= 16 && p.money < 15 && Object.values(s.relationships || {}).some((v) => v >= 70) && (p.friend_aid_turn === undefined || s.turn - p.friend_aid_turn >= 24) && chance(0.25)) {
     p.friend_aid_turn = s.turn;
