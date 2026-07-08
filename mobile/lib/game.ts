@@ -4359,6 +4359,10 @@ export function eulogy(s: GameState): { epithet: string; lines: EulLine[]; close
   if (seenN >= 10) lines.push({ k: "eul.traveled", p: [seenN] });
   const profN = new Set([...(p.professions_tried || []), p.profession].filter((x) => x !== "işsiz")).size;
   if (profN >= 4) lines.push({ k: "eul.trades", p: [profN] });
+  const arcN = s.story?.completed?.length || 0;
+  if (arcN >= 5) lines.push({ k: "eul.storyArcs", p: [arcN] });
+  const encN = Object.keys(p.enc_won || {}).length;
+  if (encN >= 3) lines.push({ k: "eul.legends", p: [encN] });
   return { epithet: deathEpithet(s), lines, close: dynastyNote(p) };
 }
 
