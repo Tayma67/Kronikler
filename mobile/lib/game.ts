@@ -2221,7 +2221,7 @@ export function sendEnvoy(prev: GameState, houseId: string): GameState {
   if (p.money < cost) { push(s, "hanedan_haber", `Elçi donatacak akçen yok.`, "kişisel", false, { k: "evj.envoyNoFee" }); return s; }
   p.propose_turn = s.turn; p.money -= cost;
   h.tutum = Math.min(100, (h.tutum ?? 0) + 8 + Math.floor(Math.random() * 7)); // 8-14: iki-üç elçilik soğuk haneyi teklife hazır eder
-  push(s, "hanedan_haber", `${h.name} kapısına hediyelerle elçi gönderdin; soğuk selam ılıdı.`, "makro", false, { k: "evj.envoySent", p: [{ hn: h.nameIdx }] });
+  { const ev2 = chance(0.5); push(s, "hanedan_haber", ev2 ? `Elçin ${h.name} konağında üç gün ağırlandı; dönerken heybesinde karşı hediye vardı — buz tam kırılmadı ama çatladı.` : `${h.name} kapısına hediyelerle elçi gönderdin; soğuk selam ılıdı.`, "makro", false, { k: ev2 ? "evj.envoySent2" : "evj.envoySent", p: [{ hn: h.nameIdx }] }); }
   return s;
 }
 // Haraç talebi: kılıç çekmeden beylik sindirmek — başarısı seferden düşük, bedeli otorite (taht eylemi hakkını kullanır).
