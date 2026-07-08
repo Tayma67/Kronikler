@@ -2376,6 +2376,8 @@ const WORLD_NEWS: string[] = [
   "%b yaylasında çobanlar bir gece gökte iki ay gördüklerine yemin ediyor; %b2 müneccimi buna göl aynası dedi, çobanlar inanmadı.",
   "%b bedesteninde bir dokumacı, bakan gözle deseni değişen bir halı dokudu derler; %b2 beyi görücü gönderdi, halı satılık değilmiş.",
   "%b yolundaki menzil taşları bir gecede yenilendi; taşçıyı gören yok, %b2 kervancıları yollar kısaldı diye söyleniyor.",
+  "%b köprüsünün ortasında bir bebek doğdu; iki beylik de 'bizim toprakta doğdu' diye tatlı bir çekişmede — %b2 beyi beşik yolladı bile.",
+  "%b ile %b2 kâtipleri ortak bir kervan sözlüğü yazıyor: kırk dilin pazarlık sözü tek deftere iniyor.",
 ];
 function worldNews(s: GameState) {
   const i1 = Math.floor(Math.random() * BEYLIKS.length);
