@@ -2269,10 +2269,10 @@ export function proposeToHouse(prev: GameState, houseId: string, type: "ittifak"
       const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E);
       p.married = true; p.married_turn = s.turn; p.spouse_bond = 40; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9);
       p.reputation = Math.min(100, p.reputation + 8); p.fame = Math.min(100, p.fame + 6);
-      push(s, "evlilik", `Dünürcüler ${h.name} kapısından güler yüzle döndü: iki ocak birleşti.`, "kişisel", true, { k: "evj.houseMarryAccept", p: [{ hn: h.nameIdx }, { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] });
+      { const hm2 = chance(0.5); push(s, "evlilik", hm2 ? `Dünürcüler ${h.name} kapısında şerbet içti: söz kesildi, iki ocak bir soluk oldu.` : `Dünürcüler ${h.name} kapısından güler yüzle döndü: iki ocak birleşti.`, "kişisel", true, { k: hm2 ? "evj.houseMarryAccept2" : "evj.houseMarryAccept", p: [{ hn: h.nameIdx }, { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
     } else {
       p.reputation = Math.min(100, p.reputation + 5);
-      push(s, "hanedan_haber", `${h.name} teklifini kabul etti; iki hane el sıkıştı.`, "makro", true, { k: "evj.houseAllyAccept", p: [{ hn: h.nameIdx }] });
+      { const ha2 = chance(0.5); push(s, "hanedan_haber", ha2 ? `${h.name} mührünü bastı: bundan böyle yolunuz bir; iki hanenin ocağı aynı rüzgârla yanacak.` : `${h.name} teklifini kabul etti; iki hane el sıkıştı.`, "makro", true, { k: ha2 ? "evj.houseAllyAccept2" : "evj.houseAllyAccept", p: [{ hn: h.nameIdx }] }); }
     }
   } else {
     h.tutum = Math.max(-100, tutum - 8);
