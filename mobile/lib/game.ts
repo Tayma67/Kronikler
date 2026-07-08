@@ -126,6 +126,7 @@ export interface Player {
   iltizam_until?: number; iltizam_loc?: string; // vergi iltizamı: hangi tura kadar, hangi şehir (peşin ödenir, aylık tahsilat + huzursuzluk riski)
   winter_stock_until?: number; // kışlık kiler dolu (hangi tura kadar) — kış açlığı hafif geçer
   horse_pawn?: { n: string; amount: number; until: number }; // sarrafta rehinli at (adı, alınan akçe, son kurtarma turu)
+  peace_made?: boolean; iltizam_done?: boolean; dowry_given?: boolean; // başarım izleri: hasımla sulh, iltizam alımı, çeyiz açılışı (tek seferlik bayraklar)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -1352,7 +1353,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         p.reputation = Math.min(100, p.reputation + 2);
         push(s, "doğum", `${cm.n} yetişkin oldu; artık kendi yolunu yürüyor. Soyun dallanıyor.`, "kişisel", true, { k: "evj.kidGrown", p: [cm.n] });
         if ((p.dowry_chest || 0) > 0) { // sandık açılır: birikim evladın yeni ocağına gider; el ağır, ad yüce olur
-          const ceyiz = p.dowry_chest || 0; p.dowry_chest = 0;
+          const ceyiz = p.dowry_chest || 0; p.dowry_chest = 0; p.dowry_given = true;
           const say = Math.min(8, 2 + Math.floor(ceyiz / 50));
           p.reputation = Math.min(100, p.reputation + say); p.honor = Math.min(100, p.honor + 2); bumpNam(p, "mert", 2);
           push(s, "doğum", `Çeyiz sandığı ${cm.n} için açıldı: ${ceyiz} akçelik birikim yeni ocağa gitti; el ağır, ad yüce oldu.`, "kişisel", false, { k: "evj.dowryOut", p: [cm.n, ceyiz] });
@@ -2644,7 +2645,7 @@ export function buyIltizam(prev: GameState): GameState {
   const cost = iltizamCost(s);
   if (p.money < cost) return s;
   p.money -= cost;
-  p.iltizam_until = s.turn + 12; p.iltizam_loc = p.location_name;
+  p.iltizam_until = s.turn + 12; p.iltizam_loc = p.location_name; p.iltizam_done = true;
   push(s, "ticaret", `${p.location_name} vergisinin iltizamını bir yıllığına aldın (−${cost} akçe); tahsildarlar artık senin adına gezecek.`, "kişisel", true, { k: "evj.iltizamIn", p: [{ pl: p.location_name }, cost] });
   return s;
 }
@@ -5892,6 +5893,7 @@ export function reconcileNemesis(prev: GameState): GameState {
   const odds = Math.min(0.85, 0.35 + effStat(p, "charisma") * 0.05 + Math.max(0, p.honor) / 200);
   if (Math.random() < odds) {
     s.story.nemesis = null;
+    p.peace_made = true;
     p.honor = Math.min(100, p.honor + 6); p.reputation = Math.min(100, p.reputation + 4);
     bumpNam(p, "mert", 4);
     push(s, "nemesis", `${n.name} ile kahve içildi, hediye kabul edildi; eski defter helalleşmeyle kapandı. Çarşı buna kılıçtan çok şaştı.`, "kişisel", true, { k: "evj.nemPeace", p: [n.name] });
@@ -5988,6 +5990,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "cokyuzlu",  name: "Çok Yüzlü",        desc: "Altı ayrı meslek dene.",              icon: "cog",         done: (s) => new Set([...(s.player.professions_tried || []), s.player.profession].filter((x) => x && x !== "işsiz")).size >= 6 },
   { id: "gonulhalka",name: "Gönül Halkası",    desc: "Beş can dostu edin (ilişki 70+).",    icon: "prayer-beads",done: (s) => Object.values(s.relationships || {}).filter((v) => v >= 70).length >= 5 },
   { id: "kandefteri",name: "Defter Kapandı",   desc: "Üç kuşak süren Kan Defteri'ni hükme bağla.", icon: "scroll",  done: (s) => !!s.player.bloodline_end },
+  { id: "sulheden",  name: "Sulh Eden",        desc: "Amansız hasmınla barış yap.",         icon: "prayer-beads",done: (s) => !!s.player.peace_made },
+  { id: "multezim",  name: "Mültezim",         desc: "Bir şehrin vergi iltizamını al.",     icon: "scroll",      done: (s) => !!s.player.iltizam_done },
+  { id: "ceyizacan", name: "Çeyiz Açan",       desc: "Bir evladın çeyiz sandığını aç.",     icon: "gems",        done: (s) => !!s.player.dowry_given },
   { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
   { id: "bilge",    name: "Yaşlı Bilge",     desc: "70 yaşını gör.",                    icon: "prayer-beads", done: (s) => s.player.age >= 70 },
   { id: "imparator",name: "Mülk İmparatoru", desc: "8 mülke sahip ol.",                 icon: "castle",       done: (s) => s.player.properties.length >= 8 },
