@@ -3741,6 +3741,16 @@ export function travelBy(prev: GameState, dest: string, route: TravelRoute): Gam
     { const tv2 = chance(0.5); push(s, "yolculuk", tv2 ? `Ana yol seni ${dest} kapısına bıraktı; heybende iki beyliğin tozu var.` : `Ana yoldan ${dest} yerleşimine gittin.`, "kişisel", false, { k: tv2 ? "evj.travel2" : "evj.travel", p: [{ pl: dest }] }); }
   }
   if (!p.dead) rollTravelEvent(s, route); // yol olayları (han/yolcu/tüccar/fırtına/geçit/kervan) — artık etkin
+  // ── Ocağa dönüş: vardığın şehirde evin varsa eşik seni tanır — yol tozunun en tatlı sonu (yalnız anlatı, kazanç yok) ──
+  if (!p.dead && p.location_name === dest && p.properties.some((pr) => pr.type === "ev" && pr.loc === dest) && chance(0.35)) {
+    const opts: { k: string; t: string; pp: EvtParam[] }[] = [];
+    if (p.dog) opts.push({ k: "evj.home1", t: `Şehir kapısına varmadan ${p.dog.n} koşarak geldi; kokunu rüzgârdan almış. Eve kadar önün sıra gitti, kuyruğu bayrak gibi.`, pp: [p.dog.n] });
+    if (p.pet) opts.push({ k: "evj.home2", t: `Kapıyı açtığında ${p.pet.n} umursamaz görünmeye çalıştı; gece yarısı göğsünün üstünde uyuyordu. Kediler özlemez, sadece affeder.`, pp: [p.pet.n] });
+    if (p.married && p.spouse_name) opts.push({ k: "evj.home3", t: `${p.spouse_name} ocağı yakmış, çorba ateşte; heyben kapıda kaldı, yolun bittiği kokudan belli. Ev, dönenindir.`, pp: [p.spouse_name] });
+    opts.push({ k: "evj.home4", t: "Ev sessizdi ama seninkiydi; ocak yanınca duvarlar yavaş yavaş seni hatırladı. Yolun sonu, kendi çatının altı.", pp: [] });
+    const pick = opts[Math.floor(Math.random() * opts.length)];
+    push(s, "yolculuk", pick.t, "kişisel", false, { k: pick.k, p: pick.pp });
+  }
   return s;
 }
 
