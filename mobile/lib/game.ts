@@ -6320,7 +6320,7 @@ export function visitHealer(prev: GameState): GameState {
     if (p.chronic.k === "eklem") push(s, "saglik", `Hekime göründün; yakı iyi geldi ama sızı derinde (−${cost} akçe).`, "kişisel", false, { k: "evj.healerEklem", p: [cost] });
     else push(s, "saglik", `Hekime göründün; nefesin açıldı ama eski öksürük yerinde (−${cost} akçe).`, "kişisel", false, { k: "evj.healerChronic", p: [cost] });
   } else {
-    push(s, "saglik", `Hekime göründün; şuruplar ve dinlenme iyi geldi (−${cost} akçe).`, "kişisel", false, { k: "evj.healerVisit", p: [cost] });
+    { const hv2 = chance(0.5); push(s, "saglik", hv2 ? `Hekim nabzını dinledi, diline baktı: "Bir şeyin yok, yorgunluk." Yine de üç günlük macun yazdı (−${cost} akçe).` : `Hekime göründün; şuruplar ve dinlenme iyi geldi (−${cost} akçe).`, "kişisel", false, { k: hv2 ? "evj.healerVisit2" : "evj.healerVisit", p: [cost] }); }
   }
   return s;
 }
