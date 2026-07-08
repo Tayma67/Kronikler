@@ -1461,6 +1461,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Eski defterleri karıştırırken gençliğinin el yazısına rastladın; harfler bile daha aceleciymiş o zamanlar.", k: "mem.oldHand" },
         { text: "Çıraklık ettiğin dükkânın önünden geçtin; içerideki yeni çırak sana ustaymışsın gibi baktı.", k: "mem.oldShop" },
         { text: "Kuyu başında sıra bekleyen gençlerin şakalaşmasını dinledin; kovanın ipini hâlâ hepsinden iyi atıyorsun.", k: "mem.wellRope" },
+        { text: "Sandıktan babadan kalma bir alet çıktı; sapındaki çentikler senin çentiklerinle aynı yerde.", k: "mem.fatherTool" },
+        { text: "Pazarda birine senin adınla seslendiler; dönüp baktın — kundakta bir bebekmiş. Adın büyümeye başladı bile.", k: "mem.namesake", fn: () => { p.fame = Math.min(100, p.fame + 1); } },
       );
     } else {
       // 70+: ömrün son faslının kendi dokusu — şafak yalnızlığı, giden dostlar, nasırlı eller, destanlaşan ad
