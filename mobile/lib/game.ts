@@ -1762,6 +1762,14 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     else if (dr < 0.67) push(s, "gunluk", `Çanak ${p.dog.n} için doluydu; ${p.pet.n} hiç acele etmeden gelip önce kendi payını yedi. Koca köpek homurdanmadan bekledi — evde taht kimin, ikisi de biliyor.`, "kişisel", false, { k: "evj.duo2", p: [p.pet.n, p.dog.n] });
     else { p.pet.bond = Math.min(100, p.pet.bond + 1); p.dog.bond = Math.min(100, p.dog.bond + 1); push(s, "gunluk", `Gece ${p.dog.n} avluda bir kez havladı; ${p.pet.n} pencere içinde kulaklarını dikti. Biri dışarının, biri içerinin nöbetçisi — ev iki yoldaşa emanet.`, "kişisel", false, { k: "evj.duo3", p: [p.pet.n, p.dog.n] }); }
   }
+  // ── Atın yoldaşlığı: ahırdaki üçüncü yoldaş — yolda can, avluda dost ──
+  if (!p.dead && p.horse && p.horse_name && !inJail(p) && chance(0.03)) {
+    const hn = p.horse_name;
+    const hr = Math.random();
+    if (hr < 0.34) push(s, "gunluk", `Sabah tımarında ${hn} başını omzuna dayadı; sıcak nefesi ensende. Kelimesiz konuşan da var bu dünyada.`, "kişisel", false, { k: "horse.moment1", p: [hn] });
+    else if (hr < 0.67 || !p.children.length) push(s, "gunluk", `Avlunun taşında nal sesi: ${hn} seni kapıda görünce kişnedi, toprağı eşeledi. Yol arkadaşın yola çağırıyor.`, "kişisel", false, { k: "horse.moment2", p: [hn] });
+    else { const kc = p.children[p.children.length - 1]; if (p.child_bond) p.child_bond[kc] = Math.min(100, (p.child_bond[kc] || 0) + 1); push(s, "gunluk", `Yele tarama nöbeti çocuklardaydı; ${hn} kımıldamadan bekledi, en küçüğü burnunu okşarken gözlerini kapadı.`, "kişisel", false, { k: "horse.moment3", p: [hn] }); }
+  }
   // ── Tanrı misafiri: evi/konağı olanın kapısı ara sıra yolcuya açılır — hediye, övgü ya da uzak diyar hikâyesi kalır ──
   if (!p.dead && p.age >= 18 && ((p.estate || 0) >= 1 || p.properties.some((pr2) => pr2.type === "ev")) && chance(0.045)) {
     const gr = Math.random();
