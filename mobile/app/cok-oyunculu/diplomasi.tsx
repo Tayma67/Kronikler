@@ -166,6 +166,9 @@ export default function Diplomasi() {
 
                   {/* Rekabet */}
                   <Text style={cap}>{t("mp.soc.capRivalry")}</Text>
+                  {pactShield && (
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.sage, marginBottom: 6 }}>{t("mp.soc.shieldNote")}</Text>
+                  )}
                   <View style={rowWrap}>
                     <Btn label={t("mp.soc.duelBtn")} disabled={x.traveling || !x.online || pactShield} onPress={() => act({ k: "duel", to: x.id })} />
                     <Btn label={t("mp.reis.voteBtn")} onPress={() => act({ k: "voteReis", target: x.id })} />
