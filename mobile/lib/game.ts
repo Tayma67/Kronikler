@@ -1439,9 +1439,11 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   if (p.age >= 54 && (p.grandchildren?.length || 0) > 0 && chance(0.05)) {
     const gc = rnd(p.grandchildren!); const r = Math.random();
-    if (r < 0.34) { p.health = Math.min(100, p.health + 3); push(s, "ihtiyarlik", `Torunun ${gc} ile vakit geçirdin; kahkahası ömrüne ömür kattı.`, "kişisel", false, { k: "evj.gcJoy", p: [gc] }); }
-    else if (r < 0.67) { bumpNam(p, "mert", 2); p.honor = Math.min(100, p.honor + 2); push(s, "ihtiyarlik", `Torunun ${gc}'e bir hayat dersi verdin; gözünde bilge biri oldun.`, "kişisel", false, { k: "evj.gcWisdom", p: [gc] }); }
-    else { p.reputation = Math.min(100, p.reputation + 2); push(s, "ihtiyarlik", `Torunun ${gc} için bir armağan yaptırdın; ailen mutlu oldu.`, "kişisel", false, { k: "evj.gcGift", p: [gc] }); }
+    if (r < 0.22) { p.health = Math.min(100, p.health + 3); push(s, "ihtiyarlik", `Torunun ${gc} ile vakit geçirdin; kahkahası ömrüne ömür kattı.`, "kişisel", false, { k: "evj.gcJoy", p: [gc] }); }
+    else if (r < 0.44) { bumpNam(p, "mert", 2); p.honor = Math.min(100, p.honor + 2); push(s, "ihtiyarlik", `Torunun ${gc}'e bir hayat dersi verdin; gözünde bilge biri oldun.`, "kişisel", false, { k: "evj.gcWisdom", p: [gc] }); }
+    else if (r < 0.66) { p.reputation = Math.min(100, p.reputation + 2); push(s, "ihtiyarlik", `Torunun ${gc} için bir armağan yaptırdın; ailen mutlu oldu.`, "kişisel", false, { k: "evj.gcGift", p: [gc] }); }
+    else if (r < 0.88 || !p.horse || !p.horse_name) push(s, "ihtiyarlik", `Torunun ${gc} dizinin dibine oturdu; masal değil, senin hayatından bir sahne istedi. Anlattın, sonunda bir daha dedi. Kronik dediğin biraz da böyle yazılır.`, "kişisel", false, { k: "evj.gcTale", p: [gc] });
+    else push(s, "ihtiyarlik", `Torunun ${gc} ilk kez ata bindi; sen yuları tuttun, o yeleye yapıştı. ${p.horse_name} adım adım, emanet taşıdığını bilir gibi yürüdü. Avluda üç tur — onun için dünya turu.`, "kişisel", false, { k: "evj.gcRide", p: [gc, p.horse_name] });
   }
   // ── Ömürlük çocukluk dostu: reşitlikte yanında kalan yoldaş, hayat boyu ara sıra ortaya çıkar (sadakat) ──
   if (!p.dead && p.age >= 16 && p.child_friend && (s.relationships[p.child_friend.id] || 0) > 0 && chance(0.025)) {
