@@ -3749,7 +3749,7 @@ export function adultAction(prev: GameState, kind: AdultAct): StudyResult {
     } else {
       p.health = Math.min(100, p.health + 2);
       chips.push({ label: "Dindar +3", col: "#9C7BC4" }, { label: "Sağlık +2", col: "#7FA66A" });
-      push(s, "olgunluk", "İbadetini edip gönlünü topladın; için ferahladı.", "kişisel", false, { k: "adult.ibadet" });
+      { const iv = chance(0.5); push(s, "olgunluk", iv ? "Avluda ezan bitti, sen bir süre daha oturdun; acele eden dünyayı kapının dışında beklettin." : "İbadetini edip gönlünü topladın; için ferahladı.", "kişisel", false, { k: iv ? "adult.ibadet2" : "adult.ibadet" }); }
     }
   } else {
     p.study_energy = studyEnergy(s) - STUDY_COST;
