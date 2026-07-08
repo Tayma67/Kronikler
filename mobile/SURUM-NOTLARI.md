@@ -2,6 +2,23 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 411-419 eki (8 Temmuz, akşam) — KESENİN VE KİLERİN HESABI (SİSTEM PAKETİ II)
+
+**Tek cümle (mağaza/what's new):**
+TR: "İkinci sistem paketi kese ve kilere iniyor: dar günde DOST ELİ (can dostun un çuvalı bırakır), evlada ÇEYİZ SANDIĞI (yetişkinlikte açılır, kalan vârise geçer), ocaktan ŞİFA (lonca hekimi itibar karşılığı gelir), çarşıda PAZAR TEZGÂHI (üç aylık kira, satışlar kârlı), zenginlere VERGİ İLTİZAMI (bir yıllık tahsilat, direten ahali riski), güzden KIŞLIK KİLER (kış açlığı yaz gibi geçer), sarrafta AT REHİNİ (altı ayda kurtar, yoksa yular gider) ve üç yeni nişan — 94 başarım."
+EN: "The second systems pack goes for purse and pantry: a FRIEND IN NEED (a bosom friend leaves a sack of flour), a DOWRY CHEST for children (opens at adulthood, the rest passes to the heir), GUILD HEALING (the physician comes, standing pays), a MARKET STALL (three-month lease, better sales), a TAX FARM for the wealthy (a year of collection, resisting-folk risk), WINTER STORES laid in autumn (winter hunger passes like summer), a HORSE PAWN at the moneylender (redeem in six months or lose the halter) and three new badges — 94 achievements."
+
+**Öne çıkanlar:**
+- **Dost eli (SP):** kese 15 akçenin altına düşerse can dostun (ilişki 70+) kapıya un çuvalı ve kese bırakabilir — iki yılda bir, kimse dilenmeden.
+- **Çeyiz sandığı (SP):** Nesil ekranında evlatlar için akçe biriktir (yalnız gider); evlat yetişkin olunca sandık açılır (itibar+şeref, birikime göre), açılmamış sandık vasiyet oranından muaf olarak vârise olduğu gibi geçer (önizleme paritesi korunur).
+- **Ocaktan şifa (SP):** lonca nüfuzunun üçüncü yolu — hasta üyeye (sağlık <70) hekim gelir (+14 sağlık), bedeli 20 ocak itibarı; sağlamı muayene etmez, itibar da yanmaz.
+- **Pazar tezgâhı (SP):** üç aylık kira ile kiralanan şehirde satışlar ×1.2 (pazarlıkta da geçer); süre bitince kepenk iner, kira üst üste binmez.
+- **Vergi iltizamı (SP):** yaş 25+ ve ün 35+ olana şehrin bir yıllık tahsilatı peşin satılır (360 akçe taban, enflasyonlu); aylık tahsilat refahla ölçeklenir, %8 ihtimalle ahali diretir (gelir yok, itibar −2). Zengin şehir seçmek gerçek karar.
+- **Kışlık kiler (SP):** güz/kışta 20 akçeyle kiler dolar; dolu kilerle kış açlık düşüşü 1.3× yerine 0.95× işler, kış gecesi anlatısına dolu-kiler sesi eklenir.
+- **At rehini (SP):** sarraf ata değerinin %60'ını verir; altı ay içinde %25 fazlasıyla kurtarılmazsa yular sarrafın olur. Adı olan atı rehine koymak yürek ister.
+- **Üç nişan (94 başarım):** Sulh Eden (hasımla barış), Mültezim (iltizam alımı), Çeyiz Açan (sandık açılışı).
+- Rehber (SSS) yeni adetleri 6 dilde anlatıyor; tüm yeni alanlar eski kayıtları kırmadan (opsiyonel şema) girdi.
+
 ## Dalga 401-409 eki (8 Temmuz, öğle) — ÇARKLAR DÖNÜYOR (SİSTEM PAKETİ)
 
 **Tek cümle (mağaza/what's new):**
