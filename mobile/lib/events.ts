@@ -10,6 +10,33 @@ export interface Dilemma {
 }
 
 export const DILEMMAS: Dilemma[] = [
+  {
+    id: "genc_seyyar", icon: "coins", title: "Seyyarın Sandığı",
+    text: "Bir seyyar, kervandan 'düşmüş' malları yarı fiyatına fısıldıyor. Kâr kapıda — menşei sorma, diyor.",
+    when: (p) => p.age >= 16,
+    choices: [
+      { label: "Ucuza kap, aynı gün sat", delta: { money: 10, honor: -3, nam: { zalim: 1 } }, result: "Mal elden ele, kâr kesene. Ama çarşıda biri malı tanıdı; adın 'sorgusuz alan' diye anıldı bir süre." },
+      { label: "Uzak dur", delta: { honor: 3 }, result: "Sandık kapandı, seyyar yürüdü. Ertesi hafta zaptiye aynı sandığı ararken senin kapına uğramadı bile." },
+    ],
+  },
+  {
+    id: "orta_cirak_hata", icon: "anvil", title: "Çırağın Hatası",
+    text: "Komşu dükkânın çırağı ağır bir bileziği eğmiş; ustası görürse kovulacak. Senden iki şey istiyor: ödünç akçe ve sükût.",
+    when: (p) => p.age >= 25,
+    choices: [
+      { label: "Gizlice yardım et", delta: { money: -25, reputation: 1, nam: { comert: 2 } }, result: "Bilezik gece onarıldı, usta hiç bilmedi. Çırak borcunu taksitle getirdi; gözlerindeki minnet faizden kıymetli." },
+      { label: "Ustaya söyle", delta: { honor: 2, fear: 1 }, result: "Usta önce köpürdü, sonra bileziği birlikte düzelttiler: 'Zanaat hatadan öğrenilir.' Çırak sana bir daha aynı gözle bakmadı." },
+    ],
+  },
+  {
+    id: "gec_kutuk", icon: "house", title: "Kütük Payı",
+    text: "Meydanda devrilen koca çınarın kütüğünü mahalle paylaşamıyor; ihtiyar heyeti hakemliği sana bıraktı: 'Sen böl, biz susalım.'",
+    when: (p) => p.age >= 55,
+    choices: [
+      { label: "Marangoza ver, meydana sedir olsun", delta: { reputation: 3, fame: 1 }, result: "Kütük rendelendi, meydana üç kollu bir sedir kuruldu. Şimdi herkes çınarın gölgesinde değil, tahtında oturuyor — hakemin adı sedirle anılıyor." },
+      { label: "Yoksullara kışlık odun dağıt", delta: { honor: 2, nam: { comert: 2 } }, result: "Baltalar indi, çınar kırk haneye kış oldu. Meydan boş kaldı ama kırk bacada duman tütüyor; dualar hakemin." },
+    ],
+  },
   // ── Orta yaş / yaşlılık / ekonomik kriz ikilemleri (Vercel life_events_v2 boşluğu) ──
   {
     id: "gec_cesme", icon: "house", title: "Adsız Çeşme",
