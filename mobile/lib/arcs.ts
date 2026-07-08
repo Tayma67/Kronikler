@@ -11,6 +11,26 @@ export interface Arc {
 
 export const ARCS: Arc[] = [
   {
+    id: "issiz_han", title: "Issız Han", icon: "house",
+    blurb: "Uzak akrabadan miras: yol üstünde kapısı çivili bir han.",
+    when: (p) => p.age >= 40,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Kadı mührü çözdü: dağ yolundaki eski han artık senin. Köylüler 'orada geceleyen çıldırır' diyor; kervancılar 'o yolun tek suyu orada' diyor.", choices: [
+        { label: "Hanı aç, ocağı yak (−50)", result: "Çiviler söküldü, bacadan yıllar sonra ilk duman tüttü. Köy uzaktan izledi; kimse hayırlı olsun demedi.", delta: { money: -50 }, next: "s2" },
+        { label: "Sat gitsin", result: "Uzak dağda dert istemedin; keseyi alıp mührü devrettin. Alan tüccarın gözündeki parıltı bir an içini kurcaladı.", delta: { money: 80, honor: -2 }, next: "s2b" },
+      ]},
+      s2: { id: "s2", text: "İlk kervan geldi; gece yarısı avludan zil sesi yükseldi — ama avlu bomboş. Sabah kervanbaşı gülümsedi: 'Eski hancının katırı. Ölmüş ama vazgeçmemiş. Yem koyun, huzur bulur.'", choices: [
+        { label: "Her akşam bir avuç yem koy", result: "Yemlik sabahları hep boş bulundu; ziller o geceden sonra ninni gibi çaldı. 'Zilli Han' yolun bereketi oldu — kervanlar sırf hikâyesi için konakladı.", delta: { money: 60, fame: 6, reputation: 4 }, next: "end" },
+        { label: "Hurafeye karnım tok — zilleri söktür", result: "Ziller sustu, avlu gerçekten ıssızlaştı. Han işledi işlemesine — ama o kış bazı kervanlar uzun yolu seçti; ateşin başında anlatacak hikâye kalmamıştı.", delta: { money: 20, fame: 2 }, next: "end" },
+      ]},
+      s2b: { id: "s2b", text: "Satın alan tüccar hanı zar meclisine çevirdi; kapısında kavga eksik olmuyor. Ve herkes oraya hâlâ 'senin hanın' diyor.", choices: [
+        { label: "Geri satın almayı öner (−120)", result: "Tüccar önce güldü, sonra keseyi görünce sustu. Han temizlendi, ocak yeniden yandı; köy bu kez kapıya ekmek bıraktı.", delta: { money: -120, honor: 6, reputation: 4 }, next: "end" },
+        { label: "Adımı ağızlardan alın de", result: "Tellal üç çarşıda bağırdı: 'Hanın sahibi değişti!' Adın kurtuldu; ama dağ yolundan her geçişte bacaya bakmadan edemiyorsun.", delta: { honor: 1, fear: 2 }, next: "end" },
+      ]},
+    },
+  },
+  {
     id: "kuyumcu_emaneti", title: "Kuyumcunun Emaneti", icon: "gems",
     blurb: "Ölen kuyumcunun mühürlü kesesi sende; kapında iki mirasçı.",
     when: (p) => p.age >= 30,
