@@ -1719,6 +1719,10 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     } else if (chance(pet.huy === "avci" ? 0.06 : 0.03)) {
       p.hunger = Math.min(100, p.hunger + 2); // fare kilere inemedi: kışlık zahire yerinde
       push(s, "gunluk", `Kilerde fare izi yok; ${pet.n} gece nöbetini ciddiye alıyor. Zahire olduğu gibi duruyor, un çuvalları delinmedi.`, "kişisel", false, { k: "evj.catPantry", p: [pet.n] });
+    } else if (pet.huy === "tembel" && chance(0.04)) {
+      push(s, "gunluk", `Güneş sabahtan akşama minder değiştirdi; ${pet.n} de onunla birlikte. Bugünkü tek işi buydu ve hakkını sonuna dek verdi.`, "kişisel", false, { k: "evj.catLazy", p: [pet.n] });
+    } else if (pet.huy === "nazli" && chance(0.04)) {
+      push(s, "gunluk", `${pet.n} kapının önünde mırıldandı; açınca girmedi, üç kez çağrılmayı bekledi. Sonunda lütfeder gibi girdi — ev onun, sen misafirsin.`, "kişisel", false, { k: "evj.catCoy", p: [pet.n] });
     } else if (p.health < 45 && chance(pet.huy === "sokulgan" ? 0.12 : 0.07)) {
       p.health = Math.min(100, p.health + 2);
       push(s, "gunluk", `Hasta yattığın günlerde ${pet.n} yorganın ucundan ayrılmadı; sıcaklığı ilaç gibi, mırıltısı dua gibi.`, "kişisel", false, { k: "evj.catComfort", p: [pet.n] });
