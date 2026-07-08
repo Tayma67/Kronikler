@@ -2,6 +2,18 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 323-329 eki (8 Temmuz, sabah) — DAVUL VE KELAM
+
+**Tek cümle (mağaza/what's new):**
+TR: "Yirmi yedinci yay davulla açıldı: Panayır Pehlivanı (18+) — güreş kaybedilir, meydan satılmaz; evlada beşinci yol Kelam açıldı (vâris söz becerisiyle başlar), yeni huylar cana geldi (misafirperver hoşbeşte ısıtır, unutkan dünü unutur), hikâye ekranına Kıssahan sayacı asıldı; mikro an 33, fırsat 24, alâmet 14."
+EN: "The twenty-seventh arc opens with a drum: The Fair Wrestler (18+) — a bout can be lost, a square is not for sale; a fifth path, the Way of Words, opens for children (heirs start with social skill), the new temperaments come alive (the hospitable warms a chat, the forgetful forgets yesterday), and a Storyteller counter hangs on the stories screen; micro-moments 33, odd jobs 24, omens 14."
+
+**Öne çıkanlar:**
+- **Panayır Pehlivanı (SP, 27. yay, 18+):** Kel Aliş meydanda — kispet mi alkış mı, açık güreş mi bahisçinin işareti mi; şike yolunun keffareti meydan çeşmesinde.
+- **Kelam Yolu (SP, 5. eğitim):** haftalık 2 akçe; biriken aylar vârise sosyal beceri kademesi olur.
+- **Canlanan huylar:** misafirperver hoşbeşte +2 ısıtır; unutkan dünkü sohbeti yarı yarıya hatırlamaz.
+- **İrili ufaklı:** hikâye ekranında X/27 Kıssahan sayacı, mikro an 31→33 (çamaşır ipi, şıra kazanı), fırsat 22→24 (harman bekçiliği, kitabe yazısı), alâmet 12→14, 70+ anı 17.
+
 ## Dalga 313-321 eki (8 Temmuz, sabah) — YAMAÇTAKİ BAĞ
 
 **Tek cümle (mağaza/what's new):**
