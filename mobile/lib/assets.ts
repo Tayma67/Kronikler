@@ -47,7 +47,7 @@ const MULK: Record<string, any> = {
 };
 export const MULK_BOS = require("../assets/mulk/bos.jpg");
 export const MULK_HERO = require("../assets/mulk/mulk_hero.jpg");
-export function mulkImage(type: string): any { return MULK[type] || MULK.ev; }
+export function mulkImage(type: string): any { return MULK[type] || (type === "bag" ? MULK.tarla : MULK.ev); } // bağın görseli tarlaya düşer (asma görseli gelene dek)
 
 // Mektep illüstrasyonları (FLUX; ders amblemleri + okul atmosferi).
 const MEKTEP: Record<string, any> = {

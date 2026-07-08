@@ -189,6 +189,7 @@ export function upgradeProperty(prev: GameState, index: number): GameState {
 export const PROPERTY_TYPES: Record<string, { name: string; icon: string; cost: number; income: number; slots: number }> = {
   tarla:    { name: "Tarla",    icon: "wheat", cost: 2000,  income: 30,  slots: 3 },
   ev:       { name: "Ev",       icon: "house", cost: 2500,  income: 36,  slots: 1 },
+  bag:      { name: "Bağ",      icon: "leaf",  cost: 4000,  income: 55,  slots: 2 },
   dukkan:   { name: "Dükkân",   icon: "coins", cost: 6500,  income: 90,  slots: 2 },
   han:      { name: "Han",      icon: "castle", cost: 11000, income: 150, slots: 3 },
   degirmen: { name: "Değirmen", icon: "anvil", cost: 18000, income: 210, slots: 4 },
