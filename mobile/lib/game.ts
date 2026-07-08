@@ -182,7 +182,7 @@ export function upgradeProperty(prev: GameState, index: number): GameState {
   if (p.dead || !pr || (pr.level || 1) >= PROP_MAX_LEVEL) return s;
   const cost = propUpgradeCost(pr); if (p.money < cost) return s;
   p.money -= cost; pr.level = (pr.level || 1) + 1;
-  push(s, "mülk", `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) büyütüldü — kademe ${pr.level} (−${cost} akçe).`, "kişisel", true, { k: "evj.propUp", p: [{ pt2: pr.type }, { pl: pr.loc }, pr.level || 1, cost] });
+  { const uv = chance(0.5); push(s, "mülk", uv ? `İskele kuruldu, duvar yükseldi; ${pr.loc}'daki ${(PROPERTY_TYPES[pr.type]?.name || "mülk").toLowerCase()} artık ${pr.level}. kademede — komşular "maşallah" dedi (−${cost} akçe).` : `${PROPERTY_TYPES[pr.type]?.name || "Mülk"} (${pr.loc}) büyütüldü — kademe ${pr.level} (−${cost} akçe).`, "kişisel", true, { k: uv ? "evj.propUp2" : "evj.propUp", p: [{ pt2: pr.type }, { pl: pr.loc }, pr.level || 1, cost] }); }
   return s;
 }
 // Gerçekçi fiyatlar: bir mülk yıllarca geri ödenen ciddi bir yatırımdır (en ucuzu ~2.000 akçe).
