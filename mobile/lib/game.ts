@@ -2365,6 +2365,9 @@ const WORLD_NEWS: string[] = [
   "Gökte kuyruklu bir yıldız belirdi; %b müneccimleri hayır, %b2 hocaları şer diyor — halk ikisini de dinliyor.",
   "%b ile %b2, sınır ırmağına ortak köprü kuruyor; iki beyin ustaları aynı iskelede çalışıyor.",
   "%b meydanındaki üç yüz yıllık çınar gece devrildi; kütüğünden yüz yıllık nal, ok ucu ve bir nişan yüzüğü çıktı.",
+  "%b yaylasında çobanlar bir gece gökte iki ay gördüklerine yemin ediyor; %b2 müneccimi buna göl aynası dedi, çobanlar inanmadı.",
+  "%b bedesteninde bir dokumacı, bakan gözle deseni değişen bir halı dokudu derler; %b2 beyi görücü gönderdi, halı satılık değilmiş.",
+  "%b yolundaki menzil taşları bir gecede yenilendi; taşçıyı gören yok, %b2 kervancıları yollar kısaldı diye söyleniyor.",
 ];
 function worldNews(s: GameState) {
   const i1 = Math.floor(Math.random() * BEYLIKS.length);
