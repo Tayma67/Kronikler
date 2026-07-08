@@ -3930,23 +3930,38 @@ export function clubPractice(prev: GameState): StudyResult {
     const win = Math.random() < Math.min(0.9, 0.4 + effStat(p, "strength") * 0.05);
     if (win) { gainSkill(s, "combat", 10); addStatXp(s, "strength", 4); p.fame = Math.min(100, p.fame + 2); gain = 2;
       chips.push({ label: "Dövüş +10", col: "#C9A84C", k: "chip.fight", p: ["+10"] }, { label: "Şöhret +2", col: "#7B4FAF", k: "chip.fame", p: ["+2"] }); key = "club.gures.win";
-      push(s, "mektep", "Güreş minderinde rakibini yendin; adın delikanlılar arasında anıldı.", "kişisel", true, { k: "club.gures.win" }); }
+      { const v2 = chance(0.5); push(s, "mektep", v2 ? "Kündeden kurtulup rakibini havada döndürdün; minder kenarında ıslıklar çaldı." : "Güreş minderinde rakibini yendin; adın delikanlılar arasında anıldı.", "kişisel", true, { k: v2 ? "club.gures.win2" : "club.gures.win" }); } }
     else { gainSkill(s, "combat", 4); p.health = Math.max(1, p.health - 3);
       chips.push({ label: "Dövüş +4", col: "#C9A84C", k: "chip.fight", p: ["+4"] }, { label: "Sağlık −3", col: "#C0556B", k: "chip.health", p: ["−3"] }); key = "club.gures.lose";
-      push(s, "mektep", "Güreşte sırtın yere geldi; ama mindere her düşüş bir ders.", "kişisel", false, { k: "club.gures.lose" }); }
+      { const v2 = chance(0.5); push(s, "mektep", v2 ? "Ayak oyununa geldin, sırtın mindere yapıştı; kalkarken tozunu silkip güldün." : "Güreşte sırtın yere geldi; ama mindere her düşüş bir ders.", "kişisel", false, { k: v2 ? "club.gures.lose2" : "club.gures.lose" }); } }
   } else if (p.club === "cirak") {
     gainSkill(s, "crafting", 10); addStatXp(s, "intelligence", 2);
     const pay = 5 + Math.floor(Math.random() * 12); p.money += pay;
     chips.push({ label: "Zanaat +10", col: "#C9A84C", k: "chip.craft", p: ["+10"] }, { label: `+${pay} akçe`, col: "#E0BC5A", k: "chip.coin", p: [pay] }); key = "club.cirak.win";
-    push(s, "mektep", "Ustanın yanında bir işi bitirdin; emeğinin karşılığını cebine koydun.", "kişisel", true, { k: "club.cirak.win", p: [pay] });
+    { const v2 = chance(0.5); push(s, "mektep", v2 ? "Ustanın verdiği işi vaktinden önce bitirdin; kalfalar ölçüp ölçüp bir daha baktı." : "Ustanın yanında bir işi bitirdin; emeğinin karşılığını cebine koydun.", "kişisel", true, { k: v2 ? "club.cirak.win2" : "club.cirak.win", p: [pay] }); }
   } else { // koro
     const win = Math.random() < Math.min(0.9, 0.4 + effStat(p, "charisma") * 0.05);
     if (win) { gainSkill(s, "social", 10); addStatXp(s, "charisma", 4); p.reputation = Math.min(100, p.reputation + 1); gain = 2;
       chips.push({ label: "Sosyal +10", col: "#C9A84C", k: "chip.social", p: ["+10"] }, { label: "İtibar +1", col: "#7FA66A", k: "chip.rep", p: ["+1"] }); key = "club.koro.win";
-      push(s, "mektep", "Koroda sesin meclisi büyüledi; el üstünde tutuldun.", "kişisel", true, { k: "club.koro.win" }); }
+      { const v2 = chance(0.5); push(s, "mektep", v2 ? "Bugün nağmeyi sen yükselttin; hoca gözlerini kapadı, meclis nefesini tuttu." : "Koroda sesin meclisi büyüledi; el üstünde tutuldun.", "kişisel", true, { k: v2 ? "club.koro.win2" : "club.koro.win" }); } }
     else { gainSkill(s, "social", 4);
       chips.push({ label: "Sosyal +4", col: "#C9A84C", k: "chip.social", p: ["+4"] }); key = "club.koro.lose";
-      push(s, "mektep", "Koroda biraz tutuldun ama gayretten geri durmadın.", "kişisel", false, { k: "club.koro.lose" }); }
+      { const v2 = chance(0.5); push(s, "mektep", v2 ? "Ses bugün boğazına takıldı; hoca gülümsedi: bülbül de her gün ötmez." : "Koroda biraz tutuldun ama gayretten geri durmadın.", "kişisel", false, { k: v2 ? "club.koro.lose2" : "club.koro.lose" }); } }
+  }
+  if (chance(0.3)) { // kulüp dokusu: meşk yalnız puan değil, insan demek — hoca ve akranlar da orada
+    const CLUB_TEX_TR: Record<string, string> = {
+      koro1: "Meşkten sonra sesi güzel bir arkadaşla avluda ikinci bir türkü tutturdunuz; hoca uzaktan dinledi, sesinizi kesmedi.",
+      koro2: "Hoca bugün seni öne dizdi: sen başla, gerisi uysun. Yanağın kızardı ama sesin titremedi.",
+      gures1: "Mindere yeni gelen çekingen çocuğa oyun gösterdin; akşam ekmeğini seninle bölüştü.",
+      gures2: "Pîr güreş bitince omzuna elini koydu: kuvvet kolda değil, yürekte. Söz minderde kaldı, sen taşıdın.",
+      cirak1: "Usta bugün sana kendi keskisini emanet etti; çelik avucunda başka türlü durdu.",
+      cirak2: "Tezgâh arkadaşınla iş bitince artık parçalardan küçük bir topaç yonttunuz; çırakların da çocukluğu var.",
+    };
+    const tv = chance(0.5) ? 1 : 2;
+    const cskill = (CLUBS.find((c) => c.id === p.club) || CLUBS[0]).skill;
+    p.teacherBond = Math.min(100, (p.teacherBond || 0) + 1);
+    gainSkill(s, cskill, 2);
+    push(s, "mektep", CLUB_TEX_TR[p.club + tv] || "", "kişisel", false, { k: "club.tex." + p.club + tv });
   }
   p.club_standing = (p.club_standing || 0) + gain;
   if (p.club_standing % 12 === 0) { p.stat_points += 1; chips.push({ label: "Kulüp ustalığı · Puan +1", col: "#E0BC5A", k: "chip.club" }); push(s, "mektep", "Kulüpte göze girdin; ustalığın bir özellik puanıyla taçlandı.", "kişisel", true, { k: "club.milestone" }); }
