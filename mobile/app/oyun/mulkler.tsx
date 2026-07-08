@@ -167,6 +167,13 @@ export default function Mulkler() {
                         <GameIcon name="iliskiler" size={11} color={C.parchmentDim} />
                         <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentDim }}>{(pr.workers?.length || 0)}/{slots}</Text>
                       </View>
+                      {/* mulk durum ikonları: kiracı / bekçi / nadas / bereket — düğme metnine gömülü durum bir bakışta görünsün */}
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                        {pr.tenant && <GameIcon name="house" size={11} color={C.gold} />}
+                        {pr.guard && <GameIcon name="shield" size={11} color={C.gold} />}
+                        {pr.fallow_until !== undefined && <GameIcon name="leaf" size={11} color={C.parchmentDim} />}
+                        {(pr.fertile_until ?? 0) > state.turn && <GameIcon name="leaf" size={11} color={C.sage} />}
+                      </View>
                     </View>
                   </View>
                   <View style={{ alignItems: "flex-end", gap: 6 }}>
