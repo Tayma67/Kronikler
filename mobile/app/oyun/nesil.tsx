@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, continueAsHeir, heirPreview, EDU_TRACKS, eduLevel, setChildEducation, childNature, favorChild } from "../../lib/game";
+import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, continueAsHeir, heirPreview, EDU_TRACKS, eduLevel, setChildEducation, childNature, favorChild, addDowry } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -80,6 +80,21 @@ export default function Nesil() {
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 12 }}>
               {t("nes.investPrompt")}
             </Text>
+            <View style={{ backgroundColor: "rgba(201,168,76,0.05)", borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 10, padding: 13, marginBottom: 12 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("nes.dowryTitle").toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{t("nes.dowryDesc")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, marginTop: 7 }}>{t("nes.dowryAmt").replace("%1", String(p.dowry_chest || 0))}</Text>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+                {[25, 100].map((amt) => {
+                  const can = p.money >= amt && !p.dead;
+                  return (
+                    <Pressable key={amt} disabled={!can} onPress={() => { hap("tap"); apply((s) => addDowry(s, amt)); }} style={{ paddingVertical: 7, paddingHorizontal: 14, borderRadius: 7, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.5)" : C.border, backgroundColor: can ? "rgba(201,168,76,0.1)" : "transparent", opacity: can ? 1 : 0.4 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 11, color: can ? C.gold : C.parchmentMuted }}>+{amt} ⚜</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
             {p.children.map((c) => {
               const invs = p.child_invests?.[c] || [];
               return (

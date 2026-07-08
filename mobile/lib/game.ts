@@ -121,6 +121,7 @@ export interface Player {
   reconcile_turn?: number; // ayda tek barış girişimi (hasım keseyle ay boyu sağılamaz)
   train_turn?: number; // ayda tek talim dersi (beceri farmı kapalı)
   friend_aid_turn?: number; // dost yardımının damgası (iki yılda bir; dar gün farm'ı kapalı)
+  dowry_chest?: number; // evlatlar için biriken çeyiz sandığı (yalnız gider; evlat yetişkin olunca açılır, kalan vârise olduğu gibi geçer)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -1342,7 +1343,16 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       if (next === 0) { p.health = Math.min(100, p.health + 2); push(s, "doğum", `${cm.n} ilk adımlarını attı; evin içi cıvıltıyla doldu.`, "kişisel", false, { k: "evj.kidStep", p: [cm.n] }); }
       else if (next === 1) push(s, "cocukluk", `${cm.n} mektebe başladı; heybesinde ekmek, gözlerinde merak.`, "kişisel", false, { k: "evj.kidSchool", p: [cm.n] });
       else if (next === 2) { const tip = Math.round(10 * inflationFactor(s)); p.money += tip; push(s, "cocukluk", `${cm.n} bir ustanın yanına çırak girdi; ilk kazancını eve getirdi (+${tip} akçe).`, "kişisel", false, { k: "evj.kidApprentice", p: [cm.n, tip] }); }
-      else { p.reputation = Math.min(100, p.reputation + 2); push(s, "doğum", `${cm.n} yetişkin oldu; artık kendi yolunu yürüyor. Soyun dallanıyor.`, "kişisel", true, { k: "evj.kidGrown", p: [cm.n] }); }
+      else {
+        p.reputation = Math.min(100, p.reputation + 2);
+        push(s, "doğum", `${cm.n} yetişkin oldu; artık kendi yolunu yürüyor. Soyun dallanıyor.`, "kişisel", true, { k: "evj.kidGrown", p: [cm.n] });
+        if ((p.dowry_chest || 0) > 0) { // sandık açılır: birikim evladın yeni ocağına gider; el ağır, ad yüce olur
+          const ceyiz = p.dowry_chest || 0; p.dowry_chest = 0;
+          const say = Math.min(8, 2 + Math.floor(ceyiz / 50));
+          p.reputation = Math.min(100, p.reputation + say); p.honor = Math.min(100, p.honor + 2); bumpNam(p, "mert", 2);
+          push(s, "doğum", `Çeyiz sandığı ${cm.n} için açıldı: ${ceyiz} akçelik birikim yeni ocağa gitti; el ağır, ad yüce oldu.`, "kişisel", false, { k: "evj.dowryOut", p: [cm.n, ceyiz] });
+        }
+      }
       break; // ayda en fazla bir kilometre taşı (olay seli olmasın)
     }
   }
@@ -2582,6 +2592,16 @@ function bestCaravanRoute(s: GameState, origin: string): { dest: string; good: s
 // Kervan gönder: en kârlı şehirler-arası rotayı bul, çok konaklı yol kur, her ay bir konak ilerlesin.
 export function caravanPremium(amount: number): number { return Math.round(amount / 8); } // lonca kefaleti primi: sekizde bir
 // Talim hocası: emekli bir sipahiden ders — akçe gider, kılıç eli sağlamlaşır. Ayda bir ders (farm yok).
+// Çeyiz sandığı: evlatlar için akçe biriktir (yalnız gider — farm yok). Evlat yetişkin olunca sandık açılır; kalan vârise olduğu gibi geçer.
+export function addDowry(prev: GameState, amount: number): GameState {
+  const s = clone(prev); const p = s.player;
+  const amt = Math.max(0, Math.round(amount));
+  if (p.dead || amt <= 0 || p.money < amt || p.children.length === 0) return s;
+  p.money -= amt;
+  p.dowry_chest = (p.dowry_chest || 0) + amt;
+  push(s, "sohbet", `Çeyiz sandığına ${amt} akçe kondu; sandıkta ${p.dowry_chest} akçe birikti. Evlat büyür, sandık bekler.`, "kişisel", false, { k: "evj.dowryAdd", p: [amt, p.dowry_chest] });
+  return s;
+}
 export function trainCost(s: GameState): number { return Math.round(45 * inflationFactor(s)); }
 export function trainCombat(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
@@ -4475,6 +4495,7 @@ export function heirPreview(prev: GameState, heirName: string, willId = "esit"):
   let points = Math.min(gen, 10); let money = inheritMoney; let rep = Math.floor(p.reputation / 2) + will.repBonus;
   if (estateTier >= 3) points += 1;
   if (estateTier >= 5) money += 80;
+  if (p.dowry_chest) money += p.dowry_chest; // continueAsHeir paritesi: açılmamış çeyiz sandığı olduğu gibi geçer
   for (const inv of invests) {
     if (inv === "egitim") points += 1;
     if (inv === "zanaat") money += 30;
@@ -4515,6 +4536,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   let startPoints = Math.min(gen, 10); let startMoney = inheritMoney; let startHealth = 100; let startRep = Math.floor(p.reputation / 2) + will.repBonus; // nesil bonusu tavanlı: çok uzun hanedanda (gen>10) vâris doğuştan tüm statları maxlayamasın
   if (estateTier >= 3) startPoints += 1; // kütüphaneli konakta büyüyen çocuk: +1 özellik puanı
   if (estateTier >= 5) startMoney += 80; // saray yavrusunun kileri: vârise çeyiz akçesi
+  if (p.dowry_chest) startMoney += p.dowry_chest; // açılmamış çeyiz sandığı vasiyet oranından muaf, olduğu gibi vârise geçer (heirPreview paritesi)
   const investNotes: string[] = [];
   for (const inv of invests) {
     if (inv === "egitim") { stats.intelligence += 2; startPoints += 1; investNotes.push("eğitimli"); }
