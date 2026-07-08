@@ -128,6 +128,7 @@ export interface Player {
   horse_pawn?: { n: string; amount: number; until: number }; // sarrafta rehinli at (adı, alınan akçe, son kurtarma turu)
   peace_made?: boolean; iltizam_done?: boolean; dowry_given?: boolean; // başarım izleri: hasımla sulh, iltizam alımı, çeyiz açılışı (tek seferlik bayraklar)
   pension_seen?: boolean; pension_accum?: number; // ocak harçlığı: duyuru bir kez, yıllık döküm için birikeç
+  kahya?: boolean; // vekilharç tutuldu mu (aylık ücret; yıpranan mülkü kendiliğinden onartır)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -346,6 +347,22 @@ export function setTenant(prev: GameState, index: number, on: boolean): GameStat
   pr.tenant = on;
   if (on) push(s, "mülk", `${pr.loc}'daki ev kiraya verildi; her ay kira işler, ev de yıpranır.`, "kişisel", false, { k: "evj.tenantIn", p: [{ pl: pr.loc }] });
   else push(s, "mülk", `${pr.loc}'daki evin kiracısı çıkarıldı; anahtar yine senin cebinde.`, "kişisel", false, { k: "evj.tenantOut", p: [{ pl: pr.loc }] });
+  return s;
+}
+// Kâhya: aylık ücretli vekilharç — bakımı 60 altına düşen mülkü kendi kesenden onartır; kese ücrete yetmezse hizmeti bırakır.
+export function kahyaWage(s: GameState): number { return Math.round(8 * inflationFactor(s)); }
+export function hireKahya(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.kahya || p.properties.length < 2 || p.money < kahyaWage(s)) return s; // tek damla mülke kâhya tutulmaz
+  p.kahya = true;
+  push(s, "mülk", `Bir kâhya tutuldu; defteri koltuğunda, gözü damda direkte. Mülklerin artık sahipsiz kalmayacak.`, "kişisel", false, { k: "evj.kahyaIn" });
+  return s;
+}
+export function fireKahya(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || !p.kahya) return s;
+  p.kahya = false;
+  push(s, "mülk", `Kâhya helallik alıp ayrıldı; defterler yine senin dizinde.`, "kişisel", false, { k: "evj.kahyaOut" });
   return s;
 }
 // Nadas: tarla bir yıl dinlendirilir — gelir kesilir, yıl dolunca toprak canlanır (+20 bakım, 24 ay ×1.5 verim).
@@ -1567,6 +1584,25 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     } else {
       p.health = Math.max(1, p.health - 1);
       if (chance(0.08)) { const w = 4 + Math.floor(Math.random() * 3); p.health = Math.max(1, p.health - w); push(s, "hastalik", `Eski öksürük alevlendi; birkaç gün nefessiz kaldın (−${w} sağlık).`, "kişisel", false, { k: "evj.chronicFlare", p: [w] }); }
+    }
+  }
+  // ── Kâhya aylık turu: ücretini alır, yıpranan mülkü onartır; kese ücrete yetmezse helallik alıp gider ──
+  if (!p.dead && p.kahya) {
+    const wage = kahyaWage(s);
+    if (p.money < wage) {
+      p.kahya = false;
+      push(s, "mülk", `Kâhyanın ücreti verilemedi; adam defteri kapatıp helallik aldı: "Kesesi boşalan bey, kâhyasını da salar."`, "kişisel", false, { k: "evj.kahyaQuit" });
+    } else {
+      p.money -= wage;
+      const idx = p.properties.findIndex((pr2) => pr2.cond < 60);
+      if (idx >= 0) {
+        const pr2 = p.properties[idx];
+        const rcost = repairCost(pr2);
+        if (p.money >= rcost + 40) { // kâhya keseyi dibine kadar boşaltmaz
+          p.money -= rcost; pr2.cond = 100;
+          push(s, "mülk", `Kâhya ${pr2.loc}'daki mülkü kendiliğinden onarttı (−${rcost} akçe); "beyim duymadan dam akmasın" demiş.`, "kişisel", false, { k: "evj.kahyaRepair", p: [{ pl: pr2.loc }, rcost] });
+        }
+      }
     }
   }
   // ── Ocak harçlığı: 60 yaşını aşan Kıdemli lonca üyesine ocaktan aylık emeklilik (yıllık dökümü kronikte) ──

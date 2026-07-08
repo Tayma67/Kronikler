@@ -4,11 +4,11 @@ import Svg, { Polyline, Polygon, Defs, LinearGradient, Stop, Rect } from "react-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard, setFallow } from "../../lib/game";
+import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard, setFallow, hireKahya, fireKahya, kahyaWage } from "../../lib/game";
 import { placeName, professionNameL } from "../../lib/locale-data";
 import { mulkImage, MULK_BOS, MULK_HERO } from "../../lib/assets";
 import { C, F } from "../../lib/theme";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { GameIcon } from "../../lib/icons";
 import { BackLabel, Panel, Portre } from "../../lib/ui";
@@ -109,6 +109,15 @@ export default function Mulkler() {
         </View>
 
         {/* Mülklerim */}
+        {p.properties.length >= 2 && (
+          <View style={{ backgroundColor: "rgba(201,168,76,0.05)", borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("mulk.kahya").toUpperCase()}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 3 }}>{applyParams(t("mulk.kahyaDesc"), [kahyaWage(state)])}</Text>
+            <Pressable onPress={() => { hap("tap"); apply((s) => (s.player.kahya ? fireKahya(s) : hireKahya(s))); }} style={{ alignSelf: "flex-start", marginTop: 8, paddingVertical: 8, paddingHorizontal: 15, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.kahya ? "transparent" : "rgba(201,168,76,0.12)" }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.gold }}>{p.kahya ? t("mulk.kahyaFire") : t("mulk.kahyaHire")}</Text>
+            </Pressable>
+          </View>
+        )}
         <Panel title={t("mulk.owned")} noPad>
           {p.properties.length === 0 ? (
             <View style={{ alignItems: "center", padding: 18 }}>
