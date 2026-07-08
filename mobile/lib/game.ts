@@ -1498,7 +1498,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   if (chance(0.05)) { const g = 5 + Math.floor(Math.random() * 20); p.money += g; const fv = chance(0.5); push(s, "gunluk", fv ? `Heybenin dibinde unutulmuş ${g} akçe çıktı; ne zaman düştüğünü kimse bilmiyor.` : `Yolda ${g} akçe buldun.`, "kişisel", false, { k: fv ? "evj.foundCoin2" : "evj.foundCoin", p: [g] }); }
   if (chance(0.04)) {
-    p.health = Math.max(0, p.health - 12); push(s, "hastalik", "Hastalandın, birkaç gün yatakta kaldın.", "kişisel", false, { k: "evj.sick" });
+    p.health = Math.max(0, p.health - 12); { const sv = chance(0.5); push(s, "hastalik", sv ? "Soğuk kemiğe işledi; birkaç gün yorgan, sıcak çorba ve komşu duasıyla geçti." : "Hastalandın, birkaç gün yatakta kaldın.", "kişisel", false, { k: sv ? "evj.sick2" : "evj.sick" }); }
     // Düşkün bünyede hastalık yerleşebilir: kronik öksürük — hekim tedavisi ister, kendiliğinden geçmez.
     if (!p.chronic && p.age >= 35 && p.health < 45 && chance(0.25)) { p.chronic = { k: "oksuruk", since: s.turn }; push(s, "hastalik", "Öksürük yakanı bırakmadı; göğsüne yerleşti. Hekim yüzü görmeden geçmeyecek.", "kişisel", true, { k: "evj.chronicStart" }); }
   }
