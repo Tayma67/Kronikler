@@ -3216,7 +3216,7 @@ export const TRAVEL_ROUTES: { id: TravelRoute; label: string; desc: string }[] =
 ];
 // At satın alma — bir kez; hızlı/güvenli "at ile" yolculuğunu açar.
 export const HORSE_COST = 200;
-export const HORSE_NAMES = ["Doru", "Yağız", "Kır", "Al", "Boz", "Demir", "Rüzgâr", "Yıldız", "Şahin", "Karayel", "Poyraz", "Kınalı", "Ceylan", "Tayfun"];
+export const HORSE_NAMES = ["Doru", "Yağız", "Kır", "Al", "Boz", "Demir", "Rüzgâr", "Yıldız", "Şahin", "Karayel", "Poyraz", "Kınalı", "Ceylan", "Tayfun", "Turna", "Bulut"];
 export function buyHorse(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.horse || p.money < HORSE_COST) return s; // çocuğa at satılmaz
@@ -4289,9 +4289,10 @@ function dynastyNote(p: Player): string {
   if (p.children.length >= 3) return "kalabalik";
   if ((p.cities_visited?.length || 0) >= 8) return "gezgin";
   if ((p.stats?.intelligence || 0) >= 9) return "alim";
+  if ((p.skills?.crafting || 0) >= 8) return "usta";
   return "sade";
 }
-const DYNNOTE_TR: Record<string, string> = { destan: "Adı destanlara karıştı.", saygin: "Diyarda saygın bir isimdi.", mulk: "Geride büyük bir mülk bıraktı.", korkulan: "Korkulan bir isimdi.", kalabalik: "Kalabalık bir soy bıraktı.", gezgin: "Yolların adamı sayıldı; her handa bir hatırası kaldı.", alim: "Aklıyla anıldı; sözü meclislerde tartıldı.", sade: "Sade bir hayat sürdü." };
+const DYNNOTE_TR: Record<string, string> = { destan: "Adı destanlara karıştı.", saygin: "Diyarda saygın bir isimdi.", mulk: "Geride büyük bir mülk bıraktı.", korkulan: "Korkulan bir isimdi.", kalabalik: "Kalabalık bir soy bıraktı.", gezgin: "Yolların adamı sayıldı; her handa bir hatırası kaldı.", alim: "Aklıyla anıldı; sözü meclislerde tartıldı.", usta: "Elinin emeği ondan sonra da konuştu; yaptıkları kaldı.", sade: "Sade bir hayat sürdü." };
 
 // ── Mersiye: bir hayat biterken kişiye özel kapanış ──
 export interface Eulogy { epithet: string; lines: string[]; close: string; }
