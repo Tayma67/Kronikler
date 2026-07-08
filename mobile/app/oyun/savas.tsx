@@ -4,7 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail } from "../../lib/game";
+import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail } from "../../lib/game";
 import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
 import { playVictory } from "../../lib/sound";
 import { GameIcon } from "../../lib/icons";
@@ -216,9 +216,20 @@ export default function Savas() {
               <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood }}>{t("cb.enemyPower")} {nemEnc.power}</Text>
             </View>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5 }}>{nemEnc.desc} {t("cb.settleTime")}</Text>
-            <Pressable disabled={!canFight} onPress={beginNemesis} style={{ alignSelf: "flex-start", marginTop: 10, paddingVertical: 8, paddingHorizontal: 18, borderRadius: 7, borderWidth: 1, borderColor: "rgba(200,60,60,0.7)", backgroundColor: "rgba(200,60,60,0.2)" }}>
-              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood, letterSpacing: 1 }}>{t("cb.settle")}</Text>
-            </Pressable>
+            {(() => {
+              const pcost = reconcileCost(state);
+              const canPeace = p.money >= pcost && p.reconcile_turn !== state.turn;
+              return (
+                <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+                  <Pressable disabled={!canFight} onPress={beginNemesis} style={{ paddingVertical: 8, paddingHorizontal: 18, borderRadius: 7, borderWidth: 1, borderColor: "rgba(200,60,60,0.7)", backgroundColor: "rgba(200,60,60,0.2)", opacity: canFight ? 1 : 0.4 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood, letterSpacing: 1 }}>{t("cb.settle")}</Text>
+                  </Pressable>
+                  <Pressable disabled={!canPeace} onPress={() => { hap("tap"); apply((s) => reconcileNemesis(s)); }} style={{ paddingVertical: 8, paddingHorizontal: 18, borderRadius: 7, borderWidth: 1, borderColor: canPeace ? "rgba(127,166,106,0.6)" : C.border, backgroundColor: canPeace ? "rgba(127,166,106,0.12)" : "transparent", opacity: canPeace ? 1 : 0.4 }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 11, color: canPeace ? C.sage : C.parchmentMuted, letterSpacing: 1 }}>{applyParams(t("cb.peaceOffer"), [pcost])}</Text>
+                  </Pressable>
+                </View>
+              );
+            })()}
           </View>
         )}
         {p.age >= 16 && (() => {

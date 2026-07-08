@@ -118,6 +118,7 @@ export interface Player {
   bargain_buy_turn?: number; bargain_sell_turn?: number; // pazarlık ayda birer kez (sınırsız arbitraj + XP farm'ı kapalı)
   dilemma_turn?: number; // ikilem sonucu turda bir kez uygulanır (çift tık / yarış koruması)
   prestige_turn?: number; // ayda tek hayrat işi (hekim/imaret spam'ı kapalı)
+  reconcile_turn?: number; // ayda tek barış girişimi (hasım keseyle ay boyu sağılamaz)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -5710,6 +5711,27 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
   return s;
 }
 const NEMESIS_NAMES = ["Kara Yusuf", "Çolak Murat", "Deli Hasan", "Topal Bekir", "Azrail Şahin", "Kanlı Doğan"];
+// Hasımla barışma girişimi: hediye kesesi + dil dökme. Şans karizma ve şerefle artar; ayda bir denenir (farm yok — yalnız gider).
+export function reconcileCost(s: GameState): number { return Math.round(70 * inflationFactor(s)); }
+export function reconcileNemesis(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player; const n = s.story?.nemesis; if (!n || p.dead || !s.story) return s;
+  const cost = reconcileCost(s);
+  if (p.money < cost) return s;
+  if (p.reconcile_turn === s.turn) return s; // ayda tek girişim
+  p.reconcile_turn = s.turn;
+  p.money -= cost;
+  const odds = Math.min(0.85, 0.35 + effStat(p, "charisma") * 0.05 + Math.max(0, p.honor) / 200);
+  if (Math.random() < odds) {
+    s.story.nemesis = null;
+    p.honor = Math.min(100, p.honor + 6); p.reputation = Math.min(100, p.reputation + 4);
+    bumpNam(p, "mert", 4);
+    push(s, "nemesis", `${n.name} ile kahve içildi, hediye kabul edildi; eski defter helalleşmeyle kapandı. Çarşı buna kılıçtan çok şaştı.`, "kişisel", true, { k: "evj.nemPeace", p: [n.name] });
+  } else {
+    s.story.tension = Math.min(100, (s.story.tension || 0) + 2);
+    push(s, "nemesis", `${n.name} hediyeyi aldı, elini sıkmadı: "Kese başka, hesap başka." Barış bir başka bahara kaldı.`, "kişisel", false, { k: "evj.nemPeaceFail", p: [n.name] });
+  }
+  return s;
+}
 // Nemesis'le hesaplaşma çatışması (sentetik, ENCOUNTERS'ta değil).
 export function nemesisEncounter(s: GameState): Encounter | null {
   const n = s.story?.nemesis; if (!n) return null;
