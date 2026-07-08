@@ -2,6 +2,19 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 274-285 eki (8 Temmuz, sabah) — ÇARŞININ DİLİ
+
+**Tek cümle (mağaza/what's new):**
+TR: "Diyar kalabalıklaştı: divana iki yeni arzuhal düştü (köprücünün defteri, bekçinin feneri — 20 oldu), sokağa üç mikro an sığdı (29), çarşıya dört fısıltı karıştı (40), göğe üç manşet yazıldı (38), üç yeni vicdan sınavı (106 ikilem) ve iki yeni iş kapısı açıldı; iki kuşun ad kavgası da bitti — kuşçunun kuşu gurbette kendi diliyle konuşuyor artık."
+EN: "The realm grew busier: two new petitions reached the divan (the toll farmer's ledger and the watchman's lantern — now 20), three micro-moments joined the street (29), four whispers slipped into the bazaar (40), three headlines were written across the sky (38), three new tests of conscience (106 dilemmas) and two new odd jobs opened; and the two birds' quarrel over one name is settled — the bird-seller's bird now speaks its own tongue abroad."
+
+**Öne çıkanlar:**
+- **Divan 18→20 (SP):** Köprücünün Borcu (fazlayı ödet ya da payını al) ve Gece Bekçisi (kadro bağla ya da nöbeti gençlere böl) — ikisi de şükran/leke tohumu eker.
+- **Sokak & çarşı:** mikro an 26→29 (hamalın dengi, tandır dumanı, atın nalı), dedikodu 36→40, dünya haberi 35→38, alâmet fısıltısı 10→12, fırsat 20→22 (Çanların Dili, Gece Salı).
+- **Vicdan sınavları:** kuyu sırası satılık mı, tuz kervanı ekinden mi geçer, yetimin tapusu kime okunur — 106 ikilem.
+- **Onarım (D282):** iki ayrı ikilem aynı "cocuk_kus" kimliğini paylaşıyordu; kuşçu versiyonu kendi kimliğine ve kendi çevirilerine kavuştu, ES'teki ters çeviri düzeldi.
+- **Başarım:** beş yayı bitirene Kıssahan nişanı (85 başarım); vitrin ve SSS sayımları eşitlendi (24 yay, 20 arzuhal, 29 mikro an, 40 fısıltı).
+
 ## Dalga 271-273 eki (8 Temmuz, sabah) — HANIN KAPISI
 
 **Tek cümle (mağaza/what's new):**
