@@ -11,6 +11,26 @@ export interface Arc {
 
 export const ARCS: Arc[] = [
   {
+    id: "gocmen_kafilesi", title: "Göçmen Kafilesi", icon: "walk",
+    blurb: "Yerinden edilmiş bir kafile surların dibine çadır kurdu; kadı senden söz bekliyor.",
+    when: (p) => p.age >= 30,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Doğudan gelen kafile surların dibine çadır kurdu: yorgun yüzler, aç çocuklar, üç zanaatkâr ve bir imam. Kadı seni çağırttı: 'Halk ikiye bölündü. Sen ne dersin — kapı mı, yol mu?'", choices: [
+        { label: "Kapıları açtır, kefil ol (−60)", result: "Kesenden un, odun ve kefalet çıktı. Kafile hamama, çocuklar fırın önüne dizildi; sur dibindeki çadırlar bir haftada söküldü — artık damları var.", delta: { money: -60, honor: 4 }, next: "s2" },
+        { label: "Yol gösterin, burada yer yok de", result: "Kafile toparlanıp güneye yürüdü; giderken kimse ardına bakmadı. Kadı bir şey demedi ama defterine bir şey yazdı.", delta: { honor: -3, fear: 2 }, next: "s2b" },
+      ]},
+      s2: { id: "s2", text: "Bir ay sonra loncalar kapına geldi: kafilenin üç zanaatkârı iş arıyor — biri demirci, biri dokumacı, biri debbağ. 'Tezgâh açarlarsa ekmeğimiz bölünür' diyen de var, 'el emek, şehir kazanır' diyen de.", choices: [
+        { label: "Loncalara kefil ol: tezgâh açsınlar", result: "Üç tezgâh açıldı; ilk kış demircinin nalları, dokumacının şalları pazarda anıldı. Loncalar homurtusunu yuttu — vergi defteri kabardıkça kadı sana baş salladı.", delta: { fame: 6, reputation: 5 }, next: "end" },
+        { label: "Önce çıraklık etsinler, sonra tezgâh", result: "Zanaatkârlar bir yıl çırak durdu; gururları incindi ama kimse aç kalmadı. Yıl dolunca ilk tezgâhı demirci açtı — ilk nalı senin atına hediye dövdü.", delta: { reputation: 3, honor: 2 }, next: "end" },
+      ]},
+      s2b: { id: "s2b", text: "Kış ortasında güneyden haber geldi: kafile geçitte fırtınaya yakalanmış; imam ve iki çocuk yolda kalmış. Çarşıda kimse yüksek sesle konuşmuyor ama herkes sana bakıyor.", choices: [
+        { label: "Kalanlara kervan ve erzak yolla (−90)", result: "Kervanın geçidi aşıp kalanları topladı; dönüşte imamın asası senin kapına bırakıldı — 'helal etti' dediler. Çarşı yeniden yüzüne bakar oldu.", delta: { money: -90, honor: 6, reputation: 3 }, next: "end" },
+        { label: "Kış herkesin kışı de, sustur", result: "Söz sustu ama iz kaldı; o kış senin sokağında kimse kapına ekmek bırakmadı. Bahar geldi, lakin bir şey eksik kaldı.", delta: { honor: -5, reputation: -4, fear: 3 }, next: "end" },
+      ]},
+    },
+  },
+  {
     id: "son_sefer", title: "Son Sefer", icon: "camel",
     blurb: "Kırk yıllık kervanbaşı son yoluna denk bir arkadaş arıyor.",
     when: (p) => p.age >= 50,
