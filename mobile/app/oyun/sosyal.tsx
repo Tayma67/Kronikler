@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { SOCIAL_AXES, socialTierIndex, hostFeast, giveAlms, intimidate, factionById, NAM_META, rumorAction, playerDominantNam } from "../../lib/game";
+import { SOCIAL_AXES, socialTierIndex, hostFeast, giveAlms, sadakaTasi, intimidate, factionById, NAM_META, rumorAction, playerDominantNam } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
@@ -64,6 +64,7 @@ export default function Sosyal() {
   const actions = [
     { key: "feast", fn: hostFeast, cost: "40⚜", need: 40, used: p.feast_turn === state.turn, enabled: canAct && p.money >= 40 && p.feast_turn !== state.turn },
     { key: "alms", fn: giveAlms, cost: "15⚜", need: 15, used: p.alms_turn === state.turn, enabled: canAct && p.money >= 15 && p.alms_turn !== state.turn },
+    { key: "tas", fn: sadakaTasi, cost: "10⚜", need: 10, used: p.tas_turn === state.turn, enabled: canAct && p.money >= 10 && p.tas_turn !== state.turn },
     { key: "intim", fn: intimidate, cost: "—", need: 0, used: p.intimidate_turn === state.turn, enabled: canAct && p.intimidate_turn !== state.turn },
   ];
 

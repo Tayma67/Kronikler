@@ -131,6 +131,7 @@ export interface Player {
   kahya?: boolean; // vekilharç tutuldu mu (aylık ücret; yıpranan mülkü kendiliğinden onartır)
   sira_gunu_year?: number; // şıra günü yapılan yıl (güzde yılda bir; bağ şenliği farmı kapalı)
   hamam_turn?: number; // ayda bir hamam sefası (sağlık/sosyal farmı kapalı)
+  tas_turn?: number; // ayda bir sadaka taşı (adsız hayır; şeref farmı kapalı)
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
   child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
@@ -5775,6 +5776,21 @@ export function hostFeast(prev: GameState): GameState {
 }
 
 // Sadaka dağıt: akçe harcayıp şeref + itibar kazan.
+// Sadaka taşı: adsız hayır — geceleyin taşın oyuğuna kese bırakılır. Kimse görmez: yalnız şeref ve nam işler, itibar/şöhret İŞLEMEZ.
+export function sadakaTasi(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13 || inJail(p)) return s;
+  if (p.tas_turn === s.turn) return s; // ayda bir taş
+  const cost = 10;
+  if (p.money < cost) { push(s, "sosyal", "Taşa bırakacak akçen yok.", "kişisel", false, { k: "evj.noTas" }); return s; }
+  p.money -= cost; p.tas_turn = s.turn;
+  let honor = 6;
+  if (p.temperament === "merhametli") honor += 3;
+  p.honor = Math.min(100, p.honor + honor);
+  bumpNam(p, "comert", 4); bumpNam(p, "dindar", 4);
+  { const tv = chance(0.5); push(s, "sosyal", tv ? "Gece yarısı sadaka taşının oyuğuna keseni bıraktın; sabah taş boştu. Kimin aldığını bilmiyorsun — mesele de bu." : "Sadaka taşına akçe bıraktın; ne veren biliniyor ne alan. Hayrın en makbulü, adı olmayanı.", "kişisel", false, { k: tv ? "evj.tas2" : "evj.tas" }); }
+  return s;
+}
 export function giveAlms(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13) return s;
