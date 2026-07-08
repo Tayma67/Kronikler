@@ -9,7 +9,7 @@ import { placeName } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader } from "../../lib/ui";
+import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 
 const KIND_KEY: Record<string, string> = { "şehir": "sehir", "kale": "kale", "köy": "koy" };
 const KIND_ICON: Record<string, string> = { "şehir": "castle", "kale": "shield", "köy": "house" };
@@ -47,7 +47,7 @@ export default function Sehir() {
   const pp = publicPerception(state);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
@@ -125,6 +125,6 @@ export default function Sehir() {
           <Text style={{ fontFamily: F.display, fontSize: 13, color: C.gold }}>›</Text>
         </Pressable>
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

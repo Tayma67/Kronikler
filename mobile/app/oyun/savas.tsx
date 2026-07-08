@@ -12,7 +12,7 @@ import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { FloatingNumber, Slash } from "../../lib/fx";
-import { BackLabel, PageHeader, ProgressBar } from "../../lib/ui";
+import { BackLabel, PageHeader, ProgressBar, ScreenFresk } from "../../lib/ui";
 
 function HpBar({ label, hp, max, color }: { label: string; hp: number; max: number; color: string }) {
   return (
@@ -177,7 +177,7 @@ export default function Savas() {
 
   // Seçim ekranı
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <View style={{ width: 40 }} />
@@ -311,6 +311,6 @@ export default function Savas() {
           );
         })()}
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

@@ -10,7 +10,7 @@ import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { playTap } from "../../lib/sound";
-import { BackLabel, PageHeader } from "../../lib/ui";
+import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 
 function Section({ title, sub }: { title: string; sub: string }) {
   return (
@@ -69,7 +69,7 @@ export default function Sosyal() {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <View style={{ width: 40 }} />
@@ -165,6 +165,6 @@ export default function Sosyal() {
           </Pressable>
         ))}
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }
