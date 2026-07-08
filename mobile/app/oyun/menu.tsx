@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Alert, ScrollView, ImageBackground } from "react-native";
+import { View, Text, Pressable, Alert, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
@@ -6,6 +6,7 @@ import { pendingPerkCount, playerWar } from "../../lib/game";
 import { useI18n } from "../../lib/i18n";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
+import { ScreenFresk } from "../../lib/ui";
 
 const SEC_KEY: Record<string, string> = { "Geçim": "sec.livelihood", "Güç & Mevki": "sec.power", "Diyar & Soy": "sec.realm", "Kayıt & Anı": "sec.records" };
 const SEC_ICON: Record<string, string> = { "Geçim": "meslek", "Güç & Mevki": "orgutler", "Diyar & Soy": "sehir", "Kayıt & Anı": "tarih" };
@@ -69,7 +70,7 @@ export default function Menu() {
     ]);
   };
   return (
-    <ImageBackground source={require("../../assets/yeni_oyun_bg.png")} resizeMode="cover" imageStyle={{ opacity: 0.13 }} style={{ flex: 1, backgroundColor: C.bg }}>
+    <ScreenFresk>
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 90 }}>
       {/* Başlık */}
       <Text style={{ fontFamily: F.display, fontSize: 22, color: C.parchment, letterSpacing: 1.5, textAlign: "center" }}>{t("menu.title")}</Text>
@@ -125,6 +126,6 @@ export default function Menu() {
       </Pressable>
       )}
     </ScrollView>
-    </ImageBackground>
+    </ScreenFresk>
   );
 }

@@ -6,6 +6,7 @@ import { GameIcon } from "./icons";
 import { useI18n } from "./i18n";
 import { hap, Hap } from "./haptics";
 import { DUR, EASE } from "./motion";
+import { isReduceMotion } from "./perf";
 import type { Dilemma, Choice } from "./events";
 import type { Opportunity } from "./game";
 import { ParticleBurst } from "./fx";
@@ -448,6 +449,7 @@ export function Panel({ title, icon, tone = C.gold, right, children, noPad, dela
 
 // Ekran freski: ana menü freski kısık ışıkla (opasite 0.1) arkadan bakar — düz zeminlere derinlik, okunurluğa dokunmadan.
 export function ScreenFresk({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
+  if (isReduceMotion()) return <View style={[{ flex: 1, backgroundColor: C.bg }, style]}>{children}</View>; // sade mod: doku belleği harcanmaz
   return (
     <ImageBackground source={require("../assets/yeni_oyun_bg.png")} resizeMode="cover" imageStyle={{ opacity: 0.1 }} style={[{ flex: 1, backgroundColor: C.bg }, style]}>
       {children}

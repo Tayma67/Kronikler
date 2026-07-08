@@ -30,7 +30,7 @@ export default function RootLayout() {
   });
   const [fontTimeout, setFontTimeout] = useState(false);
   useEffect(() => { const t = setTimeout(() => setFontTimeout(true), 6000); return () => clearTimeout(t); }, []);
-  useEffect(() => { loadSoundSetting(); loadMusicSetting(); loadHapticsSetting(); loadReduceMotion(); }, []);
+  useEffect(() => { loadSoundSetting(); loadHapticsSetting(); loadReduceMotion().then(() => { loadMusicSetting(); }); }, []);
   if (!loaded && !fontError && !fontTimeout) {
     return <LoadingScreen />;
   }

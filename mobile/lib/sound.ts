@@ -2,6 +2,7 @@
 import { createAudioPlayer, type AudioPlayer } from "expo-audio";
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { isReduceMotion } from "./perf";
 
 const KEY = "kronikler_sound_v1";
 let enabled = false;
@@ -13,13 +14,19 @@ let cingirak: AudioPlayer | null = null;
 let kilic: AudioPlayer | null = null;
 let davul: AudioPlayer | null = null;
 let yenilgi: AudioPlayer | null = null;
+let kese: AudioPlayer | null = null;
 
 // ── Arka plan müziği: Kervan Yolu teması (prosedürel, paket içi, 48 sn dikişsiz döngü). Ayrı anahtar; varsayılan AÇIK. ──
 const MKEY = "kronikler_music_v1";
 let musicEnabled = true;
 let music: AudioPlayer | null = null;
 export async function loadMusicSetting(): Promise<boolean> {
-  try { const v = await AsyncStorage.getItem(MKEY); musicEnabled = v !== "0"; } catch {}
+  // Pil dostu: sade moddaki (düşük RAM) cihazlarda müzik varsayılanı KAPALI — kullanıcı ayarlardan açarsa tercihi kalıcıdır.
+  try {
+    const v = await AsyncStorage.getItem(MKEY);
+    if (v !== null) musicEnabled = v === "1";
+    else { musicEnabled = !isReduceMotion(); await AsyncStorage.setItem(MKEY, musicEnabled ? "1" : "0"); }
+  } catch {}
   if (musicEnabled) startMusic();
   return musicEnabled;
 }
@@ -62,6 +69,7 @@ function ensure() {
     if (!kilic) kilic = createAudioPlayer(require("../assets/sfx/kilic.wav"));
     if (!davul) davul = createAudioPlayer(require("../assets/sfx/davul.wav"));
     if (!yenilgi) yenilgi = createAudioPlayer(require("../assets/sfx/yenilgi.wav"));
+    if (!kese) kese = createAudioPlayer(require("../assets/sfx/kese.wav"));
   } catch {}
 }
 function fire(p: AudioPlayer | null) {
@@ -79,3 +87,4 @@ export function playChime() { if (!enabled) return; ensure(); fire(cingirak); }
 export function playWarDrum() { if (!enabled) return; ensure(); fire(davul); }
 export function playClash() { if (!enabled) return; ensure(); fire(kilic); }
 export function playDefeat() { if (!enabled) return; ensure(); fire(yenilgi); }
+export function playCoin() { if (!enabled) return; ensure(); fire(kese); }

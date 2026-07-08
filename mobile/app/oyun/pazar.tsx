@@ -9,6 +9,7 @@ import { currentCalendar } from "../../lib/calendar";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { hap } from "../../lib/haptics";
+import { playCoin } from "../../lib/sound";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { BackLabel, ScreenFresk } from "../../lib/ui";
@@ -437,7 +438,7 @@ export default function Pazar() {
                       <Coin v={g.buy} />
                     </View>
                     <View style={{ flexDirection: "row", gap: 7, marginTop: 8 }}>
-                      <Pressable onPress={() => { hap('tap'); apply((s) => buyItem(s, g.id)); }} disabled={p.money < g.buy} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < g.buy ? C.bg : "rgba(201,168,76,0.12)" }}>
+                      <Pressable onPress={() => { hap('tap'); playCoin(); apply((s) => buyItem(s, g.id)); }} disabled={p.money < g.buy} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: p.money < g.buy ? C.bg : "rgba(201,168,76,0.12)" }}>
                         <Text style={{ fontFamily: F.display, fontSize: 11, color: p.money < g.buy ? C.parchmentMuted : C.gold }}>{t("misc.buy")} {g.buy}⚜</Text>
                       </Pressable>
                       {/* Pazarlık daha DÜŞÜK fiyata inebilir → tam fiyatı karşılayamasan da aç (modal kendi 'yeterli akçe'sini kontrol eder). */}
@@ -447,7 +448,7 @@ export default function Pazar() {
                     </View>
                     {have > 0 && (
                       <View style={{ flexDirection: "row", gap: 7, marginTop: 7 }}>
-                        <Pressable onPress={() => { hap('tap'); apply((s) => sellItem(s, g.id)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
+                        <Pressable onPress={() => { hap('tap'); playCoin(); apply((s) => sellItem(s, g.id)); }} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 7, borderWidth: 1, borderColor: C.borderHi, backgroundColor: C.card }}>
                           <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchmentDim }}>{t("misc.sell")} {g.sell}⚜</Text>
                         </Pressable>
                         <Pressable onPress={() => openBarg(g, true)} style={{ alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: "rgba(127,166,106,0.4)", backgroundColor: C.bg }}>
