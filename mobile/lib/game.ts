@@ -4768,9 +4768,10 @@ export function canUseFactionPower(p: Player): boolean {
   const st = p.faction_standing[fid] || 0;
   return factionRankIndex(st) >= 1 && st >= FAC_POWER_COST;
 }
-export function useFactionPower(prev: GameState, kind: "himaye" | "kese"): GameState {
+export function useFactionPower(prev: GameState, kind: "himaye" | "kese" | "sifa"): GameState {
   const s = clone(prev); const p = s.player; const fid = p.faction;
   if (p.dead || p.age < 13 || !fid || inJail(p) || !canUseFactionPower(p)) return s; // ölü/çocuk/zindandaki oyuncu lonca gücü kullanamaz (diğer eylemlerle tutarlı)
+  if (kind === "sifa" && p.health >= 70) { push(s, "örgüt", `Ocak hekimi sağlamı muayene etmez; çantasını açmadan döndü.`, "kişisel", false, { k: "fac.powSifaFit" }); return s; } // sağlam bedene şifa satılmaz (itibar da yanmaz)
   // Tur başına tek nüfuz kullanımı — yoksa itibar→para aynı turda boşaltılıp farm'lanır.
   if (p.faction_power_turn === s.turn) { push(s, "örgüt", `Ocağın nüfuzunu bu ay zaten kullandın; sık başvurmak yıpratır.`, "kişisel", false, { k: "evj.facPowerWait" }); return s; }
   p.faction_power_turn = s.turn;
@@ -4780,6 +4781,9 @@ export function useFactionPower(prev: GameState, kind: "himaye" | "kese"): GameS
     p.fear = Math.max(0, p.fear - 6); p.reputation = Math.min(100, p.reputation + 3);
     if (s.player_rumors?.length) s.player_rumors = s.player_rumors.slice(1);
     push(s, "örgüt", `${f?.name} seni kanadı altına aldı; düşmanların geri çekildi.`, "kişisel", true, { k: "fac.powHimaye", p: [{ fc: fid }] });
+  } else if (kind === "sifa") { // ocak hekimi: otlar, sargı, iki tatlı söz — beden toparlar
+    const h = 14; p.health = Math.min(100, p.health + h);
+    push(s, "örgüt", `${f?.name} ocağın hekimini gönderdi; kaynattığı otlar ve sardığı yara seni ayağa kaldırdı (+${h} sağlık).`, "kişisel", false, { k: "fac.powSifa", p: [{ fc: fid }, h] });
   } else { // örgüt kasası: para desteği
     const g = 25 + Math.floor(Math.random() * 25); p.money += g;
     push(s, "örgüt", `${f?.name} kasasından destek aldın (+${g} akçe).`, "kişisel", false, { k: "fac.powKese", p: [{ fc: fid }, g] });

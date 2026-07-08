@@ -64,6 +64,12 @@ export default function Orgutler() {
                   <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.gold }}>{t("fac.kese")}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.parchmentMuted }}>−{FAC_POWER_COST} {t("fac.repute").toLowerCase()}</Text>
                 </Pressable>
+                {p.health < 70 && (
+                  <Pressable onPress={() => { hap("tap"); apply((s) => useFactionPower(s, "sifa")); }} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.gold }}>{t("fac.sifa")}</Text>
+                    <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.parchmentMuted }}>−{FAC_POWER_COST} {t("fac.repute").toLowerCase()}</Text>
+                  </Pressable>
+                )}
               </View>
             ) : p.faction_power_turn === state.turn ? (
               <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("fac.powerUsedTurn")}</Text>
