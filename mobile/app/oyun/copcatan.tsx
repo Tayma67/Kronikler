@@ -7,7 +7,7 @@ import { arrangedSuitors, npcWealthTier, proposeArranged, canArrange, MATCHMAKER
 import { professionNameL } from "../../lib/locale-data";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader, Portre } from "../../lib/ui";
+import { BackLabel, PageHeader, Portre, ScreenFresk } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 
@@ -38,7 +38,7 @@ export default function Copcatan() {
   const wealthLabel = (tier: number) => t("cc.wealth." + tier);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
@@ -89,6 +89,6 @@ export default function Copcatan() {
           </>
         )}
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

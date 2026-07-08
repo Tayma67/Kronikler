@@ -10,7 +10,7 @@ import { useI18n, applyParams } from "../../lib/i18n";
 import { professionNameL } from "../../lib/locale-data";
 import { hap } from "../../lib/haptics";
 import { playTap } from "../../lib/sound";
-import { BackLabel, PageHeader, Pill } from "../../lib/ui";
+import { BackLabel, PageHeader, Pill, ScreenFresk } from "../../lib/ui";
 
 // Tarifleri kategoriye ayır (görsel düzen için).
 const CAT: Record<string, "food" | "arms" | "heal" | "wear"> = {
@@ -99,7 +99,7 @@ export default function Atolye() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <Pill text={`${t("skill.crafting")} ${skill}`} />
@@ -128,6 +128,6 @@ export default function Atolye() {
           );
         })}
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

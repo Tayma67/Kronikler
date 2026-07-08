@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { useI18n } from "../../lib/i18n";
 import { faqFor } from "../../lib/faq";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader } from "../../lib/ui";
+import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 
@@ -26,7 +26,7 @@ export default function SSS() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
@@ -59,6 +59,6 @@ export default function SSS() {
           </View>
         ))}
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

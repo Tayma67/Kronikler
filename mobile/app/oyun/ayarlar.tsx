@@ -8,6 +8,7 @@ import { useI18n } from "../../lib/i18n";
 import { LANGS } from "../../lib/locale-data";
 import { isSoundEnabled, setSoundEnabled, isMusicEnabled, setMusicEnabled, playTap } from "../../lib/sound";
 import { isHapticsEnabled, setHapticsEnabled, hap } from "../../lib/haptics";
+import { ScreenFresk } from "../../lib/ui";
 import { isReduceMotion, setReduceMotion } from "../../lib/perf";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
@@ -42,7 +43,7 @@ export default function Ayarlar() {
     { text: "✓", style: "destructive", onPress: async () => { await resetGame(); router.replace("/yeni-oyun"); } },
   ]);
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>{t("common.back")}</Text></Pressable>
         <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("settings.title")}</Text>
@@ -143,6 +144,6 @@ export default function Ayarlar() {
         </Pressable>
         <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, textAlign: "center", marginTop: 24 }}>Kronikler: Küllerin Mirası · v{Constants.expoConfig?.version || "1.0.0"}</Text>
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

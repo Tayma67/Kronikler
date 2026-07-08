@@ -9,7 +9,7 @@ import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader } from "../../lib/ui";
+import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 
 export default function Suc() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -53,7 +53,7 @@ export default function Suc() {
     );
   };
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
@@ -170,6 +170,6 @@ export default function Suc() {
           </Animated.View>
         </View>
       )}
-    </View>
+    </ScreenFresk>
   );
 }

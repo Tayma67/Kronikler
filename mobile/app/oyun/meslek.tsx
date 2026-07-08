@@ -7,7 +7,7 @@ import { professionNameL, careerTitleL, PROF_L10N } from "../../lib/locale-data"
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader, Panel, Pill } from "../../lib/ui";
+import { BackLabel, PageHeader, Panel, Pill, ScreenFresk } from "../../lib/ui";
 
 export default function Meslek() {
   const insets = useSafeAreaInsets();
@@ -25,7 +25,7 @@ export default function Meslek() {
   const curPr = professionById(p.profession);
   const tierIdx = curPr ? careerTier(curPr, p.career_xp) : 0;
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
@@ -72,6 +72,6 @@ export default function Meslek() {
           })}
         </Panel>
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

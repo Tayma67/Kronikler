@@ -12,7 +12,7 @@ import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { playTap } from "../../lib/sound";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, ScreenFresk } from "../../lib/ui";
 
 // Her ders hangi yönü geliştirir → ilerleme kaynağı + ton.
 const META: Record<string, { kind: "skill" | "nam"; key: string; tone: string }> = {
@@ -71,7 +71,7 @@ export default function Mektep() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
@@ -230,6 +230,6 @@ export default function Mektep() {
         </>)}
 
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }
