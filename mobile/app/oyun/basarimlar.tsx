@@ -6,7 +6,7 @@ import { achievementsOf } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel, PageHeader, Pill } from "../../lib/ui";
+import { BackLabel, PageHeader, Pill, ScreenFresk } from "../../lib/ui";
 
 // Sayısal eşikli başarımlar için istemci-yanı ilerleme oranı (0-1) — "az kaldı" hissi.
 // Yalnız görsel: başarım tanımına dokunmaz; listede olmayanlar bar göstermez.
@@ -43,7 +43,7 @@ export default function Basarimlar() {
   const nearest = withProg.filter((x) => !x.done && (x.prog ?? 0) > 0.25).sort((a, b) => (b.prog ?? 0) - (a.prog ?? 0)).slice(0, 2);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <Pill text={`${done}/${list.length}`} />
@@ -91,6 +91,6 @@ export default function Basarimlar() {
           </View>
         ))}
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

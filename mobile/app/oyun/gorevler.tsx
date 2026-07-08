@@ -7,7 +7,7 @@ import { arcById } from "../../lib/arcs";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
-import { BackLabel, PageHeader, Panel } from "../../lib/ui";
+import { BackLabel, PageHeader, Panel, ScreenFresk } from "../../lib/ui";
 
 export default function Gorevler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -40,7 +40,7 @@ export default function Gorevler() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
@@ -85,6 +85,6 @@ export default function Gorevler() {
           })}
         </Panel>
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

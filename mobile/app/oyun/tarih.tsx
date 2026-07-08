@@ -6,7 +6,7 @@ import { useGame } from "../../lib/store";
 import { currentCalendar } from "../../lib/calendar";
 import { C, F } from "../../lib/theme";
 import { useI18n, renderEvt, applyParams } from "../../lib/i18n";
-import { BackLabel, PageHeader } from "../../lib/ui";
+import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { isReduceMotion } from "../../lib/perf";
 import { hap } from "../../lib/haptics";
@@ -38,7 +38,7 @@ export default function Tarih() {
   // Anahtar en yeni uçtan sayılır ki yeni girdi eklenince eski kartların anahtarı kaymasın.
   const events = [...state.history].reverse();
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
@@ -112,6 +112,6 @@ export default function Tarih() {
           </View>
         );
       })()}
-    </View>
+    </ScreenFresk>
   );
 }

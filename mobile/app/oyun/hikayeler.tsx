@@ -7,7 +7,7 @@ import { arcById, availableArcs, ARCS } from "../../lib/arcs";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
-import { BackLabel, PageHeader, Panel, SectionHead } from "../../lib/ui";
+import { BackLabel, PageHeader, Panel, SectionHead, ScreenFresk } from "../../lib/ui";
 
 export default function Hikayeler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -23,7 +23,7 @@ export default function Hikayeler() {
   const avail = availableArcs(p, st.completed, st.tension, st.active?.id || null);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
@@ -83,6 +83,6 @@ export default function Hikayeler() {
           </Panel>
         )}
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

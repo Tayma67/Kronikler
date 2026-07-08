@@ -7,7 +7,7 @@ import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader } from "../../lib/ui";
+import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 
 const TIERS = [3, 6, 9];
 // Her beceri dalının ilgili özelliği (stat) + tonu.
@@ -166,7 +166,7 @@ export default function Beceriler() {
   const { t } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
       </View>
@@ -175,6 +175,6 @@ export default function Beceriler() {
         <Overview />
         {SKILL_META.map((m) => <Tree key={m.key} tree={m.key} icon={m.icon} />)}
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

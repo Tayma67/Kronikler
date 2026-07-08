@@ -7,7 +7,7 @@ import { useGame } from "../../lib/store";
 import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
-import { Portre, ProgressBar, GoldDivider } from "../../lib/ui";
+import { Portre, ProgressBar, GoldDivider, ScreenFresk } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { useI18n } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -184,7 +184,7 @@ export default function Karakter() {
   const weaponClassId = p.equipped?.silah ? ITEMS[p.equipped.silah]?.wclass : null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <ScreenFresk>
       {/* Header */}
       <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 18, backgroundColor: C.bg }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
@@ -601,6 +601,6 @@ export default function Karakter() {
         )}
         </Animated.View>
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

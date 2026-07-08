@@ -29,7 +29,7 @@ import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
-import { BackLabel, PageHeader } from "../../lib/ui";
+import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 
 function attKey(a: number) { return a >= 40 ? "dost" : a >= 10 ? "dostane" : a > -10 ? "tarafsiz" : a > -40 ? "soguk" : "hasim"; }
 function attTone(a: number) { return a >= 10 ? C.sage : a > -10 ? C.parchmentMuted : a > -40 ? C.ember : C.blood; }
@@ -65,7 +65,7 @@ export default function Hanedan() {
   const setWill = (id: string) => { hap("tap"); apply((s) => { s.player.will_pref = id; return s; }); };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <Text style={{ fontFamily: F.display, fontSize: 15, color: C.parchment, letterSpacing: 1 }}>{t("scr.hanedan")}</Text>
@@ -706,6 +706,6 @@ export default function Hanedan() {
           );
         })()}
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

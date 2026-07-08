@@ -10,7 +10,7 @@ import { placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
-import { BackLabel } from "../../lib/ui";
+import { BackLabel, ScreenFresk } from "../../lib/ui";
 
 export default function Haberler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -27,7 +27,7 @@ export default function Haberler() {
   const CAT_ICON: Record<string, string> = { hasat: "wheat", kuraklik: "sun", kervan: "camel", vergi: "coins", sinir: "crossed-swords", salgin: "healing", han: "house", kitlik: "bread" };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }}>
         <Pressable onPress={() => router.back()}><BackLabel /></Pressable>
         <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, letterSpacing: 1 }}>{t("scr.haberler")}</Text>
@@ -94,6 +94,6 @@ export default function Haberler() {
           {t("hab.footer")}
         </Text>
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }

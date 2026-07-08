@@ -8,7 +8,7 @@ import { npcsOf, relWith } from "../../lib/game";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { professionNameL, placeName } from "../../lib/locale-data";
 import { localFirstName } from "../../lib/world";
-import { Portre } from "../../lib/ui";
+import { Portre, ScreenFresk } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 
@@ -67,7 +67,7 @@ export default function Iliskiler() {
   const total = all.length;
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <ScreenFresk style={{ paddingTop: insets.top }}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 14, paddingBottom: insets.bottom + 90 }}>
         {/* PageHeader */}
         <View style={{ alignItems: "center", marginBottom: 14 }}>
@@ -148,6 +148,6 @@ export default function Iliskiler() {
           </View>
         ))}
       </ScrollView>
-    </View>
+    </ScreenFresk>
   );
 }
