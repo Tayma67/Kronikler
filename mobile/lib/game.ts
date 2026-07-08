@@ -5391,6 +5391,7 @@ export const ENCOUNTERS: Encounter[] = [
   { id: "bozkir_kurdu", title: "Bozkır Kurdu", desc: "Kösedağ'dan beri hiçbir sancağa boyun eğmemiş ihtiyar akıncı beyi son bir cenk arıyor: 'Ölmeden bir denk görmek isterim.'", power: 24, reward: 200, fame: 29, honor: 18, danger: 47, minFame: 62 },
   { id: "golge_okcusu", title: "Gölge Okçusu", desc: "Kimse yüzünü görmedi; okları hep şafakta, hep tek atışta konuşur. Hana bir pusula bırakmış: adın yazılı.", power: 28, reward: 260, fame: 36, honor: 22, danger: 54, minFame: 78 },
   { id: "cansiz_bey", title: "Cansız Bey", desc: "Kara zırhın içi boş derler: mızrak işlemez, kılıç seker. Yüz yıldır her efsaneyi gömdü — şimdi geçidin ağzında seni bekliyor.", power: 30, reward: 300, fame: 40, honor: 24, danger: 58, minFame: 85 },
+  { id: "yanik_yuzlu", title: "Yanık Yüzlü", desc: "Kösedağ'dan yüzü yanık çıkan ihtiyar sipahi son yeminini kuşanmış: 'Beni ancak diyarın en büyük adı gömer.' Közün başında seni bekliyor.", power: 32, reward: 340, fame: 44, honor: 26, danger: 62, minFame: 92 },
 ];
 // Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
 export function combatPower(p: Player): number {
@@ -5630,6 +5631,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "birlesik", name: "Tek Tuğ",         desc: "Diyarı tek tâcın altında birleştir.", icon: "banner",      done: (s) => (s.player.crownConquests?.length || 0) >= 4 },
   { id: "boszirh",  name: "Zırhın İçi",      desc: "Cansız Bey'i yen.",                  icon: "shield",      done: (s) => !!(s.player.enc_won && s.player.enc_won.cansiz_bey) },
   { id: "kissahan", name: "Kıssahan",        desc: "Beş hikâye yayını tamamla.",          icon: "scroll-open", done: (s) => (s.story?.completed?.length || 0) >= 5 },
+  { id: "sonkor",   name: "Son Kor",         desc: "Yanık Yüzlü'yü yen.",                 icon: "flame",       done: (s) => !!(s.player.enc_won && s.player.enc_won.yanik_yuzlu) },
   { id: "kandefteri",name: "Defter Kapandı",   desc: "Üç kuşak süren Kan Defteri'ni hükme bağla.", icon: "scroll",  done: (s) => !!s.player.bloodline_end },
   { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
   { id: "bilge",    name: "Yaşlı Bilge",     desc: "70 yaşını gör.",                    icon: "prayer-beads", done: (s) => s.player.age >= 70 },
