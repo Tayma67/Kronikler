@@ -323,7 +323,7 @@ export default function Dashboard() {
 
       {/* ── HERO (yaşayan sahne: Ken Burns + ambiyans) ── */}
       <KenBurns source={heroImage(p.age, cal.season)} style={{ paddingTop: insets.top }}>
-        <View style={{ backgroundColor: "rgba(8,5,2,0.5)", paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
+        <View style={{ backgroundColor: "rgba(8,5,2,0.5)", paddingHorizontal: 12, paddingTop: 10, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
           <Ambiance season={cal.season} width={Dimensions.get("window").width} height={180} embers={false} />
           <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
             {/* Sol: avatar + mini istatistikler */}
@@ -368,7 +368,7 @@ export default function Dashboard() {
           </View>
 
           {/* Tarih hapı */}
-          <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 8 }}>
+          <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 4 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(8,5,2,0.5)", borderRadius: 20, paddingVertical: 3, paddingHorizontal: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.14)" }}>
               <GameIcon name="karakter" size={9} color={C.parchmentDim} />
               <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: C.parchmentDim }}>{p.age} {t("misc.age").toUpperCase()}</Text>
@@ -429,144 +429,6 @@ export default function Dashboard() {
               </Pressable>
             ))}
           </View>
-        );
-      })()}
-
-      {/* Çocukluk uğraşları (7-12) — çocuğa hareket alanı; çalışma gücünden harcar */}
-      {!p.dead && !inJail(p) && p.age >= 7 && p.age < 13 && (() => {
-        const en = playEnergy(state); const can = en >= PLAY_COST;
-        const acts: { k: ChildAct; icon: string; label: string }[] = [
-          { k: "oyun", icon: "party", label: t("child.act.oyun") },
-          { k: "yardim", icon: "iliskiler", label: t("child.act.yardim") },
-          { k: "yaramazlik", icon: "hood", label: t("child.act.yaramazlik") },
-          { k: "kesif", icon: "firsatlar", label: t("child.act.kesif") },
-        ];
-        const onChild = (k: ChildAct) => { if (!can) return; hap("tap"); const r = childAction(state, k); if (!r.blocked) apply(() => r.state); };
-        return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: "rgba(201,168,76,0.06)" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("child.title")}</Text>
-              <View style={{ flexDirection: "row", gap: 4 }}>
-                {Array.from({ length: maxPlayEnergy(p.age) }).map((_, i) => (
-                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.gold : "transparent", borderWidth: 1, borderColor: i < en ? C.gold : C.border }} />
-                ))}
-              </View>
-            </View>
-            {/* Çocukluk yoldaşı ("can dostu") artık İlişkiler ekranında gösteriliyor (pano kalabalığı azaldı). */}
-            {p.child_dream ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 9 }}>
-                <GameIcon name="star" size={11} color={C.gold} />
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("child.dream.label")}: <Text style={{ fontFamily: F.serif, color: C.gold }}>{t("dream." + p.child_dream)}</Text></Text>
-              </View>
-            ) : null}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {acts.map((a) => (
-                <Pressable key={a.k} onPress={() => onChild(a.k)} disabled={!can} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
-                  <GameIcon name={a.icon} size={16} color={can ? C.gold : C.parchmentMuted} />
-                  <Text style={{ fontFamily: F.display, fontSize: 11, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
-                </Pressable>
-              ))}
-            </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{t("child.spent")}</Text>}
-          </View>
-        );
-      })()}
-
-      {/* Olgunluk uğraşları (18-54) — atıl aylık çalışma gücü işlesin: dört uğraş dört statı besler */}
-      {!p.dead && !inJail(p) && p.age >= 18 && p.age < 55 && (() => {
-        const en = studyEnergy(state); const can = en >= STUDY_COST;
-        const acts: { k: AdultAct; icon: string; label: string; cost?: number }[] = [
-          { k: "talim", icon: "crossed-swords", label: t("adult.act.talim"), cost: ADULT_TRAINER_COST },
-          { k: "meclis", icon: "iliskiler", label: t("adult.act.meclis") },
-          { k: "tefekkur", icon: "scroll", label: t("adult.act.tefekkur") },
-          { k: "yuruyus", icon: "firsatlar", label: t("adult.act.yuruyus") },
-          { k: "ibadet", icon: "prayer-beads", label: t("adult.act.ibadet") },
-        ];
-        const onAdult = (k: AdultAct) => { if (!can) return; hap("tap"); const r = adultAction(state, k); if (!r.blocked) { if (k === "ibadet") playNey(); apply(() => r.state); } };
-        return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(111,160,192,0.3)", backgroundColor: "rgba(111,160,192,0.05)" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.frost, textTransform: "uppercase" }}>{t("adult.title")}</Text>
-              <View style={{ flexDirection: "row", gap: 4 }}>
-                {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
-                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.frost : "transparent", borderWidth: 1, borderColor: i < en ? C.frost : C.border }} />
-                ))}
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {acts.map((a) => {
-                const dis = !can || (a.cost != null && p.money < a.cost);
-                return (
-                  <Pressable key={a.k} onPress={() => { if (!dis) onAdult(a.k); }} disabled={dis} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: dis ? C.border : "rgba(111,160,192,0.4)", backgroundColor: dis ? C.bg : C.card, opacity: dis ? 0.5 : 1 }}>
-                    <GameIcon name={a.icon} size={16} color={dis ? C.parchmentMuted : C.frost} />
-                    <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, color: dis ? C.parchmentMuted : C.parchment }} numberOfLines={1}>{a.label}{a.cost != null ? ` · ${a.cost}⚜` : ""}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        );
-      })()}
-
-      {/* İhtiyarlık uğraşları (55+) — hayatın akşamına anlam; çalışma gücünden harcar */}
-      {!p.dead && !inJail(p) && p.age >= 55 && (() => {
-        const en = studyEnergy(state); const can = en >= STUDY_COST;
-        const acts: { k: ElderAct; icon: string; label: string }[] = [
-          { k: "nasihat", icon: "speaker", label: t("elder.act.nasihat") },
-          { k: "hayir", icon: "akce", label: t("elder.act.hayir") },
-          { k: "dinlen", icon: "saglik", label: t("elder.act.dinlen") },
-          { k: "ani", icon: "roman", label: t("elder.act.ani") },
-          { k: "tekke", icon: "prayer-beads", label: t("elder.act.tekke") },
-        ];
-        const onElder = (k: ElderAct) => { if (!can) return; hap("tap"); const r = elderAction(state, k); if (!r.blocked) { if (k === "tekke") playNey(); apply(() => r.state); } };
-        return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(123,79,175,0.3)", backgroundColor: "rgba(123,79,175,0.06)" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.ink, textTransform: "uppercase" }}>{t("elder.title")}</Text>
-              <View style={{ flexDirection: "row", gap: 4 }}>
-                {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
-                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.ink : "transparent", borderWidth: 1, borderColor: i < en ? C.ink : C.border }} />
-                ))}
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {acts.map((a) => (
-                <Pressable key={a.k} onPress={() => onElder(a.k)} disabled={!can} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: can ? "rgba(123,79,175,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
-                  <GameIcon name={a.icon} size={16} color={can ? C.ink : C.parchmentMuted} />
-                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.display, fontSize: 11, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
-                </Pressable>
-              ))}
-            </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{t("child.spent")}</Text>}
-          </View>
-        );
-      })()}
-
-      {/* Aktif hikâye çağrısı */}
-      {!p.dead && state.story?.active && (
-        <Pressable onPress={() => router.push("/oyun/hikayeler")} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <GameIcon name="roman" size={16} color={C.gold} />
-          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{t("dash.storyCta")}</Text>
-          <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>›</Text>
-        </Pressable>
-      )}
-
-      {/* Sıradaki hedef (kanca) — en yakın aile/yaşam görevi */}
-      {!p.dead && (() => {
-        const fq = familyQuestsOf(state).filter((x) => !x.claimed);
-        const goal = fq.find((x) => !x.locked && !x.done) || fq.find((x) => x.done) || fq.find((x) => x.locked);
-        if (!goal) return null;
-        const tone = goal.done ? C.sage : C.gold;
-        const lbl = goal.done ? t("dash.goalReady") : goal.locked ? `${goal.q.minAge}+` : t("dash.goalNow");
-        return (
-          <Pressable onPress={() => { hap("tap"); router.push("/oyun/gorevler"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: tone + "55", backgroundColor: tone + "12", flexDirection: "row", alignItems: "center", gap: 9 }}>
-            <GameIcon name={goal.q.icon} size={16} color={tone} />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: tone, textTransform: "uppercase" }}>{t("dash.nextGoal")}</Text>
-              <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginTop: 1 }}>{t("fq." + goal.q.id + ".t")} <Text style={{ color: C.parchmentMuted, fontSize: 10.5 }}>· {t("fq." + goal.q.id + ".d")}</Text></Text>
-            </View>
-            <Text style={{ fontFamily: F.display, fontSize: 9.5, color: tone, letterSpacing: 0.5 }}>{lbl}</Text>
-          </Pressable>
         );
       })()}
 
@@ -848,6 +710,125 @@ export default function Dashboard() {
           </Animated.View>
         </ScrollView>
       </View>
+
+      {/* Çocukluk uğraşları (7-12) — çocuğa hareket alanı; çalışma gücünden harcar */}
+      {!p.dead && !inJail(p) && p.age >= 7 && p.age < 13 && (() => {
+        const en = playEnergy(state); const can = en >= PLAY_COST;
+        const acts: { k: ChildAct; icon: string; label: string }[] = [
+          { k: "oyun", icon: "party", label: t("child.act.oyun") },
+          { k: "yardim", icon: "iliskiler", label: t("child.act.yardim") },
+          { k: "yaramazlik", icon: "hood", label: t("child.act.yaramazlik") },
+          { k: "kesif", icon: "firsatlar", label: t("child.act.kesif") },
+        ];
+        const onChild = (k: ChildAct) => { if (!can) return; hap("tap"); const r = childAction(state, k); if (!r.blocked) apply(() => r.state); };
+        return (
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", backgroundColor: "rgba(201,168,76,0.06)" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("child.title")}</Text>
+              <View style={{ flexDirection: "row", gap: 4 }}>
+                {Array.from({ length: maxPlayEnergy(p.age) }).map((_, i) => (
+                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.gold : "transparent", borderWidth: 1, borderColor: i < en ? C.gold : C.border }} />
+                ))}
+              </View>
+            </View>
+            {/* Çocukluk yoldaşı ("can dostu") artık İlişkiler ekranında gösteriliyor (pano kalabalığı azaldı). */}
+            {p.child_dream ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 9 }}>
+                <GameIcon name="star" size={11} color={C.gold} />
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{t("child.dream.label")}: <Text style={{ fontFamily: F.serif, color: C.gold }}>{t("dream." + p.child_dream)}</Text></Text>
+              </View>
+            ) : null}
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {acts.map((a) => (
+                <Pressable key={a.k} onPress={() => onChild(a.k)} disabled={!can} style={{ width: "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: can ? "rgba(201,168,76,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
+                  <GameIcon name={a.icon} size={16} color={can ? C.gold : C.parchmentMuted} />
+                  <Text style={{ fontFamily: F.display, fontSize: 11, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{t("child.spent")}</Text>}
+          </View>
+        );
+      })()}
+
+      {/* Olgunluk uğraşları (18-54) — atıl aylık çalışma gücü işlesin: dört uğraş dört statı besler */}
+      {!p.dead && !inJail(p) && p.age >= 18 && p.age < 55 && (() => {
+        const en = studyEnergy(state); const can = en >= STUDY_COST;
+        const acts: { k: AdultAct; icon: string; label: string; cost?: number }[] = [
+          { k: "talim", icon: "crossed-swords", label: t("adult.act.talim"), cost: ADULT_TRAINER_COST },
+          { k: "meclis", icon: "iliskiler", label: t("adult.act.meclis") },
+          { k: "tefekkur", icon: "scroll", label: t("adult.act.tefekkur") },
+          { k: "yuruyus", icon: "firsatlar", label: t("adult.act.yuruyus") },
+          { k: "ibadet", icon: "prayer-beads", label: t("adult.act.ibadet") },
+        ];
+        const onAdult = (k: AdultAct) => { if (!can) return; hap("tap"); const r = adultAction(state, k); if (!r.blocked) { if (k === "ibadet") playNey(); apply(() => r.state); } };
+        return (
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(111,160,192,0.3)", backgroundColor: "rgba(111,160,192,0.05)" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.frost, textTransform: "uppercase" }}>{t("adult.title")}</Text>
+              <View style={{ flexDirection: "row", gap: 4 }}>
+                {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
+                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.frost : "transparent", borderWidth: 1, borderColor: i < en ? C.frost : C.border }} />
+                ))}
+              </View>
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {acts.map((a) => {
+                const dis = !can || (a.cost != null && p.money < a.cost);
+                return (
+                  <Pressable key={a.k} onPress={() => { if (!dis) onAdult(a.k); }} disabled={dis} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: dis ? C.border : "rgba(111,160,192,0.4)", backgroundColor: dis ? C.bg : C.card, opacity: dis ? 0.5 : 1 }}>
+                    <GameIcon name={a.icon} size={16} color={dis ? C.parchmentMuted : C.frost} />
+                    <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, color: dis ? C.parchmentMuted : C.parchment }} numberOfLines={1}>{a.label}{a.cost != null ? ` · ${a.cost}⚜` : ""}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        );
+      })()}
+
+      {/* İhtiyarlık uğraşları (55+) — hayatın akşamına anlam; çalışma gücünden harcar */}
+      {!p.dead && !inJail(p) && p.age >= 55 && (() => {
+        const en = studyEnergy(state); const can = en >= STUDY_COST;
+        const acts: { k: ElderAct; icon: string; label: string }[] = [
+          { k: "nasihat", icon: "speaker", label: t("elder.act.nasihat") },
+          { k: "hayir", icon: "akce", label: t("elder.act.hayir") },
+          { k: "dinlen", icon: "saglik", label: t("elder.act.dinlen") },
+          { k: "ani", icon: "roman", label: t("elder.act.ani") },
+          { k: "tekke", icon: "prayer-beads", label: t("elder.act.tekke") },
+        ];
+        const onElder = (k: ElderAct) => { if (!can) return; hap("tap"); const r = elderAction(state, k); if (!r.blocked) { if (k === "tekke") playNey(); apply(() => r.state); } };
+        return (
+          <View style={{ marginHorizontal: 12, marginTop: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(123,79,175,0.3)", backgroundColor: "rgba(123,79,175,0.06)" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.ink, textTransform: "uppercase" }}>{t("elder.title")}</Text>
+              <View style={{ flexDirection: "row", gap: 4 }}>
+                {Array.from({ length: maxStudyEnergy(p.age) }).map((_, i) => (
+                  <View key={i} style={{ width: 9, height: 9, borderRadius: 2, transform: [{ rotate: "45deg" }], backgroundColor: i < en ? C.ink : "transparent", borderWidth: 1, borderColor: i < en ? C.ink : C.border }} />
+                ))}
+              </View>
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {acts.map((a) => (
+                <Pressable key={a.k} onPress={() => onElder(a.k)} disabled={!can} style={{ width: acts.length % 2 === 1 && a.k === acts[acts.length - 1].k ? "100%" : "48%", flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: can ? "rgba(123,79,175,0.4)" : C.border, backgroundColor: can ? C.card : C.bg, opacity: can ? 1 : 0.5 }}>
+                  <GameIcon name={a.icon} size={16} color={can ? C.ink : C.parchmentMuted} />
+                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.display, fontSize: 11, color: can ? C.parchment : C.parchmentMuted }}>{a.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{t("child.spent")}</Text>}
+          </View>
+        );
+      })()}
+
+      {/* Aktif hikâye çağrısı */}
+      {!p.dead && state.story?.active && (
+        <Pressable onPress={() => router.push("/oyun/hikayeler")} style={{ marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.08)", flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <GameIcon name="roman" size={16} color={C.gold} />
+          <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment }}>{t("dash.storyCta")}</Text>
+          <Text style={{ color: C.gold, fontFamily: F.display, fontSize: 12 }}>›</Text>
+        </Pressable>
+      )}
 
       {/* ── AKSİYONLAR ── */}
       {p.dead ? (
