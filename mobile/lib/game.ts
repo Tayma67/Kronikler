@@ -1794,7 +1794,7 @@ export function advance(prev: GameState, n = 1): GameState {
     // İlk aylarda yeni oyuncuya garantili olumlu an (tempo: önce kazandır)
     if (s.turn <= 3 && !s.player.dead && i === n - 1) {
       const g = 6 + Math.floor(Math.random() * 8); s.player.money += g;
-      const NBR = ["Komşun sıcak bir çorba ikram etti.", "Pazarda biri eline birkaç akçe sıkıştırdı.", "Anlatılan bir masal yüreğini ısıttı.", "Fırıncı, günün son sıcak somununu eline tutuşturdu.", "İhtiyar bir komşu, kapının önünü süpürürken sana da dua etti.", "Bir kervancı yükünü indirirken yardımına karşılık avucuna bir şey bıraktı.", "Mahalle çocukları topladıkları cevizden bir avuç payına düşürdü."];
+      const NBR = ["Komşun sıcak bir çorba ikram etti.", "Pazarda biri eline birkaç akçe sıkıştırdı.", "Anlatılan bir masal yüreğini ısıttı.", "Fırıncı, günün son sıcak somununu eline tutuşturdu.", "İhtiyar bir komşu, kapının önünü süpürürken sana da dua etti.", "Bir kervancı yükünü indirirken yardımına karşılık avucuna bir şey bıraktı.", "Mahalle çocukları topladıkları cevizden bir avuç payına düşürdü.", "Hamamcı seni sırasız aldı: 'Bugün yorgunsun, belli.'", "Bostancı küfesinin dibindeki en olgun kavunu ayırmış: 'Bu senin, pazara değmez.'"];
       const ni = Math.floor(Math.random() * NBR.length);
       push(s, "gunluk", NBR[ni] + ` (+${g} akçe)`, "kişisel", false, { k: "evj.nbrGift", p: [{ sfx: "nbr." + ni }, g] });
     }
