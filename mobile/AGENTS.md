@@ -54,7 +54,8 @@ UI-dışı dosyalar (docs) için 2 ve 7 yeterli; game.ts'e dokunmayan UI dalgala
 
 ## Denetim araçları (scripts/_smoke/)
 
-- `run.cjs` — 300 hayatlık smoke.
+- `run.cjs` — 300 hayatlık smoke. `SMOKE_BUNDLE` (anlık-görüntü paketi yolu), `SMOKE_LIVES`, `SMOKE_JSON` env değişkenleriyle parametrelenir; verilmezse eski davranış (CI böyle kullanır).
+- `run-parallel.cjs` — ÖNERİLEN smoke koşucusu. Motoru commit damgalı bir ANLIK GÖRÜNTÜ paketine dondurur, 300 hayatı çekirdeklere böler (~6-7 dk, tekli koşunun ~1/3'ü) ve çıktıya doğrulanan commit'i yazar. Anlık görüntü sayesinde smoke koşarken çalışma kopyasında geliştirme SÜRER — denetim konveyörü durdurmaz. (Eskiden `/tmp/kronikler-game-bundle.cjs` sabit paketi kullanılırdı; konteyner restartında bayatlayıp yanlış commit'i doğrulama tuzağı vardı — bu araç onu kapatır.)
 - `migrate-check.cjs` — eski kayıt göç bekçisi.
 - `i18n-icon-check.cjs` — 6 dil anahtar tamlığı + %N placeholder + kullanılan anahtar varlığı + GameIcon geçerliliği.
 - `saga-fuzz.cjs` — Kül Yemini destanı düşman denetimi: 120 hanedan × ≤3 nesil rastgele seçim; değişmez ihlallerinde exit 1.
