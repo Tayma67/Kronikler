@@ -1767,6 +1767,11 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       push(s, "gunluk", `${dog.n} çocukları sırayla sırtına aldı, düşürmeden avluyu turladı; en çok da kendisi eğlendi.`, "kişisel", false, { k: "evj.dogKids", p: [dog.n] });
     }
   }
+  // ── At kısmeti: yaralı/başıboş bir atı sırf gönlünle iyileştirip yoldaş edinirsin — atın da kapıya geleni olur (satın alma değil, nadir) ──
+  if (!p.dead && !p.horse && p.age >= 14 && !inJail(p) && chance(0.006)) {
+    p.horse = true; p.horse_name = rnd(HORSE_NAMES); p.reputation = Math.min(100, p.reputation + 1);
+    push(s, "yolculuk", `Yol kenarında ayağı sakat, sahibi belirsiz bir at buldun; kimse sahiplenmedi. Haftalarca merhemle, sabırla iyileştirdin. Şimdi ${p.horse_name} adıyla senin peşinden geliyor — kimi yoldaş parayla değil, emekle kazanılır.`, "kişisel", true, { k: "evj.horseArrive", p: [p.horse_name] });
+  }
   // ── İki yoldaş bir ocakta: kedi ile köpek aynı evde — biri içerinin, biri dışarının nöbetçisi ──
   if (!p.dead && p.pet && p.dog && !inJail(p) && chance(0.03)) {
     const dr = Math.random();
