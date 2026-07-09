@@ -58,8 +58,8 @@ export default function Iliskiler() {
   const { lang, t } = useI18n();
   const npcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang, state?.player.location_name]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
-  // Yalnızca gerçekten etkileşime girdiğin kişiler (ilişki ≠ 0 ya da hafızada). Yeni karakterde köy halkı otomatik "tanış" sayılmaz.
-  const all = npcs.map((n) => ({ n, v: relWith(state, n.id) })).filter(({ n, v }) => v !== 0 || !!state.npc_state?.[n.id]);
+  // Bölgedeki herkes görünür — tanışmadıkların da (ilişki 0) "tanış" bandında çıkar ki üzerine tıklayıp tanışabilesin.
+  const all = npcs.map((n) => ({ n, v: relWith(state, n.id) }));
   const grouped = BANDS.map((b) => ({
     b,
     list: all.filter(({ v }) => bandOf(v).id === b.id).sort((a, z) => Math.abs(z.v) - Math.abs(a.v)),

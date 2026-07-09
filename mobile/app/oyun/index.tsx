@@ -323,7 +323,7 @@ export default function Dashboard() {
 
       {/* ── HERO (yaşayan sahne: Ken Burns + ambiyans) ── */}
       <KenBurns source={heroImage(p.age, cal.season)} style={{ paddingTop: insets.top }}>
-        <View style={{ backgroundColor: "rgba(8,5,2,0.5)", paddingHorizontal: 12, paddingTop: 10, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
+        <View style={{ backgroundColor: "rgba(8,5,2,0.5)", paddingHorizontal: 12, paddingTop: 6, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: C.borderHi }}>
           <Ambiance season={cal.season} width={Dimensions.get("window").width} height={180} embers={false} />
           <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
             {/* Sol: avatar + mini istatistikler */}
@@ -395,42 +395,7 @@ export default function Dashboard() {
         );
       })()}
 
-      {/* İlk Adımlar — yeni oyuncunun yol haritası: gerçek durumu izler, tıklayınca ilgili ekrana götürür.
-          Tümü bitince ya da yaş 22'yi geçince kendiliğinden kaybolur; × ile kalıcı kapatılır. */}
-      {!p.dead && !guideHidden && p.age < 22 && (() => {
-        const steps: { id: string; done: boolean; route?: string; act?: () => void; show: boolean }[] = [
-          { id: "eat",    done: p.hunger >= 55, act: () => { hap("success"); doEat(); }, show: true }, // ilk adım artık eylemli: dokununca yer (çantadan, yoksa sokaktan)
-          { id: "study",  done: (p.lesson_count || 0) >= 1, route: "/oyun/mektep", show: p.age < 18 },
-          { id: "club",   done: !!p.club || p.age >= 18, route: "/oyun/mektep", show: p.age < 18 },
-          { id: "friend", done: Object.values(state.relationships || {}).some((v) => v >= 10), route: "/oyun/sosyal", show: true },
-          { id: "prof",   done: p.profession !== "işsiz", route: "/oyun/meslek", show: p.age >= 13 },
-          { id: "work",   done: (p.career_xp || 0) >= 1, route: "/oyun/meslek", show: p.age >= 13 && p.profession !== "işsiz" },
-          { id: "market", done: Object.keys(p.inventory || {}).length > 0, route: "/oyun/pazar", show: p.age >= 13 },
-          { id: "guild",  done: !!p.faction || Object.values(p.faction_standing || {}).some((v) => v > 0), route: "/oyun/orgutler", show: p.age >= 13 },
-          { id: "marry",  done: p.married, route: "/oyun/iliskiler", show: p.age >= 18 },
-          { id: "estate", done: (p.properties || []).length >= 1, route: "/oyun/mulkler", show: p.age >= 16 },
-        ].filter((x) => x.show);
-        const doneN = steps.filter((x) => x.done).length;
-        if (doneN >= steps.length) return null; // yol haritası tamam — kart kaybolur
-        const next = steps.filter((x) => !x.done).slice(0, 3);
-        return (
-          <View style={{ marginHorizontal: 12, marginTop: 8, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.32)", backgroundColor: "rgba(201,168,76,0.06)", overflow: "hidden" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 11, paddingTop: 9, paddingBottom: 6 }}>
-              <GameIcon name="star" size={13} color={C.gold} />
-              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("fs.title")}</Text>
-              <Text style={{ fontFamily: F.display, fontSize: 10, color: C.parchmentMuted }}>{doneN}/{steps.length}</Text>
-              <Pressable hitSlop={8} onPress={() => { hap("tap"); hideGuide(); }}><Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchmentMuted }}>×</Text></Pressable>
-            </View>
-            {next.map((st) => (
-              <Pressable key={st.id} disabled={!st.route && !st.act} onPress={() => { if (st.act) { st.act(); return; } if (st.route) { hap("tap"); router.push(st.route as never); } }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 11, paddingVertical: 7, borderTopWidth: 1, borderTopColor: "rgba(201,168,76,0.14)", backgroundColor: pressed ? "rgba(201,168,76,0.08)" : "transparent" })}>
-                <View style={{ width: 14, height: 14, borderRadius: 7, borderWidth: 1.5, borderColor: C.goldDim }} />
-                <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchment, lineHeight: 15 }}>{t("fs." + st.id)}</Text>
-                {st.route || st.act ? <Text style={{ color: C.goldDim, fontSize: 13 }}>›</Text> : null}
-              </Pressable>
-            ))}
-          </View>
-        );
-      })()}
+      {/* İLK ADIMLAR yol haritası kartı kullanıcı isteğiyle kaldırıldı (ana sayfada yer kaplamasın). */}
 
       {/* Zindan: ağır suçun bedeli — süre dolana ya da gardiyan sussuzlanana dek çoğu kapı kilitli */}
       {!p.dead && inJail(p) && (() => {
