@@ -6319,6 +6319,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "ocakyoldasi", name: "Ocak Yoldaşı",   desc: "Kedinle bağın 80 sınırını aşsın.",    icon: "wool",        done: (s) => !!s.player.cat_bff },
   { id: "kapiyoldasi", name: "Kapı Yoldaşı",   desc: "Köpeğinle bağın 80 sınırını aşsın.",  icon: "sheep",       done: (s) => !!s.player.dog_bff },
   { id: "ucyoldas",    name: "Üç Yoldaş",      desc: "Kediyi, köpeği ve atı aynı ocakta buluştur.", icon: "compass", done: (s) => !!s.player.pet && !!s.player.dog && !!s.player.horse },
+  { id: "sancaktar",   name: "Sancağı Taşıyan", desc: "Kayıp Sancaktar'ı yenerek onun yükünü devral.", icon: "banner", done: (s) => !!s.player.enc_won?.kayip_sancaktar },
   { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
   { id: "bilge",    name: "Yaşlı Bilge",     desc: "70 yaşını gör.",                    icon: "prayer-beads", done: (s) => s.player.age >= 70 },
   { id: "imparator",name: "Mülk İmparatoru", desc: "8 mülke sahip ol.",                 icon: "castle",       done: (s) => s.player.properties.length >= 8 },
