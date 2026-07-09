@@ -4,6 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
+import { useMp } from "../../lib/mp/store";
 import { npcsOf, relWith } from "../../lib/game";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { professionNameL, placeName } from "../../lib/locale-data";
@@ -54,7 +55,8 @@ function Pill({ text, tone }: { text: string; tone: string }) {
 export default function Iliskiler() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { state } = useGame();
+  const { state, mpMode } = useGame();
+  const { snapshot, guestId } = useMp();
   const { lang, t } = useI18n();
   const npcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang, state?.player.location_name]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
@@ -81,6 +83,31 @@ export default function Iliskiler() {
             <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
           </View>
         </View>
+
+        {/* ── DİYAR HANEDANLARI: aynı diyarda yaşayan gerçek oyuncular (çok oyunculu) — bölgenin bir parçası gibi hep görünür ── */}
+        {mpMode && snapshot && snapshot.players.length > 0 && (
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", borderRadius: 12, marginBottom: 14, overflow: "hidden" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(201,168,76,0.08)" }}>
+              <GameIcon name="hanedan" size={13} color={C.gold} />
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("mp.players")}</Text>
+              <Pill text={`${snapshot.players.filter((x) => x.online && !x.dead).length}`} tone={C.sage} />
+            </View>
+            <View style={{ padding: 10 }}>
+              {snapshot.players.map((pl) => (
+                <View key={pl.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}>
+                  <Portre age={Math.max(7, pl.age)} gender={pl.gender} size={37} ring={false} seed={pl.id} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: pl.id === guestId ? C.gold : C.parchment }}>
+                      {pl.name}{pl.id === guestId ? ` ${t("mp.you")}` : ""}{pl.crowned ? " ♔" : ""}
+                    </Text>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(pl.profession, lang)} · {pl.age}</Text>
+                  </View>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: pl.online ? C.sage : C.parchmentDim }} />
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* Görücü usulü / çöpçatan — bekâr yetişkine talip önerisi (yaş/servet filtreli) */}
         {!state.player.married && state.player.age >= 18 ? (
