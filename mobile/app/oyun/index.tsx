@@ -6,6 +6,8 @@ import { useState, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
+import { useMp } from "../../lib/mp/store";
+import { realmYearMonth } from "../../lib/mp/world";
 import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork } from "../../lib/game";
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL, placeName } from "../../lib/locale-data";
@@ -92,7 +94,8 @@ function MiniStat({ icon, value, max, color }: { icon: string; value: number; ma
 export default function Dashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { state, doWork, doEat, resetGame, apply } = useGame();
+  const { state, doWork, doEat, resetGame, apply, mpMode } = useGame();
+  const { snapshot: mpSnapshot } = useMp();
   const { t, lang } = useI18n();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
   const [freshMark, setFreshMark] = useState<null | { from: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + tarihçe indeksi eşiği
@@ -395,6 +398,23 @@ export default function Dashboard() {
         );
       })()}
 
+      {/* Diyar presence (çok oyuncu): paylaşımlı diyarda olduğunu her an hisset — saat, taht, kaç kişi ayakta (İlişkiler'e köprü) */}
+      {mpMode && mpSnapshot && (() => {
+        const ym = realmYearMonth(mpSnapshot.turn);
+        const live = mpSnapshot.players.filter((x) => x.online && !x.dead).length;
+        return (
+          <Pressable onPress={() => { hap("tap"); router.push("/oyun/iliskiler"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.07)" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+              <GameIcon name="crown" size={13} color={C.gold} />
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("mp.realm")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("mp.year")} {ym.year} · {t("mp.month")} {ym.month}</Text>
+            </View>
+            <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim, marginTop: 4 }}>
+              {mpSnapshot.throne.holderName ? applyParams(t("mp.throneHolder"), [mpSnapshot.throne.holderName]) : t("mp.throneEmpty")} · {applyParams(t("mp.pulse.here"), [live])}
+            </Text>
+          </Pressable>
+        );
+      })()}
       {/* İLK ADIMLAR yol haritası kartı kullanıcı isteğiyle kaldırıldı (ana sayfada yer kaplamasın). */}
 
       {/* Zindan: ağır suçun bedeli — süre dolana ya da gardiyan sussuzlanana dek çoğu kapı kilitli */}
