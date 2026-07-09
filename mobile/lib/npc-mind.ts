@@ -15,8 +15,8 @@ export interface Memory {
 // Dedikoduya dönüşebilen anı türleri için söylenti varyant sayısı (rumor.<tur>.<i> anahtarları).
 export const RUMOR_VARIANTS: Record<string, number> = {
   hakaret: 2, tehdit: 2, saldiri: 2, kacirma: 1, hirsizlik_tanigi: 1, suc_tanigi: 1,
-  dolandiricilik: 1, somuru: 1, iftira: 2, alay: 2, yakinima_zarar: 1, flort_tanigi: 2,
-  reddedilme: 1, comert_hediye: 2, sadaka: 2, yardim: 2, borc_kurtarma: 2,
+  dolandiricilik: 2, somuru: 2, iftira: 2, alay: 2, yakinima_zarar: 2, flort_tanigi: 2,
+  reddedilme: 2, comert_hediye: 2, sadaka: 2, yardim: 2, borc_kurtarma: 2,
   hayat_kurtarma: 2, savunma: 2, ibadet_tanigi: 2, ihanet: 1,
 };
 
