@@ -5289,6 +5289,11 @@ export function tendChild(prev: GameState): GameState {
   else if (age < 13) { bond(4); if (p.child_edu?.[name]) p.child_edu[name].weeks += 1; push(s, "cocukluk", `${name} ile rahlenin başına oturdunuz; harfler sökülünce gözleri parladı.`, "kişisel", false, { k: "evj.childTend.mektepli", p: [name] }); }
   else if (age < 18) { bond(4); p.reputation = Math.min(100, p.reputation + 1); push(s, "cocukluk", `${name}'e zanaatının inceliğini gösterdin; el alışkanlığı sana çekmiş.`, "kişisel", false, { k: "evj.childTend.genc", p: [name] }); }
   else { bond(3); p.reputation = Math.min(100, p.reputation + 1); push(s, "gunluk", `Yetişkin evladın ${name} ile sofra kurdunuz; kendi ocağının derdini, sevincini dinledin.`, "kişisel", false, { k: "evj.childTend.yetiskin", p: [name] }); }
+  // Derin evlat bağı: bağ 85+ ise ara sıra yaş bandı ötesi bir an — çocuk sana çekmiş, sen çocukta kendini görürsün
+  if ((p.child_bond[name] ?? 50) >= 85 && Math.random() < 0.3) {
+    p.honor = Math.min(100, p.honor + 1);
+    push(s, "gunluk", `${name} bir söz söyledi, bir baktı — bir an aynaya bakar gibi oldun: huyun, kaşının çatılışı, hatta sustuğun yer bile ona geçmiş. Soy dediğin, kan değil biraz da bu.`, "kişisel", false, { k: "evj.childDeep", p: [name] });
+  }
   return s;
 }
 // ── Ay-içi mikro an: panoda beliren tek satırlık, atlanabilir seçim — "aynı üç buton" hissini kırar.
