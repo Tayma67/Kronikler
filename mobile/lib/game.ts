@@ -4824,6 +4824,8 @@ export function eulogy(s: GameState): { epithet: string; lines: EulLine[]; close
   // Aile
   if (p.children.length) lines.push(p.spouse_name ? { k: "eul.familySpouse", p: [p.spouse_name, p.children.length] } : { k: "eul.familyChildren", p: [p.children.length] });
   else lines.push({ k: "eul.noHeir" });
+  // Kırk yılı devirmiş ocak: yaşayan evliliğin en uzun hâli mersiyede ayrı anılır (Altın Ocak yankısı)
+  if (p.married && p.spouse_name && p.married_turn !== undefined && (s.turn - p.married_turn) >= 480) lines.push({ k: "eul.longMarriage", p: [p.spouse_name] });
   // Torunlar
   const gcN = p.grandchildren?.length || 0;
   if (gcN > 0) lines.push({ k: "eul.grandchildren", p: [gcN] });
