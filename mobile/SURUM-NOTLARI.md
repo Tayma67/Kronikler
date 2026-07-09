@@ -2,6 +2,17 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 521-523 eki (9 Temmuz, akşam) — ÖMÜR BOYU YOLDAŞLIK VE VEDANIN HABERCİSİ
+
+**Tek cümle (mağaza/what's new):**
+TR: "Yaşam dokusu bütün bir ömre yayıldı: kedi ve köpek artık yalnız yaşlılıkta değil, yetişkinlik ve olgunluk anılarında da yanında (dizine kıvrılan kedi, kapıda bekleyen köpek); gençlik yıllarına dört yeni doku — ilk hak edilen akçe, surların bittiği yerde uzanan diyar, ilk hata, ilk türkü; ve en dokunaklısı: anne-baba göçmeden önce yaşlandıklarını sessizce haber veriyor — annenin ağırlaşan elleri, babanın bastonu — veda artık birden gelmiyor."
+EN: "Life's texture now spans a whole lifetime: cat and dog stand beside you not only in old age but in the memories of youth and middle years (a cat curled on your knee, a dog waiting at the door); four new textures for the young years — the first coin earned by your own sweat, the realm stretching beyond the city walls, the first failure, the first song; and most tenderly, parents quietly show their aging before they pass — a mother's heavier hands, a father's staff — so the farewell no longer comes all at once."
+
+**Öne çıkanlar:**
+- **Ömür boyu yoldaş:** kedi ve köpek 25-70 yaş anılarında da beliriyor — yoldaşlık artık yalnız son fasılda değil, bütün yetişkinlikte görünür.
+- **Gençlik dokusu (genç-yetişkin anıları 3→7):** ilk hak edilen akçe, surların ötesinde uzanan diyar, ilk hata ve ilk türkü — erken oyunda tekrar azalır.
+- **Vedanın habercisi:** anne-baba göçmeden önce bir kez yaşlandıklarını haber verir (yoldaşın ihtiyarlık beati gibi) — kayıp birden değil, hazırlıkla gelir.
+
 ## Dalga 517-519 eki (9 Temmuz, ikindi) — GÜNLÜK OYUN VE TAHTIN VİCDANI
 
 **Tek cümle (mağaza/what's new):**
