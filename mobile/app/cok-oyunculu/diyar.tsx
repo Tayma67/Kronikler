@@ -5,6 +5,8 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../lib/i18n";
 import { useMp } from "../../lib/mp/store";
+import { useGame, migrate } from "../../lib/store";
+import { newGame, GameState } from "../../lib/game";
 import { PlayerPublic, ChatScope } from "../../lib/mp/protocol";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
@@ -19,7 +21,21 @@ export default function Diyar() {
   const router = useRouter();
   const { t } = useI18n();
   const { realmId, name, gender } = useLocalSearchParams<{ realmId: string; name: string; gender?: string }>();
-  const { status, guestId, snapshot, chat, error, joinRealm, setReady, sendChat, leave } = useMp();
+  const { status, guestId, snapshot, chat, error, joinRealm, setReady, sendChat, leave, saved } = useMp();
+  const { enterMp } = useGame();
+  const mpGender: "erkek" | "kadın" = gender === "kadın" ? "kadın" : "erkek";
+  // Diyara gir: MP karakterini yükle (sunucu yedeği varsa aynı karaktere devam, yoksa yeni hayat) ve
+  // BİREBİR tek-oyuncu ana ekranına geç. Ayrı "diyar panosu" yok — oynanış tek-oyuncuyla aynı.
+  const enterRealm = () => {
+    hap("advance");
+    let init: GameState | null = null;
+    if (saved) { try { const r = JSON.parse(saved); if (r && r.player) init = { ...migrate(r), mpRealm: true }; } catch {} }
+    if (!init) init = { ...newGame(String(name || "Hanedan"), String(name || "Han"), mpGender), mpRealm: true };
+    const meP = snapshot?.players.find((x) => x.id === guestId);
+    if (meP) { if (meP.dead) init.player.dead = true; if (typeof meP.age === "number" && meP.age > init.player.age) init.player.age = meP.age; }
+    enterMp(init);
+    router.replace("/oyun");
+  };
   const [chatText, setChatText] = useState("");
   const [chatScope, setChatScope] = useState<ChatScope>("all");
   const [whisperTo, setWhisperTo] = useState<string | null>(null);
@@ -93,7 +109,7 @@ export default function Diyar() {
 
         {/* Diyara gir (paylaşımlı oyun) */}
         {snapshot && (
-          <Pressable onPress={() => { hap("advance"); router.push({ pathname: "/cok-oyunculu/oyun", params: { name: String(name || "Hanedan"), gender: String(gender || "erkek") } }); }}
+          <Pressable onPress={enterRealm}
             style={{ marginTop: 18, paddingVertical: 14, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.6)", backgroundColor: C.gold }}>
             <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 2, color: C.inkOnGold }}>{t("mp.enterWorld")}</Text>
           </Pressable>

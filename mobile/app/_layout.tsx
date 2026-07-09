@@ -8,6 +8,7 @@ import { View, ActivityIndicator, Text, Pressable } from "react-native";
 import { useEffect, useState } from "react";
 import { GameProvider } from "../lib/store";
 import { MpProvider } from "../lib/mp/store";
+import { RealmSession } from "../lib/mp/RealmSession";
 import { LanguageProvider } from "../lib/i18n";
 import { LoadingScreen } from "../lib/fx";
 import { loadSoundSetting, loadMusicSetting } from "../lib/sound";
@@ -40,6 +41,8 @@ export default function RootLayout() {
         <GameProvider>
           <MpProvider>
             <StatusBar style="light" />
+            {/* Diyar oturumu koordinatörü: MP tick'inde yerel hayatı ilerletir (UI çizmez). */}
+            <RealmSession />
             {/* Android sistem gezinme çubuğunu gizle (tam ekran / immersive); yukarı kaydırınca geçici görünür */}
             <NavigationBar hidden />
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: "slide_from_right" }} />
