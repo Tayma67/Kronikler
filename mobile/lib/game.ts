@@ -6045,6 +6045,7 @@ export const ENCOUNTERS: Encounter[] = [
   { id: "cansiz_bey", title: "Cansız Bey", desc: "Kara zırhın içi boş derler: mızrak işlemez, kılıç seker. Yüz yıldır her efsaneyi gömdü — şimdi geçidin ağzında seni bekliyor.", power: 30, reward: 300, fame: 40, honor: 24, danger: 58, minFame: 85 },
   { id: "yanik_yuzlu", title: "Yanık Yüzlü", desc: "Kösedağ'dan yüzü yanık çıkan ihtiyar sipahi son yeminini kuşanmış: 'Beni ancak diyarın en büyük adı gömer.' Közün başında seni bekliyor.", power: 32, reward: 340, fame: 44, honor: 26, danger: 62, minFame: 92 },
   { id: "kirk_yamali", title: "Kırk Yamalı", desc: "Kırk yamalı hırkasının her yaması yenilmiş bir meydan ustasından derler. Asasıyla gezer, kimseyi aramaz — bulunur. Şimdi senin meydanında dikiliyor.", power: 34, reward: 380, fame: 48, honor: 28, danger: 66, minFame: 96 },
+  { id: "kayip_sancaktar", title: "Kayıp Sancaktar", desc: "Kösedağ bozgununda sancağı yere düşürmeyen tek erin bir gölge gibi diyarı dolaştığı söylenir; kimse öldüğünü görmedi, kimse yaşadığına inanmadı. Bir sabah otağının önünde yıpranmış bir sancakla dikiliyor: 'Bunu taşıyacak bir ad kaldı mı diyara?'", power: 36, reward: 420, fame: 52, honor: 30, danger: 70, minFame: 98 },
 ];
 // Oyuncunun savaş gücü: kuvvet + dayanıklılık/2 + silah + asker avantajı.
 export function combatPower(p: Player): number {
