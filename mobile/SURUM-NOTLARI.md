@@ -2,6 +2,17 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 505-508 eki (9 Temmuz, öğle) — SON DORUK VE DERİN BAĞLAR
+
+**Tek cümle (mağaza/what's new):**
+TR: "En yüksek şöhretin son doruğu geldi: Kösedağ'da sancağı düşürmeyen erin gölgesi KAYIP SANCAKTAR, yenene 'Sancağı Taşıyan' nişanını bırakır (17. efsane, 98. başarım). Bir de bağların en derini kendi anını kazandı: uzun evlilikte söze gerek kalmadan geçen öğle ve evladında kendini görmek — huyun, kaşının çatılışı, sustuğun yer bile ona geçmiş."
+EN: "The final summit of the highest fame arrives: the LOST STANDARD-BEARER, shadow of the warrior who never dropped the banner at Kosedag, leaves the 'Bearer of the Standard' badge to whoever defeats him (17th legend, 98th achievement). And the deepest bonds earn their own moment: in a long marriage an afternoon that needs no words, and seeing yourself in your child — your temper, the furrow of your brow, even where you fall silent, passed on."
+
+**Öne çıkanlar:**
+- **Kayıp Sancaktar (17. efsane karşılaşma):** en yüksek şöhrette (98+) gelen son doruk; yenince 'Sancağı Taşıyan' nişanı (98. başarım).
+- **Uzun evliliğin sükûtu:** eş bağı 85'i aşınca ara sıra mizaç ötesi bir an — bir bakışın tamamladığı cümle.
+- **Aynaya bakmak:** evlat bağı 85'i aşınca çocukta kendini görmek — soy kandan ibaret değil.
+
 ## Dalga 496-503 eki (9 Temmuz, öğleden önce) — SOKAĞIN, ÇOCUKLUĞUN VE SOHBETİN DOKUSU
 
 **Tek cümle (mağaza/what's new):**
