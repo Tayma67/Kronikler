@@ -34,7 +34,14 @@ export function RealmSession() {
     processedTurn.current = lastTick.turn;
     let ns = advance(sRef.current, 1);
     const mine = lastTick.results.find((r) => r.playerId === guestId);
-    if (mine && mine.events.length) ns = applyTickEvents(ns, mine.events);
+    if (mine && mine.events.length) {
+      ns = applyTickEvents(ns, mine.events);
+      // Çapraz-oyuncu olayları Hayat Günlüğü'ne düşsün (siyasi büyük anlar nişanlı) — bilinmeyen tür güvenle fallback'e düşer.
+      for (const e of mine.events) {
+        const big = e.k.startsWith("mp.sefer.") || e.k.startsWith("mp.award.") || e.k === "mp.reis.elected";
+        ns.history.push({ day: ns.turn, type: "hanedan_haber", text: "", scope: "kişisel", landmark: big, k: e.k, p: e.p } as any);
+      }
+    }
     apply(() => ns);
     syncPlayer(mePublic(guestId, ns, false));
     saveState(JSON.stringify(ns)); // her ay sonunda sunucuya yedek → çıkıp girince aynı karaktere devam
@@ -44,6 +51,7 @@ export function RealmSession() {
   useEffect(() => {
     if (!mpMode || !missed || !missed.length || !guestId || !sRef.current) return;
     const ns = applyTickEvents(sRef.current, missed);
+    for (const e of missed) ns.history.push({ day: ns.turn, type: "hanedan_haber", text: "", scope: "kişisel", landmark: false, k: e.k, p: e.p } as any);
     apply(() => ns);
     clearMissed();
     syncPlayer(mePublic(guestId, ns, false));
