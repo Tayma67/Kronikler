@@ -1092,6 +1092,27 @@ export const DILEMMAS: Dilemma[] = [
       { label: "Sırrı kendine sakla", delta: { money: 40, reputation: -2 }, result: "Yöntem yalnız senin elinde; işlerin ayrı bir itibar gördü, kesen doldu. Ama bazen örsün başında ustanın son sözü kulağında çınlıyor: 'zanaat yaşasın' demişti." },
     ],
   },
+  // ── Şöhret ikilemleri: adın senden önce yürüyünce ──
+  {
+    id: "adini_tasiyan", icon: "star", title: "Adını Taşıyan Çocuk",
+    text: "Uzak bir köyden bir aile kapına geldi; kucaklarında bir bebek. 'Adını sana borçluyuz' diyorlar — meğer bir kıtlık yılında senin bir iyiliğin dilden dile onlara ulaşmış, oğullarına senin adını vermişler. Şimdi de bir dua, bir hayır bekliyorlar.",
+    when: (p) => p.fame >= 40 && p.age >= 25,
+    identity: true,
+    choices: [
+      { label: "Adaşına bir kese bağla", delta: { money: -12, reputation: 3, honor: 2, nam: { comert: 1 } }, result: "Bebeğin beşiğine bir kese koydun; 'büyüyünce mektebe' dedin. Aile ağlayarak döndü. Adın artık bir çocuğun içinde de yaşıyor — en uzun miras." },
+      { label: "Dua et, yükünü artırma", delta: { honor: 1, nam: { dindar: 1 } }, result: "Elini bebeğin başına koydun, bir dua okudun; kese açmadın. Aile yine memnun döndü — bazen bir avuç dua, bir kese akçeden ağır tartar." },
+    ],
+  },
+  {
+    id: "nami_satan", icon: "scroll", title: "Namını Satan Sahtekâr",
+    text: "Çarşıda soluğu kesilen bir tüccar geldi: biri senin adını kullanarak mal toplamış, borç yapmış, sonra sırra kadem basmış. 'Sen kefilsin sandık' diyor kalabalık; oysa senin bundan haberin bile yok. Adın kirlenmek üzere.",
+    when: (p) => p.fame >= 50 && p.age >= 28,
+    identity: true,
+    choices: [
+      { label: "Zararı üstlen, adını temizle", delta: { money: -30, reputation: 6, honor: 5, nam: { mert: 2 } }, result: "Sahtekârın borcunu kendi kesenden kapadın; 'benim adım benim namusum' dedin. Çarşı bir ağızdan seni andı — kaybettiğin akçe, kazandığın adın yanında hiç kaldı." },
+      { label: "Kadıya ver, ödemeyi reddet", delta: { reputation: -2, fear: 1 }, result: "'Benim imzam yok, ödemem' deyip işi kadıya bıraktın. Haklıydın, kimse bir şey diyemedi; ama o gün çarşıda birkaç baş senden yana değil, kesesinden yana eğildi." },
+    ],
+  },
 ];
 
 // ── Şenlikler: yılın nabzı — sabit aylarda dönen mevsim sahneleri. ──
