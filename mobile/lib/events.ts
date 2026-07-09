@@ -1073,6 +1073,25 @@ export const DILEMMAS: Dilemma[] = [
       { label: "Bu ev onun evi, de", delta: { honor: -1 }, result: "Çocuk dudağı titreyerek gitti. Kedi o gece yine kayboldu; iki gün sonra bıyıkları tuzlu döndü. Kimseye sormadan iki evi birden idare ediyor; sen bilmiyormuş gibi yapıyorsun." },
     ],
   },
+  // ── İnsan ilişkisi ikilemleri ──
+  {
+    id: "kefil_imzasi", icon: "scroll", title: "Kefil İmzası",
+    text: "Çocukluk arkadaşın soluk soluğa geldi: bir tüccara borçlanmış, kefil olmazsan zindanı boylayacak. Gözlerinde eski günlerin sıcaklığı, sesinde yeni bir titreme var. Kâğıt ve kalem masada.",
+    when: (p) => p.age >= 18 && p.age < 45,
+    choices: [
+      { label: "İmzala, dostuna güven", delta: { honor: 3, reputation: 1 }, result: "Mührünü bastın. Arkadaşın iki yıl dişini sıktı, kuruşu kuruşuna ödedi; borcun son günü kapına bir sini baklava ile geldi. Kimi dostluk faiziyle geri döner." },
+      { label: "Sarıl ama imzalama", delta: { honor: -1 }, result: "'Kesemi açarım ama mührümü basamam' dedin, eline birkaç akçe sıkıştırdın. Arkadaşın anladı ama gözü doldu; o günden sonra selamınız var, sohbetiniz eskisi gibi değil." },
+    ],
+  },
+  {
+    id: "usta_sirri_d493", icon: "anvil", title: "Ustanın Vasiyeti",
+    text: "Yıllarca yanında çalıştığın usta ölüm döşeğinde seni çağırttı: kimseye vermediği bir yöntemin sırrını sana fısıldadı. 'Sat da geçin' diyenler var; oysa usta 'lonca öğrensin, zanaat yaşasın' demişti son nefesinde.",
+    when: (p) => p.age >= 30 && p.age < 60,
+    choices: [
+      { label: "Sırrı loncaya aç", delta: { reputation: 5, honor: 4, nam: { mert: 2 } }, result: "Yöntemi lonca defterine yazdırdın; ustanın adı başına kondu. Tezgâhların hepsi biraz senin elinden geçmiş sayılır artık — kazanmadın ama kaldın." },
+      { label: "Sırrı kendine sakla", delta: { money: 40, reputation: -2 }, result: "Yöntem yalnız senin elinde; işlerin ayrı bir itibar gördü, kesen doldu. Ama bazen örsün başında ustanın son sözü kulağında çınlıyor: 'zanaat yaşasın' demişti." },
+    ],
+  },
 ];
 
 // ── Şenlikler: yılın nabzı — sabit aylarda dönen mevsim sahneleri. ──
