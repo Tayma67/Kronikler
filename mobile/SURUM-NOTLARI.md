@@ -2,6 +2,23 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 482-494 eki (9 Temmuz, sabah) — YOLDAŞLIĞIN SON HALKALARI VE İNSAN SINAVLARI
+
+**Tek cümle (mağaza/what's new):**
+TR: "Yoldaşlıklar bir ömrü kapattı: kaybolan köpeğini tazı dövüştürücüsünün çukurundan kurtardığın yeni bir hikâye yayı; kediyle köpeği ve atı aynı ocakta buluşturana 'Üç Yoldaş' nişanı; mersiyende boş minderi bekleyen kedin ve avludan çıkmayan köpeğin; yaşlılığında göğsüne kurulan yavaş mırıltı; tembel kedi güneşle minder değiştirir, nazlı kedi üç davet bekler, köpek uykusunda sürü toplar. İnsan da eksik kalmadı: çocukluk arkadaşına kefil imzası, ölüm döşeğindeki ustanın loncaya mı sana mı kalacak sırrı; diyara üç yeni ahval — memleket yemeği pişiren han aşçısı, çatlayan değirmen taşı, kırk gündür susan derviş."
+EN: "Companionship comes full circle: a new story arc where you rescue your lost dog from a dogfighter's pit; the 'Three Companions' badge for gathering cat, dog and horse under one roof; in your eulogy the cat that keeps watch by the empty cushion and the dog that will not leave the yard; in old age a slow purr settling on your chest; the lazy cat moving with the sun, the coy cat awaiting three invitations, the dog herding a flock in its sleep. The human side too: a guarantor's seal for a childhood friend, a dying master's secret bound for the guild or for you; three new realm tidings — an innkeeper's cook of homeland dishes, a cracked millstone, a dervish silent for forty days."
+
+**Öne çıkanlar:**
+- **Çukurdaki Yoldaş (30. hikâye yayı):** kaybolan köpeğini tazı dövüştürücüsünün çukurundan bedelle ya da zaptiyeyle kurtar; kurtardığın öteki tazıyı ocağına al ya da yoluna bırak.
+- **Üç Yoldaş (97. başarım):** kediyi, köpeği ve atı aynı çatının altında buluştur.
+- **Mersiyede yoldaşlar:** bağı yüksek kedi boş minderi bekler, köpek üç gün avludan çıkmaz; ikisi birdense "gözleri kapıda".
+- **Birlikte yaşlanmak:** 70+ anılarına iki yoldaşlı sahne — göğse kurulan yavaş mırıltı, kapı taşında aynı yöne bakan iki ihtiyar.
+- **Dört huyun dördü:** tembel kedi güneşle minder değiştirir, nazlı kedi üç davet bekler; köpek uykusunda sürü toplar, sağanaktan ıslak döner.
+- **Ufukta:** yaşlanan kedi/köpek panoda sessizce anılır — veda hazırlıksız yakalamaz.
+- **İnsan ikilemleri:** çocukluk arkadaşına kefil imzası, ustanın loncaya mı sana mı kalacak sırrı.
+- **Diyarın Ahvali +3:** han aşçısı, çatlayan değirmen taşı, susan derviş.
+- **SSS:** yoldaşların nasıl edinildiği, ömürleri ve vârise geçişi altı dilde.
+
 ## Dalga 471-480 eki (9 Temmuz, şafağa karşı) — BAĞLARIN DERİNLİĞİ
 
 **Tek cümle (mağaza/what's new):**
