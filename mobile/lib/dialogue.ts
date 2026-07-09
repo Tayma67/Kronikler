@@ -71,7 +71,7 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
     return { line: pick("dlg.aile.open", 3), moodDelta: 6, relDelta: 5, memory: L("dlg.aile.open.m") };
   }
   if (intent === "dunya") {
-    return { line: pick("dlg.dunya.line", 3), moodDelta: 3, relDelta: 3, memory: L("dlg.dunya.m") };
+    return { line: pick("dlg.dunya.line", 5), moodDelta: 3, relDelta: 3, memory: L("dlg.dunya.m") };
   }
   if (intent === "hedef") {
     const line = pick("dlg.hedef.line", 3).replace("%g", goalL(npc.goal, lang));
