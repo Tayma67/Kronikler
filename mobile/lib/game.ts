@@ -1559,6 +1559,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         child ? { text: `${child} masum bir soru sordu; cevabını ararken sen de düşündün.`, k: "mem.childAsk", p: [child] } : { text: "Bir komşuyla eski günleri yâd ettin.", k: "mem.neighbor" },
         { text: "Elinin bir alışkanlığında ilk ustanı yakaladın; usta çoktan gitti, huyu sende kalmış.", k: "mem.masterHabit" },
       );
+      if (p.pet) mem.push({ text: `${p.pet.n} dizine kıvrıldı; günün bütün yorgunluğu bir mırıltıyla dağıldı. Kimseye söylemediğini ona söyledin.`, k: "mem.midCat", p: [p.pet.n] });
+      if (p.dog) mem.push({ text: `${p.dog.n} kapıda seni bekledi; ayak sesini duyunca kuyruğu eşiği süpürdü. Seni kimse onun kadar sevinerek karşılamaz.`, k: "mem.midDog", p: [p.dog.n] });
     } else if (p.age < 70) {
       mem.push(
         { text: "Dizlerin sızlıyor ama hatıraların zengin.", k: "mem.aches" },
@@ -1572,6 +1574,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "Harman yerinde gençlerin taş kaldırmasını seyrettin; biri taşı tam gençliğindeki gibi omuzluyor.", k: "mem.harvestRace" },
         { text: "Mahalle çeşmesinin taşında çocukken kazıdığın harf duruyor; yıllar silmemiş.", k: "mem.carvedInit" },
       );
+      if (p.pet) mem.push({ text: `${p.pet.n} güneşin gün boyu gezindiği taşı senden iyi bilir; ikiniz de aynı sıcak köşeye çöktünüz, kelamsız.`, k: "mem.eldCat", p: [p.pet.n] });
+      if (p.dog) mem.push({ text: `${p.dog.n} artık peşinden koşmuyor, yanında yürüyor; sizi bir arada büyüten yılların yavaş adımıyla.`, k: "mem.eldDog", p: [p.dog.n] });
     } else {
       // 70+: ömrün son faslının kendi dokusu — şafak yalnızlığı, giden dostlar, nasırlı eller, destanlaşan ad
       mem.push(
