@@ -5263,7 +5263,12 @@ export function spendWithSpouse(prev: GameState): GameState {
   p.spouse_bond = Math.min(100, p.spouse_bond + bondGain);
   p.health = Math.min(100, p.health + 2); p.hunger = Math.max(0, p.hunger - 3);
   const sn: EvtParam = p.spouse_seed != null ? { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] } : (p.spouse_name || "");
-  push(s, "evlilik", `${p.spouse_name || "Eşin"} ile baş başa bir gün geçirdiniz; bağınız pekişti.`, "kişisel", false, { k: (Math.random() < 0.5 ? "evj.spouseTime2." : "evj.spouseTime3.") + miz, p: [sn] });
+  // Derin bağın kendi anı: yıllar geçmiş, bağ 85+ ise ara sıra mizaç ötesi bir sükût sahnesi (uzun evliliğin ödülü)
+  if ((p.spouse_bond || 0) >= 85 && Math.random() < 0.35) {
+    push(s, "evlilik", `${p.spouse_name || "Eşin"} ile söze gerek kalmadan bir öğle geçti; bir bakış bir cümleyi tamamladı. Yıllar iki nefesi tek nefes yapmış.`, "kişisel", false, { k: "evj.spouseDeep", p: [sn] });
+  } else {
+    push(s, "evlilik", `${p.spouse_name || "Eşin"} ile baş başa bir gün geçirdiniz; bağınız pekişti.`, "kişisel", false, { k: (Math.random() < 0.5 ? "evj.spouseTime2." : "evj.spouseTime3.") + miz, p: [sn] });
+  }
   return s;
 }
 // Evlatlarınla ilgilen: en küçüğün yaşına göre bir sahne — soy isim listesi değil, büyüyen hayatlar (turda tek).
