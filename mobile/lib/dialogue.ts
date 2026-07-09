@@ -53,12 +53,12 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
     const backfire = t === "kibirli" || t === "ciddi" || mt === "küs";
     if (backfire) return { line: pick("dlg.iltifat.bad", 3), moodDelta: -3, relDelta: -2, memory: L("dlg.iltifat.bad.m") };
     const gain = 5 + Math.floor(charisma);
-    return { line: pick("dlg.iltifat.good", 3), moodDelta: 8, relDelta: gain, memory: L("dlg.iltifat.good.m") };
+    return { line: pick("dlg.iltifat.good", 4), moodDelta: 8, relDelta: gain, memory: L("dlg.iltifat.good.m") };
   }
   if (intent === "dert") {
     const opens = t === "dertli" || t === "yalnız" || t === "sıcakkanlı" || t === "sabırlı" || rt !== "yabancı";
     if (!opens) return { line: pick("dlg.dert.closed", 3), moodDelta: 1, relDelta: 2, memory: L("dlg.dert.closed.m") };
-    return { line: pick("dlg.dert.open", 3), moodDelta: 10, relDelta: 8, memory: L("dlg.dert.open.m") };
+    return { line: pick("dlg.dert.open", 4), moodDelta: 10, relDelta: 8, memory: L("dlg.dert.open.m") };
   }
   if (intent === "is") {
     const pn = professionNameL(npc.profession, lang);
