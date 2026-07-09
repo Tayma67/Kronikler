@@ -18,7 +18,7 @@ export interface Player {
   married: boolean; spouse_name: string | null; children: string[];
   spouse_is_player?: boolean; // çok oyuncu: eş başka bir GERÇEK oyuncu → yerel sim onu öldüremez (desync önlenir)
   widowed?: boolean; // eşi vefat etmiş (dul); married=false olur ama anı/eulogy için iz kalır
-  mother?: string; father?: string; mother_dead?: boolean; father_dead?: boolean; // ebeveynler de fanidir; oyuncu yaşlandıkça birer kez vefat eder
+  mother?: string; father?: string; mother_dead?: boolean; father_dead?: boolean; mother_frail?: boolean; father_frail?: boolean; // ebeveynler de fanidir; oyuncu yaşlandıkça birer kez vefat eder (frail: göçüşten önce tek bir yaşlanma haberi)
   parent_bond?: number; // anne-babayla bağ 0-100 (ziyaret besler; vefat acısı ve küçük miras bağa oranlı; eski kayıtta yoksa 45 sayılır)
   parent_visit_turn?: number; // bu ay ebeveyn ziyareti yapıldı mı (turda tek — bağ farmı önlenir)
   mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
@@ -1492,6 +1492,17 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
       p.married = false; p.widowed = true; p.spouse_mizac = undefined; p.health = Math.max(1, p.health - (4 + Math.round((p.spouse_bond ?? 40) / 12))); p.spouse_bond = undefined; bumpNam(p, "dindar", 2); // acı, bağın derinliğine oranlı
       push(s, "evlilik", `Ömür arkadaşın ${p.spouse_name} vefat etti; ocağın yarısı söndü. Diyar yasını paylaştı.`, "kişisel", true, { k: "evj.spouseDied", p: [{ fn: [p.spouse_seed, sg] }] });
+    }
+  }
+  // ── Anne-baba yaşlanır: göçüşten önce sessiz bir haber (yoldaşın "old" beati gibi) — veda birden gelmesin. ──
+  if (!p.dead && p.age >= 38) {
+    if (!p.mother_dead && p.mother && !p.mother_frail && chance(0.05)) {
+      p.mother_frail = true;
+      push(s, "gunluk", `Annen ${p.mother} artık eskisi gibi değil; elleri işte ağırlaştı, sesi inceldi. Onu her görüşünde bir kez daha, biraz daha uzun sarılıyorsun.`, "kişisel", false, { k: "evj.motherFrail", p: [{ fn: [p.mother_seed ?? 0, "kadın"] }] });
+    }
+    if (!p.father_dead && p.father && !p.father_frail && chance(0.05)) {
+      p.father_frail = true;
+      push(s, "gunluk", `Baban ${p.father} bastonuna daha çok yükleniyor; anlattığı hikâyeler kısaldı ama gözündeki ışık aynı. Vakit hızlanıyor, sen onun yanında yavaşlıyorsun.`, "kişisel", false, { k: "evj.fatherFrail", p: [{ fn: [p.father_seed ?? 0, "erkek"] }] });
     }
   }
   // ── Anne-baba da fanidir: çocukluğunun direkleri, sen olgunlaştıkça (onlar daha yaşlı) birer kez göçer. ──
