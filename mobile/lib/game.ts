@@ -5289,7 +5289,7 @@ export function tendChild(prev: GameState): GameState {
 // ── Ay-içi mikro an: panoda beliren tek satırlık, atlanabilir seçim — "aynı üç buton" hissini kırar.
 // Etkiler bilinçli olarak minicik: iki seçenek de geçerli, farm yok (an rastgele düşer, ertesi ay kaybolur).
 export const MICRO_IDS = ["saganak", "sokak_kedisi", "cirak_tabla", "eski_turku", "yol_soran", "yildiz_gecesi", "nalbant_kivilcimi", "harman_yeli", "bekci_feneri", "kuyu_kovasi", "pazarci_terazisi", "kirlangic_yuvasi", "degirmen_tasi", "gurbet_mektubu", "firin_koru", "cesme_olugu", "kacan_esek", "dugun_davulu", "semerci_ciragi", "ikindi_golgesi", "kar_lapasi", "sahaf_tezgahi", "kopru_dilencisi", "hamal_dengi", "tandir_dumani", "at_nali", "camasir_ipi", "sira_kazani", "ogul_arisi", "tikali_arik", "kandil_feneri", "devrilen_tezgah", "sokak_calgicisi", "yagmur_sonrasi"];
-export const MICRO_KID_IDS = ["misket_meydani", "leylek_yuvasi", "kagit_gemi", "agac_ucurtmasi", "kuzu_sayimi", "dere_bendi", "salincak_ipi"]; // 6-12 yaş bandının kendi anları
+export const MICRO_KID_IDS = ["misket_meydani", "leylek_yuvasi", "kagit_gemi", "agac_ucurtmasi", "kuzu_sayimi", "dere_bendi", "salincak_ipi", "cember_cevirme", "asik_oyunu"]; // 6-12 yaş bandının kendi anları
 const MICRO_R_TR: Record<string, [string, string]> = {
   kandil_feneri: [
     "Fenerler elden ele senin elinle geçti; avlu yıldız tarlasına döndü. İmam dua ederken adını andı.",
@@ -5314,6 +5314,14 @@ const MICRO_R_TR: Record<string, [string, string]> = {
   salincak_ipi: [
     "Dala tırmanıp ipi sağlam bağladın; ilk sallanış hakkı senin oldu. Çınar bir yaz boyu gıcırdadı, kimse düşmedi.",
     "Kayıkçı düğümünü aşağıda gösterdin; ip dalda ilk denemede tuttu. Artık her salıncak ipini sana getiriyorlar.",
+  ],
+  cember_cevirme: [
+    "Değneği çemberin içine tam açıyla vurdun; çember sokağın sonuna dek yuvarlandı, ardından koştun. Rüzgâr kulağında, dünya çemberin içinde.",
+    "Küçük komşu çocuğuna çevirmeyi öğrettin; üçüncü denemede tutturdu, sevinci sokağı doldurdu. Öğretmek de bir oyunmuş.",
+  ],
+  asik_oyunu: [
+    "Aşığı tam 'cik' diye attın; sıra dizilen aşıkları bir vuruşta topladın. Cebin doldu, arkadaşların hayran.",
+    "Kaybedince tek aşığını da verdin, homurdanmadın; ertesi gün rakibin kendi aşığını geri getirdi. Mertlik oyundan büyük.",
   ],
   ogul_arisi: [
     "Duman tüttü, sepet dala kalktı; oğul vızıltıyla içeri aktı. Arıcı ilk balı senin adına ayırdı.",
@@ -5425,6 +5433,8 @@ export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
   else if (id === "kuzu_sayimi") { if (choice === 0) addStatXp(s, "intelligence", 2); else { addStatXp(s, "stamina", 2); p.health = Math.min(100, p.health + 1); } }
   else if (id === "dere_bendi") { if (choice === 0) addStatXp(s, "strength", 2); else addStatXp(s, "intelligence", 2); }
   else if (id === "salincak_ipi") { if (choice === 0) addStatXp(s, "stamina", 2); else { addStatXp(s, "intelligence", 2); gainSkill(s, "social", 1); } }
+  else if (id === "cember_cevirme") { if (choice === 0) { addStatXp(s, "stamina", 2); addStatXp(s, "intelligence", 1); } else { gainSkill(s, "social", 2); } }
+  else if (id === "asik_oyunu") { if (choice === 0) { addStatXp(s, "intelligence", 2); } else { p.honor = Math.min(100, p.honor + 1); gainSkill(s, "social", 1); } }
   const rtr = MICRO_R_TR[id];
   push(s, "gunluk", rtr ? rtr[choice] : "", "kişisel", false, { k: `micro.${id}.r${choice}` });
   return s;
