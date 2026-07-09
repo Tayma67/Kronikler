@@ -2,6 +2,17 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 525-527 eki (9 Temmuz, gece) — VEDANIN TAMAMLANMASI VE ALTIN OCAK
+
+**Tek cümle (mağaza/what's new):**
+TR: "Ana-baba arkı kapandı ve yaşayan evlilik tacını kazandı: göçen anne için mezar taşına dökülen su ve bir Fatiha, göçen baba için avucunun izi kalan eski alet — anma yalnız o ebeveyn vefat etmişse gelir. Aynı eşle kırk yılı devirmek artık bir başarım: 'Altın Ocak' (99. başarım); ve bu uzun ömür mersiyede de ayrı anılıyor — çocuğu olmayan uzun evlilikte bile eş vedada yerini alıyor."
+EN: "The parents' arc comes full circle and the living marriage earns its crown: for a departed mother, a handful of water poured on the gravestone and a prayer; for a departed father, the old tool worn exactly where his palm rested — remembrance comes only if that parent has died. Sharing forty years with the same spouse is now an achievement, 'Golden Hearth' (the 99th); and that long life is honored in the eulogy too — even a childless long marriage gives the spouse their place in the farewell."
+
+**Öne çıkanlar:**
+- **Ebeveyn anma anı:** göçen anne/baba için, yalnız o ebeveyn vefat etmişse gelen bir anma — D523 yaşlanma habercisinin devamı (veda: haber → göçüş → anma).
+- **Altın Ocak (99. başarım):** aynı eşle kırk yılı devir — yaşayan evliliğin hak edilmiş tacı.
+- **Mersiyede kırk yıllık ocak:** uzun evlilik vedada ayrı anılır; çocuksuz uzun evlilik de artık eşi anar.
+
 ## Dalga 521-523 eki (9 Temmuz, akşam) — ÖMÜR BOYU YOLDAŞLIK VE VEDANIN HABERCİSİ
 
 **Tek cümle (mağaza/what's new):**
