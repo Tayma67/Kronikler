@@ -74,14 +74,14 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
     return { line: pick("dlg.dunya.line", 5), moodDelta: 3, relDelta: 3, memory: L("dlg.dunya.m") };
   }
   if (intent === "hedef") {
-    const line = pick("dlg.hedef.line", 3).replace("%g", goalL(npc.goal, lang));
+    const line = pick("dlg.hedef.line", 4).replace("%g", goalL(npc.goal, lang));
     return { line, moodDelta: rt === "yabancı" ? 2 : 7, relDelta: rt === "yabancı" ? 2 : 6, memory: L("dlg.hedef.m") };
   }
   // şaka
   const likes = t === "neşeli" || t === "sıcakkanlı";
   const dislikes = t === "ciddi" || t === "dindar" || t === "kibirli";
   if (dislikes && mt !== "neşeli") return { line: pick("dlg.saka.bad", 3), moodDelta: -4, relDelta: -3, memory: L("dlg.saka.bad.m") };
-  if (likes) return { line: pick("dlg.saka.good", 3), moodDelta: 12, relDelta: 7, memory: L("dlg.saka.good.m") };
+  if (likes) return { line: pick("dlg.saka.good", 4), moodDelta: 12, relDelta: 7, memory: L("dlg.saka.good.m") };
   return { line: pick("dlg.saka.mild", 3), moodDelta: 5, relDelta: 4, memory: L("dlg.saka.mild.m") };
 }
 
