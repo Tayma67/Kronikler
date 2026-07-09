@@ -1092,6 +1092,25 @@ export const DILEMMAS: Dilemma[] = [
       { label: "Sırrı kendine sakla", delta: { money: 40, reputation: -2 }, result: "Yöntem yalnız senin elinde; işlerin ayrı bir itibar gördü, kesen doldu. Ama bazen örsün başında ustanın son sözü kulağında çınlıyor: 'zanaat yaşasın' demişti." },
     ],
   },
+  // ── Taze ahlak ikilemleri ──
+  {
+    id: "bulunan_kese", icon: "coins", title: "Bulunan Kese",
+    text: "Çarşı dönüşü ayağın bir şeye takıldı: ağzı bağlı, dolu bir kese. Etrafta arayan telaşlı kimse yok; içindeki akçe bir aylık geçimine bedel. Cebine mi, tellala mı?",
+    when: (p) => p.age >= 15 && p.age < 55,
+    choices: [
+      { label: "Tellala ver, sahibini bul", delta: { honor: 4, reputation: 2, nam: { mert: 1 } }, result: "Keseyi tellala teslim ettin; üç gün sonra sahibi çıkageldi, gözleri dolu. İçinden bir avuç akçe çıkarıp uzattı: 'Helal olsun.' Aldığın az, adın çok kazandı." },
+      { label: "Kimse görmedi — cebine at", delta: { money: 30, honor: -3 }, result: "Keseyi cebe indirdin; bir aylık dert bir günde kalktı. Ama çarşıdan her geçişte içinden biri 'ya sahibi de senin gibi dar gündeyse' diye soruyor." },
+    ],
+  },
+  {
+    id: "yalanci_sahit", icon: "scales", title: "Yalancı Şahit",
+    text: "Nüfuzlu bir tüccar seni kenara çekti: bir davada lehine şahitlik edersen kesen dolacak. Oysa gördüğün, onun anlattığının tam tersi. Kadı yarın seni çağıracak.",
+    when: (p) => p.age >= 20 && p.age < 60,
+    choices: [
+      { label: "Doğruyu söyle, rüşveti reddet", delta: { honor: 5, reputation: 3, nam: { mert: 2 } }, result: "Kadı huzurunda gördüğünü olduğu gibi söyledin; tüccar kıpkırmızı oldu. Kesen dolmadı ama sözün bir mühür değerinde artık — çarşıda 'onun şahitliği senettir' diyorlar." },
+      { label: "Para al, dediğini söyle", delta: { money: 35, honor: -5, fear: 1 }, result: "İstediği gibi konuştun; kese ağırdı. Ama dava biteli aylar oldu, hâlâ o adamın gözünde bir borçlu gibisin — yalanın bedeli akçeyle bitmiyor." },
+    ],
+  },
   // ── Şöhret ikilemleri: adın senden önce yürüyünce ──
   {
     id: "adini_tasiyan", icon: "star", title: "Adını Taşıyan Çocuk",
