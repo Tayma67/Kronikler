@@ -52,63 +52,10 @@ export default function MpOyun() {
   const sRef = useRef<GameState | null>(s);
   useEffect(() => { sRef.current = s; }, [s]);
 
-  // MP karakterini ortak depoya koy (tüm /oyun alt-ekranları bunun üstünde çalışır).
-  // Sunucuda yedek varsa AYNI KARAKTERE DEVAM (çıkıp girince kaldığın yer); yoksa yeni hayat.
-  useEffect(() => {
-    if (mpMode || !guestId) return;
-    let init: GameState | null = null;
-    if (saved) { try { const r = JSON.parse(saved); if (r && r.player) init = { ...migrate(r), mpRealm: true }; } catch {} } // sunucu yedeği eski şemadan olabilir — SP ile aynı göç yolundan geçir
-    if (!init) init = { ...newGame(String(name || "Hanedan"), String(name || "Han"), mpGender), mpRealm: true };
-    // Yoklukta NPC-vekil yaşlandıysa/öldüyse dönüşte karaktere yansıt (sunucu otoritesi).
-    const meP = snapshot?.players.find((x) => x.id === guestId);
-    if (meP) { if (meP.dead) init.player.dead = true; if (typeof meP.age === "number" && meP.age > init.player.age) init.player.age = meP.age; }
-    enterMp(init);
-  }, [guestId, mpMode, saved]);
-
-  // İlk kamu senkronu + ilk yedek
-  useEffect(() => {
-    if (mpMode && s && guestId && snapshot && !synced.current) { synced.current = true; syncPlayer(mePublic(guestId, s, ready)); saveState(JSON.stringify(s)); }
-  }, [mpMode, s, guestId, snapshot]);
-
-  // Sunucu tick'i → dünya ayı ilerledi: yerel karakteri 1 ay ilerlet + çapraz etkiler + senkron
-  useEffect(() => {
-    if (!lastTick || !guestId || !sRef.current) return;
-    if (lastTick.turn === processedTurn.current) return;
-    processedTurn.current = lastTick.turn;
-    let ns = advance(sRef.current, 1);
-    const mine = lastTick.results.find((r) => r.playerId === guestId);
-    if (mine && mine.events.length) {
-      ns = applyTickEvents(ns, mine.events);
-      const ym = realmYearMonth(lastTick.turn); // kişisel sonuçlar buharlaşmasın: ay damgalı kalıcı günlük (son 12)
-      setEvLines((prev) => [...mine.events.map((e) => {
-        const big = e.k.startsWith("mp.sefer.") || e.k.startsWith("mp.award.") || e.k === "mp.reis.elected"; // siyasi büyük anlar günlükte de nişanlı
-        const tx = `${big ? "❧ " : ""}${ym.year}/${ym.month} · ` + pf(t(e.k), ...(e.p || []));
-        return e.k.startsWith("mp.soc.letterGot") && e.p?.[0] ? { tx, letterFrom: String(e.p[0]) } : { tx };
-      }), ...prev].slice(0, 12));
-    }
-    apply(() => ns);
-    setReadyOpt(null);
-    syncPlayer(mePublic(guestId, ns, false));
-    saveState(JSON.stringify(ns)); // her ay sonunda sunucuya yedekle → çıkıp girince aynı karaktere devam
-  }, [lastTick]);
-
-  // Yokluğunda biriken kişisel olaylar (hediye altını, borç düşümü, düğün...) — katılımda sunucudan gelir, bir kez işlenir.
-  useEffect(() => {
-    if (!missed || !missed.length || !guestId || !sRef.current) return;
-    const ns = applyTickEvents(sRef.current, missed);
-    setBackDigest({ n: missed.length, gold: ns.player.money - sRef.current.player.money, lines: missed.slice(0, 8).map((e) => pf(t(e.k), ...(e.p || []))) });
-    setEvLines((prev) => [...missed.map((e) => {
-      const tx = t("mp.whileAway") + " · " + pf(t(e.k), ...(e.p || []));
-      return e.k.startsWith("mp.soc.letterGot") && e.p?.[0] ? { tx, letterFrom: String(e.p[0]) } : { tx };
-    }), ...prev].slice(0, 12));
-    apply(() => ns);
-    clearMissed();
-    syncPlayer(mePublic(guestId, ns, false));
-    saveState(JSON.stringify(ns));
-  }, [missed, guestId]);
-
-  // Çıkışta MP modundan çık (SP kaydı geri yüklenir)
-  useEffect(() => () => { exitMp(); }, []);
+  // NOT: Diyar oturumu (giriş / ilk-senkron / sunucu tick'i / yokluk olayları / çıkış) artık KÖKTEKİ
+  // <RealmSession> tarafından yönetiliyor. Bu ekran yalnızca "Diyar detayları" panelidir
+  // (taht / beylik / diplomasi / sohbet / oyuncular); hiçbir yaşam-döngüsü etkisi YOK — böylece
+  // ay-ilerletme çift işlenmez. Ana ekrandaki "Diyar" şeridinden açılır, mpMode zaten açıkken.
 
   if (!mpMode || !s || !snapshot) {
     return <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center" }}>
@@ -310,16 +257,8 @@ export default function MpOyun() {
             </View>
           </Pressable>); })()}
 
-        {/* Hayatını yönet — tüm kişisel ekranlar MP karakteri üstünde */}
-        <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.subtitle")}</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {LIFE_SCREENS.map((sc) => (
-            <Pressable key={sc.path} onPress={() => { hap("tap"); router.push(sc.path as never); }} style={{ width: "31%", alignItems: "center", paddingVertical: 12, borderRadius: 9, borderWidth: 1, borderColor: C.border, backgroundColor: C.card }}>
-              <GameIcon name={sc.icon} size={18} color={C.gold} />
-              <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 0.5, color: C.parchment, marginTop: 5, textAlign: "center" }}>{t(sc.key)}</Text>
-            </Pressable>
-          ))}
-        </View>
+        {/* NOT: Kişisel ekranlar (karakter/meslek/mektep...) buradan KALDIRILDI — hepsi ana oyun ekranındaki
+            gerçek sekmelerde, MP karakteri üstünde oynanır. Bu panel yalnız diyara özgü (paylaşımlı) işler içindir. */}
 
         {/* Paylaşımlı eylemler */}
         <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, marginTop: 18, marginBottom: 8 }}>{t("mp.realm").toUpperCase()}</Text>

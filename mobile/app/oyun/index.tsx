@@ -403,7 +403,7 @@ export default function Dashboard() {
         const ym = realmYearMonth(mpSnapshot.turn);
         const live = mpSnapshot.players.filter((x) => x.online && !x.dead).length;
         return (
-          <Pressable onPress={() => { hap("tap"); router.push("/oyun/iliskiler"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.07)" }}>
+          <Pressable onPress={() => { hap("tap"); router.push("/cok-oyunculu/oyun"); }} style={{ marginHorizontal: 12, marginTop: 8, padding: 11, borderRadius: 8, borderWidth: 1, borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(201,168,76,0.07)" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
               <GameIcon name="crown" size={13} color={C.gold} />
               <Text style={{ flex: 1, fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("mp.realm")}</Text>
