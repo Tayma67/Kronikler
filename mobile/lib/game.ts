@@ -1801,7 +1801,14 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (!p.dead && p.age >= 16 && !inJail(p) && chance(0.05)) {
     const dostlar = rosterAt(s, p.location_name).filter((n2) => (s.relationships?.[n2.id] ?? 0) >= 70 && n2.alive !== false);
     if (dostlar.length) {
-      const dn = rnd(dostlar).name;
+      const en = dostlar.map((n2) => ({ n2, r: s.relationships?.[n2.id] ?? 0 })).sort((a, b) => b.r - a.r)[0];
+      const dn = en.n2.name;
+      // Ömürlük dostluğun derin anı: ilişki 88+ ise ara sıra sözün bittiği yerdeki yoldaşlık
+      if (en.r >= 88 && Math.random() < 0.3) {
+        p.honor = Math.min(100, p.honor + 1);
+        push(s, "sohbet", `${dn} ile öyle bir dostluğunuz var ki artık selam bile fazla; bir bakış, bir baş sallayış yetiyor. Kaç kışı birlikte devirdiniz — kimin sırtını kime yasladığınız belli değil, ama ikiniz de biliyorsunuz.`, "kişisel", false, { k: "evj.dostDeep", p: [dn] });
+        return s;
+      }
       const fr = Math.random();
       if (fr < 0.34) { gainSkill(s, "social", 3); push(s, "sohbet", `Akşam kapı çalındı: ${dn}, koltuğunda bir testi, dilinde iki hikâye. Ocak başında gece kısaldı; dert bölüşüldü, yarı yarıya hafifledi.`, "kişisel", false, { k: "evj.dost1", p: [dn] }); }
       else if (fr < 0.67) { p.honor = Math.min(100, p.honor + 1); push(s, "sohbet", `${dn} yataklara düşmüş diye duydun; bir tas sıcak çorbayla kapısını çaldın. Ayrılırken elini sıkı sıkı tuttu: dost dediğin, gelenmiş.`, "kişisel", false, { k: "evj.dost2", p: [dn] }); }
