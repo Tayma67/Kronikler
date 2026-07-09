@@ -5312,7 +5312,7 @@ export function tendChild(prev: GameState): GameState {
 }
 // ── Ay-içi mikro an: panoda beliren tek satırlık, atlanabilir seçim — "aynı üç buton" hissini kırar.
 // Etkiler bilinçli olarak minicik: iki seçenek de geçerli, farm yok (an rastgele düşer, ertesi ay kaybolur).
-export const MICRO_IDS = ["saganak", "sokak_kedisi", "cirak_tabla", "eski_turku", "yol_soran", "yildiz_gecesi", "nalbant_kivilcimi", "harman_yeli", "bekci_feneri", "kuyu_kovasi", "pazarci_terazisi", "kirlangic_yuvasi", "degirmen_tasi", "gurbet_mektubu", "firin_koru", "cesme_olugu", "kacan_esek", "dugun_davulu", "semerci_ciragi", "ikindi_golgesi", "kar_lapasi", "sahaf_tezgahi", "kopru_dilencisi", "hamal_dengi", "tandir_dumani", "at_nali", "camasir_ipi", "sira_kazani", "ogul_arisi", "tikali_arik", "kandil_feneri", "devrilen_tezgah", "sokak_calgicisi", "yagmur_sonrasi"];
+export const MICRO_IDS = ["saganak", "sokak_kedisi", "cirak_tabla", "eski_turku", "yol_soran", "yildiz_gecesi", "nalbant_kivilcimi", "harman_yeli", "bekci_feneri", "kuyu_kovasi", "pazarci_terazisi", "kirlangic_yuvasi", "degirmen_tasi", "gurbet_mektubu", "firin_koru", "cesme_olugu", "kacan_esek", "dugun_davulu", "semerci_ciragi", "ikindi_golgesi", "kar_lapasi", "sahaf_tezgahi", "kopru_dilencisi", "hamal_dengi", "tandir_dumani", "at_nali", "camasir_ipi", "sira_kazani", "ogul_arisi", "tikali_arik", "kandil_feneri", "devrilen_tezgah", "sokak_calgicisi", "yagmur_sonrasi", "berber_aynasi", "degirmen_sirasi"];
 export const MICRO_KID_IDS = ["misket_meydani", "leylek_yuvasi", "kagit_gemi", "agac_ucurtmasi", "kuzu_sayimi", "dere_bendi", "salincak_ipi", "cember_cevirme", "asik_oyunu"]; // 6-12 yaş bandının kendi anları
 const MICRO_R_TR: Record<string, [string, string]> = {
   kandil_feneri: [
@@ -5330,6 +5330,14 @@ const MICRO_R_TR: Record<string, [string, string]> = {
   yagmur_sonrasi: [
     "Su birikintisinden atlayan çocuklara katıldın bir an; ayakkabın ıslandı, içindeki çocuk kurudu.",
     "Kemer gibi inen alacaya durup baktın; yanındaki ihtiyar 'her yağmurun bir sözü var' dedi, sen de inandın.",
+  ],
+  berber_aynasi: [
+    "Berber aynayı arkana tuttu; bir an kendine yabancı gibi baktın: ne zaman büyümüşsün? Tıraş bitti, düşünce sürdü.",
+    "Berber dükkânında iki laf, üç dedikodu; çıkarken yanağın da gönlün de ferahlamıştı. Kimi ustanın makası dile de biçki atar.",
+  ],
+  degirmen_sirasi: [
+    "Değirmen sırasında önündeki ihtiyar 'benimki az, sen geç' dedi; sıra bir anda insanlığa döndü. Un öğütüldü, gönül de.",
+    "Sıra beklerken değirmencinin çırağıyla laflayıp taşın dilini öğrendin; bir daha un alırken kulağın çarkta olacak.",
   ],
   dere_bendi: [
     "Koca taşları dizdin, aralarını çamurla sıvadın; öğlene küçük bir göl parladı. Kurbağalar bile gelip yerleşti.",
@@ -5450,6 +5458,8 @@ export function resolveMicro(prev: GameState, choice: 0 | 1): GameState {
   else if (id === "devrilen_tezgah") { if (choice === 0) { addStatXp(s, "stamina", 2); p.hunger = Math.min(100, p.hunger + 2); } else { gainSkill(s, "social", 2); p.reputation = Math.min(100, p.reputation + 1); } }
   else if (id === "sokak_calgicisi") { if (choice === 0) { p.reputation = Math.min(100, p.reputation + 1); gainSkill(s, "social", 1); } else gainSkill(s, "social", 2); }
   else if (id === "yagmur_sonrasi") { if (choice === 0) { p.health = Math.min(100, p.health + 1); gainSkill(s, "social", 1); } else addStatXp(s, "intelligence", 2); }
+  else if (id === "berber_aynasi") { if (choice === 0) { addStatXp(s, "intelligence", 1); p.health = Math.min(100, p.health + 1); } else gainSkill(s, "social", 2); }
+  else if (id === "degirmen_sirasi") { if (choice === 0) { p.honor = Math.min(100, p.honor + 1); gainSkill(s, "social", 1); } else { gainSkill(s, "crafting", 1); addStatXp(s, "intelligence", 1); } }
   else if (id === "misket_meydani") { if (choice === 0) { addStatXp(s, "intelligence", 2); gainSkill(s, "social", 1); } else addStatXp(s, "intelligence", 2); }
   else if (id === "leylek_yuvasi") { if (choice === 0) { p.health = Math.min(100, p.health + 1); gainSkill(s, "social", 1); } else addStatXp(s, "intelligence", 2); }
   else if (id === "kagit_gemi") { if (choice === 0) gainSkill(s, "social", 2); else { gainSkill(s, "crafting", 1); addStatXp(s, "intelligence", 1); } }
