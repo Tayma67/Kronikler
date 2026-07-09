@@ -1551,6 +1551,10 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         { text: "İlk kez birine gönül kaptırdın; dilin tutuldu.", k: "mem.love", fn: () => bumpNam(p, "capkin", 2) },
         { text: "Bir ihtiyardan iki çift söz dinledin, aklına kazıdın.", k: "mem.elder", fn: () => { p.skill_xp.social += 8; p.skills.social = skillLevel(p.skill_xp.social); } },
         { text: "Geç saatlere dek bir dostunla dertleştin.", k: "mem.friend" },
+        { text: "İlk kez alın terinle bir akçe kazandın; avucunda paradan ağır durdu.", k: "mem.firstWage", fn: () => { p.money += 3; } },
+        { text: "Şehrin surlarının bittiği yeri ilk kez gördün; ötede koca bir diyarın uzandığını o gün anladın.", k: "mem.firstHorizon" },
+        { text: "Bir işi ilk kez eline yüzüne bulaştırdın; o gece utandın ama sabah dişini sıkıp yeniden denedin.", k: "mem.firstFail", fn: () => addStatXp(s, "intelligence", 3) },
+        { text: "Pazarda bir ozanın türküsü içine işledi; sözlerini günlerce diline doladın.", k: "mem.firstSong" },
       );
     } else if (p.age < 46) {
       mem.push(
