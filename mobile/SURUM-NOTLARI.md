@@ -2,6 +2,19 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 510-515 eki (9 Temmuz, öğle sonrası) — YOLDAŞ SİMETRİSİ VE VİCDAN
+
+**Tek cümle (mağaza/what's new):**
+TR: "Dostluk da derinleşti: ilişki en yüksekteyken söze gerek kalmayan bir yoldaşlık anı; at da artık kısmetle geliyor — yol kenarında sakat bulup emekle iyileştirdiğin bir at yoldaş oluyor (kedi, köpek, at: üçü de organik gelir). İki taze vicdan sınavı: çarşıda bulunan dolu kese ve rüşvetli yalancı şahitlik. Diyarın ahvali kırk dokuza çıktı; dedikodu havuzu iyisiyle kötüsüyle dengelendi."
+EN: "Friendship deepens too: at the highest bond, a companionship that needs no words; the horse now arrives by fortune — a lamed stray you heal with effort becomes a companion (cat, dog, horse: all three arrive organically). Two fresh trials of conscience: a full purse found at the market, and a bribed false witness. Realm tidings rise to forty-nine; the gossip pool is balanced in both its kind and cruel voices."
+
+**Öne çıkanlar:**
+- **Derin dostluk:** ilişki 88'i aşınca ara sıra en yakın dostla söze gerek kalmayan an — derin bağlar üçlemesi (eş/evlat/dost) tamam.
+- **At kısmeti:** yol kenarında sakat, sahipsiz bir atı iyileştirip yoldaş edinme — kedi/köpek/at üçlüsü artık organik gelir, 'Üç Yoldaş' nişanı daha ulaşılır.
+- **İki vicdan sınavı:** Bulunan Kese ve Yalancı Şahit.
+- **Diyarın Ahvali +2 (49):** ustasının borcunu ödeyen çırak, çöken köprüde omuz omuza taşçılar.
+- **Dengelenmiş dedikodu:** dört kara söylentiye de ikinci ağız.
+
 ## Dalga 505-508 eki (9 Temmuz, öğle) — SON DORUK VE DERİN BAĞLAR
 
 **Tek cümle (mağaza/what's new):**
