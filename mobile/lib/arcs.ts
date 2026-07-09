@@ -218,6 +218,26 @@ export const ARCS: Arc[] = [
       ]},
     },
   },
+  {
+    id: "cukurdaki_yoldas", title: "Çukurdaki Yoldaş", icon: "sheep",
+    blurb: "Köpeğin üç gündür kayıp; pazarda bir tazı dövüştürücüsünün adı fısıldanıyor.",
+    when: (p) => !!p.dog && p.age >= 16,
+    start: "s1",
+    stages: {
+      s1: { id: "s1", text: "Köpeğin üç gündür yok; tası dolu, eşik boş. Pazarda bir fısıltı dolaşıyor: vadiden köpek toplayan biri varmış, gece yarıları terk edilmiş kervansarayın çukurunda tazı dövüştürüyormuş.", choices: [
+        { label: "İzi kendin sür", result: "Nal izleri ve sürüklenme çizgisi seni terk edilmiş kervansaraya götürdü; avludan boğuk havlamalar geliyor. Kalbin ağzında — içlerinden biri tanıdık.", delta: {}, next: "s2" },
+        { label: "Tellal tut, ödül koy (−15)", result: "Tellalın sesi üç mahalle öteye ulaştı; akşam bir çoban çocuğu kapına geldi: kervansarayda havlamalar duymuş, ürkütücü adamlar görmüş.", delta: { money: -15 }, next: "s2" },
+      ]},
+      s2: { id: "s2", text: "Kervansaray avlusunda meşale ışığı: ortada çukur, kenarda kafesler — birinde senin köpeğin. Dövüştürücü kalın sesle konuştu: Mal artık benim. İstersen bedelini öde, istersen çukurun kenarından seyret.", choices: [
+        { label: "Bedeli öde, yoldaşını kurtar (−40)", result: "Keseyi fırlattın; kafes açıldı. Köpeğin önce sana değil, çukurdaki yaralı tazıya koştu — yaladı, sonra yanına döndü. İkiniz de arkanıza bakmadan çıktınız.", delta: { money: -40, honor: 2 }, next: "s3" },
+        { label: "Kadının zaptiyeleriyle bas", result: "Gece yarısı zaptiyelerle döndünüz; çukur dağıtıldı, kafesler açıldı, dövüştürücü zindanı boyladı. Kargaşada köpeğin bir bıçak sıyrığı aldı — yarası kapanır, korkusu değil.", delta: { honor: 4, reputation: 3, fame: 2 }, next: "s3" },
+      ]},
+      s3: { id: "s3", text: "Dönüş yolunda köpeğin her on adımda durup sana baktı; geldiğine hâlâ inanamıyor gibi. Kapıda bir karar bekliyor: çukurdan kurtulan öteki tazı da peşinizden gelmiş, yolun karşısına oturmuş.", choices: [
+        { label: "Ona da bir tas koy", result: "Tası eşiğin yanına koydun; tazı yaklaşmadı ama gitmedi de. Artık mahallenin köpeği o — kimsenin değil, herkesin. Kapının önünden her geçişinde kuyruğu bir kez sallanıyor: sana.", delta: { reputation: 2, honor: 2 }, next: "end" },
+        { label: "Kapıyı kapat; ocak, ocaktır", result: "Kapıyı kapattın; tazı sabaha karşı gitmişti. Köpeğin üç gece eşikte yattı, kapıya değil yola bakarak. Hayat devam etti — yalnız bazı akşamlar uzaktan bir havlama geliyor, köpeğinin kulakları dikiliyor.", delta: {}, next: "end" },
+      ]},
+    },
+  },
 ];
 
 ARCS.push(
