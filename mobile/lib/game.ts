@@ -1618,6 +1618,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       if (p.pet) mem.push({ text: `İkindi uykusuna yattın; ${p.pet.n} göğsüne kuruldu. İkiniz de yaşlandınız — mırıltısı eskisinden yavaş, sana eskisinden yakın.`, k: "mem.oldCat", p: [p.pet.n] });
       if (p.dog) mem.push({ text: `Kapı önünde taşa oturdun; ${p.dog.n} başını dizine koydu. İkiniz de aynı yöne baktınız — geçen kervanlara değil, geçen yıllara.`, k: "mem.oldDog", p: [p.dog.n] });
     }
+    if (p.mother_dead && p.mother) mem.push({ text: `Annen ${p.mother}'in mezar taşına bir avuç su döktün; dilin kendiliğinden bir Fatiha'ya döndü. Gidenler gider, dua kalır.`, k: "mem.motherGrave", p: [p.mother], fn: () => bumpNam(p, "dindar", 1) });
+    if (p.father_dead && p.father) mem.push({ text: `Babandan kalan eski aleti eline aldın; sapındaki aşınma tam ${p.father}'in avucunun yeri. Bir zanaat, bir ad, bir de bu iz kaldı ondan.`, k: "mem.fatherGrave", p: [p.father] });
     const m = rnd(mem); m.fn?.();
     push(s, p.age < 13 ? "cocukluk" : "gunluk", m.text, "kişisel", false, { k: m.k, p: m.p });
   }
