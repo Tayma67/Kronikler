@@ -2711,6 +2711,8 @@ const WORLD_NEWS: string[] = [
   "%b hanında bir aşçı, yolcuların anlattığı yemekleri pişiriyormuş; %b2 kervancıları memleket kokusunu orada buluyor, kimi ağlayarak yiyormuş.",
   "%b değirmeninin taşı çatladı; un kıtlığı söylentisi %b2 pazarına düşmeden fırıncılar stok yapmaya başladı, ekmek bir gecede pahalandı.",
   "%b tekkesinde bir derviş kırk gündür susuyor; %b2'den kalkan ziyaretçiler yalnız yüzüne bakıp dönüyor, dönenler 'içim rahatladı' diyor.",
+  "%b'de bir çırak ustasının ölümünden sonra tezgâhı devraldı; ilk işini bedava yaptı, 'ustamın borcu' dedi — %b2 çarşısında bile konuşuldu.",
+  "%b ile %b2 arasında bir köprü çöktü; iki beyliğin taşçıları ilk kez omuz omuza çalışıyor, kavga bir yana bırakıldı.",
 ];
 function worldNews(s: GameState) {
   const i1 = Math.floor(Math.random() * BEYLIKS.length);
