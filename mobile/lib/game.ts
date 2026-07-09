@@ -5864,7 +5864,7 @@ function successionTick(s: GameState) {
 
 // ── Divan/Arzuhal: taç sahibinin huzuruna düşen dilekçeler — hükümdarlık soyut ferman menüsü değil, yüzü olan kararlar.
 // Etki dengesi bilinçli: halkı kollamak keseden yer ama otorite/itibar getirir; keseyi kollamak nam bedeli öder (farm yok: an rastgele düşer).
-export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit", "kacak_asker", "iki_imam", "leke_surulen", "eski_silah_arkadasi", "kayip_kervan", "zindan_affi", "sel_bendi", "sahte_tanik", "kuru_kuyu", "mukerrer_bac", "yanik_koy", "hekim_ucreti", "degirmen_kavgasi", "veba_soylenti", "koprucu_borcu", "gece_bekcisi", "sinir_cevizi", "sahipsiz_sandik", "iki_dugun", "yanlis_damga"];
+export const DIVAN_IDS = ["su_kavgasi", "yetim_arazisi", "sinir_haraci", "genc_mucit", "kacak_asker", "iki_imam", "leke_surulen", "eski_silah_arkadasi", "kayip_kervan", "zindan_affi", "sel_bendi", "sahte_tanik", "kuru_kuyu", "mukerrer_bac", "yanik_koy", "hekim_ucreti", "degirmen_kavgasi", "veba_soylenti", "koprucu_borcu", "gece_bekcisi", "sinir_cevizi", "sahipsiz_sandik", "iki_dugun", "yanlis_damga", "ac_yil", "esir_fidyesi"];
 const DIVAN_R_TR: Record<string, [string, string]> = {
   iki_dugun: [
     "Günü ikiye böldün: öğlen bir düğün, akşam öteki; davul ikisinde de sustu susmadı. İki gelin alayı yolda karşılaşınca birbirine şerbet ikram etti.",
@@ -5873,6 +5873,14 @@ const DIVAN_R_TR: Record<string, [string, string]> = {
   yanlis_damga: [
     "Defter düzeltildi, kâtibin bir aylığı kesildi; çiftçi tarlasına, mühür yerine döndü. 'Defter şaşar, divan şaşmaz' sözü o hafta çıktı.",
     "Defter defterdir dedin; tarla yazılana kaldı. Çiftçi divandan çıkarken kapıya bir avuç toprak bıraktı: 'Bari bu benim olsun.' O avuç toprak dilden dile büyüdü.",
+  ],
+  ac_yil: [
+    "Ambarı açtırdın; un çuvalları meydana dizildi, sıra sabaha dek eksilmedi. O kış kimse aç yatmadı; adın 'ekmek veren' diye anıldı, hazine yarıya indi.",
+    "Ambarı yaz günü için tuttun; kıtlıkta un pahalıya satıldı. Hazine doldu ama meydandaki bakışlar soğuktu — bir ihtiyar 'padişahın ambarı tok, halkı aç' dedi, söz duvarlara yazıldı.",
+  ],
+  esir_fidyesi: [
+    "Fidyeyi hazineden ödedin; esir düşen sipahiler zincirsiz döndü, anaları eşiğinde ağladı. Askerin gözünde artık 'bizi bırakmayan' oldun.",
+    "'Devletin parası fidyeye gitmez' dedin; esirler düşman elinde kaldı. Kese sağlam ama o gün divandan çıkan bir ananın çığlığı kulağında kaldı — bazı hesaplar akçeyle kapanmaz.",
   ],
   sinir_cevizi: [
     "Ağacın gövdesi kimin toprağındaysa ceviz onun, dalları kimin damına sarkıyorsa gölgesi onun dedin; iki komşu güldü, dava bitti. Hükmün atasözü gibi dilden dile gezdi.",
@@ -5928,6 +5936,8 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
   if (id === "veba_soylenti" && choice === 0 && p.money < 130) return s;
   if (id === "koprucu_borcu" && choice === 0 && p.money < 110) return s;
   if (id === "gece_bekcisi" && choice === 0 && p.money < 100) return s;
+  if (id === "ac_yil" && choice === 0 && p.money < 180) return s;
+  if (id === "esir_fidyesi" && choice === 0 && p.money < 150) return s;
   s.divan = null;
   p.divan_resolved = (p.divan_resolved || 0) + 1; // adil hükümdar sayacı
   if (id === "su_kavgasi") {
@@ -6003,6 +6013,14 @@ export function resolveDivan(prev: GameState, choice: 0 | 1): GameState {
   } else if (id === "yanlis_damga") {
     if (choice === 0) { p.crownAuthority = clamp100(crownAuthorityOf(p) + 4); p.reputation = Math.min(100, p.reputation + 4); bumpNam(p, "mert", 2); }
     else { p.honor = Math.max(0, p.honor - 5); p.reputation = Math.max(-100, p.reputation - 4); bumpNam(p, "zalim", 2); sowSeed(s, { kaynak: "divan_damga_magduru", hmin: 36, hmax: 120, agirlik: "buyuk", nesil: true, etki: { reputation: -6 } }); }
+  }
+  else if (id === "ac_yil") {
+    if (choice === 0) { p.money -= 180; p.crownAuthority = clamp100(crownAuthorityOf(p) + 7); p.reputation = Math.min(100, p.reputation + 6); bumpNam(p, "comert", 3); p.honor = Math.min(100, p.honor + 3); }
+    else { p.money += 90; p.reputation = Math.max(-100, p.reputation - 5); p.fear = Math.min(100, p.fear + 2); bumpNam(p, "zalim", 1); sowSeed(s, { kaynak: "divan_ac_yil", hmin: 24, hmax: 96, agirlik: "orta", nesil: true, etki: { reputation: -4 } }); }
+  }
+  else if (id === "esir_fidyesi") {
+    if (choice === 0) { p.money -= 150; p.crownAuthority = clamp100(crownAuthorityOf(p) + 6); p.reputation = Math.min(100, p.reputation + 5); bumpNam(p, "mert", 3); }
+    else { p.crownAuthority = clamp100(crownAuthorityOf(p) - 3); p.reputation = Math.max(-100, p.reputation - 4); p.fear = Math.min(100, p.fear + 2); }
   }
   const rtr = DIVAN_R_TR[id];
   push(s, "taht", rtr ? rtr[choice] : "", "kişisel", choice === 0, { k: `divan.${id}.r${choice}` });
