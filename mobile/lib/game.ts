@@ -6405,6 +6405,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "kapiyoldasi", name: "Kapı Yoldaşı",   desc: "Köpeğinle bağın 80 sınırını aşsın.",  icon: "sheep",       done: (s) => !!s.player.dog_bff },
   { id: "ucyoldas",    name: "Üç Yoldaş",      desc: "Kediyi, köpeği ve atı aynı ocakta buluştur.", icon: "compass", done: (s) => !!s.player.pet && !!s.player.dog && !!s.player.horse },
   { id: "sancaktar",   name: "Sancağı Taşıyan", desc: "Kayıp Sancaktar'ı yenerek onun yükünü devral.", icon: "banner", done: (s) => !!s.player.enc_won?.kayip_sancaktar },
+  { id: "gumus_ocak",  name: "Gümüş Ocak",     desc: "Aynı eşle çeyrek asrı devir.",       icon: "ring",        done: (s) => !!s.player.married && s.player.married_turn !== undefined && (s.turn - s.player.married_turn) >= 300 },
   { id: "altin_ocak",  name: "Altın Ocak",     desc: "Aynı eşle kırk yılı devir.",         icon: "ring",        done: (s) => !!s.player.married && s.player.married_turn !== undefined && (s.turn - s.player.married_turn) >= 480 },
   { id: "lonca2",   name: "Lonca Üstadı",    desc: "Bir loncada 60 itibar topla.",      icon: "crown",        done: (s) => Object.values(s.player.faction_standing || {}).some((v) => v >= 60) },
   { id: "bilge",    name: "Yaşlı Bilge",     desc: "70 yaşını gör.",                    icon: "prayer-beads", done: (s) => s.player.age >= 70 },
