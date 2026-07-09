@@ -2,6 +2,17 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 496-498 eki (9 Temmuz, öğleden önce) — SOKAĞIN VE ÇOCUKLUĞUN DOKUSU
+
+**Tek cümle (mağaza/what's new):**
+TR: "Günlük dokusu zenginleşti: meydanda kavalıyla adını dizeye katan sokak çalgıcısı ve yağmur sonrası birikintiden atlayan çocuklara katılma anı; çocukluğa değnekle çember çevirme ve toprağa dizilen aşıkları vuruşla toplama oyunları; bir de iyilik artık dedikoduya değer — seldeki dostunu saçından çekip çıkaran, pazarda önüne dikilen, tefeciyi sessizce savan ve gece yarısı riyasız secde eden dört yeni söylenti."
+EN: "Everyday texture grows richer: a street musician who weaves your name into a verse, and joining the children who leap through puddles after the rain; two childhood games — rolling a hoop with a stick, and sweeping knucklebones off the ground; and now good deeds are worth gossiping about too — four new rumors of a friend pulled from the flood by the hair, a lone stand in the market, a debt quietly cleared, a midnight prayer without show."
+
+**Öne çıkanlar:**
+- **Mikro an havuzu 34'e:** sokak çalgıcısı (adını dizeye katar) ve yağmur sonrası birikinti anı.
+- **Çocukluk oyunları 9'a:** çember çevirme ve aşık oyunu — kaybedince mertçe verme dalıyla.
+- **Dedikodunun iyi yüzü:** hayat kurtarma, arkadaşı savunma, borç kurtarma ve riyasız ibadet söylentilerine ikinci ağız.
+
 ## Dalga 482-494 eki (9 Temmuz, sabah) — YOLDAŞLIĞIN SON HALKALARI VE İNSAN SINAVLARI
 
 **Tek cümle (mağaza/what's new):**
