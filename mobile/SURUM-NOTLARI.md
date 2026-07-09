@@ -2,6 +2,17 @@
 
 Duyuru/mağaza "yenilikler" alanı için hazır özetler. En üstteki blok en güncel.
 
+## Dalga 517-519 eki (9 Temmuz, ikindi) — GÜNLÜK OYUN VE TAHTIN VİCDANI
+
+**Tek cümle (mağaza/what's new):**
+TR: "Günlük doku ve tahtın yükü zenginleşti: berber aynasında bir an kendine yabancı bakış, değirmen sırasında ihtiyara verilen sıra; çocukluğa sırrı olan topaç ustalığı ve kartopundan ağlayan küçüğe bırakılan kar kalesi; divanda iki büyük karar — kıtlıkta ambarı halka mı açarsın, esir düşen askere hazineden fidye mi ilke mi."
+EN: "Everyday texture and the burden of the throne both grow: a stranger's glance at yourself in the barber's mirror, giving up your place to an elder in the mill line; for childhood a top-spin with a secret and a snow-fort left to a crying little one; at the divan two great decisions — open the granary to the people in famine, and ransom captive soldiers from the treasury or set a principle."
+
+**Öne çıkanlar:**
+- **Mikro an 36'ya:** berber aynası ve değirmen sırası — şehir dokusu.
+- **Çocuk oyunları 11'e:** topaç ustalığı ve kar topu savaşı (ağlayan küçüğe kaleyi bırakma dalıyla).
+- **Divan 26'ya:** Aç Yıl (ambarı halka aç ya da pahalıya tut) ve Esir Fidyesi (hazineden öde ya da ilke koy) — tahtın vicdanını sınayan iki büyük karar.
+
 ## Dalga 510-515 eki (9 Temmuz, öğle sonrası) — YOLDAŞ SİMETRİSİ VE VİCDAN
 
 **Tek cümle (mağaza/what's new):**
