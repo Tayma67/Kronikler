@@ -79,6 +79,7 @@ export default function NpcDetail() {
   const { state, apply } = useGame();
   const { lang, t } = useI18n();
   const [line, setLine] = useState<string>("");
+  const [lineDelta, setLineDelta] = useState<number>(0);
   const [giftOpen, setGiftOpen] = useState(false);
   const allNpcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang, state?.player.location_name]);
   const graph = useMemo(() => (state ? npcSocialGraph(state.player.location_name, allNpcs) : {}), [state?.player.location_name, allNpcs]);
@@ -96,14 +97,16 @@ export default function NpcDetail() {
     .sort((a, z) => TIE_ORDER.indexOf(a.kind) - TIE_ORDER.indexOf(z.kind));
   const couldMarry = !state.player.dead && !state.player.married && state.player.age >= 18 && npc.age >= 18 && npc.gender !== state.player.gender;
   const canGoal = !state.player.dead && state.player.age >= 13 && !!npc.goal; // muradına ermiş NPC'nin hedefi kalmaz — yardım/istismar kapanır
-  // Bu ay bu kişiyle anlamlı bir etkileşim (sohbet/flört/hediye/dedikodu/hakaret) yapıldı mı — tur başına tek (farm önlenir).
-  const mingled = state.npc_state?.[npc.id]?.int_turn === state.turn;
+  // Kanal-bazlı kilit: her etkileşim (her sohbet niyeti + hediye/flört/dedikodu/hakaret/sadaka) ayrı ayrı ayda bir.
+  // "dert dinle" deyince "iltifat" kapanmaz — hepsi bağımsız, hepsi bir kez okunur; farm motor tarafında kapalı.
+  const acts = state.npc_state?.[npc.id]?.act_turns;
+  const usedAct = (key: string) => acts?.[key] === state.turn;
 
   const speak = (intent: string) => {
-    if (mingled) return;
-    let said = "";
-    apply((s) => { const r = talkWith(s, npc, intent, lang); said = r.line; return r.state; });
-    setLine(said);
+    if (usedAct("t:" + intent)) return;
+    let said = ""; let d = 0;
+    apply((s) => { const r = talkWith(s, npc, intent, lang); said = r.line; d = r.delta; return r.state; });
+    setLine(said); setLineDelta(d);
   };
 
   return (
@@ -164,10 +167,17 @@ export default function NpcDetail() {
         </View>
       )}
 
-      {/* Söylenen söz */}
+      {/* Söylenen söz — yanında ilişki etkisi (kişinin mizacına/ruh haline göre artı ya da eksi gelir) */}
       {line ? (
-        <View style={{ backgroundColor: C.card, borderLeftColor: C.gold, borderLeftWidth: 2.5, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 10 }}>
-          <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: 20 }}>{line}</Text>
+        <View style={{ backgroundColor: C.card, borderLeftColor: lineDelta < 0 ? C.blood : C.gold, borderLeftWidth: 2.5, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment, lineHeight: 20 }}>{line}</Text>
+            {lineDelta !== 0 ? (
+              <View style={{ paddingVertical: 2, paddingHorizontal: 7, borderRadius: 9, borderWidth: 1, borderColor: (lineDelta > 0 ? C.sage : C.blood) + "66", backgroundColor: (lineDelta > 0 ? C.sage : C.blood) + "1A" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, color: lineDelta > 0 ? C.sage : C.blood }}>{lineDelta > 0 ? "+" + lineDelta : lineDelta}</Text>
+              </View>
+            ) : null}
+          </View>
         </View>
       ) : null}
 
@@ -176,12 +186,6 @@ export default function NpcDetail() {
         <View style={{ paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border }}>
           <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 2.5, color: C.parchmentMuted }}>{t("npc.interaction")}</Text>
         </View>
-        {mingled && (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(201,168,76,0.06)" }}>
-            <GameIcon name="prayer-beads" size={12} color={C.goldDim} />
-            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, lineHeight: 15 }}>{t("npc.mingled")}</Text>
-          </View>
-        )}
         {martialLoad(state.player) > 0 && (couldMarry || canFlirt(state.player, npc, v)) ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(224,90,48,0.07)" }}>
             <GameIcon name="crossed-swords" size={12} color={C.ember} />
@@ -189,15 +193,15 @@ export default function NpcDetail() {
           </View>
         ) : null}
         {/* 14 yaş altı NPC'ye iş/hayal sorma — çocuğun mesleği/hedefi yok (boş tırnak saçmalığı önlenir). */}
-        {INTENTS.filter((it) => (npc.age >= 14 || it.id !== "is") && (it.id !== "hedef" || !!npc.goal)).map((it) => (
-          <Pressable key={it.id} disabled={mingled} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: mingled ? 0.4 : 1 })}>
+        {INTENTS.filter((it) => (npc.age >= 14 || it.id !== "is") && (it.id !== "hedef" || !!npc.goal)).map((it) => { const done = usedAct("t:" + it.id); return (
+          <Pressable key={it.id} disabled={done} onPress={() => { hap("tap"); speak(it.id); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: done ? 0.4 : 1 })}>
             <GameIcon name={it.icon} size={17} color={C.gold} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("dlg.intent." + it.id)}</Text>
-            <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
+            {done ? <Text style={{ fontFamily: F.display, fontSize: 9, color: C.goldDim }}>{t("soc.lock.done")}</Text> : <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>}
           </Pressable>
-        ))}
-        {/* Hediye */}
-        <Pressable disabled={mingled} onPress={() => setGiftOpen((o) => !o)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: mingled ? 0.4 : 1 })}>
+        ); })}
+        {/* Hediye — kendi kanalı: sohbetten bağımsız, ayda bir */}
+        <Pressable disabled={usedAct("gift")} onPress={() => setGiftOpen((o) => !o)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: usedAct("gift") ? 0.4 : 1 })}>
           <GameIcon name="gems" size={16} color={C.gold} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npc.gift")}</Text>
           <Text style={{ color: C.goldDim, fontSize: 15 }}>{giftOpen ? "⌄" : "›"}</Text>
@@ -259,16 +263,16 @@ export default function NpcDetail() {
           <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>{GIVE_MONEY_AMT} ⚜</Text>
         </Pressable>
         {canFlirt(state.player, npc, v) && (
-          <Pressable disabled={mingled} onPress={() => { hap("success"); apply((s) => flirtWith(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: mingled ? 0.4 : 1 })}>
+          <Pressable disabled={usedAct("flirt")} onPress={() => { hap("success"); apply((s) => flirtWith(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: usedAct("flirt") ? 0.4 : 1 })}>
             <GameIcon name="lyre" size={16} color={C.gold} />
             <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t("npca.flirtBtn")}</Text>
           </Pressable>
         )}
-        <Pressable disabled={state.player.dead || state.player.age < 13 || mingled} onPress={() => { hap("tap"); apply((s) => gossipAbout(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: (state.player.age < 13 || mingled) ? 0.45 : 1 })}>
+        <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("gossip")} onPress={() => { hap("tap"); apply((s) => gossipAbout(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: (state.player.age < 13 || usedAct("gossip")) ? 0.45 : 1 })}>
           <GameIcon name="speaker" size={16} color={C.parchment} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npca.gossipBtn")}</Text>
         </Pressable>
-        <Pressable disabled={state.player.dead || state.player.age < 13 || mingled} onPress={() => { hap("tap"); apply((s) => insultNpc(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: (state.player.age < 13 || mingled) ? 0.45 : 1 })}>
+        <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("insult")} onPress={() => { hap("tap"); apply((s) => insultNpc(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: (state.player.age < 13 || usedAct("insult")) ? 0.45 : 1 })}>
           <GameIcon name="skull" size={16} color={C.blood} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.blood }}>{t("npca.insultBtn")}</Text>
         </Pressable>
@@ -280,7 +284,7 @@ export default function NpcDetail() {
           {giftables.length === 0 ? (
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, textAlign: "center", paddingVertical: 8 }}>{t("npc.noGift")}</Text>
           ) : giftables.map((k) => (
-            <Pressable key={k} disabled={mingled} onPress={() => { hap("tap"); apply((s) => giftTo(s, npc, k)); setGiftOpen(false); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7, opacity: mingled ? 0.4 : 1 }}>
+            <Pressable key={k} disabled={usedAct("gift")} onPress={() => { hap("tap"); apply((s) => giftTo(s, npc, k)); setGiftOpen(false); }} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, padding: 11, marginBottom: 7, opacity: usedAct("gift") ? 0.4 : 1 }}>
               <View style={{ width: 32, height: 32, borderRadius: 7, backgroundColor: "rgba(201,168,76,0.08)", borderWidth: 1, borderColor: "rgba(201,168,76,0.22)", alignItems: "center", justifyContent: "center" }}>
                 <GameIcon name={giftIcon(ITEMS[k])} size={16} color={C.gold} />
               </View>

@@ -633,7 +633,11 @@ export function joinThreshold(p: Player, f: Faction): number { return p.perks.in
 
 export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; }
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; noteK?: string; causeK?: string; } // noteK: kitabe kimliği (6 dile çevrilir); note eski kayıtlar için TR yedek; causeK: ölüm nedeni kodu
-export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; } // int_turn: bu kişiyle bu ay anlamlı bir etkileşim (sohbet/flört/hediye/hakaret/dedikodu) yapıldı mı — tur başına tek, ilişki/beceri farmı önlenir
+export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; act_turns?: Record<string, number>; rel_gain_turn?: number; rel_gain_amt?: number; }
+// int_turn (eski): tek blok kilit — artık kullanılmıyor, eski kayıtlar için duruyor.
+// act_turns: her etkileşim KANALI (sohbet niyeti / hediye / flört / dedikodu / hakaret / sadaka) ayrı ayrı tur-kilidi;
+//   böylece "dert dinle" deyince "iltifat" kilitlenmez — her etkileşim ayda bir okunur, kanallar bağımsız.
+// rel_gain_turn/amt: bir kişiyle bir ayda SOHBETTEN kazanılabilecek olumlu ilişki tavanı (farm önlenir; olumsuz tepki tavansız).
 // İlişkinin etkin değeri: kalıcı taban + yapısal anıların toplam yükü (Vercel effective_rel).
 export function relWith(s: GameState, id: string): number {
   return effectiveRel(s.relationships[id] || 0, s.npc_state?.[id]?.anilar);
@@ -1140,6 +1144,19 @@ export function npcStateOf(s: GameState, id: string): NpcState {
   if (!s.npc_state) s.npc_state = {};
   if (!s.npc_state[id]) s.npc_state[id] = { mood: 0, memories: [] };
   return s.npc_state[id];
+}
+// Kanal-bazlı tur-kilidi: her etkileşim kanalı (ör. "t:iltifat", "gift", "flirt") bir kişiyle ayda bir; kanallar bağımsız.
+export function npcActUsed(ns: NpcState, key: string, turn: number): boolean { return ns.act_turns?.[key] === turn; }
+function markNpcAct(ns: NpcState, key: string, turn: number): void { if (!ns.act_turns) ns.act_turns = {}; ns.act_turns[key] = turn; }
+// Sohbetten bir ayda bir kişiyle kazanılabilecek azami OLUMLU ilişki — farm tavanı. Olumsuz tepki (geri tepen iltifat) tavansız işler.
+const REL_TALK_CAP = 12;
+function budgetTalkRel(ns: NpcState, turn: number, delta: number): number {
+  if (delta <= 0) return delta; // geri tepme / kötü şaka tam uygulanır
+  if (ns.rel_gain_turn !== turn) { ns.rel_gain_turn = turn; ns.rel_gain_amt = 0; }
+  const room = Math.max(0, REL_TALK_CAP - (ns.rel_gain_amt || 0));
+  const applied = Math.min(delta, room);
+  ns.rel_gain_amt = (ns.rel_gain_amt || 0) + applied;
+  return applied;
 }
 
 // Yerleşimler — şehir/köy/kale, beyliklere (region) bağlı. Seyahat ve atmosfer.
@@ -3323,12 +3340,14 @@ export function negotiatedSell(prev: GameState, id: string, price: number): Game
 }
 
 // İlişki: niyetli sohbet (bağlamlı), hediye ver.
-export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string = "tr"): { state: GameState; line: string } {
+export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string = "tr"): { state: GameState; line: string; delta: number } {
   const s = clone(prev); const p = s.player;
-  if (p.dead) return { state: s, line: "" };
+  if (p.dead) return { state: s, line: "", delta: 0 };
   const ns = npcStateOf(s, npc.id);
-  if (ns.int_turn === s.turn) return { state: s, line: "" }; // bu ay bu kişiyle görüşüldü — aynı turda tekrar konuşup ilişki/sosyal beceri farmlanamaz
-  ns.int_turn = s.turn;
+  // Kanal-bazlı kilit: bu NİYET bu ay bu kişiyle kullanıldıysa tekrar edilemez — ama diğer niyetler (iltifat/şaka/dert…) açık kalır.
+  const akey = "t:" + intent;
+  if (npcActUsed(ns, akey, s.turn)) return { state: s, line: "", delta: 0 };
+  markNpcAct(ns, akey, s.turn);
   const rel = s.relationships[npc.id] || 0;
   // NPC, sohbette etkin ilişkiye (taban + anılar) göre davranır — hatırladıkları konuşmasına yansır.
   const r: ConvResult = converse(npc, ns.mood, effectiveRel(rel, ns.anilar), socialPresence(p), intent, lang as any);
@@ -3339,7 +3358,9 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
     if (hasPerk(p, "dil_dokme")) relDelta *= 1.5;
     relDelta = Math.round(relDelta);
   }
-  s.relationships[npc.id] = Math.max(-100, Math.min(100, rel + relDelta));
+  // Olumlu kazanç ay-tavanına takılır (aynı kişiyle onlarca niyetle ilişki farmlanamaz); olumsuz tepki tam işler.
+  const applied = budgetTalkRel(ns, s.turn, relDelta);
+  s.relationships[npc.id] = Math.max(-100, Math.min(100, rel + applied));
   ns.mood = Math.max(-100, Math.min(100, ns.mood + r.moodDelta));
   ns.memories.push(r.memory);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
@@ -3356,19 +3377,22 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   if (intent === "hosbes" && Math.random() < 0.3) { const sp = spontaneousLine(npc, ns.mood, lang as any); if (sp) line = sp + " " + line; }
   const lastAni = ns.anilar && ns.anilar.length ? ns.anilar[ns.anilar.length - 1] : null;
   if (lastAni && Math.random() < 0.3) { const cb = callbackLine(npc, lastAni.tur, lang as any); if (cb) line = line + " " + cb; }
-  // Yapısal anı: sohbet sonucuna göre türlenir (decay'li, ilişkiye etkin).
-  const memTur = relDelta >= 8 ? "icten_sohbet" : relDelta > 0 ? "guzel_sohbet" : relDelta <= -3 ? "alay" : relDelta < 0 ? "rahatsizlik" : "guzel_sohbet";
-  remember(s, npc, memTur);
-  gainSkill(s, "social", 5);
+  // Yapısal ödül (anı + sosyal beceri) yalnız gerçek kazançta; tavan dolunca sonraki niyetler yalnız muhabbet olur (farm kapalı).
+  if (applied > 0) {
+    remember(s, npc, applied >= 8 ? "icten_sohbet" : "guzel_sohbet");
+    if (!npcActUsed(ns, "t:xp", s.turn)) { markNpcAct(ns, "t:xp", s.turn); gainSkill(s, "social", 5); } // sosyal beceri kişi başına ayda bir (beceri farmı önlenir)
+  } else if (relDelta < 0) {
+    remember(s, npc, relDelta <= -3 ? "alay" : "rahatsizlik"); // geri tepen tepki iz bırakır — gerçek sonuç
+  }
   push(s, "sohbet", `${npc.name}: ${line}`);
-  return { state: s, line };
+  return { state: s, line, delta: applied };
 }
 // Eski API ile uyumluluk (basit sohbet = hoşbeş).
 export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   const s = clone(prev); const p = s.player;
   if (!(p.inventory[itemId] > 0)) return s;
   const ns = npcStateOf(s, npc.id);
-  if (ns.int_turn === s.turn) return s; ns.int_turn = s.turn; // tur başına tek etkileşim — ucuz eşya yığınıyla ilişki farmlanamaz (mal da tüketilmez)
+  if (npcActUsed(ns, "gift", s.turn)) return s; markNpcAct(ns, "gift", s.turn); // hediye kanalı ayda bir — ucuz eşya yığınıyla ilişki farmlanamaz (mal da tüketilmez)
   if (QUALITY_GOODS.has(itemId)) takeQualityUnit(p, itemId); // hediye verilen kaliteli mal inv_q'da öksüz kalmasın
   p.inventory[itemId] -= 1; if (p.inventory[itemId] <= 0) delete p.inventory[itemId];
   const generous = npc.trait === "cömert" ? 4 : 0;
@@ -3443,7 +3467,7 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.money < GOAL_HELP_COST || !npc.goal) return s; // hedefi kalmayana (muradına ermiş/çocuk) yardım anlamsız
   const ns = npcStateOf(s, npc.id);
-  if (ns.int_turn === s.turn) return s; ns.int_turn = s.turn; // tur başına tek etkileşim (sohbet/hediye ailesiyle tutarlı)
+  if (npcActUsed(ns, "help", s.turn)) return s; markNpcAct(ns, "help", s.turn); // hayale yardım kanalı ayda bir (para maliyeti zaten sınırlar)
   p.money -= GOAL_HELP_COST;
   const rel = s.relationships[npc.id] || 0;
   // Azalan getiri: zaten yakın birine yardım daha az yakınlık/itibar getirir (farm engeli).
@@ -3551,7 +3575,7 @@ export function proposeArranged(prev: GameState, npc: NPC): GameState {
 export function insultNpc(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; if (p.dead || p.age < 13) return s;
   const ns = npcStateOf(s, npc.id); const rel = s.relationships[npc.id] || 0;
-  if (ns.int_turn === s.turn) return s; ns.int_turn = s.turn; // tur başına tek etkileşim
+  if (npcActUsed(ns, "insult", s.turn)) return s; markNpcAct(ns, "insult", s.turn); // hakaret kanalı ayda bir
   let drop = 8 + Math.floor(Math.random() * 8);
   if (npc.trait === "öfkeli") { drop += 5; p.fear = Math.min(100, p.fear + 2); } // öfkeli sert karşılık verir
   s.relationships[npc.id] = Math.max(-100, rel - drop);
@@ -3570,7 +3594,7 @@ export function flirtWith(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; const rel = s.relationships[npc.id] || 0;
   if (!canFlirt(p, npc, rel)) return s;
   const ns = npcStateOf(s, npc.id);
-  if (ns.int_turn === s.turn) return s; ns.int_turn = s.turn; // tur başına tek etkileşim — flört spam'iyle ilişki +100'e çıkarılamaz
+  if (npcActUsed(ns, "flirt", s.turn)) return s; markNpcAct(ns, "flirt", s.turn); // flört kanalı ayda bir — spam'le ilişki +100'e çıkarılamaz
   const ok = Math.random() < Math.min(0.9, 0.35 + (rel - 15) * 0.01 + socialPresence(p) * 0.04 + allureBonus(s));
   if (ok) {
     const up = 6 + Math.floor(Math.random() * 8);
@@ -3587,7 +3611,7 @@ export function flirtWith(prev: GameState, npc: NPC): GameState {
 export function gossipAbout(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; if (p.dead || p.age < 13) return s;
   const ns = npcStateOf(s, npc.id); const rel = s.relationships[npc.id] || 0;
-  if (ns.int_turn === s.turn) return s; ns.int_turn = s.turn; // tur başına tek etkileşim
+  if (npcActUsed(ns, "gossip", s.turn)) return s; markNpcAct(ns, "gossip", s.turn); // dedikodu kanalı ayda bir
   const ok = Math.random() < Math.min(0.85, 0.4 + (p.skills?.social || 0) * 0.05 + p.stats.charisma * 0.02);
   if (ok) {
     s.relationships[npc.id] = Math.max(-100, rel - 4); ns.mood = Math.max(-100, ns.mood - 4); bumpNam(p, "zalim", 2);
@@ -3602,7 +3626,7 @@ export const GIVE_MONEY_AMT = 10;
 export function giveMoneyTo(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; if (p.dead || p.money < GIVE_MONEY_AMT) return s;
   const ns = npcStateOf(s, npc.id); const rel = s.relationships[npc.id] || 0;
-  if (ns.int_turn === s.turn) return s; ns.int_turn = s.turn; // tur başına tek etkileşim — sadaka spam'iyle ilişki farm'lanamaz
+  if (npcActUsed(ns, "money", s.turn)) return s; markNpcAct(ns, "money", s.turn); // sadaka kanalı ayda bir — spam'le ilişki farm'lanamaz
   p.money -= GIVE_MONEY_AMT;
   const up = rel < 70 ? 9 : 3; // azalan getiri
   s.relationships[npc.id] = Math.min(100, rel + up); ns.mood = Math.max(-100, Math.min(100, ns.mood + 10));
