@@ -3592,7 +3592,12 @@ export function insultNpc(prev: GameState, npc: NPC): GameState {
 }
 export function canFlirt(p: Player, npc: NPC, rel: number): boolean {
   // Hem oyuncu hem NPC reşit (18+), karşı cins, yakınlık ≥15. Evli oyuncu da gönül eğlendirebilir (yasak ilişki) — sonuçları ağırdır.
-  return !p.dead && p.age >= 18 && npc.age >= 18 && npc.gender !== p.gender && rel >= 15;
+  // Kendi eşine flört YOK: evlenilen NPC roster'da kalır; ona "eş-vakti" düşer, yasak ilişki değil.
+  return !p.dead && p.age >= 18 && npc.age >= 18 && npc.gender !== p.gender && rel >= 15 && !isSpouseNpc(p, npc);
+}
+// Bu NPC oyuncunun kendi eşi mi (evlenilen NPC'nin seed'i spouse_seed olarak saklanır) — yasak ilişki eşi hedef alamaz.
+export function isSpouseNpc(p: Player, npc: NPC): boolean {
+  return !!p.married && p.spouse_seed != null && locSeed(npc.id) === p.spouse_seed;
 }
 // Bir NPC seed'ine göre evli mi (deterministik: aynı kişi hep aynı) — yetişkinlerin ~%58'i evli sayılır. Evli birine yürümek "yasak" kılar.
 export function npcSeededMarried(npc: NPC): boolean {
@@ -3664,7 +3669,7 @@ function exposeAffair(s: GameState, a: NonNullable<Player["affair"]>, sg: "erkek
     const spName = p.spouse_name || "Eşin";
     if (chance(0.45)) {
       // Boşanma: eş ocağı terk etti.
-      p.married = false; p.widowed = false; p.spouse_bond = undefined; p.spouse_mizac = undefined;
+      p.married = false; p.widowed = false; p.spouse_bond = undefined; p.spouse_mizac = undefined; p.spouse_name = null; p.spouse_seed = undefined; p.married_turn = undefined; // boşanma: eş kimliği tümüyle silinir (bayat ad/yıldönümü kalmasın)
       p.reputation = clampStat(p.reputation - 6);
       push(s, "evlilik", `${spName}, ${a.name} ile ilişkini öğrendi. Ne yalvarış fayda etti ne yemin: ocağı topladı, çekip gitti. Diyar bu skandalı yıllarca konuşacak.`, "kişisel", true, { k: "affair.divorce", p: [spName, a.name] });
     } else {
