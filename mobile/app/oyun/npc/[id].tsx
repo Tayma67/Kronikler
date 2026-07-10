@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
+import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
 import { useI18n } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
@@ -256,16 +256,25 @@ export default function NpcDetail() {
             <Text style={{ color: C.goldDim, fontSize: 15 }}>›</Text>
           </Pressable>
         ); })()}
-        {/* Evlenme teklifi */}
-        {couldMarry && (
-          <Pressable onPress={() => { if (courtable) { hap("success"); apply((s) => proposeMarriage(s, npc)); } }} disabled={!courtable} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: courtable ? "rgba(201,168,76,0.08)" : "transparent" }}>
-            <GameIcon name="evlilik" size={17} color={courtable ? C.gold : C.parchmentMuted} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.serif, fontSize: 14, color: courtable ? C.gold : C.parchmentMuted }}>{t("npc.propose")}</Text>
-              {!courtable && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 1 }}>{t("npc.proposeReq")}</Text>}
-            </View>
-          </Pressable>
-        )}
+        {/* Söz kesilmiş: bu kişiyle nişanlısın, boşanmasını bekliyorsun */}
+        {state.player.betrothed?.id === npc.id ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: "rgba(192,85,107,0.08)" }}>
+            <GameIcon name="ring" size={17} color={C.roseDim} />
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.roseDim }}>{t("npc.betrothed")}</Text>
+          </View>
+        ) : couldMarry && (() => {
+          const wed = npcSeededMarried(npc); // evli birine teklif: kabul ederse önce boşanması gerekir
+          return (
+            <Pressable onPress={() => { if (courtable) { hap("success"); apply((s) => proposeMarriage(s, npc)); } }} disabled={!courtable} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: courtable ? "rgba(201,168,76,0.08)" : "transparent" }}>
+              <GameIcon name="evlilik" size={17} color={courtable ? C.gold : C.parchmentMuted} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.serif, fontSize: 14, color: courtable ? C.gold : C.parchmentMuted }}>{t("npc.propose")}</Text>
+                {!courtable ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 1 }}>{t("npc.proposeReq")}</Text>
+                  : wed ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.roseDim, marginTop: 1 }}>{t("affair.warnTheirs")}</Text> : null}
+              </View>
+            </Pressable>
+          );
+        })()}
         {/* Ek etkileşimler (Vercel npc_interactions): para / flört / dedikodu / hakaret */}
         <Pressable onPress={() => { if (state.player.money >= GIVE_MONEY_AMT) { hap("tap"); apply((s) => giveMoneyTo(s, npc)); } }} disabled={state.player.money < GIVE_MONEY_AMT} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
           <GameIcon name="akce" size={16} color={state.player.money >= GIVE_MONEY_AMT ? C.gold : C.parchmentMuted} />

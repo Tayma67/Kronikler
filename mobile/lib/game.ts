@@ -29,6 +29,7 @@ export interface Player {
   affair?: { id: string; name: string; seed: number; gender: "erkek" | "kadın"; heat: number; months: number; theirs: boolean }; // yasak ilişki: gizli sevgili (heat: ateş 0-100, theirs: karşı taraf evli mi). Evli oyuncu ihanet eder; ifşa olursa ocak yıkılır. Piç doğabilir.
   bastards?: number; // yasak ilişkiden doğan gayrimeşru evlat sayısı (ömürlük iz; itibar lekesi)
   affair_exposed_turn?: number; // son ifşa turu (art arda skandal spam'i önlenir)
+  betrothed?: { id: string; name: string; seed: number; gender: "erkek" | "kadın"; months: number }; // evli birine söz kestin: o önce kendi ocağını dağıtmalı — aylar içinde ya boşanıp seninle evlenir ya vazgeçer
   inventory: Record<string, number>; properties: Property[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
@@ -1413,6 +1414,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.married_turn = s.turn; p.spouse_bond = 35; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); { const mv2 = chance(0.5); push(s, "evlilik", mv2 ? `Davul üç gün sustu susmadı; ${name} ile aynı ocağın başına oturdunuz. Evin eşiği o gün iki kez öpüldü.` : `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: mv2 ? "evj.marry2" : "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); } }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); { const bv2 = chance(0.5); push(s, "doğum", bv2 ? `Eve bir nefes daha katıldı: ${c}. Beşik baş köşeye kuruldu; o gece kimse erken uyumadı.` : `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: bv2 ? "evj.childBorn2" : "evj.childBorn", p: [c] }); } }
   affairTick(s); // yasak ilişki: ateş soğur, piç doğabilir, ifşa yuvarlanır (evli/bekâr sonuçları exposeAffair'de)
+  betrothalTick(s); // evli birine kesilen söz: aylar içinde boşanıp evlenir ya da vazgeçer
   // Evlilik yıldönümü: her 12 ayda bir ocak tazelenir — otomatik, küçük, farm'sız (eski kayıtta married_turn yoksa sessizce atlanır).
   if (p.married && p.married_turn !== undefined && s.turn > p.married_turn && (s.turn - p.married_turn) % 12 === 0) {
     const years = Math.floor((s.turn - p.married_turn) / 12);
@@ -3526,9 +3528,15 @@ export function canCourt(p: Player, npc: NPC, rel: number): boolean {
 export function proposeMarriage(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; const rel = s.relationships[npc.id] || 0;
   if (!canCourt(p, npc, rel)) return s;
+  if (p.betrothed) return s; // zaten birine söz kestin — o çözülmeden yeni söz olmaz
   const karizmaBonus = hasPerk(p, "karizmatik") ? 0.2 : 0;
   const ok = Math.random() < Math.min(0.97, 0.25 + (rel - 50) * 0.012 + socialPresence(p) * 0.03 + karizmaBonus + courtBonus(s));
-  if (ok) {
+  if (ok && npcSeededMarried(npc)) {
+    // Evli birine teklif: kabul eder ama önce kendi ocağını dağıtması gerekir — söz kesilir, evlilik aylar sonra (betrothalTick).
+    p.betrothed = { id: npc.id, name: npc.name, seed: locSeed(npc.id), gender: npc.gender, months: 0 };
+    bumpNam(p, "capkin", 3);
+    push(s, "sohbet", `${npc.name} yüzü kızararak baktı: "Gönlüm seninle ama önce kendi ocağımı dağıtmam lazım. Bana biraz zaman ver." Söz kesildi; şimdi bekleme sırası sende.`, "kişisel", true, { k: "evj.betrothWait", p: [npc.name] });
+  } else if (ok) {
     p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(s.relationships[npc.id] || 40))); p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
     bumpNam(p, "capkin", 5);
     push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
@@ -3537,6 +3545,28 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
     push(s, "sohbet", `${npc.name} teklifini şimdilik geri çevirdi. Vakit ister.`, "kişisel", false, { k: "evj.proposeNo", p: [npc.name] });
   }
   return s;
+}
+// ── Söz kesilen evlinin boşanma süreci: aylar içinde ya boşanıp seninle evlenir ya vazgeçer (rollLifeEvents'ten). ──
+function betrothalTick(s: GameState) {
+  const p = s.player;
+  if (p.dead || !p.betrothed) return;
+  if (p.married) { p.betrothed = undefined; return; } // arada başkasıyla evlendiysen söz düşer
+  const b = p.betrothed;
+  b.months += 1;
+  if (b.months < 2) return; // boşanma bir çırpıda olmaz — en az birkaç ay
+  const sg = b.gender;
+  const nameParam: EvtParam = { fn: [b.seed, sg] };
+  if (chance(0.35)) {
+    // Boşandı ve seninle evlendi — dillere düşen bir evlilik.
+    p.married = true; p.married_turn = s.turn; p.spouse_bond = 45; p.spouse_name = b.name; p.spouse_seed = b.seed; p.spouse_mizac = undefined; p.widowed = false;
+    p.fame = Math.min(100, p.fame + 6); p.reputation = clampStat(p.reputation - 4); bumpNam(p, "capkin", 4);
+    p.betrothed = undefined;
+    push(s, "evlilik", `${b.name} sonunda kendi ocağını dağıttı ve seninle evlendi. Diyar bu evliliği uzun süre konuşacak — kimi kutladı, kimi kaş çattı.`, "kişisel", true, { k: "evj.betrothWed", p: [nameParam] });
+  } else if (chance(0.18) || b.months >= 10) {
+    // Vazgeçti / ocağını dağıtamadı — söz boşa çıktı.
+    p.betrothed = undefined; p.reputation = clampStat(p.reputation - 3);
+    push(s, "sohbet", `${b.name} sonunda kendi ocağını dağıtamadı; verdiğiniz söz sessizce boşa çıktı. Beklediğin bunca ay geride kaldı.`, "kişisel", true, { k: "evj.betrothFail", p: [b.name] });
+  }
 }
 
 // ── Görücü usulü / çöpçatan: yakınlık şartı olmadan, ücret + karizmayla talip ol ──
