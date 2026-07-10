@@ -3646,7 +3646,9 @@ function affairTick(s: GameState) {
   if (a.heat <= 0 && a.months >= 3) { push(s, "evlilik", `${a.name} ile aranızdaki ateş küllendi; yollarınız sessizce ayrıldı.`, "kişisel", false, { k: "affair.faded", p: [a.name] }); p.affair = undefined; return; }
   const sg = a.gender;
   // 1) Piç çocuk — ateş yüksekse düşük aylık ihtimal; doğunca saklanamaz, ifşayı fırlatır.
-  if (a.heat >= 40 && (p.bastards || 0) < 3 && chance(0.02 + (a.heat / 100) * 0.03)) {
+  // Doğurganlık kapısı: kadın oyuncu kendisi doğurur (yaş < 48); erkek oyuncuda çocuğu metres taşır (daha geç yaşa dek mümkün).
+  const fertile = p.gender === "erkek" ? p.age < 62 : p.age < 48;
+  if (a.heat >= 40 && fertile && (p.bastards || 0) < 3 && chance(0.02 + (a.heat / 100) * 0.03)) {
     p.bastards = (p.bastards || 0) + 1;
     const c = rnd(CHILD); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn, bastard: true });
     a.heat = Math.min(100, a.heat + 35);
@@ -3659,10 +3661,15 @@ function affairTick(s: GameState) {
   }
 }
 // İfşanın sonuçları: evli oyuncu ihanetten yıkılır (ocak çöker, boşanma olası); bekâr oyuncu evli sevgilinin eşiyle belaya girer.
-function exposeAffair(s: GameState, a: NonNullable<Player["affair"]>, sg: "erkek" | "kadın") {
+function exposeAffair(s: GameState, a: NonNullable<Player["affair"]>, _sg: "erkek" | "kadın") {
   const p = s.player;
   bumpNam(p, "capkin", 5);
-  const sn: EvtParam = { fn: [a.seed, sg] };
+  // Eş GERÇEK bir oyuncuysa (MP) yerelde boşayamayız/bağını değiştiremeyiz (desync) — yalnız itibar lekesi + dedikodu.
+  if (p.married && p.spouse_is_player) {
+    p.reputation = clampStat(p.reputation - 8);
+    push(s, "sohbet", `${a.name} ile gönül işin dile düştü; kimi hoş gördü kimi ayıpladı.`, "kişisel", false, { k: "affair.gossipMild", p: [a.name] });
+    return;
+  }
   if (p.married) {
     // Kendi eşin öğrendi — ocağın temeli sarsıldı.
     p.reputation = clampStat(p.reputation - 12); p.honor = clampStat(p.honor - 12); p.fear = clampStat(p.fear + 3);

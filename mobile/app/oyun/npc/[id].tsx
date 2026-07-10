@@ -218,7 +218,7 @@ export default function NpcDetail() {
         </Pressable>
         {/* Amacına yardım et / istismar et (npc_mind goal_action) */}
         {canGoal && (
-          <Pressable onPress={() => { if (state.player.money >= GOAL_HELP_COST) { hap("success"); apply((s) => helpNpcGoal(s, npc)); } }} disabled={state.player.money < GOAL_HELP_COST} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
+          <Pressable onPress={() => { if (state.player.money >= GOAL_HELP_COST && !usedAct("help")) { hap("success"); apply((s) => helpNpcGoal(s, npc)); } }} disabled={state.player.money < GOAL_HELP_COST || usedAct("help")} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: usedAct("help") ? 0.4 : 1 })}>
             <GameIcon name="leaf" size={16} color={state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.serif, fontSize: 14, color: state.player.money >= GOAL_HELP_COST ? C.sage : C.parchmentMuted }}>{t("npc.helpGoal")}</Text>
