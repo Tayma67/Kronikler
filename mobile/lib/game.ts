@@ -26,6 +26,9 @@ export interface Player {
   married_turn?: number; // evliliğin kurulduğu tur (yıldönümü anları; eski kayıtta yoksa yıldönümü sessizce atlanır)
   spouse_bond?: number; // eşle bağ 0-100 (yaşayan evlilik: anlar besler, ihmal/flört törpüler; dulluk acısı ve yıldönümü sıcaklığı buna oranlı)
   spouse_time_turn?: number; // bu ay eşle vakit geçirildi mi (turda tek — bağ farmı önlenir)
+  affair?: { id: string; name: string; seed: number; gender: "erkek" | "kadın"; heat: number; months: number; theirs: boolean }; // yasak ilişki: gizli sevgili (heat: ateş 0-100, theirs: karşı taraf evli mi). Evli oyuncu ihanet eder; ifşa olursa ocak yıkılır. Piç doğabilir.
+  bastards?: number; // yasak ilişkiden doğan gayrimeşru evlat sayısı (ömürlük iz; itibar lekesi)
+  affair_exposed_turn?: number; // son ifşa turu (art arda skandal spam'i önlenir)
   inventory: Record<string, number>; properties: Property[]; generation: number;
   faction: string | null; faction_standing: Record<string, number>;
   skills: Skills; skill_xp: Skills; perks: string[];
@@ -140,7 +143,7 @@ export interface Player {
   dog_bff?: boolean; // başarım izi: köpekle bağ 80 sınırını aştı
   gov_run_turn?: number; // ayda tek valilik adaylığı
   fac_rank_seen?: Record<string, number>; // lonca başına görülen en yüksek rütbe — tören yalnız onu aşınca (standing düşüp çıksa da tekrarlanmaz)
-  child_meta?: { n: string; born: number; ms?: number }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik)
+  child_meta?: { n: string; born: number; ms?: number; bastard?: boolean }[]; // evlat kilometre taşları: doğum turu + son anılan eşik (ilk adım/mektep/çıraklık/yetişkinlik); bastard: yasak ilişkiden doğan gayrimeşru evlat
   factionBans?: Record<string, number>; // fraksiyon id → geri dönüş yasağının bittiği tur (FACTION_MEMBERSHIP)
   factionLeaves?: Record<string, number>; // fraksiyondan kaç kez ayrıldın (yasak süresi tırmanır)
   priceMem?: Record<string, number>; // fiyat hafızası: "loc|good" → geçen ay kaydedilen alış fiyatı (pazar 'geçen fiyat' göstergesi)
@@ -1409,6 +1412,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50) || s.story?.active?.id === "gec_sevda"; // aktif sevda yayı da bir kur — görücü araya girmesin
   if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.married_turn = s.turn; p.spouse_bond = 35; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); { const mv2 = chance(0.5); push(s, "evlilik", mv2 ? `Davul üç gün sustu susmadı; ${name} ile aynı ocağın başına oturdunuz. Evin eşiği o gün iki kez öpüldü.` : `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: mv2 ? "evj.marry2" : "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); } }
   if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); { const bv2 = chance(0.5); push(s, "doğum", bv2 ? `Eve bir nefes daha katıldı: ${c}. Beşik baş köşeye kuruldu; o gece kimse erken uyumadı.` : `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: bv2 ? "evj.childBorn2" : "evj.childBorn", p: [c] }); } }
+  affairTick(s); // yasak ilişki: ateş soğur, piç doğabilir, ifşa yuvarlanır (evli/bekâr sonuçları exposeAffair'de)
   // Evlilik yıldönümü: her 12 ayda bir ocak tazelenir — otomatik, küçük, farm'sız (eski kayıtta married_turn yoksa sessizce atlanır).
   if (p.married && p.married_turn !== undefined && s.turn > p.married_turn && (s.turn - p.married_turn) % 12 === 0) {
     const years = Math.floor((s.turn - p.married_turn) / 12);
@@ -3587,8 +3591,18 @@ export function insultNpc(prev: GameState, npc: NPC): GameState {
   return s;
 }
 export function canFlirt(p: Player, npc: NPC, rel: number): boolean {
-  // Hem oyuncu hem NPC reşit (18+) olmalı — evlilik/kur kapısıyla tutarlı; çocuklarla gönül işi olmaz.
-  return !p.dead && !p.married && p.age >= 18 && npc.age >= 18 && npc.gender !== p.gender && rel >= 15;
+  // Hem oyuncu hem NPC reşit (18+), karşı cins, yakınlık ≥15. Evli oyuncu da gönül eğlendirebilir (yasak ilişki) — sonuçları ağırdır.
+  return !p.dead && p.age >= 18 && npc.age >= 18 && npc.gender !== p.gender && rel >= 15;
+}
+// Bir NPC seed'ine göre evli mi (deterministik: aynı kişi hep aynı) — yetişkinlerin ~%58'i evli sayılır. Evli birine yürümek "yasak" kılar.
+export function npcSeededMarried(npc: NPC): boolean {
+  if (npc.age < 22) return false;
+  let h = 0; for (let i = 0; i < npc.id.length; i++) h = (h * 31 + npc.id.charCodeAt(i)) >>> 0;
+  return (h % 100) < 58;
+}
+// Flört bu kişiyle YASAK mı (evli oyuncu ihanet ediyor ya da karşı taraf evli) — UI uyarısı ve affair akışı için.
+export function flirtIsForbidden(p: Player, npc: NPC): boolean {
+  return !!p.married || npcSeededMarried(npc);
 }
 export function flirtWith(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; const rel = s.relationships[npc.id] || 0;
@@ -3599,14 +3613,75 @@ export function flirtWith(prev: GameState, npc: NPC): GameState {
   if (ok) {
     const up = 6 + Math.floor(Math.random() * 8);
     s.relationships[npc.id] = Math.min(100, rel + up); ns.mood = Math.max(-100, Math.min(100, ns.mood + 12));
-    bumpNam(p, "capkin", 3); remember(s, npc, "guzel_sohbet");
-    if (p.married) p.spouse_bond = Math.max(0, (p.spouse_bond ?? 40) - 4); // gönül eğlencesi ocağı soğutur
-    push(s, "sohbet", `${npc.name} ile gönül eğlendirdin; arana kıvılcım düştü (+${up} ilişki).`, "kişisel", false, { k: "npca.flirtWin", p: [npc.name, up] });
+    remember(s, npc, "guzel_sohbet");
+    if (flirtIsForbidden(p, npc)) {
+      // YASAK İLİŞKİ: gizli sevgili başlar/derinleşir. Ateş biriktikçe ifşa ve piç riski artar (aylık tik'te).
+      bumpNam(p, "capkin", 4);
+      if (!p.affair || p.affair.id !== npc.id) p.affair = { id: npc.id, name: npc.name, seed: locSeed(npc.id), gender: npc.gender, heat: 0, months: 0, theirs: npcSeededMarried(npc) };
+      p.affair.heat = Math.min(100, p.affair.heat + up);
+      if (p.married && p.spouse_bond !== undefined) p.spouse_bond = Math.max(0, p.spouse_bond - 6); // ihanet ocağı soğutur (meşru flörtten ağır)
+      push(s, "sohbet", `${npc.name} ile gizlice buluştun; aranızdaki yasak ateş büyüdü. Kimse görmesin diye dua ettin (+${up}).`, "kişisel", false, { k: "affair.flirtWin", p: [npc.name, up] });
+    } else {
+      bumpNam(p, "capkin", 3);
+      push(s, "sohbet", `${npc.name} ile gönül eğlendirdin; arana kıvılcım düştü (+${up} ilişki).`, "kişisel", false, { k: "npca.flirtWin", p: [npc.name, up] });
+    }
   } else {
     s.relationships[npc.id] = Math.max(-100, rel - 5); ns.mood = Math.max(-100, ns.mood - 6);
     push(s, "sohbet", `${npc.name} yüz vermedi; mahcup oldun.`, "kişisel", false, { k: "npca.flirtLose", p: [npc.name] });
   }
   return s;
+}
+// ── Yasak ilişki aylık tik'i: ateşi soğut, piç doğur, ifşayı yuvarla (rollLifeEvents içinden çağrılır). ──
+function affairTick(s: GameState) {
+  const p = s.player;
+  if (p.dead || !p.affair) return;
+  const a = p.affair;
+  a.months += 1;
+  a.heat = Math.max(0, a.heat - 6); // ihmal edilirse (o ay buluşulmazsa) ateş söner
+  if (a.heat <= 0 && a.months >= 3) { push(s, "evlilik", `${a.name} ile aranızdaki ateş küllendi; yollarınız sessizce ayrıldı.`, "kişisel", false, { k: "affair.faded", p: [a.name] }); p.affair = undefined; return; }
+  const sg = a.gender;
+  // 1) Piç çocuk — ateş yüksekse düşük aylık ihtimal; doğunca saklanamaz, ifşayı fırlatır.
+  if (a.heat >= 40 && (p.bastards || 0) < 3 && chance(0.02 + (a.heat / 100) * 0.03)) {
+    p.bastards = (p.bastards || 0) + 1;
+    const c = rnd(CHILD); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn, bastard: true });
+    a.heat = Math.min(100, a.heat + 35);
+    push(s, "doğum", `Yasak ilişkinizden bir çocuk dünyaya geldi: ${c}. ${a.name} ile olan bu sır artık saklanamayacak kadar büyük.`, "kişisel", true, { k: "affair.bastard", p: [c, a.name] });
+  }
+  // 2) İfşa — ateş + şöhret oranında; karizma (ketumluk) düşürür. İfşa olunca ilişki biter, sonuçlar patlar.
+  const exposeChance = Math.min(0.55, 0.04 + (a.heat / 100) * 0.22 + p.fame / 3000 - (p.stats.charisma || 0) * 0.004);
+  if (p.affair_exposed_turn === undefined || s.turn - p.affair_exposed_turn >= 3) {
+    if (chance(Math.max(0.01, exposeChance))) { exposeAffair(s, a, sg); p.affair = undefined; p.affair_exposed_turn = s.turn; }
+  }
+}
+// İfşanın sonuçları: evli oyuncu ihanetten yıkılır (ocak çöker, boşanma olası); bekâr oyuncu evli sevgilinin eşiyle belaya girer.
+function exposeAffair(s: GameState, a: NonNullable<Player["affair"]>, sg: "erkek" | "kadın") {
+  const p = s.player;
+  bumpNam(p, "capkin", 5);
+  const sn: EvtParam = { fn: [a.seed, sg] };
+  if (p.married) {
+    // Kendi eşin öğrendi — ocağın temeli sarsıldı.
+    p.reputation = clampStat(p.reputation - 12); p.honor = clampStat(p.honor - 12); p.fear = clampStat(p.fear + 3);
+    const spName = p.spouse_name || "Eşin";
+    if (chance(0.45)) {
+      // Boşanma: eş ocağı terk etti.
+      p.married = false; p.widowed = false; p.spouse_bond = undefined; p.spouse_mizac = undefined;
+      p.reputation = clampStat(p.reputation - 6);
+      push(s, "evlilik", `${spName}, ${a.name} ile ilişkini öğrendi. Ne yalvarış fayda etti ne yemin: ocağı topladı, çekip gitti. Diyar bu skandalı yıllarca konuşacak.`, "kişisel", true, { k: "affair.divorce", p: [spName, a.name] });
+    } else {
+      // Affetti ama bağ kırıldı — soğuk bir ocak.
+      p.spouse_bond = Math.min(p.spouse_bond ?? 40, 8);
+      push(s, "evlilik", `${spName}, ${a.name} ile ilişkini öğrendi. Ocağı dağıtmadı ama gözlerindeki o eski sıcaklık bir daha hiç dönmedi.`, "kişisel", true, { k: "affair.forgiven", p: [spName, a.name] });
+    }
+  } else if (a.theirs) {
+    // Sen bekârsın ama sevgilin evliydi — eşi/ailesi seni buldu.
+    p.reputation = clampStat(p.reputation - 8); p.health = Math.max(1, p.health - (3 + Math.floor(Math.random() * 5)));
+    s.relationships[a.id] = Math.max(-100, (s.relationships[a.id] || 0) - 30);
+    push(s, "sohbet", `${a.name} ile yasak yakınlığın eşinin kulağına gitti. Bir gece kapında beklediler; morluklar ve utançla kaçtın.`, "kişisel", true, { k: "affair.caughtSingle", p: [a.name] });
+  } else {
+    // İki taraf da bekârdı — sadece dedikodu; küçük itibar lekesi.
+    p.reputation = clampStat(p.reputation - 3);
+    push(s, "sohbet", `${a.name} ile gönül işin dile düştü; kimi hoş gördü kimi ayıpladı.`, "kişisel", false, { k: "affair.gossipMild", p: [a.name] });
+  }
 }
 export function gossipAbout(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player; if (p.dead || p.age < 13) return s;

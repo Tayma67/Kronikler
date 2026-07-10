@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
+import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
 import { useI18n } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
@@ -139,6 +139,16 @@ export default function NpcDetail() {
         </View>
         <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted, marginTop: 6, lineHeight: 17 }}>{(() => { const q = quirkL(npc.quirk, lang); return q[0].toUpperCase() + q.slice(1); })()}.</Text>
         {npc.goal ? <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.goldDim, marginTop: 2 }}>{t("npc.dream")} {goalL(npc.goal, lang)}.</Text> : null}
+        {/* Gizli ilişki: bu kişi aktif yasak sevgilinse ateş çubuğuyla göster */}
+        {state.player.affair?.id === npc.id ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8, paddingVertical: 5, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: C.ember + "55", backgroundColor: C.ember + "14" }}>
+            <GameIcon name="lyre" size={11} color={C.ember} />
+            <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: C.ember }}>{t("affair.badge").toUpperCase()}</Text>
+            <View style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: C.ember + "22", overflow: "hidden" }}>
+              <View style={{ width: `${Math.max(0, Math.min(100, state.player.affair.heat))}%`, height: "100%", backgroundColor: C.ember }} />
+            </View>
+          </View>
+        ) : null}
       </View>
 
       {/* ── Çevresi (NPC↔NPC ilişki ağı) ── */}
@@ -262,12 +272,19 @@ export default function NpcDetail() {
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: state.player.money >= GIVE_MONEY_AMT ? C.parchment : C.parchmentMuted }}>{t("npca.moneyBtn")}</Text>
           <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>{GIVE_MONEY_AMT} ⚜</Text>
         </Pressable>
-        {canFlirt(state.player, npc, v) && (
-          <Pressable disabled={usedAct("flirt")} onPress={() => { hap("success"); apply((s) => flirtWith(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: usedAct("flirt") ? 0.4 : 1 })}>
-            <GameIcon name="lyre" size={16} color={C.gold} />
-            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.gold }}>{t("npca.flirtBtn")}</Text>
-          </Pressable>
-        )}
+        {canFlirt(state.player, npc, v) && (() => {
+          const forbidden = flirtIsForbidden(state.player, npc);
+          const tone = forbidden ? C.ember : C.gold;
+          return (
+            <Pressable disabled={usedAct("flirt")} onPress={() => { hap("success"); apply((s) => flirtWith(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : (forbidden ? "rgba(224,90,48,0.06)" : "transparent"), opacity: usedAct("flirt") ? 0.4 : 1 })}>
+              <GameIcon name="lyre" size={16} color={tone} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.serif, fontSize: 14, color: tone }}>{forbidden ? t("affair.flirtBtn") : t("npca.flirtBtn")}</Text>
+                {forbidden ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.ember, marginTop: 1 }}>{state.player.married ? t("affair.warnMarried") : t("affair.warnTheirs")}</Text> : null}
+              </View>
+            </Pressable>
+          );
+        })()}
         <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("gossip")} onPress={() => { hap("tap"); apply((s) => gossipAbout(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: (state.player.age < 13 || usedAct("gossip")) ? 0.45 : 1 })}>
           <GameIcon name="speaker" size={16} color={C.parchment} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npca.gossipBtn")}</Text>
