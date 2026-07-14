@@ -46,7 +46,7 @@ jobs:
 
       - name: Kalici imza yapilandirmasini ekle
         working-directory: mobile/android/app
-        run: node -e "const fs=require('fs');let c=fs.readFileSync('build.gradle','utf8');const rel='release {\n            storeFile file(System.getenv(\'KRONIKLER_STORE_FILE\') || \'kronikler.keystore\')\n            storePassword System.getenv(\'KRONIKLER_STORE_PASSWORD\')\n            keyAlias System.getenv(\'KRONIKLER_KEY_ALIAS\')\n            keyPassword System.getenv(\'KRONIKLER_KEY_PASSWORD\')\n        }\n    }';c=c.replace(/signingConfigs \{\s*debug \{[^}]*\}\s*\}/,m=>m.slice(0,-1)+rel);c=c.replace('signingConfig signingConfigs.debug\n            def enableShrinkResources','signingConfig signingConfigs.release\n            def enableShrinkResources');fs.writeFileSync('build.gradle',c);console.log('patched');"
+        run: node -e "const fs=require('fs');let c=fs.readFileSync('build.gradle','utf8');const rel='release {\n            storeFile file(System.getenv(\'KRONIKLER_STORE_FILE\') ?: \'kronikler.keystore\')\n            storePassword System.getenv(\'KRONIKLER_STORE_PASSWORD\')\n            keyAlias System.getenv(\'KRONIKLER_KEY_ALIAS\')\n            keyPassword System.getenv(\'KRONIKLER_KEY_PASSWORD\')\n        }\n    }';c=c.replace(/signingConfigs \{\s*debug \{[^}]*\}\s*\}/,m=>m.slice(0,-1)+rel);c=c.replace('signingConfig signingConfigs.debug\n            def enableShrinkResources','signingConfig signingConfigs.release\n            def enableShrinkResources');fs.writeFileSync('build.gradle',c);console.log('patched');"
 
       - name: Keystore'u geri yukle
         working-directory: mobile/android/app
