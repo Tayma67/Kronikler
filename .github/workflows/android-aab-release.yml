@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -43,26 +43,26 @@ jobs:
         working-directory: mobile/android/app
         run: |
           sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" build.gradle
-          grep versionCode build.gradle
-
-      - name: Configure signing
-        working-directory: mobile/android/app
-        run: |
-          cat build.gradle | sed 's/signingConfig signingConfigs.debug/signingConfig signingConfigs.release/' > build.gradle.tmp
-          mv build.gradle.tmp build.gradle
 
       - name: Restore keystore
         working-directory: mobile/android/app
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > kronikler.keystore
 
-      - name: Build AAB
+      - name: Build release AAB
         working-directory: mobile/android
         env:
           KRONIKLER_STORE_FILE: app/kronikler.keystore
           KRONIKLER_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KRONIKLER_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KRONIKLER_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew bundleRelease --no-daemon --stacktrace
+        run: >
+          ./gradlew bundleRelease 
+          -Pandroid.injected.signing.store.file=${KRONIKLER_STORE_FILE}
+          -Pandroid.injected.signing.store.password="${KRONIKLER_STORE_PASSWORD}"
+          -Pandroid.injected.signing.key.alias="${KRONIKLER_KEY_ALIAS}"
+          -Pandroid.injected.signing.key.password="${KRONIKLER_KEY_PASSWORD}"
+          --no-daemon 
+          --stacktrace
 
       - name: Rename AAB
         run: cp mobile/android/app/build/outputs/bundle/release/app-release.aab Kronikler.aab
