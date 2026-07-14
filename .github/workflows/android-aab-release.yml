@@ -48,34 +48,32 @@ jobs:
         working-directory: mobile/android/app
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > kronikler.keystore
 
-      - name: Build release AAB
+      - name: Build release AAB (signed)
         working-directory: mobile/android
-        env:
-          KRONIKLER_STORE_FILE: app/kronikler.keystore
-          KRONIKLER_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KRONIKLER_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KRONIKLER_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: >
-          ./gradlew bundleRelease 
-          -Pandroid.injected.signing.store.file=${KRONIKLER_STORE_FILE}
-          -Pandroid.injected.signing.store.password="${KRONIKLER_STORE_PASSWORD}"
-          -Pandroid.injected.signing.key.alias="${KRONIKLER_KEY_ALIAS}"
-          -Pandroid.injected.signing.key.password="${KRONIKLER_KEY_PASSWORD}"
-          --no-daemon 
-          --stacktrace
+        run: |
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file=app/kronikler.keystore \
+            -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}" \
+            --no-daemon \
+            --stacktrace
 
       - name: Rename AAB
-        run: cp mobile/android/app/build/outputs/bundle/release/app-release.aab Kronikler.aab
+        run: |
+          mkdir -p release
+          cp mobile/android/app/build/outputs/bundle/release/app-release.aab release/Kronikler.aab
+          ls -lh release/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: kronikler-aab
-          path: Kronikler.aab
+          path: release/Kronikler.aab
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: aab-latest
           name: Kronikler - AAB (Play Store)
-          files: Kronikler.aab
+          files: release/Kronikler.aab
