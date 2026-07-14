@@ -13,42 +13,36 @@ jobs:
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
     
     steps:
-      - name: Checkout APK branch
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: apk
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 20
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: "17"
 
-      - name: Install mobile dependencies
+      - name: Bagimliliklar (mobile)
         working-directory: mobile
         run: npm install --no-audit --no-fund
 
-      - name: Run Expo prebuild
+      - name: Expo prebuild (android native uret)
         working-directory: mobile
-        env:
-          CI: '1'
-        run: npx expo prebuild --platform android --no-install
+        run: npx expo prebuild --platform android --no-install --non-interactive
 
-      - name: Update versionCode
+      - name: versionCode'u guncelle
         working-directory: mobile/android/app
-        run: |
-          sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" build.gradle
+        run: sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" build.gradle
 
-      - name: Restore keystore
+      - name: Keystore'u geri yukle
         working-directory: mobile/android/app
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > kronikler.keystore
 
-      - name: Build release AAB (signed)
+      - name: Gradle bundleRelease (imzali AAB)
         working-directory: mobile/android
         run: |
           ./gradlew bundleRelease \
@@ -56,24 +50,20 @@ jobs:
             -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
             -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}" \
-            --no-daemon \
-            --stacktrace
+            --no-daemon --stacktrace
 
-      - name: Rename AAB
-        run: |
-          mkdir -p release
-          cp mobile/android/app/build/outputs/bundle/release/app-release.aab release/Kronikler.aab
-          ls -lh release/
+      - name: AAB'yi yeniden adlandir
+        run: cp mobile/android/app/build/outputs/bundle/release/app-release.aab Kronikler.aab
 
-      - name: Upload artifact
+      - name: Artefakt (yedek indirme)
         uses: actions/upload-artifact@v4
         with:
           name: kronikler-aab
-          path: release/Kronikler.aab
+          path: Kronikler.aab
 
-      - name: Create Release
+      - name: Release'e yukle (dogrudan indirme linki)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: aab-latest
-          name: Kronikler - AAB (Play Store)
-          files: release/Kronikler.aab
+          name: Kronikler - guncel AAB (Play Store)
+          files: Kronikler.aab
