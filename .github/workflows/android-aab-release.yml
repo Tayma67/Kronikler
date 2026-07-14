@@ -39,14 +39,14 @@ jobs:
         run: sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" build.gradle
 
       - name: Keystore'u geri yukle
-        working-directory: mobile/android/app
+        working-directory: mobile/android
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > kronikler.keystore
 
       - name: Gradle bundleRelease (imzali AAB)
         working-directory: mobile/android
         run: |
           ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file=app/kronikler.keystore \
+            -Pandroid.injected.signing.store.file=$(pwd)/kronikler.keystore \
             -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
             -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}" \
