@@ -7,6 +7,12 @@ name: APK (yerel derleme - hesapsiz)
 # yayin adimi ikisini de bekler — sure toplam degil, en uzun bacak kadar.
 on:
   workflow_dispatch:
+    inputs:
+      kanal:
+        description: "latest = kalici link (apk-latest) · test = ayri deneme linki (apk-test), kalici linke dokunmaz"
+        type: choice
+        options: [latest, test]
+        default: latest
 
 jobs:
   kalite:
@@ -101,8 +107,9 @@ jobs:
       - name: Release'e yukle (dogrudan indirme linki)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-latest
-          name: "Kronikler APK (guncel)"
-          body: "En guncel derleme. Dogrudan indirme: Kronikler.apk (girissiz, herkese acik)."
+          tag_name: "${{ inputs.kanal == 'test' && 'apk-test' || 'apk-latest' }}"
+          name: "${{ inputs.kanal == 'test' && 'Kronikler APK (test)' || 'Kronikler APK (guncel)' }}"
+          prerelease: "${{ inputs.kanal == 'test' }}"
+          body: "${{ inputs.kanal == 'test' && 'Deneme derlemesi - kalici linkten ayri. Dogrudan indirme: Kronikler.apk' || 'En guncel derleme. Dogrudan indirme: Kronikler.apk (girissiz, herkese acik).' }}"
           files: Kronikler.apk
           fail_on_unmatched_files: true
