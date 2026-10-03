@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail, tendPet, tendDog } from "../../lib/game";
+import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail, tendPet, tendDog, kariyerXp } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider, ScreenFresk } from "../../lib/ui";
@@ -216,7 +216,7 @@ export default function Karakter() {
               <Text style={{ fontFamily: F.display, fontSize: 19, color: C.goldBright, letterSpacing: 0.5 }}>{lakapliAd(p.name, p.lakap, p.gender === "kadın", t)}</Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
                 <GameIcon name="ilerle" size={11} color={C.gold} />
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim }}>{hasCareer ? careerTitleL(p.profession, p.career_xp, lang) : t("misc.jobless")}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim }}>{hasCareer ? careerTitleL(p.profession, kariyerXp(p), lang) : t("misc.jobless")}</Text>
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 3, marginTop: 1 }}>
                 <Badge text={`${p.age} ${t("misc.age").toUpperCase()}`} />

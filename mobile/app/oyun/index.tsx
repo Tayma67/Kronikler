@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork } from "../../lib/game";
+import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp } from "../../lib/game";
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
@@ -312,7 +312,7 @@ export default function Dashboard() {
       {p.dead && (() => {
         const eul = eulogy(state);
         const diedYear = cal.year;
-        const profLine = p.profession !== "işsiz" ? applyParams(t("eul.lived"), [careerTitleL(p.profession, p.career_xp, lang)]) : "";
+        const profLine = p.profession !== "işsiz" ? applyParams(t("eul.lived"), [careerTitleL(p.profession, kariyerXp(p), lang)]) : "";
         // Lakap: ep.<id>, kadınsa dişil varyant (ep.<id>.f) varsa onu kullan.
         const epLabel = eul.epithet ? (() => { const fk = "ep." + eul.epithet + ".f"; const fv = t(fk); return p.gender === "kadın" && fv !== fk ? fv : t("ep." + eul.epithet); })() : "";
         return (
@@ -351,7 +351,7 @@ export default function Dashboard() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
                 {profGi && <GameIcon name={profGi} size={13} color={C.gold} />}
                 <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.gold, textAlign: "center" }}>
-                  {p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, p.career_xp, lang)}
+                  {p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, kariyerXp(p), lang)}
                 </Text>
               </View>
             </View>

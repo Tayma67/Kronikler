@@ -2,7 +2,7 @@ import { View, Text, Pressable, Alert, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { pendingPerkCount, playerWar } from "../../lib/game";
+import { pendingPerkCount, playerWar, sinavDurumu } from "../../lib/game";
 import { useI18n } from "../../lib/i18n";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -55,6 +55,7 @@ export default function Menu() {
     if (!state || !p) return { n: 0, urgent: false };
     switch (key) {
       case "beceriler": return { n: pendingPerkCount(p), urgent: false };
+      case "meslek": return { n: sinavDurumu(state)?.hazir ? 1 : 0, urgent: false }; // Ahilik: peştamal sınavı hazır
       case "hikayeler": return { n: state.story?.active ? 1 : 0, urgent: false };
       case "orgutler": return { n: playerWar(state) ? 1 : 0, urgent: true };
       case "pazar": return { n: state.caravan ? 1 : 0, urgent: false };

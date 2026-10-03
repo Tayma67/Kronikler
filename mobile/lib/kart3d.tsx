@@ -15,7 +15,7 @@ import { isReduceMotion } from "./perf";
 import { hap } from "./haptics";
 import { playTap } from "./sound";
 import { GameIcon } from "./icons";
-import { useI18n } from "./i18n";
+import { useI18n, applyParams } from "./i18n";
 import type { Dilemma, Choice } from "./events";
 import type { Opportunity } from "./game";
 
@@ -369,6 +369,75 @@ export function FirsatKartiModal({ opp, statVal = 5, onResolve, onPass }: { opp:
   return (
     <Modal visible={!!opp} transparent animationType="fade" onRequestClose={onPass}>
       <Arka>{opp && <FirsatKarti key={opp.id} opp={opp} statVal={statVal} onResolve={onResolve} onPass={onPass} />}</Arka>
+    </Modal>
+  );
+}
+
+// ── AHİLİK: Peştamal Sınavı kartı — üç yol, her birinin şansı açıkça; seçince kart döner, sonuç arka yüzde ──
+// Kartın kendisi sunumdur: sonucu çağıran ekran motordan hesaplar (onSec), kart yalnız gösterir.
+export interface SinavKartiVeri { prof: string; hedefUnvan: string; yollar: string[]; oranlar: number[]; }
+function SinavKarti({ v, onSec, onKapat }: { v: SinavKartiVeri; onSec: (yol: number) => boolean | null; onKapat: () => void }) {
+  const { t } = useI18n();
+  const k = useKart3D();
+  const [sonuc, setSonuc] = useState<null | { yol: number; basari: boolean }>(null);
+  const kilit = useRef(false); const cik = useRef(false);
+  const sec = (i: number) => {
+    if (kilit.current) return; kilit.current = true;
+    const b = onSec(i);
+    if (b == null) { kilit.current = false; return; }
+    hap(b ? "success" : "error"); playTap(); setSonuc({ yol: i, basari: b });
+  };
+  const kapat = () => { if (cik.current) return; cik.current = true; k.exit(onKapat); };
+  const renk = (o: number) => (o >= 0.6 ? C.sage : o >= 0.4 ? C.gold : C.blood);
+  const tone = sonuc ? (sonuc.basari ? C.goldBright : C.blood) : C.gold;
+  return (
+    <View style={{ width: "100%", maxWidth: KART_W }}>
+      {!k.reduced && <Deste />}
+      <Animated.View style={k.style}>
+        <DonenYuz flipKey={sonuc ? "sonuc" : "sinav"} reduced={k.reduced}>
+          <KartYuz k={k} tone={tone}>
+            {!sonuc ? (
+              <>
+                <View style={{ alignItems: "center", marginTop: 4 }}><GameIcon name="scroll-open" size={26} color={C.gold} /></View>
+                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 2, color: C.goldDim, textAlign: "center", marginTop: 6 }}>{t("ahi.cardTitle").toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 16, color: C.gold, textAlign: "center", marginTop: 4 }}>{applyParams(t("ahi.target"), [v.hedefUnvan])}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: "center", lineHeight: 22, marginTop: 10, marginBottom: 14 }}>{t("sinav." + v.prof + ".x")}</Text>
+                {v.yollar.map((st, i) => (
+                  <Pressable key={i} accessibilityRole="button" accessibilityLabel={t("sinav." + v.prof + ".y" + i)} onPress={() => sec(i)} style={({ pressed }) => ({ paddingVertical: 11, paddingHorizontal: 13, borderRadius: 10, borderWidth: 1, borderColor: renk(v.oranlar[i]) + "77", backgroundColor: pressed ? C.gold + "1F" : C.bg, marginBottom: 9 })}>
+                    <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.3 }}>{t("sinav." + v.prof + ".y" + i)}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 5 }}>
+                      <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted }}>{t("st." + st)}</Text>
+                      <View style={{ borderRadius: 12, borderWidth: 1, borderColor: renk(v.oranlar[i]), paddingVertical: 2, paddingHorizontal: 9 }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 12, color: renk(v.oranlar[i]) }}>{applyParams(t("ahi.odds"), [Math.round(v.oranlar[i] * 100)])}</Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                ))}
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, textAlign: "center", marginTop: 4, lineHeight: 17 }}>{t("ahi.how")}</Text>
+              </>
+            ) : (
+              <View style={{ alignItems: "center" }}>
+                <GameIcon name={sonuc.basari ? "medal" : "hourglass"} size={32} color={sonuc.basari ? C.goldBright : C.blood} />
+                <Text style={{ fontFamily: F.display, fontSize: 17, letterSpacing: 1, color: sonuc.basari ? C.goldBright : C.blood, marginTop: 8, textAlign: "center" }}>{sonuc.basari ? t("ahi.passed") : t("ahi.failed")}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: "center", lineHeight: 22, marginTop: 10 }}>{t("sinav." + v.prof + (sonuc.basari ? ".ok" : ".no"))}</Text>
+                <View style={{ width: "40%", height: 1, backgroundColor: tone + "55", marginVertical: 12 }} />
+                <Text style={{ fontFamily: F.display, fontSize: 13, color: sonuc.basari ? C.gold : C.parchmentMuted, textAlign: "center" }}>{sonuc.basari ? applyParams(t("ahi.newTitle"), [v.hedefUnvan]) : applyParams(t("ahi.cool"), [6])}</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={t("common.continue")} onPress={kapat} style={{ marginTop: 18, paddingVertical: 12, paddingHorizontal: 44, borderRadius: 9, borderWidth: 1.5, borderColor: C.gold + "99", backgroundColor: sonuc.basari ? C.gold : C.bg }}>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: sonuc.basari ? C.inkOnGold : C.gold }}>{t("common.continue")}</Text>
+                </Pressable>
+              </View>
+            )}
+          </KartYuz>
+        </DonenYuz>
+      </Animated.View>
+    </View>
+  );
+}
+
+export function SinavKartiModal({ v, onSec, onKapat }: { v: SinavKartiVeri | null; onSec: (yol: number) => boolean | null; onKapat: () => void }) {
+  return (
+    <Modal visible={!!v} transparent animationType="fade" onRequestClose={onKapat}>
+      <Arka>{v && <SinavKarti key={v.prof + v.hedefUnvan} v={v} onSec={onSec} onKapat={onKapat} />}</Arka>
     </Modal>
   );
 }
