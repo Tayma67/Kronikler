@@ -165,7 +165,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     const r = state?.player.rakip; const y = r && !r.bitti && r.prof === state?.player.profession ? r.yaris : undefined;
-    if (state && y != null && yarisAcilan.current !== y) { yarisAcilan.current = y; setYarisK(rakipKartVerisi(state, t, lang, true)); }
+    // Meydan okumayla başlayan yarışın kartını meslek ekranı açar; burada yalnız yıllık yarış vakti kendiliğinden açılır (çift kart olmasın).
+    if (state && y != null && yarisAcilan.current !== y && r?.meydan !== y) { yarisAcilan.current = y; setYarisK(rakipKartVerisi(state, t, lang, true)); }
   }, [state?.player.rakip?.yaris]);
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
   const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; const isFest = !!dilemma && dilemma.id.startsWith("fest_"); if (dilemma) { const k = "dil." + dilemma.id + ".r" + i; const v = t(k); res = v === k ? c.result : v; } apply((s) => applyDilemma(s, c.delta, res, sk, isFest, dilemma ? "dil." + dilemma.id + ".r" + i : undefined)); setDilemma(null); };
