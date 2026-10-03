@@ -129,7 +129,7 @@ export default function NpcDetail() {
           {/* Bant etiketi */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: band.tone + "66", backgroundColor: band.tone + "14" }}>
             <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: band.tone }} />
-            <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: band.tone }}>{(prof.aileRolu ? t({ anne: "char.mother", baba: "char.father", es: "char.spouse" }[prof.aileRolu]) : t("relb." + band.id)).toUpperCase()}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: band.tone }}>{(prof.aileRolu ? t({ anne: "char.mother", baba: "char.father", es: "char.spouse", evlat: "tie.evlat", kardes: "tie.kardes" }[prof.aileRolu]) : t("relb." + band.id)).toUpperCase()}</Text>
           </View>
         </View>
 

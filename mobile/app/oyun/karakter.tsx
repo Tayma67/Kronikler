@@ -524,12 +524,12 @@ export default function Karakter() {
                   <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted }}>{t("char.none")}</Text>
                 ) : (
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                    {p.children.map((c, i) => (
-                      <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 9 }}>
+                    {p.children.map((c, i) => { const cid = p.child_ids?.[c]; return ( // evlat gerçek kişiyse dokununca profili açılır
+                      <Pressable key={i} disabled={!cid} onPress={() => { if (cid) { hap("tap"); router.push(`/oyun/npc/${cid}`); } }} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 9 }}>
                         <GameIcon name="dogum" size={11} color={C.goldDim} />
                         <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{c}</Text>
-                      </View>
-                    ))}
+                      </Pressable>
+                    ); })}
                   </View>
                 )}
               </View>

@@ -113,7 +113,14 @@ Kalemler (tamsayı; toplam −100..100'e kırpılırsa fark "Daha ötesi olmaz" 
 
 Yapısal kalemler yeni bir kazanç kanalı açmaz (farm yok); eylem kanalları ayda bir kilitli kalır.
 
+### Oyuncunun evlatları (uygulandı)
+- Her nesil 7 yaşında, eşsiz ve evlatsız başlar; evlat ancak evlilikten (ya da gizli ilişkiden) sonra doğar.
+- Evlat doğunca nüfusta kişi olur (`p.child_ids`): ocakta büyür, adı konduğu gibi her dilde aynı, soyadı oyuncunun.
+  Oyuncu yaşarken (ve vâris seçilene dek) evlenmez, göçmez, ölüm zarından muaftır.
+- Torun yalnız yetişkin (18+) bir evlat varken doğar.
+- Vâris seçilince onun kaydı nüfustan kalkar (artık oyuncudur); öbür evlatlar vârisin kardeşleri olur
+  (`p.sibling_ids`, görüşte "Kardeş bağı" +15), kendi hayatlarını yaşar: evlenir, doğurur, ölür.
+
 ### Sonraki aşamalara devreden
 - Rakip usta (`p.rakip`) ve yeni çırak (`p.cirak`) hâlâ tohum tabanlı; Aşama 3'te gerçek kişiye bağlanacak.
 - Eski çırak (`p.apprentice`) ile yeni çırak sistemi birleştirilecek.
-- Oyuncunun çocukları (`p.children`) henüz nüfusta kişi değil.

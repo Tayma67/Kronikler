@@ -20,6 +20,7 @@ export interface Kisi {
   tr: number; qk: number; gl: number; // TRAITS / QUIRKS / GOALS indeksleri (kayıt küçük kalsın)
   af?: number; ns?: number; // ilk ad: temel kadro r-değeri ×2³² (af, tamsayı — kayıpsız) ya da tohum (ns)
   sf?: number; ss?: number; // soyad: aynı biçim — babadan geçer
+  ad?: string;             // sabit ilk ad (oyuncunun evladı: konduğu ad her dilde aynı yazılır)
   sa?: string;             // sabit soyad (oyuncu ailesi: oyuncunun seçtiği soyad her dilde aynı yazılır)
   ol?: number;             // ölüm yılı (yoksa yaşıyor)
   es?: string;             // eş kimliği; OYUNCU = oyuncu
@@ -38,6 +39,7 @@ export interface NufusCtx {
 
 // ── İsim ──
 export function kisiIlkAd(k: Kisi, lang: Lang = "tr"): string {
+  if (k.ad) return k.ad;
   const pool = NAME_POOLS[lang] || NAME_POOLS.tr; const arr = k.g === "erkek" ? pool.m : pool.f;
   return k.af != null ? arr[Math.min(arr.length - 1, Math.floor((k.af / R32) * arr.length))] : arr[((k.ns ?? 0) >>> 0) % arr.length];
 }
@@ -174,7 +176,8 @@ export interface YilOpts {
   korunan?: Set<string>;    // budanmayacak kimlikler (oyuncuyla bağı olanlar)
   oyuncuLoc?: string; oyuncuCins?: Cins; oyuncuYas?: number; oyuncuBekar?: boolean;
   olumCarpani?: number;     // çağ olayları (salgın) için
-  sabit?: Set<string>;      // oyuncunun ailesi (anne, baba): evlilik pazarına ve göçe girmez, ocağında kalır
+  sabit?: Set<string>;      // oyuncunun ailesi (anne, baba, evlatları): evlilik pazarına ve göçe girmez, ocağında kalır
+  muaf?: Set<string>;       // ölüm zarından muaf (oyuncu yaşarken evlatları — onların akıbeti oyuncunun hikâyesidir)
 }
 export function olumOlasiligi(yas: number): number {
   if (yas >= 100) return 1;
@@ -201,7 +204,7 @@ export function nufusYil(pop: Nufus, ctx: NufusCtx, o: YilOpts): NufusOlay[] {
   const canli = () => Object.values(pop.k).filter((k) => k.ol == null);
   // 1) Ölümler
   for (const k of canli()) {
-    if (k.es === OYUNCU) continue;
+    if (k.es === OYUNCU || o.muaf?.has(k.id)) continue;
     if (rng() < olumOlasiligi(yas(k)) * (o.olumCarpani ?? 1)) {
       k.ol = wy;
       if (k.es && pop.k[k.es]?.ol == null && pop.k[k.es]) delete pop.k[k.es].es; // eş dul kalır
