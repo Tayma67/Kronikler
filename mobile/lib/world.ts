@@ -1,5 +1,5 @@
 // Dünya modeli — NPC'ler, eşyalar, pazar. Offline, deterministik üretim.
-import { NAME_POOLS, Lang } from "./locale-data";
+import { NAME_POOLS, Lang, soyadCinsli } from "./locale-data";
 import { tFor } from "./i18n";
 export interface NPC { id: string; name: string; age: number; gender: "erkek" | "kadın"; profession: string; trait: string; quirk: string; goal: string; loc?: string; alive?: boolean; bornY?: number; nameSeed?: number; es?: string; } // es: eş kimliği (nüfus; "@" = oyuncu)
 // Kişilik özellikleri (deterministik atanır).
@@ -48,7 +48,7 @@ export function generateNPCs(seed: number, n = 30, lang: Lang = "tr", prefix = "
     const gender: "erkek" | "kadın" = r() < 0.5 ? "erkek" : "kadın";
     const ad = gender === "erkek" ? pick(pool.m, r) : pick(pool.f, r);
     // r() tüketim sırası korunur (soyad, yaş, meslek, huy, tuhaflık, hedef) → deterministik.
-    const surname = pick(pool.s, r);
+    const surname = soyadCinsli(pick(pool.s, r), lang, gender); // r() bir kez tüketilir; Rusçada kadın biçimi
     const age = 5 + Math.floor(r() * 68); // 5–72: yaşıt/çocuk da bulunsun (oyuncu 7'de başlar)
     // profession = "yetişkin mesleği" olarak saklanır; gösterimde yaşa göre çocuk/çırak'a indirgenir (npcByAge).
     const profession = pick(NPC_PROFS, r);

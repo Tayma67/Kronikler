@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { kisiProfil, kisiCevresi, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
+import { kisiProfil, kisiCevresi, gorus, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
 import { useI18n } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
@@ -81,6 +81,7 @@ export default function NpcDetail() {
   const [line, setLine] = useState<string>("");
   const [lineDelta, setLineDelta] = useState<number>(0);
   const [giftOpen, setGiftOpen] = useState(false);
+  const [gorusAcik, setGorusAcik] = useState(false); // görüş dökümü (neden böyle bakıyor)
   // Kişi nüfus kaydından okunur (her yerden; yaşayan ya da rahmetli) — nüfus her eylemde yenilendiği için pop'a bağlı.
   const prof = useMemo(() => (state ? kisiProfil(state, id, lang) : null), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
   const cevre = useMemo(() => (state ? kisiCevresi(state, id, lang) : []), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
@@ -136,8 +137,30 @@ export default function NpcDetail() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
           {!prof.olu ? <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="prayer-beads" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>{t("dlg.mood." + moodKey(ns.mood))}</Text></View> : null}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="star" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>{traitL(npc.trait, lang)}</Text></View>
-          <Text style={{ fontFamily: F.display, fontSize: 11, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted }}>{t("npc.rel")} {v > 0 ? "+" + v : v}</Text>
+          <Pressable onPress={() => { hap("tap"); setGorusAcik((x) => !x); }} hitSlop={8} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 11, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted }}>{t("npc.rel")} {v > 0 ? "+" + v : v}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.goldDim, textDecorationLine: "underline" }}>{t("gorus.ipucu")}</Text>
+          </Pressable>
         </View>
+        {/* Görüş dökümü: motorun kullandığı değerle birebir aynı kalemler (relWith = gorus().toplam) */}
+        {gorusAcik ? (() => {
+          const g = gorus(state, npc.id);
+          return (
+            <View style={{ marginTop: 10, paddingTop: 9, borderTopWidth: 1, borderTopColor: C.border }}>
+              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.goldDim, marginBottom: 6 }}>{t("gorus.title")}</Text>
+              {g.kalemler.map((it, i) => (
+                <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, paddingVertical: 3 }}>
+                  <Text style={{ flex: 1, fontFamily: it.k === "gorus.ani" ? F.serifItalic : F.serif, fontSize: 12, color: C.parchmentDim, lineHeight: 17 }}>{it.k === "gorus.ani" ? "«" + t("mem.remember." + it.tur) + "»" : t(it.k)}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 11.5, color: it.v > 0 ? C.sage : C.blood, minWidth: 34, textAlign: "right" }}>{it.v > 0 ? "+" + it.v : it.v}</Text>
+                </View>
+              ))}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingTop: 6, marginTop: 4, borderTopWidth: 1, borderTopColor: C.border }}>
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, color: C.parchment }}>{t("gorus.toplam")}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 12, color: g.toplam >= 20 ? C.sage : g.toplam <= -20 ? C.blood : C.parchment, minWidth: 34, textAlign: "right" }}>{g.toplam > 0 ? "+" + g.toplam : g.toplam}</Text>
+              </View>
+            </View>
+          );
+        })() : null}
         <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted, marginTop: 6, lineHeight: 17 }}>{(() => { const q = quirkL(npc.quirk, lang); return q[0].toUpperCase() + q.slice(1); })()}.</Text>
         {npc.goal && !prof.olu ? <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.goldDim, marginTop: 2 }}>{t("npc.dream")} {goalL(npc.goal, lang)}.</Text> : null}
         {/* Gizli ilişki: bu kişi aktif yasak sevgilinse ateş çubuğuyla göster */}

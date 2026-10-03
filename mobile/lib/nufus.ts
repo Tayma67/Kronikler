@@ -3,7 +3,7 @@
 // Değişmezler (testlerle korunur): kimlik eşsiz · yaşayanlarda eşlik simetrik · tek eş · yakın akraba evlenmez ·
 // ebeveyn-çocuk ≥16 yaş · co ⇔ baba/anne tutarlı · ölü kadroda görünmez · referanslar ya çözülür ya yoktur.
 import { NPC, generateNPCs, npcSocialGraph, mkRng, npcAgeProfession, TRAITS, NPC_PROFS, QUIRKS, GOALS, locSeed } from "./world";
-import { NAME_POOLS, Lang } from "./locale-data";
+import { NAME_POOLS, Lang, soyadCinsli } from "./locale-data";
 
 export type Cins = "erkek" | "kadın";
 const R32 = 4294967296; // mulberry32 çıktısı t/2³² — r×2³² tam sayıdır, isim indeksi kayıpsız korunur
@@ -44,7 +44,7 @@ export function kisiIlkAd(k: Kisi, lang: Lang = "tr"): string {
 export function kisiSoyad(k: Kisi, lang: Lang = "tr"): string {
   if (k.sa) return k.sa;
   const pool = NAME_POOLS[lang] || NAME_POOLS.tr;
-  return k.sf != null ? pool.s[Math.min(pool.s.length - 1, Math.floor((k.sf / R32) * pool.s.length))] : pool.s[((k.ss ?? 0) >>> 0) % pool.s.length];
+  return soyadCinsli(k.sf != null ? pool.s[Math.min(pool.s.length - 1, Math.floor((k.sf / R32) * pool.s.length))] : pool.s[((k.ss ?? 0) >>> 0) % pool.s.length], lang, k.g);
 }
 export function kisiAdi(k: Kisi, lang: Lang = "tr"): string { return `${kisiIlkAd(k, lang)} ${kisiSoyad(k, lang)}`; }
 export const yasOf = (k: Kisi, wy: number) => (k.ol != null ? k.ol : wy) - k.dy;

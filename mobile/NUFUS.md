@@ -93,6 +93,26 @@ kaydından çözülür (kadroda görülen adla birebir).
   Vâris kayıtlarında ölmüş atanın "yaşıyor" kalmış işareti düzeltilir.
 - Göç idempotent: `pop` varsa tekrar çalışmaz.
 
+## Aşama 2 — Görüş ve sebepleri (uygulandı: `gorus()` lib/game.ts)
+
+`relWith(s, id) = gorus(s, id).toplam` — profil ekranındaki döküm ile motorun her kararı (kur, flört, istismar,
+sohbet tonu, esnaf indirimi, sadık dost yardımı, NPC'nin kapına gelmesi) AYNI fonksiyondan beslenir.
+Kalemler (tamsayı; toplam −100..100'e kırpılırsa fark "Daha ötesi olmaz" kalemiyle gösterilir):
+
+| Kalem | Değer |
+|---|---|
+| Aranızda geçenler | `s.relationships[id]` (eylemlerin biriktirdiği taban) |
+| Anılar (türüne göre) | aynı türdeki anıların sönen yükleri toplamı — NPC'nin kendi ağzından («bana hediye vermişti») |
+| Evlat bağı | anne/baba: 20 + (parent_bond − 45)/3 |
+| Evlilik bağı | eş: 10 + (spouse_bond − 40)/2 |
+| Hısımlık | eşinin anne/babası/kardeşi: +10 |
+| Yakınlarına davranışın | eşine, anne-babasına, evlatlarına, kardeşlerine doğrudan hesabının yüzde 20'si (±20) |
+| Nâmın | itibar/10 |
+| Huy ↔ nâm | dindar → dindarlığın; cömert/misafirperver/sıcakkanlı → cömertliğin; mert → mertliğin; herkes → zulmün (−); kibirli → şöhretin (−) |
+| Meslektaş / ekmeğini verdiğin / valiliğin | +5 / +8 / vergi ≤10 ise +6, ≥25 ise −8 |
+
+Yapısal kalemler yeni bir kazanç kanalı açmaz (farm yok); eylem kanalları ayda bir kilitli kalır.
+
 ### Sonraki aşamalara devreden
 - Rakip usta (`p.rakip`) ve yeni çırak (`p.cirak`) hâlâ tohum tabanlı; Aşama 3'te gerçek kişiye bağlanacak.
 - Eski çırak (`p.apprentice`) ile yeni çırak sistemi birleştirilecek.

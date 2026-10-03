@@ -27,6 +27,10 @@ export function placeName(canonical: string, lang: Lang): string {
 }
 
 // NPC isim havuzları (erkek/kadın ad + soyad), dile göre.
+// Rusçada soyad cinsiyete göre çekilir (Пастухов → Пастухова); havuz eril biçimi tutar.
+export function soyadCinsli(sy: string, lang: Lang, g: "erkek" | "kadın"): string {
+  return lang === "ru" && g === "kadın" && /(ов|ев|ёв|ин|ын)$/.test(sy) ? sy + "а" : sy;
+}
 export const NAME_POOLS: Record<Lang, { m: string[]; f: string[]; s: string[] }> = {
   tr: {
     m: ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim","Osman","Yusuf","Murat","Kerem","Emre","Cihan","Barış","Tolga","Mert","Orhan","Aydoğan","Selçuk"],
