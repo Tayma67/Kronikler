@@ -38,6 +38,7 @@ for (let i = 0; i < LIVES; i++) {
           else if (act < 0.92 && g.canUseFactionPower(p)) s = g.useFactionPower(s, R(["himaye","kese"]));
         } catch (e) { errors++; if (errors <= 5) console.log("AKSİYON HATASI:", e.message); }
         try { if (s.pendingScene && s.pendingScene.kind === "crime") s = g.resolveCrimeScene(s, R(["saklan","rusvet","kac"])); } catch (e) { errors++; if (errors <= 5) console.log("SAHNE HATASI:", e.message); }
+        try { if (s.player.tezgah) s = g.resolveTezgah(s, R([0, 1, 2])); } catch (e) { errors++; if (errors <= 5) console.log("TEZGÂH HATASI:", e.message); } // mesleğin kendi kararı (kilitli hüner yolu no-op kalır)
       }
       s = g.advance(s, 1);
     }

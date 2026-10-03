@@ -183,8 +183,8 @@ export function AchievementToast({ name, icon, onClose }: { name: string | null;
 
 // İkilem perdesi — anlatısal seçim. onChoose(choice) çağrılır.
 // İkilem: 3D Kader Kartı (lib/kart3d) — kaydırarak ya da dokunarak seçilir, kart dönüp sonucu gösterir.
-export function DilemmaModal({ dilemma, onChoose }: { dilemma: Dilemma | null; onChoose: (c: Choice, i: number) => void }) {
-  return <KaderKartiModal dilemma={dilemma} onChoose={onChoose} />;
+export function DilemmaModal({ dilemma, onChoose, female }: { dilemma: Dilemma | null; onChoose: (c: Choice, i: number) => void; female?: boolean }) {
+  return <KaderKartiModal dilemma={dilemma} onChoose={onChoose} female={female} />;
 }
 
 // Sinematik mersiye / vefat ekranı — bir hayatın duygusal kapanışı.

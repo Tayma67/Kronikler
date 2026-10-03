@@ -155,9 +155,11 @@ function EtkiIzi({ c }: { c: Choice }) {
   );
 }
 
-function KaderKarti({ dilemma, onChoose }: { dilemma: Dilemma; onChoose: (c: Choice, i: number) => void }) {
+function KaderKarti({ dilemma, onChoose, female }: { dilemma: Dilemma; onChoose: (c: Choice, i: number) => void; female?: boolean }) {
   const { t } = useI18n();
   const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
+  // Sonuç metni: kadın oyuncuda dişil varyant (.f) varsa o — günlükteki renderEvt ile aynı kural.
+  const sonuc = (i: number) => { const c = dilemma.choices[i]; const k = c.rk || "dil." + dilemma.id + ".r" + i; if (female) { const fv = t(k + ".f"); if (fv !== k + ".f") return fv; } return gt(k, c.result); };
   const etiket = (i: number) => gt("dil." + dilemma.id + ".c" + i, dilemma.choices[i].label);
   const k = useKart3D();
   const tx = k.tx, ty = k.ty;
@@ -235,6 +237,7 @@ function KaderKarti({ dilemma, onChoose }: { dilemma: Dilemma; onChoose: (c: Cho
                   </View>
                   <Text style={{ fontFamily: F.display, fontSize: 17, color: C.gold, textAlign: "center", letterSpacing: 0.5, marginTop: 12 }}>{gt("dil." + dilemma.id + ".t", dilemma.title)}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: "center", lineHeight: 22, marginTop: 10, marginBottom: ikili ? 12 : 4 }}>{gt("dil." + dilemma.id + ".x", dilemma.text)}</Text>
+                  {!!dilemma.not && <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.goldDim, textAlign: "center", lineHeight: 17, marginBottom: 10 }}>{dilemma.not}</Text>}
                   {ikili && <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, textAlign: "center" }}>‹  {t("kart.swipe")}  ›</Text>}
                 </KartYuz>
               ) : (
@@ -242,7 +245,7 @@ function KaderKarti({ dilemma, onChoose }: { dilemma: Dilemma; onChoose: (c: Cho
                   <View style={{ alignItems: "center", marginTop: 4 }}><GameIcon name={dilemma.icon} size={22} color={C.goldDim} /></View>
                   <Text style={{ fontFamily: F.display, fontSize: 12.5, letterSpacing: 1, color: C.goldBright, textAlign: "center", marginTop: 8 }}>{etiket(secim)}</Text>
                   <View style={{ alignSelf: "center", width: "40%", height: 1, backgroundColor: C.gold + "55", marginVertical: 12 }} />
-                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: "center", lineHeight: 22 }}>{gt("dil." + dilemma.id + ".r" + secim, dilemma.choices[secim].result)}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 15, color: C.parchment, textAlign: "center", lineHeight: 22 }}>{sonuc(secim)}</Text>
                   <Pressable accessibilityRole="button" accessibilityLabel={t("frs.ok")} onPress={devam} style={{ marginTop: 18, alignSelf: "center", paddingVertical: 12, paddingHorizontal: 44, borderRadius: 9, borderWidth: 1.5, borderColor: C.gold + "99", backgroundColor: C.gold }}>
                     <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.inkOnGold }}>{t("frs.ok")}</Text>
                   </Pressable>
@@ -259,6 +262,7 @@ function KaderKarti({ dilemma, onChoose }: { dilemma: Dilemma; onChoose: (c: Cho
               {ikili && <Animated.View pointerEvents="none" style={[{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.gold + "2E" }, i === 0 ? solSt : sagSt]} />}
               <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment, letterSpacing: 0.4, textAlign: "center" }}>{etiket(i)}</Text>
               <EtkiIzi c={c} />
+              {c.sans != null && <Text style={{ fontFamily: F.display, fontSize: 10.5, color: c.sans >= 60 ? C.sage : c.sans >= 40 ? C.ember : C.blood, textAlign: "center", marginTop: 5, letterSpacing: 0.5 }}>{applyParams(t("ahi.odds"), [c.sans])}</Text>}
             </Pressable>
           ))}
         </View>
@@ -267,10 +271,10 @@ function KaderKarti({ dilemma, onChoose }: { dilemma: Dilemma; onChoose: (c: Cho
   );
 }
 
-export function KaderKartiModal({ dilemma, onChoose }: { dilemma: Dilemma | null; onChoose: (c: Choice, i: number) => void }) {
+export function KaderKartiModal({ dilemma, onChoose, female }: { dilemma: Dilemma | null; onChoose: (c: Choice, i: number) => void; female?: boolean }) {
   return (
     <Modal visible={!!dilemma} transparent animationType="fade" onRequestClose={() => {}}>
-      <Arka>{dilemma && <KaderKarti key={dilemma.id} dilemma={dilemma} onChoose={onChoose} />}</Arka>
+      <Arka>{dilemma && <KaderKarti key={dilemma.id} dilemma={dilemma} onChoose={onChoose} female={female} />}</Arka>
     </Modal>
   );
 }

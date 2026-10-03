@@ -1,11 +1,12 @@
 // İkilemler — ay ilerlerken çıkan anlatısal seçimler. Saf veri; etki applyDilemma ile uygulanır.
 import { GameState, Delta, Player } from "./game";
 
-export interface Choice { label: string; delta: Delta; result: string; }
+export interface Choice { label: string; delta: Delta; result: string; rk?: string; sans?: number; } // rk: sonuç metni anahtarı (riskli yolun kötü sonucu) · sans: görünür başarı şansı %
 export interface Dilemma {
   id: string; title: string; text: string; icon: string;
   when?: (p: Player) => boolean;
   identity?: boolean; // kimliğe (nam/korku/şeref/şöhret) tepki veren olay — daha sık çıkar
+  not?: string; // kartın altına düşen çevrilmiş not (ör. kilitli hüner yolu ipucu)
   choices: Choice[];
 }
 

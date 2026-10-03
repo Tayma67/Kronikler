@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp } from "../../lib/game";
+import { applyDilemma, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp } from "../../lib/game";
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
@@ -197,6 +197,20 @@ export default function Dashboard() {
 
   if (!state) return <LoadingScreen />;
   const p = state.player;
+  // Tezgâh: work() mesleğe özgü bir karar bıraktıysa 3D kartta sorulur. Hüner yolu kilitliyse gizlenir, gereği kartın altında yazar;
+  // riskli yolun şansı görünür ve sonucu (kartta önceden atılmış zarla) arka yüzde motorla aynı çıkar.
+  const tzK = !p.dead ? tezgahKart(p) : undefined;
+  const tzHuner = tzK ? tezgahHuner(p, tzK) : false;
+  const tzDilemma: Dilemma | null = tzK ? {
+    id: tzK.id, title: "", text: "", icon: tzK.icon,
+    not: tzHuner ? undefined : applyParams(t("tz.lock"), [t("st." + tezgahHunerStat(p, tzK)), TEZGAH_HUNER]),
+    choices: tzK.s.filter((_, i) => i < 2 || tzHuner).map((sc, i) => ({
+      label: "", result: "", delta: sc.d,
+      sans: sc.risk ? tezgahSans(p, tzK) : undefined,
+      rk: sc.risk && !tezgahBasari(p, tzK, i) ? "dil." + tzK.id + ".r" + i + "x" : undefined,
+    })),
+  } : null;
+  const onTezgah = (_c: Choice, i: number) => { hap("selection"); apply((s) => resolveTezgah(s, i)); };
   const cal = currentCalendar(state.turn);
   const turn = state.turn;
   const fame = Math.round(p.fame || 0);
@@ -271,9 +285,11 @@ export default function Dashboard() {
       {milestone ? (
         <MilestoneModal visible={true} type={milestone.type} text={renderEvt(milestone.k, milestone.text, milestone.p, lang, t, p.gender === "kadın")} onClose={() => setMilestone(null)} />
       ) : dilemma ? (
-        <DilemmaModal dilemma={dilemma} onChoose={onChoose} />
+        <DilemmaModal dilemma={dilemma} onChoose={onChoose} female={p.gender === "kadın"} />
       ) : opp ? (
         <OpportunityModal opp={opp} statVal={opp ? state.player.stats[opp.stat] : 5} onResolve={onResolveOpp} onPass={() => { hap("tap"); setOpp(null); }} />
+      ) : tzDilemma ? (
+        <DilemmaModal dilemma={tzDilemma} onChoose={onTezgah} female={p.gender === "kadın"} />
       ) : ach ? (
         <AchievementToast name={ach.name} icon={ach.icon} onClose={() => setAch(null)} />
       ) : null}

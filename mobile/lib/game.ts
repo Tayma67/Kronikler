@@ -156,6 +156,7 @@ export interface Player {
   lakap?: string; lakaplar?: string[]; // yaşayan lakap (oynayış tarzından türer, ayda bir güncellenir) + ömür boyu kazanılanlar
   kademe?: number; // Ahilik: sınavla KAZANILAN kariyer kademesi (etkin unvan = min(hizmet süresi, kazanılan)); meslek değişince 0
   sinav_cagri?: number; sinav_bekle?: number; sinav_turn?: number; // peştamal sınavı: çağrılan hedef · kalınca yeniden çağrı turu · ayda tek deneme
+  tezgah?: string; tezgah_turn?: number; tezgah_zar?: number; tezgah_gor?: string[]; // tezgâh kararı: bekleyen kart · son kart turu · önceden atılmış zar · bu ömürde görülen kartlar
   sinav_gecme?: number; sinav_kalma?: number; // ömür boyu geçilen/kalınan peştamal sınavları (ustalık ünleri / Ebedi Kalfa)
   fetih_turlari?: number[]; divan_karar?: number; // hükümdar sicili: fetih turları (Yıldırım) + karara bağlanan divan arzuhalleri (Kanuni)
 }
@@ -3108,7 +3109,7 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
     { const wv2 = chance(0.5); push(s, "çalışma", wv2 ? `${careerTitle(p.profession, xp0)} olarak ter döktün; ay sonunda avucunda ${earn} akçe vardı.` : `${careerTitle(p.profession, xp0)} olarak çalıştın, ${earn} akçe kazandın.`, "kişisel", false, { k: wv2 ? "evj.work2" : "evj.work", p: [{ c: [p.profession, xp0] }, earn] }); }
   }
   if (pr) sinavCagrisi(s); // Ahilik: hizmet dolunca lonca peştamal sınavına çağırır — kademe kendiliğinden yükselmez
-  if (!failed && chance(0.3)) rollWorkEvent(s);                 // %30 meslek mini-olayı
+  if (!failed && !(pr && tezgahTetik(s)) && chance(0.3)) rollWorkEvent(s); // önce mesleğin kendi kararı (tezgâh), yoksa %30 mini-olay
   return s;
 }
 
@@ -3213,6 +3214,114 @@ export function professionAction(prev: GameState): GameState {
     p.reputation = Math.max(-100, p.reputation - 1);
     push(s, "çalışma", `Girişimin umduğun gibi gitmedi (+${small} akçe).`, "kişisel", false, { k: "prof.actLose", p: [small] });
   }
+  return s;
+}
+
+// ── Tezgâh: mesleğin kendi kararları ──
+// Çalışırken önüne düşen, mesleğe özgü ikilemler. Her mesleğin üç kartı var: çıraklıkta (a), kalfalıkta (b), ustalıkta (c);
+// her kart bir ömürde bir kez gelir. İki yol herkese açık; üçüncü yol HÜNER ister (meslek özelliği 7+ ya da usta kademesi) —
+// ustalık yalnız maaş değil, görülebilen yoldur. Riskli yolun şansı görünür ve özelliğe bağlıdır (zar kart düşerken atılır);
+// bazı seçimler aylar/yıllar sonra "yankı" olarak döner (sonuç tohumu). Metinler i18n: dil.<id>.t/x/c0-2/r0-2/r<i>x, seed.<id>_<i>.
+export interface TezgahYanki { hmin: number; hmax: number; etki: { money?: number; reputation?: number; health?: number } }
+export interface TezgahSecim { d: Delta; risk?: Delta; y?: TezgahYanki }
+export interface TezgahKart { id: string; prof: string; r: number; icon: string; s: TezgahSecim[] }
+export const TEZGAH_ARA = 6;       // iki kart arası en az ay
+export const TEZGAH_HUNER = 7;     // üçüncü yol için meslek özelliği eşiği
+const tzY = (hmin: number, hmax: number, etki: TezgahYanki["etki"]): TezgahYanki => ({ hmin, hmax, etki });
+export const TEZGAH: TezgahKart[] = [
+  { id: "tz_ciftci_a", prof: "çiftçi", r: 0, icon: "wheat", s: [{ d: { honor: 3 }, y: tzY(12, 48, { money: 25, reputation: 2 }) }, { d: { money: 12, honor: -3 }, y: tzY(18, 60, { money: -30, reputation: -4 }) }, { d: { reputation: 3, fame: 2, money: 8 } }] },
+  { id: "tz_ciftci_b", prof: "çiftçi", r: 1, icon: "sun", s: [{ d: { money: 10, reputation: 1 } }, { d: { money: 30 }, risk: { money: -10, health: -2 } }, { d: { money: 24, fame: 1, reputation: 1 } }] },
+  { id: "tz_ciftci_c", prof: "çiftçi", r: 2, icon: "house", s: [{ d: { money: 40, fear: 3, honor: -2 }, y: tzY(18, 60, { money: -25, reputation: -5 }) }, { d: { money: 15, honor: 3, reputation: 3 }, y: tzY(12, 48, { money: 35, reputation: 2 }) }, { d: { money: 30, reputation: 4, fame: 3 } }] },
+  { id: "tz_demirci_a", prof: "demirci", r: 0, icon: "anvil", s: [{ d: { honor: 3, reputation: -1 }, y: tzY(8, 36, { money: 20, reputation: 2 }) }, { d: { money: 6, honor: -3 }, y: tzY(6, 30, { money: -20, reputation: -4 }) }, { d: { money: 10, reputation: 2, fame: 1 } }] },
+  { id: "tz_demirci_b", prof: "demirci", r: 1, icon: "crossed-swords", s: [{ d: { money: 30, reputation: -2 } }, { d: { money: 6, honor: 3, reputation: 3 }, y: tzY(8, 24, { money: 25, reputation: 2 }) }, { d: { money: 36, health: -3, fame: 2 } }] },
+  { id: "tz_demirci_c", prof: "demirci", r: 2, icon: "flame", s: [{ d: { money: 50, fame: 3, honor: -3 }, y: tzY(18, 72, { reputation: -5 }) }, { d: { honor: 5, reputation: 2, nam: { mert: 2 } }, y: tzY(6, 36, { money: -25 }) }, { d: { money: 35, honor: 2, fame: 2 } }] },
+  { id: "tz_tuccar_a", prof: "tüccar", r: 0, icon: "scales", s: [{ d: { honor: 2, reputation: 1 }, y: tzY(24, 96, { money: 35, reputation: 2 }) }, { d: { money: 12, honor: -3 }, y: tzY(12, 60, { money: -20, reputation: -4 }) }, { d: { money: 8, reputation: 2, honor: 2 } }] },
+  { id: "tz_tuccar_b", prof: "tüccar", r: 1, icon: "camel", s: [{ d: { money: 60 }, risk: { money: -30 } }, { d: { money: 12, reputation: 1 } }, { d: { money: 36, reputation: 2 } }] },
+  { id: "tz_tuccar_c", prof: "tüccar", r: 2, icon: "wheat", s: [{ d: { money: 70, reputation: -6, honor: -4 }, y: tzY(24, 96, { reputation: -4 }) }, { d: { money: 20, honor: 3, reputation: 3 } }, { d: { money: 15, reputation: 5, honor: 4, nam: { comert: 3 } }, y: tzY(10, 24, { money: 80, reputation: 4 }) }] },
+  { id: "tz_balikci_a", prof: "balıkçı", r: 0, icon: "fishing", s: [{ d: { money: 25, fame: 1 }, risk: { health: -8, money: -5 } }, { d: { reputation: 2 } }, { d: { money: 22, reputation: 2 } }] },
+  { id: "tz_balikci_b", prof: "balıkçı", r: 1, icon: "fishing", s: [{ d: { honor: 3, reputation: 2 }, y: tzY(12, 60, { money: 15, health: 5 }) }, { d: { money: 15, honor: -2 }, y: tzY(4, 24, { money: -20 }) }, { d: { money: 10, reputation: 4, fame: 1 } }] },
+  { id: "tz_balikci_c", prof: "balıkçı", r: 2, icon: "amphora", s: [{ d: { money: 55, reputation: -4 }, y: tzY(6, 24, { money: -20, reputation: -2 }) }, { d: { money: 8, reputation: 4, honor: 2 } }, { d: { money: 40, reputation: 3, fame: 2 } }] },
+  { id: "tz_avci_a", prof: "avcı", r: 0, icon: "bow", s: [{ d: { money: 18 } }, { d: { honor: 2, reputation: -1 }, y: tzY(24, 90, { health: 6 }) }, { d: { reputation: 2, fame: 2 } }] },
+  { id: "tz_avci_b", prof: "avcı", r: 1, icon: "crown", s: [{ d: { money: 25, reputation: 1 } }, { d: { honor: 2, reputation: -1 } }, { d: { money: 18, fame: 3, reputation: 2 }, y: tzY(12, 36, { money: 40 }) }] },
+  { id: "tz_avci_c", prof: "avcı", r: 2, icon: "skull", s: [{ d: { money: 40, fame: 5, reputation: 4 }, risk: { health: -15, reputation: 1 } }, { d: { money: 20, reputation: 3 } }, { d: { reputation: 4, fame: 3, honor: 2 } }] },
+  { id: "tz_marangoz_a", prof: "marangoz", r: 0, icon: "saw", s: [{ d: { honor: 2, reputation: 1 }, y: tzY(36, 120, { reputation: 4 }) }, { d: { money: 6, honor: -2 }, y: tzY(12, 60, { money: -15, reputation: -5 }) }, { d: { money: 8, reputation: 2, fame: 1 } }] },
+  { id: "tz_marangoz_b", prof: "marangoz", r: 1, icon: "map", s: [{ d: { money: 12, reputation: 2 }, y: tzY(12, 48, { money: 10, reputation: -4 }) }, { d: { money: 18, reputation: -1 }, y: tzY(24, 96, { reputation: 6 }) }, { d: { money: 16, reputation: 3, fame: 1 } }] },
+  { id: "tz_marangoz_c", prof: "marangoz", r: 2, icon: "castle", s: [{ d: { money: 45, honor: -2 } }, { d: { honor: 3, reputation: 2 }, y: tzY(8, 36, { money: 50 }) }, { d: { money: 40, fame: 3, reputation: 2 } }] },
+  { id: "tz_coban_a", prof: "çoban", r: 0, icon: "sheep", s: [{ d: { money: 6, reputation: 3, fame: 1 }, risk: { health: -5, money: -4 } }, { d: { money: -6 } }, { d: { money: 4, reputation: 2 } }] },
+  { id: "tz_coban_b", prof: "çoban", r: 1, icon: "sun", s: [{ d: { money: 10, reputation: -3 }, y: tzY(6, 24, { money: -20 }) }, { d: { health: -3, honor: 2, reputation: 1 } }, { d: { money: 8, reputation: 3 }, y: tzY(8, 20, { money: 20, reputation: 2 }) }] },
+  { id: "tz_coban_c", prof: "çoban", r: 2, icon: "leaf", s: [{ d: { money: 40, fear: 3, reputation: -4, nam: { zalim: 1 } }, y: tzY(12, 48, { reputation: -4 }) }, { d: { money: 20, honor: 2, reputation: 2 } }, { d: { money: 25, reputation: 4, fame: 2 } }] },
+  { id: "tz_firinci_a", prof: "fırıncı", r: 0, icon: "bread", s: [{ d: { money: 5, honor: -2 } }, { d: { money: -3, honor: 3 }, y: tzY(24, 96, { money: 30 }) }, { d: { money: 8, reputation: 2 } }] },
+  { id: "tz_firinci_b", prof: "fırıncı", r: 1, icon: "scales", s: [{ d: { money: -10, honor: 3, reputation: 2 }, y: tzY(12, 60, { reputation: 3 }) }, { d: { money: 8, honor: -3 }, y: tzY(6, 30, { money: -25, reputation: -3 }) }, { d: { money: 10, reputation: 2 } }] },
+  { id: "tz_firinci_c", prof: "fırıncı", r: 2, icon: "bread", s: [{ d: { money: 25, reputation: -3 } }, { d: { money: -10, honor: 4, reputation: 4 }, y: tzY(2, 8, { money: -25 }) }, { d: { money: 20, reputation: 5, fame: 2 } }] },
+  { id: "tz_asker_a", prof: "asker", r: 0, icon: "shield", s: [{ d: { honor: 2, reputation: -1 }, y: tzY(24, 90, { health: 8, reputation: 2 }) }, { d: { reputation: 1, honor: -2 } }, { d: { reputation: 2, fame: 1, honor: 1 } }] },
+  { id: "tz_asker_b", prof: "asker", r: 1, icon: "flame", s: [{ d: { money: 20, honor: -4, nam: { zalim: 2 } }, y: tzY(36, 120, { reputation: -4, health: -5 }) }, { d: { honor: 4, reputation: -1, nam: { mert: 2 } }, y: tzY(36, 150, { money: 20, reputation: 5 }) }, { d: { money: 10, honor: 3, reputation: 2 } }] },
+  { id: "tz_asker_c", prof: "asker", r: 2, icon: "castle", s: [{ d: { money: 30, fear: 5, honor: -5, nam: { zalim: 3 } } }, { d: { honor: 5, reputation: 2, nam: { mert: 2 } }, y: tzY(2, 10, { money: -30, reputation: 4 }) }, { d: { money: 40, honor: 3, fame: 3 } }] },
+  { id: "tz_muzisyen_a", prof: "müzisyen", r: 0, icon: "lyre", s: [{ d: { health: -4, honor: 2, reputation: 2 } }, { d: { money: 12, reputation: 3, fame: 1 }, risk: { money: -6, reputation: -2 } }, { d: { money: 10, reputation: 3, fame: 2 } }] },
+  { id: "tz_muzisyen_b", prof: "müzisyen", r: 1, icon: "tombstone", s: [{ d: { money: 30, honor: -2 }, y: tzY(8, 36, { reputation: -4 }) }, { d: { money: 10, honor: 2 } }, { d: { money: 25, fame: 3, reputation: 2 }, y: tzY(10, 24, { money: 40 }) }] },
+  { id: "tz_muzisyen_c", prof: "müzisyen", r: 2, icon: "lyre", s: [{ d: { money: 20, reputation: 2 }, y: tzY(24, 96, { money: 20, reputation: 4 }) }, { d: { fame: 2 }, y: tzY(60, 180, { reputation: 6 }) }, { d: { money: 10, fame: 3, reputation: 3 } }] },
+  { id: "tz_sifaci_a", prof: "şifacı", r: 0, icon: "potion", s: [{ d: { honor: 2, reputation: -1 }, y: tzY(60, 180, { money: 10, reputation: 3 }) }, { d: { honor: -1 } }, { d: { reputation: 2, fame: 1, honor: 1 } }] },
+  { id: "tz_sifaci_b", prof: "şifacı", r: 1, icon: "healing", s: [{ d: { honor: 4, reputation: 4, fame: 2, nam: { dindar: 2 } }, risk: { health: -15, reputation: 3 } }, { d: { money: 10, reputation: -2 } }, { d: { reputation: 5, fame: 3, honor: 2 }, y: tzY(6, 24, { money: 30, reputation: 5 }) }] },
+  { id: "tz_sifaci_c", prof: "şifacı", r: 2, icon: "herbs", s: [{ d: { money: 70, honor: -6, nam: { zalim: 3 } }, y: tzY(12, 60, { money: -30, reputation: -8 }) }, { d: { money: 35, honor: 2 } }, { d: { money: 45, reputation: 2, honor: 1, fame: 2 } }] },
+  { id: "tz_katip_a", prof: "katip", r: 0, icon: "book", s: [{ d: { honor: 3, reputation: 1 }, y: tzY(60, 180, { money: 20, reputation: 4 }) }, { d: { money: 4, honor: -2 } }, { d: { reputation: 3, fame: 1, honor: 2 } }] },
+  { id: "tz_katip_b", prof: "katip", r: 1, icon: "scroll", s: [{ d: { money: 35, honor: -5 }, y: tzY(24, 120, { money: -30, reputation: -6 }) }, { d: { honor: 3, reputation: -1 } }, { d: { money: 25, honor: 1, fame: 1 }, y: tzY(4, 18, { reputation: 5 }) }] },
+  { id: "tz_katip_c", prof: "katip", r: 2, icon: "scroll-open", s: [{ d: { money: 40, reputation: -2, honor: -3 } }, { d: { honor: 3, reputation: 2 }, y: tzY(6, 30, { money: -25 }) }, { d: { money: 15, honor: 3, reputation: 4, fame: 2 }, y: tzY(12, 36, { money: 20, reputation: 3 }) }] },
+  { id: "tz_kuyumcu_a", prof: "kuyumcu", r: 0, icon: "ring", s: [{ d: { honor: 2, reputation: 1 } }, { d: { money: 15, honor: -4 }, y: tzY(6, 36, { money: -30, reputation: -5 }) }, { d: { reputation: 3, fame: 1 }, y: tzY(4, 18, { money: 30, reputation: 2 }) }] },
+  { id: "tz_kuyumcu_b", prof: "kuyumcu", r: 1, icon: "gems", s: [{ d: { money: 20, reputation: 3, honor: 2 }, risk: { money: -20, honor: 2 } }, { d: { money: 10 } }, { d: { money: 15, reputation: 3, fame: 2 } }] },
+  { id: "tz_kuyumcu_c", prof: "kuyumcu", r: 2, icon: "coins", s: [{ d: { money: 60, honor: -4 }, y: tzY(12, 48, { reputation: -6 }) }, { d: { money: -10, honor: 5, reputation: 3 }, y: tzY(6, 24, { money: 50 }) }, { d: { money: 40, fame: 2, honor: 1 } }] },
+  { id: "tz_dokumaci_a", prof: "dokumacı", r: 0, icon: "bucket", s: [{ d: { honor: 2, money: -4 } }, { d: { honor: -2 } }, { d: { money: 10, reputation: 2, fame: 1 } }] },
+  { id: "tz_dokumaci_b", prof: "dokumacı", r: 1, icon: "crown", s: [{ d: { money: 25, honor: -3 }, y: tzY(24, 72, { money: -35, reputation: -5 }) }, { d: { money: 10, honor: 3, reputation: 1 } }, { d: { money: 30, fame: 3, reputation: 2 } }] },
+  { id: "tz_dokumaci_c", prof: "dokumacı", r: 2, icon: "wool", s: [{ d: { money: 50, honor: -4, nam: { zalim: 2 } } }, { d: { honor: 3, reputation: 2 } }, { d: { reputation: 4, fame: 2, honor: 3 }, y: tzY(60, 180, { money: 40, reputation: 3 }) }] },
+  { id: "tz_hanci_a", prof: "hancı", r: 0, icon: "coins", s: [{ d: { health: -2, honor: 3, reputation: 2 }, y: tzY(24, 96, { money: 40 }) }, { d: { reputation: 1 } }, { d: { reputation: 3, fame: 1 } }] },
+  { id: "tz_hanci_b", prof: "hancı", r: 1, icon: "hood", s: [{ d: { money: 25, honor: -2 }, y: tzY(2, 12, { money: -20, reputation: -3 }) }, { d: { fear: 2, reputation: 2 }, y: tzY(4, 18, { money: -30, health: -3 }) }, { d: { money: 20, reputation: 2, fame: 1 }, y: tzY(8, 30, { money: 25, reputation: 3 }) }] },
+  { id: "tz_hanci_c", prof: "hancı", r: 2, icon: "house", s: [{ d: { money: 50, fame: 2, reputation: 1 } }, { d: { honor: 2, reputation: 3 }, y: tzY(36, 120, { money: 40, reputation: 3 }) }, { d: { money: 45, reputation: 4, fame: 3 } }] },
+];
+export function tezgahKart(p: Player): TezgahKart | undefined { return p.tezgah ? TEZGAH.find((k) => k.id === p.tezgah) : undefined; }
+// Hüner yolu: meslek özelliği eşiği ya da usta kademesi.
+export function tezgahHuner(p: Player, k?: TezgahKart): boolean {
+  const prof = k ? k.prof : p.profession;
+  return kademeOf(p) >= 2 || effStat(p, PROF_STAT[prof] || "stamina") >= TEZGAH_HUNER;
+}
+export function tezgahHunerStat(p: Player, k?: TezgahKart): keyof Stats { return PROF_STAT[k ? k.prof : p.profession] || "stamina"; }
+// Riskli yolun başarı şansı (0-100): meslek özelliğine bağlı, kartta görünür.
+export function tezgahSans(p: Player, k: TezgahKart): number {
+  return Math.round(Math.max(0.15, Math.min(0.9, 0.35 + effStat(p, PROF_STAT[k.prof] || "stamina") * 0.06)) * 100);
+}
+// Zar kart düşerken atılır; kart ile motor aynı sonucu görür (önizleme = gerçek).
+export function tezgahBasari(p: Player, k: TezgahKart, i: number): boolean {
+  if (!k.s[i]?.risk) return true;
+  return (p.tezgah_zar ?? 0) * 100 < tezgahSans(p, k);
+}
+// work() içinden: uygun kart varsa bekleyen karara koyar. Bir ömürde her kart bir kez; aralar en az TEZGAH_ARA ay.
+function tezgahTetik(s: GameState): boolean {
+  const p = s.player;
+  if (p.tezgah || (p.tezgah_turn != null && s.turn - p.tezgah_turn < TEZGAH_ARA)) return false;
+  const gor = p.tezgah_gor || [];
+  const havuz = TEZGAH.filter((k) => k.prof === p.profession && k.r <= kademeOf(p) && !gor.includes(k.id));
+  if (!havuz.length || !chance(0.3)) return false;
+  havuz.sort((a, b) => a.r - b.r); // önce kendi kademesinin altında kalan (henüz görülmemiş) kart
+  p.tezgah = havuz[0].id; p.tezgah_turn = s.turn; p.tezgah_zar = Math.random();
+  return true;
+}
+export function resolveTezgah(prev: GameState, i: number): GameState {
+  const s = clone(prev); const p = s.player;
+  const k = tezgahKart(p);
+  if (!k || p.dead) return s;
+  const sc = k.s[i]; if (!sc) return s;
+  if (i === 2 && !tezgahHuner(p, k)) return s; // hüner yolu kilitli
+  const ok = tezgahBasari(p, k, i);
+  const d = ok ? sc.d : sc.risk!;
+  if (d.money) p.money = Math.max(0, p.money + d.money);
+  if (d.health) p.health = Math.max(1, Math.min(100, p.health + d.health));
+  if (d.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + d.reputation));
+  if (d.honor) p.honor = Math.max(0, Math.min(100, p.honor + d.honor));
+  if (d.fear) p.fear = Math.max(0, Math.min(100, p.fear + d.fear));
+  if (d.fame) p.fame = Math.max(0, Math.min(100, p.fame + d.fame));
+  if (d.nam) for (const nk of Object.keys(d.nam) as (keyof Nam)[]) bumpNam(p, nk, d.nam[nk]!);
+  if (ok && sc.y) sowSeed(s, { kaynak: k.id + "_" + i, hmin: sc.y.hmin, hmax: sc.y.hmax, agirlik: "orta", nesil: false, etki: sc.y.etki });
+  gainSkill(s, PROF_SKILL[k.prof] || "crafting", 6);
+  p.tezgah = undefined; p.tezgah_zar = undefined;
+  p.tezgah_gor = [...(p.tezgah_gor || []), k.id];
+  push(s, "çalışma", "Tezgâhta bir karar verdin.", "kişisel", i === 2, { k: "dil." + k.id + ".r" + i + (ok ? "" : "x") });
   return s;
 }
 
@@ -3989,7 +4098,7 @@ export function changeProfession(prev: GameState, prof: string): GameState {
   if (!p.professions_tried) p.professions_tried = [];
   // Ayrıldığın meslek de sayılır (doğumda doğrudan atanan ilk meslek kaybolmasın — markVisit'teki kalkış kaydının analoğu).
   if (p.profession !== "işsiz" && !p.professions_tried.includes(p.profession)) p.professions_tried.push(p.profession);
-  p.profession = prof; p.career_xp = 0; p.kademe = 0; p.sinav_cagri = undefined; p.sinav_bekle = undefined; // yeni lonca, yeni çıraklık
+  p.profession = prof; p.career_xp = 0; p.kademe = 0; p.sinav_cagri = undefined; p.sinav_bekle = undefined; p.tezgah = undefined; // yeni lonca, yeni çıraklık
   if (!p.professions_tried.includes(prof)) p.professions_tried.push(prof);
   { const pv2 = chance(0.5); push(s, "meslek_değişimi", pv2 ? `Eski önlük çiviye asıldı; ${(professionById(prof)?.name || cap(prof)).toLowerCase()} tezgâhında ilk gün. Herkes bir zamanlar çıraktı.` : `${professionById(prof)?.name || cap(prof)} mesleğine geçtin — yeniden en alttan.`, "kişisel", true, { k: pv2 ? "evj.profSwitch2" : "evj.profSwitch", p: [{ pr: prof }] }); }
   return s;
