@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail, tendPet, tendDog, kariyerXp } from "../../lib/game";
+import { aileUyesi, useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail, tendPet, tendDog, kariyerXp } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider, ScreenFresk } from "../../lib/ui";
@@ -84,19 +84,21 @@ function Badge({ name, text }: { name?: string; text: string }) {
 }
 
 // Aile bireyi karosu — portre + rol + ad (boşsa kesik çerçeve + amblem).
-function RelativeTile({ role, name, age, gender, seed, has }: { role: string; name: string; age: number; gender: "erkek" | "kadın"; seed: string | number; has: boolean }) {
+// Aile karosu: gerçek kişiyse dokununca profili açılır; rahmetliyse soluk portre + "rahmetli".
+function RelativeTile({ role, name, age, gender, seed, has, olu, late, onPress }: { role: string; name: string; age: number; gender: "erkek" | "kadın"; seed: string | number; has: boolean; olu?: boolean; late?: string; onPress?: () => void }) {
   return (
-    <View style={{ flex: 1, alignItems: "center", backgroundColor: C.bg, borderWidth: 1, borderColor: has ? GB : C.border, borderRadius: 11, paddingVertical: 11, paddingHorizontal: 5, gap: 7 }}>
+    <Pressable disabled={!onPress} onPress={onPress} style={{ flex: 1, alignItems: "center", backgroundColor: C.bg, borderWidth: 1, borderColor: has ? GB : C.border, borderRadius: 11, paddingVertical: 11, paddingHorizontal: 5, gap: 7 }}>
       {has ? (
-        <Portre age={age} gender={gender} size={50} ring={false} seed={seed} />
+        <View style={{ opacity: olu ? 0.45 : 1 }}><Portre age={age} gender={gender} size={50} ring={false} seed={seed} /></View>
       ) : (
         <View style={{ width: 50, height: 50, borderRadius: 25, borderWidth: 1, borderColor: C.border, alignItems: "center", justifyContent: "center", backgroundColor: C.card }}>
           <GameIcon name="iliskiler" size={20} color={C.parchmentMuted} />
         </View>
       )}
       <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1, color: C.goldDim, textTransform: "uppercase" }}>{role}</Text>
-      <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12.5, color: has ? C.parchment : C.parchmentMuted, textAlign: "center" }}>{name}</Text>
-    </View>
+      <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12.5, color: has && !olu ? C.parchment : C.parchmentMuted, textAlign: "center" }}>{name}</Text>
+      {has ? <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.parchmentMuted, marginTop: -4 }}>{olu && late ? late : String(age)}</Text> : null}
+    </Pressable>
   );
 }
 
@@ -240,7 +242,7 @@ export default function Karakter() {
               })() : null}
               {p.married && p.spouse_seed != null ? (() => {
                 const sg = p.gender === "kadın" ? "erkek" : "kadın";
-                const nm = localFirstName(p.spouse_seed, sg, lang);
+                const nm = aileUyesi(state, "es", lang)?.ilkAd ?? localFirstName(p.spouse_seed, sg, lang); // gerçek eşin adı kaydından
                 const bond = p.spouse_bond ?? 40;
                 const spent = p.spouse_time_turn === state.turn;
                 return (
@@ -489,15 +491,21 @@ export default function Karakter() {
               <SectionHead title={t("char.family")} />
               {/* Ebeveynler + eş — portreli karolar */}
               <View style={{ flexDirection: "row", gap: 8 }}>
-                <RelativeTile role={t("char.mother")} has={true}
-                  name={p.mother_seed != null ? localFirstName(p.mother_seed, "kadın", lang) : (p.mother || t("char.none"))}
-                  age={p.age + 26} gender="kadın" seed={p.mother_seed ?? `${p.name}-m`} />
-                <RelativeTile role={t("char.father")} has={true}
-                  name={p.father_seed != null ? localFirstName(p.father_seed, "erkek", lang) : (p.father || t("char.none"))}
-                  age={p.age + 28} gender="erkek" seed={p.father_seed ?? `${p.name}-f`} />
-                <RelativeTile role={t("char.spouse")} has={p.spouse_seed != null || !!p.spouse_name}
-                  name={p.spouse_seed != null ? localFirstName(p.spouse_seed, spouseGender, lang) : (p.spouse_name || t("char.none"))}
-                  age={Math.max(16, p.age - 1)} gender={spouseGender} seed={p.spouse_seed ?? `${p.name}-s`} />
+                {(() => { // anne, baba ve eş nüfusta gerçek kişiyse ad, yaş ve ölüm kayıttan; değilse eski tohum/ad
+                  const an = aileUyesi(state, "anne", lang), ba = aileUyesi(state, "baba", lang), es = aileUyesi(state, "es", lang);
+                  const ac = (u: typeof an) => (u ? () => { hap("tap"); router.push(`/oyun/npc/${u.id}`); } : undefined);
+                  return (<>
+                    <RelativeTile role={t("char.mother")} has={true} olu={an ? an.olu : !!p.mother_dead} late={t("npc.late")} onPress={ac(an)}
+                      name={an ? an.ilkAd : p.mother_seed != null ? localFirstName(p.mother_seed, "kadın", lang) : (p.mother || t("char.none"))}
+                      age={an ? an.yas : p.age + 26} gender="kadın" seed={an ? an.id : p.mother_seed ?? `${p.name}-m`} />
+                    <RelativeTile role={t("char.father")} has={true} olu={ba ? ba.olu : !!p.father_dead} late={t("npc.late")} onPress={ac(ba)}
+                      name={ba ? ba.ilkAd : p.father_seed != null ? localFirstName(p.father_seed, "erkek", lang) : (p.father || t("char.none"))}
+                      age={ba ? ba.yas : p.age + 28} gender="erkek" seed={ba ? ba.id : p.father_seed ?? `${p.name}-f`} />
+                    <RelativeTile role={t("char.spouse")} has={!!es || p.spouse_seed != null || !!p.spouse_name} olu={es ? es.olu : !!p.widowed} late={t("npc.late")} onPress={ac(es)}
+                      name={es ? es.ilkAd : p.spouse_seed != null ? localFirstName(p.spouse_seed, spouseGender, lang) : (p.spouse_name || t("char.none"))}
+                      age={es ? es.yas : Math.max(16, p.age - 1)} gender={spouseGender} seed={es ? es.id : p.spouse_seed ?? `${p.name}-s`} />
+                  </>);
+                })()}
               </View>
               {/* Ebeveyn ziyareti: en az biri hayattaysa (turda tek) */}
               {!(p.mother_dead && p.father_dead) && (() => { const visited = p.parent_visit_turn === state.turn; return (

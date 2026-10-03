@@ -58,7 +58,7 @@ export default function Iliskiler() {
   const { state, mpMode } = useGame();
   const { snapshot, guestId } = useMp();
   const { lang, t } = useI18n();
-  const npcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang, state?.player.location_name]);
+  const npcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.pop, state?.seed, state?.turn, lang, state?.player.location_name]); // nüfus yaşar: doğan, ölen, göçen kadroya yansısın
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   // Bölgedeki herkes görünür — tanışmadıkların da (ilişki 0) "tanış" bandında çıkar ki üzerine tıklayıp tanışabilesin.
   const all = npcs.map((n) => ({ n, v: relWith(state, n.id) }));

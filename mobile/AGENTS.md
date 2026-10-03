@@ -75,7 +75,8 @@ UI-dışı dosyalar (docs) için 2 ve 7 yeterli; game.ts'e dokunmayan UI dalgala
   kapanışında; `resolveSaga` seçimleri işler; sahne panoda BEKLER (silinmez). Vârise geçer (scene temizlenir,
   declined sıfırlanır). `declined=9` = "haberi Karakuş'a sattı" sentineli (o ömürde destan kapalı).
 - **Arz-talep:** NPC meslekleri → `cityProfCounts` (yıl-memolu) → `cityGoodSupply` → `supplyDemandMult` → fiyat.
-  NPC yaşam tiki yılda bir (`npcLifeTick`): ölüm/doğum/murat; `npcEvo.prof` = hayaline eren NPC'nin yeni mesleği.
+  NPC yaşam tiki yılda bir (`npcLifeTick` → `nufusYil`): kalıcı kişiler `s.pop` (lib/nufus.ts, NUFUS.md) —
+  gerçek evlilik/doğum/ölüm/göç; oyuncunun eşi ve anne-babası da kişidir (`spouse_id/mother_id/father_id`).
 - **i18n:** `lib/i18n.tsx` (~4.4k anahtar × 6 dil). Yeni anahtar ekleme kalıbı: bir anchor anahtarın 6 dildeki
   konumunu bulup ters sırayla blob ekle; değerlerde `"` ve `\` yasak (assert'le).
 - **Sinematik prolog:** `app/yeni-oyun.tsx` (Prolog) + `lib/prolog.tsx` (SVG sahne tabloları). Sade mod

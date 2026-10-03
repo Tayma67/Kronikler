@@ -1,7 +1,8 @@
 // Offline oyun çekirdeği (sürüm 3) — hayat döngüsü + NPC/ilişki/envanter/pazar.
 import type { EvtParam } from "./i18n";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
-import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname, SPECIALTIES, Item, WClass, applyFamilySurnames, npcAgeProfession } from "./world";
+import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname, SPECIALTIES, Item, WClass, applyFamilySurnames, npcAgeProfession, TRAITS, QUIRKS, GOALS } from "./world";
+import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf } from "./nufus";
 import { Lang } from "./locale-data";
 import { converse, ConvResult, spontaneousLine, callbackLine, perceptionGreeting } from "./dialogue";
 import { Memory, addMemory, decayMemories, effectiveRel, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS } from "./npc-mind";
@@ -22,6 +23,7 @@ export interface Player {
   parent_bond?: number; // anne-babayla bağ 0-100 (ziyaret besler; vefat acısı ve küçük miras bağa oranlı; eski kayıtta yoksa 45 sayılır)
   parent_visit_turn?: number; // bu ay ebeveyn ziyareti yapıldı mı (turda tek — bağ farmı önlenir)
   mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
+  spouse_id?: string; mother_id?: string; father_id?: string; // yaşayan nüfustaki gerçek kişiler (eş, anne, baba): ad, yaş ve ölüm oradan gelir
   spouse_mizac?: string; // kur yaptığın NPC'nin karakterinden gelen eş mizacı (tanıdığın kişi evlenince başkalaşmaz)
   married_turn?: number; // evliliğin kurulduğu tur (yıldönümü anları; eski kayıtta yoksa yıldönümü sessizce atlanır)
   spouse_bond?: number; // eşle bağ 0-100 (yaşayan evlilik: anlar besler, ihmal/flört törpüler; dulluk acısı ve yıldönümü sıcaklığı buna oranlı)
@@ -430,117 +432,232 @@ export function propWorkerSlots(pr: Property): number { return (PROPERTY_TYPES[p
 export function rosterSize(loc: string): number { const k = placeKind(loc); return k === "şehir" ? 30 : k === "kale" ? 20 : 15; } // test geri bildirimi: 10 kişilik kasaba boş hissettiriyordu; taban deterministik olduğundan büyütme eski kayıtlara yeni yüzler ekler, kimseyi silmez
 // Dünya saati: nesiller boyu biriken yıl (NPC'ler bununla yaşlanır).
 export function worldYears(s: GameState): number { return (s.world?.npcYears || 0) + Math.floor(s.turn / 12); }
-// Deterministik temel kadro önbelleği: generateNPCs(loc,lang) saf ve değişmez → sonsuza dek memo'lanır.
-// (42 yerleşimli dünyada yaşayan-dünya tikinin her yıl tüm lokasyonları taramasını ucuzlatır.)
-const _rosterBaseCache: Record<string, NPC[]> = {};
-function rosterBase(loc: string, lang: Lang): NPC[] {
-  const key = loc + "|" + lang;
-  let b = _rosterBaseCache[key];
-  if (!b) { b = generateNPCs(locSeed(loc), rosterSize(loc), lang, loc); applyFamilySurnames(loc, b); _rosterBaseCache[key] = b; }
-  return b;
-}
-export function rosterAt(s: GameState, loc: string, lang: Lang = "tr"): NPC[] {
-  const wy = worldYears(s); const evo = s.world?.npcEvo;
-  // Yaşa göre normalize: meslek (çocuk/çırak) + 14 altı hedef gütmez (2 yaşında tüccar/borç olmaz).
-  const norm = (n: NPC, age: number): NPC => ({ ...n, age, profession: npcAgeProfession(evo?.[n.id]?.prof || n.profession, age), goal: age < 14 || evo?.[n.id]?.goalDone ? "" : n.goal });
-  const base = rosterBase(loc, lang)
-    .map((n) => norm({ ...n, alive: evo?.[n.id]?.dead ? false : true } as NPC, Math.min(95, n.age + wy)))
-    .filter((n) => n.alive !== false);
-  const born = (s.world?.npcBorn || []).filter((n) => n.loc === loc && n.alive !== false)
-    .map((n) => norm({ ...n, name: n.nameSeed != null ? `${localFirstName(n.nameSeed, n.gender, lang)} ${localSurname(n.nameSeed * 2 + 1, lang)}` : n.name } as NPC, Math.min(95, n.age + Math.max(0, wy - (n.bornY ?? wy)))));
-  return born.length ? [...base, ...born] : base;
-}
+// Yaşayan kadro: kalıcı nüfusun o yerleşimde yaşayanları (isim dile göre çözülür, meslek yaşa göre).
+export function rosterAt(s: GameState, loc: string, lang: Lang = "tr"): NPC[] { return kadro(nufusOf(s), loc, worldYears(s), lang); }
 // Bir mülkün şehrinin işçi havuzu (yaşayan kadrodan).
 export function townNpcsOf(s: GameState, loc: string, lang: Lang = "tr"): NPC[] { return rosterAt(s, loc, lang); }
-// Yaşayan dünya tiki (Vercel simulation _age_and_die / _marry_and_birth): yılda bir yaşa-bağlı ölüm + dengeli doğum (nüfus stabil) + evlilik haberi.
-function npcBaby(s: GameState, loc: string): NPC {
-  const n = generateNPCs((locSeed(loc) ^ s.turn ^ Math.floor(Math.random() * 1e6)) >>> 0, 1, "tr", "born")[0];
-  n.id = `born_${loc}_${s.turn}_${Math.floor(Math.random() * 1e6)}`; n.loc = loc; n.alive = true; n.age = 0; n.bornY = worldYears(s);
-  // profession/goal saklı kalır (yetişkin değeri); gösterimde rosterAt yaşa göre çocuk/çırak'a indirger.
-  n.nameSeed = (Math.floor(Math.random() * 1e9)) >>> 0; // isim dile göre çözülsün
-  return n;
+// ── Yaşayan nüfus bağlamı (NUFUS.md) — yerleşimler, hedef nüfus, bölge ──
+function nufusCtx(): NufusCtx { return { yerler: LOCATIONS, hedef: rosterSize, bolge: regionOf }; }
+// Nüfusu getir; yoksa (eski kayıt ya da çok oyunculu geçici durum) kur. Saf okuyucular için geçici kopya önbelleklenir.
+const _geciciNufus = new Map<string, Nufus>();
+export function nufusOf(s: GameState): Nufus {
+  if (s.pop) return s.pop;
+  const key = `${s.seed}|${worldYears(s)}`;
+  let p = _geciciNufus.get(key);
+  if (!p) { p = nufusKur(nufusCtx(), eskiDunyaOf(s)); if (_geciciNufus.size > 4) _geciciNufus.clear(); _geciciNufus.set(key, p); }
+  return p;
 }
-// Diyara yerleşen bekâr yetişkin: oyuncunun çağında kimse kalmadıysa kasabaya taze kan (yılda en çok bir; farm yok — oyuncu eylemi değil).
-function npcNewcomer(s: GameState, loc: string, gender: "erkek" | "kadın", age: number): NPC {
-  const n = npcBaby(s, loc);
-  n.gender = gender; n.age = Math.max(18, Math.min(50, age));
-  return n;
+// Değiştiren akışlar için: nüfus kayıtta yoksa kurulur, eski alanlar boşaltılır, oyuncunun ailesi gerçek kişilere bağlanır (göç idempotent).
+// Nüfusu DEĞİŞTİRECEK her akış önce bunu çağırır (paylaşılan nüfus burada kopyalanır; doğrudan s.pop'a yazılmaz).
+const _popPaylasimli = new WeakSet<object>();
+function nufusHazirla(s: GameState): Nufus {
+  if (!s.pop) {
+    s.pop = nufusKur(nufusCtx(), eskiDunyaOf(s)); if (s.world) { delete s.world.npcEvo; delete s.world.npcBorn; }
+    if (s.player) oyuncuAilesiKur(s);
+  } else if (_popPaylasimli.has(s)) {
+    s.pop = typeof structuredClone === "function" ? structuredClone(s.pop) : JSON.parse(JSON.stringify(s.pop));
+    _popPaylasimli.delete(s);
+  }
+  nufusDegisti(s.pop!);
+  return s.pop!;
 }
+function eskiDunyaOf(s: GameState): EskiDunya {
+  const p = s.player; const wy = worldYears(s);
+  const oyuncuEs = p && p.married && p.spouse_seed != null ? { seed: p.spouse_seed, ey: wy - Math.floor(Math.max(0, s.turn - (p.married_turn ?? s.turn)) / 12) } : null;
+  return { wy, evo: s.world?.npcEvo, born: s.world?.npcBorn, oyuncuEs };
+}
+// Oyuncunun ailesi nüfusta gerçek kişidir: anne-baba ocakta yaşar (yaşlanır, ölür), eş oyuncunun ocağındadır.
+// Eski kayıtta adından ibaret aile üyesi aynı adla (aynı tohum) kaydolur; ölmüş olan kurulmaz. Tekrar çağrılması zararsızdır.
+function oyuncuAilesiKur(s: GameState) {
+  const p = s.player; if (!s.pop || !p) return; const pop = s.pop; // çağıranlar: nufusHazirla (taze), newGame, continueAsHeir (özel kopya)
+  const wy = worldYears(s); const yurt = p.home_name || p.location_name;
+  const kur = (g: Cins, yas: number, seed: number | undefined): Kisi => {
+    const k = yeniGelen(pop, wy, yurt, g, Math.max(16, Math.min(95, yas)), Math.random);
+    if (seed != null) k.ns = seed >>> 0; // ad: aynı tohum → kayıttaki adla birebir (6 dilde)
+    return k;
+  };
+  // Eş: NPC eşi nüfusKur bağladı; bağlanamayan (isim+tohum) eş aynı adla kaydolur.
+  if (p.married && !p.spouse_is_player && !(p.spouse_id && pop.k[p.spouse_id])) {
+    const es = Object.values(pop.k).find((k) => k.es === OYUNCU && k.ol == null);
+    if (es) p.spouse_id = es.id;
+    else if (p.spouse_seed != null) {
+      const g: Cins = p.gender === "erkek" ? "kadın" : "erkek";
+      const k = kur(g, p.age + (g === "kadın" ? -2 : 2), p.spouse_seed);
+      k.es = OYUNCU; k.ey = wy - Math.floor(Math.max(0, s.turn - (p.married_turn ?? s.turn)) / 12); p.spouse_id = k.id;
+    }
+  }
+  // Vâris kaydında ölmüş ata "yaşıyor" işaretli kalmış olabilir (eski hata): atalar defterindeki son ad ebeveynse vefat etmiştir.
+  const ata = s.dynasty?.[s.dynasty.length - 1]?.name;
+  if (ata && (p.generation || 1) > 1) { if (p.mother === ata) p.mother_dead = true; if (p.father === ata) p.father_dead = true; }
+  // Anne-baba: yaşıyorsa ve henüz kişi değilse kurulur; ikisi de yaşıyorsa birbirinin eşidir. Baba oyuncunun soyadını taşır.
+  let anne = p.mother_id ? pop.k[p.mother_id] : undefined, baba = p.father_id ? pop.k[p.father_id] : undefined;
+  if (!anne && !p.mother_dead && p.mother && !p.mother_id) { anne = kur("kadın", p.age + 26, p.mother_seed); p.mother_id = anne.id; }
+  if (!baba && !p.father_dead && p.father && !p.father_id) { baba = kur("erkek", p.age + 28, p.father_seed); p.father_id = baba.id; if (p.surname) baba.sa = p.surname; }
+  if (anne && baba && anne.ol == null && baba.ol == null && !anne.es && !baba.es) { anne.es = baba.id; baba.es = anne.id; anne.ey = baba.ey = wy - p.age - 1; }
+  if (s.relationships) for (const k of [anne, baba]) if (k && s.relationships[k.id] === undefined) s.relationships[k.id] = 60; // evlat yabancı değildir
+  if (p.spouse_id && s.relationships && s.relationships[p.spouse_id] === undefined) s.relationships[p.spouse_id] = 50;
+  nufusDegisti(pop);
+}
+// Oyuncuyla bağı olan kayıtlar budanmaz (ilişki, anı, işçi, çırak, can yoldaşı, eş, anne-baba).
+function nufusKorunan(s: GameState): Set<string> {
+  const k = new Set<string>([...Object.keys(s.relationships || {}), ...Object.keys(s.npc_state || {})]);
+  const p = s.player;
+  for (const pr of p.properties || []) for (const w of pr.workers || []) k.add(w);
+  if (p.child_friend) k.add(p.child_friend.id);
+  if (p.apprentice) k.add(p.apprentice.id);
+  for (const id of [p.spouse_id, p.mother_id, p.father_id, p.betrothed?.id, p.affair?.id]) if (id) k.add(id);
+  return k;
+}
+export function kisiOf(s: GameState, id: string): Kisi | undefined { return nufusOf(s).k[id]; }
+export function kisiYasiyor(s: GameState, id: string): boolean { const k = nufusOf(s).k[id]; return !k || k.ol == null; } // kayıtsız (henüz kurulmamış) kişi yaşıyor sayılır
+// Olay parametresi: kişinin adı her dilde kendi kaydından çözülür (tam ad / yalnız ilk ad).
+export const knParam = (k: Kisi): EvtParam => ({ kn: [k.g, k.af ?? -1, k.ns ?? 0, k.sf ?? -1, k.ss ?? 0, k.sa || ""] });
+export const kfParam = (k: Kisi): EvtParam => ({ kf: [k.g, k.af ?? -1, k.ns ?? 0] });
+// Oyuncunun kendi anne/babası mı (kur, flört, görücü adayı olamaz).
+export function oyuncuAkrabasi(p: Player, id: string): boolean { return id === p.mother_id || id === p.father_id; }
+// Oyuncunun eşi (yaşıyor ya da vefat etmiş; boşanınca bağ kopar).
+export function esKisi(s: GameState): Kisi | undefined { const id = s.player.spouse_id; return id ? nufusOf(s).k[id] : undefined; }
+// Eşin ilk adı (olay parametresi): gerçek kişiyse onun adı, değilse eski tohum/ad.
+function esParam(s: GameState): EvtParam {
+  const k = esKisi(s); if (k) return kfParam(k);
+  const p = s.player; return esParam(s);
+}
+function ebeveynParam(s: GameState, rol: "anne" | "baba"): EvtParam {
+  const p = s.player; const id = rol === "anne" ? p.mother_id : p.father_id; const k = id ? nufusOf(s).k[id] : undefined;
+  if (k) return kfParam(k);
+  return { fn: [(rol === "anne" ? p.mother_seed : p.father_seed) ?? 0, rol === "anne" ? "kadın" : "erkek"] };
+}
+// Ailenin bir üyesi (gösterim): gerçek kişiyse ad/yaş/ölüm kaydından.
+export function aileUyesi(s: GameState, rol: "es" | "anne" | "baba", lang: Lang = "tr"): { id: string; ad: string; ilkAd: string; yas: number; olu: boolean; loc: string } | null {
+  const p = s.player; const id = rol === "es" ? p.spouse_id : rol === "anne" ? p.mother_id : p.father_id;
+  const k = id ? nufusOf(s).k[id] : undefined; if (!k) return null;
+  const n = kisiNpc(k, worldYears(s), lang);
+  return { id: k.id, ad: n.name, ilkAd: n.name.split(" ")[0], yas: yasOf(k, worldYears(s)), olu: k.ol != null, loc: k.loc };
+}
+// Kişi profili (her yerden): yaşayan ya da rahmetli, nerede olursa olsun. Etkileşim yalnız aynı yerdeki yaşayanla.
+export function kisiProfil(s: GameState, id: string, lang: Lang = "tr"): { npc: NPC; olu: boolean; burada: boolean; aileRolu: "anne" | "baba" | "es" | null } | null {
+  const k = nufusOf(s).k[id]; if (!k) return null; const p = s.player;
+  const aileRolu = id === p.mother_id ? "anne" : id === p.father_id ? "baba" : id === p.spouse_id ? "es" : null;
+  return { npc: kisiNpc(k, worldYears(s), lang), olu: k.ol != null, burada: k.ol == null && k.loc === p.location_name, aileRolu };
+}
+// Bir kişinin aile ve çevresi (profil ekranı): eş, anne-baba, evlatlar, kardeşler, dost ve hasımlar — ölüler ve uzaktakiler dahil.
+export function kisiCevresi(s: GameState, id: string, lang: Lang = "tr"): { tur: "es" | "ebeveyn" | "evlat" | "kardes" | "dost" | "rakip"; npc: NPC; olu: boolean; uzak: boolean }[] {
+  const pop = nufusOf(s); const wy = worldYears(s);
+  const TUR = { es: "es", baba: "ebeveyn", anne: "ebeveyn", evlat: "evlat", kardes: "kardes", dost: "dost", hasim: "rakip" } as const;
+  return kisiBaglari(pop, id).map((b) => { const k = pop.k[b.id]; return { tur: TUR[b.tur], npc: kisiNpc(k, wy, lang), olu: k.ol != null, uzak: k.loc !== s.player.location_name }; });
+}
+// Oyuncunun NPC ile evliliği nüfusa işlenir: o kişi evlilik pazarından çıkar; önceki eşi (varsa) bağdan çözülür.
+function nufusOyuncuylaEvlen(s: GameState, id: string) {
+  const pop = nufusHazirla(s); const k = pop.k[id]; if (!k || k.ol != null) return;
+  for (const x of Object.values(pop.k)) if (x.es === OYUNCU && x.ol == null) delete x.es; // tek eş
+  if (k.es && pop.k[k.es]) delete pop.k[k.es].es;
+  k.es = OYUNCU; k.ey = worldYears(s);
+}
+// Oyuncu gerçek bir kişiyle evlenir: eş kimliği, adı, isim tohumu ve mizacı tek yerden kurulur; eş oyuncunun ocağına taşınır.
+function oyuncuEvlenKisi(s: GameState, kisi: Kisi) {
+  const p = s.player;
+  nufusOyuncuylaEvlen(s, kisi.id);
+  const k = nufusHazirla(s).k[kisi.id]; // yazınca kopyalanan nüfusta güncel nesne
+  k.loc = p.home_name || p.location_name;
+  p.spouse_id = k.id; p.spouse_name = kisiAdi(k, "tr"); p.spouse_seed = k.ns ?? locSeed(k.id);
+  p.spouse_mizac = mizacFromTrait(huyOf(k), p.spouse_seed);
+  s.relationships[k.id] = Math.max(40, s.relationships[k.id] ?? 0); // görücüyle de olsa eş yabancı kalmaz
+}
+// Görücü usulü / hikâye düğünü / hanedan ittifakı: eş gerçek bir kişidir. Önce bulunduğun yerde (yoksa bölgende) çağına uygun
+// bekâr biri; yoksa (ya da hanedan gelini/damadıysa) uzaktan gelip ocağına yerleşen biri.
+function esBulVeyaKur(s: GameState, uzaktan = false): Kisi {
+  const pop = nufusHazirla(s); const p = s.player; const wy = worldYears(s);
+  const g: Cins = p.gender === "erkek" ? "kadın" : "erkek";
+  if (!uzaktan) {
+    const uygun = (k: Kisi) => {
+      if (k.ol != null || k.es || k.g !== g || oyuncuAkrabasi(p, k.id) || (s.relationships[k.id] ?? 0) <= -20) return false;
+      const y = wy - k.dy; return y >= (g === "kadın" ? 16 : 18) && y >= p.age - 12 && y <= p.age + 10;
+    };
+    const hepsi = Object.values(pop.k).filter(uygun);
+    const yerde = hepsi.filter((k) => k.loc === p.location_name);
+    const havuz = yerde.length ? yerde : hepsi.filter((k) => regionOf(k.loc) === regionOf(p.location_name));
+    if (havuz.length) return rnd(havuz);
+  }
+  const yas = g === "kadın" ? Math.max(16, p.age - 1 - Math.floor(Math.random() * 6)) : Math.max(18, p.age + Math.floor(Math.random() * 5));
+  return yeniGelen(pop, wy, p.home_name || p.location_name, g, Math.min(80, yas), Math.random);
+}
+// Oyuncunun yaşayan eşi: dul kalır (oyuncu öldü), ayrılır (boşanma) ya da ölür (eşin ölümü oyuncu akışında).
+function nufusOyuncuEsi(s: GameState): Kisi | undefined { if (!s.pop) return undefined; return Object.values(nufusHazirla(s).k).find((k) => k.es === OYUNCU && k.ol == null); } // yazma amaçlı
+function nufusOyuncuEsiAyril(s: GameState) { const k = nufusOyuncuEsi(s); if (k) delete k.es; s.player.spouse_id = undefined; }
+function nufusOyuncuEsiOldu(s: GameState) { const k = nufusOyuncuEsi(s); if (k) { k.ol = worldYears(s); nufusDegisti(s.pop!); } } // eş kaydı tarih olarak kalır (spouse_id vâris için durur)
+// Anne/baba vefatı (tek yerden): nüfusta ölen gerçek ebeveyn ya da kaydı olmayan eski ebeveynin zarı.
+function ebeveynVefat(s: GameState, rol: "anne" | "baba") {
+  const p = s.player;
+  if (rol === "anne") p.mother_dead = true; else p.father_dead = true;
+  p.health = Math.max(1, p.health - (3 + Math.round((p.parent_bond ?? 45) / 20))); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1); // acı, bağın derinliğine oranlı
+  const k = (rol === "anne" ? p.mother_id : p.father_id); const kk = k && s.pop ? nufusHazirla(s).k[k] : undefined;
+  if (kk && kk.ol == null) { kk.ol = worldYears(s); nufusDegisti(s.pop!); }
+  if (rol === "anne") push(s, "kader", `Annen ${p.mother} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.motherDied", p: [ebeveynParam(s, "anne")] });
+  else push(s, "kader", `Baban ${p.father} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.fatherDied", p: [ebeveynParam(s, "baba")] });
+  if ((p.parent_bond ?? 45) >= 60) {
+    const mir = Math.round(20 * inflationFactor(s)); p.money += mir;
+    if (rol === "anne") push(s, "kader", `Annenin çeyiz sandığından sana kalan çıktı (+${mir} akçe); yakın olana el emeği kalır.`, "kişisel", false, { k: "evj.parentLegacy", p: [mir] });
+    else push(s, "kader", `Babanın kesesinden sana ayırdığı çıktı (+${mir} akçe); yakın olana el emeği kalır.`, "kişisel", false, { k: "evj.parentLegacy", p: [mir] });
+  }
+}
+
 function npcLifeTick(s: GameState) {
   if (s.turn === 0 || s.turn % 12 !== 0) return; // yılda bir
-  if (!s.world.npcEvo) s.world.npcEvo = {};
-  if (!s.world.npcBorn) s.world.npcBorn = [];
-  let knownGone: string | null = null;
-  for (const loc of LOCATIONS) {
-    for (const n of rosterAt(s, loc)) {
-      const dc = n.age < 55 ? 0 : n.age < 70 ? 0.02 : n.age < 82 ? 0.07 : 0.18; // yaşa göre ölüm şansı
-      if (dc <= 0 || Math.random() >= dc) continue;
-      if (n.id.startsWith("born_")) { const b = s.world.npcBorn.find((x) => x.id === n.id); if (b) b.alive = false; }
-      else s.world.npcEvo[n.id] = { dead: true };
-      s.world.npcBorn.push(npcBaby(s, loc)); // her ölüm bir doğumla dengelenir → nüfus stabil
-      // Ölen NPC oyuncunun işçisiyse mülkten çıkar (slot boşalsın) + haber ver.
-      for (const pr of s.player.properties) { if (pr.workers?.includes(n.id)) { pr.workers = pr.workers.filter((id) => id !== n.id); push(s, "mülk", `İşçin ${n.name} vefat etti; mülkünde bir yer boşaldı.`, "kişisel", false, { k: "npclife.workerDied", p: [n.name, { pt2: pr.type }] }); } }
-      if (!knownGone && s.npc_state?.[n.id]) knownGone = n.name;
+  const pop = nufusHazirla(s); const p = s.player; const wy = worldYears(s);
+  const sabit = new Set<string>(); for (const id of [p.mother_id, p.father_id]) if (id) sabit.add(id);
+  const olaylar = nufusYil(pop, nufusCtx(), {
+    wy, korunan: nufusKorunan(s), sabit,
+    oyuncuLoc: p.location_name, oyuncuCins: p.gender, oyuncuYas: p.age, oyuncuBekar: !p.married && !p.dead,
+  });
+  const tanidik = (id: string) => s.relationships[id] !== undefined || !!s.npc_state?.[id];
+  const ad = (id: string) => { const k = pop.k[id]; return k ? kisiAdi(k, "tr") : "?"; };
+  const prm = (id: string): EvtParam => { const k = pop.k[id]; return k ? knParam(k) : "?"; };
+  let olumHaberi = false, evlilikHaberi = 0, dogumHaberi = 0;
+  for (const o of olaylar) {
+    if (o.t === "olum") {
+      if (p.dead) continue;
+      if (o.id === p.mother_id && !p.mother_dead) { ebeveynVefat(s, "anne"); continue; }
+      if (o.id === p.father_id && !p.father_dead) { ebeveynVefat(s, "baba"); continue; }
+      // Ölen oyuncunun işçisiyse mülkten çıkar (yer boşalsın) + haber.
+      for (const pr of p.properties) if (pr.workers?.includes(o.id)) {
+        pr.workers = pr.workers.filter((w) => w !== o.id);
+        push(s, "mülk", `İşçin ${ad(o.id)} vefat etti; mülkünde bir yer boşaldı.`, "kişisel", false, { k: "npclife.workerDied", p: [prm(o.id), { pt2: pr.type }] });
+      }
+      if (!olumHaberi && tanidik(o.id)) { olumHaberi = true; push(s, "dunya_olayi", `${ad(o.id)} bu dünyadan göçtü; tanıdık bir yüz eksildi.`, "kişisel", true, { k: "npclife.deathKnown", p: [prm(o.id)] }); }
+    } else if (o.t === "evlilik") {
+      const yerel = pop.k[o.a]?.loc === p.location_name;
+      if (evlilikHaberi < 2 && (yerel || tanidik(o.a) || tanidik(o.b))) { evlilikHaberi++; push(s, "dunya_olayi", `${ad(o.a)} ile ${ad(o.b)} dünyaevi kurdu.`, tanidik(o.a) || tanidik(o.b) ? "kişisel" : "makro", false, { k: "npclife.marry", p: [prm(o.a), prm(o.b)] }); }
+    } else if (o.t === "dogum") {
+      const bilinen = tanidik(o.anne) ? o.anne : tanidik(o.baba) ? o.baba : null;
+      if (dogumHaberi < 2 && bilinen) { dogumHaberi++; push(s, "dunya_olayi", `${ad(bilinen)}'in bir evladı dünyaya geldi.`, "kişisel", false, { k: "npclife.birth", p: [prm(bilinen)] }); }
+    } else if (o.t === "gelen" && o.nereye === p.location_name) {
+      push(s, "dunya_olayi", `${p.location_name}'e yeni biri yerleşti; çarşıda tanımadık bir yüz var.`, "kişisel", false, { k: "npclife.newcomer", p: [{ pl: p.location_name }] });
     }
   }
-  // Bekâr yaşıt garantisi: bekâr oyuncunun (18-50) kasabasında çağına yakın bekâr kalmadıysa yılda bir yeni biri yerleşir (test geri bildirimi: "yaşıtım bekâr yok").
-  const pp = s.player;
-  if (!pp.dead && !pp.married && pp.age >= 18 && pp.age <= 50) {
-    const eligible = rosterAt(s, pp.location_name).filter((n) => n.gender !== pp.gender && n.age >= 18 && n.age < 60 && Math.abs(n.age - pp.age) <= 12);
-    if (eligible.length < 2) {
-      const g2: "erkek" | "kadın" = pp.gender === "erkek" ? "kadın" : "erkek";
-      const nc = npcNewcomer(s, pp.location_name, g2, pp.age - 2 + Math.floor(Math.random() * 6));
-      s.world.npcBorn.push(nc);
-      push(s, "dunya_olayi", `${pp.location_name}'e yeni biri yerleşti; çarşıda tanımadık bir yüz var.`, "kişisel", false, { k: "npclife.newcomer", p: [{ pl: pp.location_name }] });
-    }
+  // Eş oyuncunun ocağında yaşar (ocak değişirse peşinden gelir).
+  const esK = nufusOyuncuEsi(s); if (esK && esK.loc !== (p.home_name || p.location_name)) { esK.loc = p.home_name || p.location_name; nufusDegisti(pop); }
+  // Omuz verilen hayaller boşa gitmez: yılda bir, yardım görmüş biri muradına erebilir.
+  for (const k of Object.values(pop.k)) {
+    if (!k.gh || k.gd || k.ol != null || Math.random() >= 0.35) continue;
+    k.gd = true;
+    s.relationships[k.id] = Math.min(100, (s.relationships[k.id] || 0) + 10);
+    p.reputation = Math.min(100, p.reputation + 2);
+    push(s, "dunya_olayi", `${kisiAdi(k, "tr")} yıllardır kovaladığı hayaline kavuştu — senin desteğinle. Adın hayır duayla anılıyor.`, "kişisel", true, { k: "npclife.goalDone", p: [knParam(k), { goalk: hayalOf(k) }] });
+    break; // yılda en çok bir murat haberi
   }
-  if (knownGone) push(s, "dunya_olayi", `${knownGone} bu dünyadan göçtü; tanıdık bir yüz eksildi.`, "kişisel", true, { k: "npclife.deathKnown", p: [knownGone] });
-  else if (Math.random() < 0.5) { // evlilik haberi (nüfus etkisi yok)
-    const loc = rnd(LOCATIONS); const r = rosterAt(s, loc);
-    const m = r.find((n) => n.gender === "erkek" && n.age >= 18 && n.age < 55);
-    const f = r.find((n) => n.gender === "kadın" && n.age >= 18 && n.age < 55);
-    if (m && f) push(s, "dunya_olayi", `${loc}'de ${m.name} ile ${f.name} dünyaevi kurdu.`, "makro", false, { k: "npclife.marry", p: [m.name, f.name] });
-  }
-  // Omuz verilen hayaller boşa gitmez: yılda bir, yardım görmüş NPC'lerden biri muradına erebilir (dünya dokunuşunla değişir).
-  for (const id of Object.keys(s.world.npcEvo)) {
-    const e = s.world.npcEvo[id];
-    if (!e.goalHelped || e.goalDone || e.dead || Math.random() >= 0.35) continue;
-    e.goalDone = true;
-    s.relationships[id] = Math.min(100, (s.relationships[id] || 0) + 10);
-    s.player.reputation = Math.min(100, s.player.reputation + 2);
-    push(s, "dunya_olayi", `${e.gname || "Bir dost"} yıllardır kovaladığı hayaline kavuştu — senin desteğinle. Adın hayır duayla anılıyor.`, "kişisel", true, { k: "npclife.goalDone", p: [e.gname || "?", { goalk: e.goalk || "" }] });
-    break; // yılda en çok bir murat haberi (olay seli olmasın)
-  }
-  // NPC'ler kendi hayalini kendisi de kovalar: yılda ~%45 şansla diyardan BİR yetişkin, kimse yardım etmeden muradına erer.
-  // Dünya oyuncusuz da yaşar: dükkân açan/kervana atılan tüccarlığa geçer (şehir kadrosu → arz → fiyat kayar),
-  // ustabaşı olan usta izi bırakır (miras ziyareti havuzuna girer). Oyuncuya ödül yok — farm değil, dünya nabzı.
+  // NPC'ler kendi hayalini kendisi de kovalar: yılda ~yüzde 45 şansla bir yetişkin kendi emeğiyle muradına erer (dünya oyuncusuz da yaşar).
   if (Math.random() < 0.45) {
     const gloc = rnd(LOCATIONS);
-    const cands = rosterAt(s, gloc).filter((n) => n.age >= 18 && !!n.goal);
+    const cands = Object.values(pop.k).filter((k) => k.ol == null && k.loc === gloc && wy - k.dy >= 18 && !k.gd);
     if (cands.length) {
-      const n = rnd(cands);
-      const e = (s.world.npcEvo[n.id] = s.world.npcEvo[n.id] || {});
-      e.goalDone = true; e.gname = n.name; e.goalk = n.goal;
-      if (n.goal === "bir dükkân açmanın hayalini kuruyor" || n.goal === "kervan ticaretine atılmak istiyor") e.prof = "tüccar";
-      else if (n.goal === "ustabaşı olmak istiyor") e.usta = true;
-      const known = s.relationships[n.id] !== undefined || gloc === s.player.location_name;
-      push(s, "dunya_olayi", `${gloc}'te ${n.name} yıllardır kovaladığı hayaline kendi emeğiyle kavuştu: ${n.goal}.`, known ? "kişisel" : "makro", false, { k: "npclife.goalSelf", p: [n.name, { goalk: n.goal }, { pl: gloc }] });
+      const k = rnd(cands);
+      k.gd = true;
+      const hy = hayalOf(k);
+      if (hy === "bir dükkân açmanın hayalini kuruyor" || hy === "kervan ticaretine atılmak istiyor") k.prof = "tüccar";
+      else if (hy === "ustabaşı olmak istiyor") k.usta = true;
+      const known = tanidik(k.id) || gloc === p.location_name;
+      push(s, "dunya_olayi", `${gloc}'te ${kisiAdi(k, "tr")} yıllardır kovaladığı hayaline kendi emeğiyle kavuştu: ${hy}.`, known ? "kişisel" : "makro", false, { k: "npclife.goalSelf", p: [knParam(k), { goalk: hy }, { pl: gloc }] });
     }
-  }
-  // Her yıl ölü doğanları ele (yaşayanlar asla silinmez). Böylece npcBorn ≈ yaşayan sayısı (~600) kalır:
-  // nüfus korunur (eski 260 sınırı yaşayanı siliyordu) + dizi şişmez (rosterAt ucuz kalır).
-  s.world.npcBorn = s.world.npcBorn.filter((n) => n.alive !== false);
-  // Nüfus tavanı: yeni gelen/bekâr garantisi akışları canlı sayıyı sınırsız büyütüyordu (40 yılda ~450, on neselde binler).
-  // Tavan aşılınca yalnız iz bırakmamış doğanlar (tanışılmamış, ilişkisiz, işçi değil, can yoldaşı değil) en yaşlıdan elenir.
-  if (s.world.npcBorn.length > 300) {
-    const touched = new Set<string>();
-    for (const id of Object.keys(s.npc_state || {})) touched.add(id);
-    for (const id of Object.keys(s.relationships || {})) touched.add(id);
-    for (const pr of s.player.properties || []) for (const w of pr.workers || []) touched.add(w);
-    if (s.player.child_friend) touched.add(s.player.child_friend.id);
-    const removable = s.world.npcBorn.filter((n) => !touched.has(n.id)).sort((a, b) => (b.age || 0) - (a.age || 0));
-    const drop = new Set(removable.slice(0, s.world.npcBorn.length - 300).map((n) => n.id));
-    if (drop.size) s.world.npcBorn = s.world.npcBorn.filter((n) => !drop.has(n.id));
   }
 }
 // Mesleğe göre üretkenlik uyumu (çiftçi tarlada, demirci değirmende daha verimli).
@@ -860,6 +977,7 @@ export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
   newsSeenTurn?: number; // haberler ekranının son görüldüğü tur (menü rozeti için; opsiyonel — eski kayıtlar dokunulmadan çalışır)
   relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean; goalHelped?: boolean; goalDone?: boolean; gname?: string; goalk?: string; usta?: boolean; prof?: string }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
+  pop?: Nufus; // yaşayan nüfus: kalıcı kişiler ve aileler (NUFUS.md)
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
@@ -1286,8 +1404,8 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
   const gift = fateKeys[seed % 4];
   const birthStats: Stats = { strength: 1, intelligence: 1, charisma: 1, stamina: 1 };
   birthStats[gift] += 1;
-  return {
-    turn: 0, seed, world: { ready: true, inflation: 1 },
+  const s: GameState = {
+    turn: 0, seed, world: { ready: true, inflation: 1 }, pop: nufusKur(nufusCtx(), { wy: 0 }),
     relationships: {}, dynasty: [], npc_state: {}, story: { active: null, completed: [], tension: 0 }, wars: [], caravan: null, econ: 1,
     player: {
       name: surname ? `${first} ${surname}` : first, surname, gender, base_age: 7, age: 7,
@@ -1306,6 +1424,8 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
     settlements: [],
     history: [{ day: 0, type: "doğum", text: `Bu diyara bir can daha geldi; doğuştan bir yanı kuvvetli.`, scope: "kişisel", landmark: false, k: "evj.birthFate", p: [{ statk: gift }] }],
   };
+  oyuncuAilesiKur(s); // anne-baba doğduğun yerde gerçek kişiler olarak yaşar
+  return s;
 }
 
 // Doğuştan mizaç — açılışta seçilir; kimlik eksenini ta başından tohumlar.
@@ -1328,7 +1448,11 @@ function push(s: GameState, type: string, text: string, scope: "kişisel" | "mak
 }
 function clone(s: GameState): GameState {
   // structuredClone (Hermes destekli) JSON round-trip'ten belirgin hızlı — geç nesillerde dokunma gecikmesini azaltır.
-  return typeof structuredClone === "function" ? structuredClone(s) : JSON.parse(JSON.stringify(s));
+  const dc = (x: any) => (typeof structuredClone === "function" ? structuredClone(x) : JSON.parse(JSON.stringify(x)));
+  if (!s.pop) return dc(s);
+  // Nüfus (kaydın en büyük parçası) yazınca kopyalanır: okuyan eylem eski nüfusu paylaşır, değiştiren nufusHazirla ile kendi kopyasını alır.
+  const c = dc({ ...s, pop: undefined }); c.pop = s.pop; _popPaylasimli.add(c);
+  return c;
 }
 // Ölüm nedeni: olay anahtarı → neden kodu (mersiye "nasıl öldü"yü de anlatsın; eski kayıtta alan yoksa satır sessizce atlanır).
 const DEATH_CAUSE: Record<string, string> = {
@@ -1355,6 +1479,8 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): { k: string; text: stri
   return rnd(pool);
 }
 
+// Yeni evladın adı: kardeşleriyle aynı ad konmaz (evlat bilgisi ada göre tutulur — iki 'Mert' karışır).
+function cocukAdi(p: Player): string { const bos = CHILD.filter((n) => !p.children.includes(n)); return bos.length ? rnd(bos) : rnd(CHILD); }
 function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const p = s.player;
   if (p.age === 13 && p.profession === "işsiz") {
@@ -1372,8 +1498,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // Atanın çırağı vârisi bulur: geçmiş nesilde yetiştirilen usta (npcEvo.usta) yeni kuşağın kapısını çalar — hanedan mirasının yankısı.
   // Hayatta bir kez (fates), oyuncu tetiklemesiz ve düşük olasılıklı — farm değil, sürpriz vefa anı.
   if (p.generation > 1 && !p.fates.includes("usta_ziyaret") && chance(0.02)) {
-    const evo = s.world?.npcEvo || {};
-    const ustaId = Object.keys(evo).find((id) => evo[id]?.usta && !evo[id]?.dead);
+    const ustaId = Object.values(nufusOf(s).k).find((k) => k.usta && k.ol == null)?.id;
     if (ustaId) {
       const who = rosterAt(s, p.location_name).find((n) => n.id === ustaId);
       if (who) {
@@ -1430,8 +1555,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.dead) return;
   // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50) || s.story?.active?.id === "gec_sevda"; // aktif sevda yayı da bir kur — görücü araya girmesin
-  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E); p.married = true; p.married_turn = s.turn; p.spouse_bond = 35; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); { const mv2 = chance(0.5); push(s, "evlilik", mv2 ? `Davul üç gün sustu susmadı; ${name} ile aynı ocağın başına oturdunuz. Evin eşiği o gün iki kez öpüldü.` : `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: mv2 ? "evj.marry2" : "evj.marry", p: [{ fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); } }
-  if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = rnd(CHILD); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); { const bv2 = chance(0.5); push(s, "doğum", bv2 ? `Eve bir nefes daha katıldı: ${c}. Beşik baş köşeye kuruldu; o gece kimse erken uyumadı.` : `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: bv2 ? "evj.childBorn2" : "evj.childBorn", p: [c] }); } }
+  if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { p.married = true; p.married_turn = s.turn; p.spouse_bond = 35; oyuncuEvlenKisi(s, esBulVeyaKur(s)); const name = p.spouse_name!; p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); { const mv2 = chance(0.5); push(s, "evlilik", mv2 ? `Davul üç gün sustu susmadı; ${name} ile aynı ocağın başına oturdunuz. Evin eşiği o gün iki kez öpüldü.` : `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: mv2 ? "evj.marry2" : "evj.marry", p: [esParam(s)] }); } }
+  if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = cocukAdi(p); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); { const bv2 = chance(0.5); push(s, "doğum", bv2 ? `Eve bir nefes daha katıldı: ${c}. Beşik baş köşeye kuruldu; o gece kimse erken uyumadı.` : `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: bv2 ? "evj.childBorn2" : "evj.childBorn", p: [c] }); } }
   affairTick(s); // yasak ilişki: ateş soğur, piç doğabilir, ifşa yuvarlanır (evli/bekâr sonuçları exposeAffair'de)
   betrothalTick(s); // evli birine kesilen söz: aylar içinde boşanıp evlenir ya da vazgeçer
   // Evlilik yıldönümü: her 12 ayda bir ocak tazelenir — otomatik, küçük, farm'sız (eski kayıtta married_turn yoksa sessizce atlanır).
@@ -1439,7 +1564,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     const years = Math.floor((s.turn - p.married_turn) / 12);
     p.spouse_bond = Math.min(100, (p.spouse_bond ?? 40) + 3);
     p.health = Math.min(100, p.health + 1 + Math.round((p.spouse_bond || 0) / 50));
-    const sp: EvtParam = p.spouse_seed != null ? { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] } : (p.spouse_name || "");
+    const sp: EvtParam = esParam(s);
     const nm = p.spouse_name || "Eşin";
     const bnd = p.spouse_bond ?? 40;
     if (years === 1) push(s, "evlilik", `${nm} ile ilk yılınız doldu: acemi bir ocak, taze bir düzen; sofrada iki kaşığın yeri artık belli.`, "kişisel", false, { k: "evj.anniv1", p: [sp, years] });
@@ -1490,7 +1615,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // ── Ömürlük çocukluk dostu: reşitlikte yanında kalan yoldaş, hayat boyu ara sıra ortaya çıkar (sadakat) ──
   if (!p.dead && p.age >= 16 && p.child_friend && (s.relationships[p.child_friend.id] || 0) > 0 && chance(0.025)) {
     const cf = p.child_friend;
-    const alive = !s.world.npcBorn || (s.world.npcBorn.find((n) => n.id === cf.id)?.alive !== false);
+    const alive = kisiYasiyor(s, cf.id);
     if (alive) {
       const r = Math.random();
       if (r < 0.4) { p.health = Math.min(100, p.health + 4); s.relationships[cf.id] = Math.min(100, (s.relationships[cf.id] || 0) + 2); push(s, "gunluk", "Çocukluk dostun çıkageldi; eski günleri yâd ettiniz, içine bir ferahlık doldu.", "kişisel", false, { k: "evj.oldFriendVisit", p: [{ fn: [cf.seed, cf.gender] }] }); }
@@ -1527,44 +1652,37 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     else if (p.faction === "golge") { gainSkill(s, "social", 3); p.fear = Math.min(100, p.fear + 1); push(s, "gunluk", "Kardeşlikten kulağına bir sır fısıldandı; kimin nerede gezdiğini artık biliyorsun.", "kişisel", false, { k: "fsig.golge" }); }
   }
   // ── Dulluk: eş de fanidir; birlikte yaşlandıkça vefat ihtimali artar. Dul kalınca yas + (genç dulsa yeniden evlilik mümkün) ──
-  if (!p.dead && p.married && p.spouse_seed != null && p.age >= 45 && !p.spouse_is_player) {
+  const esK = esKisi(s); const esYas = esK ? worldYears(s) - esK.dy : p.age;
+  if (!p.dead && p.married && p.spouse_seed != null && esYas >= 45 && !p.spouse_is_player) {
     // NOT: eş gerçek bir oyuncuysa (spouse_is_player) yerel sim onu öldürmez — ölümü kendi oynanışından/sunucudan gelir.
-    const dc = p.age < 55 ? 0.008 : p.age < 65 ? 0.02 : p.age < 75 ? 0.04 : 0.07;
+    const dc = esK ? 1 - Math.pow(1 - olumOlasiligi(esYas), 1 / 12) : p.age < 55 ? 0.008 : p.age < 65 ? 0.02 : p.age < 75 ? 0.04 : 0.07;
     if (chance(dc)) {
       const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
-      p.married = false; p.widowed = true; p.spouse_mizac = undefined; p.health = Math.max(1, p.health - (4 + Math.round((p.spouse_bond ?? 40) / 12))); p.spouse_bond = undefined; bumpNam(p, "dindar", 2); // acı, bağın derinliğine oranlı
-      push(s, "evlilik", `Ömür arkadaşın ${p.spouse_name} vefat etti; ocağın yarısı söndü. Diyar yasını paylaştı.`, "kişisel", true, { k: "evj.spouseDied", p: [{ fn: [p.spouse_seed, sg] }] });
+      nufusOyuncuEsiOldu(s); p.married = false; p.widowed = true; p.spouse_mizac = undefined; p.health = Math.max(1, p.health - (4 + Math.round((p.spouse_bond ?? 40) / 12))); p.spouse_bond = undefined; bumpNam(p, "dindar", 2); // acı, bağın derinliğine oranlı
+      push(s, "evlilik", `Ömür arkadaşın ${p.spouse_name} vefat etti; ocağın yarısı söndü. Diyar yasını paylaştı.`, "kişisel", true, { k: "evj.spouseDied", p: [esParam(s)] });
     }
   }
   // ── Anne-baba yaşlanır: göçüşten önce sessiz bir haber (yoldaşın "old" beati gibi) — veda birden gelmesin. ──
   if (!p.dead && p.age >= 38) {
     if (!p.mother_dead && p.mother && !p.mother_frail && chance(0.05)) {
       p.mother_frail = true;
-      push(s, "gunluk", `Annen ${p.mother} artık eskisi gibi değil; elleri işte ağırlaştı, sesi inceldi. Onu her görüşünde bir kez daha, biraz daha uzun sarılıyorsun.`, "kişisel", false, { k: "evj.motherFrail", p: [{ fn: [p.mother_seed ?? 0, "kadın"] }] });
+      push(s, "gunluk", `Annen ${p.mother} artık eskisi gibi değil; elleri işte ağırlaştı, sesi inceldi. Onu her görüşünde bir kez daha, biraz daha uzun sarılıyorsun.`, "kişisel", false, { k: "evj.motherFrail", p: [ebeveynParam(s, "anne")] });
     }
     if (!p.father_dead && p.father && !p.father_frail && chance(0.05)) {
       p.father_frail = true;
-      push(s, "gunluk", `Baban ${p.father} bastonuna daha çok yükleniyor; anlattığı hikâyeler kısaldı ama gözündeki ışık aynı. Vakit hızlanıyor, sen onun yanında yavaşlıyorsun.`, "kişisel", false, { k: "evj.fatherFrail", p: [{ fn: [p.father_seed ?? 0, "erkek"] }] });
+      push(s, "gunluk", `Baban ${p.father} bastonuna daha çok yükleniyor; anlattığı hikâyeler kısaldı ama gözündeki ışık aynı. Vakit hızlanıyor, sen onun yanında yavaşlıyorsun.`, "kişisel", false, { k: "evj.fatherFrail", p: [ebeveynParam(s, "baba")] });
     }
   }
   // ── Anne-baba da fanidir: çocukluğunun direkleri, sen olgunlaştıkça (onlar daha yaşlı) birer kez göçer. ──
   if (!p.dead && p.age >= 28) {
     const pdc = p.age < 40 ? 0.012 : p.age < 55 ? 0.03 : 0.06;
-    if (!p.mother_dead && p.mother && chance(pdc)) {
-      p.mother_dead = true; p.health = Math.max(1, p.health - (3 + Math.round((p.parent_bond ?? 45) / 20))); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1); // acı, bağın derinliğine oranlı
-      push(s, "kader", `Annen ${p.mother} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.motherDied", p: [{ fn: [p.mother_seed ?? 0, "kadın"] }] });
-      if ((p.parent_bond ?? 45) >= 60) { const mir = Math.round(20 * inflationFactor(s)); p.money += mir; push(s, "kader", `Annenin çeyiz sandığından sana kalan çıktı (+${mir} akçe); yakın olana el emeği kalır.`, "kişisel", false, { k: "evj.parentLegacy", p: [mir] }); }
-    }
-    if (!p.father_dead && p.father && chance(pdc)) {
-      p.father_dead = true; p.health = Math.max(1, p.health - (3 + Math.round((p.parent_bond ?? 45) / 20))); bumpNam(p, "dindar", 2); p.reputation = Math.min(100, p.reputation + 1); // acı, bağın derinliğine oranlı
-      push(s, "kader", `Baban ${p.father} Hakk'ın rahmetine kavuştu; çocukluğunun bir direği daha gitti.`, "kişisel", true, { k: "evj.fatherDied", p: [{ fn: [p.father_seed ?? 0, "erkek"] }] });
-      if ((p.parent_bond ?? 45) >= 60) { const mir = Math.round(20 * inflationFactor(s)); p.money += mir; push(s, "kader", `Babanın kesesinden sana ayırdığı çıktı (+${mir} akçe); yakın olana el emeği kalır.`, "kişisel", false, { k: "evj.parentLegacy", p: [mir] }); }
-    }
+    if (!p.mother_dead && p.mother && !(p.mother_id && nufusOf(s).k[p.mother_id]) && chance(pdc)) ebeveynVefat(s, "anne"); // gerçek kişi olan anneyi nüfus yaşatır/öldürür
+    if (!p.father_dead && p.father && !(p.father_id && nufusOf(s).k[p.father_id]) && chance(pdc)) ebeveynVefat(s, "baba");
   }
   // ── Evli hayat anları: eşinle ocak tüten yıllar; ara sıra sıcak ya da sınanan anlar (sadık-dost'a paralel) ──
   if (!p.dead && p.married && p.spouse_seed != null && p.age >= 16 && chance(0.03)) {
     const sg: "erkek" | "kadın" = p.gender === "erkek" ? "kadın" : "erkek";
-    const sn: EvtParam = { fn: [p.spouse_seed, sg] };
+    const sn: EvtParam = esParam(s);
     const miz = p.spouse_mizac || spouseMizac(p.spouse_seed); // eş mizacı anların rengini belirler (kur yapılan NPC'nin karakteri öncelikli)
     if (p.spouse_bond === undefined) p.spouse_bond = 40; // eski kayıt göçü: bağ orta noktadan başlar
     const bond = (d: number) => { p.spouse_bond = Math.max(0, Math.min(100, (p.spouse_bond || 0) + d)); };
@@ -2164,7 +2282,7 @@ export function advance(prev: GameState, n = 1): GameState {
     if (i === n - 1) tipsTick(s); // eyleme dönük duyumlar (piyasa ipucu / fraksiyon istihbaratı)
     if (i === n - 1) { locEventTick(s); locEventPersonal(s); } // tipli lokasyon olayları (kuraklık/panayır/veba) + oradaysan hisset
     if (i === n - 1) factionAITick(s); // fraksiyonlar dünyada görünür eylemler yapar (bağış/sabotaj/nüfuz/suikast)
-    if (i === n - 1) npcLifeTick(s); // yaşayan dünya: NPC ölüm/yeni nesil + evlilik/doğum (yılda bir)
+    npcLifeTick(s); // yaşayan dünya: NPC ölüm/yeni nesil + evlilik/doğum (yılda bir)
     if (i === n - 1) claimAchievements(s); // ay sonunda yeni başarımları ödüllendir
     if (i === n - 1) claimFamilyQuests(s); // ay sonunda tamamlanan aile/yaşam görevlerini ödüllendir
     const inBreath = (s.story?.breath || 0) > 0; // doruk sonrası sakin dönem
@@ -2586,10 +2704,9 @@ export function acceptDynastyOffer(prev: GameState, offerId: string): GameState 
   if (!s.allied_houses) s.allied_houses = [];
   if (!s.allied_houses.includes(offer.houseId)) s.allied_houses.push(offer.houseId);
   if (offer.type === "evlilik" && !p.married) {
-    const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E);
-    p.married = true; p.married_turn = s.turn; p.spouse_bond = 40; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9);
+    p.married = true; p.married_turn = s.turn; p.spouse_bond = 40; p.widowed = false; oyuncuEvlenKisi(s, esBulVeyaKur(s, true)); // hanedandan gelen gelin/damat ocağına yerleşir
     p.reputation = Math.min(100, p.reputation + 8); p.fame = Math.min(100, p.fame + 6);
-    push(s, "evlilik", `${h?.name || "Köklü bir hanedan"} ile evlilik ittifakı kurdun; iki ocak birleşti.`, "kişisel", true, { k: "evj.houseMarryAccept", p: [h ? { hn: h.nameIdx } : "", { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] });
+    push(s, "evlilik", `${h?.name || "Köklü bir hanedan"} ile evlilik ittifakı kurdun; iki ocak birleşti.`, "kişisel", true, { k: "evj.houseMarryAccept", p: [h ? { hn: h.nameIdx } : "", esParam(s)] });
   } else {
     p.reputation = Math.min(100, p.reputation + 5);
     push(s, "hanedan_haber", `${h?.name || "Bir hanedan"} ile ittifak kurdun; artık arkanı kollayan bir gücün var.`, "makro", true, { k: "evj.houseAllyAccept", p: [h ? { hn: h.nameIdx } : ""] });
@@ -2647,10 +2764,9 @@ export function proposeToHouse(prev: GameState, houseId: string, type: "ittifak"
     if (!s.allied_houses) s.allied_houses = [];
     s.allied_houses.push(houseId);
     if (type === "evlilik" && !p.married) {
-      const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E);
-      p.married = true; p.married_turn = s.turn; p.spouse_bond = 40; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9);
+      p.married = true; p.married_turn = s.turn; p.spouse_bond = 40; p.widowed = false; oyuncuEvlenKisi(s, esBulVeyaKur(s, true));
       p.reputation = Math.min(100, p.reputation + 8); p.fame = Math.min(100, p.fame + 6);
-      { const hm2 = chance(0.5); push(s, "evlilik", hm2 ? `Dünürcüler ${h.name} kapısında şerbet içti: söz kesildi, iki ocak bir soluk oldu.` : `Dünürcüler ${h.name} kapısından güler yüzle döndü: iki ocak birleşti.`, "kişisel", true, { k: hm2 ? "evj.houseMarryAccept2" : "evj.houseMarryAccept", p: [{ hn: h.nameIdx }, { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] }] }); }
+      { const hm2 = chance(0.5); push(s, "evlilik", hm2 ? `Dünürcüler ${h.name} kapısında şerbet içti: söz kesildi, iki ocak bir soluk oldu.` : `Dünürcüler ${h.name} kapısından güler yüzle döndü: iki ocak birleşti.`, "kişisel", true, { k: hm2 ? "evj.houseMarryAccept2" : "evj.houseMarryAccept", p: [{ hn: h.nameIdx }, esParam(s)] }); }
     } else {
       p.reputation = Math.min(100, p.reputation + 5);
       { const ha2 = chance(0.5); push(s, "hanedan_haber", ha2 ? `${h.name} mührünü bastı: bundan böyle yolunuz bir; iki hanenin ocağı aynı rüzgârla yanacak.` : `${h.name} teklifini kabul etti; iki hane el sıkıştı.`, "makro", true, { k: ha2 ? "evj.houseAllyAccept2" : "evj.houseAllyAccept", p: [{ hn: h.nameIdx }] }); }
@@ -3800,7 +3916,7 @@ export function mentorApprentice(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   const a = p.apprentice; if (p.dead || !a) return s;
   if (p.apprentice_turn === s.turn) return s; // ayda bir ders
-  if (s.world?.npcEvo?.[a.id]?.dead) {
+  if (!kisiYasiyor(s, a.id)) {
     // Çırak dünya akışında ölmüş olabilir — yarım kalan çıraklık kapanır.
     p.apprentice = undefined;
     push(s, "çıraklık", `Çırağın ${a.name} bu dünyadan göçtü; yarım kalan hüner yüreğinde sızı bıraktı.`, "kişisel", true, { k: "evj.apr.lost", p: [a.name] });
@@ -3814,7 +3930,7 @@ export function mentorApprentice(prev: GameState): GameState {
     p.apprentice = undefined;
     p.fame = Math.min(100, p.fame + 5); p.honor = Math.min(100, p.honor + 5);
     s.relationships[a.id] = Math.max(-100, Math.min(100, (s.relationships[a.id] || 0) + 25));
-    if (s.world) { s.world.npcEvo = s.world.npcEvo || {}; const evo = (s.world.npcEvo[a.id] = s.world.npcEvo[a.id] || {}); evo.usta = true; } // kalıcı iz: senin elinden çıkma usta
+    { const k = nufusHazirla(s).k[a.id]; if (k) k.usta = true; } // kalıcı iz: senin elinden çıkma usta
     push(s, "çıraklık", `${a.name} yetişti: senin elinden çıkma bir usta artık. Adın onunla da anılacak.`, "kişisel", true, { k: "evj.apr.done", p: [a.name] });
   } else {
     push(s, "çıraklık", `${a.name} ile tezgâh başında bir ay geçti (${a.months}/${APPRENTICE_MONTHS}).`, "kişisel", false, { k: "evj.apr.step", p: [a.name, a.months, APPRENTICE_MONTHS] });
@@ -3840,8 +3956,7 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   remember(s, npc, "yardim"); // kalıcıya yakın +20 anı (Vercel: "sana borçlu")
   // Hayal tohumu: omuz verilen hedef yıllar içinde gerçekleşebilir (npcLifeTick çözer) — dünya senin dokunuşunla değişir.
-  if (!s.world.npcEvo) s.world.npcEvo = {};
-  s.world.npcEvo[npc.id] = { ...(s.world.npcEvo[npc.id] || {}), goalHelped: true, gname: npc.name, goalk: npc.goal };
+  { const k = nufusHazirla(s).k[npc.id]; if (k) k.gh = true; }
   // Velinimet tohumu: bu iyilik yıllar sonra keseyle ve itibarla döner (nesil aşabilir). Yalnız taze yardımda (azalan getiri; aynı NPC'ye spam ile tohum farmı önlenir).
   if (fresh) sowSeed(s, { kaynak: "velinimet", hmin: 24, hmax: 96, agirlik: "buyuk", nesil: true, etki: { money: 90, reputation: 6 }, npcName: npc.name });
   push(s, "sohbet", `${npc.name}'in "${npc.goal}" derdine ${GOAL_HELP_COST} akçeyle omuz verdin; sana minnettar kaldı.`, "kişisel", true, { k: "evj.helpGoal", p: [npc.name, { goalk: npc.goal }, GOAL_HELP_COST] });
@@ -3875,7 +3990,7 @@ export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
 
 // Dünür gönderebilir misin? (Bekâr, 18+, karşı cinsten yetişkin, yakınlık yeterli.)
 export function canCourt(p: Player, npc: NPC, rel: number): boolean {
-  return !p.dead && !p.married && p.age >= 18 && npc.age >= 18 && npc.gender !== p.gender && rel >= 50;
+  return !p.dead && !p.married && p.age >= 18 && npc.age >= 18 && npc.gender !== p.gender && rel >= 50 && npc.es !== OYUNCU && !oyuncuAkrabasi(p, npc.id); // evliyse söz kesme yolu açılır (önce ocağını dağıtır)
 }
 // Evlenme teklifi: yakınlık + karizmaya göre kabul/ret.
 export function proposeMarriage(prev: GameState, npc: NPC): GameState {
@@ -3890,9 +4005,9 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
     bumpNam(p, "capkin", 3);
     push(s, "sohbet", `${npc.name} yüzü kızararak baktı: "Gönlüm seninle ama önce kendi ocağımı dağıtmam lazım. Bana biraz zaman ver." Söz kesildi; şimdi bekleme sırası sende.`, "kişisel", true, { k: "evj.betrothWait", p: [npc.name] });
   } else if (ok) {
-    p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(s.relationships[npc.id] || 40))); p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
+    p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(s.relationships[npc.id] || 40))); { const k = nufusHazirla(s).k[npc.id]; if (k && k.ol == null) oyuncuEvlenKisi(s, k); else { p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); } } p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
     bumpNam(p, "capkin", 5);
-    push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
+    push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [esParam(s)] });
   } else {
     s.relationships[npc.id] = Math.max(0, rel - 8);
     push(s, "sohbet", `${npc.name} teklifini şimdilik geri çevirdi. Vakit ister.`, "kişisel", false, { k: "evj.proposeNo", p: [npc.name] });
@@ -3908,10 +4023,12 @@ function betrothalTick(s: GameState) {
   b.months += 1;
   if (b.months < 2) return; // boşanma bir çırpıda olmaz — en az birkaç ay
   const sg = b.gender;
-  const nameParam: EvtParam = { fn: [b.seed, sg] };
+  const bk = nufusOf(s).k[b.id];
+  if (bk && bk.ol != null) { p.betrothed = undefined; return; } // söz kesilen vefat etti (ölüm haberi nüfus tikinden gelir)
+  const nameParam: EvtParam = bk ? kfParam(bk) : { fn: [b.seed, sg] };
   if (chance(0.35)) {
     // Boşandı ve seninle evlendi — dillere düşen bir evlilik.
-    p.married = true; p.married_turn = s.turn; p.spouse_bond = 45; p.spouse_name = b.name; p.spouse_seed = b.seed; p.spouse_mizac = undefined; p.widowed = false;
+    p.married = true; p.married_turn = s.turn; p.spouse_bond = 45; p.widowed = false; if (bk) oyuncuEvlenKisi(s, bk); else { p.spouse_name = b.name; p.spouse_seed = b.seed; p.spouse_mizac = undefined; } // eski eşiyle bağı nüfusta çözülür
     p.fame = Math.min(100, p.fame + 6); p.reputation = clampStat(p.reputation - 4); bumpNam(p, "capkin", 4);
     p.betrothed = undefined;
     push(s, "evlilik", `${b.name} sonunda kendi ocağını dağıttı ve seninle evlendi. Diyar bu evliliği uzun süre konuşacak — kimi kutladı, kimi kaş çattı.`, "kişisel", true, { k: "evj.betrothWed", p: [nameParam] });
@@ -3938,20 +4055,20 @@ export function canArrange(s: GameState): boolean {
 // Görücü usulü evlenilebilecek adaylar: karşı cinsiyet, 18–59, bulunduğun diyardan.
 export function arrangedSuitors(s: GameState, lang: Lang = "tr"): NPC[] {
   const p = s.player; if (p.married || p.age < 18) return [];
-  return npcsOf(s, lang).filter((n) => n.gender !== p.gender && n.age >= 18 && n.age < 60);
+  return npcsOf(s, lang).filter((n) => n.gender !== p.gender && n.age >= 18 && n.age < 60 && !n.es && !oyuncuAkrabasi(p, n.id)); // evli ve akraba aday olmaz
 }
 // Görücü usulü talip ol: ücret peşin; kabul karizma + şöhrete bağlı (yakınlık şartı YOK).
 export function proposeArranged(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player;
-  if (p.dead || p.married || p.age < 18 || npc.gender === p.gender || npc.age < 18) return s;
+  if (p.dead || p.married || p.age < 18 || npc.gender === p.gender || npc.age < 18 || !!npc.es || oyuncuAkrabasi(p, npc.id)) return s;
   if (p.propose_turn === s.turn) return s; // ayda tek dünür girişimi (hane teklifiyle ortak hak — retry kumarı kapalı)
   p.propose_turn = s.turn;
   if (p.money < MATCHMAKER_FEE) { push(s, "sohbet", `Çöpçatana verecek akçen yok.`, "kişisel", false, { k: "evj.matchNoFee" }); return s; }
   p.money -= MATCHMAKER_FEE;
   const ok = Math.random() < Math.min(0.92, 0.42 + socialPresence(p) * 0.04 + p.fame / 320 + (hasPerk(p, "karizmatik") ? 0.15 : 0));
   if (ok) {
-    p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(s.relationships[npc.id] || 40))); p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
-    push(s, "evlilik", `${npc.name} ile görücü usulü evlendin — iki aile görüştü, yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [{ fn: [p.spouse_seed!, p.gender === "erkek" ? "kadın" : "erkek"] }] });
+    p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(s.relationships[npc.id] || 40))); { const k = nufusHazirla(s).k[npc.id]; if (k && k.ol == null) oyuncuEvlenKisi(s, k); else { p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); } } p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
+    push(s, "evlilik", `${npc.name} ile görücü usulü evlendin — iki aile görüştü, yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [esParam(s)] });
   } else {
     push(s, "sohbet", `${npc.name}'in ailesi teklifi şimdilik geri çevirdi; çöpçatan başka kapı çalacak.`, "kişisel", false, { k: "evj.proposeNo", p: [npc.name] });
   }
@@ -3976,17 +4093,15 @@ export function insultNpc(prev: GameState, npc: NPC): GameState {
 export function canFlirt(p: Player, npc: NPC, rel: number): boolean {
   // Hem oyuncu hem NPC reşit (18+), karşı cins, yakınlık ≥15. Evli oyuncu da gönül eğlendirebilir (yasak ilişki) — sonuçları ağırdır.
   // Kendi eşine flört YOK: evlenilen NPC roster'da kalır; ona "eş-vakti" düşer, yasak ilişki değil.
-  return !p.dead && p.age >= 18 && npc.age >= 18 && npc.gender !== p.gender && rel >= 15 && !isSpouseNpc(p, npc);
+  return !p.dead && p.age >= 18 && npc.age >= 18 && npc.gender !== p.gender && rel >= 15 && !isSpouseNpc(p, npc) && !oyuncuAkrabasi(p, npc.id);
 }
 // Bu NPC oyuncunun kendi eşi mi (evlenilen NPC'nin seed'i spouse_seed olarak saklanır) — yasak ilişki eşi hedef alamaz.
 export function isSpouseNpc(p: Player, npc: NPC): boolean {
-  return !!p.married && p.spouse_seed != null && locSeed(npc.id) === p.spouse_seed;
+  return !!p.married && (npc.es === OYUNCU || (p.spouse_seed != null && locSeed(npc.id) === p.spouse_seed));
 }
-// Bir NPC seed'ine göre evli mi (deterministik: aynı kişi hep aynı) — yetişkinlerin ~%58'i evli sayılır. Evli birine yürümek "yasak" kılar.
+// Bu NPC evli mi (nüfustaki gerçek eşi var mı) — evli birine yürümek "yasak" kılar, ona teklif söz kesmeye döner.
 export function npcSeededMarried(npc: NPC): boolean {
-  if (npc.age < 22) return false;
-  let h = 0; for (let i = 0; i < npc.id.length; i++) h = (h * 31 + npc.id.charCodeAt(i)) >>> 0;
-  return (h % 100) < 58;
+  return !!npc.es && npc.es !== OYUNCU; // gerçek medeni hâl (nüfus kaydı)
 }
 // Flört bu kişiyle YASAK mı (evli oyuncu ihanet ediyor ya da karşı taraf evli) — UI uyarısı ve affair akışı için.
 export function flirtIsForbidden(p: Player, npc: NPC): boolean {
@@ -4033,7 +4148,7 @@ function affairTick(s: GameState) {
   const fertile = p.gender === "erkek" ? p.age < 62 : p.age < 48;
   if (a.heat >= 40 && fertile && (p.bastards || 0) < 3 && chance(0.02 + (a.heat / 100) * 0.03)) {
     p.bastards = (p.bastards || 0) + 1;
-    const c = rnd(CHILD); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn, bastard: true });
+    const c = cocukAdi(p); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn, bastard: true });
     a.heat = Math.min(100, a.heat + 35);
     push(s, "doğum", `Yasak ilişkinizden bir çocuk dünyaya geldi: ${c}. ${a.name} ile olan bu sır artık saklanamayacak kadar büyük.`, "kişisel", true, { k: "affair.bastard", p: [c, a.name] });
   }
@@ -4059,7 +4174,7 @@ function exposeAffair(s: GameState, a: NonNullable<Player["affair"]>, _sg: "erke
     const spName = p.spouse_name || "Eşin";
     if (chance(0.45)) {
       // Boşanma: eş ocağı terk etti.
-      p.married = false; p.widowed = false; p.spouse_bond = undefined; p.spouse_mizac = undefined; p.spouse_name = null; p.spouse_seed = undefined; p.married_turn = undefined; // boşanma: eş kimliği tümüyle silinir (bayat ad/yıldönümü kalmasın)
+      nufusOyuncuEsiAyril(s); p.married = false; p.widowed = false; p.spouse_bond = undefined; p.spouse_mizac = undefined; p.spouse_name = null; p.spouse_seed = undefined; p.married_turn = undefined; // boşanma: eş kimliği tümüyle silinir (bayat ad/yıldönümü kalmasın)
       p.reputation = clampStat(p.reputation - 6);
       push(s, "evlilik", `${spName}, ${a.name} ile ilişkini öğrendi. Ne yalvarış fayda etti ne yemin: ocağı topladı, çekip gitti. Diyar bu skandalı yıllarca konuşacak.`, "kişisel", true, { k: "affair.divorce", p: [spName, a.name] });
     } else {
@@ -4626,11 +4741,11 @@ function shapeChildhood(s: GameState) {
   const p = s.player; const c = p.child_acts || {};
   // Oyun yoldaşı: bağ güçlüyse seninle birlikte büyür ve ömürlük gerçek bir dosta dönüşür (ilişki grafiğine girer).
   const cf = p.child_friend;
-  const bornFriend = () => { // yoldaşı gerçek bir doğmuş NPC olarak ilişki grafiğine al (dost ya da rakip)
-    if (!s.world.npcBorn) s.world.npcBorn = [];
-    if (!s.world.npcBorn.some((n) => n.id === cf!.id)) {
+  const bornFriend = () => { // yoldaşı gerçek bir kişi olarak nüfusa al (dost ya da rakip)
+    const pop = nufusHazirla(s);
+    if (!pop.k[cf!.id]) {
       const tmpl = generateNPCs((cf!.seed ^ 0x5bd1e995) >>> 0, 1, "tr", "cf")[0];
-      s.world.npcBorn.push({ ...tmpl, id: cf!.id, gender: cf!.gender, nameSeed: cf!.seed, loc: p.location_name, alive: true, age: p.age, bornY: worldYears(s) });
+      pop.k[cf!.id] = { id: cf!.id, g: cf!.gender, dy: worldYears(s) - p.age, loc: p.location_name, prof: tmpl.profession, tr: Math.max(0, TRAITS.indexOf(tmpl.trait)), qk: Math.max(0, QUIRKS.indexOf(tmpl.quirk)), gl: Math.max(0, GOALS.indexOf(tmpl.goal)), ns: cf!.seed, ss: cf!.seed * 2 + 1 };
     }
   };
   if (cf && (cf.feud || 0) >= 2 && cf.bond < 50) { // dargınlık büyüdü → çocukluk rakibi (nemesis'e giden yol)
@@ -5662,8 +5777,11 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   // Bilinçli olarak YALNIZ silah: zırh/giyim bedene göredir ve eskir; kılıç ise hanenin simgesidir (tek parça = anlatı ağırlığı korunur).
   const heirloomId = p.equipped?.silah || null;
   const heirloomQ = heirloomId ? (p.equipped_q?.silah || "siradan") : null;
+  const heirPop = nufusHazirla(s); for (const k of Object.values(heirPop.k)) if (k.es === OYUNCU && k.ol == null) delete k.es; // atanın eşi dul kalır
+  const esK = p.spouse_id ? heirPop.k[p.spouse_id] : undefined; // vârisin öbür ebeveyni (gerçek kişi)
+  const esOlu = esK ? esK.ol != null : !!p.widowed;
   const ns: GameState = {
-    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcEvo: prev.world?.npcEvo, npcBorn: prev.world?.npcBorn, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, relationships: {}, dynasty, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
+    turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, pop: heirPop, relationships: {}, dynasty, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
     feud: prev.feud ? { houseId: prev.feud.houseId, nameIdx: prev.feud.nameIdx, stage: prev.feud.stage, heat: Math.round(prev.feud.heat / 2) } : undefined,
     bloodline: prev.bloodline ? { ...prev.bloodline, gen: prev.bloodline.gen + 1, scene: "bl_devir", act_turn: 0, opened: Math.max(0, prev.bloodline.opened - prev.turn), path: [...prev.bloodline.path] } : undefined, // KAN DEFTERİ vârise geçer: yeni kuşak, devir sahnesi
@@ -5685,6 +5803,8 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
       mother: p.gender === "erkek" ? (p.spouse_name || rnd(SPOUSE_K)) : p.name, father: p.gender === "erkek" ? p.name : (p.spouse_name || rnd(SPOUSE_E)),
       // Eş tarafı ebeveyn kültürel tohumla (dile göre çözülür); önceki oyuncu tarafı kendi adıyla kalır.
       mother_seed: p.gender === "erkek" ? p.spouse_seed : undefined, father_seed: p.gender === "erkek" ? undefined : p.spouse_seed,
+      mother_id: p.gender === "erkek" ? esK?.id : undefined, father_id: p.gender === "erkek" ? undefined : esK?.id,
+      mother_dead: p.gender === "kadın" ? true : esOlu || undefined, father_dead: p.gender === "erkek" ? true : esOlu || undefined, // ata vefat etti — vâris onu ikinci kez gömmez
       inventory: heirloomId ? { ekmek: 2, [heirloomId]: 1 } : { ekmek: 2 }, properties: props, generation: gen,
       inv_q: heirloomId && heirloomQ && heirloomQ !== "siradan" ? { [heirloomId]: { [heirloomQ]: 1 } } : undefined,
       faction: null, faction_standing: {},
@@ -5721,6 +5841,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     ns.player.dog = { n: p.dog.n, born: p.dog.born - prev.turn, bond: Math.max(5, Math.round(p.dog.bond / 2)), span: p.dog.span, old: p.dog.old };
     ns.history.push({ day: 0, type: "nesil_devri", text: `${p.dog.n} tabutun ardından mezara kadar yürüdü; üç gün eşikten ayrılmadı. Dördüncü gün başını yeni sahibinin dizine koydu: nöbet devam ediyor.`, scope: "kişisel", landmark: false, k: "evj.dogHeir", p: [p.dog.n] });
   }
+  oyuncuAilesiKur(ns); // vârisin yaşayan anne/babası (atanın eşi ya da adından ibaret ebeveyn) gerçek kişi olur
   return ns;
 }
 
@@ -5966,7 +6087,7 @@ export function spendWithSpouse(prev: GameState): GameState {
   else if (miz === "dindar") { p.honor = Math.min(100, p.honor + 1); bumpNam(p, "dindar", 1); }
   p.spouse_bond = Math.min(100, p.spouse_bond + bondGain);
   p.health = Math.min(100, p.health + 2); p.hunger = Math.max(0, p.hunger - 3);
-  const sn: EvtParam = p.spouse_seed != null ? { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] } : (p.spouse_name || "");
+  const sn: EvtParam = esParam(s);
   // Derin bağın kendi anı: yıllar geçmiş, bağ 85+ ise ara sıra mizaç ötesi bir sükût sahnesi (uzun evliliğin ödülü)
   if ((p.spouse_bond || 0) >= 85 && Math.random() < 0.35) {
     push(s, "evlilik", `${p.spouse_name || "Eşin"} ile söze gerek kalmadan bir öğle geçti; bir bakış bir cümleyi tamamladı. Yıllar iki nefesi tek nefes yapmış.`, "kişisel", false, { k: "evj.spouseDeep", p: [sn] });
@@ -7363,8 +7484,7 @@ export function advanceArc(prev: GameState, choiceIdx: number, loc?: { result?: 
     if (d.nam) for (const k of Object.keys(d.nam) as (keyof Nam)[]) bumpNam(p, k, d.nam[k]!);
     // Düğün dalı: anlatı ile mekanik ayrışmasın — sonuç "düğün var" diyorsa oyuncu gerçekten evlenir (rastgele evlilikle aynı kurulum).
     if (d.marry && !p.married) {
-      const name = p.gender === "erkek" ? rnd(SPOUSE_K) : rnd(SPOUSE_E);
-      p.married = true; p.married_turn = s.turn; p.spouse_bond = 45; p.spouse_name = name; p.spouse_seed = Math.floor(Math.random() * 1e9); p.widowed = false;
+      p.married = true; p.married_turn = s.turn; p.spouse_bond = 45; p.widowed = false; oyuncuEvlenKisi(s, esBulVeyaKur(s));
     }
   }
   push(s, "hikaye", loc?.result || c.result, "kişisel");
@@ -8500,5 +8620,6 @@ export function migrate(s: GameState): GameState {
   // Ahilik göçü: eski kayıtta kazanılmış kademe yok → hizmetin verdiği unvan kazanılmış sayılır (kimse rütbe kaybetmez; bundan sonrası sınavla).
   if (p.kademe === undefined && p.profession && p.profession !== "işsiz") { const pr0 = professionById(p.profession); p.kademe = pr0 ? careerTier(pr0, p.career_xp || 0) : 0; }
   s.schema = 1; // şema damgası: bu sürümün göçlerinden geçti
+  if (s.player && s.world) nufusHazirla(s); // yaşayan nüfus: eski kadro (isim, yaş, aile, ilişki) birebir kalıcı kişilere dönüşür
   return s;
 }

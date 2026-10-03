@@ -4,13 +4,13 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { npcsOf, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
+import { kisiProfil, kisiCevresi, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
 import { useI18n } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
 import { topMemories } from "../../../lib/npc-mind";
-import { professionNameL, traitL, quirkL, goalL } from "../../../lib/locale-data";
-import { ITEMS, npcSocialGraph, TieKind } from "../../../lib/world";
+import { professionNameL, traitL, quirkL, goalL, placeName } from "../../../lib/locale-data";
+import { ITEMS, TieKind } from "../../../lib/world";
 import { Portre, BackLabel, ScreenFresk } from "../../../lib/ui";
 import { GameIcon } from "../../../lib/icons";
 import { C, F } from "../../../lib/theme";
@@ -81,22 +81,22 @@ export default function NpcDetail() {
   const [line, setLine] = useState<string>("");
   const [lineDelta, setLineDelta] = useState<number>(0);
   const [giftOpen, setGiftOpen] = useState(false);
-  const allNpcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.seed, lang, state?.player.location_name]);
-  const graph = useMemo(() => (state ? npcSocialGraph(state.player.location_name, allNpcs) : {}), [state?.player.location_name, allNpcs]);
+  // Kişi nüfus kaydından okunur (her yerden; yaşayan ya da rahmetli) — nüfus her eylemde yenilendiği için pop'a bağlı.
+  const prof = useMemo(() => (state ? kisiProfil(state, id, lang) : null), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
+  const cevre = useMemo(() => (state ? kisiCevresi(state, id, lang) : []), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
-  const npc = allNpcs.find((n) => n.id === id);
-  if (!npc) return <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top + 40 }}><Text style={{ color: C.parchmentMuted, textAlign: "center" }}>{t("npc.notFound")}</Text></View>;
+  const npc = prof?.npc;
+  if (!prof || !npc) return <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top + 40 }}><Text style={{ color: C.parchmentMuted, textAlign: "center" }}>{t("npc.notFound")}</Text></View>;
   const v = relWith(state, npc.id);
   const band = bandOf(v);
   const ns = state.npc_state?.[npc.id] || { mood: 0, memories: [] };
   const giftables = Object.keys(state.player.inventory).filter((k) => state.player.inventory[k] > 0);
   const courtable = canCourt(state.player, npc, v);
-  const ties = (graph[npc.id] || [])
-    .map((tt) => ({ ...tt, who: allNpcs.find((n) => n.id === tt.otherId) }))
-    .filter((tt) => tt.who)
-    .sort((a, z) => TIE_ORDER.indexOf(a.kind) - TIE_ORDER.indexOf(z.kind));
-  const couldMarry = !state.player.dead && !state.player.married && state.player.age >= 18 && npc.age >= 18 && npc.gender !== state.player.gender;
-  const canGoal = !state.player.dead && state.player.age >= 13 && !!npc.goal; // muradına ermiş NPC'nin hedefi kalmaz — yardım/istismar kapanır
+  const ties = cevre
+    .map((tt) => ({ kind: tt.tur as TieKind, otherId: tt.npc.id, who: tt.npc, olu: tt.olu, uzak: tt.uzak }))
+    .sort((a, z) => TIE_ORDER.indexOf(a.kind) - TIE_ORDER.indexOf(z.kind) || Number(a.olu) - Number(z.olu));
+  const couldMarry = prof.burada && !state.player.dead && !state.player.married && state.player.age >= 18 && npc.age >= 18 && npc.gender !== state.player.gender;
+  const canGoal = prof.burada && !state.player.dead && state.player.age >= 13 && !!npc.goal; // muradına ermiş NPC'nin hedefi kalmaz — yardım/istismar kapanır
   // Kanal-bazlı kilit: her etkileşim (her sohbet niyeti + hediye/flört/dedikodu/hakaret/sadaka) ayrı ayrı ayda bir.
   // "dert dinle" deyince "iltifat" kapanmaz — hepsi bağımsız, hepsi bir kez okunur; farm motor tarafında kapalı.
   const acts = state.npc_state?.[npc.id]?.act_turns;
@@ -121,24 +121,25 @@ export default function NpcDetail() {
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 17, color: C.parchment, letterSpacing: 0.5 }}>{npc.name}</Text>
-            <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 1 }}>{professionNameL(npc.profession, lang)} · {npc.age} {t("misc.age")}</Text>
+            <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 1 }}>{prof.olu ? t("npc.late") : professionNameL(npc.profession, lang)} · {npc.age} {t("misc.age")}</Text>
+            {!prof.olu && !prof.burada ? <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.goldDim, marginTop: 2 }}>{t("npc.livesIn").replace("%1", placeName(npc.loc || "", lang))}</Text> : null}
             <RelBand score={v} />
           </View>
           {/* Bant etiketi */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: band.tone + "66", backgroundColor: band.tone + "14" }}>
             <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: band.tone }} />
-            <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: band.tone }}>{t("relb." + band.id).toUpperCase()}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 0.5, color: band.tone }}>{(prof.aileRolu ? t({ anne: "char.mother", baba: "char.father", es: "char.spouse" }[prof.aileRolu]) : t("relb." + band.id)).toUpperCase()}</Text>
           </View>
         </View>
 
         {/* Hızlı bilgi */}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="prayer-beads" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>{t("dlg.mood." + moodKey(ns.mood))}</Text></View>
+          {!prof.olu ? <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="prayer-beads" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>{t("dlg.mood." + moodKey(ns.mood))}</Text></View> : null}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="star" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>{traitL(npc.trait, lang)}</Text></View>
           <Text style={{ fontFamily: F.display, fontSize: 11, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted }}>{t("npc.rel")} {v > 0 ? "+" + v : v}</Text>
         </View>
         <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted, marginTop: 6, lineHeight: 17 }}>{(() => { const q = quirkL(npc.quirk, lang); return q[0].toUpperCase() + q.slice(1); })()}.</Text>
-        {npc.goal ? <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.goldDim, marginTop: 2 }}>{t("npc.dream")} {goalL(npc.goal, lang)}.</Text> : null}
+        {npc.goal && !prof.olu ? <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.goldDim, marginTop: 2 }}>{t("npc.dream")} {goalL(npc.goal, lang)}.</Text> : null}
         {/* Gizli ilişki: bu kişi aktif yasak sevgilinse ateş çubuğuyla göster */}
         {state.player.affair?.id === npc.id ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8, paddingVertical: 5, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: C.ember + "55", backgroundColor: C.ember + "14" }}>
@@ -161,11 +162,11 @@ export default function NpcDetail() {
           {ties.map((tt) => {
             const meta = TIE_META[tt.kind];
             return (
-              <Pressable key={tt.otherId} onPress={() => { hap("tap"); router.push(`/oyun/npc/${tt.otherId}`); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6, opacity: pressed ? 0.6 : 1 })}>
-                <Portre age={tt.who!.age} gender={tt.who!.gender} size={32} ring={false} seed={tt.who!.id} />
+              <Pressable key={tt.kind + tt.otherId} onPress={() => { hap("tap"); router.push(`/oyun/npc/${tt.otherId}`); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6, opacity: pressed ? 0.6 : 1 })}>
+                <View style={{ opacity: tt.olu ? 0.45 : 1 }}><Portre age={tt.who!.age} gender={tt.who!.gender} size={32} ring={false} seed={tt.who!.id} /></View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{tt.who!.name}</Text>
-                  <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(tt.who!.profession, lang)} · {tt.who!.age}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 13, color: tt.olu ? C.parchmentMuted : C.parchment }}>{tt.who!.name}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{tt.olu ? t("npc.late") : professionNameL(tt.who!.profession, lang)} · {tt.who!.age}{!tt.olu && tt.uzak ? " · " + placeName(tt.who!.loc || "", lang) : ""}</Text>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: meta.tone + "55", backgroundColor: meta.tone + "14" }}>
                   <GameIcon name={meta.icon} size={11} color={meta.tone} />
@@ -177,6 +178,7 @@ export default function NpcDetail() {
         </View>
       )}
 
+      {prof.burada && (<>
       {/* Söylenen söz — yanında ilişki etkisi (kişinin mizacına/ruh haline göre artı ya da eksi gelir) */}
       {line ? (
         <View style={{ backgroundColor: C.card, borderLeftColor: lineDelta < 0 ? C.blood : C.gold, borderLeftWidth: 2.5, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 10 }}>
@@ -320,6 +322,8 @@ export default function NpcDetail() {
           ))}
         </View>
       )}
+
+      </>)}
 
       {/* ── Seni hatırlıyor (yapısal anılar, en ağır) ── */}
       {(() => {

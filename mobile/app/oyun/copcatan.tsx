@@ -18,7 +18,7 @@ export default function Copcatan() {
   const { lang, t } = useI18n();
   const [ageF, setAgeF] = useState<"all" | "young" | "mid" | "old">("all");
   const [wealthF, setWealthF] = useState<number>(-1); // -1 hepsi, 0/1/2 servet
-  const suitors = useMemo(() => (state ? arrangedSuitors(state, lang) : []), [state?.seed, lang, state?.player.location_name, state?.turn, state?.player.married]);
+  const suitors = useMemo(() => (state ? arrangedSuitors(state, lang) : []), [state?.pop, state?.seed, lang, state?.player.location_name, state?.turn, state?.player.married]);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const able = canArrange(state);

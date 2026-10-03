@@ -1,19 +1,19 @@
 // Dünya modeli — NPC'ler, eşyalar, pazar. Offline, deterministik üretim.
 import { NAME_POOLS, Lang } from "./locale-data";
 import { tFor } from "./i18n";
-export interface NPC { id: string; name: string; age: number; gender: "erkek" | "kadın"; profession: string; trait: string; quirk: string; goal: string; loc?: string; alive?: boolean; bornY?: number; nameSeed?: number; }
+export interface NPC { id: string; name: string; age: number; gender: "erkek" | "kadın"; profession: string; trait: string; quirk: string; goal: string; loc?: string; alive?: boolean; bornY?: number; nameSeed?: number; es?: string; } // es: eş kimliği (nüfus; "@" = oyuncu)
 // Kişilik özellikleri (deterministik atanır).
 export const TRAITS = ["neşeli","ciddi","kibirli","cömert","dertli","yalnız","kurnaz","mert","dindar","hırslı","utangaç","sıcakkanlı","misafirperver","unutkan","sabırlı","aceleci"];
-const QUIRKS = ["sürekli hava durumundan dert yanar","eski günleri anlatmayı sever","herkese lakap takar","az konuşur çok dinler","yüksek sesle güler","pazarlığa bayılır","komşularını çekiştirir","bir türküyü mırıldanır","sözüne hep bir atasözü katar","cebinde kuru üzüm taşır, çocuklara dağıtır","gölgeye bakıp vakti şaşmaz bilir","selamı herkese adıyla verir","gördüğü her kuşa ekmek ufalar","eşiğini günde iki kez süpürür"];
+export const QUIRKS = ["sürekli hava durumundan dert yanar","eski günleri anlatmayı sever","herkese lakap takar","az konuşur çok dinler","yüksek sesle güler","pazarlığa bayılır","komşularını çekiştirir","bir türküyü mırıldanır","sözüne hep bir atasözü katar","cebinde kuru üzüm taşır, çocuklara dağıtır","gölgeye bakıp vakti şaşmaz bilir","selamı herkese adıyla verir","gördüğü her kuşa ekmek ufalar","eşiğini günde iki kez süpürür"];
 // NPC'nin peşinde olduğu hayat hedefi (söylenti ve sohbete renk katar).
-const GOALS = ["bir dükkân açmanın hayalini kuruyor","kızını/oğlunu evermek istiyor","borçlarından kurtulmaya çalışıyor","hacca gitmeyi diliyor","toprak satın almak için biriktiriyor","ustabaşı olmak istiyor","küs olduğu kardeşiyle barışmak istiyor","bir ev yaptırmanın derdinde","kervan ticaretine atılmak istiyor","adını duyurmak istiyor","yıllardır görmediği memleketini görmek istiyor","çırağını kendi dükkânına kavuşturmak istiyor","babasından kalma bağı yeniden yeşertmek istiyor","bir yetimi yanına çırak almak istiyor"];
+export const GOALS = ["bir dükkân açmanın hayalini kuruyor","kızını/oğlunu evermek istiyor","borçlarından kurtulmaya çalışıyor","hacca gitmeyi diliyor","toprak satın almak için biriktiriyor","ustabaşı olmak istiyor","küs olduğu kardeşiyle barışmak istiyor","bir ev yaptırmanın derdinde","kervan ticaretine atılmak istiyor","adını duyurmak istiyor","yıllardır görmediği memleketini görmek istiyor","çırağını kendi dükkânına kavuşturmak istiyor","babasından kalma bağı yeniden yeşertmek istiyor","bir yetimi yanına çırak almak istiyor"];
 export type WClass = "hizli" | "kesici" | "ezici" | "delici" | "menzilli";
 export interface Item { id: string; name: string; icon: string; buy: number; sell: number; kind: "yiyecek" | "esya" | "silah" | "zirh" | "kalkan" | "baslik" | "eldiven" | "ayakkabi" | "kiyafet" | "taki"; heal?: number; feed?: number; power?: number; defense?: number; charisma?: number; prestige?: number; wclass?: WClass; twoHanded?: boolean; }
 
 const AD_E = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim","Osman","Yusuf","Murat","Kerem","Emre","Cihan","Barış","Tolga","Mert"];
 const AD_K = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif","Nur","Reyhan","Cansu","Derya","Sevda","Pınar","Gül","Nazlı","Hande"];
 const SOYAD = ["Atay","Bircan","Demirhan","Saygı","Açıkel","Dalkılıç","Kayhan","Bal","Yıldırım","Toprak","Çelik","Aydın","Korkmaz","Şahin"];
-const NPC_PROFS = ["çiftçi","demirci","tüccar","balıkçı","avcı","çoban","fırıncı","müzisyen","şifacı","asker","işsiz"];
+export const NPC_PROFS = ["çiftçi","demirci","tüccar","balıkçı","avcı","çoban","fırıncı","müzisyen","şifacı","asker","işsiz"];
 
 function pick<T>(a: T[], r: () => number): T { return a[Math.floor(r() * a.length)]; }
 

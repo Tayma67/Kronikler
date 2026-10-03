@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { playVictory, playChime } from "../../lib/sound";
-import {
+import { aileUyesi,
   playerHousePower, houseAttitude, dynastyPower, houseSeal,
   WILL_STYLES, throneRequirements, throneBacking, canClaimThrone, throneOdds, claimThrone, THRONE_COST,
   canFoundSettlement, foundSettlement, settlementIncome, settleFee, SETTLE_MAX, SETTLE_TIER, developSettlement, developSettlementCost,
@@ -134,7 +134,7 @@ export default function Hanedan() {
           {/* Aile özeti */}
           <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 14, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border, alignSelf: "stretch" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="karakter" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{p.name}</Text></View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="ring" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{p.married ? (p.spouse_seed != null ? localFirstName(p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek", lang) : (p.spouse_name || t("dyn.unwed"))) : t("dyn.unwed")}</Text></View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="ring" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{p.married ? (aileUyesi(state, "es", lang)?.ilkAd ?? (p.spouse_seed != null ? localFirstName(p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek", lang) : (p.spouse_name || t("dyn.unwed")))) : t("dyn.unwed")}</Text></View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="baby" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{p.children.length}</Text></View>
             {(p.grandchildren?.length || 0) > 0 && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><GameIcon name="family" size={12} color={C.goldDim} /><Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{p.grandchildren!.length}</Text></View>
