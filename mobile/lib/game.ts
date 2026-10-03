@@ -157,6 +157,7 @@ export interface Player {
   kademe?: number; // Ahilik: sınavla KAZANILAN kariyer kademesi (etkin unvan = min(hizmet süresi, kazanılan)); meslek değişince 0
   sinav_cagri?: number; sinav_bekle?: number; sinav_turn?: number; // peştamal sınavı: çağrılan hedef · kalınca yeniden çağrı turu · ayda tek deneme
   tezgah?: string; tezgah_turn?: number; tezgah_zar?: number; tezgah_gor?: string[]; // tezgâh kararı: bekleyen kart · son kart turu · önceden atılmış zar · bu ömürde görülen kartlar
+  rakip?: Rakip; // çarşıdaki meslek rakibi (kalfalıkta doğar; lonca bayrağı yarışı)
   sinav_gecme?: number; sinav_kalma?: number; // ömür boyu geçilen/kalınan peştamal sınavları (ustalık ünleri / Ebedi Kalfa)
   fetih_turlari?: number[]; divan_karar?: number; // hükümdar sicili: fetih turları (Yıldırım) + karara bağlanan divan arzuhalleri (Kanuni)
 }
@@ -2143,6 +2144,7 @@ export function advance(prev: GameState, n = 1): GameState {
     { const mf = monthlyFlavor(s, cal); push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k }); }
     if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 6 && chance(0.12)) { const mp = s.player.age >= 13 ? MICRO_IDS : MICRO_KID_IDS; s.micro = { id: mp[Math.floor(Math.random() * mp.length)] }; } } // mikro an: yok sayılırsa ertesi ay kaybolur (çocuğa çocuk anı)
     crownCampaignTick(s); // Sefer 2.0: ordu her ay yol alır (yürüyüş → kuşatma → hüküm)
+    rakipTick(s); // çarşıdaki rakip: hüneri büyür, hamle yapar, yıllık bayrak yarışı vakti
     if (i === n - 1) sagaTick(s); // Kül Yemini: destan sahnesi kapıları (düşen sahne panoda bekler, silinmez)
     if (i === n - 1) bloodlineTick(s); // Kan Defteri: nesil destanının sahne kapıları
     if (i === n - 1) successionTick(s); // Veraset: gözde ilanının kardeş sofrasındaki yankısı
@@ -3088,6 +3090,7 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
   if (hasPerk(p, "becerikli")) mult += 0.15;
   if (hasPerk(p, "usta_eli")) mult += 0.2;
   if (hasPerk(p, "basyapit")) mult += 0.25;
+  { const rk = p.rakip; if (rk && rk.bitti && rk.prof === p.profession) mult += rk.bitti === "ustun" ? 0.1 : rk.bitti === "ortak" ? 0.08 : -0.05; } // çarşının bayrağı: müşteri bayraklı tezgâha gider
   const tierBefore = pr ? careerTier(pr, kariyerXp(p)) : 0;
   const titleMult = TITLE_MULT[tierBefore] || 1;
   const base = pr ? pr.base : 4;
@@ -3109,6 +3112,7 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
     { const wv2 = chance(0.5); push(s, "çalışma", wv2 ? `${careerTitle(p.profession, xp0)} olarak ter döktün; ay sonunda avucunda ${earn} akçe vardı.` : `${careerTitle(p.profession, xp0)} olarak çalıştın, ${earn} akçe kazandın.`, "kişisel", false, { k: wv2 ? "evj.work2" : "evj.work", p: [{ c: [p.profession, xp0] }, earn] }); }
   }
   if (pr) sinavCagrisi(s); // Ahilik: hizmet dolunca lonca peştamal sınavına çağırır — kademe kendiliğinden yükselmez
+  if (pr) rakipDogum(s); // kalfalıkta çarşıda bir rakip belirir
   if (!failed && !(pr && tezgahTetik(s)) && chance(0.3)) rollWorkEvent(s); // önce mesleğin kendi kararı (tezgâh), yoksa %30 mini-olay
   return s;
 }
@@ -3321,7 +3325,120 @@ export function resolveTezgah(prev: GameState, i: number): GameState {
   gainSkill(s, PROF_SKILL[k.prof] || "crafting", 6);
   p.tezgah = undefined; p.tezgah_zar = undefined;
   p.tezgah_gor = [...(p.tezgah_gor || []), k.id];
-  push(s, "çalışma", "Tezgâhta bir karar verdin.", "kişisel", i === 2, { k: "dil." + k.id + ".r" + i + (ok ? "" : "x") });
+  push(s, "çalışma", "Tezgâhta bir karar verdin.", "kişisel", false, { k: "dil." + k.id + ".r" + i + (ok ? "" : "x") });
+  return s;
+}
+
+// ── Rakip Usta: çarşıda adın bir başkasınınkiyle anılır ──
+// Kalfalığa erince aynı meslekten bir rakip belirir (adı dile göre yerelleşir). Mizacı dürüst, kıskanç ya da hilebazdır;
+// ilk hamlesinde ya da ilk yarışta belli olur. Hüneri her ay büyür — oyuncu da büyümezse geride kalır. Her yıl (ya da
+// meydan okuyunca) lonca bayrağı yarışı: üç yol (mesleğin özelliği · halkı kazanmak · rakibin işini bozmak), şanslar görünür;
+// hile kolay görünür ama yakalanırsan çarşı unutmaz. İlk ÜÇ bayrağı alan çarşının ustası sayılır: kazanan gelir üstünlüğü,
+// kaybeden müşteri kaybı yaşar; dürüst rakiple ortaklık da kurulabilir. Yıllar sonra yeni bir rakip yeniden belirir.
+export type RakipMizac = "durust" | "kiskanc" | "hilebaz";
+export interface Rakip { seed: number; g: "erkek" | "kadın"; prof: string; huner: number; mizac: RakipMizac; galip: number; maglup: number; hile?: number; dogum: number; next: number; yaris?: number; meydan?: number; bilinen?: boolean; bitti?: "ustun" | "yenik" | "ortak"; bittiTur?: number }
+export const RAKIP_HEDEF = 3;          // ilk üç bayrağı alan kazanır
+export const RAKIP_MEYDAN_BEDEL = 15;  // meydan okuma (malzeme + lonca harcı)
+export const RAKIP_MEYDAN_ARA = 6;     // iki meydan okuma arası ay
+export const RAKIP_TAVAN = 125;        // rakip hünerinin tavanı (zirvedeki usta ~110 puan)
+const rkG = (g: "erkek" | "kadın") => (g === "kadın" ? "_k" : ""); // rakip özneli metinlerin dişil anahtarı (ru/ar/es/pt çekimi)
+const rkAd = (r: Rakip): EvtParamLike => ({ fn: [r.seed, r.g] });
+type EvtParamLike = { fn: [number, "erkek" | "kadın"] };
+export function rakipAktif(p: Player): Rakip | undefined { const r = p.rakip; return r && !r.bitti && r.prof === p.profession && !p.dead ? r : undefined; }
+export function rakipYollari(p: Player): (keyof Stats)[] { const pr = p.rakip?.prof || p.profession; return [PROF_STAT[pr] || "stamina", "charisma", "intelligence"]; }
+export function rakipPuan(p: Player, stat: keyof Stats): number {
+  const dom = (PROF_SKILL[p.profession] || "crafting") as SkillKey;
+  return Math.round(effStat(p, stat) * 7 + skillLevel(p.skill_xp[dom] || 0) * 3 + kademeOf(p) * 6);
+}
+export function rakipOranlari(p: Player): number[] {
+  const r = p.rakip; if (!r) return [0, 0, 0];
+  return rakipYollari(p).map((st, i) => {
+    let o = 0.5 + (rakipPuan(p, st) - r.huner) * 0.012;
+    if (i === 2) o += r.mizac === "hilebaz" ? -0.05 : 0.15; // hile kolay görünür; hilebaza hile sökmez
+    return Math.max(0.08, Math.min(0.92, Math.round(o * 100) / 100));
+  });
+}
+function rakipDogum(s: GameState) {
+  const p = s.player; const r = p.rakip;
+  if (kademeOf(p) < 1) return;
+  const bos = !r || r.prof !== p.profession || (!!r.bitti && s.turn - (r.bittiTur ?? 0) >= (r.bitti === "yenik" ? 48 : 84)); // rövanş 4 yıl, yeni meydan okuyan 7 yıl sonra
+  if (!bos || !chance(0.12)) return;
+  const g: "erkek" | "kadın" = chance(0.5) ? "erkek" : "kadın"; const seed = Math.floor(Math.random() * 1e9);
+  const u = Math.random(); const mizac: RakipMizac = u < 0.4 ? "durust" : u < 0.75 ? "kiskanc" : "hilebaz";
+  const huner = Math.max(20, Math.min(RAKIP_TAVAN, rakipPuan(p, PROF_STAT[p.profession] || "stamina") + Math.floor(Math.random() * 15) - 9));
+  const ilk = !r;
+  p.rakip = { seed, g, prof: p.profession, huner, mizac, galip: 0, maglup: 0, dogum: s.turn, next: s.turn + 12 };
+  push(s, "rakip", "Çarşıda adın bir başkasınınkiyle anılmaya başladı.", "kişisel", true, { k: (ilk ? "evj.rakip.dogum" : "evj.rakip.yeni") + rkG(g), p: [rkAd(p.rakip), { pr: p.profession }] });
+}
+function rakipSonu(s: GameState) {
+  const p = s.player; const r = p.rakip; if (!r || r.bitti) return;
+  if (r.galip >= RAKIP_HEDEF) {
+    r.bitti = "ustun"; r.bittiTur = s.turn; r.yaris = undefined;
+    p.fame = Math.min(100, p.fame + 5); p.reputation = Math.min(100, p.reputation + 5);
+    push(s, "rakip", "Çarşının bayrağı artık sende.", "kişisel", true, { k: "evj.rakip.ustun" + rkG(r.g), p: [rkAd(r)] });
+  } else if (r.maglup >= RAKIP_HEDEF) {
+    r.bitti = "yenik"; r.bittiTur = s.turn; r.yaris = undefined;
+    push(s, "rakip", "Çarşının bayrağı rakibinde kaldı.", "kişisel", true, { k: "evj.rakip.yenik" + rkG(r.g), p: [rkAd(r)] });
+  }
+}
+function rakipTick(s: GameState) {
+  const p = s.player; const r = rakipAktif(p); if (!r) return;
+  // Rakip geride kalınca hırsla çalışır, öndeyken gevşer: yarış hep çekişmeli, ama oyuncunun emeği farkı açar.
+  const hiz = (r.mizac === "kiskanc" ? 0.5 : r.mizac === "durust" ? 0.4 : 0.35) * (r.huner < rakipPuan(p, PROF_STAT[r.prof] || "stamina") ? 0.9 : 0.3);
+  r.huner = Math.min(RAKIP_TAVAN, Math.round((r.huner + hiz) * 100) / 100);
+  if (r.yaris == null && s.turn >= r.next) {
+    r.yaris = s.turn;
+    push(s, "rakip", "Lonca bayrağı için yarış vakti.", "kişisel", false, { k: "evj.rakip.vakit" + rkG(r.g), p: [rkAd(r)] });
+  } else if (r.yaris != null && s.turn - r.yaris >= 3) { // yarışa çıkmayan bayrağı bırakır
+    r.maglup++; r.yaris = undefined; r.next = s.turn + 12;
+    push(s, "rakip", "Yarışa çıkmadın; bayrak rakibine gitti.", "kişisel", false, { k: "evj.rakip.cekildi" + rkG(r.g), p: [rkAd(r)] });
+    rakipSonu(s); if (r.bitti) return;
+  }
+  if (!chance(0.035)) return;
+  r.bilinen = true;
+  if (r.mizac === "kiskanc") { p.reputation = Math.max(-100, p.reputation - 2); push(s, "rakip", "Rakibin hakkında dedikodu yayıyor.", "kişisel", false, { k: "evj.rakip.dedikodu" + rkG(r.g), p: [rkAd(r)] }); }
+  else if (r.mizac === "hilebaz") { const kayip = Math.min(25, Math.round(p.money * 0.05)); if (kayip > 0) { p.money -= kayip; push(s, "rakip", "Rakibin müşterini ayarttı.", "kişisel", false, { k: "evj.rakip.musteri" + rkG(r.g), p: [rkAd(r), kayip] }); } }
+  else { p.reputation = Math.min(100, p.reputation + 1); push(s, "rakip", "Rakibin çarşıda işini övdü.", "kişisel", false, { k: "evj.rakip.ovgu" + rkG(r.g), p: [rkAd(r)] }); }
+}
+export function rakipMeydanHazir(s: GameState): boolean {
+  const p = s.player; const r = rakipAktif(p);
+  return !!r && r.yaris == null && (r.meydan == null || s.turn - r.meydan >= RAKIP_MEYDAN_ARA) && p.money >= RAKIP_MEYDAN_BEDEL && !inJail(p);
+}
+export function rakipMeydanKalan(s: GameState): number { const r = s.player.rakip; return r?.meydan == null ? 0 : Math.max(0, RAKIP_MEYDAN_ARA - (s.turn - r.meydan)); }
+export function rakipMeydan(prev: GameState): GameState {
+  if (!rakipMeydanHazir(prev)) return prev;
+  const s = clone(prev); const p = s.player; const r = p.rakip!;
+  p.money -= RAKIP_MEYDAN_BEDEL; r.meydan = s.turn; r.yaris = s.turn;
+  push(s, "rakip", "Rakibine meydan okudun.", "kişisel", false, { k: "evj.rakip.meydan" + rkG(r.g), p: [rkAd(r)] });
+  return s;
+}
+// Yarış: başarı zarı burada atılır; sonuç kartın arka yüzünde gösterilir (Ahilik sınavı ile aynı akış).
+export function rakipYarisi(prev: GameState, yol: number): { state: GameState; basari: boolean | null } {
+  const s = clone(prev); const p = s.player; const r = rakipAktif(p);
+  if (!r || r.yaris == null || yol < 0 || yol > 2 || inJail(p)) return { state: prev, basari: null };
+  const ok = Math.random() < rakipOranlari(p)[yol];
+  r.yaris = undefined; r.next = s.turn + 12; r.bilinen = true;
+  gainSkill(s, PROF_SKILL[r.prof] || "crafting", 5);
+  if (ok) {
+    r.galip++;
+    const odul = Math.round((15 + kademeOf(p) * 10) * inflationFactor(s)); p.money += odul;
+    p.fame = Math.min(100, p.fame + 2); p.reputation = Math.min(100, p.reputation + 2);
+    if (yol === 2) { p.honor = Math.max(0, p.honor - 3); r.hile = (r.hile || 0) + 1; }
+    push(s, "rakip", "Lonca bayrağı bu yıl senin tezgâhına asıldı.", "kişisel", false, { k: (yol === 2 ? "evj.rakip.winHile" : "evj.rakip.win") + rkG(r.g), p: [rkAd(r), odul] });
+  } else {
+    r.maglup++;
+    if (yol === 2) { p.reputation = Math.max(-100, p.reputation - 6); p.honor = Math.max(0, p.honor - 4); push(s, "rakip", "Rakibinin işini bozarken yakalandın.", "kişisel", true, { k: "evj.rakip.hile" + rkG(r.g), p: [rkAd(r)] }); }
+    else { p.reputation = Math.max(-100, p.reputation - 1); push(s, "rakip", "Lonca bayrağı bu yıl rakibine gitti.", "kişisel", false, { k: "evj.rakip.lose" + rkG(r.g), p: [rkAd(r)] }); }
+  }
+  rakipSonu(s);
+  return { state: s, basari: ok };
+}
+export function rakipOrtaklikHazir(p: Player): boolean { const r = rakipAktif(p); return !!r && r.mizac === "durust" && !!r.bilinen && r.galip >= 1 && r.maglup >= 1 && r.yaris == null; }
+export function rakipOrtaklik(prev: GameState): GameState {
+  if (!rakipOrtaklikHazir(prev.player)) return prev;
+  const s = clone(prev); const p = s.player; const r = p.rakip!;
+  r.bitti = "ortak"; r.bittiTur = s.turn; p.honor = Math.min(100, p.honor + 2);
+  push(s, "rakip", "Rakibinle ortak oldun.", "kişisel", true, { k: "evj.rakip.ortak" + rkG(r.g), p: [rkAd(r)] });
   return s;
 }
 

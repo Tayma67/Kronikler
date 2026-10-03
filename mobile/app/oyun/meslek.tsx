@@ -3,7 +3,8 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { changeProfession, PROFESSIONS, professionById, careerTier, hasProfAction, canProfAction, professionAction, profActionCooldownLeft, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat, kariyerXp, sinavDurumu, ustalikSinavi } from "../../lib/game";
+import { changeProfession, PROFESSIONS, professionById, careerTier, hasProfAction, canProfAction, professionAction, profActionCooldownLeft, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat, kariyerXp, sinavDurumu, ustalikSinavi, rakipAktif, rakipPuan, rakipYollari, rakipMeydan, rakipMeydanHazir, rakipMeydanKalan, rakipYarisi, rakipOrtaklik, rakipOrtaklikHazir, RAKIP_HEDEF, RAKIP_MEYDAN_BEDEL } from "../../lib/game";
+import { rakipAdi, rakipKartVerisi } from "../../lib/rakip-ui";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
 import { professionNameL, careerTitleL, PROF_L10N } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
@@ -18,6 +19,7 @@ export default function Meslek() {
   const { state, apply } = useGame();
   const { t, lang } = useI18n();
   const [sinav, setSinav] = useState<SinavKartiVeri | null>(null); // açılışta dondurulur: sonuç gelince kademe değişse de kart kapanana dek aynı kalır
+  const [yaris, setYaris] = useState<SinavKartiVeri | null>(null); // lonca bayrağı yarışı — aynı dondurma kuralı
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   if (p.age < 13) {
@@ -56,6 +58,66 @@ export default function Meslek() {
           );
         })()}
         <SinavKartiModal v={sinav} onSec={(yol) => { const r = ustalikSinavi(state, yol); if (r.basari != null) apply(() => r.state); return r.basari; }} onKapat={() => setSinav(null)} />
+
+        {/* Rakip Usta: çarşıda adın bir başkasınınkiyle anılır — lonca bayrağı yarışı */}
+        {(() => {
+          if (p.profession === "işsiz") return null;
+          const r = p.rakip && p.rakip.prof === p.profession ? p.rakip : undefined;
+          if (!r) return (
+            <Panel title={t("rk.title")}>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentDim, lineHeight: 19 }}>{t("rk.hint")}</Text>
+            </Panel>
+          );
+          const aktif = rakipAktif(p);
+          const ben = rakipPuan(p, rakipYollari(p)[0]);
+          const o = Math.round(r.huner);
+          const olcek = Math.max(100, ben, o); // çubuklar ortak ölçekte
+          const bar = (ad: string, v: number, renk: string) => (
+            <View style={{ marginTop: 7 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment }}>{ad}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 12, color: renk }}>{v}</Text>
+              </View>
+              <View style={{ height: 6, borderRadius: 3, backgroundColor: C.border, marginTop: 3, overflow: "hidden" }}>
+                <View style={{ width: `${Math.round((v / olcek) * 100)}%`, height: 6, borderRadius: 3, backgroundColor: renk }} />
+              </View>
+            </View>
+          );
+          const kalan = r.yaris != null ? Math.max(1, 3 - (state.turn - r.yaris)) : 0;
+          const meydanOk = rakipMeydanHazir(state);
+          const btn = (label: string, onPress: () => void, dolu: boolean, disabled = false) => (
+            <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress} style={{ marginTop: 11, paddingVertical: 12, borderRadius: 9, borderWidth: 1.5, borderColor: disabled ? C.border : C.gold + "99", backgroundColor: dolu && !disabled ? C.gold : C.bg, alignItems: "center", opacity: disabled ? 0.55 : 1 }}>
+              <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.2, color: dolu && !disabled ? C.inkOnGold : C.gold }}>{label}</Text>
+            </Pressable>
+          );
+          return (
+            <Panel title={t("rk.title")} right={<GameIcon name="banner" size={18} color={C.gold} />}>
+              <Text style={{ fontFamily: F.display, fontSize: 15, color: C.gold }}>{rakipAdi(p, lang)}</Text>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentDim, marginTop: 2 }}>{applyParams(t("rk.huy"), [r.bilinen ? t("rk.m." + r.mizac) : t("rk.m.unknown")], lang)}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim, marginTop: 10 }}>{t("rk.skill").toUpperCase()}</Text>
+              {bar(t("rk.you"), ben, ben >= o ? C.sage : C.ember)}
+              {bar(rakipAdi(p, lang), o, C.blood)}
+              <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginTop: 10 }}>{applyParams(t("rk.flags"), [r.galip, r.maglup, RAKIP_HEDEF], lang)}</Text>
+              {r.bitti ? (
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: r.bitti === "yenik" ? C.ember : C.goldBright, marginTop: 6, lineHeight: 19 }}>{t("rk.end." + r.bitti)}</Text>
+              ) : aktif && r.yaris != null ? (
+                <>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.goldBright, marginTop: 6 }}>{applyParams(t("rk.pending"), [kalan], lang)}</Text>
+                  {btn(t("rk.btnRace"), () => { hap("tap"); setYaris(rakipKartVerisi(state, t, lang)); }, true)}
+                </>
+              ) : aktif ? (
+                <>
+                  <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchmentDim, marginTop: 6 }}>{applyParams(t("rk.next"), [Math.max(1, r.next - state.turn)], lang)}</Text>
+                  {btn(applyParams(t("rk.btnChallenge"), [RAKIP_MEYDAN_BEDEL], lang), () => { hap("tap"); const ns = rakipMeydan(state); apply(() => ns); setYaris(rakipKartVerisi(ns, t, lang)); }, false, !meydanOk)}
+                  {rakipMeydanKalan(state) > 0 && <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5, textAlign: "center" }}>{applyParams(t("rk.wait"), [rakipMeydanKalan(state)], lang)}</Text>}
+                  {rakipOrtaklikHazir(p) ? btn(t("rk.btnPartner"), () => { hap("success"); apply((s) => rakipOrtaklik(s)); }, false)
+                    : r.bilinen && r.mizac === "durust" ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 8, lineHeight: 17 }}>{t("rk.partnerHint")}</Text> : null}
+                </>
+              ) : null}
+            </Panel>
+          );
+        })()}
+        <SinavKartiModal v={yaris} onSec={(yol) => { const r = rakipYarisi(state, yol); if (r.basari != null) apply(() => r.state); return r.basari; }} onKapat={() => setYaris(null)} />
 
         {curPr && (
           <Panel title={professionNameL(p.profession, lang)} right={<Pill text={`${tierIdx + 1}/${curPr.tiers.length}`} />}>

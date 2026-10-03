@@ -8,8 +8,10 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp } from "../../lib/game";
+import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp } from "../../lib/game";
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
+import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
+import { rakipKartVerisi } from "../../lib/rakip-ui";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
@@ -102,6 +104,9 @@ export default function Dashboard() {
   const [yearReport, setYearReport] = useState<GameEvent | null>(null); // yıl dönümü karnesi (yaş günü ritüeli)
   const [dilemma, setDilemma] = useState<Dilemma | null>(null);
   const [opp, setOpp] = useState<Opportunity | null>(null);
+  // Lonca bayrağı yarışı vakti gelince kart bir kez kendiliğinden açılır ("şimdi değil" denebilir; meslek ekranından da girilir).
+  const [yarisK, setYarisK] = useState<SinavKartiVeri | null>(null);
+  const yarisAcilan = useRef<number | null>(null);
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
   const [tab, setTab] = useState<"gunluk" | "dunya">("gunluk");
   const [guideHidden, setGuideHidden] = useState(false);
@@ -158,6 +163,10 @@ export default function Dashboard() {
   }, []);
   const closeTut = () => { setShowTut(false); AsyncStorage.setItem("kronikler_sp_tut", "1").catch(() => {}); };
 
+  useEffect(() => {
+    const r = state?.player.rakip; const y = r && !r.bitti && r.prof === state?.player.profession ? r.yaris : undefined;
+    if (state && y != null && yarisAcilan.current !== y) { yarisAcilan.current = y; setYarisK(rakipKartVerisi(state, t, lang, true)); }
+  }, [state?.player.rakip?.yaris]);
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
   const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; const isFest = !!dilemma && dilemma.id.startsWith("fest_"); if (dilemma) { const k = "dil." + dilemma.id + ".r" + i; const v = t(k); res = v === k ? c.result : v; } apply((s) => applyDilemma(s, c.delta, res, sk, isFest, dilemma ? "dil." + dilemma.id + ".r" + i : undefined)); setDilemma(null); };
   const onResolveOpp = (success: boolean) => { if (!opp) return; hap("advance"); apply((s) => resolveOpportunity(s, opp, success)); setOpp(null); };
@@ -290,6 +299,8 @@ export default function Dashboard() {
         <OpportunityModal opp={opp} statVal={opp ? state.player.stats[opp.stat] : 5} onResolve={onResolveOpp} onPass={() => { hap("tap"); setOpp(null); }} />
       ) : tzDilemma ? (
         <DilemmaModal dilemma={tzDilemma} onChoose={onTezgah} female={p.gender === "kadın"} />
+      ) : yarisK ? (
+        <SinavKartiModal v={yarisK} onSec={(yol) => { const r = rakipYarisi(state, yol); if (r.basari != null) apply(() => r.state); return r.basari; }} onKapat={() => setYarisK(null)} />
       ) : ach ? (
         <AchievementToast name={ach.name} icon={ach.icon} onClose={() => setAch(null)} />
       ) : null}

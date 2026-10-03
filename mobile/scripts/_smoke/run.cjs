@@ -39,6 +39,12 @@ for (let i = 0; i < LIVES; i++) {
         } catch (e) { errors++; if (errors <= 5) console.log("AKSİYON HATASI:", e.message); }
         try { if (s.pendingScene && s.pendingScene.kind === "crime") s = g.resolveCrimeScene(s, R(["saklan","rusvet","kac"])); } catch (e) { errors++; if (errors <= 5) console.log("SAHNE HATASI:", e.message); }
         try { if (s.player.tezgah) s = g.resolveTezgah(s, R([0, 1, 2])); } catch (e) { errors++; if (errors <= 5) console.log("TEZGÂH HATASI:", e.message); } // mesleğin kendi kararı (kilitli hüner yolu no-op kalır)
+        try { // çarşıdaki rakip: bekleyen yarış (bazen çekilir), ara sıra meydan okuma ve ortaklık
+          const rk = s.player.rakip;
+          if (rk && rk.yaris != null && Math.random() < 0.7) s = g.rakipYarisi(s, R([0, 1, 2])).state;
+          else if (Math.random() < 0.05 && g.rakipMeydanHazir(s)) s = g.rakipMeydan(s);
+          if (g.rakipOrtaklikHazir(s.player) && Math.random() < 0.3) s = g.rakipOrtaklik(s);
+        } catch (e) { errors++; if (errors <= 5) console.log("RAKİP HATASI:", e.message); }
       }
       s = g.advance(s, 1);
     }
