@@ -291,7 +291,9 @@ export default function Dashboard() {
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: 60 }]}>
         {coinsOn && <CoinShower shoot={shoot} width={Dimensions.get("window").width} height={Dimensions.get("window").height} />}
       </View>
-      {milestone ? (
+      {yarisK ? (
+        <SinavKartiModal v={yarisK} onSec={(yol) => { const r = rakipYarisi(state, yol); if (r.basari != null) apply(() => r.state); return r.basari; }} onKapat={() => setYarisK(null)} />
+      ) : milestone ? (
         <MilestoneModal visible={true} type={milestone.type} text={renderEvt(milestone.k, milestone.text, milestone.p, lang, t, p.gender === "kadın")} onClose={() => setMilestone(null)} />
       ) : dilemma ? (
         <DilemmaModal dilemma={dilemma} onChoose={onChoose} female={p.gender === "kadın"} />
@@ -299,13 +301,11 @@ export default function Dashboard() {
         <OpportunityModal opp={opp} statVal={opp ? state.player.stats[opp.stat] : 5} onResolve={onResolveOpp} onPass={() => { hap("tap"); setOpp(null); }} />
       ) : tzDilemma ? (
         <DilemmaModal dilemma={tzDilemma} onChoose={onTezgah} female={p.gender === "kadın"} />
-      ) : yarisK ? (
-        <SinavKartiModal v={yarisK} onSec={(yol) => { const r = rakipYarisi(state, yol); if (r.basari != null) apply(() => r.state); return r.basari; }} onKapat={() => setYarisK(null)} />
       ) : ach ? (
         <AchievementToast name={ach.name} icon={ach.icon} onClose={() => setAch(null)} />
       ) : null}
       {/* Yıl karnesi: yaş günü ritüeli — yılın izleri + mevcut durum */}
-      {yearReport && !milestone && (() => {
+      {yearReport && !milestone && !yarisK && (() => {
         const yrEvents = state.history.filter((ev) => ev.day > turn - 12 && ev.day <= turn && ev.landmark && ev.type !== "yıl_dönümü").slice(-3);
         return (
           <Modal visible transparent animationType="fade" onRequestClose={() => setYearReport(null)}>
