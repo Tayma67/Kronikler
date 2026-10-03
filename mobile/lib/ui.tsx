@@ -100,12 +100,13 @@ const MILESTONE_LABEL: Record<string, { tag: string; icon: string }> = {
   meslek_değişimi: { tag: "Yeni Bir Yol", icon: "compass" },
   ölüm: { tag: "Hayatın Sonu", icon: "tombstone" },
   nesil_devri: { tag: "Yeni Nesil", icon: "banner" },
+  lakap: { tag: "Yeni Bir Lakap", icon: "crown" },
 };
 
 const MS_ACCENT: Record<string, string> = {
   doğum: C.ink, dogum: C.ink, evlilik: C.rose, kariyer_terfi: C.gold, başarım: C.gold,
   tahta_çıkış: C.gold, şehir_kuruluşu: C.gold, savaş_zaferi: C.ember, komutan_savaşı: C.ember,
-  ölüm: C.parchmentMuted, nesil_devri: C.ink,
+  ölüm: C.parchmentMuted, nesil_devri: C.ink, lakap: C.goldBright,
 };
 // Yayılan parlama halkası (kutlama hissi).
 function Burst({ color }: { color: string }) {
@@ -128,6 +129,8 @@ function IconPulse({ icon, color }: { icon: string; color: string }) {
 
 export function MilestoneModal({ visible, type, text, onClose }: { visible: boolean; type: string; text: string; onClose: () => void }) {
   const meta = MILESTONE_LABEL[type] || { tag: "Dönüm Noktası", icon: "star" };
+  const { t } = useI18n();
+  const msTag = (() => { const k = "ms." + type; const v = t(k); return v !== k ? v : meta.tag; })(); // çevirisi olan tipler 6 dilde, eskiler TR etikete düşer
   const accent = MS_ACCENT[type] || C.gold;
   const celebratory = type !== "ölüm";
   return (
@@ -143,12 +146,12 @@ export function MilestoneModal({ visible, type, text, onClose }: { visible: bool
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 }}>
             <View style={{ height: 1, width: 24, backgroundColor: accent + "88" }} />
-            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 3, color: accent, textTransform: "uppercase" }}>{meta.tag}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 3, color: accent, textTransform: "uppercase" }}>{msTag}</Text>
             <View style={{ height: 1, width: 24, backgroundColor: accent + "88" }} />
           </View>
           <Text style={{ fontFamily: F.serif, fontSize: 16, color: C.parchment, textAlign: "center", lineHeight: 24, marginTop: 14 }}>{text}</Text>
           <Pressable onPress={onClose} style={{ marginTop: 22, paddingVertical: 11, paddingHorizontal: 28, borderRadius: 9, borderWidth: 1.5, borderColor: accent + "99", backgroundColor: accent }}>
-            <Text style={{ fontFamily: F.display, fontSize: 12, color: C.inkOnGold, letterSpacing: 1.5 }}>DEVAM</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 12, color: C.inkOnGold, letterSpacing: 1.5 }}>{t("common.continue")}</Text>
           </Pressable>
         </Animated.View>
       </Pressable>

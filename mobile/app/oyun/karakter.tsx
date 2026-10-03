@@ -9,7 +9,7 @@ import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider, ScreenFresk } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
-import { useI18n, applyParams } from "../../lib/i18n";
+import { useI18n, applyParams, lakapAdi, lakapliAd } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { playWater, playPurr, playBark } from "../../lib/sound";
 import { placeName, professionNameL, careerTitleL } from "../../lib/locale-data";
@@ -213,7 +213,7 @@ export default function Karakter() {
             {/* Bilgi */}
             <View style={{ flex: 1, gap: 5 }}>
               <Text style={{ fontFamily: F.display, fontSize: 7.5, letterSpacing: 2, color: C.parchmentMuted }}>{t("dyn.houseOf").replace("%s", (p.surname || p.name)).toUpperCase()}</Text>
-              <Text style={{ fontFamily: F.display, fontSize: 19, color: C.goldBright, letterSpacing: 0.5 }}>{p.name}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 19, color: C.goldBright, letterSpacing: 0.5 }}>{lakapliAd(p.name, p.lakap, p.gender === "kadın", t)}</Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
                 <GameIcon name="ilerle" size={11} color={C.gold} />
                 <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim }}>{hasCareer ? careerTitleL(p.profession, p.career_xp, lang) : t("misc.jobless")}</Text>
@@ -419,6 +419,48 @@ export default function Karakter() {
                 );
               })()}
             </Card>
+
+            {/* Lakap & Sicil: oynayış tarzının halktaki adı + savaş kaydı */}
+            {(() => {
+              const kadin = p.gender === "kadın";
+              const z = p.zafer || 0, b = p.bozgun || 0;
+              const gecmis = (p.lakaplar || []).filter((x) => x !== p.lakap);
+              return (
+                <Card>
+                  <SectionHead title={t("kar.lakap")} />
+                  {p.lakap ? (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <GameIcon name="crown" size={18} color={C.goldBright} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontFamily: F.display, fontSize: 16, color: C.goldBright, letterSpacing: 0.5 }}>{lakapAdi(p.lakap, kadin, t)}</Text>
+                        <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentDim, marginTop: 2, lineHeight: 18 }}>{t("lakap." + p.lakap + ".d")}</Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, lineHeight: 18 }}>{t("kar.lakapYok")}</Text>
+                  )}
+                  {(z + b > 0) && (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginTop: 11, paddingTop: 11, borderTopWidth: 1, borderTopColor: C.border }}>
+                      <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted }}>{t("kar.sicil").toUpperCase()}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 13, color: C.sage }}>{z} {t("kar.zafer")}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 13, color: C.blood }}>{b} {t("kar.bozgun")}</Text>
+                    </View>
+                  )}
+                  {gecmis.length > 0 && (
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted, marginBottom: 6 }}>{t("kar.lakaplar").toUpperCase()}</Text>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                        {gecmis.map((id) => (
+                          <View key={id} style={{ borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingVertical: 3, paddingHorizontal: 10 }}>
+                            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim }}>{lakapAdi(id, kadin, t)}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+                </Card>
+              );
+            })()}
 
             <Pressable onPress={() => router.push("/oyun/beceriler")}>
               <Card>

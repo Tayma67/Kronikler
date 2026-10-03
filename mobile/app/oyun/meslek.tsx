@@ -2,10 +2,11 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { changeProfession, PROFESSIONS, professionById, careerTier, hasProfAction, canProfAction, professionAction, profActionCooldownLeft } from "../../lib/game";
+import { changeProfession, PROFESSIONS, professionById, careerTier, hasProfAction, canProfAction, professionAction, profActionCooldownLeft, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat } from "../../lib/game";
 import { professionNameL, careerTitleL, PROF_L10N } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, applyParams } from "../../lib/i18n";
+import { GameIcon } from "../../lib/icons";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, Panel, Pill, ScreenFresk } from "../../lib/ui";
 
@@ -60,13 +61,30 @@ export default function Meslek() {
         <Panel title={t("scr.meslek")} noPad>
           {PROFESSIONS.map((pr, i) => {
             const cur = pr.id === p.profession;
+            // Meslek hak edilir: yetenek (özellik) + emek (beceri tecrübesi) + gerekirse sermaye. Eksik şart kırmızı, yanında sendeki değer.
+            const m = meslekSarti(pr.id); const ek = meslekEksik(state, pr.id); const ser = meslekSermaye(state, pr.id);
+            const kilit = !cur && !meslegeUygun(state, pr.id);
+            const acik = !!m && m.statMin === 0 && m.xpMin === 0 && !m.sermaye;
+            const sart = (txt: string, eksik: boolean, sende: string) => (
+              <Text key={txt} style={{ fontFamily: F.serif, fontSize: 12, color: eksik ? C.blood : C.sage, lineHeight: 17 }}>{txt}{eksik ? `  ·  ${t("mes.youHave").replace("%1", sende)}` : ""}</Text>
+            );
             return (
-              <Pressable key={pr.id} onPress={() => { if (p.dead) return; hap("tap"); apply((s) => changeProfession(s, pr.id)); }} disabled={cur || p.dead} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: i === PROFESSIONS.length - 1 ? 0 : 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : cur ? "rgba(201,168,76,0.06)" : "transparent" })}>
+              <Pressable key={pr.id} accessibilityRole="button" accessibilityState={{ disabled: cur || p.dead || kilit }} accessibilityLabel={professionNameL(pr.id, lang)} onPress={() => { if (p.dead || kilit) return; hap("tap"); apply((s) => changeProfession(s, pr.id)); }} disabled={cur || p.dead || kilit} style={({ pressed }) => ({ opacity: kilit ? 0.8 : 1, flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: i === PROFESSIONS.length - 1 ? 0 : 1, borderBottomColor: C.border, backgroundColor: pressed ? C.cardHi : cur ? "rgba(201,168,76,0.06)" : "transparent" })}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 14, color: cur ? C.gold : C.parchment }}>{professionNameL(pr.id, lang)}</Text>
-                  <Text style={{ fontFamily: F.serif, fontSize: 11, color: C.parchmentMuted }}>{t("st." + pr.stat)} · {pr.tiers.length} {t("mes.tier")}</Text>
+                  <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted }}>{t("st." + pr.stat)} · {pr.tiers.length} {t("mes.tier")}</Text>
+                  {!cur && m && (acik ? (
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.sage, marginTop: 3 }}>{t("mes.open")}</Text>
+                  ) : (
+                    <View style={{ marginTop: 4 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentMuted, marginBottom: 1 }}>{t("mes.need").toUpperCase()}</Text>
+                      {m.statMin > 0 && sart(`${t("st." + m.stat)} ${m.statMin}`, ek.stat, String(Math.floor(effStat(p, m.stat))))}
+                      {m.xpMin > 0 && sart(applyParams(t("mes.xp"), [t("skill." + m.skill), m.xpMin], lang), ek.xp, String(p.skill_xp?.[m.skill] || 0))}
+                      {ser > 0 && sart(t("mes.capital").replace("%1", String(ser)), ek.sermaye, String(Math.floor(p.money)))}
+                    </View>
+                  ))}
                 </View>
-                {cur ? <Pill text={t("mes.current")} /> : <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold, letterSpacing: 1 }}>{t("mes.switch")} ›</Text>}
+                {cur ? <Pill text={t("mes.current")} /> : kilit ? <GameIcon name="hourglass" size={16} color={C.parchmentMuted} /> : <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold, letterSpacing: 1 }}>{t("mes.switch")}</Text>}
               </Pressable>
             );
           })}

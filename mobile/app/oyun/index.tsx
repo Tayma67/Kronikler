@@ -16,7 +16,7 @@ import { heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre, TutorialModal } from "../../lib/ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameIcon } from "../../lib/icons";
-import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
+import { useI18n, applyParams, renderEvt, lakapliAd } from "../../lib/i18n";
 import { playTap, playChime, playSaz, playNey } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
@@ -269,7 +269,7 @@ export default function Dashboard() {
         {coinsOn && <CoinShower shoot={shoot} width={Dimensions.get("window").width} height={Dimensions.get("window").height} />}
       </View>
       {milestone ? (
-        <MilestoneModal visible={true} type={milestone.type} text={milestone.text} onClose={() => setMilestone(null)} />
+        <MilestoneModal visible={true} type={milestone.type} text={renderEvt(milestone.k, milestone.text, milestone.p, lang, t, p.gender === "kadın")} onClose={() => setMilestone(null)} />
       ) : dilemma ? (
         <DilemmaModal dilemma={dilemma} onChoose={onChoose} />
       ) : opp ? (
@@ -345,7 +345,7 @@ export default function Dashboard() {
             {/* Orta: isim + ünvan */}
             <View style={{ flex: 1, alignItems: "center", paddingHorizontal: 6 }}>
               <Text numberOfLines={2} style={{ fontFamily: F.display, fontSize: 17, color: C.parchment, letterSpacing: 1.5, textAlign: "center", textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 10 }}>
-                {p.name.toUpperCase()}
+                {lakapliAd(p.name, p.lakap, p.gender === "kadın", t).toUpperCase()}
               </Text>
               <View style={{ width: "55%", height: 1, marginVertical: 4, backgroundColor: "rgba(201,168,76,0.5)" }} />
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>

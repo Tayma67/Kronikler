@@ -151,6 +151,9 @@ export interface Player {
   debt?: number; loan_turn?: number; // tefeci borcu (aylık faiz işler) + ilk ödünç alınan tur
   deposit?: number; // sarraf emaneti (hırsızlık/yağma/haciz olaylarından korunur; yıllık küçük mudârabe getirisi)
   last_zekat?: number; // son zekât verilen tur (yılda bir kapısı); serveti saygınlığa çevirir
+  zafer?: number; bozgun?: number; // savaş sicili: kazanılan/kaybedilen çarpışmalar (karşılaşma, cephe, sefer) — vârise geçmez
+  delilik?: number; // akıl dışı riskler: oyunun bildiği güç oranlarına karşı atılan kumarlar ("Deli" lakabının yakıtı)
+  lakap?: string; lakaplar?: string[]; // yaşayan lakap (oynayış tarzından türer, ayda bir güncellenir) + ömür boyu kazanılanlar
 }
 // Çocuğa yatırım — vâris olursa başlangıç avantajı verir.
 export interface Investment { id: string; label: string; icon: string; cost: number; desc: string; }
@@ -1344,8 +1347,11 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const p = s.player;
   if (p.age === 13 && p.profession === "işsiz") {
     // Çocukluk hayali meslek seçimini etkiler: %45 ihtimalle hayalinin yoluna düşersin.
-    if (p.child_dream && chance(0.45)) { const cands = PROFS.filter((id) => (PROF_SKILL[id] || "crafting") === p.child_dream); p.profession = cands.length ? rnd(cands) : rnd(PROFS); }
-    else p.profession = rnd(PROFS);
+    // Meslek hak edilir: çocuklukta emek vermeyen ancak açık kapılı işlere (çoban/çiftçi/balıkçı) düşer.
+    const ehil = PROFS.filter((id) => meslekSermaye(s, id) === 0 && meslegeUygun(s, id));
+    const havuz = ehil.length ? ehil : ACIK_MESLEK;
+    const hayal = havuz.filter((id) => (PROF_SKILL[id] || "crafting") === p.child_dream);
+    p.profession = p.child_dream && hayal.length && chance(0.6) ? rnd(hayal) : rnd(havuz);
     p.stat_points += 3; push(s, "meslek_edinme", `Reşit oldun. ${cap(p.profession)} olarak hayata atıldın — dünya sana açıldı.`, "kişisel", true, { k: "evj.profGain", p: [{ pr: p.profession }] }); shapeChildhood(s);
   }
   // ── Kader anları: hayatın belirli dönümlerinde kimliğe ayna tutan sahneler ──
@@ -2131,6 +2137,7 @@ export function advance(prev: GameState, n = 1): GameState {
     if (i === n - 1) sagaTick(s); // Kül Yemini: destan sahnesi kapıları (düşen sahne panoda bekler, silinmez)
     if (i === n - 1) bloodlineTick(s); // Kan Defteri: nesil destanının sahne kapıları
     if (i === n - 1) successionTick(s); // Veraset: gözde ilanının kardeş sofrasındaki yankısı
+    if (i === n - 1) lakapTick(s); // Yaşayan lakap: oynayış tarzı halkın diline düşer
     if (i === n - 1) { s.divan = null; if (!s.player.dead && s.player.crowned && chance(0.10)) s.divan = { id: DIVAN_IDS[Math.floor(Math.random() * DIVAN_IDS.length)] }; } // divan arzuhali: yalnız taç sahibine, yok sayılırsa düşer
     rollLifeEvents(s, cal);
     tickFactions(s, i === n - 1);
@@ -3017,13 +3024,15 @@ export function playerWar(s: GameState): FactionWar | null {
 // Cepheye git: loncan için savaş — risk/ödül, savaş skoruna katkı.
 export function supportWar(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
-  const w = playerWar(s); if (!w || p.dead || p.age < 13 || inJail(p)) return s; // hücreden cepheye gidilmez
+  const w = playerWar(s); if (!w || p.dead || inJail(p)) return s; // hücreden cepheye gidilmez
+  if (p.age < 16) { push(s, "ocak_savasi", `Cepheye çocuk alınmaz; önce bileğin yetişsin.`, "kişisel", false, { k: "evj.frontYoung" }); return s; }
   // Tur başına tek cephe çıkışı — yoksa aynı turda üst üste ganimet/itibar farm'lanır.
   if (p.war_support_turn === s.turn) { push(s, "ocak_savasi", `Bu ay cephede yeterince savaştın; biraz soluklan.`, "kişisel", false, { k: "evj.frontWait" }); return s; }
   p.war_support_turn = s.turn;
   const mine = w.a === p.faction ? "a" : "b";
   const pw = combatPower(p);
   const win = Math.random() < Math.max(0.2, Math.min(0.9, 0.4 + pw * 0.02));
+  if (win) p.zafer = (p.zafer || 0) + 1; else p.bozgun = (p.bozgun || 0) + 1; // savaş sicili
   gainSkill(s, "combat", 8);
   addStatXp(s, "strength", 3); // cephe tecrübesi gücü geliştirir
   if (win) {
@@ -3978,6 +3987,8 @@ export const ALL_PROFS = PROFS;
 export function changeProfession(prev: GameState, prof: string): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || prof === p.profession || !PROFS.includes(prof)) return s;
+  if (!meslegeUygun(s, prof)) { push(s, "meslek_değişimi", `${cap(prof)} olmaya henüz ehil değilsin; önce ehliyetini göster.`, "kişisel", false, { k: "evj.mesRet", p: [{ pr: prof }] }); return s; }
+  { const ser = meslekSermaye(s, prof); if (ser > 0) { p.money -= ser; push(s, "meslek_değişimi", `Tezgâh hakkı ve alet edevat için ${ser} akçe sermaye koydun.`, "kişisel", false, { k: "evj.mesSermaye", p: [ser] }); } }
   if (!p.professions_tried) p.professions_tried = [];
   // Ayrıldığın meslek de sayılır (doğumda doğrudan atanan ilk meslek kaybolmasın — markVisit'teki kalkış kaydının analoğu).
   if (p.profession !== "işsiz" && !p.professions_tried.includes(p.profession)) p.professions_tried.push(p.profession);
@@ -4909,6 +4920,83 @@ function dynastyNote(p: Player): string {
   return "sade";
 }
 const DYNNOTE_TR: Record<string, string> = { destan: "Adı destanlara karıştı.", saygin: "Diyarda saygın bir isimdi.", mulk: "Geride büyük bir mülk bıraktı.", korkulan: "Korkulan bir isimdi.", kalabalik: "Kalabalık bir soy bıraktı.", gezgin: "Yolların adamı sayıldı; her handa bir hatırası kaldı.", alim: "Aklıyla anıldı; sözü meclislerde tartıldı.", usta: "Elinin emeği ondan sonra da konuştu; yaptıkları kaldı.", sade: "Sade bir hayat sürdü." };
+
+// ── MESLEK KAPISI: meslek hak edilir — yetenek (özellik) + emek (beceri tecrübesi) + gerekirse sermaye ──
+// Özellik puanı istenilen yere basılabildiği için tek başına emeği ölçmez; beceri tecrübesi ancak yaparak birikir.
+// Zorluk mesleğin taban kazancından (base) türer: 4 çıraklık · 5 ustalık · 6 seçkin. Açık kapılı işler (ırgatlık/yamaklık) herkese açıktır.
+export const ACIK_MESLEK = ["çoban", "çiftçi", "balıkçı"];
+const MESLEK_SERMAYE: Record<string, number> = { tüccar: 120, hancı: 150, kuyumcu: 250 };
+export interface MeslekSarti { stat: keyof Stats; statMin: number; skill: SkillKey; xpMin: number; sermaye: number; }
+export function meslekSarti(id: string): MeslekSarti | null {
+  const pr = professionById(id); if (!pr) return null;
+  const skill = (PROF_SKILL[id] || "crafting") as SkillKey;
+  if (ACIK_MESLEK.includes(id)) return { stat: pr.stat, statMin: 0, skill, xpMin: 0, sermaye: 0 };
+  return { stat: pr.stat, statMin: pr.base, skill, xpMin: pr.base <= 4 ? 40 : pr.base === 5 ? 100 : 160, sermaye: MESLEK_SERMAYE[id] || 0 };
+}
+export function meslekSermaye(s: GameState, id: string): number { const m = meslekSarti(id); return m ? Math.round(m.sermaye * inflationFactor(s)) : 0; }
+export function meslekEksik(s: GameState, id: string): { stat: boolean; xp: boolean; sermaye: boolean } {
+  const p = s.player; const m = meslekSarti(id);
+  if (!m) return { stat: true, xp: true, sermaye: true };
+  return { stat: effStat(p, m.stat) < m.statMin, xp: (p.skill_xp?.[m.skill] || 0) < m.xpMin, sermaye: p.money < meslekSermaye(s, id) };
+}
+export function meslegeUygun(s: GameState, id: string): boolean { const e = meslekEksik(s, id); return !e.stat && !e.xp && !e.sermaye; }
+
+// ── YAŞAYAN LAKAP: oynayış tarzından kazanılan, hayat boyunca değişen ad ──
+// Kurallar öncelik sırasıyla denenir: bir hayatı en çok tanımlayan ilk vasıf kazanır.
+// Titreme önleyici: tutulan lakap gevşek eşikle (g=1) korunur; yerini ancak daha öncelikli bir lakabın KESİN eşiği alır.
+export const LAKAP_IDS = ["deli", "namaglup", "daima_yenik", "zalim", "gorkemli", "bahtsiz", "vasifsiz", "korkulan", "cimri", "comert", "dindar", "capkin", "adil", "mert", "meteliksiz", "mechul"] as const;
+const LAKAP_TR: Record<string, string> = { deli: "Deli", namaglup: "Namağlup", daima_yenik: "Daima Yenik", zalim: "Zalim", gorkemli: "Görkemli", bahtsiz: "Bahtsız", vasifsiz: "Vasıfsız", korkulan: "Korkulan", cimri: "Cimri", comert: "Cömert", dindar: "Dindar", capkin: "Çapkın", adil: "Adil", mert: "Mert", meteliksiz: "Meteliksiz", mechul: "Meçhul" };
+function deliPuani(p: Player): number { return (p.delilik || 0) + Math.max(0, (p.professions_tried?.length || 0) - 4); } // meslekten mesleğe savrulmak da sayılır
+function servetOf(p: Player): number { return p.money + (p.deposit || 0) - (p.debt || 0); }
+function vasifsizMi(p: Player, g: number): boolean {
+  if (p.age < 18) return false;
+  // Kılıç tutmayı öğrenmeden çarpışmaya girmek: vasıfsız savaşçı
+  if ((p.zafer || 0) + (p.bozgun || 0) >= 2 && p.skill_xp.combat < 100 + 40 * g && effStat(p, "strength") < 5) return true;
+  // Yıllardır meslekte ama zanaatını öğrenmemiş
+  if (p.profession === "işsiz") return false;
+  const dom = (PROF_SKILL[p.profession] || "crafting") as SkillKey;
+  return p.career_xp >= 24 && p.skill_xp[dom] < 60 + 40 * g;
+}
+const LAKAP_KURAL: { id: string; ok: (p: Player, s: GameState, g: number) => boolean }[] = [
+  { id: "deli",        ok: (p, _s, g) => deliPuani(p) >= 3 - g },
+  { id: "namaglup",    ok: (p, _s, g) => (p.zafer || 0) >= 6 - 2 * g && !(p.bozgun || 0) },
+  { id: "daima_yenik", ok: (p, _s, g) => (p.bozgun || 0) >= 6 - g && (p.zafer || 0) <= 1 },
+  { id: "zalim",       ok: (p, _s, g) => (p.nam?.zalim || 0) >= 55 - 10 * g },
+  { id: "gorkemli",    ok: (p, _s, g) => (p.zafer || 0) >= 12 - 3 * g && (p.zafer || 0) >= (4 - g) * (p.bozgun || 0) }, // oran da gevşer: tek bozgun görkemi silmez
+  { id: "bahtsiz",     ok: (p, _s, g) => (p.bozgun || 0) >= 4 - g && (p.bozgun || 0) >= (2 - 0.5 * g) * (p.zafer || 0) },
+  { id: "vasifsiz",    ok: (p, _s, g) => vasifsizMi(p, g) },
+  { id: "korkulan",    ok: (p, _s, g) => p.fear >= 65 - 10 * g },
+  { id: "cimri",       ok: (p, s, g) => servetOf(p) >= 15000 * inflationFactor(s) && (p.nam?.comert || 0) <= 5 + 5 * g },
+  { id: "comert",      ok: (p, _s, g) => (p.nam?.comert || 0) >= 55 - 10 * g },
+  { id: "dindar",      ok: (p, _s, g) => (p.nam?.dindar || 0) >= 55 - 10 * g },
+  { id: "capkin",      ok: (p, _s, g) => (p.nam?.capkin || 0) >= 55 - 10 * g || (p.bastards || 0) >= 2 },
+  { id: "adil",        ok: (p, _s, g) => p.honor >= 75 - 10 * g && (p.nam?.zalim || 0) < 15 },
+  { id: "mert",        ok: (p, _s, g) => (p.nam?.mert || 0) >= 60 - 10 * g },
+  { id: "meteliksiz",  ok: (p, s, g) => p.age >= 22 && servetOf(p) < (30 + 20 * g) * inflationFactor(s) && (p.debt || 0) > 0 },
+  { id: "mechul",      ok: (p, _s, g) => p.age >= 30 && p.fame < 10 + 5 * g },
+];
+export function lakapHesapla(s: GameState): string {
+  const p = s.player;
+  if (p.age < 16) return ""; // çocuğa lakap takılmaz (çocukluk karakteri ayrı sistemdir)
+  const tutulan = p.lakap || "";
+  for (const r of LAKAP_KURAL) {
+    if (r.ok(p, s, 0)) return r.id;
+    if (r.id === tutulan && r.ok(p, s, 1)) return r.id;
+  }
+  return "";
+}
+function lakapTick(s: GameState) {
+  const p = s.player;
+  if (p.dead) return;
+  const yeni = lakapHesapla(s); const eski = p.lakap || "";
+  if (yeni === eski) return;
+  p.lakap = yeni || undefined;
+  if (!yeni) return; // lakap sönünce sessizce düşer (halk unutur, ilan edilmez)
+  const ilk = !(p.lakaplar && p.lakaplar.length);
+  if (!p.lakaplar) p.lakaplar = [];
+  if (!p.lakaplar.includes(yeni)) p.lakaplar.push(yeni);
+  push(s, "lakap", ilk ? `Adın dilden dile dolaşmaya başladı: artık sana '${LAKAP_TR[yeni]}' diyorlar.` : `Eski lakabın unutuldu; halk artık sana '${LAKAP_TR[yeni]}' diyor.`, "kişisel", true, { k: ilk ? "evj.lakap.ilk" : "evj.lakap.yeni", p: [{ lk: yeni }] });
+}
 
 // ── Mersiye: bir hayat biterken kişiye özel kapanış ──
 export interface Eulogy { epithet: string; lines: string[]; close: string; }
@@ -6404,6 +6492,11 @@ export function applyBattleOutcome(prev: GameState, id: string, won: boolean, fi
   p.battle_award_turn = s.turn;
   p.battle_turn = s.turn; // giriş kilidi kurulmamışsa (eski akış) burada da kurulur — çifte güvence
   gainSkill(s, "combat", won ? 14 : 7);
+  if (won) p.zafer = (p.zafer || 0) + 1; else p.bozgun = (p.bozgun || 0) + 1; // savaş sicili (lakaplar buradan beslenir)
+  if (e.power >= combatPower(p) * 1.6 + 2) { // kendinden çok güçlüye dalmak: cesaret değil delilik sayılır
+    p.delilik = (p.delilik || 0) + 1;
+    push(s, "lakap", `Seyredenler başlarını iki yana salladı: o bilekle o rakibin üstüne yürünmez. Sende bir delilik olduğu fısıldanmaya başladı.`, "kişisel", false, { k: "evj.deli.dov" });
+  }
   if (won) {
     let reward = Math.round(e.reward * inflationFactor(s)); // ödül çağın parasıyla — geç oyunda dövüş anlamsız kalmasın
     if (hasPerk(p, "savas_ustasi")) reward = Math.round(reward * 1.5);
@@ -7543,6 +7636,10 @@ export function launchCampaign(prev: GameState, beylikId: string): { state: Game
   const s = clone(prev); const p = s.player;
   if (!canLaunchCampaign(s) || !campaignTargets(s).some((tg) => tg.id === beylikId)) return { state: s, success: false };
   p.money -= CAMPAIGN_COST;
+  if (campaignOdds(s) < 0.3) { // divanın bildiği oran yüzde otuzun altındayken tuğ çözmek: "Deli Hükümdar" yolu
+    p.delilik = (p.delilik || 0) + 1;
+    push(s, "lakap", `Divan fısıldaşıyor: bu sefer akıl kârı değil. Tuğlar yine de çözüldü ve tahtta bir delilik olduğu konuşulmaya başladı.`, "kişisel", false, { k: "evj.deli.sefer" });
+  }
   let edge = Math.min(6, (p.retinue || 0) * 2); // maiyet orduya omuz verir
   if ((s.allied_houses || []).length) {
     const ah = ensureRivals(s).find((x) => s.allied_houses!.includes(x.id));
@@ -7578,7 +7675,7 @@ function crownCampaignTick(s: GameState) {
   const odds = Math.max(0.15, Math.min(0.92, campaignOdds(s) + c.edge / 100));
   if (Math.random() < odds) {
     p.crownConquests = [...(p.crownConquests || []), beylikId];
-    p.campaignsWon = (p.campaignsWon || 0) + 1;
+    p.campaignsWon = (p.campaignsWon || 0) + 1; p.zafer = (p.zafer || 0) + 1;
     p.crownAuthority = clamp100(crownAuthorityOf(p) + 10);
     p.fame = clamp100(p.fame + 12);
     bumpNam(p, "mert", 5);
@@ -7590,7 +7687,7 @@ function crownCampaignTick(s: GameState) {
       push(s, "taht", `Beş sancak tek tâcın altında: diyar birleşti. Adın artık çağların değil, çağlar senin adının etrafında dönecek.`, "kişisel", true, { k: "crown.unification" });
     }
   } else {
-    p.crownAuthority = clamp100(crownAuthorityOf(p) - 12);
+    p.crownAuthority = clamp100(crownAuthorityOf(p) - 12); p.bozgun = (p.bozgun || 0) + 1;
     p.reputation = Math.max(-100, p.reputation - 6);
     const hurt = 6 + Math.floor(Math.random() * 10); p.health = Math.max(1, p.health - hurt);
     push(s, "taht", `Sefer bozguna uğradı; otoriten sarsıldı, yara aldın (−${hurt} sağlık).`, "kişisel", true, { k: "crown.campaignLose", p: [{ bl: beylikId }, hurt] });
@@ -7717,7 +7814,11 @@ export function courtRankId(p: Player): string { return COURT_RANKS[p.courtRank 
 export function courtSalary(p: Player): number { return inCourt(p) ? (COURT_SALARY[p.courtRank ?? 0] || 0) : 0; }
 export function canEnterCourt(s: GameState): boolean {
   const p = s.player;
-  return !p.dead && !p.crowned && !inCourt(p) && p.age >= 16 && p.reputation >= 20 && (effStat(p, "intelligence") >= 4 || p.profession === "katip");
+  if (p.dead || p.crowned || inCourt(p) || p.age < 18 || p.reputation < 30) return false;
+  // Divana liyakatle girilir: kâtiplikte pişmiş olmak YA DA okumuş-yazmış keskin bir akıl (zekâ + mektep sınavı ya da ticaret tecrübesi).
+  const katipPismis = p.profession === "katip" && p.career_xp >= 30;
+  const okumus = effStat(p, "intelligence") >= 6 && ((p.exam_wins || 0) >= 3 || (p.skill_xp?.trade || 0) >= 200);
+  return katipPismis || okumus;
 }
 export function enterCourt(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
