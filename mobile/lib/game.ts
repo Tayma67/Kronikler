@@ -159,6 +159,7 @@ export interface Player {
   tezgah?: string; tezgah_turn?: number; tezgah_zar?: number; tezgah_gor?: string[]; // tezgâh kararı: bekleyen kart · son kart turu · önceden atılmış zar · bu ömürde görülen kartlar
   rakip?: Rakip; // çarşıdaki meslek rakibi (kalfalıkta doğar; lonca bayrağı yarışı)
   rakip_zafer?: number; // bayrağı kazanılan rekabet sayısı (Bayraktar lakabı)
+  hile_yakalanma?: number; pabuc?: number; // lonca yarışında hilede yakalanma · pabucun dama atıldığı tur (loncadan atılma)
   cirak?: Cirak; cirak_yetisen?: number; cirak_kacan?: number; cirak_bekle?: number; // usta olunca yanına alınan çırak · peştamal kuşattırılan · kaçan · yeni çırak için bekleme turu
   sinav_gecme?: number; sinav_kalma?: number; // ömür boyu geçilen/kalınan peştamal sınavları (ustalık ünleri / Ebedi Kalfa)
   fetih_turlari?: number[]; divan_karar?: number; // hükümdar sicili: fetih turları (Yıldırım) + karara bağlanan divan arzuhalleri (Kanuni)
@@ -3431,11 +3432,25 @@ export function rakipYarisi(prev: GameState, yol: number): { state: GameState; b
     push(s, "rakip", "Lonca bayrağı bu yıl senin tezgâhına asıldı.", "kişisel", false, { k: (yol === 2 ? "evj.rakip.winHile" : "evj.rakip.win") + rkG(r.g), p: [rkAd(r), odul] });
   } else {
     r.maglup++;
-    if (yol === 2) { p.reputation = Math.max(-100, p.reputation - 6); p.honor = Math.max(0, p.honor - 4); push(s, "rakip", "Rakibinin işini bozarken yakalandın.", "kişisel", true, { k: "evj.rakip.hile" + rkG(r.g), p: [rkAd(r)] }); }
+    if (yol === 2) {
+      p.reputation = Math.max(-100, p.reputation - 6); p.honor = Math.max(0, p.honor - 4);
+      p.hile_yakalanma = (p.hile_yakalanma || 0) + 1;
+      if (p.hile_yakalanma >= 2) { pabucDama(s); return { state: s, basari: false }; } // ikinci hile: lonca affetmez
+      push(s, "rakip", "Rakibinin işini bozarken yakalandın.", "kişisel", true, { k: "evj.rakip.hile" + rkG(r.g), p: [rkAd(r)] });
+    }
     else { p.reputation = Math.max(-100, p.reputation - 1); push(s, "rakip", "Lonca bayrağı bu yıl rakibine gitti.", "kişisel", false, { k: "evj.rakip.lose" + rkG(r.g), p: [rkAd(r)] }); }
   }
   rakipSonu(s);
   return { state: s, basari: ok };
+}
+// Pabucu dama atılmak (Ahi geleneği): hilesi iki kez yakalanan esnafın pabucu çarşının ortasında dama atılır —
+// peştamalı çözülür (bir kademe düşer), lonca onu bir yıl sınava almaz, rekabet rakibin zaferiyle biter, halk unutmaz.
+function pabucDama(s: GameState) {
+  const p = s.player; const r = p.rakip;
+  p.kademe = Math.max(0, kademeOf(p) - 1); p.pabuc = s.turn; p.sinav_bekle = s.turn + 12; p.sinav_cagri = undefined; p.hile_yakalanma = 0;
+  p.reputation = Math.max(-100, p.reputation - 8);
+  if (r && !r.bitti) { r.bitti = "yenik"; r.bittiTur = s.turn; r.yaris = undefined; }
+  push(s, "pabuc", "Pabucun dama atıldı.", "kişisel", true, { k: "evj.pabuc", p: [{ c: [p.profession, kariyerXp(p)] }] });
 }
 export function rakipOrtaklikHazir(p: Player): boolean { const r = rakipAktif(p); return !!r && r.mizac === "durust" && !!r.bilinen && r.galip >= 1 && r.maglup >= 1 && r.yaris == null; }
 export function rakipOrtaklik(prev: GameState): GameState {
@@ -5319,8 +5334,8 @@ export function meslegeUygun(s: GameState, id: string): boolean { const e = mesl
 // ── YAŞAYAN LAKAP: oynayış tarzından kazanılan, hayat boyunca değişen ad ──
 // Kurallar öncelik sırasıyla denenir: bir hayatı en çok tanımlayan ilk vasıf kazanır.
 // Titreme önleyici: tutulan lakap gevşek eşikle (g=1) korunur; yerini ancak daha öncelikli bir lakabın KESİN eşiği alır.
-export const LAKAP_IDS = ["deli", "cihangir", "yildirim", "fatih", "kanuni", "namaglup", "ebedi_kalfa", "gazi", "pir", "bayraktar", "lokman", "kalemsor", "dertli", "kartal_goz", "ahi", "altin_elli", "daima_yenik", "zalim", "gorkemli", "bahtsiz", "vasifsiz", "korkulan", "cimri", "comert", "dindar", "capkin", "adil", "mert", "meteliksiz", "mechul"] as const;
-const LAKAP_TR: Record<string, string> = { pir: "Pir", bayraktar: "Bayraktar", cihangir: "Cihangir", yildirim: "Yıldırım", fatih: "Fatih", kanuni: "Kanuni", ebedi_kalfa: "Ebedi Kalfa", gazi: "Gazi", lokman: "Lokman", kalemsor: "Kalemşor", dertli: "Dertli", kartal_goz: "Kartal Göz", ahi: "Ahi", altin_elli: "Altın Elli", deli: "Deli", namaglup: "Namağlup", daima_yenik: "Daima Yenik", zalim: "Zalim", gorkemli: "Görkemli", bahtsiz: "Bahtsız", vasifsiz: "Vasıfsız", korkulan: "Korkulan", cimri: "Cimri", comert: "Cömert", dindar: "Dindar", capkin: "Çapkın", adil: "Adil", mert: "Mert", meteliksiz: "Meteliksiz", mechul: "Meçhul" };
+export const LAKAP_IDS = ["pabucu_damda", "deli", "cihangir", "yildirim", "fatih", "kanuni", "namaglup", "ebedi_kalfa", "gazi", "pir", "bayraktar", "lokman", "kalemsor", "dertli", "kartal_goz", "ahi", "altin_elli", "daima_yenik", "zalim", "gorkemli", "bahtsiz", "vasifsiz", "korkulan", "cimri", "comert", "dindar", "capkin", "adil", "mert", "meteliksiz", "mechul"] as const;
+const LAKAP_TR: Record<string, string> = { pabucu_damda: "Pabucu Damda", pir: "Pir", bayraktar: "Bayraktar", cihangir: "Cihangir", yildirim: "Yıldırım", fatih: "Fatih", kanuni: "Kanuni", ebedi_kalfa: "Ebedi Kalfa", gazi: "Gazi", lokman: "Lokman", kalemsor: "Kalemşor", dertli: "Dertli", kartal_goz: "Kartal Göz", ahi: "Ahi", altin_elli: "Altın Elli", deli: "Deli", namaglup: "Namağlup", daima_yenik: "Daima Yenik", zalim: "Zalim", gorkemli: "Görkemli", bahtsiz: "Bahtsız", vasifsiz: "Vasıfsız", korkulan: "Korkulan", cimri: "Cimri", comert: "Cömert", dindar: "Dindar", capkin: "Çapkın", adil: "Adil", mert: "Mert", meteliksiz: "Meteliksiz", mechul: "Meçhul" };
 function deliPuani(p: Player): number { return (p.delilik || 0) + Math.max(0, (p.professions_tried?.length || 0) - 4); } // meslekten mesleğe savrulmak da sayılır
 function servetOf(p: Player): number { return p.money + (p.deposit || 0) - (p.debt || 0); }
 function vasifsizMi(p: Player, g: number): boolean {
@@ -5335,10 +5350,11 @@ function vasifsizMi(p: Player, g: number): boolean {
 function zirvedeMi(p: Player): boolean { const pr = professionById(p.profession); return !!pr && kademeOf(p) >= pr.tiers.length - 1; }
 function temizUsta(p: Player): boolean { // ustalık ünü: zirveye HİÇ kalmadan çıkmak + mesleğin ana özelliğinde yetkinlik (8+)
   const pr = professionById(p.profession);
-  return !!pr && zirvedeMi(p) && !(p.sinav_kalma || 0) && effStat(p, pr.stat) >= 8;
+  return !!pr && zirvedeMi(p) && !(p.sinav_kalma || 0) && p.pabuc == null && effStat(p, pr.stat) >= 8; // pabucu dama atılmış usta bir daha "temiz" sayılmaz
 }
 function yildirimMi(p: Player): boolean { const t = [...(p.fetih_turlari || [])].sort((a, b) => a - b); for (let i = 1; i < t.length; i++) if (t[i] - t[i - 1] <= 24) return true; return false; } // iki fetih arası en çok iki yıl
 const LAKAP_KURAL: { id: string; ok: (p: Player, s: GameState, g: number) => boolean }[] = [
+  { id: "pabucu_damda", ok: (p, s, g) => p.pabuc != null && s.turn - p.pabuc < 60 + 60 * g }, // loncadan atılmanın yüz karası yıllarca silinmez
   { id: "deli",        ok: (p, _s, g) => deliPuani(p) >= 3 - g },
   { id: "cihangir",    ok: (p) => (p.crownConquests?.length || 0) >= 4 }, // diyarı birleştiren
   { id: "yildirim",    ok: (p) => yildirimMi(p) },

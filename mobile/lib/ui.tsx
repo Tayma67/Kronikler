@@ -106,12 +106,13 @@ const MILESTONE_LABEL: Record<string, { tag: string; icon: string }> = {
   terfi: { tag: "Mesleğin Zirvesi", icon: "crown" },
   rakip: { tag: "Çarşıda Rakip", icon: "banner" },
   cirak: { tag: "Peştamal Töreni", icon: "graduate-cap" },
+  pabuc: { tag: "Pabucun Dama Atıldı", icon: "boot" },
 };
 
 const MS_ACCENT: Record<string, string> = {
   doğum: C.ink, dogum: C.ink, evlilik: C.rose, kariyer_terfi: C.gold, başarım: C.gold,
   tahta_çıkış: C.gold, şehir_kuruluşu: C.gold, savaş_zaferi: C.ember, komutan_savaşı: C.ember,
-  ölüm: C.parchmentMuted, nesil_devri: C.ink, lakap: C.goldBright, sinav: C.gold, pestamal: C.goldBright, terfi: C.goldBright, rakip: C.ember, cirak: C.goldBright,
+  ölüm: C.parchmentMuted, nesil_devri: C.ink, lakap: C.goldBright, sinav: C.gold, pestamal: C.goldBright, terfi: C.goldBright, rakip: C.ember, cirak: C.goldBright, pabuc: C.blood,
 };
 // Yayılan parlama halkası (kutlama hissi).
 function Burst({ color }: { color: string }) {
@@ -137,7 +138,7 @@ export function MilestoneModal({ visible, type, text, onClose }: { visible: bool
   const { t } = useI18n();
   const msTag = (() => { const k = "ms." + type; const v = t(k); return v !== k ? v : meta.tag; })(); // çevirisi olan tipler 6 dilde, eskiler TR etikete düşer
   const accent = MS_ACCENT[type] || C.gold;
-  const celebratory = type !== "ölüm";
+  const celebratory = type !== "ölüm" && type !== "pabuc"; // utanç anı kutlanmaz
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(6,4,2,0.9)", alignItems: "center", justifyContent: "center", padding: 28 }}>
