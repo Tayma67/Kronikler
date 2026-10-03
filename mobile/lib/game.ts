@@ -3233,7 +3233,7 @@ export function professionAction(prev: GameState): GameState {
 // bazı seçimler aylar/yıllar sonra "yankı" olarak döner (sonuç tohumu). Metinler i18n: dil.<id>.t/x/c0-2/r0-2/r<i>x, seed.<id>_<i>.
 export interface TezgahYanki { hmin: number; hmax: number; etki: { money?: number; reputation?: number; health?: number } }
 export interface TezgahSecim { d: Delta; risk?: Delta; y?: TezgahYanki }
-export interface TezgahKart { id: string; prof: string; r: number; icon: string; s: TezgahSecim[] }
+export interface TezgahKart { id: string; prof: string; r: number; icon: string; s: TezgahSecim[]; yas?: number } // yas: ihtiyar usta kartı (bu yaştan sonra)
 export const TEZGAH_ARA = 6;       // iki kart arası en az ay
 export const TEZGAH_HUNER = 7;     // üçüncü yol için meslek özelliği eşiği
 const tzY = (hmin: number, hmax: number, etki: TezgahYanki["etki"]): TezgahYanki => ({ hmin, hmax, etki });
@@ -3283,6 +3283,22 @@ export const TEZGAH: TezgahKart[] = [
   { id: "tz_hanci_a", prof: "hancı", r: 0, icon: "coins", s: [{ d: { health: -2, honor: 3, reputation: 2 }, y: tzY(24, 96, { money: 40 }) }, { d: { reputation: 1 } }, { d: { reputation: 3, fame: 1 } }] },
   { id: "tz_hanci_b", prof: "hancı", r: 1, icon: "hood", s: [{ d: { money: 25, honor: -2 }, y: tzY(2, 12, { money: -20, reputation: -3 }) }, { d: { fear: 2, reputation: 2 }, y: tzY(4, 18, { money: -30, health: -3 }) }, { d: { money: 20, reputation: 2, fame: 1 }, y: tzY(8, 30, { money: 25, reputation: 3 }) }] },
   { id: "tz_hanci_c", prof: "hancı", r: 2, icon: "house", s: [{ d: { money: 50, fame: 2, reputation: 1 } }, { d: { honor: 2, reputation: 3 }, y: tzY(36, 120, { money: 40, reputation: 3 }) }, { d: { money: 45, reputation: 4, fame: 3 } }] },
+  // İhtiyar usta dönemi (45+): yaşlılığın kendi kararları — titreyen el, son kervan, sırrı kime bırakmalı
+  { id: "tz_ciftci_d", prof: "çiftçi", r: 0, yas: 45, icon: "wheat", s: [{ d: { money: 15, reputation: 1 } }, { d: { health: -4, honor: 2, reputation: 2 } }, { d: { reputation: 4, fame: 2 }, y: tzY(12, 48, { money: 30, reputation: 2 }) }] },
+  { id: "tz_demirci_d", prof: "demirci", r: 0, yas: 45, icon: "anvil", s: [{ d: { money: 40, health: -5, fame: 2 } }, { d: { reputation: -1 } }, { d: { money: 30, reputation: 3, fame: 2 } }] },
+  { id: "tz_tuccar_d", prof: "tüccar", r: 0, yas: 45, icon: "camel", s: [{ d: { money: 120, fame: 5 }, risk: { health: -15, money: -20 } }, { d: { honor: 1 } }, { d: { money: 40, reputation: 3 }, y: tzY(12, 48, { money: 50 }) }] },
+  { id: "tz_balikci_d", prof: "balıkçı", r: 0, yas: 45, icon: "flame", s: [{ d: { reputation: 6, fame: 4, honor: 3 }, risk: { health: -15, reputation: 2 } }, { d: { honor: -1 } }, { d: { reputation: 6, fame: 4, honor: 2 }, y: tzY(24, 96, { reputation: 4 }) }] },
+  { id: "tz_avci_d", prof: "avcı", r: 0, yas: 45, icon: "bow", s: [{ d: { fame: 4, reputation: 2 }, risk: { health: -12 } }, { d: { honor: 2 } }, { d: { reputation: 4, fame: 2 } }] },
+  { id: "tz_marangoz_d", prof: "marangoz", r: 0, yas: 45, icon: "saw", s: [{ d: { money: 60, fame: 5, health: -6 } }, { d: { reputation: -1 } }, { d: { money: 40, fame: 4, reputation: 3 } }] },
+  { id: "tz_coban_d", prof: "çoban", r: 0, yas: 45, icon: "sheep", s: [{ d: { honor: 2, reputation: 1 } }, { d: { money: 5 } }, { d: { reputation: 2, honor: 1 } }] },
+  { id: "tz_firinci_d", prof: "fırıncı", r: 0, yas: 45, icon: "bread", s: [{ d: { reputation: 2, money: -10 } }, { d: { money: 5 } }, { d: { reputation: 4, honor: 3, nam: { comert: 3 } }, y: tzY(12, 60, { reputation: 4 }) }] },
+  { id: "tz_asker_d", prof: "asker", r: 0, yas: 45, icon: "shield", s: [{ d: { fame: 4, honor: 3, money: 30 }, risk: { health: -15, honor: 2 } }, { d: { honor: -1 } }, { d: { reputation: 4, fame: 3, honor: 2 } }] },
+  { id: "tz_muzisyen_d", prof: "müzisyen", r: 0, yas: 45, icon: "lyre", s: [{ d: { fame: 5, money: 40, health: -3 } }, { d: { money: 15 } }, { d: { fame: 5, reputation: 3, money: 30 }, y: tzY(12, 36, { reputation: 4 }) }] },
+  { id: "tz_sifaci_d", prof: "şifacı", r: 0, yas: 45, icon: "book", s: [{ d: { reputation: 5, honor: 3, health: -8 } }, { d: { health: 10, reputation: -2 } }, { d: { fame: 5, reputation: 3 }, y: tzY(24, 96, { reputation: 5, money: 20 }) }] },
+  { id: "tz_katip_d", prof: "katip", r: 0, yas: 45, icon: "scroll", s: [{ d: { honor: 5, reputation: -3, fear: 1 }, y: tzY(24, 72, { money: -30, reputation: -3 }) }, { d: { honor: -3 } }, { d: { honor: 4, reputation: 2 }, y: tzY(12, 48, { reputation: 4 }) }] },
+  { id: "tz_kuyumcu_d", prof: "kuyumcu", r: 0, yas: 45, icon: "ring", s: [{ d: { money: 80, fame: 4 }, risk: { money: 10, health: -3 } }, { d: { reputation: -1 } }, { d: { money: 70, fame: 4, reputation: 2 } }] },
+  { id: "tz_dokumaci_d", prof: "dokumacı", r: 0, yas: 45, icon: "wool", s: [{ d: { money: 40, reputation: 2, health: -3 } }, { d: { honor: 2 } }, { d: { fame: 4, reputation: 3 }, y: tzY(12, 48, { money: 60 }) }] },
+  { id: "tz_hanci_d", prof: "hancı", r: 0, yas: 45, icon: "house", s: [{ d: { honor: 5, reputation: 3 } }, { d: { money: 20, honor: -2 } }, { d: { honor: 5, reputation: 4, fame: 3, nam: { comert: 3 } }, y: tzY(24, 120, { reputation: 5 }) }] },
 ];
 export function tezgahKart(p: Player): TezgahKart | undefined { return p.tezgah ? TEZGAH.find((k) => k.id === p.tezgah) : undefined; }
 // Hüner yolu: meslek özelliği eşiği ya da usta kademesi.
@@ -3305,7 +3321,7 @@ function tezgahTetik(s: GameState): boolean {
   const p = s.player;
   if (p.tezgah || (p.tezgah_turn != null && s.turn - p.tezgah_turn < TEZGAH_ARA)) return false;
   const gor = p.tezgah_gor || [];
-  const havuz = TEZGAH.filter((k) => k.prof === p.profession && k.r <= kademeOf(p) && !gor.includes(k.id));
+  const havuz = TEZGAH.filter((k) => k.prof === p.profession && k.r <= kademeOf(p) && (!k.yas || p.age >= k.yas) && !gor.includes(k.id));
   if (!havuz.length || !chance(0.3)) return false;
   havuz.sort((a, b) => a.r - b.r); // önce kendi kademesinin altında kalan (henüz görülmemiş) kart
   p.tezgah = havuz[0].id; p.tezgah_turn = s.turn; p.tezgah_zar = Math.random();
