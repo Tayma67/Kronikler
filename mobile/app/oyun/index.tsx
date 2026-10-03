@@ -18,7 +18,7 @@ import { heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre, TutorialModal } from "../../lib/ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameIcon } from "../../lib/icons";
-import { useI18n, applyParams, renderEvt, lakapliAd } from "../../lib/i18n";
+import { useI18n, applyParams, renderEvt, lakapliAd, lakapAdi } from "../../lib/i18n";
 import { playTap, playChime, playSaz, playNey } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
@@ -344,7 +344,7 @@ export default function Dashboard() {
         const epLabel = eul.epithet ? (() => { const fk = "ep." + eul.epithet + ".f"; const fv = t(fk); return p.gender === "kadın" && fv !== fk ? fv : t("ep." + eul.epithet); })() : "";
         return (
           <EulogyModal visible={showEulogy} name={p.name} epithet={epLabel} bornYear={diedYear - p.age} diedYear={diedYear} age={p.age}
-            professionLine={profLine} lines={eul.lines.map((l) => applyParams(t(l.k), l.p))} close={t("dynnote." + eul.close)} hasHeir={p.children.length > 0}
+            professionLine={profLine} lines={eul.lines.map((l) => { const kad = p.gender === "kadın"; const fk = l.k + ".f"; const fv = t(fk); return applyParams(kad && fv !== fk ? fv : t(l.k), (l.p || []).map((v) => (typeof v === "object" ? lakapAdi(v.lk, kad, t) : v))); })} close={t("dynnote." + eul.close)} hasHeir={p.children.length > 0}
             onReel={() => { setShowEulogy(false); router.push("/oyun/tarih?cine=1"); }}
             onChronicle={() => { setShowEulogy(false); router.push("/oyun/roman"); }}
             onContinue={() => { setShowEulogy(false); if (p.children.length > 0) router.push("/oyun/nesil"); else { resetGame(); router.replace("/yeni-oyun"); } }} />

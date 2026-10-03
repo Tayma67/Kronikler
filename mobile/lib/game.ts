@@ -5417,7 +5417,7 @@ export function deathEpithet(s: GameState): string {
 }
 // Hayatı dokuyan 2-4 cümle. Satırlar {k,p} olarak döner; index.tsx render anında 6 dile çevirir
 // (epithet/close kalıcı DynastyRecord'da saklandığından TR bırakılır).
-export interface EulLine { k: string; p?: (string | number)[]; }
+export interface EulLine { k: string; p?: (string | number | { lk: string })[]; } // {lk}: lakap kimliği (gösterimde dile + cinsiyete çevrilir)
 export function eulogy(s: GameState): { epithet: string; lines: EulLine[]; close: string } {
   const p = s.player; const n = p.nam || ({} as Nam);
   const lines: EulLine[] = [];
@@ -5425,6 +5425,13 @@ export function eulogy(s: GameState): { epithet: string; lines: EulLine[]; close
   if (p.fame >= 60) lines.push({ k: "eul.fameHigh" });
   else if (p.fame >= 30) lines.push({ k: "eul.fameMid" });
   else lines.push({ k: "eul.fameLow" });
+  // Yaşayan lakabın yolculuğu: halkın ona taktığı adlar sırayla anılır (ilk → orta → son).
+  { const ls = p.lakaplar || []; const son = p.lakap || ls[ls.length - 1];
+    const ilk = ls.find((x) => x !== son); // son addan farklı en eski ad
+    const ara = ilk ? ls.filter((x) => x !== son && x !== ilk) : [];
+    if (son && ilk && ara.length) lines.push({ k: "eul.lakapYol3", p: [{ lk: ilk }, { lk: ara[Math.floor(ara.length / 2)] }, { lk: son }] });
+    else if (son && ilk) lines.push({ k: "eul.lakapYol", p: [{ lk: ilk }, { lk: son }] });
+    else if (son) lines.push({ k: "eul.lakapBir", p: [{ lk: son }] }); }
   // Nasıl öldüğü de mirastır: düelloda düşenle yatağında göçen aynı mersiyeyi almasın.
   if (p.death_cause) lines.push({ k: "eul.cause." + p.death_cause });
   // En belirgin huy
@@ -5436,6 +5443,10 @@ export function eulogy(s: GameState): { epithet: string; lines: EulLine[]; close
   if (p.crowned) lines.push({ k: "eul.crowned" });
   else if ((p.courtRank ?? -1) >= 4) lines.push({ k: "eul.courtSadrazam" });
   else if ((p.courtRank ?? -1) >= 3) lines.push({ k: "eul.courtVezir" });
+  // Meslek hikâyesi: peştamal inadı, çarşının bayrağı, yetişen çıraklar
+  if ((p.sinav_kalma || 0) >= 1 && (p.sinav_gecme || 0) >= 1) lines.push({ k: "eul.sinavInat", p: [p.sinav_kalma || 0] });
+  if ((p.rakip_zafer || 0) >= 1) lines.push({ k: "eul.bayrak", p: [p.rakip_zafer || 0] });
+  if ((p.cirak_yetisen || 0) >= 1) lines.push({ k: "eul.cirak", p: [p.cirak_yetisen || 0] });
   // Sefer & bayındırlık (hükümdarlık mirası)
   const conq = p.crownConquests?.length || 0;
   if (conq > 0) lines.push({ k: "eul.conquest", p: [conq] });
