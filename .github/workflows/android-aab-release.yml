@@ -1,19 +1,17 @@
 name: AAB (Play Store - imzali derleme)
 
-# Elle tetiklenir: GitHub -> Actions -> "AAB (Play Store - imzali derleme)" -> Run workflow.
-# Kalici keystore ile IMZALI bir .aab uretir ve 'aab-latest' Release'ine yukler.
-# Gerekli GitHub Secrets (Settings -> Secrets and variables -> Actions):
-#   KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
-permissions:
-  contents: write
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+    
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,32 +32,25 @@ jobs:
 
       - name: Expo prebuild (android native uret)
         working-directory: mobile
-        env:
-          CI: "1"
-        run: npx expo prebuild --platform android --no-install
+        run: npx expo prebuild --platform android --no-install --non-interactive
 
-      - name: versionCode'u build numarasiyla guncelle
+      - name: versionCode'u guncelle
         working-directory: mobile/android/app
-        run: |
-          sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" build.gradle
-          grep versionCode build.gradle
-
-      - name: Kalici imza yapilandirmasini ekle
-        working-directory: mobile/android/app
-        run: node -e "const fs=require('fs');let c=fs.readFileSync('build.gradle','utf8');const rel='release {\n            storeFile file(System.getenv(\'KRONIKLER_STORE_FILE\') ?: \'kronikler.keystore\')\n            storePassword System.getenv(\'KRONIKLER_STORE_PASSWORD\')\n            keyAlias System.getenv(\'KRONIKLER_KEY_ALIAS\')\n            keyPassword System.getenv(\'KRONIKLER_KEY_PASSWORD\')\n        }\n    }';c=c.replace(/signingConfigs \{\s*debug \{[^}]*\}\s*\}/,m=>m.slice(0,-1)+rel);c=c.replace('signingConfig signingConfigs.debug\n            def enableShrinkResources','signingConfig signingConfigs.release\n            def enableShrinkResources');fs.writeFileSync('build.gradle',c);console.log('patched');"
+        run: sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" build.gradle
 
       - name: Keystore'u geri yukle
-        working-directory: mobile/android/app
+        working-directory: mobile/android
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > kronikler.keystore
 
       - name: Gradle bundleRelease (imzali AAB)
         working-directory: mobile/android
-        env:
-          KRONIKLER_STORE_FILE: kronikler.keystore
-          KRONIKLER_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KRONIKLER_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KRONIKLER_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew bundleRelease --no-daemon --stacktrace
+        run: |
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file=$(pwd)/kronikler.keystore \
+            -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}" \
+            --no-daemon --stacktrace
 
       - name: AAB'yi yeniden adlandir
         run: cp mobile/android/app/build/outputs/bundle/release/app-release.aab Kronikler.aab
