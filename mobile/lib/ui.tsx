@@ -105,12 +105,13 @@ const MILESTONE_LABEL: Record<string, { tag: string; icon: string }> = {
   pestamal: { tag: "Peştamal Kuşandın", icon: "medal" },
   terfi: { tag: "Mesleğin Zirvesi", icon: "crown" },
   rakip: { tag: "Çarşıda Rakip", icon: "banner" },
+  cirak: { tag: "Peştamal Töreni", icon: "graduate-cap" },
 };
 
 const MS_ACCENT: Record<string, string> = {
   doğum: C.ink, dogum: C.ink, evlilik: C.rose, kariyer_terfi: C.gold, başarım: C.gold,
   tahta_çıkış: C.gold, şehir_kuruluşu: C.gold, savaş_zaferi: C.ember, komutan_savaşı: C.ember,
-  ölüm: C.parchmentMuted, nesil_devri: C.ink, lakap: C.goldBright, sinav: C.gold, pestamal: C.goldBright, terfi: C.goldBright, rakip: C.ember,
+  ölüm: C.parchmentMuted, nesil_devri: C.ink, lakap: C.goldBright, sinav: C.gold, pestamal: C.goldBright, terfi: C.goldBright, rakip: C.ember, cirak: C.goldBright,
 };
 // Yayılan parlama halkası (kutlama hissi).
 function Burst({ color }: { color: string }) {

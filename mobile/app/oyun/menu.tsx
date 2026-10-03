@@ -55,7 +55,7 @@ export default function Menu() {
     if (!state || !p) return { n: 0, urgent: false };
     switch (key) {
       case "beceriler": return { n: pendingPerkCount(p), urgent: false };
-      case "meslek": { const ry = state.player.rakip; const yaris = !!ry && !ry.bitti && ry.prof === state.player.profession && ry.yaris != null; return { n: sinavDurumu(state)?.hazir || yaris ? 1 : 0, urgent: yaris }; } // Ahilik: peştamal sınavı hazır
+      case "meslek": { const ry = state.player.rakip; const yaris = !!ry && !ry.bitti && ry.prof === state.player.profession && ry.yaris != null; const ck = state.player.cirak; const ihmal = !!ck && ck.prof === state.player.profession && ck.ihmal >= 2; return { n: sinavDurumu(state)?.hazir || yaris || ihmal ? 1 : 0, urgent: yaris || ihmal }; } // Ahilik: peştamal sınavı hazır
       case "hikayeler": return { n: state.story?.active ? 1 : 0, urgent: false };
       case "orgutler": return { n: playerWar(state) ? 1 : 0, urgent: true };
       case "pazar": return { n: state.caravan ? 1 : 0, urgent: false };

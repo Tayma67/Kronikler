@@ -158,6 +158,8 @@ export interface Player {
   sinav_cagri?: number; sinav_bekle?: number; sinav_turn?: number; // peştamal sınavı: çağrılan hedef · kalınca yeniden çağrı turu · ayda tek deneme
   tezgah?: string; tezgah_turn?: number; tezgah_zar?: number; tezgah_gor?: string[]; // tezgâh kararı: bekleyen kart · son kart turu · önceden atılmış zar · bu ömürde görülen kartlar
   rakip?: Rakip; // çarşıdaki meslek rakibi (kalfalıkta doğar; lonca bayrağı yarışı)
+  rakip_zafer?: number; // bayrağı kazanılan rekabet sayısı (Bayraktar lakabı)
+  cirak?: Cirak; cirak_yetisen?: number; cirak_kacan?: number; cirak_bekle?: number; // usta olunca yanına alınan çırak · peştamal kuşattırılan · kaçan · yeni çırak için bekleme turu
   sinav_gecme?: number; sinav_kalma?: number; // ömür boyu geçilen/kalınan peştamal sınavları (ustalık ünleri / Ebedi Kalfa)
   fetih_turlari?: number[]; divan_karar?: number; // hükümdar sicili: fetih turları (Yıldırım) + karara bağlanan divan arzuhalleri (Kanuni)
 }
@@ -2145,6 +2147,7 @@ export function advance(prev: GameState, n = 1): GameState {
     if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 6 && chance(0.12)) { const mp = s.player.age >= 13 ? MICRO_IDS : MICRO_KID_IDS; s.micro = { id: mp[Math.floor(Math.random() * mp.length)] }; } } // mikro an: yok sayılırsa ertesi ay kaybolur (çocuğa çocuk anı)
     crownCampaignTick(s); // Sefer 2.0: ordu her ay yol alır (yürüyüş → kuşatma → hüküm)
     rakipTick(s); // çarşıdaki rakip: hüneri büyür, hamle yapar, yıllık bayrak yarışı vakti
+    cirakTick(s); // çırak: kost, kendi kendine öğrenme, ihmal, olaylar, peştamal
     if (i === n - 1) sagaTick(s); // Kül Yemini: destan sahnesi kapıları (düşen sahne panoda bekler, silinmez)
     if (i === n - 1) bloodlineTick(s); // Kan Defteri: nesil destanının sahne kapıları
     if (i === n - 1) successionTick(s); // Veraset: gözde ilanının kardeş sofrasındaki yankısı
@@ -3091,6 +3094,7 @@ export function work(prev: GameState, style: WorkStyle = "normal"): GameState {
   if (hasPerk(p, "usta_eli")) mult += 0.2;
   if (hasPerk(p, "basyapit")) mult += 0.25;
   { const rk = p.rakip; if (rk && rk.bitti && rk.prof === p.profession) mult += rk.bitti === "ustun" ? 0.1 : rk.bitti === "ortak" ? 0.08 : -0.05; } // çarşının bayrağı: müşteri bayraklı tezgâha gider
+  if (p.cirak && p.cirak.prof === p.profession) mult += 0.05; // çırağın eli: tezgâhta bir çift el daha
   const tierBefore = pr ? careerTier(pr, kariyerXp(p)) : 0;
   const titleMult = TITLE_MULT[tierBefore] || 1;
   const base = pr ? pr.base : 4;
@@ -3373,7 +3377,7 @@ function rakipDogum(s: GameState) {
 function rakipSonu(s: GameState) {
   const p = s.player; const r = p.rakip; if (!r || r.bitti) return;
   if (r.galip >= RAKIP_HEDEF) {
-    r.bitti = "ustun"; r.bittiTur = s.turn; r.yaris = undefined;
+    r.bitti = "ustun"; r.bittiTur = s.turn; r.yaris = undefined; p.rakip_zafer = (p.rakip_zafer || 0) + 1;
     p.fame = Math.min(100, p.fame + 5); p.reputation = Math.min(100, p.reputation + 5);
     push(s, "rakip", "Çarşının bayrağı artık sende.", "kişisel", true, { k: "evj.rakip.ustun" + rkG(r.g), p: [rkAd(r)] });
   } else if (r.maglup >= RAKIP_HEDEF) {
@@ -3440,6 +3444,92 @@ export function rakipOrtaklik(prev: GameState): GameState {
   r.bitti = "ortak"; r.bittiTur = s.turn; p.honor = Math.min(100, p.honor + 2);
   push(s, "rakip", "Rakibinle ortak oldun.", "kişisel", true, { k: "evj.rakip.ortak" + rkG(r.g), p: [rkAd(r)] });
   return s;
+}
+
+// ── Çırak: ustalık yalnız yapmak değil, yetiştirmektir ──
+// Usta (kademe 2+) yanına bir çırak alabilir. Üç aday her ay değişir; huyları farklıdır: hevesli (hızlı öğrenir, sakar),
+// yetenekli (sıçramalı ilerler ama tembelleşebilir), sadık (yavaş ama ihmale dayanır, tezgâhı kollar). Çırağın kostu aylık;
+// ders vermek ayda bir (tur kilidi), ilerlemeyi asıl o taşır. Uzun ihmal çırağı kaçırır. İlerleme 100'e varınca peştamal
+// töreni: ustanın şanı ve itibarı artar, yıllar sonra çırak vefasını gösterir (tohum). Üç çırak yetiştirene "Pir" denir.
+export type CirakHuy = "hevesli" | "yetenekli" | "sadik";
+export interface Cirak { seed: number; g: "erkek" | "kadın"; huy: CirakHuy; ilerleme: number; alis: number; sonDers?: number; ihmal: number; prof: string }
+export const CIRAK_BEDEL = 10;   // çırağa ilk takım (alet + peştamal bezi)
+export const CIRAK_KOST = 3;     // aylık kost (yemek + yatak)
+export const CIRAK_DERS_ARA = 3; // ders üç ayda bir (angarya değil, an): sindirmek zaman ister
+const ckG = (g: "erkek" | "kadın") => (g === "kadın" ? "_k" : "");
+const ckAd = (c: { seed: number; g: "erkek" | "kadın" }) => ({ fn: [c.seed, c.g] as [number, "erkek" | "kadın"] });
+export function cirakAlabilir(p: Player, turn?: number): boolean { return !p.dead && !p.cirak && kademeOf(p) >= 2 && p.profession !== "işsiz" && !inJail(p) && (turn == null || p.cirak_bekle == null || turn >= p.cirak_bekle); }
+export function cirakBekleAy(s: GameState): number { const b = s.player.cirak_bekle; return b == null ? 0 : Math.max(0, b - s.turn); }
+// Bu ayın adayları (ay + isimle deterministik — ekran açılıp kapansa da aynı kalır).
+export function cirakAdaylari(s: GameState): { seed: number; g: "erkek" | "kadın"; huy: CirakHuy }[] {
+  let h = locSeed("cirak:" + s.player.name + ":" + s.turn) >>> 0;
+  const nx = () => { h = (Math.imul(h ^ (h >>> 15), 2246822519) + 0x9e3779b9) >>> 0; return h; };
+  const huylar: CirakHuy[] = ["hevesli", "yetenekli", "sadik"];
+  return huylar.map((huy) => ({ seed: nx() % 1000000000, g: (nx() % 2 ? "erkek" : "kadın") as "erkek" | "kadın", huy }));
+}
+export function cirakAl(prev: GameState, i: number): GameState {
+  const p0 = prev.player;
+  if (!cirakAlabilir(p0, prev.turn) || p0.money < CIRAK_BEDEL) return prev;
+  const a = cirakAdaylari(prev)[i]; if (!a) return prev;
+  const s = clone(prev); const p = s.player;
+  p.money -= CIRAK_BEDEL;
+  p.cirak = { seed: a.seed, g: a.g, huy: a.huy, ilerleme: 0, alis: s.turn, ihmal: 0, prof: p.profession };
+  push(s, "cirak", "Yanına bir çırak aldın.", "kişisel", false, { k: "evj.cirak.al" + ckG(a.g), p: [ckAd(a)] });
+  return s;
+}
+export function cirakDersKalan(s: GameState): number { const c = s.player.cirak; return !c || c.sonDers == null ? 0 : Math.max(0, CIRAK_DERS_ARA - (s.turn - c.sonDers)); }
+export function cirakDersHazir(s: GameState): boolean { const c = s.player.cirak; return !!c && c.prof === s.player.profession && cirakDersKalan(s) === 0 && !s.player.dead && !inJail(s.player) && s.player.hunger >= 10; }
+export function cirakDers(prev: GameState): GameState {
+  if (!cirakDersHazir(prev)) return prev;
+  const s = clone(prev); const p = s.player; const c = p.cirak!;
+  const dom = (PROF_SKILL[c.prof] || "crafting") as SkillKey;
+  const kazanc = 5 + skillLevel(p.skill_xp[dom] || 0) * 0.4 + (c.huy === "hevesli" ? 1.5 : 0); // çıraklık yıllar sürer (~3 yıl)
+  c.ilerleme = Math.min(100, Math.round((c.ilerleme + kazanc) * 10) / 10); c.sonDers = s.turn; c.ihmal = 0;
+  p.hunger = Math.max(0, p.hunger - 5);
+  gainSkill(s, dom, 2); // öğretmek ustayı da biler
+  const v = Math.floor(Math.random() * 3);
+  push(s, "cirak", "Çırağına ders verdin.", "kişisel", false, { k: "evj.cirak.ders" + v + ckG(c.g), p: [ckAd(c)] });
+  cirakMezun(s);
+  return s;
+}
+function cirakMezun(s: GameState) {
+  const p = s.player; const c = p.cirak; if (!c || c.ilerleme < 100) return;
+  p.cirak = undefined; p.cirak_yetisen = (p.cirak_yetisen || 0) + 1; p.cirak_bekle = s.turn + 12;
+  p.fame = Math.min(100, p.fame + 3); p.reputation = Math.min(100, p.reputation + 3);
+  sowSeed(s, { kaynak: "cirak_vefa", hmin: 36, hmax: 120, agirlik: "orta", nesil: false, etki: { money: 40, reputation: 3 } });
+  push(s, "cirak", "Çırağın peştamal kuşandı.", "kişisel", true, { k: "evj.cirak.pestamal" + ckG(c.g), p: [ckAd(c), p.cirak_yetisen] });
+}
+function cirakTick(s: GameState) {
+  const p = s.player; const c = p.cirak;
+  if (!c || p.dead) return;
+  if (c.prof !== p.profession) { // meslek değişti: çırak başka bir ustaya gider
+    p.cirak = undefined;
+    push(s, "cirak", "Çırağın başka bir ustaya gitti.", "kişisel", false, { k: "evj.cirak.ayrildi" + ckG(c.g), p: [ckAd(c)] });
+    return;
+  }
+  if (p.money >= CIRAK_KOST) p.money -= CIRAK_KOST; else c.ihmal += 1; // kost ödenemezse çırak da aç kalır
+  c.ilerleme = Math.min(100, Math.round((c.ilerleme + (c.huy === "hevesli" ? 0.6 : c.huy === "sadik" ? 0.5 : 0.4)) * 10) / 10);
+  if (s.turn - (c.sonDers ?? c.alis) > CIRAK_DERS_ARA + 3) c.ihmal += 1; else c.ihmal = 0; // altı ay derssiz kalan çırak bunalmaya başlar
+  const sinir = c.huy === "sadik" ? 10 : 6;
+  if (c.ihmal >= sinir) {
+    p.cirak = undefined; p.cirak_kacan = (p.cirak_kacan || 0) + 1; p.cirak_bekle = s.turn + 12; p.reputation = Math.max(-100, p.reputation - 2);
+    push(s, "cirak", "Çırağın ilgisizlikten kaçtı.", "kişisel", false, { k: "evj.cirak.kacti" + ckG(c.g), p: [ckAd(c)] });
+    return;
+  }
+  if (chance(0.06)) {
+    const iyi = chance(0.5);
+    if (c.huy === "hevesli") {
+      if (iyi) { c.ilerleme = Math.min(100, c.ilerleme + 2); push(s, "cirak", "Çırağın gece sabahlara dek çalıştı.", "kişisel", false, { k: "evj.cirak.gayret" + ckG(c.g), p: [ckAd(c)] }); }
+      else { const z = Math.min(p.money, 8); p.money -= z; push(s, "cirak", "Çırağın aceleyle bir aleti kırdı.", "kişisel", false, { k: "evj.cirak.sakar" + ckG(c.g), p: [ckAd(c), z] }); }
+    } else if (c.huy === "yetenekli") {
+      if (iyi) { c.ilerleme = Math.min(100, c.ilerleme + 4); p.fame = Math.min(100, p.fame + 1); push(s, "cirak", "Çırağın senin bile düşünmediğin bir yol buldu.", "kişisel", false, { k: "evj.cirak.bulus" + ckG(c.g), p: [ckAd(c)] }); }
+      else { c.ilerleme = Math.max(0, c.ilerleme - 3); push(s, "cirak", "Çırağın tembelliğe vurdu.", "kişisel", false, { k: "evj.cirak.tembel" + ckG(c.g), p: [ckAd(c)] }); }
+    } else {
+      p.reputation = Math.min(100, p.reputation + 1);
+      push(s, "cirak", "Çırağın tezgâhını senin yokluğunda da kolladı.", "kişisel", false, { k: "evj.cirak.sadakat" + ckG(c.g), p: [ckAd(c)] });
+    }
+  }
+  cirakMezun(s);
 }
 
 export function eat(prev: GameState): GameState {
@@ -5229,8 +5319,8 @@ export function meslegeUygun(s: GameState, id: string): boolean { const e = mesl
 // ── YAŞAYAN LAKAP: oynayış tarzından kazanılan, hayat boyunca değişen ad ──
 // Kurallar öncelik sırasıyla denenir: bir hayatı en çok tanımlayan ilk vasıf kazanır.
 // Titreme önleyici: tutulan lakap gevşek eşikle (g=1) korunur; yerini ancak daha öncelikli bir lakabın KESİN eşiği alır.
-export const LAKAP_IDS = ["deli", "cihangir", "yildirim", "fatih", "kanuni", "namaglup", "ebedi_kalfa", "gazi", "lokman", "kalemsor", "dertli", "kartal_goz", "ahi", "altin_elli", "daima_yenik", "zalim", "gorkemli", "bahtsiz", "vasifsiz", "korkulan", "cimri", "comert", "dindar", "capkin", "adil", "mert", "meteliksiz", "mechul"] as const;
-const LAKAP_TR: Record<string, string> = { cihangir: "Cihangir", yildirim: "Yıldırım", fatih: "Fatih", kanuni: "Kanuni", ebedi_kalfa: "Ebedi Kalfa", gazi: "Gazi", lokman: "Lokman", kalemsor: "Kalemşor", dertli: "Dertli", kartal_goz: "Kartal Göz", ahi: "Ahi", altin_elli: "Altın Elli", deli: "Deli", namaglup: "Namağlup", daima_yenik: "Daima Yenik", zalim: "Zalim", gorkemli: "Görkemli", bahtsiz: "Bahtsız", vasifsiz: "Vasıfsız", korkulan: "Korkulan", cimri: "Cimri", comert: "Cömert", dindar: "Dindar", capkin: "Çapkın", adil: "Adil", mert: "Mert", meteliksiz: "Meteliksiz", mechul: "Meçhul" };
+export const LAKAP_IDS = ["deli", "cihangir", "yildirim", "fatih", "kanuni", "namaglup", "ebedi_kalfa", "gazi", "pir", "bayraktar", "lokman", "kalemsor", "dertli", "kartal_goz", "ahi", "altin_elli", "daima_yenik", "zalim", "gorkemli", "bahtsiz", "vasifsiz", "korkulan", "cimri", "comert", "dindar", "capkin", "adil", "mert", "meteliksiz", "mechul"] as const;
+const LAKAP_TR: Record<string, string> = { pir: "Pir", bayraktar: "Bayraktar", cihangir: "Cihangir", yildirim: "Yıldırım", fatih: "Fatih", kanuni: "Kanuni", ebedi_kalfa: "Ebedi Kalfa", gazi: "Gazi", lokman: "Lokman", kalemsor: "Kalemşor", dertli: "Dertli", kartal_goz: "Kartal Göz", ahi: "Ahi", altin_elli: "Altın Elli", deli: "Deli", namaglup: "Namağlup", daima_yenik: "Daima Yenik", zalim: "Zalim", gorkemli: "Görkemli", bahtsiz: "Bahtsız", vasifsiz: "Vasıfsız", korkulan: "Korkulan", cimri: "Cimri", comert: "Cömert", dindar: "Dindar", capkin: "Çapkın", adil: "Adil", mert: "Mert", meteliksiz: "Meteliksiz", mechul: "Meçhul" };
 function deliPuani(p: Player): number { return (p.delilik || 0) + Math.max(0, (p.professions_tried?.length || 0) - 4); } // meslekten mesleğe savrulmak da sayılır
 function servetOf(p: Player): number { return p.money + (p.deposit || 0) - (p.debt || 0); }
 function vasifsizMi(p: Player, g: number): boolean {
@@ -5275,6 +5365,8 @@ const LAKAP_KURAL: { id: string; ok: (p: Player, s: GameState, g: number) => boo
   { id: "capkin",      ok: (p, _s, g) => (p.nam?.capkin || 0) >= 55 - 10 * g || (p.bastards || 0) >= 2 },
   { id: "adil",        ok: (p, _s, g) => p.honor >= 75 - 10 * g && (p.nam?.zalim || 0) < 15 },
   { id: "mert",        ok: (p, _s, g) => (p.nam?.mert || 0) >= 60 - 10 * g },
+  { id: "pir",         ok: (p, _s, g) => (p.cirak_yetisen || 0) >= 5 - g }, // ustaların ustası: beş çırağa peştamal kuşattıran
+  { id: "bayraktar",   ok: (p, _s, g) => (p.rakip_zafer || 0) >= 2 - g }, // iki ayrı rakibe karşı çarşının bayrağı
   { id: "meteliksiz",  ok: (p, s, g) => p.age >= 22 && servetOf(p) < (30 + 20 * g) * inflationFactor(s) && (p.debt || 0) > 0 },
   { id: "mechul",      ok: (p, _s, g) => p.age >= 30 && p.fame < 10 + 5 * g },
 ];

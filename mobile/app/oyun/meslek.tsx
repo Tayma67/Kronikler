@@ -3,7 +3,8 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { changeProfession, PROFESSIONS, professionById, careerTier, hasProfAction, canProfAction, professionAction, profActionCooldownLeft, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat, kariyerXp, sinavDurumu, ustalikSinavi, rakipAktif, rakipPuan, rakipYollari, rakipMeydan, rakipMeydanHazir, rakipMeydanKalan, rakipYarisi, rakipOrtaklik, rakipOrtaklikHazir, RAKIP_HEDEF, RAKIP_MEYDAN_BEDEL } from "../../lib/game";
+import { changeProfession, PROFESSIONS, professionById, careerTier, hasProfAction, canProfAction, professionAction, profActionCooldownLeft, meslekSarti, meslekEksik, meslekSermaye, meslegeUygun, effStat, kariyerXp, sinavDurumu, ustalikSinavi, rakipAktif, rakipPuan, rakipYollari, rakipMeydan, rakipMeydanHazir, rakipMeydanKalan, rakipYarisi, rakipOrtaklik, rakipOrtaklikHazir, RAKIP_HEDEF, RAKIP_MEYDAN_BEDEL, cirakAlabilir, cirakAdaylari, cirakAl, cirakDers, cirakDersHazir, cirakDersKalan, cirakBekleAy, CIRAK_BEDEL, CIRAK_KOST, kademeOf } from "../../lib/game";
+import { localFirstName } from "../../lib/world";
 import { rakipAdi, rakipKartVerisi } from "../../lib/rakip-ui";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
 import { professionNameL, careerTitleL, PROF_L10N } from "../../lib/locale-data";
@@ -118,6 +119,61 @@ export default function Meslek() {
           );
         })()}
         <SinavKartiModal v={yaris} onSec={(yol) => { const r = rakipYarisi(state, yol); if (r.basari != null) apply(() => r.state); return r.basari; }} onKapat={() => setYaris(null)} />
+
+        {/* Çırak: ustalık yetiştirmektir — ders ver, kostunu öde, peştamalını kuşat */}
+        {(() => {
+          if (p.profession === "işsiz") return null;
+          const c = p.cirak && p.cirak.prof === p.profession ? p.cirak : undefined;
+          const sayac = (p.cirak_yetisen || p.cirak_kacan) ? <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, marginTop: 8 }}>{applyParams(t("ck.raised"), [p.cirak_yetisen || 0, p.cirak_kacan || 0], lang)}</Text> : null;
+          if (!c && kademeOf(p) < 2) return (
+            <Panel title={t("ck.title")}>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentDim, lineHeight: 19 }}>{t("ck.hint")}</Text>
+              {sayac}
+            </Panel>
+          );
+          if (!c) {
+            const adaylar = cirakAdaylari(state); const alabilir = cirakAlabilir(p, state.turn) && p.money >= CIRAK_BEDEL; const bekle = cirakBekleAy(state);
+            return (
+              <Panel title={t("ck.title")} right={<GameIcon name="graduate-cap" size={18} color={C.gold} />}>
+                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.goldDim }}>{t("ck.pick").toUpperCase()}</Text>
+                {bekle > 0 && <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.ember, marginTop: 5 }}>{applyParams(t("ck.wait"), [bekle], lang)}</Text>}
+                {adaylar.map((a, i) => (
+                  <View key={i} style={{ marginTop: 9, padding: 10, borderRadius: 9, borderWidth: 1, borderColor: C.border, backgroundColor: C.bg }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment }}>{localFirstName(a.seed, a.g, lang)}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 11, color: C.gold, letterSpacing: 0.5 }}>{t("ck.h." + a.huy)}</Text>
+                    </View>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentDim, marginTop: 3, lineHeight: 17 }}>{t("ck.hd." + a.huy)}</Text>
+                    <Pressable accessibilityRole="button" accessibilityLabel={applyParams(t("ck.btnTake"), [CIRAK_BEDEL], lang)} disabled={!alabilir} onPress={() => { hap("success"); apply((st) => cirakAl(st, i)); }} style={{ marginTop: 8, paddingVertical: 9, borderRadius: 8, borderWidth: 1.2, borderColor: alabilir ? C.gold + "99" : C.border, alignItems: "center", opacity: alabilir ? 1 : 0.55 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.gold }}>{applyParams(t("ck.btnTake"), [CIRAK_BEDEL], lang)}</Text>
+                    </Pressable>
+                  </View>
+                ))}
+                <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, marginTop: 8, lineHeight: 17 }}>{applyParams(t("ck.cost"), [CIRAK_KOST], lang)}</Text>
+                {sayac}
+              </Panel>
+            );
+          }
+          const hazir = cirakDersHazir(state);
+          return (
+            <Panel title={t("ck.title")} right={<GameIcon name="graduate-cap" size={18} color={C.gold} />}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={{ fontFamily: F.display, fontSize: 15, color: C.gold }}>{localFirstName(c.seed, c.g, lang)}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 11, color: C.parchmentDim }}>{t("ck.h." + c.huy)}</Text>
+              </View>
+              <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment, marginTop: 8 }}>{applyParams(t("ck.progress"), [Math.floor(c.ilerleme)], lang)}</Text>
+              <View style={{ height: 7, borderRadius: 4, backgroundColor: C.border, marginTop: 4, overflow: "hidden" }}>
+                <View style={{ width: `${Math.min(100, c.ilerleme)}%`, height: 7, borderRadius: 4, backgroundColor: C.gold }} />
+              </View>
+              {c.ihmal >= 2 && <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.ember, marginTop: 7 }}>{t("ck.neglect")}</Text>}
+              <Pressable accessibilityRole="button" accessibilityLabel={t("ck.btnLesson")} disabled={!hazir} onPress={() => { hap("tap"); apply((st) => cirakDers(st)); }} style={{ marginTop: 11, paddingVertical: 12, borderRadius: 9, borderWidth: 1.5, borderColor: hazir ? C.gold + "99" : C.border, backgroundColor: hazir ? C.gold : C.bg, alignItems: "center", opacity: hazir ? 1 : 0.6 }}>
+                <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.2, color: hazir ? C.inkOnGold : C.parchmentMuted }}>{hazir ? t("ck.btnLesson") : cirakDersKalan(state) > 0 ? applyParams(t("ck.lessonWait"), [cirakDersKalan(state)], lang) : t("ck.lessonDone")}</Text>
+              </Pressable>
+              <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, marginTop: 8, lineHeight: 17 }}>{applyParams(t("ck.cost"), [CIRAK_KOST], lang)}</Text>
+              {sayac}
+            </Panel>
+          );
+        })()}
 
         {curPr && (
           <Panel title={professionNameL(p.profession, lang)} right={<Pill text={`${tierIdx + 1}/${curPr.tiers.length}`} />}>
