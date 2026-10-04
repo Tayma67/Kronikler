@@ -8116,8 +8116,50 @@ export function applyDilemma(prev: GameState, delta: Delta, resultText: string, 
   if (delta.standing && p.faction) p.faction_standing[p.faction] = (p.faction_standing[p.faction] || 0) + delta.standing; // lonca itibarı (fraksiyon sahnesi)
   if (seedKey && DILEMMA_SEEDS[seedKey]) sowSeed(s, DILEMMA_SEEDS[seedKey]); // sessiz tohum: seçim yıllar sonra döner
   push(s, "olay", resultText, "kişisel", false, evKey ? { k: evKey } : undefined); // anahtar varsa günlük dile/dişile göre yeniden çözülür (renderEvt fallback güvenli)
+  if (seedKey && p.health > 0) ikilemKisisi(s, seedKey.split(":")[0], delta);
   if (p.health <= 0) die(s, `${p.name} bu olaydan sağ çıkamadı.`, { k: "evj.dieEvent", p: [p.name] });
   return s;
+}
+// ── İkilemin insanı: "ırgat", "komşu", "yetim", "eski hasım" gerçek bir kişidir. Seçimin ahlakî yönü (şeref ve nâm) o kişinin
+// anısına yazılır ("o gün bana insanlık etti/etmedi") ve kroniğe adıyla düşer; yakınlarına da dokunur. Tarafsız seçim iz bırakmaz.
+type IkilemRol = "komsu" | "yoksul" | "yolcu" | "yasli" | "genc" | "cocuk" | "esnaf" | "dost" | "hasim" | "isci" | "cirak" | "yoldas";
+const IKILEM_ROL: Record<string, IkilemRol> = {
+  kuyudaki_oglak: "komsu", gece_misafiri: "yolcu", son_soz: "hasim", yarim_ekmek: "yoksul", eski_rakip: "hasim", dusen_kese: "yolcu", bag_cocugu: "cocuk",
+  kuyu_sirasi: "komsu", iki_yetim: "cocuk", orta_cirak_hata: "genc", gec_kutuk: "komsu", gec_hesap: "komsu", orta_usta: "yasli", cocuk_yalan: "cocuk",
+  genc_meydan: "genc", cocuk_kavga: "cocuk", cocuk_kese: "komsu", yetiskin_yangin: "komsu", cocuk_kabadayi: "cocuk", carsi_yangin: "esnaf", sel_baskini: "komsu",
+  yetim_cirak: "cocuk", isci_zammi: "isci", kusurlu_sikayet: "komsu", dost_rakip: "dost", evlat_yalan: "komsu", yasli_nasihat: "genc", yasli_eskidost: "dost",
+  cirak_hata: "cirak", cocukluk_kese: "esnaf", vali_dilek: "yasli", cocuk_firtina: "komsu", genc_suclama: "yoldas", yetiskin_kuyu: "komsu", yetiskin_gurbetci: "yoldas",
+  orta_sirdas: "dost", orta_terazi: "esnaf", orta_komsu_duvar: "komsu", tavuk_davasi: "komsu", iki_evin_kedisi: "cocuk", kefil_imzasi: "yoldas", bulunan_kese: "komsu",
+  yalanci_sahit: "esnaf", dilenci: "yoksul", hasta: "yolcu", kayip_cocuk: "cocuk", borc: "dost", yetim: "cocuk", fest_kis_3: "yolcu", fest_hasat_5: "komsu", fest_hasat_4: "komsu",
+};
+function ikilemRolKisisi(s: GameState, rol: IkilemRol): Kisi | undefined {
+  const p = s.player; const pop = nufusOf(s); const wy = worldYears(s); const yas = (k: Kisi) => wy - k.dy;
+  const aileDegil = (k: Kisi) => k.ol == null && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && k.es !== OYUNCU;
+  const yer = Object.values(pop.k).filter((k) => aileDegil(k) && k.loc === p.location_name);
+  const sec = (a: Kisi[]) => (a.length ? rnd(a) : undefined);
+  switch (rol) {
+    case "komsu": return sec(yer.filter((k) => yas(k) >= 18));
+    case "yoksul": { const y = yer.filter((k) => yas(k) >= 18 && (k.prof === "işsiz" || (k.cocuk || []).filter((c) => pop.k[c]?.ol == null && yas(pop.k[c]) < 14).length >= 3)); return sec(y.length ? y : yer.filter((k) => yas(k) >= 18)); }
+    case "yolcu": return sec(Object.values(pop.k).filter((k) => aileDegil(k) && k.loc !== p.location_name && regionOf(k.loc) === regionOf(p.location_name) && yas(k) >= 18));
+    case "yasli": return sec(yer.filter((k) => yas(k) >= 55));
+    case "genc": return sec(yer.filter((k) => yas(k) >= 13 && yas(k) <= 25));
+    case "cocuk": return sec(yer.filter((k) => yas(k) >= 5 && yas(k) <= 12));
+    case "esnaf": return sec(yer.filter((k) => yas(k) >= 18 && DUKKANCI.has(k.prof)));
+    case "dost": return yer.filter((k) => yas(k) >= 16 && relWith(s, k.id) >= 30).sort((a, b) => relWith(s, b.id) - relWith(s, a.id))[0];
+    case "hasim": return yer.filter((k) => yas(k) >= 16 && relWith(s, k.id) <= -20).sort((a, b) => relWith(s, a.id) - relWith(s, b.id))[0];
+    case "isci": return sec(p.properties.flatMap((pr) => pr.workers || []).map((id) => pop.k[id]).filter((k): k is Kisi => !!k && k.ol == null));
+    case "cirak": { const k = p.cirak?.id ? pop.k[p.cirak.id] : undefined; return k && k.ol == null ? k : undefined; }
+    case "yoldas": { const k = p.child_friend ? pop.k[p.child_friend.id] : undefined; return k && k.ol == null && k.loc === p.location_name ? k : ikilemRolKisisi(s, "dost"); }
+  }
+}
+function ikilemKisisi(s: GameState, id: string, delta: Delta) {
+  const rol = IKILEM_ROL[id]; if (!rol) return;
+  const n = delta.nam || {}; const yon = (delta.honor || 0) + (n.comert || 0) + (n.mert || 0) + (n.dindar || 0) - 1.5 * (n.zalim || 0);
+  if (Math.abs(yon) < 2) return; // tarafsız seçim — kimsenin hafızasına düşmez
+  const k = ikilemRolKisisi(s, rol); if (!k) return;
+  const iyi = yon > 0;
+  remember(s, { id: k.id, name: kisiAdi(k, "tr") }, iyi ? "ikilem_iyi" : "ikilem_kotu"); if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0;
+  push(s, "olay", `O gün karşındaki: ${kisiAdi(k, "tr")}. ${iyi ? "Bu iyiliği unutmayacak." : "Bunu unutmayacak."}`, "kişisel", false, { k: iyi ? "ikilem.kisiIyi" : "ikilem.kisiKotu", p: [knParam(k)] });
 }
 
 // ── Beceri Ağacı — 4 dal (savaş/ticaret/zanaat/sosyal), her dalda 3/6/9'da perk seçimi ──

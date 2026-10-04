@@ -301,3 +301,16 @@ unutuyordu (atanın iyiliği de zulmü de sıfırlanıyordu), (4) "velinimet" to
 - **Loncadaşlık:** bir loncaya üyeysen o loncaya bağlı esnaf (meslekten: tüccar/hancı/kuyumcu → Tüccarlar,
   demirci/marangoz/dokumacı → Demirciler, asker → Asker Ocağı, şifacı → Şifacılar, kâtip/müzisyen → Edebiyat)
   seni loncadaşı görür (+6); loncaların savaştaysa karşı loncanın esnafı −6. Gölge Kardeşliği gizlidir.
+
+## Kasabanın gözü ve ikilemin insanı (uygulandı)
+
+- **Kasabanın gözünde** (mahalle ekranı, `kasabaGozu`): bulunduğun yerdeki yetişkinlerin (ailen hariç) huy grubuna göre
+  ortalama bakışı ve o grupta görüşü en çok belirleyen kalem; dost (≥30) ve hasım (≤−30) sayısı; o yerde dolaşan
+  söylenti sayısı. Döküm motorla aynıdır — aynı nâmın grup grup farklı yankısını oyuncu kendi gözüyle görür.
+- **Kardeş adları:** sonradan doğan kardeş de ilk kardeşler de oyuncunun ve birbirlerinin ilk adıyla 6 dilin hiçbirinde
+  çakışmaz (ad tohumu yeniden çekilir).
+- **İkilemin insanı** (`IKILEM_ROL`): içinde bir insan olan ikilemler (komşu, yoksul/ırgat, yolcu, yaşlı, genç, çocuk,
+  esnaf, dost, hasım, işçi, çırak, can yoldaşı) seçimden sonra o rolün gerçek karşılığını bulur. Seçimin ahlakî yönü
+  (şeref + cömertlik/mertlik/dindarlık − 1,5×zulüm; |yön| ≥ 2) o kişinin anısına yazılır: "o gün bana insanlık etti"
+  (+8) ya da "etmedi" (−8); kroniğe "O gün karşındaki: …" diye düşer, yakınlarına da dokunur. Tarafsız seçim iz bırakmaz;
+  rolün karşılığı yoksa (ör. hasmın yok) kimse yazılmaz. 143 seçimin 58'i bir insana bağlanır.
