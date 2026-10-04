@@ -4,12 +4,12 @@ import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, trainCombat, trainCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail } from "../../lib/game";
+import { ENCOUNTERS, combatPower, armorDefense, weaponClass, hasShield, shieldBlockChance, applyBattleOutcome, nemesisEncounter, applyNemesisOutcome, reconcileNemesis, reconcileCost, diyetBedeli, diyetSansi, diyetOde, kisiProfil, trainCombat, trainCost, startBattleAttempt, inflationFactor, hireGuard, dismissGuards, retinueHireCost, retinueWage, RETINUE_MAX, inJail } from "../../lib/game";
 import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance, CbLogEntry } from "../../lib/combat";
 import { playVictory, playWarDrum, playClash, playDefeat } from "../../lib/sound";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
-import { useI18n, applyParams } from "../../lib/i18n";
+import { useI18n, applyParams, kucukHarf } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { FloatingNumber, Slash } from "../../lib/fx";
 import { BackLabel, PageHeader, ProgressBar, ScreenFresk } from "../../lib/ui";
@@ -29,7 +29,8 @@ function HpBar({ label, hp, max, color }: { label: string; hp: number; max: numb
 export default function Savas() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const [diyetAcik, setDiyetAcik] = useState(false);
   // i18n anahtarı yoksa encounter'ın kendi (TR) verisini kullan.
   const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
   // Savaş log'u (combat.ts'ten dile bağımsız {k,p}) render anında çevrilir: { mv } → hamle adı, { lk } → alt-anahtar.
@@ -55,9 +56,15 @@ export default function Savas() {
   const canFight = p.age >= 13 && !p.dead && !tooWeak && !foughtThisMonth;
 
   const nemEnc = nemesisEncounter(state);
+  // Hasım gerçek bir kişiyse adı her dilde kendi adıyla; kanlı hasımsa kimin kanı için geldiği
+  const nem = state.story?.nemesis;
+  const nemAdi = nem ? (nem.id ? kisiProfil(state, nem.id, lang)?.npc.name : undefined) || nem.name : "";
+  const nemTitle = applyParams(t("cb.nemTitle"), [nemAdi]);
+  const yakAdi = (yak: string | undefined, olenG?: string) => kucukHarf(t("kan.yak." + (yak || "kardes") + (yak === "baba" || yak === "anne" ? "" : olenG === "kadın" ? ".k" : ".e")), lang);
+  const nemOlen = nem?.olen ? kisiProfil(state, nem.olen, lang) : null;
   // Ay hakkı girişte yanar (çekirdek kilidi): kaybederken ekrandan kaçıp bedelsiz tekrar denenemez.
   const begin = (id: string) => { const e = ENCOUNTERS.find((x) => x.id === id)!; setEncId(id); playWarDrum(); setBs(startBattle(p, { ...e, title: gt("enc." + e.id + ".t", e.title) })); setApplied(false); setFloats([]); apply((s) => startBattleAttempt(s)); };
-  const beginNemesis = () => { if (!nemEnc) return; setEncId("nemesis"); playWarDrum(); setBs(startBattle(p, nemEnc)); setApplied(false); setFloats([]); apply((s) => startBattleAttempt(s)); };
+  const beginNemesis = () => { if (!nemEnc) return; setEncId("nemesis"); playWarDrum(); setBs(startBattle(p, { ...nemEnc, title: nemTitle })); setApplied(false); setFloats([]); apply((s) => startBattleAttempt(s)); };
   const play = (mv: Move) => {
     if (!bs || bs.over) return;
     const next = stepBattle(bs, p, mv, stance);
@@ -213,13 +220,46 @@ export default function Savas() {
         {nemEnc && (
           <View style={{ backgroundColor: "rgba(120,20,20,0.15)", borderWidth: 1, borderColor: "rgba(200,60,60,0.6)", borderRadius: 10, padding: 14, marginBottom: 12 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><GameIcon name="suc" size={13} color={C.blood} /><Text style={{ fontFamily: F.display, fontSize: 14, color: C.blood }}>{nemEnc.title}</Text></View>
+              <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 6, marginRight: 10 }}><GameIcon name="suc" size={13} color={C.blood} /><Text style={{ flexShrink: 1, fontFamily: F.display, fontSize: 14, color: C.blood }}>{nemTitle}</Text></View>
               <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood }}>{t("cb.enemyPower")} {nemEnc.power}</Text>
             </View>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5 }}>{nemEnc.desc} {t("cb.settleTime")}</Text>
+            {nemOlen ? <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchment, marginTop: 5 }}>{applyParams(t("cb.kanFor"), [yakAdi(nem?.yak, nemOlen.npc.gender), nemOlen.npc.name])}</Text> : null}
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginTop: 5 }}>{applyParams(t("cb.nemDesc"), [nemAdi])} {t("cb.settleTime")}</Text>
             {(() => {
-              const pcost = reconcileCost(state);
-              const canPeace = p.money >= pcost && p.reconcile_turn !== state.turn;
+              const kanli = !!nem?.olen; // kanlı hasım hediyeyle değil diyetle konuşur
+              const pcost = kanli ? diyetBedeli(state) : reconcileCost(state);
+              const canPeace = p.money >= pcost && p.reconcile_turn !== state.turn && !p.dead;
+              const ds = kanli ? diyetSansi(state) : null;
+              if (kanli) return (
+                <View style={{ marginTop: 10 }}>
+                  <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                    <Pressable disabled={!canFight} onPress={beginNemesis} style={{ paddingVertical: 8, paddingHorizontal: 18, borderRadius: 7, borderWidth: 1, borderColor: "rgba(200,60,60,0.7)", backgroundColor: "rgba(200,60,60,0.2)", opacity: canFight ? 1 : 0.4 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 11, color: C.blood, letterSpacing: 1 }}>{t("cb.settle")}</Text>
+                    </Pressable>
+                    <Pressable disabled={!canPeace} onPress={() => { hap("tap"); apply((s) => diyetOde(s)); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 7, borderWidth: 1, borderColor: canPeace ? "rgba(127,166,106,0.6)" : C.border, backgroundColor: canPeace ? "rgba(127,166,106,0.12)" : "transparent", opacity: canPeace ? 1 : 0.4 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 11, color: canPeace ? C.sage : C.parchmentMuted, letterSpacing: 1 }}>{applyParams(t("cb.diyet"), [pcost])}</Text>
+                    </Pressable>
+                    <Pressable onPress={() => setDiyetAcik(!diyetAcik)} hitSlop={8} style={{ alignSelf: "center", paddingVertical: 3, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: (diyetAcik ? C.gold : C.goldDim) + "88", backgroundColor: diyetAcik ? "rgba(201,168,76,0.14)" : "transparent" }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 11, color: ds!.yuzde >= 60 ? C.sage : ds!.yuzde <= 25 ? C.blood : C.gold }}>%{ds!.yuzde}</Text>
+                    </Pressable>
+                  </View>
+                  {diyetAcik ? (
+                    <View style={{ paddingTop: 8 }}>
+                      <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1.5, color: C.goldDim, marginBottom: 4 }}>{t("sans.title")}</Text>
+                      {ds!.kalemler.map((x, i) => (
+                        <View key={i} style={{ flexDirection: "row", paddingVertical: 2 }}>
+                          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>{t(x.k)}</Text>
+                          <Text style={{ fontFamily: F.display, fontSize: 11, color: x.v > 0 ? C.sage : C.blood }}>{x.v > 0 ? "+" + x.v : x.v}</Text>
+                        </View>
+                      ))}
+                      <View style={{ flexDirection: "row", paddingTop: 4, marginTop: 3, borderTopWidth: 1, borderTopColor: C.border }}>
+                        <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, color: C.parchment }}>{t("sans.toplam")}</Text>
+                        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.gold }}>%{ds!.yuzde}</Text>
+                      </View>
+                    </View>
+                  ) : null}
+                </View>
+              );
               return (
                 <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
                   <Pressable disabled={!canFight} onPress={beginNemesis} style={{ paddingVertical: 8, paddingHorizontal: 18, borderRadius: 7, borderWidth: 1, borderColor: "rgba(200,60,60,0.7)", backgroundColor: "rgba(200,60,60,0.2)", opacity: canFight ? 1 : 0.4 }}>
@@ -233,6 +273,27 @@ export default function Savas() {
             })()}
           </View>
         )}
+        {(() => {
+          const kd = (state.kanDefteri || []).filter((x) => x.tur !== "canborcu");
+          if (!kd.length || p.dead) return null;
+          return (
+            <View style={{ backgroundColor: "rgba(120,20,20,0.08)", borderWidth: 1, borderColor: "rgba(200,60,60,0.35)", borderRadius: 10, padding: 13, marginBottom: 12 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}><GameIcon name="tombstone" size={13} color={C.blood} /><Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1.5, color: C.blood }}>{t("kd.baslik").toUpperCase()}</Text></View>
+              {kd.map((x) => {
+                const k = kisiProfil(state, x.id, lang); if (!k) return null;
+                const o = x.olen ? kisiProfil(state, x.olen, lang) : null;
+                const neden = x.tur === "yuzkarasi" ? t("kd.donus") : o ? applyParams(t("kd.satir"), ["", yakAdi(x.yak, o.npc.gender), o.npc.name]).trim() : "";
+                const durum = k.npc.age < 16 ? t("kd.cocuk") : state.turn >= x.vade ? t("kd.yakin") : t("kd.bekliyor");
+                return (
+                  <View key={x.id} style={{ paddingVertical: 4 }}>
+                    <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment }}>{k.npc.name}<Text style={{ color: C.parchmentDim }}>{neden ? " · " + neden : ""}</Text></Text>
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted }}>{durum}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          );
+        })()}
         {p.age >= 14 && (() => {
           const tcost = trainCost(state);
           const canTrain = p.money >= tcost && p.train_turn !== state.turn && !p.dead;

@@ -12,6 +12,7 @@ import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, te
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
 import { rakipKartVerisi } from "../../lib/rakip-ui";
+import { HesapModal } from "../../lib/hesap-ui";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
@@ -302,6 +303,8 @@ export default function Dashboard() {
         <OpportunityModal opp={opp} statVal={opp ? state.player.stats[opp.stat] : 5} onResolve={onResolveOpp} onPass={() => { hap("tap"); setOpp(null); }} />
       ) : tzDilemma ? (
         <DilemmaModal dilemma={tzDilemma} onChoose={onTezgah} female={p.gender === "kadın"} />
+      ) : state.hesap && !p.dead && !yearReport ? ( // yıl karnesi kapanınca hesap anı gelir (iki pencere üst üste açılmaz)
+        <HesapModal />
       ) : state.npcTeklif && !p.dead ? (() => {
         // NPC'nin kendi kararıyla gelen teklifi: kim, ne istiyor, sana bakışı ve en büyük sebebi (döküm motorla aynı)
         const tk = state.npcTeklif!; const pr = kisiProfil(state, tk.id, lang);

@@ -47,6 +47,13 @@ for (let i = 0; i < LIVES; i++) {
         } catch (e) { errors++; if (errors <= 5) console.log("RAKİP HATASI:", e.message); }
         try { if (Math.random() < 0.15) s = g.mekanaGit(s, R(g.MEKANLAR)); if (Math.random() < 0.15) s = g.aksamSofrasi(s); } catch (e) { errors++; if (errors <= 5) console.log("MAHALLE HATASI:", e.message); } // mahalle mekânı + akşam sofrası
         try { if (s.player.age >= 13 && s.player.age < 18 && Math.random() < 0.5) { const r = g.youthAction(s, R(["usta", "akran", "gonul", "huner"])); if (!r.blocked) s = r.state; } } catch (e) { errors++; if (errors <= 5) console.log("GENÇLİK HATASI:", e.message); } // gençlik uğraşları (13-17)
+        try { // hasımla hesaplaşma: yenersen bağışla/canını al, kanlı hasma diyet, kişisiz hasma barış; kırgın birinden helallik
+          const nm = s.story && s.story.nemesis;
+          if (nm && s.player.age >= 16 && Math.random() < 0.06) { s = g.applyNemesisOutcome(s, Math.random() < 0.5, 10 + Math.floor(Math.random() * 60)); if (s.hesap) s = g.hesapKarari(s, Math.random() < 0.5); }
+          else if (nm && nm.olen && Math.random() < 0.08) s = g.diyetOde(s);
+          else if (nm && Math.random() < 0.04) s = g.reconcileNemesis(s);
+          const npcs2 = g.npcsOf(s); if (npcs2.length && Math.random() < 0.05) { const nn = R(npcs2); if (g.helalUygun(s, nn.id)) s = g.helallikIste(s, nn, Math.random() < 0.5); }
+        } catch (e) { errors++; if (errors <= 5) console.log("HESAP HATASI:", e.message); }
         try { if (s.npcTeklif && Math.random() < 0.6) s = g.npcTeklifYanit(s, Math.random() < 0.5); } catch (e) { errors++; if (errors <= 5) console.log("TEKLİF HATASI:", e.message); } // NPC'nin kendi teklifi (dünürcü/borç)
         try { // çırak: usta olunca al, çoğu zaman ders ver (bazen ihmal et → kaçış yolu da koşar)
           if (g.cirakAlabilir(s.player, s.turn) && Math.random() < 0.15) s = g.cirakAl(s, R([0, 1, 2]));

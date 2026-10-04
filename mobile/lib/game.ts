@@ -138,6 +138,7 @@ export interface Player {
   bargain_buy_turn?: number; bargain_sell_turn?: number; // pazarlık ayda birer kez (sınırsız arbitraj + XP farm'ı kapalı)
   dilemma_turn?: number; // ikilem sonucu turda bir kez uygulanır (çift tık / yarış koruması)
   prestige_turn?: number; // ayda tek hayrat işi (hekim/imaret spam'ı kapalı)
+  katil?: string; // oyuncunun canını alan gerçek kişi (vâris bu hesabı devralır)
   reconcile_turn?: number; // ayda tek barış girişimi (hasım keseyle ay boyu sağılamaz)
   train_turn?: number; // ayda tek talim dersi (beceri farmı kapalı)
   friend_aid_turn?: number; // dost yardımının damgası (iki yılda bir; dar gün farm'ı kapalı)
@@ -555,6 +556,8 @@ function nufusKorunan(s: GameState): Set<string> {
   for (const pr of p.properties || []) for (const w of pr.workers || []) k.add(w);
   if (p.child_friend) k.add(p.child_friend.id);
   if (p.apprentice) k.add(p.apprentice.id);
+  for (const x of s.kanDefteri || []) { k.add(x.id); if (x.olen) k.add(x.olen); }
+  for (const id of [s.story?.nemesis?.id, s.story?.nemesis?.olen, s.hesap?.id, p.katil]) if (id) k.add(id);
   for (const id of [p.spouse_id, p.mother_id, p.father_id, p.betrothed?.id, p.affair?.id, s.npcTeklif?.id, ...evlatKimlikleri(p), ...(p.sibling_ids || []), ...(p.alacaklar || []).map((a) => a.id), p.rakip?.id, p.cirak?.id]) if (id) k.add(id);
   return k;
 }
@@ -1347,7 +1350,7 @@ function directorTick(s: GameState) {
   const big = (s.seeds || []).filter((t) => t.agirlik === "buyuk" && s.turn - t.ekim >= t.hmin && seedKosulOk(s, t)).sort((a, b) => a.ekim - b.ekim)[0]; // kişiye bağlıysa o kişi yaşıyor ve muradına ermiş olmalı
   if (big && tohumSonucu(s, big)) { // doruk anı: kişiye bağlı tohum o kişinin hâline göre sonuçlanır (vefalıysa ödül, unuttuysa hayal kırıklığı)
   } else if (st.nemesis && Math.random() < 0.6) {
-    push(s, "doruk", `Husumet doruğa çıktı: ${st.nemesis.name} gölgeden çıkıp üstüne geldi.`, "kişisel", true, { k: "dir.climaxNemesis", p: [st.nemesis.name] });
+    push(s, "doruk", `Husumet doruğa çıktı: ${st.nemesis.name} gölgeden çıkıp üstüne geldi.`, "kişisel", true, { k: "dir.climaxNemesis", p: [nemAd(s, st.nemesis)] });
     s.player.fear = Math.min(100, s.player.fear + 4);
     st.nemesis.power += 3;
   } else if (Math.random() < 0.5) {
@@ -1465,12 +1468,14 @@ export function rumorAction(prev: GameState, rumorId: string, eylem: "yuzles" | 
   }
   return s;
 }
-export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number } | null; flags?: Record<string, boolean>; lull?: number; breath?: number; }
+export interface StoryProgress { active: { id: string; stage: string } | null; completed: string[]; tension: number; nemesis?: { name: string; power: number; id?: string; olen?: string; yak?: KanYak; nesil?: number; kt?: number } | null; flags?: Record<string, boolean>; lull?: number; breath?: number; }
 export interface GameState {
   turn: number; seed: number; player: Player; history: GameEvent[];
   newsSeenTurn?: number; // haberler ekranının son görüldüğü tur (menü rozeti için; opsiyonel — eski kayıtlar dokunulmadan çalışır)
   relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean; goalHelped?: boolean; goalDone?: boolean; gname?: string; goalk?: string; usta?: boolean; prof?: string }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
   pop?: Nufus; // yaşayan nüfus: kalıcı kişiler ve aileler (NUFUS.md)
+  kanDefteri?: KanKaydi[]; // kan davası: canını aldığın (ya da bağışladığın) kişilerden doğan, sırası gelince karşına çıkacak hesaplar
+  hesap?: { id: string; turn: number; olen?: string; yak?: KanYak; nesil?: number; kt?: number }; // yendiğin gerçek hasım yerde: bağışla ya da canını al (karar bekliyor)
   npcTeklif?: { id: string; tur: "dunur" | "borc" | "kardes" | "miras"; tutar?: number; ay?: number; turn: number }; // bir NPC'nin sana kendi kararıyla yaptığı bekleyen teklif
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
@@ -2589,17 +2594,23 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     }
   }
   // ── Nemesis dünyada yaşıyor: musallat olur; yoksa derin bir husumet amansız hasma dönüşebilir ──
+  kanTiki(s);
   if (!p.dead && p.age >= 14 && s.story) {
-    if (s.story.nemesis && chance(0.10)) {
-      const n = s.story.nemesis;
+    if (s.story.nemesis?.olen && chance(0.05)) { // kanlı hasım: ölünün adıyla musallat olur
+      const n = s.story.nemesis; const ok = nufusOf(s).k[n.olen!]; const kz = Math.random() < 0.5;
+      if (kz) p.reputation = Math.max(-100, p.reputation - 3); else p.fear = Math.min(100, p.fear + 2);
+      s.story.tension = Math.min(100, s.story.tension + 3);
+      push(s, "nemesis", kz ? `${n.name} çarşıda herkesin içinde seni kanlı diye andı.` : `${n.name} kapına bir kefen bıraktı; dökülen kan unutulmadı.`, "kişisel", false, { k: kz ? "kan.taciz1" : "kan.taciz0", p: [nemAd(s, n), ok ? knParam(ok) : ""] });
+    } else if (s.story.nemesis && chance(0.10)) {
+      const n = s.story.nemesis; const na = nemAd(s, n);
       const nemIdx = Math.floor(Math.random() * 6);
       let txt: string; let nemP: EvtParam[];
-      if (nemIdx === 0) { p.reputation = Math.max(-100, p.reputation - 4); txt = `${n.name} arkandan kuyunu kazıyor; itibarın sarsıldı.`; nemP = [n.name]; }
-      else if (nemIdx === 1) { const loss = Math.min(p.money, 8); p.money -= loss; txt = `${n.name}'ın adamları malına dokundu (−${loss} akçe).`; nemP = [n.name, loss]; }
-      else if (nemIdx === 2) { p.health = Math.max(1, p.health - 5); txt = `${n.name} pusu kurdu; sıyrıklarla kurtuldun.`; nemP = [n.name]; }
-      else if (nemIdx === 3) { txt = `${n.name} bir tehdit daha yolladı; hesap görülmeyi bekliyor.`; nemP = [n.name]; }
-      else if (nemIdx === 4) { p.reputation = Math.max(-100, p.reputation - 2); txt = `${n.name} çarşıda adını karalayan bir türkü tutturmuş; gülüşmeler kulağına kadar geldi.`; nemP = [n.name]; }
-      else { txt = `${n.name} pazarda yolunu kesti; tek söz etmeden yüzüne baktı ve geçti. Bütün gün o bakışı düşündün.`; nemP = [n.name]; }
+      if (nemIdx === 0) { p.reputation = Math.max(-100, p.reputation - 4); txt = `${n.name} arkandan kuyunu kazıyor; itibarın sarsıldı.`; nemP = [na]; }
+      else if (nemIdx === 1) { const loss = Math.min(p.money, 8); p.money -= loss; txt = `${n.name}'ın adamları malına dokundu (−${loss} akçe).`; nemP = [na, loss]; }
+      else if (nemIdx === 2) { p.health = Math.max(1, p.health - 5); txt = `${n.name} pusu kurdu; sıyrıklarla kurtuldun.`; nemP = [na]; }
+      else if (nemIdx === 3) { txt = `${n.name} bir tehdit daha yolladı; hesap görülmeyi bekliyor.`; nemP = [na]; }
+      else if (nemIdx === 4) { p.reputation = Math.max(-100, p.reputation - 2); txt = `${n.name} çarşıda adını karalayan bir türkü tutturmuş; gülüşmeler kulağına kadar geldi.`; nemP = [na]; }
+      else { txt = `${n.name} pazarda yolunu kesti; tek söz etmeden yüzüne baktı ve geçti. Bütün gün o bakışı düşündün.`; nemP = [na]; }
       s.story.tension = Math.min(100, s.story.tension + 3);
       push(s, "nemesis", txt, "kişisel", false, { k: "evj.nem" + nemIdx, p: nemP });
     } else if (!s.story.nemesis && chance(0.03)) {
@@ -2607,7 +2618,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       if (rivals.length) {
         const rid = rnd(rivals)[0];
         const npc = npcsOf(s).find((x) => x.id === rid);
-        if (npc) { s.story.nemesis = { name: npc.name, power: 14 + Math.floor(Math.random() * 10) }; push(s, "nemesis", `${npc.name} ile husumetiniz kan davasına döndü; artık amansız bir hasımsın.`, "kişisel", true, { k: "evj.nemFeud", p: [npc.name] }); }
+        const nk = npc ? nufusOf(s).k[npc.id] : undefined;
+        if (npc) { s.story.nemesis = { name: npc.name, power: 14 + Math.floor(Math.random() * 10), id: nk ? npc.id : undefined }; push(s, "nemesis", `${npc.name} ile husumetiniz kan davasına döndü; artık amansız bir hasımsın.`, "kişisel", true, { k: "evj.nemFeud", p: [nk ? knParam(nk) : npc.name] }); }
       }
     }
   }
@@ -6589,6 +6601,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, pop: heirPop, relationships: Object.fromEntries([...kardesIds, ...Object.keys(ataHatira).filter((id) => Math.abs(ataHatira[id]) >= 15)].map((id) => [id, 0])), dynasty, // atasını güçlü hatırlayan seni de tanır
     ata_hatira: Object.keys(ataHatira).length ? ataHatira : undefined, soy_nam: Object.values(soyNam).some((v) => v > 0) ? soyNam : undefined, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
+    kanDefteri: kanMiras(prev, heirPop), // dökülen kan vârise geçer: yemin eden yaşıyorsa hesap kapanmadı
     feud: prev.feud ? { houseId: prev.feud.houseId, nameIdx: prev.feud.nameIdx, stage: prev.feud.stage, heat: Math.round(prev.feud.heat / 2) } : undefined,
     bloodline: prev.bloodline ? { ...prev.bloodline, gen: prev.bloodline.gen + 1, scene: "bl_devir", act_turn: 0, opened: Math.max(0, prev.bloodline.opened - prev.turn), path: [...prev.bloodline.path] } : undefined, // KAN DEFTERİ vârise geçer: yeni kuşak, devir sahnesi
     // İttifaklar da nesle geçer (kan davası geçiyorsa el sıkışma da geçer — hanedanlar arası bağ kişisel değil hanevidir).
@@ -6634,6 +6647,10 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   // Nesil hafızası kroniğe düşer: kasaba atanı nasıl anıyorsa sana da öyle bakar.
   if (ataIyi >= 3 && ataIyi >= ataKotu * 2) ns.history.push({ day: 0, type: "nesil_devri", text: `Kasabada pek çok kişi atanı iyilikle anıyor; kapılar sana da açık.`, scope: "kişisel", landmark: true, k: "evj.ataIyi", p: [p.name, ataIyi] });
   else if (ataKotu >= 3 && ataKotu >= ataIyi * 2) ns.history.push({ day: 0, type: "nesil_devri", text: `Atanın yaptıkları unutulmadı; kasabada bazı kapılar sana kapalı.`, scope: "kişisel", landmark: true, k: "evj.ataKotu", p: [p.name, ataKotu] });
+  // Kişiye bağlı kan: atanın döktüğü kanın hesabı ve atanın canını alanın hesabı vârise geçer.
+  for (const x of (ns.kanDefteri || []).slice(0, 2)) { const k = heirPop.k[x.id]; const ok = x.olen ? heirPop.k[x.olen] : undefined; if (k && ok) ns.history.push({ day: 0, type: "kan_davası", text: `Atanın döktüğü kan sana geçti: ${kisiAdi(k, "tr")} hâlâ hesap bekliyor.`, scope: "kişisel", landmark: true, k: "kan.miras", p: [knParam(k), knParam(ok)] }); }
+  { const kk = p.katil ? heirPop.k[p.katil] : undefined;
+    if (kk && kk.ol == null) { ns.relationships[kk.id] = -60; ns.history.push({ day: 0, type: "kan_davası", text: `Atan ${p.name}, ${kisiAdi(kk, "tr")} eliyle can verdi; o hesap şimdi senin.`, scope: "kişisel", landmark: true, k: "kan.babaKatili", p: [knParam(kk), p.name] }); } }
   // Devralınan kan davası kroniğe düşer: yeni kuşak yükün farkında başlar.
   if (ns.feud) ns.history.push({ day: 0, type: "kan_davası", text: `Atalardan kalan kan davası sana geçti; o hesap hâlâ açık.`, scope: "kişisel", landmark: true, k: "evj.feud.inherit", p: [{ hn: ns.feud.nameIdx }] });
   // Yadigâr kroniğe düşer: atanın silahı sandıkta vârisi bekler.
@@ -7898,7 +7915,7 @@ const NEMESIS_NAMES = ["Kara Yusuf", "Çolak Murat", "Deli Hasan", "Topal Bekir"
 // Hasımla barışma girişimi: hediye kesesi + dil dökme. Şans karizma ve şerefle artar; ayda bir denenir (farm yok — yalnız gider).
 export function reconcileCost(s: GameState): number { return Math.round(70 * inflationFactor(s)); }
 export function reconcileNemesis(prev: GameState): GameState {
-  const s = clone(prev); const p = s.player; const n = s.story?.nemesis; if (!n || p.dead || !s.story) return s;
+  const s = clone(prev); const p = s.player; const n = s.story?.nemesis; if (!n || p.dead || !s.story || n.olen) return s; // kanlı hasım hediyeyle değil diyetle konuşur
   const cost = reconcileCost(s);
   if (p.money < cost) return s;
   if (p.reconcile_turn === s.turn) return s; // ayda tek girişim
@@ -7910,10 +7927,177 @@ export function reconcileNemesis(prev: GameState): GameState {
     p.peace_made = true;
     p.honor = Math.min(100, p.honor + 6); p.reputation = Math.min(100, p.reputation + 4);
     bumpNam(p, "mert", 4);
-    push(s, "nemesis", `${n.name} ile kahve içildi, hediye kabul edildi; eski defter helalleşmeyle kapandı. Çarşı buna kılıçtan çok şaştı.`, "kişisel", true, { k: "evj.nemPeace", p: [n.name] });
+    if (n.id && kisiOf(s, n.id)) { s.relationships[n.id] = Math.max(-20, s.relationships[n.id] || 0); remember(s, { id: n.id, name: n.name }, "barisma"); } // barışılan hasım hemen yeniden hasım olmaz
+    push(s, "nemesis", `${n.name} ile kahve içildi, hediye kabul edildi; eski defter helalleşmeyle kapandı. Çarşı buna kılıçtan çok şaştı.`, "kişisel", true, { k: "evj.nemPeace", p: [nemAd(s, n)] });
   } else {
     s.story.tension = Math.min(100, (s.story.tension || 0) + 2);
-    push(s, "nemesis", `${n.name} hediyeyi aldı, elini sıkmadı: "Kese başka, hesap başka." Barış bir başka bahara kaldı.`, "kişisel", false, { k: "evj.nemPeaceFail", p: [n.name] });
+    push(s, "nemesis", `${n.name} hediyeyi aldı, elini sıkmadı: "Kese başka, hesap başka." Barış bir başka bahara kaldı.`, "kişisel", false, { k: "evj.nemPeaceFail", p: [nemAd(s, n)] });
+  }
+  return s;
+}
+// ── Kan davası (kişiye bağlı): yendiğin gerçek hasmı bağışlamak ya da canını almak; dökülen kanın yakınlarda doğurduğu intikam ──
+// Kimin intikam yemini edeceğini huyu ve ölüye yakınlığı belirler; çocuksa büyüyünce gelir. Diyet davayı kapatabilir; dava vârise geçer.
+export type KanYak = "baba" | "anne" | "es" | "kardes" | "evlat"; // ölü, intikamcının neyiydi
+export interface KanKaydi { id: string; tur: "kan" | "yuzkarasi" | "canborcu"; olen?: string; yak?: KanYak; turn: number; vade: number; nesil: number; cocuk?: boolean; kt?: number }
+// Hasmın adı: gerçek kişiyse her dilde kendi adıyla, değilse kayıtlı adıyla.
+function nemAd(s: GameState, n: { name: string; id?: string }): EvtParam { const k = n.id ? nufusOf(s).k[n.id] : undefined; return k ? knParam(k) : n.name; }
+const INTIKAM: Record<string, number> = { kibirli: 0.75, mert: 0.7, "hırslı": 0.6, aceleci: 0.5, ciddi: 0.45, kurnaz: 0.4, dertli: 0.35, "yalnız": 0.35, "utangaç": 0.2, unutkan: 0.12, "sabırlı": 0.12, dindar: 0.12 };
+const YAK_AGIRLIK: Record<KanYak, number> = { baba: 1, anne: 1, evlat: 0.9, kardes: 0.85, es: 0.7 };
+// Ölünün yaşayan yakınları ve ölünün onlara ne olduğu.
+function kanYakinlari(pop: Nufus, olen: Kisi): { k: Kisi; yak: KanYak }[] {
+  const out: { k: Kisi; yak: KanYak }[] = [];
+  const ekle = (id: string | undefined, yak: KanYak) => { const x = id && id !== OYUNCU ? pop.k[id] : undefined; if (x && x.ol == null && x.id !== olen.id && !out.some((o) => o.k.id === x.id)) out.push({ k: x, yak }); };
+  for (const c of olen.cocuk || []) ekle(c, olen.g === "kadın" ? "anne" : "baba");
+  ekle(olen.es, "es");
+  ekle(olen.baba, "evlat"); ekle(olen.anne, "evlat");
+  for (const e of [olen.baba, olen.anne]) { const ek = e ? pop.k[e] : undefined; for (const c of ek?.cocuk || []) ekle(c, "kardes"); }
+  return out;
+}
+const yakParam = (yak: KanYak | undefined, olen: Kisi | undefined): EvtParam => ({ tk: "kan.yak." + (yak || "kardes") + (yak === "baba" || yak === "anne" ? "" : olen?.g === "kadın" ? ".k" : ".e") });
+// Hesap kararı yalnız bağı olmayan bir hasım için açılır (aile, nişanlı, sevgili, çırak, işçi, rakip, can yoldaşı hariç).
+export function hesapUygun(s: GameState, id: string): boolean {
+  const p = s.player; const k = nufusOf(s).k[id]; if (!k || k.ol != null || k.es === OYUNCU) return false;
+  if (oyuncuAkrabasi(p, id) || id === p.spouse_id || id === p.betrothed?.id || id === p.affair?.id || id === p.apprentice?.id || id === p.cirak?.id || id === p.rakip?.id || id === p.child_friend?.id) return false;
+  return !(p.properties || []).some((pr) => (pr.workers || []).includes(id));
+}
+// Karar ekranı için: yerdekinin huyu ve ardında bırakacağı yakınlar.
+export function hesapBilgi(s: GameState): { id: string; huy: string; yakin: number } | null {
+  const h = s.hesap; const k = h ? nufusOf(s).k[h.id] : undefined; if (!h || !k || k.ol != null) return null;
+  return { id: k.id, huy: huyOf(k), yakin: kanYakinlari(nufusOf(s), k).length };
+}
+// Dökülen kan: yakınlar unutmaz; içlerinden biri (huyuna ve yakınlığına göre) yemin edebilir.
+function kanDok(s: GameState, olen: Kisi, nesil: number) {
+  const p = s.player; const pop = nufusOf(s); const wy = worldYears(s); const op = knParam(olen);
+  const yak = kanYakinlari(pop, olen);
+  for (const y of yak) remember(s, { id: y.k.id, name: kisiAdi(y.k, "tr") }, "kan");
+  if (!yak.length) { push(s, "kan_davası", `${kisiAdi(olen, "tr")} ardında yakın kimse bırakmadı.`, "kişisel", false, { k: "kan.kimsesiz", p: [op] }); return; }
+  let sec: { k: Kisi; yak: KanYak } | null = null; let best = 0;
+  for (const y of yak) {
+    if (oyuncuAkrabasi(p, y.k.id) || y.k.id === p.spouse_id || y.k.es === OYUNCU) continue; // kendi ailen sana kan gütmez (yası yine de tutar)
+    const yas = wy - y.k.dy; const pr = (INTIKAM[huyOf(y.k)] ?? 0.3) * YAK_AGIRLIK[y.yak] * (yas >= 60 ? 0.3 : 1);
+    if (Math.random() < pr && pr > best) { best = pr; sec = y; }
+  }
+  if (!sec) { push(s, "kan_davası", `${kisiAdi(olen, "tr")} için yas tutuldu; yemin eden çıkmadı ama bu kan unutulmayacak.`, "kişisel", false, { k: "kan.yeminYok", p: [op] }); return; }
+  const yas = wy - sec.k.dy; const cocuk = yas < 16;
+  (s.kanDefteri = s.kanDefteri || []).push({ id: sec.k.id, tur: "kan", olen: olen.id, yak: sec.yak, turn: s.turn, vade: cocuk ? s.turn + (16 - yas) * 12 : s.turn + 3 + Math.floor(Math.random() * 10), nesil, cocuk: cocuk || undefined, kt: s.turn });
+  const key = (cocuk ? "kan.yeminCocuk" : "kan.yemin") + (sec.k.g === "kadın" ? ".k" : "");
+  push(s, "kan_davası", `${kisiAdi(sec.k, "tr")} yemin etti: ${kisiAdi(olen, "tr")} için kan yerde kalmayacak.`, "kişisel", true, { k: key, p: [knParam(sec.k), yakParam(sec.yak, olen), op] });
+}
+// Yerdeki hasım: bağışla (oldur=false) ya da canını al. Her iki yolun sonucu kişinin huyuna ve ardındakilere göre şekillenir.
+export function hesapKarari(prev: GameState, oldur: boolean): GameState { const s = clone(prev); hesapUygula(s, oldur); return s; }
+function hesapUygula(s: GameState, oldur: boolean) {
+  const p = s.player; const h = s.hesap; if (!h || p.dead) return;
+  s.hesap = undefined;
+  const pop = nufusHazirla(s); const k = pop.k[h.id]; if (!k || k.ol != null || !hesapUygun(s, k.id)) return;
+  const kp = knParam(k); const nm = kisiAdi(k, "tr");
+  const olenId = h.olen; const olenYak = h.yak; const nesil = h.nesil || 0; // yerdeki bir kanlıysa davasının izi
+  s.kanDefteri = (s.kanDefteri || []).filter((x) => x.id !== k.id); // yenilen kişinin bekleyen hesapları bu kararla yeniden yazılır
+  if (!s.kanDefteri.length) s.kanDefteri = undefined;
+  if (oldur) {
+    k.ol = worldYears(s); if (k.es && k.es !== OYUNCU && pop.k[k.es]?.ol == null) delete pop.k[k.es].es; nufusDegisti(pop);
+    p.honor = Math.max(0, p.honor - 10); bumpNam(p, "zalim", 8); p.fear = Math.min(100, p.fear + 8); p.reputation = Math.max(-100, p.reputation - 6);
+    push(s, "kan_davası", `${nm} yerde yatarken canını aldın. Kan döküldü; bu hesap artık kapanmaz.`, "kişisel", true, { k: "kan.oldur", p: [kp] });
+    const tanik = npcsOf(s).filter((n) => n.id !== k.id).sort(() => Math.random() - 0.5).slice(0, 3);
+    for (const t of tanik) remember(s, t, "suc_tanigi");
+    kanDok(s, k, nesil + 1);
+    // Meydanda dövüşmek suç değildir; yerdekini öldürmek kan suçudur. Korku kadıyı da susturabilir.
+    if (!p.crowned && !inJail(p) && Math.random() < Math.max(0.1, 0.4 - p.fear / 300)) {
+      p.jail = { left: 3, kind: "katl" };
+      push(s, "suç", `Kadı yerdekinin canını almayı kan suçu saydı: 3 ay zindan.`, "kişisel", true, { k: "kan.zindan", p: [3] });
+    }
+    return;
+  }
+  p.honor = Math.min(100, p.honor + 5); bumpNam(p, "mert", 4); p.reputation = Math.min(100, p.reputation + 3); p.fame = Math.min(100, p.fame + 2);
+  const ns = npcStateOf(s, k.id); const g = huyGrubu(huyOf(k)); const ok = olenId ? pop.k[olenId] : undefined;
+  if (g === "ilkeli" || g === "sicak") {
+    for (const m of ns.anilar || []) if (m.yuk < 0) m.yuk = Math.round(m.yuk * (g === "ilkeli" ? 0.3 : 0.4) * 1000) / 1000;
+    remember(s, { id: k.id, name: nm }, "can_bagisi"); s.relationships[k.id] = Math.max(s.relationships[k.id] || 0, g === "ilkeli" ? 10 : 0);
+    (s.kanDefteri = s.kanDefteri || []).push({ id: k.id, tur: "canborcu", turn: s.turn, vade: s.turn + 12 + Math.floor(Math.random() * 37), nesil: 0 });
+    push(s, "nemesis", `${nm} canını bağışlamanı unutmayacak.`, "kişisel", true, { k: g === "ilkeli" ? "kan.bagisIlkeli" : "kan.bagisSicak", p: [kp] });
+    if (ok) push(s, "kan_davası", `${nm}, ${kisiAdi(ok, "tr")} için tuttuğu davayı senin bağışınla kapattı.`, "kişisel", true, { k: "kan.bagisKapandi", p: [kp, knParam(ok)] });
+  } else if (g === "cekingen") {
+    for (const m of ns.anilar || []) if (m.yuk < 0) m.yuk = Math.round(m.yuk * 0.6 * 1000) / 1000;
+    s.relationships[k.id] = Math.max(s.relationships[k.id] || 0, -30);
+    const yer = LOCATIONS.filter((l) => l !== k.loc && regionOf(l) === regionOf(k.loc));
+    if (!k.es && yer.length) { k.loc = rnd(yer); nufusDegisti(pop); push(s, "nemesis", `${nm} yenilginin utancıyla ${k.loc} yoluna düştü.`, "kişisel", true, { k: "kan.bagisCekingen", p: [kp, { pl: k.loc }] }); }
+    else push(s, "nemesis", `${nm} bağışlandı ama artık yolunu senden uzak tutuyor.`, "kişisel", true, { k: "kan.bagisCekingen2", p: [kp] });
+    if (ok) push(s, "kan_davası", `${nm}, ${kisiAdi(ok, "tr")} için tuttuğu davayı senin bağışınla kapattı.`, "kişisel", true, { k: "kan.bagisKapandi", p: [kp, knParam(ok)] });
+  } else {
+    remember(s, { id: k.id, name: nm }, "yuz_karasi"); s.relationships[k.id] = -40; // hemen yeniden hasım olmaz; yüz karası yıllar içinde döner
+    (s.kanDefteri = s.kanDefteri || []).push({ id: k.id, tur: "yuzkarasi", olen: olenId, yak: olenYak, turn: s.turn, vade: s.turn + 24 + Math.floor(Math.random() * 49), nesil, kt: h.kt });
+    push(s, "nemesis", `${nm} bağışını hakaret saydı; bu yüz karasını unutmayacak.`, "kişisel", true, { k: "kan.bagisCikarci", p: [kp] });
+  }
+}
+// Aylık: ölen hasım ve kanlılar defterden düşer; can borcu ödenir; sırası gelen (ve yetişkin olan) hesap sormaya gelir.
+function kanTiki(s: GameState) {
+  const p = s.player; const st = s.story; if (p.dead || !st) return;
+  if (s.hesap && s.turn - s.hesap.turn >= 1) hesapUygula(s, false); // karar verilmeden ay döndüyse kılıç iner: bağışlanmış sayılır
+  const pop = nufusOf(s); const wy = worldYears(s);
+  const n = st.nemesis;
+  if (n?.id) { const k = pop.k[n.id]; if (!k || k.ol != null) { st.nemesis = null; if (k) push(s, "nemesis", `${n.name} öldü; aranızdaki hesap onunla toprağa girdi.`, "kişisel", true, { k: "kan.hasimOldu", p: [knParam(k)] }); } }
+  const d = s.kanDefteri; if (!d?.length) return;
+  const kalan: KanKaydi[] = [];
+  for (const x of d) {
+    const k = pop.k[x.id];
+    if (!k || k.ol != null) { if (k && x.tur === "kan") push(s, "kan_davası", `Kanlın ${kisiAdi(k, "tr")} öldü; dava onunla toprağa girdi.`, "kişisel", false, { k: "kan.davaciOldu", p: [knParam(k)] }); continue; }
+    if (x.tur === "canborcu" && s.turn >= x.vade && chance(0.2)) {
+      const para = Math.round((25 + Math.floor(Math.random() * 26)) * inflationFactor(s)); p.money += para;
+      push(s, "nemesis", `Canını bağışladığın ${kisiAdi(k, "tr")} borcunu ödemeye geldi (+${para} akçe).`, "kişisel", true, { k: "kan.canBorcu", p: [knParam(k), para] });
+      continue;
+    }
+    kalan.push(x);
+  }
+  s.kanDefteri = kalan.length ? kalan : undefined;
+  if (st.nemesis || p.age < 14 || !kalan.length) return;
+  const hazir = kalan.filter((x) => x.tur !== "canborcu" && s.turn >= x.vade && wy - pop.k[x.id].dy >= 16).sort((a, b) => a.vade - b.vade);
+  if (!hazir.length || !chance(0.25)) return;
+  const x = hazir[0]; const k = pop.k[x.id]; const ok = x.olen ? pop.k[x.olen] : undefined;
+  s.kanDefteri = kalan.filter((y) => y !== x); if (!s.kanDefteri.length) s.kanDefteri = undefined;
+  st.nemesis = { name: kisiAdi(k, "tr"), id: k.id, power: 16 + Math.floor(Math.random() * 8) + Math.min(9, x.nesil * 3) + (x.tur === "yuzkarasi" || x.cocuk ? 4 : 0), olen: x.olen, yak: x.yak, nesil: x.nesil, kt: x.kt ?? x.turn };
+  st.tension = Math.min(100, st.tension + 5);
+  s.relationships[k.id] = Math.min(s.relationships[k.id] ?? 0, -60);
+  if (x.tur === "yuzkarasi") push(s, "nemesis", `Bağışladığın ${kisiAdi(k, "tr")} yüz karasını unutmadı; yine karşına dikildi.`, "kişisel", true, { k: "kan.donus", p: [knParam(k)] });
+  else push(s, "nemesis", `${kisiAdi(k, "tr")} hesap sormaya geldi.`, "kişisel", true, { k: (x.cocuk ? "kan.buyudu" : "kan.davaci") + (k.g === "kadın" ? ".k" : ""), p: [knParam(k), yakParam(x.yak, ok), ok ? knParam(ok) : ""] });
+}
+// Vârise geçen kan kayıtları: bekleyen yeminler ve sürmekte olan kanlı hasım (atayı o öldürmediyse — öldürdüyse kanını almıştır).
+function kanMiras(prev: GameState, pop: Nufus): KanKaydi[] | undefined {
+  const out: KanKaydi[] = []; const t0 = prev.turn; const yasar = (id: string) => !!pop.k[id] && pop.k[id].ol == null;
+  for (const x of prev.kanDefteri || []) if (x.tur === "kan" && yasar(x.id)) out.push({ ...x, turn: x.turn - t0, vade: Math.max(0, x.vade - t0), kt: (x.kt ?? x.turn) - t0 });
+  const n = prev.story?.nemesis;
+  if (n?.id && n.olen && n.id !== prev.player.katil && yasar(n.id)) out.push({ id: n.id, tur: "kan", olen: n.olen, yak: n.yak, turn: -t0, vade: 0, nesil: n.nesil || 1, kt: (n.kt ?? 0) - t0 });
+  return out.length ? out : undefined;
+}
+// Diyet: kanlı hasma kan bedeli teklif et. Kabul şansı huyuna, yakınlığına, geçen zamana, dökülen kanın sayısına ve senin nâmına bağlı.
+export function diyetBedeli(s: GameState): number { const n = s.story?.nemesis; return Math.round((80 + 40 * Math.max(1, n?.nesil || 1)) * inflationFactor(s)); }
+export function diyetSansi(s: GameState): { yuzde: number; kalemler: SansKalemi[] } {
+  const p = s.player; const n = s.story?.nemesis; const k = n?.id ? nufusOf(s).k[n.id] : undefined;
+  if (!n?.olen || !k) return { yuzde: 0, kalemler: [] };
+  const ks: SansKalemi[] = []; const ekle = (key: string, v: number) => { const r = Math.round(v); if (r) ks.push({ k: key, v: r }); };
+  const huy = huyOf(k); const g = huyGrubu(huy);
+  ekle("sans.taban", 25);
+  ekle("sans.huy", huy === "dindar" || huy === "sabırlı" ? 25 : huy === "kibirli" || huy === "mert" ? -15 : g === "cikarci" ? 15 : g === "ilkeli" ? 0 : 10);
+  ekle("sans.yakinlik", n.yak === "evlat" ? -15 : n.yak === "baba" || n.yak === "anne" ? -10 : -5); // evladının kanı en ağır
+  ekle("sans.zaman", Math.min(20, Math.max(0, s.turn - (n.kt ?? s.turn)) / 6));
+  ekle("sans.nesil", -Math.max(0, (n.nesil || 1) - 1) * 10);
+  ekle("sans.seref", Math.min(15, p.honor / 5));
+  ekle("sans.zalim", -Math.min(15, (p.nam?.zalim || 0) / 5));
+  const top = ks.reduce((a, x) => a + x.v, 0); const c = Math.max(5, Math.min(85, top)); if (c !== top) ks.push({ k: "sans.sinir", v: c - top });
+  return { yuzde: c, kalemler: ks };
+}
+export function diyetOde(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player; const n = s.story?.nemesis; if (!n?.olen || !n.id || p.dead || !s.story) return s;
+  const k = nufusOf(s).k[n.id]; if (!k || k.ol != null) return s;
+  if (p.reconcile_turn === s.turn) return s; // ayda tek girişim (barış hediyesiyle ortak kilit)
+  const cost = diyetBedeli(s); if (p.money < cost) return s;
+  p.reconcile_turn = s.turn;
+  if (Math.random() * 100 < diyetSansi(s).yuzde) {
+    p.money -= cost; s.story.nemesis = null; p.honor = Math.min(100, p.honor + 3); bumpNam(p, "dindar", 1);
+    const ns = npcStateOf(s, k.id); for (const m of ns.anilar || []) if (m.tur === "kan") m.yuk = Math.round(m.yuk * 0.5 * 1000) / 1000;
+    remember(s, { id: k.id, name: n.name }, "diyet"); s.relationships[k.id] = Math.max(-20, s.relationships[k.id] || 0);
+    push(s, "kan_davası", `${n.name} diyeti kabul etti (${cost} akçe); kan davası kapandı.`, "kişisel", true, { k: "kan.diyetOk", p: [knParam(k), cost] });
+  } else {
+    s.relationships[k.id] = Math.max(-100, (s.relationships[k.id] || 0) - 3);
+    push(s, "kan_davası", `${n.name} diyeti geri çevirdi: "Kan parayla yıkanmaz."`, "kişisel", false, { k: "kan.diyetRed", p: [knParam(k)] });
   }
   return s;
 }
@@ -7933,12 +8117,13 @@ export function applyNemesisOutcome(prev: GameState, won: boolean, finalHp: numb
     bumpNam(p, "mert", 8);
     const floor = hasPerk(p, "yilmaz") ? 5 : 1; p.health = Math.max(floor, Math.min(Math.round(finalHp), p.health)); // zafer canı giriş canını aşamaz
     s.story.nemesis = null;
-    push(s, "nemesis", `${n.name}'ı alt ettin! Hesap kapandı, adın korkusuz diye anıldı.`, "kişisel", true, { k: "evj.nemWin", p: [n.name] });
+    push(s, "nemesis", `${n.name}'ı alt ettin! Hesap kapandı, adın korkusuz diye anıldı.`, "kişisel", true, { k: "evj.nemWin", p: [nemAd(s, n)] });
+    if (n.id && hesapUygun(s, n.id)) s.hesap = { id: n.id, turn: s.turn, olen: n.olen, yak: n.yak, nesil: n.nesil, kt: n.kt }; // gerçek hasım yerde: kararı sen vereceksin
   } else {
     p.health = Math.max(0, Math.round(finalHp));
-    if (p.health <= 0) { die(s, `${p.name}, ${n.name} ile hesaplaşmada can verdi.`, { k: "evj.dieNemesis", p: [p.name, n.name] }); return s; }
+    if (p.health <= 0) { if (n.id) p.katil = n.id; die(s, `${p.name}, ${n.name} ile hesaplaşmada can verdi.`, { k: "evj.dieNemesis", p: [p.name, nemAd(s, n)] }); return s; }
     maybeInjure(s, true);
-    push(s, "nemesis", `${n.name} yine üstün geldi; intikam bir başka bahara kaldı.`, "kişisel", false, { k: "evj.nemLose", p: [n.name] });
+    push(s, "nemesis", `${n.name} yine üstün geldi; intikam bir başka bahara kaldı.`, "kişisel", false, { k: "evj.nemLose", p: [nemAd(s, n)] });
   }
   return s;
 }

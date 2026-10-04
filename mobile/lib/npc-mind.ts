@@ -18,6 +18,7 @@ export const RUMOR_VARIANTS: Record<string, number> = {
   dolandiricilik: 2, somuru: 2, iftira: 2, alay: 2, yakinima_zarar: 2, flort_tanigi: 2,
   reddedilme: 2, comert_hediye: 2, sadaka: 2, yardim: 2, borc_kurtarma: 2,
   hayat_kurtarma: 2, savunma: 2, ibadet_tanigi: 2, ihanet: 1, yuz_cevirme: 2, miras_kavgasi: 2, soyulma: 2, ucret_odenmedi: 1, angarya: 1, vergi_zulmu: 1,
+  kan: 2, can_bagisi: 2,
 };
 
 export interface MemSpec { yuk: number; unutma: number; skandal: number; nam: string | null; travma?: boolean; }
@@ -73,6 +74,11 @@ export const MEMORY_TYPES: Record<string, MemSpec> = {
   ikilem_iyi:     { yuk: +8,  unutma: 0.98, skandal: 0.0, nam: null },    // zor bir anında insanlık gördü
   ikilem_kotu:    { yuk: -8,  unutma: 0.98, skandal: 0.0, nam: null },    // zor bir anında yüz çevrildi
   helallik:       { yuk: +6,  unutma: 0.98, skandal: 0.0, nam: null },    // helallik verdi (kırgınlık soldu)
+  kan:            { yuk: -60, unutma: 1.0,  skandal: 1.0, nam: "zalim", travma: true }, // yakınının canını aldı
+  can_bagisi:     { yuk: +30, unutma: 1.0,  skandal: 0.6, nam: "mert",  travma: true }, // yere serdiği hâlde canını bağışladı
+  yuz_karasi:     { yuk: -25, unutma: 0.995, skandal: 0.5, nam: null },   // bağışlandı ama yenilgiyi yüz karası saydı
+  diyet:          { yuk: +12, unutma: 0.99, skandal: 0.3, nam: null },    // kan bedelini ödedi, dava kapandı
+  barisma:        { yuk: +12, unutma: 0.99, skandal: 0.3, nam: "mert" },  // amansız hasımken barıştı
 };
 
 export const NAM_TRAITS = ["comert", "zalim", "capkin", "dindar", "mert"];

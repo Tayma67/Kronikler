@@ -329,3 +329,36 @@ unutuyordu (atanın iyiliği de zulmü de sıfırlanıyordu), (4) "velinimet" to
   şerefin yüksekse ilkeli insan da az inanır (×0,3), çıkarcı fazla inanır (×1,2), yabancı tam inanır.
 - **Dostun savunması:** ilişkisi ≥50 bir dost senin hakkında konuşurken yarı yarıya o yerdeki en ağır olumsuz
   söylentiyi söndürür ("seni savundu" kroniği). Dost biriktiren kara çalmaya karşı korunur; hasım biriktiren yalnız kalır.
+
+## Kan davası kişiye bağlı (uygulandı)
+
+- **Hasım gerçek kişi:** derin husumetten doğan amansız hasım artık nüfustaki kişinin kendisidir (`nemesis.id`); adı her
+  dilde kendi adıyla yazılır, ölürse hesap onunla toprağa girer. Barış hediyesi kabul edilirse ilişki −20'nin altında
+  kalmaz ve "barışma" anısı yazılır (hemen yeniden hasım olmaz). Eski kayıtlardaki kişisiz hasımlar eskisi gibi işler.
+- **Hesap anı** (`s.hesap`, `HesapModal` oyun yerleşiminde tek yerde): gerçek hasmı yenince karar senindir. Aile,
+  nişanlı, sevgili, çırak, işçi, rakip ve can yoldaşı için açılmaz. Pencere hasmın huyunu ve geride kalacak yakın
+  sayısını gösterir; karar verilmeden ay dönerse bağışlanmış sayılır.
+  - **Bağışla** (şeref +5, mertlik +4): ilkeli ve sıcak huylu kırgınlığını büyük ölçüde siler, "canını bağışladı" anısı
+    (+30, kalıcı) yazılır, 1–4 yıl içinde can borcunu ödemeye gelir; çekingen utancından (bekârsa) bölgedeki başka bir
+    yere göçer ya da yolunu senden uzak tutar; çıkarcı bağışı hakaret sayar ("yüz karası" −25), 2–6 yıl sonra yeniden
+    karşına dikilir (+4 güçle).
+  - **Canını al** (şeref −10, zulüm +8, korku +8, itibar −6): kişi ölür, eşi dul kalır; o yerden üç kişi tanık olur.
+    Ölünün yaşayan bütün yakınlarına (evlat, eş, anne-baba, kardeş) "kan" anısı (−60, kalıcı) yazılır. Kadı, korkun
+    düşükse en çok %40 olasılıkla 3 ay zindan verir (taçlıya değil).
+- **İntikam yemini:** yakınlardan her biri huyuna (kibirli .75, mert .7, hırslı .6 … dindar/sabırlı .12, unutkan .12)
+  ve ölüye yakınlığına (anne-baba-evlat 1, kardeş .85, eş .7; 60 yaş üstü ×.3) göre zar atar; en yüksek olasılıkla
+  yemin eden kanlın olur. Senin ailen sana kan gütmez. Yemin eden yoksa "yas tutuldu, yemin eden çıkmadı" düşer.
+  Ölçüm (290 öldürme): yakınları mert olan ailede %87, hırslıda %82, kibirlide %72, dindarda %41, sabırlıda %29,
+  unutkanda %18 yemin; yeminlerin %18'i çocuktan, zindan %29.
+- **Kanlı gelir:** yetişkin yeminli 3–12 ay içinde, çocuk yeminli ancak 16 yaşına basınca ("artık çocuk değil")
+  amansız hasmın olur; ölünün kimi olduğunu taşır (`olen`, `yak`, `nesil`). Kanlı hasım arada kapına kefen bırakır,
+  çarşıda seni gösterir; hediyeyle barışmaz.
+- **Diyet** (savaş ekranı, şans dökümü görünür): bedel 80 + 40×nesil (enflasyonla). Şans: taban 25; huy (dindar/sabırlı
+  +25, çıkarcı +15, sıcak/çekingen +10, kibirli/mert −15); yakınlık (evlat −15, anne-baba −10, kardeş/eş −5); geçen
+  zaman (+ay/6, en çok +20); dökülen kan (her ek nesil −10); şeref (+15'e kadar); zulüm (−15'e kadar). %5..%85.
+  Kabul: dava kapanır, kan anısı yarıya iner, "diyet" anısı yazılır. Ret: para alınmaz, ilişki −3. Ayda bir girişim.
+- **Zincir:** kanlıyı da yenip öldürürsen onun yakınları bir sonraki nesil yemini eder (ölçüm: 30'da 23); diyet her
+  nesilde zorlaşır. Kanlıyı bağışlarsan ilkeli/sıcak/çekingen davayı kapatır, çıkarcı yüz karasıyla döner.
+- **Vâris:** bekleyen yeminler ve süren kanlı hasım vârise geçer ("atanın döktüğü kan sana geçti"); vâris 14 yaşından
+  sonra onlarla yüzleşir. Atayı hesaplaşmada öldüren kanlı ise kanını almıştır, vârise gelmez; ama vâris onu
+  "atamın katili" diye bilir (ilişki −60) ve büyüyünce hasmı olabilir. Kroniğe "o hesap şimdi senin" diye düşer.
