@@ -17,7 +17,7 @@ export const RUMOR_VARIANTS: Record<string, number> = {
   hakaret: 2, tehdit: 2, saldiri: 2, kacirma: 1, hirsizlik_tanigi: 1, suc_tanigi: 1,
   dolandiricilik: 2, somuru: 2, iftira: 2, alay: 2, yakinima_zarar: 2, flort_tanigi: 2,
   reddedilme: 2, comert_hediye: 2, sadaka: 2, yardim: 2, borc_kurtarma: 2,
-  hayat_kurtarma: 2, savunma: 2, ibadet_tanigi: 2, ihanet: 1,
+  hayat_kurtarma: 2, savunma: 2, ibadet_tanigi: 2, ihanet: 1, yuz_cevirme: 2, miras_kavgasi: 2,
 };
 
 export interface MemSpec { yuk: number; unutma: number; skandal: number; nam: string | null; travma?: boolean; }
@@ -59,6 +59,8 @@ export const MEMORY_TYPES: Record<string, MemSpec> = {
   ihanet:         { yuk: -30, unutma: 1.0,  skandal: 0.5, nam: null,    travma: true },
   flort_tanigi:   { yuk:  -1, unutma: 0.96, skandal: 0.4, nam: "capkin" },
   reddedilme:     { yuk:  -2, unutma: 0.95, skandal: 0.3, nam: "capkin" },
+  yuz_cevirme:    { yuk: -14, unutma: 0.99, skandal: 0.3, nam: null }, // darda kalan kardeşi kapıdan çevirmek
+  miras_kavgasi:  { yuk: -16, unutma: 0.99, skandal: 0.4, nam: null }, // mirasta kardeş payını vermemek
 };
 
 export const NAM_TRAITS = ["comert", "zalim", "capkin", "dindar", "mert"];

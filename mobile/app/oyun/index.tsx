@@ -307,14 +307,17 @@ export default function Dashboard() {
         const tk = state.npcTeklif!; const pr = kisiProfil(state, tk.id, lang);
         if (!pr) return null;
         const g = gorus(state, tk.id).toplam;
-        const metin = renderEvt(tk.tur === "dunur" ? "npct.dunur" : "npct.borc", "", tk.tur === "dunur" ? [pr.npc.name] : [pr.npc.name, tk.tutar || 0, tk.ay || 12], lang, t, p.gender === "kadın");
+        const kardesTur = tk.tur === "kardes" || tk.tur === "miras"; // kardeşin isteği: anahtar kardeşin cinsine göre, adı ilk adıyla
+        const metin = kardesTur ? renderEvt("npct." + tk.tur + (pr.npc.gender === "kadın" ? ".k" : ""), "", [pr.npc.name.split(" ")[0], tk.tutar || 0], lang, t, p.gender === "kadın")
+          : renderEvt(tk.tur === "dunur" ? "npct.dunur" : "npct.borc", "", tk.tur === "dunur" ? [pr.npc.name] : [pr.npc.name, tk.tutar || 0, tk.ay || 12], lang, t, p.gender === "kadın");
+        const yetmez = tk.tur !== "dunur" && p.money < (tk.tutar || 0); // kesede yoksa verilemez (ret her zaman açık)
         const neden = renderEvt("npct.why", "", [(g > 0 ? "+" : "") + g, gorusSebebi(state, tk.id, g >= 0 ? 1 : -1)], lang, t, p.gender === "kadın");
         const yanit = (kabul: boolean) => { hap("selection"); playTap(); apply((s) => npcTeklifYanit(s, kabul)); };
         return (
           <Modal visible transparent animationType="fade" onRequestClose={() => yanit(false)}>
             <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.72)", alignItems: "center", justifyContent: "center", padding: 22 }}>
               <View style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", borderRadius: 14, padding: 18, alignItems: "center" }}>
-                <GameIcon name={tk.tur === "dunur" ? "ring" : "coins"} size={18} color={C.gold} />
+                <GameIcon name={tk.tur === "dunur" ? "ring" : tk.tur === "kardes" ? "iliskiler" : tk.tur === "miras" ? "scales" : "coins"} size={18} color={C.gold} />
                 <View style={{ marginTop: 10 }}><Portre age={pr.npc.age} gender={pr.npc.gender} size={64} ring={false} seed={pr.npc.id} /></View>
                 <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, marginTop: 8, textAlign: "center" }}>{pr.npc.name}</Text>
                 <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, lineHeight: 21, marginTop: 10, textAlign: "center" }}>{metin}</Text>
@@ -323,7 +326,7 @@ export default function Dashboard() {
                   <Pressable onPress={() => yanit(false)} style={{ flex: 1, paddingVertical: 11, borderRadius: 9, borderWidth: 1, borderColor: C.border, alignItems: "center" }}>
                     <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentMuted, letterSpacing: 0.5 }}>{t("npct.red")}</Text>
                   </Pressable>
-                  <Pressable onPress={() => yanit(true)} style={{ flex: 1, paddingVertical: 11, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
+                  <Pressable disabled={yetmez} onPress={() => yanit(true)} style={{ flex: 1, paddingVertical: 11, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center", opacity: yetmez ? 0.4 : 1 }}>
                     <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5 }}>{t("npct.kabul")}</Text>
                   </Pressable>
                 </View>

@@ -196,3 +196,16 @@ Yapısal kalemler yeni bir kazanç kanalı açmaz (farm yok); eylem kanalları a
   (çeşitleri dahil, `.vN`) seçilmez; hepsi yakınsa en eskisi. Zindanda ve ölüyken satır yazılmaz.
 - Yaşam-evresi anıları iki yıl içinde yinelenmez; yetim çocuğa "annen masal anlattı" yazılmaz; ilk ayların komşu
   iyilikleri birbirinin aynı olmaz.
+
+## Kardeşlerle hesap (uygulandı)
+
+- **Darda kalan kardeş:** işsiz ya da 14 yaş altı üç çocuğuyla bunalmış yetişkin kardeş (ayda yüzde 2) yardım ister —
+  nerede yaşarsa yaşasın haber gönderir; aynı kardeş dört yılda bir; kesende istenenin bir buçuk katı yoksa istemez.
+  Verirsen kesenden çıkar, kardeşin "zor günümde yanımdaydı" diye hatırlar, cömertlik nâmı ve şeref; vermezsen
+  "darda kaldığımda kapısını yüzüme kapattı" anısı (−14, unutulmaz gibi) ve dedikodu olabilir.
+- **Mirasta kardeş payı:** anne/baba vefatında sana el emeği kaldıysa hırslı, kurnaz ya da kibirli bir kardeş
+  payının yarısını ister. Bekleyen başka teklif varsa sırası gelince kapıya gelir (`miras_bekle`); arada ölürse düşer.
+  Verirsen söz tutmuş sayılırsın; vermezsen "mirasta hakkımı yedi" anısı (−16) ve dedikodu.
+- Teklif ekranında kesen yetmiyorsa kabul düğmesi kapalıdır; ret her zaman açık.
+- **İlişkiler ekranında aile paneli:** anne-baba, eş, evlatlar, kardeşler rolüyle ayrı panelde; bantlar ailenin
+  dışındakileri sıralar.

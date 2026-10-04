@@ -27,6 +27,8 @@ export interface Player {
   spouse_id?: string; mother_id?: string; father_id?: string; // yaşayan nüfustaki gerçek kişiler (eş, anne, baba): ad, yaş ve ölüm oradan gelir
   child_ids?: Record<string, string>; // evlat adı → nüfustaki kişi (ocakta büyür; sen yaşarken evden ayrılmaz)
   alacaklar?: { id: string; tutar: number; vade: number; uzatildi?: boolean }[]; // NPC'lere verilen borçlar (vadesinde huyuna göre ödenir)
+  miras_bekle?: { id: string; tutar: number }; // ebeveyn mirasında payını isteyecek kardeş (bekleyen başka teklif bitince gelir)
+  kardes_istek?: Record<string, number>; // kardeşin son yardım isteği (tur) — aynı kardeş dört yılda bir ister
   mahalle_turn?: number; sofra_turn?: number; // ayda bir mahalle mekânına uğrama · ayda bir akşam sofrası (farm yok)
   sibling_ids?: string[]; // vârisin kardeşleri (atanın öbür evlatları — artık kendi hayatlarını yaşayan gerçek kişiler)
   spouse_mizac?: string; // kur yaptığın NPC'nin karakterinden gelen eş mizacı (tanıdığın kişi evlenince başkalaşmaz)
@@ -688,6 +690,10 @@ function ebeveynVefat(s: GameState, rol: "anne" | "baba") {
     const mir = Math.round(20 * inflationFactor(s)); p.money += mir;
     if (rol === "anne") push(s, "kader", `Annenin çeyiz sandığından sana kalan çıktı (+${mir} akçe); yakın olana el emeği kalır.`, "kişisel", false, { k: "evj.parentLegacy", p: [mir] });
     else push(s, "kader", `Babanın kesesinden sana ayırdığı çıktı (+${mir} akçe); yakın olana el emeği kalır.`, "kişisel", false, { k: "evj.parentLegacy", p: [mir] });
+    // Gözü mirasta kardeş: hırslı, kurnaz ya da kibirli bir kardeş bu paydan hakkını ister (yarısı) — verip vermemek senin.
+    const pop = nufusOf(s); const wy = worldYears(s);
+    const aci = (p.sibling_ids || []).map((id) => pop.k[id]).filter((k): k is Kisi => !!k && k.ol == null && wy - k.dy >= 16 && ["hırslı", "kurnaz", "kibirli"].includes(huyOf(k)));
+    if (aci.length && !p.dead) { p.miras_bekle = { id: rnd(aci).id, tutar: Math.max(1, Math.round(mir / 2)) }; mirasIstegi(s); } // başka teklif bekliyorsa sırası gelince
   }
 }
 
@@ -994,8 +1000,23 @@ function npcTeklifTiki(s: GameState) {
     s.npcTeklif = undefined;
   }
   alacakTiki(s);
-  if (s.npcTeklif || p.dead || p.age < 16 || !chance(0.04)) return;
+  mirasIstegi(s);
+  if (s.npcTeklif || p.dead || p.age < 16) return;
   const wy = worldYears(s); const pop = nufusOf(s);
+  // Darda kalan kardeş (işsiz ya da küçük çocuklarla bunalmış) yardım ister — nerede yaşarsa yaşasın haber gönderir; aynı kardeş dört yılda bir.
+  if (chance(0.02)) {
+    const ist = p.kardes_istek || {};
+    const dar = (p.sibling_ids || []).map((id) => pop.k[id]).filter((k): k is Kisi => !!k && k.ol == null && wy - k.dy >= 18 && s.turn - (ist[k.id] ?? -999) >= 48
+      && (k.prof === "işsiz" || (k.cocuk || []).filter((c) => pop.k[c] && pop.k[c].ol == null && wy - pop.k[c].dy < 14).length >= 3));
+    const tutar = Math.round((20 + Math.floor(Math.random() * 41)) * inflationFactor(s));
+    if (dar.length && p.money >= Math.round(tutar * 1.5)) {
+      const k = rnd(dar); (p.kardes_istek = { ...ist })[k.id] = s.turn;
+      s.npcTeklif = { id: k.id, tur: "kardes", tutar, turn: s.turn };
+      push(s, "sohbet", `Kardeşin ${kisiAdi(k, "tr")} darda: ${tutar} akçe yardım istiyor; geri ödeyecek hâli yok.`, "kişisel", true, { k: k.g === "kadın" ? "npct.kardes.k" : "npct.kardes", p: [kfParam(k), tutar] });
+      return;
+    }
+  }
+  if (!chance(0.04)) return;
   const yerde = Object.values(pop.k).filter((k) => k.ol == null && k.loc === p.location_name && wy - k.dy >= 18 && k.es !== OYUNCU);
   const secenek: { id: string; tur: "dunur" | "borc"; tutar?: number; ay?: number }[] = [];
   if (!p.married && !p.betrothed && p.age >= 18 && p.age <= 50) {
@@ -1012,12 +1033,31 @@ function npcTeklifTiki(s: GameState) {
   if (sec.tur === "dunur") push(s, "evlilik", `${kisiAdi(k, "tr")} ailesiyle dünürcü gönderdi: seninle evlenmek istiyor.`, "kişisel", true, { k: "npct.dunur", p: [knParam(k)] });
   else push(s, "sohbet", `${kisiAdi(k, "tr")} kapını çaldı: ${sec.tutar} akçe borç istiyor.`, "kişisel", false, { k: "npct.borc", p: [knParam(k), sec.tutar!, sec.ay!] });
 }
+// Mirasta pay isteyen kardeş: bekleyen başka teklif yoksa kapıya gelir (kardeş o arada öldüyse istek düşer).
+function mirasIstegi(s: GameState) {
+  const p = s.player; const m = p.miras_bekle; if (!m || s.npcTeklif || p.dead) return;
+  const k = nufusOf(s).k[m.id]; p.miras_bekle = undefined; if (!k || k.ol != null) return;
+  s.npcTeklif = { id: k.id, tur: "miras", tutar: m.tutar, turn: s.turn };
+  push(s, "sohbet", `Kardeşin ${kisiAdi(k, "tr")} mirastan payını istiyor: ${m.tutar} akçe.`, "kişisel", true, { k: k.g === "kadın" ? "npct.miras.k" : "npct.miras", p: [kfParam(k), m.tutar] });
+}
 // Bekleyen teklife cevap (kabul/ret). Şart değiştiyse (kişi evlendi, öldü, para yetmiyor) teklif sessizce düşer.
 export function npcTeklifYanit(prev: GameState, kabul: boolean): GameState {
   const s = clone(prev); const p = s.player; const t = s.npcTeklif; if (!t || p.dead) return s;
   s.npcTeklif = undefined;
   const k = nufusOf(s).k[t.id]; if (!k || k.ol != null) return s;
   const kp = knParam(k); const nm = kisiAdi(k, "tr");
+  if (t.tur === "kardes" || t.tur === "miras") { // kardeşe yardım / mirasta kardeş payı: verirsen kesenden çıkar, vermezsen kardeşin unutmaz
+    const kk = (key: string) => (k.g === "kadın" ? key + ".k" : key); const kf = kfParam(k); const tutar = t.tutar || 0;
+    const yardim = t.tur === "kardes";
+    if (kabul && p.money >= tutar) {
+      p.money -= tutar; remember(s, { id: t.id, name: nm }, yardim ? "yardim" : "soz_tutma"); bumpNam(p, "comert", yardim ? 2 : 1); p.honor = Math.min(100, p.honor + 1);
+      push(s, "sohbet", yardim ? `Kardeşin ${nm} için kesenden ${tutar} akçe çıktı; gözleri doldu.` : `Mirası kardeşin ${nm} ile paylaştın (${tutar} akçe); kan bağı akçeden ağır geldi.`, "kişisel", false, { k: kk(yardim ? "npct.kardesVer" : "npct.mirasVer"), p: [kf, tutar] });
+    } else if (!kabul) {
+      remember(s, { id: t.id, name: nm }, yardim ? "yuz_cevirme" : "miras_kavgasi");
+      push(s, "sohbet", yardim ? `Kardeşin ${nm} kapından eli boş döndü; aranıza soğukluk girdi.` : `Mirası kardeşin ${nm} ile paylaşmadın; artık selamı kesik.`, "kişisel", true, { k: kk(yardim ? "npct.kardesRed" : "npct.mirasRed"), p: [kf] });
+    }
+    return s;
+  }
   if (t.tur === "dunur") {
     if (!kabul) { s.relationships[t.id] = Math.max(-100, (s.relationships[t.id] || 0) - 6); push(s, "sohbet", `${nm} ailesinin dünür teklifini geri çevirdin.`, "kişisel", false, { k: "npct.dunurRed", p: [kp] }); return s; }
     if (p.married || p.betrothed || k.es) return s;
@@ -1258,7 +1298,7 @@ export interface GameState {
   newsSeenTurn?: number; // haberler ekranının son görüldüğü tur (menü rozeti için; opsiyonel — eski kayıtlar dokunulmadan çalışır)
   relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean; goalHelped?: boolean; goalDone?: boolean; gname?: string; goalk?: string; usta?: boolean; prof?: string }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
   pop?: Nufus; // yaşayan nüfus: kalıcı kişiler ve aileler (NUFUS.md)
-  npcTeklif?: { id: string; tur: "dunur" | "borc"; tutar?: number; ay?: number; turn: number }; // bir NPC'nin sana kendi kararıyla yaptığı bekleyen teklif
+  npcTeklif?: { id: string; tur: "dunur" | "borc" | "kardes" | "miras"; tutar?: number; ay?: number; turn: number }; // bir NPC'nin sana kendi kararıyla yaptığı bekleyen teklif
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
   story: StoryProgress;

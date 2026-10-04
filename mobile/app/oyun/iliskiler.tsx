@@ -60,12 +60,16 @@ export default function Iliskiler() {
   const npcs = useMemo(() => (state ? npcsOf(state, lang) : []), [state?.pop, state?.seed, state?.turn, lang, state?.player.location_name]); // nüfus yaşar: doğan, ölen, göçen kadroya yansısın
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   // Bölgedeki herkes görünür — tanışmadıkların da (ilişki 0) "tanış" bandında çıkar ki üzerine tıklayıp tanışabilesin.
-  const all = npcs.map((n) => ({ n, v: relWith(state, n.id) }));
+  // Ailen (anne-baba, eş, evlatlar, kardeşler) kendi panelinde; bantlar ailenin dışındakileri sıralar.
+  const pl = state.player;
+  const rolOf = (id: string): string | null => id === pl.mother_id ? "char.mother" : id === pl.father_id ? "char.father" : id === pl.spouse_id ? "char.spouse" : pl.child_ids && Object.values(pl.child_ids).includes(id) ? "tie.evlat" : pl.sibling_ids?.includes(id) ? "tie.kardes" : null;
+  const aile = npcs.map((n) => ({ n, v: relWith(state, n.id), rol: rolOf(n.id) })).filter((x): x is { n: typeof x.n; v: number; rol: string } => !!x.rol);
+  const all = npcs.filter((n) => !rolOf(n.id)).map((n) => ({ n, v: relWith(state, n.id) }));
   const grouped = BANDS.map((b) => ({
     b,
     list: all.filter(({ v }) => bandOf(v).id === b.id).sort((a, z) => Math.abs(z.v) - Math.abs(a.v)),
   }));
-  const total = all.length;
+  const total = all.length + aile.length;
 
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>
@@ -143,6 +147,29 @@ export default function Iliskiler() {
             </Pressable>
           );
         })() : null}
+
+        {aile.length ? (
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(201,168,76,0.08)" }}>
+              <GameIcon name="hanedan" size={13} color={C.gold} />
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("char.family")}</Text>
+              <Pill text={`${aile.length} ${t("rel.people")}`} tone={C.gold} />
+            </View>
+            <View style={{ padding: 10 }}>
+              {aile.map(({ n, v, rol }) => (
+                <Pressable key={n.id} onPress={() => router.push(`/oyun/npc/${n.id}`)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}>
+                  <Portre age={n.age} gender={n.gender} size={37} ring={false} seed={n.id} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{n.name}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t(rol)} · {professionNameL(n.profession, lang)} · {n.age}</Text>
+                    <RelBand score={v} />
+                  </View>
+                  <Text style={{ fontFamily: F.display, fontSize: 13, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted, width: 34, textAlign: "right" }}>{v > 0 ? "+" + v : v}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         {total === 0 ? (
           <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 24, alignItems: "center" }}>
