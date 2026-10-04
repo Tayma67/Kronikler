@@ -209,3 +209,18 @@ Yapısal kalemler yeni bir kazanç kanalı açmaz (farm yok); eylem kanalları a
 - Teklif ekranında kesen yetmiyorsa kabul düğmesi kapalıdır; ret her zaman açık.
 - **İlişkiler ekranında aile paneli:** anne-baba, eş, evlatlar, kardeşler rolüyle ayrı panelde; bantlar ailenin
   dışındakileri sıralar.
+
+## Gençlik çağı 13-17 (uygulandı: `youthAction`, ana ekranda "Gençlik uğraşları")
+
+- Çocukluk oyunu 13'te, olgunluk uğraşları 18'de başlıyordu; aradaki beş yıl boştu. Artık ayda iki hak (çocukluk
+  havuzu, mektepten ayrı) dört uğraşa gider — hepsi gerçek kişilerle:
+  - **Ustanın yanında:** şehirde mesleğini yapan en kıdemli kişi ustandır (tanıdıksa önce o); meslek becerisi,
+    bazen övgü (itibar), bazen azar. Ustayla yakınlık gençlikten en çok 40'a çıkar.
+  - **Akranlarla:** can yoldaşın (yoksa bir yaşıt) ve diğerleriyle meydanda; sosyal beceri, karizma; bazen kavga
+    (morluk, mertlik). Yakınlık en çok 60.
+  - **Gönül işleri (15+):** mahallede karşı cinsten ±3 yaş, bekâr, akraba olmayan biri — ilk gönlün (`gonul`).
+    Yakınlık en çok 45 (kur 18'de ve 50'de açılır: biraz emek ister); bazen dillere düşersin (çapkın nâmı).
+    Aday yoksa düğme kapalıdır.
+  - **Meydanda hüner:** güç ve dayanıklılık; bazen yaşıtınla koşu yarışı (kazanırsan itibar, mertlik).
+- İlk gönlün sen 30'a varmadan başkasıyla evlenirse kroniğe düşer; 18'inde hâlâ bekâr ve yakınsanız "belki artık söz
+  zamanıdır" satırı gelir.

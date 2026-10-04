@@ -60,6 +60,8 @@ export interface Player {
   inv_q?: Record<string, Partial<Record<QualityTier, number>>>; // eşya kalite kırılımı (quality.py portu; sıradan izlenmez)
   last_study_turn?: number; lesson_count?: number; // mektep: sınav sayacı (eski gate; enerji sistemine taşındı)
   study_energy?: number; // aylık çalışma gücü — ders + kulüp meşki bundan harcanır
+  gonul?: string; // gençlikte gönlünü kaptırdığın gerçek kişi (ilk gönül) — reşitlikte hâlâ bekârsa kapı aralık
+  genc_acts?: Record<string, number>; // gençlik uğraşları sayacı (13-17)
   play_energy?: number; // çocukluk günleri hakkı — mektepten AYRI havuz (ders çalışmak oyunu yemez)
   club?: string; teacherBond?: number; // mektep kulübü (haftalık pasif XP) + hoca bağı
   club_standing?: number; last_club_turn?: number; club_grad?: string; // kulüp itibarı + aylık meşk kapısı + mezun olunan kulüp
@@ -769,6 +771,8 @@ function npcLifeTick(s: GameState) {
       }
       if (!olumHaberi && tanidik(o.id)) { olumHaberi = true; push(s, "dunya_olayi", `${ad(o.id)} bu dünyadan göçtü; tanıdık bir yüz eksildi.`, "kişisel", true, { k: "npclife.deathKnown", p: [prm(o.id)] }); }
     } else if (o.t === "evlilik") {
+      const gn = p.gonul && (o.a === p.gonul || o.b === p.gonul) ? p.gonul : null;
+      if (gn && !p.dead) { p.gonul = undefined; if (p.age >= 30) continue; push(s, "olgunluk", `İlk gönlün ${ad(gn)} başkasıyla evlendi; düğün sesleri sana uzak geldi.`, "kişisel", true, { k: gk(gn, "genc.gonulEvlendi"), p: [prf(gn)] }); continue; } // yıllar geçtiyse (30+) ilk gönlün düğünü sessizce geçer
       const kz = kardes(o.a) ? o.a : kardes(o.b) ? o.b : null;
       if (kz && !p.dead) { const obur = kz === o.a ? o.b : o.a; push(s, "evlilik", `Kardeşin ${ad(kz)}, ${ad(obur)} ile dünyaevine girdi; ocağın bir dalı daha filizlendi.`, "kişisel", false, { k: gk(kz, "evj.siblingMarry"), p: [prf(kz), prm(obur)] }); continue; }
       const yerel = pop.k[o.a]?.loc === p.location_name;
@@ -1903,6 +1907,11 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     const cf = p.child_friend;
     if (cf) push(s, "cocukluk", "Yoldaşınla ilk kez şehrin surlarına tırmandınız; diyar gözünüzde büyüdü.", "kişisel", true, { k: "evj.child8f", p: [cfParam(s, cf)] });
     else push(s, "cocukluk", "İlk kez şehrin surlarına tırmandın; diyar gözünde büyüdü.", "kişisel", true, { k: "evj.child8" });
+  }
+  // Reşitlik: gençlikteki ilk gönül hâlâ bekâr ve yakınsa kapı aralık (kur ve görücü artık açık).
+  if (p.age >= 18 && p.gonul && fate("gonul18")) {
+    const g = nufusOf(s).k[p.gonul];
+    if (g && g.ol == null && !g.es && !p.married && (s.relationships[g.id] ?? 0) >= 25) push(s, "olgunluk", `Reşit oldun; ilk gönlün ${kisiAdi(g, "tr")} hâlâ bekâr. Belki artık söz zamanıdır.`, "kişisel", true, { k: g.g === "kadın" ? "genc.gonul18.k" : "genc.gonul18", p: [kfParam(g)] });
   }
   if (p.age >= 10 && p.age < 13 && fate("child10")) {
     gainSkill(s, "social", 12); gainSkill(s, "crafting", 8);
@@ -4950,7 +4959,7 @@ export function studyEnergy(s: GameState): number { return s.player.study_energy
 export function studiedThisTurn(s: GameState): boolean { return studyEnergy(s) < STUDY_COST; }
 // Çocukluk günleri (oyun/yardım/yaramazlık/keşif) mektepten ayrı hak kullanır — ders çalışan çocuk oynamaktan olmaz (test geri bildirimi).
 export const PLAY_COST = 2;
-export function maxPlayEnergy(age: number): number { return age < 13 ? 4 : 0; } // ayda 2 çocukluk hakkı
+export function maxPlayEnergy(age: number): number { return age < 18 ? 4 : 0; } // ayda 2 hak: çocuklukta oyun, gençlikte (13-17) gençlik uğraşları
 export function playEnergy(s: GameState): number { return s.player.play_energy ?? maxPlayEnergy(s.player.age); }
 // Sınava kaç ders kaldı (4 derste bir sınav).
 export function lessonsToExam(p: Player): number { return 4 - ((p.lesson_count || 0) % 4); }
@@ -5171,6 +5180,76 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
   }
   return { state: s, key, chips };
 }
+
+// ── Gençlik uğraşları (13-17): çocukluk oyunu bitti, olgunluk talimi başlamadı — aradaki beş yıl gerçek insanlarla dolar.
+// Ayda iki hak (çocukluk havuzu); kazançlar küçük ve tavanlı, ilişki artışları sınırlı (farm yok).
+export type GencAct = "usta" | "akran" | "gonul" | "huner";
+const GONUL_YAS = 15;
+// Ustan: şehirde senin mesleğini yapan en kıdemli (25+) kişi — aileden değil, tanıdıksa önce o.
+function gencUsta(s: GameState): Kisi | undefined {
+  const p = s.player; if (!NPC_PROFS.includes(p.profession) || p.profession === "işsiz") return undefined; const wy = worldYears(s);
+  const ad = Object.values(nufusOf(s).k).filter((k) => k.ol == null && k.loc === p.location_name && k.prof === p.profession && wy - k.dy >= 25 && !oyuncuAkrabasi(p, k.id) && k.id !== p.rakip?.id);
+  return ad.sort((a, b) => (s.relationships[b.id] !== undefined ? 1 : 0) - (s.relationships[a.id] !== undefined ? 1 : 0) || a.dy - b.dy)[0];
+}
+// Gönül adayı: aynı yerde, karşı cinsten, ±3 yaş, bekâr, akraba değil; önceki gönül hâlâ uygunsa o.
+export function gonulAdayi(s: GameState): Kisi | undefined {
+  const p = s.player; const wy = worldYears(s); const pop = nufusOf(s);
+  const uygun = (k?: Kisi) => !!k && k.ol == null && k.loc === p.location_name && k.g !== p.gender && !k.es && Math.abs(wy - k.dy - p.age) <= 3 && wy - k.dy >= 13 && !oyuncuAkrabasi(p, k.id);
+  if (p.gonul && uygun(pop.k[p.gonul])) return pop.k[p.gonul];
+  const ad = Object.values(pop.k).filter((k) => uygun(k)); return ad.length ? rnd(ad) : undefined;
+}
+export function youthAction(prev: GameState, kind: GencAct): StudyResult {
+  const s = clone(prev); const p = s.player;
+  if (p.dead || p.age < 13 || p.age >= 18 || inJail(p)) return { state: s, key: "", chips: [], blocked: true };
+  if (kind === "gonul" && p.age < GONUL_YAS) return { state: s, key: "", chips: [], blocked: true };
+  if (playEnergy(s) < PLAY_COST) return { state: s, key: "", chips: [], blocked: true };
+  p.play_energy = playEnergy(s) - PLAY_COST;
+  p.genc_acts = { ...(p.genc_acts || {}), [kind]: (p.genc_acts?.[kind] || 0) + 1 };
+  const chips: StudyResult["chips"] = []; let key = "";
+  const yakinlas = (id: string, d: number, tavan: number) => { const v = s.relationships[id] ?? 0; if (v < tavan) s.relationships[id] = Math.min(tavan, v + d); };
+  const gk = (k: Kisi, x: string) => (k.g === "kadın" ? x + ".k" : x);
+  if (kind === "usta") {
+    const u = gencUsta(s); const sk = PROF_SKILL[p.profession] || "crafting";
+    if (!u) { gainSkill(s, sk, 4); key = "genc.usta0"; push(s, "olgunluk", "Tezgâhta kendi başına çalıştın; el alıştı.", "kişisel", false, { k: key }); }
+    else {
+      const r = Math.random();
+      if (r < 0.15) { gainSkill(s, sk, 2); key = gk(u, "genc.ustaAzar"); push(s, "olgunluk", `Bir işi aceleye getirdin; usta ${kisiAdi(u, "tr")} azarladı, baştan yaptırdı.`, "kişisel", false, { k: key, p: [kfParam(u)] }); }
+      else if (r < 0.3) { gainSkill(s, sk, 6); p.reputation = Math.min(100, p.reputation + 1); yakinlas(u.id, 3, 40); key = gk(u, "genc.ustaOver"); push(s, "olgunluk", `Usta ${kisiAdi(u, "tr")} işine baktı, bir şey demedi; ama akşam çarşıda adını övmüş.`, "kişisel", false, { k: key, p: [kfParam(u)] }); }
+      else { gainSkill(s, sk, 5); yakinlas(u.id, 2, 40); key = gk(u, "genc.usta"); push(s, "olgunluk", `Usta ${kisiAdi(u, "tr")} yanında bir gün daha: ${p.profession} işinin bir inceliğini daha kaptın.`, "kişisel", false, { k: key, p: [kfParam(u), { prl: p.profession }] }); }
+    }
+    chips.push({ label: "Beceri ↑", col: "#C9A84C" });
+  } else if (kind === "akran") {
+    gainSkill(s, "social", 4); addStatXp(s, "charisma", 2);
+    const cf = p.child_friend; const yol = cf ? nufusOf(s).k[cf.id] : undefined;
+    const ys = yasitlar(s); const k = yol && yol.ol == null && yol.loc === p.location_name ? yol : ys.length ? rnd(ys) : undefined;
+    if (k) { if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0; yakinlas(k.id, 3, 60); }
+    if (k && Math.random() < 0.15) { p.health = Math.max(1, p.health - 3); bumpNam(p, "mert", 1); addStatXp(s, "strength", 2); key = gk(k, "genc.akranKavga"); push(s, "olgunluk", `Akranlarla laf dalaşı yumruğa döndü; ${kisiAdi(k, "tr")} araya girdi ama bir morluk kaptın.`, "kişisel", false, { k: key, p: [kfParam(k)] }); }
+    else if (k) { key = "genc.akran"; push(s, "olgunluk", `${kisiAdi(k, "tr")} ve akranlarınla akşama dek meydanda vakit geçirdiniz; lafın, şakan pişti.`, "kişisel", false, { k: key, p: [kfParam(k)] }); }
+    else { key = "genc.akran0"; push(s, "olgunluk", "Akranlarınla meydanda vakit geçirdin; lafın, şakan pişti.", "kişisel", false, { k: key }); }
+    chips.push({ label: "Sosyal ↑", col: "#C9A84C" });
+  } else if (kind === "gonul") {
+    const k = gonulAdayi(s);
+    if (!k) { key = "genc.gonul0"; push(s, "olgunluk", "Gönlün kıpır kıpır ama mahallede gözüne kestirdiğin kimse yok.", "kişisel", false, { k: key }); }
+    else {
+      const ilk = p.gonul !== k.id; p.gonul = k.id; if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0; yakinlas(k.id, 4, 45); addStatXp(s, "charisma", 2);
+      if (!ilk && Math.random() < 0.2) { bumpNam(p, "capkin", 1); p.reputation = Math.max(-100, p.reputation - 1); key = "genc.gonulDil"; push(s, "olgunluk", `${kisiAdi(k, "tr")} ile konuşurken görüldün; mahalle dedikodusu çabuk yayıldı.`, "kişisel", false, { k: key, p: [kfParam(k)] }); }
+      else { key = ilk ? "genc.gonul" : "genc.gonul2"; push(s, "olgunluk", ilk ? `Çeşme başında ${kisiAdi(k, "tr")} ile göz göze geldiniz; kalbin bir hoş oldu.` : `${kisiAdi(k, "tr")} ile çarşıda yine karşılaştınız; bu kez iki çift laf ettiniz, ikiniz de kızardınız.`, "kişisel", ilk, { k: key, p: [kfParam(k)] }); }
+    }
+    chips.push({ label: "Karizma ↑", col: "#C0556B" });
+  } else {
+    addStatXp(s, "strength", 3); addStatXp(s, "stamina", 3);
+    const rakipler = yasitlar(s).filter((k) => k.g === p.gender);
+    if (rakipler.length && Math.random() < 0.4) {
+      const k = rnd(rakipler); const kaz = Math.random() < 0.35 + (p.stats.strength + p.stats.stamina) * 0.04;
+      if (kaz) { p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "mert", 1); key = "genc.huner"; push(s, "olgunluk", `Meydanda koşu yarışına girdin; son düzlükte ${kisiAdi(k, "tr")} geride kaldı, alkışlar senindi.`, "kişisel", false, { k: key, p: [kfParam(k)] }); }
+      else { p.health = Math.max(1, p.health - 2); key = gk(k, "genc.hunerKayip"); push(s, "olgunluk", `Meydandaki yarışta ${kisiAdi(k, "tr")} seni geçti; dizlerin kanadı, hırsın bilendi.`, "kişisel", false, { k: key, p: [kfParam(k)] }); }
+      if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0;
+    } else { key = "genc.huner0"; push(s, "olgunluk", "Meydanda ter döktün; bileğin de nefesin de güçlendi.", "kişisel", false, { k: key }); }
+    chips.push({ label: "Güç ↑", col: "#C9A84C" });
+  }
+  return { state: s, key, chips };
+}
+// İlk gönlün başkasıyla evlenirse (yıllık tikte) ya da reşitlikte hâlâ bekârsa kroniğe düşer (bkz. rollLifeEvents).
 
 // Çocukluk karakteri etiketleri (reşitlikte belirlenir; karakter ekranında gösterilir).
 export const CHILDHOOD_LABEL: Record<string, string> = { hasari: "Haşarı", uslu: "Uslu", canli: "Canlı", merakli: "Meraklı" };
