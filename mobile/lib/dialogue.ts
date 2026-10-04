@@ -39,7 +39,7 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
   const hitch = mt === "küs" || mt === "soğuk";
   const fn = (npc.name.split(" ")[0]);
   const q = quirkL(npc.quirk, lang);
-  const L = (k: string) => tFor(lang, k).replace("%n", fn).replace("%q", q);
+  const L = (k: string) => tFor(lang, k).split("%n").join(fn).split("%q").join(q); // yer tutucu birden çok kez geçebilir
   // Tekrarı azalt: aynı niyetin sıcak/olumlu satırı birkaç çeşitten rastgele seçilir (base + base2…).
   const pick = (base: string, n: number) => { const i = Math.floor(Math.random() * n); return L(i === 0 ? base : base + (i + 1)); };
 
@@ -62,7 +62,7 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
   }
   if (intent === "is") {
     const pn = professionNameL(npc.profession, lang);
-    const line = (hitch ? pick("dlg.is.cold", 3) : pick("dlg.is.warm", 3)).replace("%p", pn);
+    const line = (hitch ? pick("dlg.is.cold", 3) : pick("dlg.is.warm", 3)).split("%p").join(pn);
     return { line, moodDelta: hitch ? 1 : 4, relDelta: hitch ? 1 : 3, memory: L("dlg.is.m") };
   }
   if (intent === "aile") {
@@ -74,7 +74,7 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
     return { line: pick("dlg.dunya.line", 5), moodDelta: 3, relDelta: 3, memory: L("dlg.dunya.m") };
   }
   if (intent === "hedef") {
-    const line = pick("dlg.hedef.line", 4).replace("%g", goalL(npc.goal, lang));
+    const line = pick("dlg.hedef.line", 4).split("%g").join(goalL(npc.goal, lang));
     return { line, moodDelta: rt === "yabancı" ? 2 : 7, relDelta: rt === "yabancı" ? 2 : 6, memory: L("dlg.hedef.m") };
   }
   // şaka
@@ -88,7 +88,7 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
 // NPC bazen kendi gündemini açar (Vercel _spontaneous_line). Ruh haline/hedefe göre; boş dönebilir.
 export function spontaneousLine(npc: NPC, mood: number, lang: Lang = "tr"): string {
   const fn = npc.name.split(" ")[0];
-  const L = (k: string) => tFor(lang, k).replace("%n", fn).replace("%g", goalL(npc.goal, lang));
+  const L = (k: string) => tFor(lang, k).split("%n").join(fn).split("%g").join(goalL(npc.goal, lang));
   const pick = (base: string, n: number) => { const i = Math.floor(Math.random() * n); return L(i === 0 ? base : base + (i + 1)); };
   const mt = moodTier(mood);
   if (mt === "neşeli") return pick("dlg.spont.happy", 7);
@@ -106,7 +106,7 @@ export function callbackLine(npc: NPC, memTur: string, lang: Lang = "tr"): strin
   const k = map[memTur]; if (!k) return "";
   if (npc.trait === "unutkan" && Math.random() < 0.5) return ""; // unutkan dünkü sohbeti bugün hatırlamayabilir
   const vi = Math.floor(Math.random() * 3); const key = vi === 0 ? k : k + (vi + 1); // her göndermenin üç varyantı — uzun oyunda ezber kırılır
-  return tFor(lang, key).replace("%n", npc.name.split(" ")[0]);
+  return tFor(lang, key).split("%n").join(npc.name.split(" ")[0]);
 }
 
 export function moodLabel(m: number): string {

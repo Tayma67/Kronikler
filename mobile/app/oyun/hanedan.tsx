@@ -62,7 +62,7 @@ export default function Hanedan() {
   const doClaim = () => { hap("success"); const r = claimThrone(state); apply(() => r.state); setThroneMsg({ ok: r.success, tick: Date.now() }); };
   const doCampaign = (id: string) => { hap("success"); const r = launchCampaign(state, id); apply(() => r.state); setCampMsg({ ok: r.success, tick: Date.now(), key: r.success ? "crown.campaignStartedShort" : undefined }); };
   const doFound = () => { if (!settleChk.ok || !settleName.trim()) return; hap("success"); apply((s) => foundSettlement(s, settleName)); setSettleName(""); };
-  const setWill = (id: string) => { hap("tap"); apply((s) => { s.player.will_pref = id; return s; }); };
+  const setWill = (id: string) => { hap("tap"); apply((s) => ({ ...s, player: { ...s.player, will_pref: id } })); }; // yeni nesne: durum yerinde değiştirilmez
 
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>

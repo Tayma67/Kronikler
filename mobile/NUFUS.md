@@ -148,6 +148,32 @@ Yapısal kalemler yeni bir kazanç kanalı açmaz (farm yok); eylem kanalları a
   hasım aleyhine konuşur ya da laf sokar; ≤ −50 ve sinsi huylu (kurnaz/hırslı/kibirli) olan, o şehirdeki mülküne zarar
   verir. Her olayda görüşünün o yöndeki en ağır sebebi yazılır («bana hakaret etmişti» ya da "zulmünün nâmı").
 
-### Sonraki aşamalara devreden
-- Rakip usta (`p.rakip`) ve yeni çırak (`p.cirak`) hâlâ tohum tabanlı; Aşama 3'te gerçek kişiye bağlanacak.
-- Eski çırak (`p.apprentice`) ile yeni çırak sistemi birleştirilecek.
+## Aşama 4 — Etkileşim = teklif, sohbet = gerçek hayat (uygulandı)
+
+- **Kabul şansı** (`teklifSansi`): kur, görücü, flört ve dedikodu, yüzde puanı kalemlerle hesaplanır; motor zarı aynı
+  yüzdeyle atar (4000 denemede gösterilen %40 → gerçekleşen %39.4). Profilde her teklifin yanında yüzde rozeti,
+  dokununca döküm (temel şans, sana bakışı, toplumdaki ağırlığın, karizmatik, güvenilir/çapkın/korkutucu/zalim nâmı,
+  şöhret, çekicilik, sosyal beceri, karizma, sınır). Görücü ekranında da yüzde görünür.
+- **Sohbet gerçek hayattan** (`gercekSatir`): kişi açıldığında şablon yerine kendi hayatını anlatır —
+  aile (yeni doğan, evlenen evlat, yakın kayıp, eş ve evlilik yılı, evlat sayısı, dul/bekâr), iş (oyuncunun işçisi,
+  işsizlikte kıt iş, meslek değişiminin sebebi, malının kıt/bol olması), dünya (kasabadaki son ölüm/düğün), hayal
+  (erdi / omuz verdin / kendi ağzından; çocuk ve yabancıya açılmaz), dert (ölen dost, hasım). Uydurma yok.
+
+## Rakip usta ve çırak gerçek kişi (uygulandı)
+
+- Rakip doğunca aynı ad tohumuyla (`ns = seed`) çarşıda yaşayan bir usta olarak nüfusa girer (`rakip.id`); rekabet
+  sürerken çarşıdan ayrılmaz; ölürse rekabet "vefat" ile kapanır (ortaklık bonusu verilmez). Görüş: rekabet −15,
+  ortaklık +15.
+- Çırak alınınca 11–14 yaşında gerçek bir çocuk olarak ocağa girer (`cirak.id`); çıraklıkta evlenmez, göçmez, ölmez;
+  peştamal kuşanınca mesleği ustanınki olur ve "senin yetiştirdiğin usta" işaretini taşır. Görüş: ustası olman +20/+15.
+- Aynı anda tek çırak: eski "çırak al" (45+ yaş, kasabadan biri) ile lonca çırağı birbirini dışlar.
+
+## Aşama 5 — Mahalle ve gün (uygulandı: `mahalle`, `mekanaGit`, `aksamSofrasi`; ekran `app/oyun/mahalle.tsx`)
+
+- Beş mekân: çarşı, cami, kahvehane, meydan, han. Her ay herkes mesleğine, huyuna ve yaşına göre tam bir mekândadır
+  (ay boyunca sabit; dağılım ~ çarşı yüzde 36, meydan 29, cami 17, kahve 13, han 6).
+- Ayda bir mekâna uğranır (`mahalle_turn`): oradaki en çok 2 (kahvede 3) tanımadığınla tanışırsın ve mekânın küçük
+  getirisi: çarşı → şehrin en kıt malı + ticaret becerisi; cami → dindarlık nâmı + sağlık; kahve → sosyal beceri;
+  meydan → çocukken güç, büyükken itibar; han → bölgedeki başka bir çarşının kıt malı. Kahve ve han 14 yaş üstü.
+- Akşam sofrası (`sofra_turn`): ocağındaki gerçek aile (eş, evlatlar, anne-baba, kardeşler) aynı yerdeyse ayda bir;
+  bir yiyecek ya da 3 akçe; doyurur, bağları birer puan ısıtır (eşle vakit/evlat/ziyaret eylemlerinin yerini tutmaz).

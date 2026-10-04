@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { kisiProfil, kisiCevresi, gorus, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
+import { kisiProfil, kisiCevresi, gorus, teklifSansi, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
 import { useI18n, kucukHarf } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
@@ -34,6 +34,32 @@ const TIE_META: Record<TieKind, { icon: string; tone: string }> = {
   rakip: { icon: "crossed-swords", tone: C.blood },
 };
 const TIE_ORDER: TieKind[] = ["es", "ebeveyn", "evlat", "kardes", "dost", "rakip"];
+
+// Teklif şansı rozeti (dokununca döküm açılır) — yüzde ve kalemler motorun zar attığı değerle birebir.
+function SansRozet({ yuzde, acik, onPress }: { yuzde: number; acik: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={8} style={{ paddingVertical: 3, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: (acik ? C.gold : C.goldDim) + "88", backgroundColor: acik ? "rgba(201,168,76,0.14)" : "transparent" }}>
+      <Text style={{ fontFamily: F.display, fontSize: 11, color: yuzde >= 60 ? C.sage : yuzde <= 25 ? C.blood : C.gold }}>%{yuzde}</Text>
+    </Pressable>
+  );
+}
+function SansDokum({ kalemler, yuzde, t }: { kalemler: { k: string; v: number }[]; yuzde: number; t: (k: string) => string }) {
+  return (
+    <View style={{ paddingHorizontal: 14, paddingBottom: 10, paddingTop: 2 }}>
+      <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1.5, color: C.goldDim, marginBottom: 4 }}>{t("sans.title")}</Text>
+      {kalemler.map((x, i) => (
+        <View key={i} style={{ flexDirection: "row", paddingVertical: 2 }}>
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 11.5, color: C.parchmentDim }}>{t(x.k)}</Text>
+          <Text style={{ fontFamily: F.display, fontSize: 11, color: x.v > 0 ? C.sage : C.blood }}>{x.v > 0 ? "+" + x.v : x.v}</Text>
+        </View>
+      ))}
+      <View style={{ flexDirection: "row", paddingTop: 4, marginTop: 3, borderTopWidth: 1, borderTopColor: C.border }}>
+        <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, color: C.parchment }}>{t("sans.toplam")}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.gold }}>%{yuzde}</Text>
+      </View>
+    </View>
+  );
+}
 
 function RelBand({ score }: { score: number }) {
   const pct = Math.max(0, Math.min(100, ((score + 100) / 200) * 100));
@@ -82,6 +108,7 @@ export default function NpcDetail() {
   const [lineDelta, setLineDelta] = useState<number>(0);
   const [giftOpen, setGiftOpen] = useState(false);
   const [gorusAcik, setGorusAcik] = useState(false); // görüş dökümü (neden böyle bakıyor)
+  const [sansAcik, setSansAcik] = useState<string | null>(null); // hangi teklifin şans dökümü açık
   // Kişi nüfus kaydından okunur (her yerden; yaşayan ya da rahmetli) — nüfus her eylemde yenilendiği için pop'a bağlı.
   const prof = useMemo(() => (state ? kisiProfil(state, id, lang) : null), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
   const cevre = useMemo(() => (state ? kisiCevresi(state, id, lang) : []), [state?.pop, state?.seed, state?.turn, state?.player.location_name, lang, id]);
@@ -105,9 +132,8 @@ export default function NpcDetail() {
 
   const speak = (intent: string) => {
     if (usedAct("t:" + intent)) return;
-    let said = ""; let d = 0;
-    apply((s) => { const r = talkWith(s, npc, intent, lang); said = r.line; d = r.delta; return r.state; });
-    setLine(said); setLineDelta(d);
+    const r = talkWith(state, npc, intent, lang); // saf motor: söz burada okunur, durum tek seferde uygulanır
+    apply(() => r.state); setLine(r.line); setLineDelta(r.delta);
   };
 
   return (
@@ -298,9 +324,11 @@ export default function NpcDetail() {
                 {!courtable ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 1 }}>{t("npc.proposeReq")}</Text>
                   : wed ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.roseDim, marginTop: 1 }}>{t("affair.warnTheirs")}</Text> : null}
               </View>
+              {courtable ? <SansRozet yuzde={teklifSansi(state, npc, "kur").yuzde} acik={sansAcik === "kur"} onPress={() => setSansAcik(sansAcik === "kur" ? null : "kur")} /> : null}
             </Pressable>
           );
         })()}
+        {sansAcik === "kur" && courtable ? (() => { const x = teklifSansi(state, npc, "kur"); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
         {/* Ek etkileşimler (Vercel npc_interactions): para / flört / dedikodu / hakaret */}
         <Pressable onPress={() => { if (state.player.money >= GIVE_MONEY_AMT) { hap("tap"); apply((s) => giveMoneyTo(s, npc)); } }} disabled={state.player.money < GIVE_MONEY_AMT} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent" })}>
           <GameIcon name="akce" size={16} color={state.player.money >= GIVE_MONEY_AMT ? C.gold : C.parchmentMuted} />
@@ -317,13 +345,17 @@ export default function NpcDetail() {
                 <Text style={{ fontFamily: F.serif, fontSize: 14, color: tone }}>{forbidden ? t("affair.flirtBtn") : t("npca.flirtBtn")}</Text>
                 {forbidden ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.ember, marginTop: 1 }}>{state.player.married ? t("affair.warnMarried") : t("affair.warnTheirs")}</Text> : null}
               </View>
+              <SansRozet yuzde={teklifSansi(state, npc, "flort").yuzde} acik={sansAcik === "flort"} onPress={() => setSansAcik(sansAcik === "flort" ? null : "flort")} />
             </Pressable>
           );
         })()}
+        {sansAcik === "flort" && canFlirt(state.player, npc, v) ? (() => { const x = teklifSansi(state, npc, "flort"); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
         <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("gossip")} onPress={() => { hap("tap"); apply((s) => gossipAbout(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: (state.player.age < 13 || usedAct("gossip")) ? 0.45 : 1 })}>
           <GameIcon name="speaker" size={16} color={C.parchment} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npca.gossipBtn")}</Text>
+          <SansRozet yuzde={teklifSansi(state, npc, "dedikodu").yuzde} acik={sansAcik === "dedikodu"} onPress={() => setSansAcik(sansAcik === "dedikodu" ? null : "dedikodu")} />
         </Pressable>
+        {sansAcik === "dedikodu" ? (() => { const x = teklifSansi(state, npc, "dedikodu"); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
         <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("insult")} onPress={() => { hap("tap"); apply((s) => insultNpc(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: (state.player.age < 13 || usedAct("insult")) ? 0.45 : 1 })}>
           <GameIcon name="skull" size={16} color={C.blood} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.blood }}>{t("npca.insultBtn")}</Text>

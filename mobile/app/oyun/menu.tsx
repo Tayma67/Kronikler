@@ -30,6 +30,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
   ]},
   { title: "Diyar & Soy", items: [
     { to: "/oyun/sehir", icon: "sehir" },
+    { to: "/oyun/mahalle", icon: "house" },
     { to: "/oyun/harita", icon: "map" },
     { to: "/oyun/haberler", icon: "haberler" },
     { to: "/oyun/hanedan", icon: "hanedan" },

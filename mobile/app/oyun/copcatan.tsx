@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { arrangedSuitors, npcWealthTier, proposeArranged, canArrange, MATCHMAKER_FEE } from "../../lib/game";
+import { arrangedSuitors, npcWealthTier, proposeArranged, canArrange, MATCHMAKER_FEE, teklifSansi } from "../../lib/game";
 import { professionNameL } from "../../lib/locale-data";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
@@ -77,6 +77,7 @@ export default function Copcatan() {
                     <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(n.profession, lang)} · {n.age}</Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 }}>
                       <GameIcon name="akce" size={9} color={tcol} /><Text style={{ fontFamily: F.display, fontSize: 9, color: tcol }}>{wealthLabel(tier)}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 9, color: C.goldDim, marginLeft: 6 }}>{t("sans.toplam")} %{teklifSansi(state, n, "gorucu").yuzde}</Text>
                     </View>
                   </View>
                   <Pressable disabled={!able} onPress={() => { hap("success"); apply((s) => proposeArranged(s, n)); }} style={{ paddingVertical: 9, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1.5, borderColor: able ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: able ? C.gold : C.bg, opacity: able ? 1 : 0.5 }}>

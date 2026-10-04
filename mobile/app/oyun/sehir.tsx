@@ -20,6 +20,7 @@ const VENUES = [
   { to: "/oyun/atolye", icon: "anvil", key: "scr.atolye" },
   { to: "/oyun/mektep", icon: "mektep", key: "scr.mektep" },
   { to: "/oyun/orgutler", icon: "orgutler", key: "scr.orgutler" },
+  { to: "/oyun/mahalle", icon: "house", key: "scr.mahalle" },
   { to: "/oyun/iliskiler", icon: "iliskiler", key: "rel.headTitle" },
   { to: "/oyun/haberler", icon: "haberler", key: "scr.haberler" },
 ];
