@@ -1117,6 +1117,7 @@ function soylentiEtkisi(s: GameState, k: Kisi, huy: string | undefined): number 
   for (const r of rs) {
     if (r.kaynak && r.kaynak === ad) continue;
     const yer = r.loc || s.player.location_name; const w = yer === k.loc ? 1 : regionOf(yer) === regionOf(k.loc) ? 0.4 : 0; if (!w) continue;
+    if (r.tur === "kara_cal") { const yak = s.relationships[k.id] ?? 0; t += r.yon * r.siddet * 2 * w * (yak >= 30 ? 0.2 : g === "ilkeli" && s.player.honor >= 40 ? 0.3 : g === "cikarci" ? 1.2 : 1); continue; } // kara çalmaya dostun inanmaz, şerefliye ilkeli inanmaz
     const hw = r.nam === "zalim" ? (g === "ilkeli" ? 1.5 : g === "cikarci" ? 0.5 : 1) : r.nam === "comert" ? (g === "sicak" ? 1.5 : g === "cikarci" ? 0.5 : 1)
       : r.nam === "mert" ? (g === "ilkeli" ? 1.5 : 1) : r.nam === "dindar" ? (huy === "dindar" ? 1.5 : 0.7) : r.nam === "capkin" ? (huy === "dindar" || huy === "ciddi" ? 1.5 : 0.6) : 1;
     t += r.yon * r.siddet * 2 * w * hw;
@@ -2194,7 +2195,11 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     const k = id ? nufusOf(s).k[id] : undefined;
     if (id && k && k.ol == null && k.loc === p.location_name && worldYears(s) - k.dy >= 13) { // yalnız aynı yerleşimdekiler kapına gelir
       const rel = relWith(s, id); const wns = npcStateOf(s, id); const nm = kisiAdi(k, "tr"); const kp = knParam(k);
-      if (rel >= 30) {
+      const kotuSoz = rel >= 50 ? (s.player_rumors || []).filter((r) => r.yon < 0 && (r.loc || p.location_name) === k.loc && r.kaynak !== nm).sort((a, b) => b.siddet - a.siddet)[0] : undefined;
+      if (kotuSoz && Math.random() < 0.5) { // seveni hakkındaki kötü söze karşı çıkar: söylenti söner
+        s.player_rumors = (s.player_rumors || []).filter((r) => r.id !== kotuSoz.id); s.relationships[id] = Math.min(100, (s.relationships[id] || 0) + 1);
+        push(s, "söylenti", `${nm} hakkındaki sözlere karşı çıktı; söylenti söndü.`, "kişisel", true, { k: "npci.savundu", p: [kp, gorusSebebi(s, id, 1)] });
+      } else if (rel >= 30) {
         wns.mood = Math.min(100, wns.mood + 4);
         if (p.health < 50) { p.health = Math.min(100, p.health + 4); push(s, "sohbet", `${nm} hâlini sormaya geldi, bir tas sıcak çorba bıraktı; için ısındı.`, "kişisel", false, { k: "npci.soupWhy", p: [kp, gorusSebebi(s, id, 1)] }); }
         else { s.relationships[id] = Math.min(100, (s.relationships[id] || 0) + 2); p.health = Math.min(100, p.health + 2); push(s, "sohbet", `${nm} seni sofrasına çağırdı; gülüşüp dertleştiniz.`, "kişisel", false, { k: "npci.mealWhy", p: [kp, gorusSebebi(s, id, 1)] }); }
@@ -2213,6 +2218,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         } else if (Math.random() < 0.5) {
           p.reputation = Math.max(-100, p.reputation - 1);
           push(s, "sohbet", `${nm} çarşıda aleyhinde konuşmuş; lafı kulağına geldi.`, "kişisel", false, { k: "npci.badmouthWhy", p: [kp, gorusSebebi(s, id, -1)] });
+          // Laf söylentiye döner: kasabada dolaşır, duyanın gözünü bulandırır (yüzleşip söndürebilirsin; dostların da karşı çıkabilir).
+          if (rel <= -40) { const rs = s.player_rumors || []; rs.push({ id: Math.random().toString(36).slice(2, 12), hafta: s.turn, tur: "kara_cal", vi: Math.floor(Math.random() * 2), nam: null, yon: -1, siddet: rel <= -70 ? 3 : 2, kaynak: nm, loc: k.loc }); s.player_rumors = rs.slice(-12); }
         } else {
           s.relationships[id] = Math.max(-100, (s.relationships[id] || 0) - 3); wns.mood = Math.max(-100, wns.mood - 5);
           push(s, "sohbet", `${nm} yolda önünü kesip laf soktu; dişini sıkıp geçtin.`, "kişisel", false, { k: "npci.tauntWhy", p: [kp, gorusSebebi(s, id, -1)] });
@@ -4842,6 +4849,42 @@ export function gossipAbout(prev: GameState, npc: NPC): GameState {
   } else {
     s.relationships[npc.id] = Math.max(-100, rel - 12); ns.mood = Math.max(-100, ns.mood - 14); remember(s, npc, "hakaret");
     push(s, "sohbet", `Dedikodun ${npc.name}'in kulağına gitti; sana diş biledi (−12 ilişki).`, "kişisel", false, { k: "npca.gossipLose", p: [npc.name] });
+  }
+  return s;
+}
+// ── Helallik: kırdığın birinden helallik istemek. Huyu, yaranın derinliği, şerefin ve zulüm nâmın belirler; gönül almak için
+// bedel de önerilebilir (çıkarcı için çok, dindar için ters). Kabul ederse kötü anıları solar; etmezse bir kez daha kırılır.
+// Kişi başına ayda bir; yalnız aranızda kayda değer kırgınlık (anı toplamı ≤ −8) varken.
+function kirginlik(s: GameState, id: string): { top: number; travma: number } {
+  let top = 0, travma = 0; for (const m of s.npc_state?.[id]?.anilar || []) if (m.yuk < 0) { top += m.yuk; if (m.travma) travma++; } return { top, travma };
+}
+export function helalUygun(s: GameState, id: string): boolean { return kirginlik(s, id).top <= -8; }
+export function helalBedeli(s: GameState, id: string): number { return Math.round((10 + Math.abs(kirginlik(s, id).top)) * inflationFactor(s)); }
+export function helalSansi(s: GameState, npc: NPC, bedel: boolean): { yuzde: number; kalemler: SansKalemi[] } {
+  const p = s.player; const ks: SansKalemi[] = []; const ekle = (k: string, v: number) => { const r = Math.round(v); if (r) ks.push({ k, v: r }); };
+  const huy = npc.trait; const g = huyGrubu(huy); const kr = kirginlik(s, npc.id);
+  ekle("sans.taban", 30);
+  ekle("sans.huy", huy === "dindar" ? 25 : g === "ilkeli" ? 20 : g === "sicak" ? 15 : g === "cekingen" ? 5 : -5);
+  ekle("sans.yara", -Math.min(40, Math.abs(kr.top) / 2) - kr.travma * 10);
+  ekle("sans.seref", Math.min(15, p.honor / 5));
+  ekle("sans.zalim", -Math.min(15, (p.nam?.zalim || 0) / 5));
+  if (bedel) ekle("sans.bedel", g === "cikarci" ? 30 : huy === "dindar" ? -5 : g === "ilkeli" ? 0 : 10);
+  const top = ks.reduce((a, x) => a + x.v, 0); const c = Math.max(5, Math.min(90, top)); if (c !== top) ks.push({ k: "sans.sinir", v: c - top });
+  return { yuzde: c, kalemler: ks };
+}
+export function helallikIste(prev: GameState, npc: NPC, bedel = false): GameState {
+  const s = clone(prev); const p = s.player; if (p.dead || p.age < 13 || inJail(p)) return s;
+  const ns = npcStateOf(s, npc.id); if (npcActUsed(ns, "helal", s.turn) || !helalUygun(s, npc.id)) return s;
+  const cost = helalBedeli(s, npc.id); if (bedel && p.money < cost) return s;
+  const sans = helalSansi(s, npc, bedel).yuzde; markNpcAct(ns, "helal", s.turn);
+  if (Math.random() * 100 < sans) {
+    for (const m of ns.anilar || []) if (m.yuk < 0) m.yuk = Math.round(m.yuk * 0.4 * 1000) / 1000; // kırgınlık solar (travma izi kalır ama hafifler)
+    remember(s, npc, "helallik"); p.honor = Math.min(100, p.honor + 2); bumpNam(p, "dindar", 1);
+    if (bedel) p.money -= cost;
+    push(s, "sohbet", `${npc.name} helallik verdi; aranızdaki kırgınlık hafifledi.`, "kişisel", true, { k: bedel ? "npca.helalOkBedel" : "npca.helalOk", p: [npc.name, cost] });
+  } else {
+    s.relationships[npc.id] = Math.max(-100, (s.relationships[npc.id] || 0) - 2);
+    push(s, "sohbet", `${npc.name} helallik vermedi.`, "kişisel", false, { k: bedel ? "npca.helalRedBedel" : "npca.helalRed", p: [npc.name, gorusSebebi(s, npc.id, -1)] });
   }
   return s;
 }

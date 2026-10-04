@@ -72,6 +72,7 @@ export const MEMORY_TYPES: Record<string, MemSpec> = {
   vergi_hafif:    { yuk: +5,  unutma: 0.96, skandal: 0.0, nam: null },    // hafif vergiye dua etti
   ikilem_iyi:     { yuk: +8,  unutma: 0.98, skandal: 0.0, nam: null },    // zor bir anında insanlık gördü
   ikilem_kotu:    { yuk: -8,  unutma: 0.98, skandal: 0.0, nam: null },    // zor bir anında yüz çevrildi
+  helallik:       { yuk: +6,  unutma: 0.98, skandal: 0.0, nam: null },    // helallik verdi (kırgınlık soldu)
 };
 
 export const NAM_TRAITS = ["comert", "zalim", "capkin", "dindar", "mert"];

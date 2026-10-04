@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
-import { kisiProfil, kisiCevresi, gorus, teklifSansi, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
+import { kisiProfil, kisiCevresi, gorus, teklifSansi, helalUygun, helalBedeli, helalSansi, helallikIste, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
 import { useI18n, kucukHarf } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
@@ -356,6 +356,21 @@ export default function NpcDetail() {
           <SansRozet yuzde={teklifSansi(state, npc, "dedikodu").yuzde} acik={sansAcik === "dedikodu"} onPress={() => setSansAcik(sansAcik === "dedikodu" ? null : "dedikodu")} />
         </Pressable>
         {sansAcik === "dedikodu" ? (() => { const x = teklifSansi(state, npc, "dedikodu"); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
+        {/* Helallik: aranızda kırgınlık varsa — içtenlikle ya da gönlünü alarak (bedelli) */}
+        {helalUygun(state, npc.id) && (() => { const cost = helalBedeli(state, npc.id); const kul = usedAct("helal") || state.player.dead || state.player.age < 13; return (<>
+          <Pressable disabled={kul} onPress={() => { hap("tap"); apply((s) => helallikIste(s, npc, false)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: kul ? 0.45 : 1 })}>
+            <GameIcon name="prayer-beads" size={16} color={C.sage} />
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npca.helalBtn")}</Text>
+            <SansRozet yuzde={helalSansi(state, npc, false).yuzde} acik={sansAcik === "helal"} onPress={() => setSansAcik(sansAcik === "helal" ? null : "helal")} />
+          </Pressable>
+          {sansAcik === "helal" ? (() => { const x = helalSansi(state, npc, false); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
+          <Pressable disabled={kul || state.player.money < cost} onPress={() => { hap("tap"); apply((s) => helallikIste(s, npc, true)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: kul || state.player.money < cost ? 0.45 : 1 })}>
+            <GameIcon name="akce" size={16} color={C.gold} />
+            <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{t("npca.helalBedelBtn")} <Text style={{ fontFamily: F.display, fontSize: 11, color: C.goldDim }}>· {cost} ⚜</Text></Text>
+            <SansRozet yuzde={helalSansi(state, npc, true).yuzde} acik={sansAcik === "helalb"} onPress={() => setSansAcik(sansAcik === "helalb" ? null : "helalb")} />
+          </Pressable>
+          {sansAcik === "helalb" ? (() => { const x = helalSansi(state, npc, true); return <SansDokum kalemler={x.kalemler} yuzde={x.yuzde} t={t} />; })() : null}
+        </>); })()}
         <Pressable disabled={state.player.dead || state.player.age < 13 || usedAct("insult")} onPress={() => { hap("tap"); apply((s) => insultNpc(s, npc)); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: pressed ? C.cardHi : "transparent", opacity: (state.player.age < 13 || usedAct("insult")) ? 0.45 : 1 })}>
           <GameIcon name="skull" size={16} color={C.blood} />
           <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 14, color: C.blood }}>{t("npca.insultBtn")}</Text>

@@ -314,3 +314,18 @@ unutuyordu (atanın iyiliği de zulmü de sıfırlanıyordu), (4) "velinimet" to
   (şeref + cömertlik/mertlik/dindarlık − 1,5×zulüm; |yön| ≥ 2) o kişinin anısına yazılır: "o gün bana insanlık etti"
   (+8) ya da "etmedi" (−8); kroniğe "O gün karşındaki: …" diye düşer, yakınlarına da dokunur. Tarafsız seçim iz bırakmaz;
   rolün karşılığı yoksa (ör. hasmın yok) kimse yazılmaz. 143 seçimin 58'i bir insana bağlanır.
+
+## Helallik, kara çalma ve dostun savunması (uygulandı)
+
+- **Helallik** (NPC ekranı, `helallikIste`): toplam olumsuz anı yükü −8 ve altındaysa o kişiden helallik istenebilir;
+  ayda bir kez (kişi başına "helal" kanalı). İki yol: yalnız gönül ("içten") ya da bedel ödeyerek (10 + yara, enflasyonla).
+  Şans döküm olarak görünür: taban 30, huy (dindar +25, ilkeli +20, sıcak +15, çekingen +5, çıkarcı −5),
+  yara (−yük/2 en çok −40, her travma −10), şeref (+şeref/5 en çok +15), zulüm (−zulüm/5 en çok −15), bedel
+  (çıkarcı +30, sıcak/çekingen +10, ilkeli 0, dindar −5 — parayla gönül alınmaz). %5..%90 arası.
+  Kabul: olumsuz anılar %60 hafifler, "helalleşme" anısı yazılır, şeref +2, dindarlık +1; bedel yolu parayı alır.
+  Ret: ilişki −2, para alınmaz. Böylece bir kurnaz içten affetmez ama parayla susar; dindar parayı kırıcı bulur.
+- **Kara çalma:** görüşü −40 ve altındaki hasım seni kötülerken yalnız fısıldamaz, yaşadığı yere "kara çal"
+  söylentisi bırakır (−70 altında daha ağır). Bu söylentiye seni tanıyan dostun (ilişki ≥30) az inanır (×0,2),
+  şerefin yüksekse ilkeli insan da az inanır (×0,3), çıkarcı fazla inanır (×1,2), yabancı tam inanır.
+- **Dostun savunması:** ilişkisi ≥50 bir dost senin hakkında konuşurken yarı yarıya o yerdeki en ağır olumsuz
+  söylentiyi söndürür ("seni savundu" kroniği). Dost biriktiren kara çalmaya karşı korunur; hasım biriktiren yalnız kalır.
