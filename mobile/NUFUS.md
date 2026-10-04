@@ -177,3 +177,22 @@ Yapısal kalemler yeni bir kazanç kanalı açmaz (farm yok); eylem kanalları a
   meydan → çocukken güç, büyükken itibar; han → bölgedeki başka bir çarşının kıt malı. Kahve ve han 14 yaş üstü.
 - Akşam sofrası (`sofra_turn`): ocağındaki gerçek aile (eş, evlatlar, anne-baba, kardeşler) aynı yerdeyse ayda bir;
   bir yiyecek ya da 3 akçe; doyurur, bağları birer puan ısıtır (eşle vakit/evlat/ziyaret eylemlerinin yerini tutmaz).
+
+## Çocukluk gerçek insanlarla (uygulandı)
+
+- **Kardeşler:** ilk nesil yeni oyunda 0–3 kardeşle doğar (yüzde 25/35/28/12); hepsi anne-babanın gerçek evladıdır,
+  yaşları ebeveynlere uyar, oyuncuyla aynı yaşta kardeş yoktur, adlar birbirinden ve oyuncudan ayrıdır, soyadı ailenin.
+  Anne-baban sonradan bir evlat daha doğurursa o da kardeşin olur (`sibling_ids`). Kardeşin evlenmesi, göçmesi,
+  ölümü kroniğe kendi satırıyla düşer; karakter ekranının aile kartında kardeşler satırı profile açılır.
+  Nüfusta doğan çocuk babasının yazılı soyadını (`sa`) da taşır.
+- **Can yoldaşı gerçek bir yaşıt:** ilk oyunda mahalledeki ±2 yaş aralığındaki (aileden olmayan) bir çocuk seçilir —
+  tanıdığın varsa önce o; mahallede yaşıt yoksa o yerleşimdeki uygun yaşta bir ailenin çocuğu olarak kurulur.
+  Olay metinleri ve ekranlar adı kaydından okur; çocukken ölürse yoldaşlık biter ve yenisi bulunabilir.
+  Eski kayıtların tohumdan yoldaşı aynen sürer (reşitlikte nüfusa girer). Hâli tek yerden: `yoldasDurumu`.
+- **Ayın satırı** (`monthlyFlavor`): mevsim satırlarının yanında gerçek kişiler — annenin/babanın masalı (yetimse
+  mahallenin yaşlısı), ebeveynin seni işine götürmesi (meslekle), yoldaşın ya da mahallenin bir yaşıtı (tanımadığınla
+  tanışırsın), ağabey/abla/küçük kardeş; yetişkinlikte adıyla komşu, kardeş, anne-baba, küçük evlat.
+  Kişili satırın anahtarı kişinin cinsine göre (`.k` = kadın), dillerde uyum doğru kalır. Son 6 ayda çıkan sahne
+  (çeşitleri dahil, `.vN`) seçilmez; hepsi yakınsa en eskisi. Zindanda ve ölüyken satır yazılmaz.
+- Yaşam-evresi anıları iki yıl içinde yinelenmez; yetim çocuğa "annen masal anlattı" yazılmaz; ilk ayların komşu
+  iyilikleri birbirinin aynı olmaz.

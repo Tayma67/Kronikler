@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { aileUyesi, useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail, tendPet, tendDog, kariyerXp } from "../../lib/game";
+import { aileUyesi, kisiProfil, yoldasAdi, yoldasDurumu, useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail, tendPet, tendDog, kariyerXp } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider, ScreenFresk } from "../../lib/ui";
@@ -230,14 +230,15 @@ export default function Karakter() {
               </View>
               {p.childhood ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 4 }} numberOfLines={2}>{t("childhood." + p.childhood + ".d")}</Text> : null}
               {p.child_friend ? (() => {
-                const cf = p.child_friend; const nm = localFirstName(cf.seed, cf.gender, lang);
-                const rel = state.relationships[cf.id];
-                const status = p.age < 13 ? t("child.friend.label") : (rel != null && rel > 0 ? t("child.friend.lifelong") : (rel != null && rel < 0 ? t("child.friend.rivalStatus") : t("child.friend.parted")));
+                const cf = p.child_friend; const nm = yoldasAdi(state, lang) || "";
+                const d = yoldasDurumu(p);
+                const status = d === "cocuk" ? t("child.friend.label") : d === "omurluk" ? t("child.friend.lifelong") : d === "rakip" ? t("child.friend.rivalStatus") : t("child.friend.parted");
+                const kayitli = !!kisiProfil(state, cf.id, lang); // gerçek kişiyse dokununca profili açılır
                 return (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}>
+                  <Pressable disabled={!kayitli} onPress={() => { hap("tap"); router.push(`/oyun/npc/${cf.id}`); }} style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}>
                     <GameIcon name="iliskiler" size={11} color={C.roseDim} />
                     <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("child.friend.of")}: <Text style={{ color: C.parchment }}>{nm}</Text> · {status}</Text>
-                  </View>
+                  </Pressable>
                 );
               })() : null}
               {p.married && p.spouse_seed != null ? (() => {
@@ -533,6 +534,25 @@ export default function Karakter() {
                   </View>
                 )}
               </View>
+              {/* Kardeşler — aynı ocakta büyüyen gerçek kişiler (rahmetliler soluk); dokununca profili */}
+              {(() => { const ks = (p.sibling_ids || []).map((id) => kisiProfil(state, id, lang)).filter((x): x is NonNullable<typeof x> => !!x); if (!ks.length) return null; return (
+                <View style={{ marginTop: 11, paddingTop: 11, borderTopWidth: 1, borderTopColor: C.border }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 7 }}>
+                    <GameIcon name="iliskiler" size={12} color={C.goldDim} />
+                    <Text style={{ fontFamily: F.display, fontSize: 9.5, letterSpacing: 1, color: C.parchmentMuted, textTransform: "uppercase" }}>{t("char.siblings")}</Text>
+                    <Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.gold }}>{ks.filter((k) => !k.olu).length}</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                    {ks.map((k) => (
+                      <Pressable key={k.npc.id} onPress={() => { hap("tap"); router.push(`/oyun/npc/${k.npc.id}`); }} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 9, opacity: k.olu ? 0.55 : 1 }}>
+                        <GameIcon name="iliskiler" size={11} color={C.goldDim} />
+                        <Text style={{ fontFamily: F.serif, fontSize: 13, color: C.parchment }}>{k.npc.name.split(" ")[0]}</Text>
+                        <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{k.olu ? t("npc.late") : String(k.npc.age)}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              ); })()}
               <Pressable onPress={() => { hap("tap"); router.push("/oyun/hanedan"); }} style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 11, paddingTop: 11, borderTopWidth: 1, borderTopColor: C.border }}>
                 <GameIcon name="hanedan" size={12} color={C.gold} />
                 <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 0.5, color: C.gold }}>{t("scr.hanedan")} ›</Text>

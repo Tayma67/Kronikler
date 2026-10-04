@@ -260,7 +260,7 @@ export function nufusYil(pop: Nufus, ctx: NufusCtx, o: YilOpts): NufusOlay[] {
       id, g, dy: wy, loc: anne.loc, prof, tr: tu < 0.35 ? baba.tr : tu < 0.6 ? anne.tr : rIx(TRAITS, rng),
       qk: rIx(QUIRKS, rng), gl: rIx(GOALS, rng), ns: Math.floor(rng() * 1e9), baba: baba.id, anne: anne.id,
     };
-    if (baba.sf != null) c.sf = baba.sf; else c.ss = baba.ss ?? Math.floor(rng() * 1e9);
+    if (baba.sa) c.sa = baba.sa; else if (baba.sf != null) c.sf = baba.sf; else c.ss = baba.ss ?? Math.floor(rng() * 1e9); // soyadı babadan (oyuncu ailesinin yazılı soyadı dahil)
     pop.k[id] = c; (anne.cocuk = anne.cocuk || []).push(id); (baba.cocuk = baba.cocuk || []).push(id);
     sayim[anne.loc] = (sayim[anne.loc] || 0) + 1;
     out.push({ t: "dogum", id, anne: anne.id, baba: baba.id });

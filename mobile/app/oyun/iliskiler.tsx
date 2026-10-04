@@ -5,10 +5,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
-import { npcsOf, relWith } from "../../lib/game";
+import { npcsOf, relWith, yoldasAdi, yoldasDurumu, kisiProfil } from "../../lib/game";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { professionNameL, placeName } from "../../lib/locale-data";
-import { localFirstName } from "../../lib/world";
 import { Portre, ScreenFresk } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -123,13 +122,15 @@ export default function Iliskiler() {
 
         {/* Çocukluk yoldaşı ("can dostu") — panodan buraya taşındı; ömürlük dost ya da rakip olabilir */}
         {state.player.child_friend ? (() => {
-          const cf = state.player.child_friend!; const nm = localFirstName(cf.seed, cf.gender, lang);
-          const rival = (cf.feud || 0) > cf.bond; const tone = rival ? C.blood : C.roseDim;
-          const statusKey = rival ? "child.friend.rivalStatus" : cf.bond >= 70 ? "child.friend.lifelong" : "child.friend.label";
+          const cf = state.player.child_friend!; const nm = yoldasAdi(state, lang) || "";
+          const d = yoldasDurumu(state.player);
+          const rival = d === "rakip" || (d === "cocuk" && (cf.feud || 0) > cf.bond); const tone = rival ? C.blood : C.roseDim;
+          const statusKey = rival ? "child.friend.rivalStatus" : d === "omurluk" ? "child.friend.lifelong" : d === "ayrildi" ? "child.friend.parted" : "child.friend.label";
+          const kayit = kisiProfil(state, cf.id, lang); // gerçek kişiyse yaşı kaydından, dokununca profili
           return (
-            <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: tone + "44", borderRadius: 12, marginBottom: 12, padding: 12 }}>
+            <Pressable disabled={!kayit} onPress={() => router.push(`/oyun/npc/${cf.id}`)} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: tone + "44", borderRadius: 12, marginBottom: 12, padding: 12 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Portre age={Math.max(7, state.player.age)} gender={cf.gender} size={37} ring={false} seed={"cf_" + cf.seed} />
+                <Portre age={kayit ? kayit.npc.age : Math.max(7, state.player.age)} gender={cf.gender} size={37} ring={false} seed={kayit ? cf.id : "cf_" + cf.seed} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{nm}</Text>
                   <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("child.friend.of")}</Text>
@@ -139,7 +140,7 @@ export default function Iliskiler() {
                 </View>
                 <Pill text={t(statusKey)} tone={tone} />
               </View>
-            </View>
+            </Pressable>
           );
         })() : null}
 

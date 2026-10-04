@@ -2,7 +2,7 @@
 import type { EvtParam } from "./i18n";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname, SPECIALTIES, Item, WClass, applyFamilySurnames, npcAgeProfession, TRAITS, QUIRKS, GOALS, NPC_PROFS } from "./world";
-import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf, kardesler, bagEvrimi, kisiSil } from "./nufus";
+import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf, kardesler, bagEvrimi, kisiSil, kisiIlkAd } from "./nufus";
 import { Lang, professionNameL, goalL } from "./locale-data";
 import { tFor, kucukHarf } from "./i18n";
 import { converse, ConvResult, spontaneousLine, callbackLine, perceptionGreeting } from "./dialogue";
@@ -509,6 +509,31 @@ function oyuncuAilesiKur(s: GameState) {
   if (s.relationships) for (const id of [anne?.id, baba?.id, p.spouse_id]) if (id && s.relationships[id] === undefined) s.relationships[id] = 0; // tanıdık; sevgi akrabalık kaleminden (gorus)
   nufusDegisti(pop);
 }
+// İlk neslin kardeşleri (yalnız yeni oyun): anne-babanın öbür evlatları aynı ocakta büyüyen gerçek kişilerdir.
+// Yaşlar ebeveynlere uyar (doğurduğunda anne 16-44, baba 16+), oyuncuyla aynı yaşta (ikiz) kardeş kurulmaz; adlar birbirinden ve oyuncudan ayrıdır.
+function ilkKardeslerKur(s: GameState) {
+  const p = s.player; const pop = s.pop; if (!pop) return;
+  const anne = p.mother_id ? pop.k[p.mother_id] : undefined, baba = p.father_id ? pop.k[p.father_id] : undefined;
+  if (!anne || !baba || anne.ol != null || baba.ol != null) return;
+  const wy = worldYears(s); const ay = yasOf(anne, wy), by = yasOf(baba, wy);
+  const u = Math.random(); const adet = u < 0.25 ? 0 : u < 0.6 ? 1 : u < 0.88 ? 2 : 3;
+  const yaslar = Array.from({ length: 16 }, (_, i) => i + 1).filter((y) => y !== p.age && ay - y >= 16 && ay - y <= 44 && by - y >= 16);
+  const ilk = p.surname && p.name.endsWith(" " + p.surname) ? p.name.slice(0, -(p.surname.length + 1)) : p.name;
+  const adlar = new Set<string>([ilk]); const ids: string[] = [];
+  for (let i = 0; i < adet && yaslar.length; i++) {
+    const yas = yaslar.splice(Math.floor(Math.random() * yaslar.length), 1)[0];
+    const g: Cins = Math.random() < 0.5 ? "erkek" : "kadın";
+    const k = yeniGelen(pop, wy, anne.loc, g, yas, Math.random);
+    for (let d = 0; d < 12 && adlar.has(kisiIlkAd(k, "tr")); d++) k.ns = Math.floor(Math.random() * 1e9);
+    adlar.add(kisiIlkAd(k, "tr"));
+    if (p.surname) k.sa = p.surname; else if (baba.sf != null) k.sf = baba.sf; else k.ss = baba.ss;
+    if (yas >= 14 && Math.random() < 0.5) k.prof = g === "erkek" ? baba.prof : anne.prof; // büyükler çoğu kez ocağın işine girmiştir
+    k.anne = anne.id; k.baba = baba.id; (anne.cocuk = anne.cocuk || []).push(k.id); (baba.cocuk = baba.cocuk || []).push(k.id);
+    s.relationships[k.id] = 0; ids.push(k.id);
+  }
+  if (ids.length) p.sibling_ids = ids;
+  nufusDegisti(pop);
+}
 // Oyuncuyla bağı olan kayıtlar budanmaz (ilişki, anı, işçi, çırak, can yoldaşı, eş, anne-baba).
 function nufusKorunan(s: GameState): Set<string> {
   const k = new Set<string>([...Object.keys(s.relationships || {}), ...Object.keys(s.npc_state || {})]);
@@ -521,6 +546,31 @@ function nufusKorunan(s: GameState): Set<string> {
 }
 export function kisiOf(s: GameState, id: string): Kisi | undefined { return nufusOf(s).k[id]; }
 export function kisiYasiyor(s: GameState, id: string): boolean { const k = nufusOf(s).k[id]; return !k || k.ol == null; } // kayıtsız (henüz kurulmamış) kişi yaşıyor sayılır
+// ── Can yoldaşı: mahallede yaşıt gerçek bir çocuk (eski kayıtta adı tohumdan, reşitlikte nüfusa girer) ──
+type Yoldas = NonNullable<Player["child_friend"]>;
+function cfParam(s: GameState, cf: Yoldas): EvtParam { const k = nufusOf(s).k[cf.id]; return k ? kfParam(k) : { fn: [cf.seed, cf.gender] }; }
+// Yoldaşın hâli: çocukken "cocuk"; reşitlikte dargınlık büyüdüyse rakip, bağ güçlüyse ömürlük dost, değilse yollar ayrıldı (shapeChildhood eşikleri).
+export function yoldasDurumu(p: Player): "cocuk" | "omurluk" | "rakip" | "ayrildi" | null {
+  const cf = p.child_friend; if (!cf) return null; if (p.age < 13) return "cocuk";
+  return (cf.feud || 0) >= 2 && cf.bond < 50 ? "rakip" : cf.bond >= 40 ? "omurluk" : "ayrildi";
+}
+export function yoldasAdi(s: GameState, lang: Lang = "tr"): string | null {
+  const cf = s.player.child_friend; if (!cf) return null; const k = nufusOf(s).k[cf.id];
+  return k ? kisiIlkAd(k, lang) : localFirstName(cf.seed, cf.gender, lang);
+}
+// Mahallenin yaşıt çocukları (±2 yaş; aileden değil). Yoksa ocağın birinden bir yaşıt kurulur — mahallede tek çocuk kalmaz.
+function yasitlar(s: GameState): Kisi[] {
+  const p = s.player; const wy = worldYears(s);
+  return Object.values(nufusOf(s).k).filter((k) => k.ol == null && k.loc === p.location_name && Math.abs(yasOf(k, wy) - p.age) <= 2 && yasOf(k, wy) >= 5 && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id);
+}
+function yasitKur(s: GameState): Kisi {
+  const pop = nufusHazirla(s); const p = s.player; const wy = worldYears(s);
+  const yas = Math.max(5, p.age + Math.floor(Math.random() * 3) - 1);
+  const k = yeniGelen(pop, wy, p.location_name, Math.random() < 0.6 ? p.gender : p.gender === "erkek" ? "kadın" : "erkek", yas, Math.random);
+  const ana = Object.values(pop.k).filter((a) => a.ol == null && a.g === "kadın" && a.loc === p.location_name && a.es && a.es !== OYUNCU && pop.k[a.es]?.ol == null && yasOf(a, wy) - yas >= 18 && yasOf(a, wy) - yas <= 40 && yasOf(pop.k[a.es]!, wy) - yas >= 18 && !oyuncuAkrabasi(p, a.id)); // iki ebeveyn de çocuğu doğuracak/büyütecek yaşta
+  if (ana.length) { const a = rnd(ana); const b = pop.k[a.es!]; k.anne = a.id; k.baba = b.id; (a.cocuk = a.cocuk || []).push(k.id); (b.cocuk = b.cocuk || []).push(k.id); delete k.ss; if (b.sa) k.sa = b.sa; else if (b.sf != null) k.sf = b.sf; else k.ss = b.ss; }
+  nufusDegisti(pop); return k;
+}
 // Olay parametresi: kişinin adı her dilde kendi kaydından çözülür (tam ad / yalnız ilk ad).
 export const knParam = (k: Kisi): EvtParam => (k.ad ? { kn: [k.g, k.af ?? -1, k.ns ?? 0, k.sf ?? -1, k.ss ?? 0, k.sa || "", k.ad] } : { kn: [k.g, k.af ?? -1, k.ns ?? 0, k.sf ?? -1, k.ss ?? 0, k.sa || ""] });
 export const kfParam = (k: Kisi): EvtParam => (k.ad ? { kf: [k.g, k.af ?? -1, k.ns ?? 0, k.ad] } : { kf: [k.g, k.af ?? -1, k.ns ?? 0] });
@@ -559,7 +609,7 @@ export function esKisi(s: GameState): Kisi | undefined { const id = s.player.spo
 // Eşin ilk adı (olay parametresi): gerçek kişiyse onun adı, değilse eski tohum/ad.
 function esParam(s: GameState): EvtParam {
   const k = esKisi(s); if (k) return kfParam(k);
-  const p = s.player; return esParam(s);
+  const p = s.player; return p.spouse_seed != null ? { fn: [p.spouse_seed, p.gender === "erkek" ? "kadın" : "erkek"] } : (p.spouse_name || "");
 }
 function ebeveynParam(s: GameState, rol: "anne" | "baba"): EvtParam {
   const p = s.player; const id = rol === "anne" ? p.mother_id : p.father_id; const k = id ? nufusOf(s).k[id] : undefined;
@@ -694,11 +744,17 @@ function npcLifeTick(s: GameState) {
   const ad = (id: string) => { const k = pop.k[id]; return k ? kisiAdi(k, "tr") : "?"; };
   const prm = (id: string): EvtParam => { const k = pop.k[id]; return k ? knParam(k) : "?"; };
   let olumHaberi = false, evlilikHaberi = 0, dogumHaberi = 0;
+  const kardes = (id: string) => !!p.sibling_ids?.includes(id);
+  const prf = (id: string): EvtParam => { const k = pop.k[id]; return k ? kfParam(k) : "?"; };
+  const gk = (id: string, key: string) => (pop.k[id]?.g === "kadın" ? key + ".k" : key); // kişinin cinsine göre anahtar (dillerde uyum)
+  const evlenen = new Set<string>(); for (const o of olaylar) if (o.t === "evlilik") { evlenen.add(o.a); evlenen.add(o.b); }
   for (const o of olaylar) {
     if (o.t === "olum") {
       if (p.dead) continue;
       if (o.id === p.mother_id && !p.mother_dead) { ebeveynVefat(s, "anne"); continue; }
       if (o.id === p.father_id && !p.father_dead) { ebeveynVefat(s, "baba"); continue; }
+      if (kardes(o.id)) { p.health = Math.max(1, p.health - 3); push(s, "kader", `Kardeşin ${ad(o.id)} Hakk'ın rahmetine kavuştu; aynı ocakta büyüdüğün bir can eksildi.`, "kişisel", true, { k: gk(o.id, "evj.siblingDied"), p: [prf(o.id)] }); continue; }
+      if (p.child_friend?.id === o.id && p.age < 13) { const cf = p.child_friend; p.child_friend = undefined; push(s, "cocukluk", `Can yoldaşın ${ad(o.id)} bir hastalığa yenik düştü; sokak birden sessizleşti.`, "kişisel", true, { k: gk(o.id, "evj.cfDied"), p: [cfParam(s, cf)] }); continue; }
       if (p.rakip && o.id === p.rakip.id && !p.rakip.bitti) { p.rakip.bitti = "vefat"; p.rakip.bittiTur = s.turn; p.rakip.yaris = undefined; push(s, "rakip", `Çarşıdaki rakibin vefat etti; bayrak yarışı yarım kaldı.`, "kişisel", true, { k: "evj.rakip.vefat", p: [prm(o.id)] }); continue; }
       // Ölen oyuncunun işçisiyse mülkten çıkar (yer boşalsın) + haber.
       for (const pr of p.properties) if (pr.workers?.includes(o.id)) {
@@ -707,11 +763,19 @@ function npcLifeTick(s: GameState) {
       }
       if (!olumHaberi && tanidik(o.id)) { olumHaberi = true; push(s, "dunya_olayi", `${ad(o.id)} bu dünyadan göçtü; tanıdık bir yüz eksildi.`, "kişisel", true, { k: "npclife.deathKnown", p: [prm(o.id)] }); }
     } else if (o.t === "evlilik") {
+      const kz = kardes(o.a) ? o.a : kardes(o.b) ? o.b : null;
+      if (kz && !p.dead) { const obur = kz === o.a ? o.b : o.a; push(s, "evlilik", `Kardeşin ${ad(kz)}, ${ad(obur)} ile dünyaevine girdi; ocağın bir dalı daha filizlendi.`, "kişisel", false, { k: gk(kz, "evj.siblingMarry"), p: [prf(kz), prm(obur)] }); continue; }
       const yerel = pop.k[o.a]?.loc === p.location_name;
       if (evlilikHaberi < 2 && (yerel || tanidik(o.a) || tanidik(o.b))) { evlilikHaberi++; push(s, "dunya_olayi", `${ad(o.a)} ile ${ad(o.b)} dünyaevi kurdu.`, tanidik(o.a) || tanidik(o.b) ? "kişisel" : "makro", false, { k: "npclife.marry", p: [prm(o.a), prm(o.b)] }); }
     } else if (o.t === "dogum") {
+      if (!p.dead && ((p.mother_id && o.anne === p.mother_id) || (p.father_id && o.baba === p.father_id))) { // anne-babana bir evlat daha: kardeşin
+        (p.sibling_ids = p.sibling_ids || []).push(o.id); s.relationships[o.id] = 0;
+        push(s, "doğum", `Ocağa bir bebek sesi düştü: kardeşin ${ad(o.id)} dünyaya geldi.`, "kişisel", true, { k: gk(o.id, "evj.siblingBorn"), p: [prf(o.id)] }); continue;
+      }
       const bilinen = tanidik(o.anne) ? o.anne : tanidik(o.baba) ? o.baba : null;
       if (dogumHaberi < 2 && bilinen) { dogumHaberi++; push(s, "dunya_olayi", `${ad(bilinen)}'in bir evladı dünyaya geldi.`, "kişisel", false, { k: "npclife.birth", p: [prm(bilinen)] }); }
+    } else if (o.t === "goc" && kardes(o.id) && !evlenen.has(o.id) && !p.dead) {
+      push(s, "dunya_olayi", `Kardeşin ${ad(o.id)} yükünü sarıp ${o.nereye} yoluna düştü; artık orada yaşayacak.`, "kişisel", false, { k: gk(o.id, "evj.siblingMoved"), p: [prf(o.id), { pl: o.nereye }] });
     } else if (o.t === "gelen" && o.nereye === p.location_name) {
       push(s, "dunya_olayi", `${p.location_name}'e yeni biri yerleşti; çarşıda tanımadık bir yüz var.`, "kişisel", false, { k: "npclife.newcomer", p: [{ pl: p.location_name }] });
     }
@@ -1642,6 +1706,7 @@ export function newGame(first: string, surname: string, gender: "erkek" | "kadı
     history: [{ day: 0, type: "doğum", text: `Bu diyara bir can daha geldi; doğuştan bir yanı kuvvetli.`, scope: "kişisel", landmark: false, k: "evj.birthFate", p: [{ statk: gift }] }],
   };
   oyuncuAilesiKur(s); // anne-baba doğduğun yerde gerçek kişiler olarak yaşar
+  ilkKardeslerKur(s); // ve öbür evlatları: kardeşlerin
   return s;
 }
 
@@ -1683,17 +1748,64 @@ function die(s: GameState, text: string, loc?: { k: string; p?: EvtParam[] }) {
   push(s, "ölüm", text, "kişisel", true, loc);
 }
 
-function monthlyFlavor(s: GameState, cal: CalendarInfo): { k: string; text: string } {
-  const child = s.player.age < 13; const pool: { k: string; text: string }[] = [];
+// Ayın satırı: mevsim + gündelik hayat; gündelik satırlar mümkünse gerçek kişilerle (anne-baba, kardeş, yaşıt, komşu, evlat).
+// Son 6 ayda çıkan sahne tekrar seçilmez. Kişili satırın anahtarı kişinin cinsine göre (.k = kadın) — dillerde uyum doğru kalır.
+type AySatiri = { k: string; text: string; p?: EvtParam[]; tanis?: string };
+function monthlyFlavor(s: GameState, cal: CalendarInfo): AySatiri {
+  const p = s.player; const child = p.age < 13; const pool: AySatiri[] = [];
+  const pop = nufusOf(s); const wy = worldYears(s);
+  const yakin = (id?: string): Kisi | undefined => { const k = id ? pop.k[id] : undefined; return k && k.ol == null && k.loc === p.location_name ? k : undefined; };
+  const cins = (k: Kisi, key: string) => (k.g === "kadın" ? key + ".k" : key);
+  const anne = yakin(p.mother_id), baba = yakin(p.father_id);
+  const kardesler = (p.sibling_ids || []).map((id) => yakin(id)).filter((k): k is Kisi => !!k);
+  const meslek = (k: Kisi) => { const m = npcAgeProfession(k.prof, yasOf(k, wy)); return m && m !== "işsiz" && NPC_PROFS.includes(m) ? m : null; };
+  if (child) {
+    if (anne) pool.push({ k: "flav.cTaleAnne", text: `Annen ${kisiIlkAd(anne)} ocağın başında bir masal anlattı; sonunu duymadan uyuyakaldın.`, p: [kfParam(anne)] });
+    else if (baba) pool.push({ k: "flav.cTaleBaba", text: `Baban ${kisiIlkAd(baba)} akşam bir masal anlattı; gece devlerle perilerle doldu.`, p: [kfParam(baba)] });
+    else { const ih = Object.values(pop.k).filter((k) => k.ol == null && k.loc === p.location_name && yasOf(k, wy) >= 60); if (ih.length) { const k = rnd(ih); pool.push({ k: cins(k, "flav.cTaleNine"), text: `Mahallenin yaşlısı ${kisiIlkAd(k)} kapı önünde eski zaman masalları anlattı.`, p: [kfParam(k)] }); } }
+    const isci = baba && meslek(baba) ? baba : anne && meslek(anne) ? anne : undefined;
+    if (isci && p.age >= 8) pool.push({ k: isci === baba ? "flav.cIsBaba" : "flav.cIsAnne", text: `${isci === baba ? "Baban" : "Annen"} ${kisiIlkAd(isci)} seni işine götürdü; bir ${meslek(isci)} nasıl çalışır, gözünle gördün.`, p: [kfParam(isci), { prl: meslek(isci)! }] });
+    const yol = p.child_friend ? yakin(p.child_friend.id) : undefined;
+    if (yol) { const v = Math.floor(Math.random() * 3); const YT = ["dere boyunda taş sektirdiniz", "bostandan erik aşırdınız; bekçi görmeden kaçtınız", "çatıya çıkıp yıldızları saydınız; ikiniz de sayıyı şaşırdınız"];
+      pool.push({ k: cins(yol, "flav.cYoldas" + (v ? ".v" + (v + 1) : "")), text: `Can yoldaşın ${kisiIlkAd(yol)} ile ${YT[v]}.`, p: [kfParam(yol)] }); }
+    else {
+      const ys = yasitlar(s); const k = ys.length ? rnd(ys) : undefined;
+      if (k && s.relationships[k.id] !== undefined) pool.push({ k: cins(k, "flav.cYasit"), text: `Mahallenin çocuklarından ${kisiIlkAd(k)} ile akşama dek koşturdunuz.`, p: [kfParam(k)] });
+      else if (k) pool.push({ k: cins(k, "flav.cYasitYeni"), text: `Sokakta ${kisiIlkAd(k)} adında yaşıt bir çocukla tanıştın; ertesi gün yine kapına geldi.`, p: [kfParam(k)], tanis: k.id });
+      else pool.push({ k: "flav.cFriend", text: "Bir arkadaşınla dere boyunda taş attınız." });
+    }
+    if (kardesler.length) {
+      const k = rnd(kardesler); const ky = yasOf(k, wy);
+      if (ky >= p.age + 3) pool.push({ k: cins(k, "flav.cKardesB"), text: `${k.g === "kadın" ? "Ablan" : "Ağabeyin"} ${kisiIlkAd(k)} seni çarşıya götürdü, bir avuç leblebi aldı.`, p: [kfParam(k)] });
+      else if (ky <= p.age - 2 && ky >= 3) pool.push({ k: cins(k, "flav.cKardesKucuk"), text: `Küçük kardeşin ${kisiIlkAd(k)} peşinden hiç ayrılmadı; ona sapan atmayı öğrettin.`, p: [kfParam(k)] });
+      else if (ky >= 4) pool.push({ k: cins(k, "flav.cKardesKavga"), text: `Kardeşin ${kisiIlkAd(k)} ile avluda kavga ettiniz; akşam sofrasında barıştınız.`, p: [kfParam(k)] });
+    }
+    pool.push({ k: "flav.cPlay", text: "Sokakta oyun oynadın." });
+  } else {
+    pool.push({ k: "flav.aWork", text: "Gününü işinle geçirdin." }, { k: "flav.aMarket", text: "Çarşıda dolaştın." }, { k: "flav.aRest", text: "Bir gününü dinlenip dua ederek geçirdin." }, { k: "flav.aCoin", text: "Kesendeki akçeleri sayıp yarını düşündün." });
+    const komsu = Object.values(pop.k).filter((k) => k.ol == null && k.loc === p.location_name && yasOf(k, wy) >= 16 && s.relationships[k.id] !== undefined && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && (s.relationships[k.id] ?? 0) > -20); // husumetli komşuyla kapı önü sohbeti olmaz
+    if (komsu.length) { const k = rnd(komsu); pool.push({ k: cins(k, "flav.aChatAd"), text: `Komşun ${kisiIlkAd(k)} ile kapı önünde uzun uzun sohbet ettin.`, p: [kfParam(k)] }); }
+    else pool.push({ k: "flav.aChat", text: "Komşunla kapı önünde uzun uzun sohbet ettin." });
+    const yk = kardesler.filter((k) => yasOf(k, wy) >= 13);
+    if (yk.length) { const k = rnd(yk); pool.push({ k: cins(k, "flav.aKardes"), text: `Kardeşin ${kisiIlkAd(k)} uğradı; çocukluğunuzu anıp güldünüz.`, p: [kfParam(k)] }); }
+    if (anne) pool.push({ k: "flav.aAnne", text: `Annen ${kisiIlkAd(anne)} seni kapıda karşıladı; önüne sıcak bir çorba koydu.`, p: [kfParam(anne)] });
+    else if (baba) pool.push({ k: "flav.aBaba", text: `Baban ${kisiIlkAd(baba)} ile akşamüstü avluda oturup dertleştiniz.`, p: [kfParam(baba)] });
+    const ev = evlatKimlikleri(p).map((id) => yakin(id)).filter((k): k is Kisi => !!k && yasOf(k, wy) >= 3 && yasOf(k, wy) <= 10);
+    if (ev.length) { const k = rnd(ev); pool.push({ k: cins(k, "flav.aEvlat"), text: `Evladın ${kisiIlkAd(k)} dizine oturup bir masal istedi; sesin yetene dek anlattın.`, p: [kfParam(k)] }); }
+  }
   if (cal.season === "Kış") pool.push({ k: "flav.kis1", text: "Soğuk sert geçti; ocağın başında ısındın." }, { k: "flav.kis2", text: "Kar yolları kapadı, evde kaldın." }, { k: "flav.kis3", text: "Uzun kış gecesinde bir hikâye dinledin; soba çıtırdadı." });
   if (cal.season === "Kış" && (s.player.winter_stock_until ?? 0) >= s.turn) pool.push({ k: "flav.kis4", text: "Dışarıda tipi, içeride dolu kiler: kavurma tavada, odun sobada. Kış bu evden alacağını alamadı." });
   if (cal.season === "İlkbahar") pool.push({ k: "flav.ilk1", text: "Tarlalar yeşerdi, içine umut düştü." }, { k: "flav.ilk2", text: "Kuşlar döndü; köy canlandı." }, { k: "flav.ilk3", text: "İlk yağmur toprağı uyandırdı; ıslak yollarda yürüdün." });
   if (cal.season === "Yaz") pool.push({ k: "flav.yaz1", text: "Sıcak günlerde gölgede dinlendin." }, { k: "flav.yaz2", text: "Hasada yardım ettin." }, { k: "flav.yaz3", text: "Çeşme başında serinleyip komşularla hâl hatır sordun." });
   if (cal.season === "Sonbahar") pool.push({ k: "flav.son1", text: "Yapraklar döküldü; kışa hazırlık başladı." }, { k: "flav.son2", text: "Pazarda son ürünler satıldı." }, { k: "flav.son3", text: "Bağ bozumu telaşı; sepetler üzümle doldu." });
-  pool.push(child ? { k: "flav.cPlay", text: "Sokakta oyun oynadın." } : { k: "flav.aWork", text: "Gününü işinle geçirdin." }, child ? { k: "flav.cTale", text: "Annen masal anlattı." } : { k: "flav.aMarket", text: "Çarşıda dolaştın." });
-  if (child) pool.push({ k: "flav.cFriend", text: "Bir arkadaşınla dere boyunda taş attınız." });
-  else pool.push({ k: "flav.aChat", text: "Komşunla kapı önünde uzun uzun sohbet ettin." }, { k: "flav.aRest", text: "Bir gününü dinlenip dua ederek geçirdin." }, { k: "flav.aCoin", text: "Kesendeki akçeleri sayıp yarını düşündün." });
-  return rnd(pool);
+  // Tekrar önleme: son 6 ayda çıkan sahne (cinsiyet eki ve çeşidiyle birlikte) seçilmez; hepsi yakın tarihliyse en eskisi seçilir.
+  const kok = (k: string) => k.replace(/\.k$/, "").replace(/\.v\d$/, "");
+  const sonGorulme: Record<string, number> = {};
+  for (let i = s.history.length - 1; i >= 0 && s.history[i].day >= s.turn - 24; i--) { const k = s.history[i].k; if (k && k.startsWith("flav.") && sonGorulme[kok(k)] === undefined) sonGorulme[kok(k)] = s.history[i].day; }
+  const taze = pool.filter((x) => (sonGorulme[kok(x.k)] ?? -1e9) < s.turn - 6);
+  if (taze.length) return rnd(taze);
+  const enEski = Math.min(...pool.map((x) => sonGorulme[kok(x.k)] ?? -1e9));
+  return rnd(pool.filter((x) => (sonGorulme[kok(x.k)] ?? -1e9) === enEski));
 }
 
 // Yeni evladın adı: kardeşleriyle aynı ad konmaz (evlat bilgisi ada göre tutulur — iki 'Mert' karışır).
@@ -1749,7 +1861,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.age >= 8 && p.age < 13 && fate("child8")) {
     addStatXp(s, "intelligence", 8); p.health = Math.min(100, p.health + 4);
     const cf = p.child_friend;
-    if (cf) push(s, "cocukluk", "Yoldaşınla ilk kez şehrin surlarına tırmandınız; diyar gözünüzde büyüdü.", "kişisel", true, { k: "evj.child8f", p: [{ fn: [cf.seed, cf.gender] }] });
+    if (cf) push(s, "cocukluk", "Yoldaşınla ilk kez şehrin surlarına tırmandınız; diyar gözünüzde büyüdü.", "kişisel", true, { k: "evj.child8f", p: [cfParam(s, cf)] });
     else push(s, "cocukluk", "İlk kez şehrin surlarına tırmandın; diyar gözünde büyüdü.", "kişisel", true, { k: "evj.child8" });
   }
   if (p.age >= 10 && p.age < 13 && fate("child10")) {
@@ -1830,14 +1942,14 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     else push(s, "ihtiyarlik", `Torunun ${gc} ilk kez ata bindi; sen yuları tuttun, o yeleye yapıştı. ${p.horse_name} adım adım, emanet taşıdığını bilir gibi yürüdü. Avluda üç tur — onun için dünya turu.`, "kişisel", false, { k: "evj.gcRide", p: [gc, p.horse_name] });
   }
   // ── Ömürlük çocukluk dostu: reşitlikte yanında kalan yoldaş, hayat boyu ara sıra ortaya çıkar (sadakat) ──
-  if (!p.dead && p.age >= 16 && p.child_friend && relWith(s, p.child_friend.id) > 0 && chance(0.025)) {
-    const cf = p.child_friend;
+  if (!p.dead && p.age >= 16 && yoldasDurumu(p) === "omurluk" && relWith(s, p.child_friend!.id) > 0 && chance(0.025)) {
+    const cf = p.child_friend!;
     const alive = kisiYasiyor(s, cf.id);
     if (alive) {
       const r = Math.random();
-      if (r < 0.4) { p.health = Math.min(100, p.health + 4); s.relationships[cf.id] = Math.min(100, (s.relationships[cf.id] || 0) + 2); push(s, "gunluk", "Çocukluk dostun çıkageldi; eski günleri yâd ettiniz, içine bir ferahlık doldu.", "kişisel", false, { k: "evj.oldFriendVisit", p: [{ fn: [cf.seed, cf.gender] }] }); }
-      else if ((p.money < 30 || (p.debt || 0) > 0) && r < 0.7) { const help = 20 + Math.floor(Math.random() * 30); p.money += help; push(s, "gunluk", "Çocukluk dostun darda olduğunu duydu; sessizce kesene biraz akçe bıraktı.", "kişisel", false, { k: "evj.oldFriendHelp", p: [{ fn: [cf.seed, cf.gender] }, help] }); }
-      else { p.reputation = Math.min(100, p.reputation + 2); push(s, "gunluk", "Çocukluk dostun seni mecliste övdü; sözü itibarına itibar kattı.", "kişisel", false, { k: "evj.oldFriendVouch", p: [{ fn: [cf.seed, cf.gender] }] }); }
+      if (r < 0.4) { p.health = Math.min(100, p.health + 4); s.relationships[cf.id] = Math.min(100, (s.relationships[cf.id] || 0) + 2); push(s, "gunluk", "Çocukluk dostun çıkageldi; eski günleri yâd ettiniz, içine bir ferahlık doldu.", "kişisel", false, { k: "evj.oldFriendVisit", p: [cfParam(s, cf)] }); }
+      else if ((p.money < 30 || (p.debt || 0) > 0) && r < 0.7) { const help = 20 + Math.floor(Math.random() * 30); p.money += help; push(s, "gunluk", "Çocukluk dostun darda olduğunu duydu; sessizce kesene biraz akçe bıraktı.", "kişisel", false, { k: "evj.oldFriendHelp", p: [cfParam(s, cf), help] }); }
+      else { p.reputation = Math.min(100, p.reputation + 2); push(s, "gunluk", "Çocukluk dostun seni mecliste övdü; sözü itibarına itibar kattı.", "kişisel", false, { k: "evj.oldFriendVouch", p: [cfParam(s, cf)] }); }
     }
   }
   // ── NPC'nin başlattığı anlar (Aşama 3): dost sofraya çağırır, hasım dile düşürür ya da malına dokunur — her biri görüşünün
@@ -1939,7 +2051,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     const mem: { text: string; k: string; p?: (string | number)[]; fn?: () => void }[] = [];
     if (p.age < 13) {
       mem.push(
-        { text: "Annen bir masal anlattı; kahramanı sendin.", k: "mem.tale" },
+        ...(!p.mother_dead ? [{ text: "Annen bir masal anlattı; kahramanı sendin.", k: "mem.tale" }] : []), // yetim çocuğa annesinin masalı yazılmaz
         { text: "Bir sokak köpeğiyle dost oldun, peşinden ayrılmadı.", k: "mem.dog" },
         { text: "Bir büyüğün elini izleyip zanaatı merak ettin.", k: "mem.craft", fn: () => { p.skill_xp.crafting += 8; p.skills.crafting = skillLevel(p.skill_xp.crafting); } },
       );
@@ -2006,7 +2118,9 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     }
     if (p.mother_dead && p.mother) mem.push({ text: `Annen ${p.mother}'in mezar taşına bir avuç su döktün; dilin kendiliğinden bir Fatiha'ya döndü. Gidenler gider, dua kalır.`, k: "mem.motherGrave", p: [p.mother], fn: () => bumpNam(p, "dindar", 1) });
     if (p.father_dead && p.father) mem.push({ text: `Babandan kalan eski aleti eline aldın; sapındaki aşınma tam ${p.father}'in avucunun yeri. Bir zanaat, bir ad, bir de bu iz kaldı ondan.`, k: "mem.fatherGrave", p: [p.father] });
-    const m = rnd(mem); m.fn?.();
+    const son = new Set(s.history.filter((e) => e.day >= s.turn - 24 && e.k?.startsWith("mem.")).map((e) => e.k)); // iki yıl içinde aynı anı yinelenmez
+    const tazeMem = mem.filter((x) => !son.has(x.k));
+    const m = rnd(tazeMem.length ? tazeMem : mem); m.fn?.();
     push(s, p.age < 13 ? "cocukluk" : "gunluk", m.text, "kişisel", false, { k: m.k, p: m.p });
   }
   if (chance(0.05)) { const g = 5 + Math.floor(Math.random() * 20); p.money += g; const fv = chance(0.5); push(s, "gunluk", fv ? `Heybenin dibinde unutulmuş ${g} akçe çıktı; ne zaman düştüğünü kimse bilmiyor.` : `Yolda ${g} akçe buldun.`, "kişisel", false, { k: fv ? "evj.foundCoin2" : "evj.foundCoin", p: [g] }); }
@@ -2488,7 +2602,7 @@ export function advance(prev: GameState, n = 1): GameState {
       if (jp.jail!.left <= 0) { jp.jail = null; jp.jail_freed = (jp.jail_freed || 0) + 1; jp.reputation = Math.max(-100, jp.reputation - 1); push(s, "suç", `Cezan doldu; zindan kapısı gün ışığına açıldı. Diyar seni unutmamış ama gözler bir süre üstünde.`, "kişisel", true, { k: "jail.released" }); }
       else { const JAIL_M_TR = ["Zindanda bir ay daha geçti; duvara bir çentik daha.", "Mazgaldan bir güvercin süzüldü; kırıntını paylaştın, gün biraz kısaldı.", "Yan hücrenin ihtiyarı duvara vura vura eski bir türkü tıklattı; sen de tempo tuttun."]; const jmi = Math.floor(Math.random() * JAIL_M_TR.length); push(s, "suç", JAIL_M_TR[jmi], "kişisel", false, { k: jmi === 0 ? "jail.month" : "jail.month" + jmi, p: [jp.jail!.left] }); }
     }
-    { const mf = monthlyFlavor(s, cal); push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k }); }
+    if (!s.player.dead && !inJail(s.player)) { const mf = monthlyFlavor(s, cal); if (mf.tanis && s.relationships[mf.tanis] === undefined) s.relationships[mf.tanis] = 0; push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k, p: mf.p }); } // tanış: sokakta tanışılan yaşıt artık tanıdık
     if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 6 && chance(0.12)) { const mp = s.player.age >= 13 ? MICRO_IDS : MICRO_KID_IDS; s.micro = { id: mp[Math.floor(Math.random() * mp.length)] }; } } // mikro an: yok sayılırsa ertesi ay kaybolur (çocuğa çocuk anı)
     crownCampaignTick(s); // Sefer 2.0: ordu her ay yol alır (yürüyüş → kuşatma → hüküm)
     rakipTick(s); // çarşıdaki rakip: hüneri büyür, hamle yapar, yıllık bayrak yarışı vakti
@@ -2540,7 +2654,9 @@ export function advance(prev: GameState, n = 1): GameState {
     if (s.turn <= 3 && !s.player.dead && i === n - 1) {
       const g = 6 + Math.floor(Math.random() * 8); s.player.money += g;
       const NBR = ["Komşun sıcak bir çorba ikram etti.", "Pazarda biri eline birkaç akçe sıkıştırdı.", "Anlatılan bir masal yüreğini ısıttı.", "Fırıncı, günün son sıcak somununu eline tutuşturdu.", "İhtiyar bir komşu, kapının önünü süpürürken sana da dua etti.", "Bir kervancı yükünü indirirken yardımına karşılık avucuna bir şey bıraktı.", "Mahalle çocukları topladıkları cevizden bir avuç payına düşürdü.", "Hamamcı seni sırasız aldı: 'Bugün yorgunsun, belli.'", "Bostancı küfesinin dibindeki en olgun kavunu ayırmış: 'Bu senin, pazara değmez.'"];
-      const ni = Math.floor(Math.random() * NBR.length);
+      const verilen = new Set(s.history.filter((e) => e.k === "evj.nbrGift").map((e) => (e.p?.[0] as { sfx?: string } | undefined)?.sfx)); // ilk ayların iyilikleri birbirinin aynı olmaz
+      const bos = NBR.map((_, i) => i).filter((i) => !verilen.has("nbr." + i));
+      const ni = bos.length ? rnd(bos) : Math.floor(Math.random() * NBR.length);
       push(s, "gunluk", NBR[ni] + ` (+${g} akçe)`, "kişisel", false, { k: "evj.nbrGift", p: [{ sfx: "nbr." + ni }, g] });
     }
     // Cliffhanger: ayın sonunda ara sıra bir sonraki ayı tease et
@@ -4967,25 +5083,26 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
   if (kind === "oyun") {
     p.health = Math.min(100, p.health + 5); addStatXp(s, "stamina", 4); gainSkill(s, "social", 4);
     chips.push({ label: "Sağlık +5", col: "#7FA66A" }, { label: "Dayanıklılık ↑", col: "#C9A84C" });
-    if (!p.child_friend) { // ilk oyunda bir can yoldaşı belirir
-      const seed = (Math.floor(Math.random() * 1e9)) >>> 0;
-      const gender: "erkek" | "kadın" = Math.random() < 0.5 ? "erkek" : "kadın";
-      p.child_friend = { id: `cf_${s.turn}_${seed % 100000}`, seed, gender, bond: 14 };
+    if (!p.child_friend) { // ilk oyunda mahallenin yaşıt çocuklarından biri can yoldaşın olur (tanıdığın varsa önce o)
+      const ys = yasitlar(s); const tanidik = ys.filter((k) => s.relationships[k.id] !== undefined);
+      const k = tanidik.length ? rnd(tanidik) : ys.length ? rnd(ys) : yasitKur(s);
+      p.child_friend = { id: k.id, seed: k.ns ?? 0, gender: k.g, bond: 14 };
+      if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0;
       chips.push({ label: "Yeni yoldaş", col: "#C0556B" }); key = "child.friend.new";
-      push(s, "cocukluk", "Oyun sırasında bir can yoldaşı edindin; günler artık daha şen.", "kişisel", true, { k: "child.friend.new", p: [{ fn: [seed, gender] }] });
+      push(s, "cocukluk", "Oyun sırasında bir can yoldaşı edindin; günler artık daha şen.", "kişisel", true, { k: "child.friend.new", p: [cfParam(s, p.child_friend)] });
     } else { // her oyun bağı güçlendirir
       const before = p.child_friend.bond;
       p.child_friend.bond = Math.min(100, before + 8 + Math.floor(Math.random() * 5));
       chips.push({ label: "Bağ ↑", col: "#C0556B" });
       const cf = p.child_friend;
-      if (before < 50 && cf.bond >= 50) { key = "child.friend.close"; push(s, "cocukluk", "Yoldaşınla aranızdaki bağ pekişti; sırdaş oldunuz.", "kişisel", true, { k: "child.friend.close", p: [{ fn: [cf.seed, cf.gender] }] }); }
+      if (before < 50 && cf.bond >= 50) { key = "child.friend.close"; push(s, "cocukluk", "Yoldaşınla aranızdaki bağ pekişti; sırdaş oldunuz.", "kişisel", true, { k: "child.friend.close", p: [cfParam(s, cf)] }); }
       else if (Math.random() < 0.35) { // küçük ortak macera (oyunu çeşitlendirir)
         const adv = Math.floor(Math.random() * 6);
-        if (adv === 0) { addStatXp(s, "intelligence", 4); chips.push({ label: "Zekâ ↑", col: "#6FA0C0" }); key = "child.adv.nest"; push(s, "cocukluk", "Yoldaşınla bir kuş yuvası buldunuz; saatlerce izleyip merak ettiniz.", "kişisel", false, { k: "child.adv.nest", p: [{ fn: [cf.seed, cf.gender] }] }); }
+        if (adv === 0) { addStatXp(s, "intelligence", 4); chips.push({ label: "Zekâ ↑", col: "#6FA0C0" }); key = "child.adv.nest"; push(s, "cocukluk", "Yoldaşınla bir kuş yuvası buldunuz; saatlerce izleyip merak ettiniz.", "kişisel", false, { k: "child.adv.nest", p: [cfParam(s, cf)] }); }
         else if (adv === 1) { addStatXp(s, "stamina", 4); p.health = Math.min(100, p.health + 3); chips.push({ label: "Dayanıklılık ↑", col: "#C9A84C" }); key = "child.adv.hide"; push(s, "cocukluk", "Saklambaçta sokağın bütün köşelerini avucunuzun içi gibi öğrendiniz.", "kişisel", false, { k: "child.adv.hide" }); }
         else if (adv === 2) { const coin = 2 + Math.floor(Math.random() * 6); p.money += coin; chips.push({ label: `+${coin} akçe`, col: "#E0BC5A" }); key = "child.adv.find"; push(s, "cocukluk", "Yıkık bir duvarın dibinde eski bir akçe buldunuz; paylaştınız.", "kişisel", false, { k: "child.adv.find", p: [coin] }); }
-        else if (adv === 3) { cf.bond = Math.min(100, cf.bond + 5); bumpNam(p, "mert", 2); chips.push({ label: "Bağ ↑↑", col: "#C0556B" }); key = "child.adv.bully"; push(s, "cocukluk", "Bir kabadayı yolunuzu kesti; yoldaşınla sırt sırta verip göğüs gerdiniz, bağınız perçinlendi.", "kişisel", true, { k: "child.adv.bully", p: [{ fn: [cf.seed, cf.gender] }] }); }
-        else if (adv === 4) { addStatXp(s, "stamina", 3); gainSkill(s, "social", 3); chips.push({ label: "Dayanıklılık ↑", col: "#C9A84C" }); key = "child.adv.stone"; push(s, "cocukluk", "Dere kenarında taş sektirme yarışına tutuştunuz; senin taşın beş kere sekti, zafer nârası attınız.", "kişisel", false, { k: "child.adv.stone", p: [{ fn: [cf.seed, cf.gender] }] }); }
+        else if (adv === 3) { cf.bond = Math.min(100, cf.bond + 5); bumpNam(p, "mert", 2); chips.push({ label: "Bağ ↑↑", col: "#C0556B" }); key = "child.adv.bully"; push(s, "cocukluk", "Bir kabadayı yolunuzu kesti; yoldaşınla sırt sırta verip göğüs gerdiniz, bağınız perçinlendi.", "kişisel", true, { k: "child.adv.bully", p: [cfParam(s, cf)] }); }
+        else if (adv === 4) { addStatXp(s, "stamina", 3); gainSkill(s, "social", 3); chips.push({ label: "Dayanıklılık ↑", col: "#C9A84C" }); key = "child.adv.stone"; push(s, "cocukluk", "Dere kenarında taş sektirme yarışına tutuştunuz; senin taşın beş kere sekti, zafer nârası attınız.", "kişisel", false, { k: "child.adv.stone", p: [cfParam(s, cf)] }); }
         else { addStatXp(s, "intelligence", 4); chips.push({ label: "Zekâ ↑", col: "#6FA0C0" }); key = "child.adv.fountain"; push(s, "cocukluk", "Eski çeşmenin taşındaki silik yazıyı sökmeye çalıştınız; yarısını okudun, gerisini masal edip anlattın.", "kişisel", false, { k: "child.adv.fountain" }); }
       }
       else { key = "child.oyun"; push(s, "cocukluk", "Yoldaşınla sokakta oyun oynadınız; soluk soluğa ama mutlu.", "kişisel", false, { k: "child.oyun" }); }
@@ -4999,7 +5116,7 @@ export function childAction(prev: GameState, kind: ChildAct): StudyResult {
     if (p.child_friend && Math.random() < 0.25) {
       p.child_friend.bond = Math.max(0, p.child_friend.bond - 10); p.child_friend.feud = (p.child_friend.feud || 0) + 1;
       chips.push({ label: "Dargınlık", col: "#C0556B" }); key = "child.feud";
-      push(s, "cocukluk", "Yaramazlığın yoldaşına patladı; aranıza bir soğukluk girdi.", "kişisel", false, { k: "child.feud", p: [{ fn: [p.child_friend.seed, p.child_friend.gender] }] });
+      push(s, "cocukluk", "Yaramazlığın yoldaşına patladı; aranıza bir soğukluk girdi.", "kişisel", false, { k: "child.feud", p: [cfParam(s, p.child_friend)] });
     } else if (Math.random() < 0.5) { bumpNam(p, "capkin", 2); gainSkill(s, "social", 5); p.health = Math.min(100, p.health + 2);
       chips.push({ label: "Sosyal +5", col: "#C9A84C", k: "chip.social", p: ["+5"] }); key = "child.yaramazlik.win";
       push(s, "cocukluk", "Bir yaramazlık çevirdin ve yakayı sıyırdın; akranların kıkırdadı.", "kişisel", false, { k: "child.yaramazlik.win" }); }
@@ -5032,13 +5149,13 @@ function shapeChildhood(s: GameState) {
   if (cf && (cf.feud || 0) >= 2 && cf.bond < 50) { // dargınlık büyüdü → çocukluk rakibi (nemesis'e giden yol)
     bornFriend();
     s.relationships[cf.id] = Math.min(s.relationships[cf.id] ?? 0, -60); // nemesis eşiğinin (−55) altına in — "nemesis'e giden yol" gerçekten işlesin
-    push(s, "cocukluk", "Çocukluk yoldaşınla aranıza kan girdi; o artık bir rakip — yolunuz hep kesişecek.", "kişisel", true, { k: "child.friend.rival", p: [{ fn: [cf.seed, cf.gender] }] });
+    push(s, "cocukluk", "Çocukluk yoldaşınla aranıza kan girdi; o artık bir rakip — yolunuz hep kesişecek.", "kişisel", true, { k: "child.friend.rival", p: [cfParam(s, cf)] });
   } else if (cf && cf.bond >= 40) {
     bornFriend();
     s.relationships[cf.id] = Math.max(s.relationships[cf.id] || 0, Math.min(80, cf.bond));
-    push(s, "cocukluk", "Çocukluk yoldaşın seninle birlikte büyüdü; artık ömürlük bir dostun var.", "kişisel", true, { k: "child.friend.grown", p: [{ fn: [cf.seed, cf.gender] }] });
+    push(s, "cocukluk", "Çocukluk yoldaşın seninle birlikte büyüdü; artık ömürlük bir dostun var.", "kişisel", true, { k: "child.friend.grown", p: [cfParam(s, cf)] });
   } else if (cf) {
-    push(s, "cocukluk", "Çocukluk yoldaşınla yollarınız ayrıldı; çocukluk işte, gelip geçti.", "kişisel", false, { k: "child.friend.lost", p: [{ fn: [cf.seed, cf.gender] }] });
+    push(s, "cocukluk", "Çocukluk yoldaşınla yollarınız ayrıldı; çocukluk işte, gelip geçti.", "kişisel", false, { k: "child.friend.lost", p: [cfParam(s, cf)] });
   }
   // Çocukluk hayali: edindiğin meslek hayalinin domeniyle örtüşürse hayal gerçek olur (ödül); yoksa başka bahara kalır.
   if (p.child_dream) {
