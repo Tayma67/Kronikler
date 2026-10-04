@@ -224,3 +224,52 @@ Yapısal kalemler yeni bir kazanç kanalı açmaz (farm yok); eylem kanalları a
   - **Meydanda hüner:** güç ve dayanıklılık; bazen yaşıtınla koşu yarışı (kazanırsan itibar, mertlik).
 - İlk gönlün sen 30'a varmadan başkasıyla evlenirse kroniğe düşer; 18'inde hâlâ bekâr ve yakınsanız "belki artık söz
   zamanıdır" satırı gelir.
+
+## Sonuçlar: kim olduğun kime nasıl yansır (uygulandı)
+
+İnceleme (karşılaştırmalı simülasyon: 22 yıl "herkese yardım eden" ile "önüne gelene zulmeden"):
+doğrudan dokunulan kişilerde fark zaten güçlüydü; ama (1) söylentiler yalnız ekranda duruyordu, kimsenin görüşüne
+girmiyordu, (2) nâma her huy hemen hemen aynı tepkiyi veriyordu, (3) vâris devrinde kasaba atayı tamamen
+unutuyordu (atanın iyiliği de zulmü de sıfırlanıyordu), (4) "velinimet" tohumu kime yardım edildiğine bakmadan
+25 akçeyi kesin 90 akçeye çeviriyordu (çiftlik). Düzeltmeler:
+
+- **Söylentiler etkili** (`gorus.soylenti`): dolaştığı yerleşimde tam, aynı bölgede yarı duyulur; ±12 tavan;
+  duyanın huyu tartar (zulüm söylentisini ilkeli 1,5 kat, çıkarcı yarım; cömertlik söylentisini sıcak kalpli 1,5 kat).
+  Söylentinin kaynağı kendi anısıyla baktığı için ikinci kez etkilenmez. Söylentiler zamanla söner.
+- **Huya göre tepki matrisi** (`namTepkisi`, dört huy grubu):
+  ilkeli (dindar, mert, ciddi) · çıkarcı (kurnaz, hırslı, kibirli) · çekingen (utangaç, dertli, yalnız, sabırlı,
+  unutkan) · sıcak (cömert, misafirperver, sıcakkanlı, neşeli, aceleci).
+  - Cömertlik: sıcak +8'e kadar, ilkeli/çekingen +4, çıkarcı 0.
+  - Zulüm: ilkeli −15'e kadar, sıcak/çekingen −10, çıkarcı −5 (güce saygı).
+  - Mertlik: ilkeli +8, çekingen +4 (korunduğunu bilir), sıcak +3. Dindarlık: dindar +8, ciddi/sabırlı +4.
+  - Çapkınlık (yeni kalem): dindar/ciddi −8, neşeli 0, diğerleri −3.
+- **Kendiliğinden hamleler huyla şekillenir:** senden nefret eden çekingen biri korkulan birine laf sokamaz,
+  yolunu değiştirir; ilkeli biri zulmü herkesin önünde yüzüne vurur (itibar −2); çıkarcı huylu, cömertliği dillere
+  düşmüş birine sevmese de borç istemeye gelir (ve daha az öder) — saf görünenin kapısı çok çalınır.
+  Hakarette sert karşılık veren huylar düzeltildi (olmayan "öfkeli" huyu yerine aceleci, kibirli, mert).
+- **İyiliğin ve zulmün karşılığı kişiye bağlı** (tohumlar `npcId` taşır): velinimet ancak yardım ettiğin kişi
+  muradına erdiyse döner; o zaman da huyu karar verir (ilkeli yüzde 85, sıcak 80, çekingen 60, çıkarcı 30 vefa) —
+  vefasız "seni tanımazdan gelir"; kişi öldüyse ailesi dualarla anar (+1 itibar); hiç belini doğrultamadıysa söner.
+  Sömürülen kişi ölmüşse intikam söner; dindar, sabırlı, utangaç olan yarı yarıya affeder.
+- **Nesil hafızası:** vâris devrinde her kişinin ataya hesabının yarısı (önceki ataların hatırası da yarılanarak)
+  `ata_hatira` olarak kalır (±40) → görüşte "Atanı hatırlayışı" kalemi; güçlü hatırlayanlar vârisi tanır.
+  Atanın nâmının dörtte biri (önceki soyun yarısıyla) hanedan nâmı olur → "Hanedanının nâmı" kalemi (±10).
+  Çok kişi atayı iyi ya da kötü anıyorsa vâris kroniğe bunu bilerek başlar.
+- Ölçüm (aynı simülasyon, sonra): hiç dokunulmamış kişilerin görüşü yardımsever için +7→+18, zalim için −38→−52;
+  vârise kasabanın bakışı +7→+43 ve −3→−40; huy grupları arasında belirgin fark; korkudan kaçanlar ve zulmü yüzüne
+  vuranlar ortaya çıktı; velinimetlerin üçte biri vefasız çıkıyor.
+
+## Usta, gençlik izi, eşin tepkisi (uygulandı)
+
+- **Gerçek usta** (`usta_id`): 13'te çırak verildiğin usta şehirde mesleğini yapan en kıdemli kişidir; gençlikte
+  "ustanın yanında" uğraşı da onu bulur. Çıraklık ve kalfalıkta ustan tezgâhını bırakmaz (göçmez, iş değiştirmez).
+  Görüşü peştamal sınavına yansır (+10'a kadar kefil, −8'e kadar aleyh); sever ve geçersen peştamalını kendi kuşatır,
+  küsse kaldığında aleyhine konuştuğu duyulur. Ölürse kroniğe düşer; seviyorsa son bir sırrını bırakır (beceri).
+  Usta da seni "çırağı" olarak görür (+10). Karakter ekranında ustanın adı profiline açılır.
+- **Gençlik izi** (`genclik`): 18'de en az 6 gençlik uğraşı yaptıysan en çok yaptığın kalıcı iz bırakır —
+  Hünerli (meslek becerisi), Sözü dinlenir (sosyal, karizma), Gönül ehli (karizma), Yiğit (güç, dayanıklılık, mertlik).
+  Karakter ekranında çocukluk rozetinin yanında görünür.
+- **Eşin nâmına tepkisi** (yılda bir, yüzde 60): çapkınlığına dindar/ciddi eş −8 (diğerleri −5); zulmüne çıkarcı eş
+  memnun (+1), çekingen eş korkar (−3), diğerleri utanır (−4); cömertliğine sıcak/ilkeli eş gurur duyar (+3),
+  çıkarcı eş "ocağın akçesini dağıtıyorsun" diye yakınır (−2); dindarlığına dindar eş huzur bulur (+3).
+  Bağ 8'in altına düşerse çıkarcı olmayan eş ocağı terk edebilir.

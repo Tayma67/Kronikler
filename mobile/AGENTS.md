@@ -60,6 +60,7 @@ UI-dışı dosyalar (docs) için 2 ve 7 yeterli; game.ts'e dokunmayan UI dalgala
 - `i18n-icon-check.cjs` — 6 dil anahtar tamlığı + %N placeholder + kullanılan anahtar varlığı + GameIcon geçerliliği.
 - `dil-karisma.cjs` — her dilin birleşmiş son sözlüğünde başka dilin metni var mı (Arap/Kiril yazısı kesin ayırt eder; Latin dillerde çevrilmemiş Türkçe). i18n'e dokunan her dalgada checker ile birlikte koşulur → "DİL KARIŞMASI: TEMİZ".
 - `olay-metin.cjs [hayat]` — gerçek hayatlar oynatıp kroniğe düşen HER olayı 6 dilde ekrandaki gibi yazdırır; artakalan yer tutucu (%1, %b…), undefined/NaN → hata. Olay metni ekleyen her dalgada koşulur → "OLAY METNİ: TEMİZ".
+- `karakter-ayna.cjs` — sonuç denetimi: aynı kurallarla "herkese yardım eden" ve "önüne gelene zulmeden" iki karakter 22 yıl oynatılır; kasabanın 1./10./22. yıldaki bakışı, hiç dokunulmamışların ve huy gruplarının bakışı, dost/hasım hamleleri, kaçan/yüzüne vuran, teklifler, söylentiler, tohum sonuçları ve vârise geçen bakış yan yana basılır. Görüş, nâm, söylenti, tohum ya da vâris devrine dokunan her dalgada koşulur; iki sütunun yönü ayrışmalı (yardımsever +, zalim −).
 - `saga-fuzz.cjs` — Kül Yemini destanı düşman denetimi: 120 hanedan × ≤3 nesil rastgele seçim; değişmez ihlallerinde exit 1.
   Destana (saga) dokunan her dalgadan sonra çalıştırılır.
 

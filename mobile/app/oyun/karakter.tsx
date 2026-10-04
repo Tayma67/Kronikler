@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { aileUyesi, kisiProfil, yoldasAdi, yoldasDurumu, useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail, tendPet, tendDog, kariyerXp } from "../../lib/game";
+import { aileUyesi, kisiProfil, yoldasAdi, yoldasDurumu, ustamKim, useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail, tendPet, tendDog, kariyerXp } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider, ScreenFresk } from "../../lib/ui";
@@ -227,8 +227,15 @@ export default function Karakter() {
                 <Badge name="star" text={`${p.generation}. ${t("misc.generation").toUpperCase()}`} />
                 {inJail(p) ? <Badge name="prisoner" text={`${t("jail.title")} · ${p.jail!.left} ${t("char.mo").toUpperCase()}`} /> : null}
                 {p.childhood ? <Badge name="baby" text={t("childhood." + p.childhood).toUpperCase()} /> : null}
+                {p.genclik ? <Badge name="banner" text={t("genclik." + p.genclik).toUpperCase()} /> : null}
               </View>
-              {p.childhood ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 4 }} numberOfLines={2}>{t("childhood." + p.childhood + ".d")}</Text> : null}
+              {p.childhood ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 4 }} numberOfLines={2}>{t("childhood." + p.childhood + ".d")}{p.genclik ? " " + t("genclik." + p.genclik + ".d") : ""}</Text> : p.genclik ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 4 }} numberOfLines={2}>{t("genclik." + p.genclik + ".d")}</Text> : null}
+              {(() => { const u = ustamKim(state); if (!u) return null; const pr = kisiProfil(state, u.id, lang); if (!pr) return null; return ( // gerçek ustan: dokununca profili
+                <Pressable onPress={() => { hap("tap"); router.push(`/oyun/npc/${u.id}`); }} style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 }}>
+                  <GameIcon name="anvil" size={11} color={C.goldDim} />
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("char.usta")}: <Text style={{ color: C.parchment }}>{pr.npc.name.split(" ")[0]}</Text></Text>
+                </Pressable>
+              ); })()}
               {p.child_friend ? (() => {
                 const cf = p.child_friend; const nm = yoldasAdi(state, lang) || "";
                 const d = yoldasDurumu(p);
