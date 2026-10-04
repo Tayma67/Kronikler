@@ -1049,12 +1049,21 @@ export function gorus(s: GameState, id: string): { toplam: number; kalemler: Gor
   // Çarşı ve divan: meslektaşlık, ekmeğini verdiğin işçi, valisi olduğun şehrin vergisi.
   if (k && wy - k.dy >= 14 && p.age >= 14 && p.profession !== "işsiz" && k.prof === p.profession) ekle("gorus.meslek", 5);
   if ((p.properties || []).some((pr) => pr.workers?.includes(id))) ekle("gorus.isveren", 8);
+  if (k) { const es = new Set([...(s.eserler?.[k.loc] || []), ...(p.govWorks?.[k.loc] || [])]); if (es.size) ekle("gorus.eser", Math.min(8, es.size * 3)); } // çeşmesinden su içtiği, köprüsünden geçtiği hanedan
+  if (k && p.faction && wy - k.dy >= 18) { const nl = npcLonca(k.prof); if (nl === p.faction) ekle("gorus.lonca", 6); else if (nl && (s.wars || []).some((w) => (w.a === nl && w.b === p.faction) || (w.b === nl && w.a === p.faction))) ekle("gorus.loncaHasmi", -6); }
   if (k && p.governorships?.includes(k.loc)) { const v = p.govTax?.[k.loc] ?? 15; ekle("gorus.vali", v <= 10 ? 6 : v >= 25 ? -8 : 0); }
   const top = ks.reduce((a, x) => a + x.v, 0); const c = Math.max(-100, Math.min(100, top));
   if (c !== top) ks.push({ k: "gorus.sinir", v: c - top }); // döküm her zaman gösterilen toplama eşittir
   return { toplam: c, kalemler: ks };
 }
 export function relWith(s: GameState, id: string): number { return gorus(s, id).toplam; }
+// Meslekten lonca: esnafın hangi loncaya bağlı olduğu (Gölge Kardeşliği gizlidir — kimse açıkça üyesi değildir).
+export function npcLonca(prof: string): string | null {
+  if (prof === "tüccar" || prof === "hancı" || prof === "kuyumcu") return "tuccar";
+  if (prof === "demirci" || prof === "marangoz" || prof === "dokumacı") return "demirci";
+  if (prof === "asker") return "asker"; if (prof === "şifacı") return "sifaci"; if (prof === "katip" || prof === "müzisyen") return "edebiyat";
+  return null;
+}
 // Huy grupları: neye değer verdikleri ve korkuya nasıl karşılık verdikleri.
 type HuyGrubu = "ilkeli" | "cikarci" | "cekingen" | "sicak";
 export function huyGrubu(huy?: string): HuyGrubu {
@@ -1449,6 +1458,7 @@ export interface GameState {
   settlements?: Settlement[]; // hanedanın kurduğu yerleşimler
   marketEvent?: { goods: string[]; mult: number; until: number; key: string } | null; // geçici piyasa olayı
   player_rumors?: Rumor[]; // oyuncu hakkında dolaşan söylentiler (npc_mind dedikodu ağı)
+  eserler?: Record<string, string[]>; // hanedanın şehirlere yaptırdığı bayındırlık eserleri — o şehrin insanları kuşaklar boyu anar (vârise geçer)
   ata_hatira?: Record<string, number>; // nesil hafızası: kişilerin atanı (atalarını) nasıl hatırladığı — vârise görüş kalemi olarak geçer, her nesilde yarılanır
   soy_nam?: Nam; // hanedanın nâmı: ataların nâmından süzülen iz (dörtte biri, her nesilde yarılanır)
   seeds?: Seed[]; // sonuç tohumları (geçmişin geleceğe etkisi)
@@ -6516,6 +6526,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     // Hanedan hafızası vârise geçer: ataların tamamladığı yaylar bayrak olarak kalır, az da olsa anlatı momentumu verir.
     story: { active: null, completed: [], tension: Math.min(20, Object.keys(prev.story?.flags || {}).length * 3), nemesis: null, flags: { ...(prev.story?.flags || {}) }, lull: 0 }, wars: [], caravan: null, econ: 1,
     settlements: prev.settlements || [], // dynastinin kurduğu yerleşimler vârise kalır
+    eserler: prev.eserler || (prev.player.govWorks && Object.keys(prev.player.govWorks).length ? { ...prev.player.govWorks } : undefined), // yaptırılan eserler şehirde kalır, hanedanın adıyla anılır
     // Sadece nesil aşabilen tohumlar vârise geçer. Vârisin turu 0'dan başladığı için ekim'i yeniden
     // tabanla (ekim -= prev.turn): birikmiş yaş korunur, yoksa yas=turn-ekim negatif kalıp tohum hiç olgunlaşmaz.
     seeds: (prev.seeds || []).filter((t) => t.nesil).map((t) => ({ ...t, ekim: t.ekim - prev.turn })),
@@ -8856,7 +8867,20 @@ export function issueEdict(prev: GameState, loc: string, id: string): GameState 
   if (e.nam && e.namAmt) bumpNam(p, e.nam, e.namAmt);
   p.govEdict[loc] = s.turn;
   push(s, "yonetim", `${loc}'de ferman çıkardın.`, "kişisel", true, { k: "gov.edict." + id, p: [{ pl: loc }] });
+  fermanKisileri(s, loc, id);
   return s;
+}
+// Fermanın dokunduğu gerçek insanlar: angaryaya koşulanlar, vergisi bağışlananlar, hakkına kavuşanlar, pazarı açılan esnaf.
+// Her biri anısına yazar (yakınlarına da dokunur); kroniğe birinin adıyla düşer.
+const FERMAN_ANI: Record<string, { tur: string; key: string; n: number }> = { angarya: { tur: "angarya", key: "gov.angaryaKisi", n: 5 }, vergiaffi: { tur: "vergi_affi", key: "gov.vergiaffiKisi", n: 5 }, adalet: { tur: "adalet", key: "gov.adaletKisi", n: 3 }, pazarserbest: { tur: "pazar_serbest", key: "gov.pazarKisi", n: 4 } };
+function fermanKisileri(s: GameState, loc: string, id: string) {
+  const f = FERMAN_ANI[id]; if (!f) return; const p = s.player; const wy = worldYears(s);
+  let ad = Object.values(nufusOf(s).k).filter((k) => k.ol == null && k.loc === loc && wy - k.dy >= 16 && !oyuncuAkrabasi(p, k.id) && k.es !== OYUNCU);
+  if (id === "pazarserbest") { const e = ad.filter((k) => DUKKANCI.has(k.prof)); if (e.length) ad = e; }
+  else if (id === "angarya") { const e = ad.filter((k) => wy - k.dy <= 50); if (e.length) ad = e; }
+  const secilen: Kisi[] = []; while (ad.length && secilen.length < f.n) secilen.push(ad.splice(Math.floor(Math.random() * ad.length), 1)[0]);
+  for (const k of secilen) { remember(s, { id: k.id, name: kisiAdi(k, "tr") }, f.tur); if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0; }
+  if (secilen.length) push(s, "yonetim", `${kisiAdi(secilen[0], "tr")} de fermandan payını aldı.`, "kişisel", false, { k: f.key, p: [knParam(secilen[0])] });
 }
 // ── Bayındırlık eseri: şehre kalıcı yatırım (çeşme/köprü/imarethane/burç). Bir kez kurulur; memnuniyet/gelir tabanını yükseltir + şöhret. ──
 export interface GovWork { id: string; costMoney: number; costTreasury: number; happy: number; leg: number; fame: number; nam?: keyof Nam; namAmt?: number; }
@@ -8883,18 +8907,40 @@ export function fundWork(prev: GameState, loc: string, id: string): GameState {
   p.fame = Math.min(100, p.fame + w.fame);
   if (w.nam && w.namAmt) bumpNam(p, w.nam, w.namAmt);
   p.govWorks[loc] = [...worksOf(p, loc), id];
+  (s.eserler = s.eserler || {})[loc] = [...new Set([...(s.eserler[loc] || []), id])]; // eser hanedanın adıyla şehirde kalır
   push(s, "yonetim", `${loc}'de bir eser yaptırdın; adın hayırla anılacak.`, "kişisel", true, { k: "gov.work." + id, p: [{ pl: loc }] });
   return s;
 }
 // Kalıcı eser ikramiyesi: her eser halkı daha memnun tutar ve şehir gelirini bir nebze artırır.
 export function worksBonus(p: Player, loc: string): number { return worksOf(p, loc).length; }
 
+function vergiKisileri(s: GameState, loc: string, tax: number) {
+  const p = s.player; const pop = nufusOf(s); const wy = worldYears(s);
+  const yer = Object.values(pop.k).filter((k) => k.ol == null && k.loc === loc && wy - k.dy >= 18 && !oyuncuAkrabasi(p, k.id) && k.es !== OYUNCU);
+  if (tax >= 25 && Math.random() < 0.6) {
+    const yoksul = yer.filter((k) => k.prof === "işsiz" || (k.cocuk || []).filter((c) => pop.k[c]?.ol == null && wy - pop.k[c].dy < 14).length >= 3);
+    const k = yoksul.length ? rnd(yoksul) : yer.length ? rnd(yer) : undefined; if (!k) return;
+    remember(s, { id: k.id, name: kisiAdi(k, "tr") }, "vergi_zulmu"); if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0;
+    push(s, "yonetim", `${kisiAdi(k, "tr")} vergiyi ödeyemedi; ocağındaki son keçiyi sattı.`, "kişisel", false, { k: "gov.vergiMagdur", p: [knParam(k)] });
+  } else if (tax <= 10 && Math.random() < 0.4 && yer.length) {
+    const k = rnd(yer); remember(s, { id: k.id, name: kisiAdi(k, "tr") }, "vergi_hafif"); if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0;
+    push(s, "yonetim", `${kisiAdi(k, "tr")} vergin hafif olduğu için ocağında sana dua ediyor.`, "kişisel", false, { k: "gov.vergiDua", p: [knParam(k)] });
+  }
+}
+function isyanOnderi(s: GameState, loc: string): Kisi | undefined {
+  const p = s.player; const wy = worldYears(s);
+  const yer = Object.values(nufusOf(s).k).filter((k) => k.ol == null && k.loc === loc && wy - k.dy >= 20 && !oyuncuAkrabasi(p, k.id) && k.es !== OYUNCU);
+  if (!yer.length) return undefined;
+  const ilkeli = yer.filter((k) => huyGrubu(huyOf(k)) === "ilkeli"); const havuz = ilkeli.length ? ilkeli : yer;
+  return havuz.sort((a, b) => relWith(s, a.id) - relWith(s, b.id))[0];
+}
 // Valilik döngüsü (her tur, yalnız vali ise): vergi → hazine, vergi → memnuniyet, memnuniyet+rep → meşruiyet; düşerse isyan/azil.
 function governorTick(s: GameState) {
   const p = s.player; if (p.dead) return; const list = p.governorships; if (!list?.length) return; // öldüğün ay valilik/azil olayı çıkmasın (crownTick/courtTick ile tutarlı)
   if (!p.govLeg) p.govLeg = {}; if (!p.govHappy) p.govHappy = {}; if (!p.govTreasury) p.govTreasury = {};
   for (const loc of [...list]) {
     const tax = govTaxOf(p, loc);
+    if (s.turn % 12 === 0) vergiKisileri(s, loc, tax); // vergi bir sayı değil: yılda bir, ağırsa birinin ocağını söndürür, hafifse dua alır
     const works = worksBonus(p, loc); // bayındırlık eseri sayısı
     const prosperity = cityInfo(loc, placeKind(loc)).prosperity;
     p.govTreasury[loc] = Math.round((p.govTreasury[loc] ?? 0) + prosperity * tax / 100 * 0.4 * (1 + works * 0.06)); // hazine vergiyle dolar (eserler artırır)
@@ -8915,7 +8961,9 @@ function governorTick(s: GameState) {
       p.govHappy[loc] = Math.min(100, happy + 18);
       p.govTreasury[loc] = Math.round((p.govTreasury[loc] ?? 0) * 0.5);
       p.reputation = Math.max(-100, p.reputation - 3);
-      push(s, "yonetim", `${loc}'de halk homurdandı; şehir hazinesi zarar gördü.`, "kişisel", false, { k: "gov.unrest", p: [{ pl: loc }] });
+      const onder = isyanOnderi(s, loc); // halkı meydanda toplayan: sana en kırgın ilkeli ya da en kırgın kişi
+      if (onder) { s.relationships[onder.id] = Math.max(-100, (s.relationships[onder.id] ?? 0) - 10); push(s, "yonetim", `${loc}'de ${kisiAdi(onder, "tr")} halkı meydanda topladı; şehir hazinesi zarar gördü.`, "kişisel", true, { k: "gov.unrestOnder", p: [knParam(onder), { pl: loc }] }); }
+      else push(s, "yonetim", `${loc}'de halk homurdandı; şehir hazinesi zarar gördü.`, "kişisel", false, { k: "gov.unrest", p: [{ pl: loc }] });
     } else if (Math.random() < 0.05) { // merkezî divan talebi: hazineden vergi ister (öde → meşruiyet; ödeyemezsen güven sarsılır)
       const demand = 20 + Math.round(prosperity * 0.2);
       if ((p.govTreasury[loc] ?? 0) >= demand) {

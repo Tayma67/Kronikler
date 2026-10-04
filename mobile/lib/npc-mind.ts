@@ -17,7 +17,7 @@ export const RUMOR_VARIANTS: Record<string, number> = {
   hakaret: 2, tehdit: 2, saldiri: 2, kacirma: 1, hirsizlik_tanigi: 1, suc_tanigi: 1,
   dolandiricilik: 2, somuru: 2, iftira: 2, alay: 2, yakinima_zarar: 2, flort_tanigi: 2,
   reddedilme: 2, comert_hediye: 2, sadaka: 2, yardim: 2, borc_kurtarma: 2,
-  hayat_kurtarma: 2, savunma: 2, ibadet_tanigi: 2, ihanet: 1, yuz_cevirme: 2, miras_kavgasi: 2, soyulma: 2, ucret_odenmedi: 1,
+  hayat_kurtarma: 2, savunma: 2, ibadet_tanigi: 2, ihanet: 1, yuz_cevirme: 2, miras_kavgasi: 2, soyulma: 2, ucret_odenmedi: 1, angarya: 1, vergi_zulmu: 1,
 };
 
 export interface MemSpec { yuk: number; unutma: number; skandal: number; nam: string | null; travma?: boolean; }
@@ -64,6 +64,12 @@ export const MEMORY_TYPES: Record<string, MemSpec> = {
   soyulma:        { yuk: -25, unutma: 0.99, skandal: 0.6, nam: "zalim" }, // malını çalanı tanıdı
   kovulma:        { yuk: -12, unutma: 0.97, skandal: 0.0, nam: null },    // işinden kovuldu
   ucret_odenmedi: { yuk: -8,  unutma: 0.96, skandal: 0.3, nam: null },    // emeğinin karşılığını alamadı
+  angarya:        { yuk: -10, unutma: 0.98, skandal: 0.3, nam: "zalim" }, // valinin angaryasına koşuldu
+  vergi_affi:     { yuk: +6,  unutma: 0.97, skandal: 0.0, nam: "comert" },// vergisi bağışlandı
+  adalet:         { yuk: +5,  unutma: 0.97, skandal: 0.0, nam: null },    // fermanla hakkına kavuştu
+  pazar_serbest:  { yuk: +5,  unutma: 0.96, skandal: 0.0, nam: null },    // pazar serbestisiyle kazandı
+  vergi_zulmu:    { yuk: -10, unutma: 0.98, skandal: 0.3, nam: "zalim" }, // ağır vergiyle ocağı söndü
+  vergi_hafif:    { yuk: +5,  unutma: 0.96, skandal: 0.0, nam: null },    // hafif vergiye dua etti
 };
 
 export const NAM_TRAITS = ["comert", "zalim", "capkin", "dindar", "mert"];

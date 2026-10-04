@@ -286,3 +286,18 @@ unutuyordu (atanın iyiliği de zulmü de sıfırlanıyordu), (4) "velinimet" to
 - **Aile ihmali** (yılda bir; aynı yerde yaşıyorlarsa): eşle bir yıl, anne-babayla ya da küçük çocuklarla iki yıl hiç
   vakit geçirilmezse (akşam sofrası da sayılır) eş bağı −4, anne-baba bağı −5, çocukların bağı −5 ve kroniğe düşer.
   12 yıllık ölçümde ihmalkâr karakterin anne-baba bağı 1'e, ilgili olanınki 100'e varıyor.
+
+## Valilik ve lonca kişiye dokunuyor (uygulandı)
+
+- **Fermanlar gerçek insanlara dokunur:** angarya çalışma çağındaki 5 kişiyi koşar ("beni angaryaya koştu", −10,
+  zulüm nâmı, dedikodusu dolaşır); vergi affı 5 kişinin duasını alır (+6); adalet fermanı 3 kişiyi hakkına kavuşturur
+  (+5); pazar serbestisi esnafı sevindirir (+5). Kroniğe birinin adıyla düşer; yakınlarına da dokunur.
+- **Vergi bir sayı değil:** yılda bir, vergi %25 ve üstüyse (yüzde 60) bir yoksulun (işsiz ya da üç küçük çocuklu)
+  ocağı söner — "ağır vergisiyle ocağımı söndürdü" (−10, dedikodu); %10 ve altıysa (yüzde 40) biri dua eder (+5).
+- **İsyanın önderi:** halk ayaklandığında meydanda toplayan, sana en kırgın ilkeli (yoksa en kırgın) kişidir; adıyla
+  kroniğe düşer, sana kırgınlığı derinleşir (−10).
+- **Eserler kuşaklar boyu:** yaptırdığın çeşme, köprü, imarethane, burç o şehirdeki herkesin görüşüne girer (eser başına
+  +3, en çok +8) ve `eserler` olarak vârise geçer — valilik bitse de hanedanın adıyla anılır.
+- **Loncadaşlık:** bir loncaya üyeysen o loncaya bağlı esnaf (meslekten: tüccar/hancı/kuyumcu → Tüccarlar,
+  demirci/marangoz/dokumacı → Demirciler, asker → Asker Ocağı, şifacı → Şifacılar, kâtip/müzisyen → Edebiyat)
+  seni loncadaşı görür (+6); loncaların savaştaysa karşı loncanın esnafı −6. Gölge Kardeşliği gizlidir.
