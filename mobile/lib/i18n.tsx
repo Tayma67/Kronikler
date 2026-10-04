@@ -3306,6 +3306,7 @@ export function renderEvt(k: string | undefined, fallback: string, p: EvtParam[]
   }
   if (tpl === k) return fallback; // anahtar hiçbir sözlükte yok → kayıtlı (interpolasyonlu TR) metne düş, ham anahtar gösterme
   if (!p || !p.length) return tpl;
+  tpl = tpl.replace(/%b2/g, "%2").replace(/%b(?![a-z0-9])/g, "%1"); // dünya haberlerinin beylik yer tutucuları (%b, %b2) sıralı parametreye eşlenir
   if (lang === "tr") tpl = trApplySuffixes(tpl, (n) => resolveEvtParam(p[n - 1], lang, t, female)); // ekli yer tutucular önce, doğru allomorfla
   return tpl.replace(/%(\d+)/g, (_, n) => resolveEvtParam(p[+n - 1], lang, t, female));
 }
