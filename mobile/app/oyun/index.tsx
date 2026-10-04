@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp } from "../../lib/game";
+import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, npcTeklifYanit } from "../../lib/game";
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
 import { rakipKartVerisi } from "../../lib/rakip-ui";
@@ -302,7 +302,36 @@ export default function Dashboard() {
         <OpportunityModal opp={opp} statVal={opp ? state.player.stats[opp.stat] : 5} onResolve={onResolveOpp} onPass={() => { hap("tap"); setOpp(null); }} />
       ) : tzDilemma ? (
         <DilemmaModal dilemma={tzDilemma} onChoose={onTezgah} female={p.gender === "kadın"} />
-      ) : ach ? (
+      ) : state.npcTeklif && !p.dead ? (() => {
+        // NPC'nin kendi kararıyla gelen teklifi: kim, ne istiyor, sana bakışı ve en büyük sebebi (döküm motorla aynı)
+        const tk = state.npcTeklif!; const pr = kisiProfil(state, tk.id, lang);
+        if (!pr) return null;
+        const g = gorus(state, tk.id).toplam;
+        const metin = renderEvt(tk.tur === "dunur" ? "npct.dunur" : "npct.borc", "", tk.tur === "dunur" ? [pr.npc.name] : [pr.npc.name, tk.tutar || 0, tk.ay || 12], lang, t, p.gender === "kadın");
+        const neden = renderEvt("npct.why", "", [(g > 0 ? "+" : "") + g, gorusSebebi(state, tk.id, g >= 0 ? 1 : -1)], lang, t, p.gender === "kadın");
+        const yanit = (kabul: boolean) => { hap("selection"); playTap(); apply((s) => npcTeklifYanit(s, kabul)); };
+        return (
+          <Modal visible transparent animationType="fade" onRequestClose={() => yanit(false)}>
+            <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.72)", alignItems: "center", justifyContent: "center", padding: 22 }}>
+              <View style={{ width: "100%", maxWidth: 380, backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", borderRadius: 14, padding: 18, alignItems: "center" }}>
+                <GameIcon name={tk.tur === "dunur" ? "ring" : "coins"} size={18} color={C.gold} />
+                <View style={{ marginTop: 10 }}><Portre age={pr.npc.age} gender={pr.npc.gender} size={64} ring={false} seed={pr.npc.id} /></View>
+                <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, marginTop: 8, textAlign: "center" }}>{pr.npc.name}</Text>
+                <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, lineHeight: 21, marginTop: 10, textAlign: "center" }}>{metin}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.goldDim, lineHeight: 18, marginTop: 8, textAlign: "center" }}>{neden}</Text>
+                <View style={{ flexDirection: "row", gap: 10, marginTop: 16, alignSelf: "stretch" }}>
+                  <Pressable onPress={() => yanit(false)} style={{ flex: 1, paddingVertical: 11, borderRadius: 9, borderWidth: 1, borderColor: C.border, alignItems: "center" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 12, color: C.parchmentMuted, letterSpacing: 0.5 }}>{t("npct.red")}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => yanit(true)} style={{ flex: 1, paddingVertical: 11, borderRadius: 9, borderWidth: 1, borderColor: "rgba(201,168,76,0.55)", backgroundColor: "rgba(201,168,76,0.12)", alignItems: "center" }}>
+                    <Text style={{ fontFamily: F.display, fontSize: 12, color: C.gold, letterSpacing: 0.5 }}>{t("npct.kabul")}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          </Modal>
+        );
+      })() : ach ? (
         <AchievementToast name={ach.name} icon={ach.icon} onClose={() => setAch(null)} />
       ) : null}
       {/* Yıl karnesi: yaş günü ritüeli — yılın izleri + mevcut durum */}

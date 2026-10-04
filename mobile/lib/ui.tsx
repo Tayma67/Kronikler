@@ -136,7 +136,7 @@ function IconPulse({ icon, color }: { icon: string; color: string }) {
 export function MilestoneModal({ visible, type, text, onClose }: { visible: boolean; type: string; text: string; onClose: () => void }) {
   const meta = MILESTONE_LABEL[type] || { tag: "Dönüm Noktası", icon: "star" };
   const { t } = useI18n();
-  const msTag = (() => { const k = "ms." + type; const v = t(k); return v !== k ? v : meta.tag; })(); // çevirisi olan tipler 6 dilde, eskiler TR etikete düşer
+  const msTag = (() => { const k = "ms." + type; const v = t(k); return v !== k ? v : t("ms.genel"); })(); // her tip 6 dilde; bilinmeyen tip genel "dönüm noktası"na düşer (Türkçe etiket sızmaz)
   const accent = MS_ACCENT[type] || C.gold;
   const celebratory = type !== "ölüm" && type !== "pabuc"; // utanç anı kutlanmaz
   return (

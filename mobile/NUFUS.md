@@ -134,6 +134,20 @@ Yapısal kalemler yeni bir kazanç kanalı açmaz (farm yok); eylem kanalları a
   çözülür; ölenin bağı çözülür. Görüşe "Dostlarına davranışın" (yüzde 10, ±10) ve "Hasımlarına davranışın"
   (ters işaret, ±10) kalemleri eklenir.
 
+## Aşama 3b — NPC'nin sana yönelik kararları (uygulandı)
+
+- **Teklifler** (`s.npcTeklif`, aynı anda tek, 3 ayda cevapsız kalırsa düşer ve kırgınlık bırakır; ayda yüzde 4 yoklama):
+  - *Dünürcü:* bulunduğun yerde bekâr, karşı cinsten, yaşı ±10 ve sana bakışı ≥ 40 olan kişi. Kabul → o kişiyle evlilik;
+    ret → taban −6.
+  - *Borç isteme:* sana bakışı ≥ 15 olan yetişkin; tutar 15–50 akçe (enflasyonlu), vade 12–24 ay; ancak paran tutarın
+    iki katıysa ve açık alacağın üçten azsa. Kabul → anı "yardım", cömertlik nâmı; ret → taban −4.
+  - *Geri ödeme* (`p.alacaklar`): mert/dindar/sabırlı/cömert/ciddi yüzde 90, kurnaz/hırslı yüzde 55, diğerleri yüzde 75;
+    cömert/mert yüzde 10 fazlasıyla öder. Ödenmezse bir yıl mühlet, sonra batar; borçlu ölürse alacak mezara gider.
+    Alacaklar vârise geçer.
+- **Kendiliğinden hamleler** (ayda yüzde 5): sana bakışı ≥ 30 olan dost çorba getirir / sofraya çağırır; ≤ −30 olan
+  hasım aleyhine konuşur ya da laf sokar; ≤ −50 ve sinsi huylu (kurnaz/hırslı/kibirli) olan, o şehirdeki mülküne zarar
+  verir. Her olayda görüşünün o yöndeki en ağır sebebi yazılır («bana hakaret etmişti» ya da "zulmünün nâmı").
+
 ### Sonraki aşamalara devreden
 - Rakip usta (`p.rakip`) ve yeni çırak (`p.cirak`) hâlâ tohum tabanlı; Aşama 3'te gerçek kişiye bağlanacak.
 - Eski çırak (`p.apprentice`) ile yeni çırak sistemi birleştirilecek.

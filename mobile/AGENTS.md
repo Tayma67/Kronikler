@@ -40,7 +40,7 @@ Aşağıdaki kurallar geçmiş oturumlarda kullanıcıyla kesinleşti; **tartı�
    hedefli sim + tsc + bundle + checker + migrate yeterlidir. Smoke kontrol noktası patlarsa suçlu,
    son smoke'tan bu yana giren dalgalardadır — hedefli simlerle daralt.
 6. `node scripts/_smoke/migrate-check.cjs` (eski kayıt göçü).
-7. **Checker:** `node scripts/_smoke/i18n-icon-check.cjs` → "SONUÇ: TEMİZ (0 sorun)" (taban D445 ile sıfırlandı; TEK sorun bile çıkarsa yeni hata var demektir).
+7. **Checker:** `node scripts/_smoke/i18n-icon-check.cjs` → "SONUÇ: TEMİZ (0 sorun)" ve `node scripts/_smoke/dil-karisma.cjs` → "DİL KARIŞMASI: TEMİZ" (taban D445 ile sıfırlandı; TEK sorun bile çıkarsa yeni hata var demektir).
 8. Depo kökünden commit + `git push -u origin apk` (ağ hatasında 2s/4s/8s/16s geri çekilmeli 5 deneme).
 
 **Senkron bekçisi (yaşanmış olay):** uzak yürütme konteyneri ara sıra ESKİ bir çalışma-kopyası anlık
@@ -58,6 +58,7 @@ UI-dışı dosyalar (docs) için 2 ve 7 yeterli; game.ts'e dokunmayan UI dalgala
 - `run-parallel.cjs` — ÖNERİLEN smoke koşucusu. Motoru commit damgalı bir ANLIK GÖRÜNTÜ paketine dondurur, 300 hayatı çekirdeklere böler (~6-7 dk, tekli koşunun ~1/3'ü) ve çıktıya doğrulanan commit'i yazar. Anlık görüntü sayesinde smoke koşarken çalışma kopyasında geliştirme SÜRER — denetim konveyörü durdurmaz. (Eskiden `/tmp/kronikler-game-bundle.cjs` sabit paketi kullanılırdı; konteyner restartında bayatlayıp yanlış commit'i doğrulama tuzağı vardı — bu araç onu kapatır.)
 - `migrate-check.cjs` — eski kayıt göç bekçisi.
 - `i18n-icon-check.cjs` — 6 dil anahtar tamlığı + %N placeholder + kullanılan anahtar varlığı + GameIcon geçerliliği.
+- `dil-karisma.cjs` — her dilin birleşmiş son sözlüğünde başka dilin metni var mı (Arap/Kiril yazısı kesin ayırt eder; Latin dillerde çevrilmemiş Türkçe). i18n'e dokunan her dalgada checker ile birlikte koşulur → "DİL KARIŞMASI: TEMİZ".
 - `saga-fuzz.cjs` — Kül Yemini destanı düşman denetimi: 120 hanedan × ≤3 nesil rastgele seçim; değişmez ihlallerinde exit 1.
   Destana (saga) dokunan her dalgadan sonra çalıştırılır.
 

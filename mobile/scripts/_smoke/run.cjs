@@ -45,6 +45,7 @@ for (let i = 0; i < LIVES; i++) {
           else if (Math.random() < 0.05 && g.rakipMeydanHazir(s)) s = g.rakipMeydan(s);
           if (g.rakipOrtaklikHazir(s.player) && Math.random() < 0.3) s = g.rakipOrtaklik(s);
         } catch (e) { errors++; if (errors <= 5) console.log("RAKİP HATASI:", e.message); }
+        try { if (s.npcTeklif && Math.random() < 0.6) s = g.npcTeklifYanit(s, Math.random() < 0.5); } catch (e) { errors++; if (errors <= 5) console.log("TEKLİF HATASI:", e.message); } // NPC'nin kendi teklifi (dünürcü/borç)
         try { // çırak: usta olunca al, çoğu zaman ders ver (bazen ihmal et → kaçış yolu da koşar)
           if (g.cirakAlabilir(s.player, s.turn) && Math.random() < 0.15) s = g.cirakAl(s, R([0, 1, 2]));
           if (g.cirakDersHazir(s) && Math.random() < 0.6) s = g.cirakDers(s);
