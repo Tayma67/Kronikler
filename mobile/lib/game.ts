@@ -518,6 +518,13 @@ function oyuncuAilesiKur(s: GameState) {
   if (s.relationships) for (const id of [anne?.id, baba?.id, p.spouse_id]) if (id && s.relationships[id] === undefined) s.relationships[id] = 0; // tanıdık; sevgi akrabalık kaleminden (gorus)
   nufusDegisti(pop);
 }
+// Kardeş adı ayrı olsun: oyuncunun ve diğer kardeşlerin ilk adıyla hiçbir dilde çakışmasın (ad tohumu yeniden çekilir).
+const AD_DILLERI: Lang[] = ["tr", "en", "es", "pt", "ar", "ru"];
+function kardesAdiAyir(k: Kisi, digerleri: Kisi[], oyuncuAd: string) {
+  const cakisir = () => AD_DILLERI.some((L) => { const a = kisiIlkAd(k, L); return a === oyuncuAd || digerleri.some((d) => d.id !== k.id && kisiIlkAd(d, L) === a); });
+  for (let d = 0; d < 25 && cakisir(); d++) k.ns = Math.floor(Math.random() * 1e9);
+}
+const oyuncuIlkAd = (p: Player) => (p.surname && p.name.endsWith(" " + p.surname) ? p.name.slice(0, -(p.surname.length + 1)) : p.name);
 // İlk neslin kardeşleri (yalnız yeni oyun): anne-babanın öbür evlatları aynı ocakta büyüyen gerçek kişilerdir.
 // Yaşlar ebeveynlere uyar (doğurduğunda anne 16-44, baba 16+), oyuncuyla aynı yaşta (ikiz) kardeş kurulmaz; adlar birbirinden ve oyuncudan ayrıdır.
 function ilkKardeslerKur(s: GameState) {
@@ -527,14 +534,12 @@ function ilkKardeslerKur(s: GameState) {
   const wy = worldYears(s); const ay = yasOf(anne, wy), by = yasOf(baba, wy);
   const u = Math.random(); const adet = u < 0.25 ? 0 : u < 0.6 ? 1 : u < 0.88 ? 2 : 3;
   const yaslar = Array.from({ length: 16 }, (_, i) => i + 1).filter((y) => y !== p.age && ay - y >= 16 && ay - y <= 44 && by - y >= 16);
-  const ilk = p.surname && p.name.endsWith(" " + p.surname) ? p.name.slice(0, -(p.surname.length + 1)) : p.name;
-  const adlar = new Set<string>([ilk]); const ids: string[] = [];
+  const ilk = oyuncuIlkAd(p); const ids: string[] = [];
   for (let i = 0; i < adet && yaslar.length; i++) {
     const yas = yaslar.splice(Math.floor(Math.random() * yaslar.length), 1)[0];
     const g: Cins = Math.random() < 0.5 ? "erkek" : "kadın";
     const k = yeniGelen(pop, wy, anne.loc, g, yas, Math.random);
-    for (let d = 0; d < 12 && adlar.has(kisiIlkAd(k, "tr")); d++) k.ns = Math.floor(Math.random() * 1e9);
-    adlar.add(kisiIlkAd(k, "tr"));
+    kardesAdiAyir(k, ids.map((x) => pop.k[x]), ilk);
     if (p.surname) k.sa = p.surname; else if (baba.sf != null) k.sf = baba.sf; else k.ss = baba.ss;
     if (yas >= 14 && Math.random() < 0.5) k.prof = g === "erkek" ? baba.prof : anne.prof; // büyükler çoğu kez ocağın işine girmiştir
     k.anne = anne.id; k.baba = baba.id; (anne.cocuk = anne.cocuk || []).push(k.id); (baba.cocuk = baba.cocuk || []).push(k.id);
@@ -787,6 +792,7 @@ function npcLifeTick(s: GameState) {
       if (evlilikHaberi < 2 && (yerel || tanidik(o.a) || tanidik(o.b))) { evlilikHaberi++; push(s, "dunya_olayi", `${ad(o.a)} ile ${ad(o.b)} dünyaevi kurdu.`, tanidik(o.a) || tanidik(o.b) ? "kişisel" : "makro", false, { k: "npclife.marry", p: [prm(o.a), prm(o.b)] }); }
     } else if (o.t === "dogum") {
       if (!p.dead && ((p.mother_id && o.anne === p.mother_id) || (p.father_id && o.baba === p.father_id))) { // anne-babana bir evlat daha: kardeşin
+        { const yeniK = pop.k[o.id]; if (yeniK) kardesAdiAyir(yeniK, (p.sibling_ids || []).map((x) => pop.k[x]).filter((x): x is Kisi => !!x), oyuncuIlkAd(p)); } // aynı ocakta iki "Tolga" olmaz
         (p.sibling_ids = p.sibling_ids || []).push(o.id); s.relationships[o.id] = 0;
         push(s, "doğum", `Ocağa bir bebek sesi düştü: kardeşin ${ad(o.id)} dünyaya geldi.`, "kişisel", true, { k: gk(o.id, "evj.siblingBorn"), p: [prf(o.id)] }); continue;
       }
@@ -1057,6 +1063,27 @@ export function gorus(s: GameState, id: string): { toplam: number; kalemler: Gor
   return { toplam: c, kalemler: ks };
 }
 export function relWith(s: GameState, id: string): number { return gorus(s, id).toplam; }
+// Kasabanın gözünde (mahalle ekranı): bulunduğun yerdeki yetişkinlerin (ailen hariç) huy grubuna göre sana ortalama bakışı ve
+// o grupta görüşü en çok belirleyen kalem; dost/hasım sayısı ve o yerde dolaşan söylentiler. Döküm motorla aynı (gorus).
+export interface GrupGozu { grup: HuyGrubu; n: number; ort: number; sebep: string | null; sebepTur?: string }
+export function kasabaGozu(s: GameState): { gruplar: GrupGozu[]; dost: number; hasim: number; soylenti: number; toplam: number } {
+  const p = s.player; const wy = worldYears(s); const pop = nufusOf(s);
+  const yer = Object.values(pop.k).filter((k) => k.ol == null && k.loc === p.location_name && wy - k.dy >= 16 && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id);
+  const by: Record<string, { n: number; t: number; kal: Record<string, number> }> = {};
+  let dost = 0, hasim = 0;
+  for (const k of yer) {
+    const gr = gorus(s, k.id); const g = huyGrubu(huyOf(k)); const b = (by[g] = by[g] || { n: 0, t: 0, kal: {} });
+    b.n++; b.t += gr.toplam; if (gr.toplam >= 30) dost++; if (gr.toplam <= -30) hasim++;
+    for (const x of gr.kalemler) { if (x.k === "gorus.sinir") continue; const key = x.k === "gorus.ani" ? "ani:" + x.tur : x.k; b.kal[key] = (b.kal[key] || 0) + x.v; }
+  }
+  const gruplar: GrupGozu[] = (["ilkeli", "sicak", "cekingen", "cikarci"] as HuyGrubu[]).filter((g) => by[g]).map((g) => {
+    const b = by[g]; const en = Object.entries(b.kal).sort((a, z) => Math.abs(z[1]) - Math.abs(a[1]))[0];
+    const sebep = en && Math.abs(en[1] / b.n) >= 1 ? en[0] : null;
+    return { grup: g, n: b.n, ort: Math.round(b.t / b.n), sebep: sebep && sebep.startsWith("ani:") ? "gorus.ani" : sebep, sebepTur: sebep && sebep.startsWith("ani:") ? sebep.slice(4) : undefined };
+  });
+  const soylenti = (s.player_rumors || []).filter((r) => (r.loc || p.location_name) === p.location_name).length;
+  return { gruplar, dost, hasim, soylenti, toplam: yer.length };
+}
 // Meslekten lonca: esnafın hangi loncaya bağlı olduğu (Gölge Kardeşliği gizlidir — kimse açıkça üyesi değildir).
 export function npcLonca(prof: string): string | null {
   if (prof === "tüccar" || prof === "hancı" || prof === "kuyumcu") return "tuccar";
@@ -1065,7 +1092,7 @@ export function npcLonca(prof: string): string | null {
   return null;
 }
 // Huy grupları: neye değer verdikleri ve korkuya nasıl karşılık verdikleri.
-type HuyGrubu = "ilkeli" | "cikarci" | "cekingen" | "sicak";
+export type HuyGrubu = "ilkeli" | "cikarci" | "cekingen" | "sicak";
 export function huyGrubu(huy?: string): HuyGrubu {
   if (huy === "dindar" || huy === "mert" || huy === "ciddi") return "ilkeli";
   if (huy === "kurnaz" || huy === "hırslı" || huy === "kibirli") return "cikarci";

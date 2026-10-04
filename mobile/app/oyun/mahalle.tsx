@@ -5,7 +5,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { mahalle, mekanaGit, MEKANLAR, MEKAN_YAS, Mekan, sofraKatilimcilari, aksamSofrasi, kisiProfil } from "../../lib/game";
+import { mahalle, mekanaGit, MEKANLAR, MEKAN_YAS, Mekan, sofraKatilimcilari, aksamSofrasi, kisiProfil, kasabaGozu } from "../../lib/game";
 import { useI18n, renderEvt } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
@@ -22,6 +22,7 @@ export default function Mahalle() {
   const { lang, t } = useI18n();
   const [sonuc, setSonuc] = useState<string>("");
   const yerler = useMemo(() => (state ? mahalle(state, lang) : null), [state?.pop, state?.turn, state?.player.location_name, lang]);
+  const goz = useMemo(() => (state ? kasabaGozu(state) : null), [state]); // kasabanın gözünde: huy gruplarına göre bakış ve sebep
   if (!state || !yerler) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const gidildi = p.mahalle_turn === state.turn;
@@ -47,6 +48,27 @@ export default function Mahalle() {
         {sonuc ? (
           <View style={{ backgroundColor: C.card, borderLeftColor: C.gold, borderLeftWidth: 2.5, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 12 }}>
             <Text style={{ fontFamily: F.serif, fontSize: 13.5, color: C.parchment, lineHeight: 20 }}>{sonuc}</Text>
+          </View>
+        ) : null}
+
+        {/* Kasabanın gözünde — aynı nâm her huyda aynı yankıyı bulmaz; grup grup ortalama bakış ve en ağır sebep */}
+        {goz && goz.toplam > 0 ? (
+          <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 13, marginBottom: 14 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <GameIcon name="iliskiler" size={15} color={C.gold} />
+              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.5 }}>{t("mh.goz.title")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 10.5, color: C.goldDim }}>{renderEvt("mh.goz.dost", "", [goz.dost, goz.hasim], lang, t, female)}</Text>
+            </View>
+            {goz.gruplar.map((g) => (
+              <View key={g.grup} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 5, borderTopWidth: 1, borderTopColor: C.border }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment }}>{t("huy.grup." + g.grup)} <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>· {g.n}</Text></Text>
+                  {g.sebep ? <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("mh.goz.sebep")}: {g.sebep === "gorus.ani" && g.sebepTur ? "«" + t("mem.remember." + g.sebepTur) + "»" : t(g.sebep)}</Text> : null}
+                </View>
+                <Text style={{ fontFamily: F.display, fontSize: 14, width: 44, textAlign: "right", color: g.ort >= 20 ? C.sage : g.ort <= -20 ? C.blood : C.parchmentDim }}>{g.ort > 0 ? "+" + g.ort : g.ort}</Text>
+              </View>
+            ))}
+            {goz.soylenti ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.goldDim, marginTop: 6 }}>{renderEvt("mh.goz.soylenti", "", [goz.soylenti], lang, t, female)}</Text> : null}
           </View>
         ) : null}
 
