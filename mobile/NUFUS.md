@@ -273,3 +273,16 @@ unutuyordu (atanın iyiliği de zulmü de sıfırlanıyordu), (4) "velinimet" to
   memnun (+1), çekingen eş korkar (−3), diğerleri utanır (−4); cömertliğine sıcak/ilkeli eş gurur duyar (+3),
   çıkarcı eş "ocağın akçesini dağıtıyorsun" diye yakınır (−2); dindarlığına dindar eş huzur bulur (+3).
   Bağ 8'in altına düşerse çıkarcı olmayan eş ocağı terk edebilir.
+
+## Suç, işçiler ve aile ihmali artık kişiye dokunuyor (uygulandı)
+
+- **Suçun kurbanı gerçek bir insan:** yankesicilikte çarşıdan biri, dükkân soygununda bir esnaf, konakta varlıklı biri,
+  yol soygununda bölgeden geçen bir yolcu (aile, eş, çocuk asla). İş başarılırsa kurban çoğu zaman kimin yaptığını
+  bilmez (kronik "kurbanın hâlâ bilmiyor" diye adını anar); beşte bir öğrenir (−15). Yakalanırsan seni tanır:
+  "malımı çaldı" anısı (−25, unutulmaz gibi, zulüm nâmı); yakınlarına da dokunur, dedikodusu dolaşır.
+- **İşçi çıkarmak:** "ekmeğimi elimden aldı" anısı (−12); kroniğe düşer.
+- **Ödenemeyen ücret:** kese (o ayın geliriyle bile) ücretlere yetmezse her işçi "emeğimin karşılığını vermedi" der
+  (−8, dedikodusu dolaşır); görüşü dibe vuran (≤−20) işi bırakır. Homurtu kroniği üç ayda bir.
+- **Aile ihmali** (yılda bir; aynı yerde yaşıyorlarsa): eşle bir yıl, anne-babayla ya da küçük çocuklarla iki yıl hiç
+  vakit geçirilmezse (akşam sofrası da sayılır) eş bağı −4, anne-baba bağı −5, çocukların bağı −5 ve kroniğe düşer.
+  12 yıllık ölçümde ihmalkâr karakterin anne-baba bağı 1'e, ilgili olanınki 100'e varıyor.

@@ -62,6 +62,9 @@ export interface Player {
   study_energy?: number; // aylık çalışma gücü — ders + kulüp meşki bundan harcanır
   usta_id?: string; // çırak verildiğin gerçek usta (13'te; görüşü peştamal sınavına yansır, vefatı kroniğe düşer)
   genclik?: string; // reşitlikte gençliğin bıraktığı iz (hunerli/sozu/gonul/yigit)
+  son_kurban?: { id: string; turn: number }; // son suçun gerçek kurbanı (yakalanırsan seni tanır)
+  ucret_turn?: number; // ödenemeyen ücret homurtusunun son kroniği (aylık tekrar yazılmaz)
+  ihmal_bas?: number; // aile ihmali sayacının başladığı tur (eski kayıtta ilk yıllık kontrolde kurulur)
   gonul?: string; // gençlikte gönlünü kaptırdığın gerçek kişi (ilk gönül) — reşitlikte hâlâ bekârsa kapı aralık
   genc_acts?: Record<string, number>; // gençlik uğraşları sayacı (13-17)
   play_energy?: number; // çocukluk günleri hakkı — mektepten AYRI havuz (ders çalışmak oyunu yemez)
@@ -795,6 +798,7 @@ function npcLifeTick(s: GameState) {
       push(s, "dunya_olayi", `${p.location_name}'e yeni biri yerleşti; çarşıda tanımadık bir yüz var.`, "kişisel", false, { k: "npclife.newcomer", p: [{ pl: p.location_name }] });
     }
   }
+  ailedenIhmal(s); // ilgi görmeyen eş, anne-baba ve çocuklar yıllar içinde soğur
   // Eşin de nâmını duyar: huyuna göre utanır, korkar, gurur duyar ya da yakınır; bağ en dibe vurursa ocağı terk edebilir.
   if (!p.dead && p.married && !p.spouse_is_player && p.spouse_id) { const e = pop.k[p.spouse_id]; if (e && e.ol == null && e.es === OYUNCU) esTepkisi(s, e); }
   // Kendi kararları: meslek pazarı ve dostluk/hasımlık — tanıdıksa haberi gelir (yılda en çok birer).
@@ -829,6 +833,30 @@ function npcLifeTick(s: GameState) {
       const known = tanidik(k.id) || gloc === p.location_name;
       push(s, "dunya_olayi", `${gloc}'te ${kisiAdi(k, "tr")} yıllardır kovaladığı hayaline kendi emeğiyle kavuştu: ${hy}.`, known ? "kişisel" : "makro", false, { k: "npclife.goalSelf", p: [knParam(k), { goalk: hy }, { pl: gloc }] });
     }
+  }
+}
+// Aile ihmali (yılda bir): eşle bir yıl, anne-babayla ya da küçük çocuklarla iki yıl hiç vakit geçirilmez (sofra da sayılır) ve
+// aynı yerdelerse bağ törpülenir ve kroniğe düşer. Uzakta yaşayan ya da ölen için sayılmaz; ilgi gösterilince sayaç sıfırlanır.
+function ailedenIhmal(s: GameState) {
+  const p = s.player; if (p.dead || p.age < 16 || inJail(p)) return;
+  if (p.ihmal_bas == null) { p.ihmal_bas = s.turn; return; } // eski kayıt: sayaç bugünden başlar
+  const pop = nufusOf(s); const wy = worldYears(s); const son = (x?: number) => Math.max(x ?? -1e9, p.sofra_turn ?? -1e9, p.ihmal_bas!);
+  const burada = (id?: string) => { const k = id ? pop.k[id] : undefined; return k && k.ol == null && k.loc === p.location_name ? k : undefined; };
+  const es = p.married && !p.spouse_is_player ? burada(p.spouse_id) : undefined;
+  if (es && s.turn - son(Math.max(p.spouse_time_turn ?? -1e9, p.married_turn ?? -1e9)) >= 12) {
+    p.spouse_bond = Math.max(0, (p.spouse_bond ?? 40) - 4);
+    push(s, "evlilik", `Eşin ${kisiAdi(es, "tr")} bu yıl seni ocakta pek göremedi; aranıza mesafe girdi.`, "kişisel", false, { k: es.g === "kadın" ? "evj.esIhmal.k" : "evj.esIhmal", p: [kfParam(es)] });
+  }
+  const ebeveyn = burada(p.mother_id) || burada(p.father_id);
+  if (ebeveyn && s.turn - son(p.parent_visit_turn) >= 24) {
+    p.parent_bond = Math.max(0, (p.parent_bond ?? 45) - 5);
+    push(s, "gunluk", `${ebeveyn.g === "kadın" ? "Annen" : "Baban"} ${kisiAdi(ebeveyn, "tr")} 'bir uğramaz oldu' diye yakınıyor.`, "kişisel", false, { k: ebeveyn.g === "kadın" ? "evj.anneIhmal" : "evj.babaIhmal", p: [kfParam(ebeveyn)] });
+  }
+  const kucukler = p.children.map((c) => ({ c, k: burada(p.child_ids?.[c]) })).filter((x): x is { c: string; k: Kisi } => !!x.k && wy - x.k.dy >= 3 && wy - x.k.dy < 18);
+  if (kucukler.length && s.turn - son(p.child_time_turn) >= 24) {
+    p.child_bond = p.child_bond || {}; for (const x of kucukler) p.child_bond[x.c] = Math.max(0, (p.child_bond[x.c] ?? 50) - 5);
+    const x = kucukler[0];
+    push(s, "gunluk", `Evladın ${x.c} seni yabancı gibi karşılamaya başladı; ilgisizlik iz bırakıyor.`, "kişisel", false, { k: x.k.g === "kadın" ? "evj.evlatIhmal.k" : "evj.evlatIhmal", p: [kfParam(x.k)] });
   }
 }
 function esTepkisi(s: GameState, e: Kisi) {
@@ -903,11 +931,23 @@ export function hireWorker(prev: GameState, index: number, npcId: string): GameS
   push(s, "mülk", `${npc?.name || "Bir işçi"}, ${PROPERTY_TYPES[pr.type]?.name || "mülkünde"} (${pr.loc}) işe alındı.`, "kişisel", true, { k: "evj.workerHired", p: [npc?.name || "Bir işçi", { pt2: pr.type }, { pl: pr.loc }] });
   return s;
 }
+// Ücreti ödenemeyen işçiler: her biri bunu anısına yazar; görüşü dibe vuran işi bırakır. Kronik üç ayda bir.
+function ucretOdenemedi(s: GameState) {
+  const p = s.player; const pop = nufusOf(s); let biraktı = 0;
+  for (const pr of p.properties) for (const id of [...(pr.workers || [])]) {
+    const k = pop.k[id]; if (!k || k.ol != null) continue;
+    remember(s, { id, name: kisiAdi(k, "tr") }, "ucret_odenmedi");
+    if (relWith(s, id) <= -20 && Math.random() < 0.3) { pr.workers = (pr.workers || []).filter((w) => w !== id); biraktı++; push(s, "mülk", `${kisiAdi(k, "tr")} ücretini alamayınca işi bıraktı.`, "kişisel", false, { k: "evj.workerQuit", p: [knParam(k)] }); }
+  }
+  if (!biraktı && (p.ucret_turn == null || s.turn - p.ucret_turn >= 3)) { p.ucret_turn = s.turn; push(s, "mülk", `İşçilerinin ücretini ödeyemedin; tezgâhta homurtu var.`, "kişisel", false, { k: "evj.ucretOdenmedi" }); }
+}
 // İşçi çıkar.
 export function fireWorker(prev: GameState, index: number, npcId: string): GameState {
   const s = clone(prev); if (s.player.dead) return s; const pr = s.player.properties[index];
-  if (!pr || !pr.workers) return s;
+  if (!pr || !pr.workers || !pr.workers.includes(npcId)) return s;
   pr.workers = pr.workers.filter((id) => id !== npcId);
+  const k = nufusOf(s).k[npcId]; // kovulan işçi ekmeğinin elinden alındığını unutmaz (yakınlarına da dokunur)
+  if (k && k.ol == null) { remember(s, { id: k.id, name: kisiAdi(k, "tr") }, "kovulma"); push(s, "mülk", `${kisiAdi(k, "tr")} işten çıkarıldı.`, "kişisel", false, { k: "evj.workerFired", p: [knParam(k)] }); }
   return s;
 }
 // ── Örgütler / Loncalar — 1247 Anadolu'sunun güç odakları ──
@@ -2704,7 +2744,8 @@ export function advance(prev: GameState, n = 1): GameState {
     inc = Math.round(inc * inf);
     wages = wages * inf;
     const wageCost = Math.round(wages);
-    if (wageCost > 0) s.player.money = Math.max(0, s.player.money - wageCost); // işçi maaşları (her hâlükârda ödenir; para negatife düşmez)
+    if (wageCost > 0 && s.player.money + inc < wageCost) ucretOdenemedi(s); // kese (bu ayın geliriyle bile) ücretlere yetmedi: işçiler homurdanır, bazısı bırakır
+    if (wageCost > 0) s.player.money = Math.max(0, s.player.money - wageCost); // işçi maaşları (kesede ne varsa ödenir; para negatife düşmez)
     if (inc > 0) s.player.money += inc;
     // Pasif gelir/ücret kroniği: aylık spam yerine yılda bir konsolide özet (gelir her ay parana eklenir).
     s.player.harvestAccum = (s.player.harvestAccum || 0) + inc;
@@ -5574,6 +5615,22 @@ export function underworldTier(p: Player): number {
   for (let i = 0; i < UNDERWORLD_TIERS.length; i++) if (st >= UNDERWORLD_TIERS[i]) tier = i;
   return tier;
 }
+// Suçun kurbanı gerçek bir insandır: yankesicilikte çarşıdan biri, dükkân soygununda bir esnaf, konakta varlıklı biri,
+// yol soygununda bölgeden geçen bir yolcu. Aile, eş ve çocuk kurban seçilmez.
+const DUKKANCI = new Set(["tüccar", "fırıncı", "kuyumcu", "hancı", "demirci", "dokumacı", "marangoz", "şifacı"]);
+function kurbanSec(s: GameState, kind: CrimeKind): Kisi | undefined {
+  const p = s.player; const pop = nufusOf(s); const wy = worldYears(s);
+  const ok = (k: Kisi) => k.ol == null && wy - k.dy >= 18 && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && k.es !== OYUNCU;
+  if (kind === "soygun") { const yol = Object.values(pop.k).filter((k) => ok(k) && k.loc !== p.location_name && regionOf(k.loc) === regionOf(p.location_name)); return yol.length ? rnd(yol) : undefined; }
+  const yer = Object.values(pop.k).filter((k) => ok(k) && k.loc === p.location_name);
+  const hedef = kind === "dukkan_soyma" ? yer.filter((k) => DUKKANCI.has(k.prof)) : kind === "konak_soygunu" ? yer.filter((k) => k.usta || k.prof === "kuyumcu" || k.prof === "tüccar" || k.prof === "hancı") : yer;
+  const h = hedef.length ? hedef : yer; return h.length ? rnd(h) : undefined;
+}
+// Kurban seni öğrenir: anısına yazılır (yakınlarına da dokunur), dedikodusu dolaşır.
+function kurbanOgrenir(s: GameState, k: Kisi, tam: boolean) {
+  remember(s, { id: k.id, name: kisiAdi(k, "tr") }, "soyulma", tam ? undefined : { yuk: -15 });
+  if (s.relationships[k.id] === undefined) s.relationships[k.id] = 0;
+}
 export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   const s = clone(prev); const p = s.player;
   if (inJail(p)) return s;
@@ -5583,6 +5640,7 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
   if (p.last_crime_turn === s.turn) return s;          // ay başına tek suç denemesi (risksiz spam ile para basma önlenir)
   p.last_crime_turn = s.turn;
   const ct = CRIME_TYPES[kind] || CRIME_TYPES.yankesicilik;
+  const kurban = kurbanSec(s, kind); p.son_kurban = kurban ? { id: kurban.id, turn: s.turn } : undefined;
   const golgeBonus = p.faction === "golge" ? 0.12 : 0;     // Gölge Kardeşliği avantajı
   const hasariBonus = p.childhood === "hasari" ? 0.07 : 0; // haşarı çocukluk: sokak kurnazlığı işe yarar
   const success = Math.random() < ct.base + p.stats.charisma * 0.01 + golgeBonus + hasariBonus + crimeSuccessMod(s);
@@ -5605,6 +5663,11 @@ export function doCrime(prev: GameState, kind: CrimeKind): GameState {
     const why = dread(s) > 30 ? " Korkulan adın kurbanını dondurdu." : "";
     push(s, "suç", `${ct.label} işini başardın (+${cash} akçe).${why}`, "kişisel", false, { k: "evj.crimeWin", p: [{ cr: kind }, cash, dread(s) > 30 ? { sfx: "sfx.crimeDread" } : ""] });
     if (hot > 0) push(s, "suç", `Ganimetin ${hot} akçelik kısmı sıcak mal; eritmek için kara borsa lazım.`, "kişisel", false, { k: "crime.hotGot", p: [hot] });
+    if (kurban) { // başarılı işte kurban çoğu zaman kimin yaptığını bilmez; beşte bir öğrenir
+      if (Math.random() < 0.2) { kurbanOgrenir(s, kurban, false); push(s, "suç", `${kisiAdi(kurban, "tr")} kimin işi olduğunu öğrendi.`, "kişisel", false, { k: "crime.kurbanBildi", p: [knParam(kurban)] }); }
+      else push(s, "suç", `Kurbanın ${kisiAdi(kurban, "tr")} neyin başına geldiğini hâlâ bilmiyor.`, "kişisel", false, { k: "crime.kurban", p: [knParam(kurban)] });
+      p.son_kurban = undefined;
+    }
     return s;
   }
   // ── Kesinti anı (Vercel interrupt sahnesi): yakalanmak üzeresin — oyuncu seçer (Saklan/Rüşvet/Kaç).
@@ -5698,6 +5761,8 @@ function crimeCaught(s: GameState, kind: CrimeKind, direct = false) {
   const extra = crimeCaughtPenalty(s);
   p.money -= fine; p.reputation = Math.max(-100, p.reputation - 6 - ct.sev * 2 - extra); p.health = Math.max(0, p.health - hurt);
   witnessScandal(s, kind === "yankesicilik" || kind === "dukkan_soyma" ? "hirsizlik_tanigi" : "suc_tanigi", 0.7);
+  { const kb = p.son_kurban && s.turn - p.son_kurban.turn <= 2 ? nufusOf(s).k[p.son_kurban.id] : undefined; p.son_kurban = undefined; // yakalandın: kurban seni tanır
+    if (kb && kb.ol == null) { kurbanOgrenir(s, kb, true); push(s, "suç_yakalandı", `${kisiAdi(kb, "tr")} seni tanıdı; bunu ömür boyu unutmayacak.`, "kişisel", false, { k: "crime.kurbanTanidi", p: [knParam(kb)] }); } }
   if (ct.sev >= 3 && Math.random() < 0.5) sowSeed(s, { kaynak: "suc_gecmisi", hmin: 24, hmax: 120, agirlik: "orta", nesil: false, etki: { money: -30, reputation: -4 } });
   push(s, "suç_yakalandı", `Yakalandın! ${fine} akçe ceza, itibarın sarsıldı.`, "kişisel", true, { k: "evj.crimeCaught", p: [fine, extra >= 4 ? { sfx: "sfx.crimeHard" } : ""] });
   if (p.health <= 0) die(s, `${p.name}, suçüstü yakalanıp can verdi.`, { k: "evj.dieCrime", p: [p.name] });
