@@ -121,6 +121,19 @@ Yapısal kalemler yeni bir kazanç kanalı açmaz (farm yok); eylem kanalları a
 - Vâris seçilince onun kaydı nüfustan kalkar (artık oyuncudur); öbür evlatlar vârisin kardeşleri olur
   (`p.sibling_ids`, görüşte "Kardeş bağı" +15), kendi hayatlarını yaşar: evlenir, doğurur, ölür.
 
+## Aşama 3a — Kendi kararları: meslek pazarı ve bağlar (uygulandı)
+
+- **Meslek kararı (yıllık):** bir mesleğin getirisi, ürettiği malların o şehirdeki arz-talep çarpanıdır (mevsimden
+  bağımsız; müzisyen/asker/tüccar sabit, işsiz 0.3). İşsiz yüzde 50 ihtimalle en kazançlı işe girer; 18–45 yaş arası
+  biri, en iyi iş kendi işinden 1.3 kat kazançlıysa ve mesleğinde en az 2 kişi kalıyorsa yüzde 6 × huy (hırslı/kurnaz
+  1.6, dindar/sabırlı/ciddi 0.6) ihtimalle geçer. Şehir başına yılda nüfusun yüzde 5'i. Usta, oyuncunun eşi ve ailesi
+  karar dışıdır. Sonuç: kıt mal üretilir, fiyat kendiliğinden dengelenir (80 yılda işsiz 61 → 1; gıda çarpanı ~1.4 → ~1.2).
+  Profilde son 6 yıldaki karar sebebiyle görünür; tanıdıksa haberi gelir.
+- **Dostluk/hasımlık (yıllık):** aynı yerdeki yetişkin çiftler; huy uyumuyla dostluk (en çok 3), aynı meslekte
+  hırslı/kibirli/kurnaz rekabetiyle hasımlık (en çok 2). Uzaklaşan dostluk yüzde 10, sönen rekabet yüzde 8 ihtimalle
+  çözülür; ölenin bağı çözülür. Görüşe "Dostlarına davranışın" (yüzde 10, ±10) ve "Hasımlarına davranışın"
+  (ters işaret, ±10) kalemleri eklenir.
+
 ### Sonraki aşamalara devreden
 - Rakip usta (`p.rakip`) ve yeni çırak (`p.cirak`) hâlâ tohum tabanlı; Aşama 3'te gerçek kişiye bağlanacak.
 - Eski çırak (`p.apprentice`) ile yeni çırak sistemi birleştirilecek.

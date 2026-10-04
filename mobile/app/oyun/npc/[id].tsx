@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
 import { kisiProfil, kisiCevresi, gorus, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
-import { useI18n } from "../../../lib/i18n";
+import { useI18n, kucukHarf } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
 import { topMemories } from "../../../lib/npc-mind";
@@ -162,6 +162,7 @@ export default function NpcDetail() {
           );
         })() : null}
         <Text style={{ fontFamily: F.serif, fontSize: 11.5, color: C.parchmentMuted, marginTop: 6, lineHeight: 17 }}>{(() => { const q = quirkL(npc.quirk, lang); return q[0].toUpperCase() + q.slice(1); })()}.</Text>
+        {prof.karar ? <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 2 }}>{(() => { const k = prof.karar!; const mal = kucukHarf(t("it." + k.mal), lang); const eski = kucukHarf(professionNameL(k.eski, lang), lang); return k.eski === "işsiz" ? (k.yilOnce === 0 ? t("npc.jobFoundNow").replace("%1", mal) : t("npc.jobFoundAgo").replace("%1", String(k.yilOnce)).replace("%2", mal)) : k.yilOnce === 0 ? t("npc.jobSwitchNow").replace("%1", eski).replace("%2", mal) : t("npc.jobSwitchAgo").replace("%1", String(k.yilOnce)).replace("%2", eski).replace("%3", mal); })()}</Text> : null}
         {npc.goal && !prof.olu ? <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.goldDim, marginTop: 2 }}>{t("npc.dream")} {goalL(npc.goal, lang)}.</Text> : null}
         {/* Gizli ilişki: bu kişi aktif yasak sevgilinse ateş çubuğuyla göster */}
         {state.player.affair?.id === npc.id ? (

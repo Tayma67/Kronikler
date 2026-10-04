@@ -2,7 +2,7 @@
 import type { EvtParam } from "./i18n";
 import { currentCalendar, playerAge, CalendarInfo } from "./calendar";
 import { ITEMS, marketGoods, locSeed, generateNPCs, NPC, generateDynasties, cityInfo, RivalHouse, houseNameIdx, localFirstName, localSurname, SPECIALTIES, Item, WClass, applyFamilySurnames, npcAgeProfession, TRAITS, QUIRKS, GOALS, NPC_PROFS } from "./world";
-import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf, kardesler } from "./nufus";
+import { Nufus, Kisi, Cins, NufusCtx, EskiDunya, OYUNCU, nufusKur, nufusYil, kadro, kisiAdi, hayalOf, huyOf, yeniGelen, nufusDegisti, olumOlasiligi, kisiNpc, kisiBaglari, yasOf, kardesler, bagEvrimi, kisiSil } from "./nufus";
 import { Lang } from "./locale-data";
 import { converse, ConvResult, spontaneousLine, callbackLine, perceptionGreeting } from "./dialogue";
 import { Memory, addMemory, decayMemories, effectiveRel, behaviorTier, MEMORY_TYPES, RUMOR_VARIANTS } from "./npc-mind";
@@ -564,10 +564,11 @@ export function aileUyesi(s: GameState, rol: "es" | "anne" | "baba", lang: Lang 
   return { id: k.id, ad: n.name, ilkAd: n.name.split(" ")[0], yas: yasOf(k, worldYears(s)), olu: k.ol != null, loc: k.loc };
 }
 // Kişi profili (her yerden): yaşayan ya da rahmetli, nerede olursa olsun. Etkileşim yalnız aynı yerdeki yaşayanla.
-export function kisiProfil(s: GameState, id: string, lang: Lang = "tr"): { npc: NPC; olu: boolean; burada: boolean; aileRolu: "anne" | "baba" | "es" | "evlat" | "kardes" | null } | null {
+export function kisiProfil(s: GameState, id: string, lang: Lang = "tr"): { npc: NPC; olu: boolean; burada: boolean; aileRolu: "anne" | "baba" | "es" | "evlat" | "kardes" | null; karar?: { yilOnce: number; eski: string; mal: string } } | null {
   const k = nufusOf(s).k[id]; if (!k) return null; const p = s.player;
   const aileRolu = id === p.mother_id ? "anne" : id === p.father_id ? "baba" : id === p.spouse_id ? "es" : evlatKimlikleri(p).includes(id) ? "evlat" : p.sibling_ids?.includes(id) ? "kardes" : null;
-  return { npc: kisiNpc(k, worldYears(s), lang), olu: k.ol != null, burada: k.ol == null && k.loc === p.location_name, aileRolu };
+  const karar = k.kr && worldYears(s) - k.kr.y <= 6 && k.ol == null ? { yilOnce: worldYears(s) - k.kr.y, eski: k.kr.e, mal: k.kr.m } : undefined;
+  return { npc: kisiNpc(k, worldYears(s), lang), olu: k.ol != null, burada: k.ol == null && k.loc === p.location_name, aileRolu, karar };
 }
 // Bir kişinin aile ve çevresi (profil ekranı): eş, anne-baba, evlatlar, kardeşler, dost ve hasımlar — ölüler ve uzaktakiler dahil.
 export function kisiCevresi(s: GameState, id: string, lang: Lang = "tr"): { tur: "es" | "ebeveyn" | "evlat" | "kardes" | "dost" | "rakip"; npc: NPC; olu: boolean; uzak: boolean }[] {
@@ -630,6 +631,45 @@ function ebeveynVefat(s: GameState, rol: "anne" | "baba") {
   }
 }
 
+// ── NPC kararları (Aşama 3): mesleğin getirisi şehirdeki arz-talepten okunur (mevsimden bağımsız). Kıt malı üreten meslek
+// kazançlıdır; işsiz iş arar, çok kalabalık meslekteki genç-orta yaşlı kıt mesleğe yönelir → arz artar, fiyat dengelenir.
+const KAZANC_SABIT: Record<string, number> = { "müzisyen": 1.0, "asker": 1.05, "tüccar": 1.1, "işsiz": 0.3 };
+function meslekKazanci(counts: Record<string, number>, loc: string, prof: string): { v: number; m: string } {
+  if (KAZANC_SABIT[prof] != null) return { v: KAZANC_SABIT[prof], m: "" };
+  let top = 0, ag = 0, enKit = "", enKitV = 0;
+  for (const good in GOOD_PRODUCERS) {
+    const w = GOOD_PRODUCERS[good].find(([p]) => p === prof)?.[1]; if (!w) continue;
+    let sup = 0; for (const [p2, w2] of GOOD_PRODUCERS[good]) sup += (counts[p2] || 0) * w2;
+    const dem = (DEMAND_COEF[good] || 0.06) * rosterSize(loc);
+    const v = Math.max(0.65, Math.min(1.6, 1 / (0.55 + 0.45 * ((sup + 0.3) / dem))));
+    const a = w * (DEMAND_COEF[good] || 0.06); top += v * a; ag += a;
+    if (v > enKitV) { enKitV = v; enKit = good; }
+  }
+  return { v: ag ? top / ag : 0.3, m: enKit };
+}
+function npcMeslekKararlari(s: GameState, pop: Nufus, wy: number, sabit: Set<string>): { id: string; e: string; y: string; m: string }[] {
+  const out: { id: string; e: string; y: string; m: string }[] = [];
+  const MESLEKLER = NPC_PROFS.filter((x) => x !== "işsiz" && x !== "asker" && x !== "müzisyen");
+  for (const loc of LOCATIONS) {
+    const L = Object.values(pop.k).filter((k) => k.ol == null && k.loc === loc);
+    const counts: Record<string, number> = {}; for (const k of L) { const y = wy - k.dy; if (y >= 14) counts[k.prof] = (counts[k.prof] || 0) + workerAgeProd(y); }
+    let hak = Math.max(1, Math.floor(L.length * 0.05)); // yılda yerleşim başına sınırlı geçiş (dengelenme yavaş ve inandırıcı)
+    for (const k of L) {
+      if (hak <= 0) break;
+      const y = wy - k.dy; if (y < 18 || y > 45 || sabit.has(k.id) || k.usta || k.es === OYUNCU) continue;
+      const cur = meslekKazanci(counts, loc, k.prof);
+      let best = "", bv = 0, bm = ""; for (const m of MESLEKLER) { if (m === k.prof) continue; const r = meslekKazanci(counts, loc, m); if (r.v > bv) { bv = r.v; best = m; bm = r.m; } }
+      if (!best) continue;
+      const huy = huyOf(k); const mod = huy === "hırslı" || huy === "kurnaz" ? 1.6 : huy === "dindar" || huy === "sabırlı" || huy === "ciddi" ? 0.6 : 1;
+      const issiz = k.prof === "işsiz";
+      if (issiz ? Math.random() >= 0.5 : !(bv > cur.v * 1.3 && (counts[k.prof] || 0) > 2 && Math.random() < 0.06 * mod)) continue;
+      const w = workerAgeProd(y); counts[k.prof] = (counts[k.prof] || 0) - w; counts[best] = (counts[best] || 0) + w;
+      out.push({ id: k.id, e: k.prof, y: best, m: bm });
+      k.kr = { y: wy, e: k.prof, m: bm }; k.prof = best; hak--;
+    }
+  }
+  return out;
+}
 function npcLifeTick(s: GameState) {
   if (s.turn === 0 || s.turn % 12 !== 0) return; // yılda bir
   const pop = nufusHazirla(s); const p = s.player; const wy = worldYears(s);
@@ -664,6 +704,14 @@ function npcLifeTick(s: GameState) {
       push(s, "dunya_olayi", `${p.location_name}'e yeni biri yerleşti; çarşıda tanımadık bir yüz var.`, "kişisel", false, { k: "npclife.newcomer", p: [{ pl: p.location_name }] });
     }
   }
+  // Kendi kararları: meslek pazarı ve dostluk/hasımlık — tanıdıksa haberi gelir (yılda en çok birer).
+  const kararlar = npcMeslekKararlari(s, pop, wy, sabit);
+  const bilinenKarar = kararlar.find((x) => tanidik(x.id) || pop.k[x.id]?.loc === p.location_name);
+  if (bilinenKarar && !p.dead) push(s, "dunya_olayi", bilinenKarar.e === "işsiz" ? `${ad(bilinenKarar.id)} sonunda iş buldu, ${bilinenKarar.y} oldu.` : `${ad(bilinenKarar.id)} ${bilinenKarar.e} işini bıraktı, ${bilinenKarar.y} oldu: çarşıda ${bilinenKarar.m} kıttı.`, tanidik(bilinenKarar.id) ? "kişisel" : "makro", false, bilinenKarar.e === "işsiz" ? { k: "npclife.jobFound", p: [prm(bilinenKarar.id), { prl: bilinenKarar.y }, { il: bilinenKarar.m }] } : { k: "npclife.jobSwitch", p: [prm(bilinenKarar.id), { prl: bilinenKarar.e }, { prl: bilinenKarar.y }, { il: bilinenKarar.m }] });
+  const baglar = bagEvrimi(pop, wy);
+  const bilinenBag = baglar.find((x) => tanidik(x.a) && tanidik(x.b));
+  if (bilinenBag && !p.dead) push(s, "dunya_olayi", bilinenBag.t === "dost" ? `${ad(bilinenBag.a)} ile ${ad(bilinenBag.b)} can ciğer dost oldu.` : `${ad(bilinenBag.a)} ile ${ad(bilinenBag.b)} arasına husumet girdi.`, "kişisel", false, { k: bilinenBag.t === "dost" ? "npclife.friends" : "npclife.feud", p: [prm(bilinenBag.a), prm(bilinenBag.b)] });
+  _profCache = {}; // nüfus ve meslekler değişti — şehir arzı yeniden okunur
   // Eş oyuncunun ocağında yaşar (ocak değişirse peşinden gelir).
   const esK = nufusOyuncuEsi(s); if (esK && esK.loc !== (p.home_name || p.location_name)) { esK.loc = p.home_name || p.location_name; nufusDegisti(pop); }
   // Omuz verilen hayaller boşa gitmez: yılda bir, yardım görmüş biri muradına erebilir.
@@ -830,6 +878,10 @@ export function gorus(s: GameState, id: string): { toplam: number; kalemler: Gor
     const yakin = new Set<string>([...(k.es && k.es !== OYUNCU ? [k.es] : []), ...(k.baba ? [k.baba] : []), ...(k.anne ? [k.anne] : []), ...(k.cocuk || []), ...kardesler(pop, id)]);
     let t = 0; for (const y of yakin) if (pop.k[y] && pop.k[y].ol == null) t += dogrudanHesap(s, y);
     ekle("gorus.yakin", Math.max(-20, Math.min(20, t * 0.2)));
+    let d = 0; for (const x of k.dost || []) if (pop.k[x] && pop.k[x].ol == null) d += dogrudanHesap(s, x);
+    ekle("gorus.dostlari", Math.max(-10, Math.min(10, d * 0.1)));
+    let h = 0; for (const x of k.hasim || []) if (pop.k[x] && pop.k[x].ol == null) h += dogrudanHesap(s, x);
+    ekle("gorus.hasimlari", Math.max(-10, Math.min(10, -h * 0.1))); // hasmına iyilik onu kızdırır, hasmına kötülük onu sevindirir
   }
   // Nâm ve huy: herkes nâmını duyar; huyu neye değer verdiğini belirler.
   ekle("gorus.nam", p.reputation / 10);
@@ -5855,12 +5907,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
   const digerId = hk ? (hk.anne || hk.baba) : p.spouse_id; // vârisin öbür ebeveyni: kendi kaydındaki (eş ya da gizli sevgili)
   const esK = digerId ? heirPop.k[digerId] : undefined; // gerçek kişi
   const kardesIds = evlatKimlikleri(p).filter((id) => id !== hkId && heirPop.k[id] && heirPop.k[id].ol == null);
-  if (hk && hkId) { // vâris artık oyuncu: nüfustaki kaydı kalkar (aynı insan iki yerde yaşamasın)
-    for (const pa of [hk.anne, hk.baba]) if (pa && heirPop.k[pa]?.cocuk) { heirPop.k[pa].cocuk = heirPop.k[pa].cocuk!.filter((c) => c !== hkId); if (!heirPop.k[pa].cocuk!.length) delete heirPop.k[pa].cocuk; }
-    if (hk.es && heirPop.k[hk.es]?.es === hkId) delete heirPop.k[hk.es].es; // (savunma) bağ kalmasın
-    for (const c of hk.cocuk || []) { const ck = heirPop.k[c]; if (ck) { if (ck.baba === hkId) delete ck.baba; if (ck.anne === hkId) delete ck.anne; } }
-    delete heirPop.k[hkId]; nufusDegisti(heirPop);
-  }
+  if (hk && hkId) kisiSil(heirPop, hkId); // vâris artık oyuncu: nüfustaki kaydı ve ona işaret eden her bağ kalkar
   const esOlu = esK ? esK.ol != null : hk ? false : !!p.widowed;
   const ns: GameState = {
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, pop: heirPop, relationships: Object.fromEntries(kardesIds.map((id) => [id, 0])), dynasty, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,

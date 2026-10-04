@@ -28,6 +28,7 @@ export interface Kisi {
   ey?: number;             // evlilik yılı
   dost?: string[]; hasim?: string[];
   gd?: boolean; gh?: boolean; usta?: boolean; // hayaline erdi · oyuncu hayaline omuz verdi · oyuncunun yetiştirdiği usta
+  kr?: { y: number; e: string; m: string }; // son meslek kararı: yıl, bırakılan meslek, kıt olduğu için yöneldiği mal
 }
 export interface Nufus { v: 1; k: Record<string, Kisi>; n: number } // n: yeni kimlik sayacı
 
@@ -306,6 +307,53 @@ export function nufusYil(pop: Nufus, ctx: NufusCtx, o: YilOpts): NufusOlay[] {
   nufusDegisti(pop);
   return out;
 }
+// ── Bağ evrimi (Aşama 3): aynı yerde yaşayanlar arasında dostluk ve hasımlık kendiliğinden doğar, uzaklık ve zamanla söner. ──
+// Dostluk: huy uyumu (aynı huy, sıcak huylar); hasımlık: aynı meslekte hırslı/kibirli/kurnaz rekabeti. Bağlar simetriktir.
+const SICAK_HUY = ["neşeli", "sıcakkanlı", "misafirperver", "cömert"];
+export type BagOlay = { t: "dost" | "hasim"; a: string; b: string };
+function bagla(pop: Nufus, a: Kisi, b: Kisi, tur: "dost" | "hasim") { (a[tur] = a[tur] || []).push(b.id); (b[tur] = b[tur] || []).push(a.id); }
+function coz(a: Kisi, b: Kisi, tur: "dost" | "hasim") {
+  for (const [x, y] of [[a, b], [b, a]] as const) { if (x[tur]) { x[tur] = x[tur]!.filter((i) => i !== y.id); if (!x[tur]!.length) delete x[tur]; } }
+}
+export function bagEvrimi(pop: Nufus, wy: number, rng: () => number = Math.random): BagOlay[] {
+  const out: BagOlay[] = [];
+  const yas = (k: Kisi) => wy - k.dy;
+  const yerde: Record<string, Kisi[]> = {};
+  for (const k of Object.values(pop.k)) if (k.ol == null && yas(k) >= 16) (yerde[k.loc] = yerde[k.loc] || []).push(k);
+  // Sönme: uzaklaşan dostluk yüzde 10, zamanla affedilen hasımlık yüzde 8 (aynı yerde aynı meslekte süren rekabet sönmez)
+  for (const k of Object.values(pop.k)) {
+    if (k.ol != null) continue;
+    for (const d of [...(k.dost || [])]) { const o = pop.k[d]; if (o && (o.ol != null || (d > k.id && o.loc !== k.loc && rng() < 0.1))) coz(k, o, "dost"); } // ölen dostun yeri boşalır
+    for (const h of [...(k.hasim || [])]) { const o = pop.k[h]; if (o && (o.ol != null || (h > k.id && !(o.loc === k.loc && o.prof === k.prof) && rng() < 0.08))) coz(k, o, "hasim"); }
+  }
+  for (const loc in yerde) {
+    const L = yerde[loc]; if (L.length < 2) continue;
+    const deneme = Math.ceil(L.length / 2);
+    for (let i = 0; i < deneme; i++) {
+      const a = L[Math.floor(rng() * L.length)], b = L[Math.floor(rng() * L.length)];
+      if (a === b || a.es === b.id || a.dost?.includes(b.id) || a.hasim?.includes(b.id) || yakinAkraba(pop, a.id, b.id)) continue;
+      const ha = huyOf(a), hb = huyOf(b);
+      const rakip = a.prof === b.prof && a.prof !== "işsiz" && (HASIM_HUY.includes(ha) || HASIM_HUY.includes(hb));
+      if (rakip && (a.hasim?.length || 0) < 2 && (b.hasim?.length || 0) < 2 && rng() < 0.5) { bagla(pop, a, b, "hasim"); out.push({ t: "hasim", a: a.id, b: b.id }); continue; }
+      let uyum = (a.tr === b.tr ? 2 : 0) + (SICAK_HUY.includes(ha) ? 1 : 0) + (SICAK_HUY.includes(hb) ? 1 : 0) - (ha === "kibirli" || hb === "kibirli" ? 1 : 0) - (Math.abs(yas(a) - yas(b)) > 25 ? 1 : 0);
+      if (uyum >= 1 && (a.dost?.length || 0) < 3 && (b.dost?.length || 0) < 3 && rng() < (uyum >= 2 ? 0.7 : 0.25)) { bagla(pop, a, b, "dost"); out.push({ t: "dost", a: a.id, b: b.id }); }
+    }
+  }
+  nufusDegisti(pop);
+  return out;
+}
+
+// Bir kişiyi nüfustan kaldırır ve ona işaret eden her bağı temizler (vâris oyuncu olunca kaydı kalkar).
+export function kisiSil(pop: Nufus, id: string): void {
+  const k = pop.k[id]; if (!k) return;
+  for (const pa of [k.baba, k.anne]) { const x = pa ? pop.k[pa] : undefined; if (x?.cocuk) { x.cocuk = x.cocuk.filter((c) => c !== id); if (!x.cocuk.length) delete x.cocuk; } }
+  if (k.es && pop.k[k.es]?.es === id) delete pop.k[k.es].es;
+  for (const c of k.cocuk || []) { const ck = pop.k[c]; if (ck) { if (ck.baba === id) delete ck.baba; if (ck.anne === id) delete ck.anne; } }
+  for (const tur of ["dost", "hasim"] as const) for (const o of k[tur] || []) { const x = pop.k[o]; if (x?.[tur]) { x[tur] = x[tur]!.filter((i) => i !== id); if (!x[tur]!.length) delete x[tur]; } }
+  delete pop.k[id];
+  nufusDegisti(pop);
+}
+
 export const NUFUS_TAVAN = 2000;
 export function nufusBuda(pop: Nufus, wy: number, korunan: Set<string>): void {
   const sil = new Set<string>();
@@ -363,5 +411,9 @@ export function nufusDenetle(pop: Nufus, wy: number): string[] {
     if (k.ol == null && k.es !== OYUNCU && wy - k.dy > 100) hata.push(`ölümsüz ${id}`);
   }
   if (Object.values(pop.k).filter((k) => k.ol == null && k.es === OYUNCU).length > 1) hata.push("oyuncunun birden çok eşi");
+  for (const id in pop.k) { const k = pop.k[id];
+    for (const tur of ["dost", "hasim"] as const) for (const o of k[tur] || []) { const x = pop.k[o]; if (!x) hata.push(`${tur} yok ${id}`); else if (!(x[tur] || []).includes(id)) hata.push(`${tur} simetrik değil ${id}`); if (o === id) hata.push(`kendine ${tur} ${id}`); }
+    for (const o of k.dost || []) if ((k.hasim || []).includes(o)) hata.push(`hem dost hem hasım ${id}`);
+  }
   return hata;
 }
