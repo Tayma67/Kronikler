@@ -39,7 +39,8 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
   const hitch = mt === "küs" || mt === "soğuk";
   const fn = (npc.name.split(" ")[0]);
   const q = quirkL(npc.quirk, lang);
-  const L = (k: string) => tFor(lang, k).split("%n").join(fn).split("%q").join(q); // yer tutucu birden çok kez geçebilir
+  const buyuk = (x: string) => (x ? x.charAt(0).toLocaleUpperCase(lang === "tr" ? "tr-TR" : lang) + x.slice(1) : x); // cümle başına düşen huy büyük harfle ("herkese…" → "Herkese…")
+  const L = (k: string) => tFor(lang, k).split("%n").join(fn).replace(/(^|[.!?…]\s+)%q/g, (_m, on: string) => on + buyuk(q)).split("%q").join(q); // yer tutucu birden çok kez geçebilir
   // Tekrarı azalt: aynı niyetin sıcak/olumlu satırı birkaç çeşitten rastgele seçilir (base + base2…).
   const pick = (base: string, n: number) => { const i = Math.floor(Math.random() * n); return L(i === 0 ? base : base + (i + 1)); };
 

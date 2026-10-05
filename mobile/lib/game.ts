@@ -8342,8 +8342,12 @@ export function acikHesaplar(s: GameState): AcikHesap[] {
 // Günlükte "önemli": oyuncunun kendi hayatına ait olaylar ve ona değen dünya olayları. Mevsim/renk satırları, fısıltılar,
 // piyasa ve uzak dünya haberleri "hepsi"nde kalır (aile ihmali gibi kişisel uyarılar her zaman önemlidir).
 const SINYALSIZ = new Set(["gunluk", "fisilti", "piyasa", "dunya"]);
+// Oyuncunun kendi rutin eyleminin dönütü (aylık "çalıştın, X akçe" ve açtığın sohbetin cevabı) o an ekranda görülür;
+// Önemli'yi doldurmaz, Günlük'te kalır. İşteki özel olaylar (fırtına, dev balık…) önemli sayılmaya devam eder.
+const RUTIN_DONUT = new Set(["evj.work", "evj.work2"]);
 export function onemliMi(e: GameEvent): boolean {
   if (donumAni(e)) return true;
+  if (RUTIN_DONUT.has(e.k || "") || (!e.k && e.type === "sohbet")) return false;
   if (e.scope === "makro") return false;
   if (SINYALSIZ.has(e.type)) return /hmal/.test(e.k || "");
   return true;

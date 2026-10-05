@@ -8,6 +8,8 @@ fs.writeFileSync(giris, 'export * as g from "./lib/game";\nexport { renderEvt, t
 try { execSync(`npx esbuild "${giris}" --bundle --format=cjs --platform=node --outfile="${tmp}/o.cjs" --log-level=error`, { cwd: kok, stdio: "inherit" }); }
 finally { fs.unlinkSync(giris); }
 const { g, renderEvt, tFor } = require(`${tmp}/o.cjs`);
+// Çevrilmemiş ham anahtar (ör. "wev.balıkçı.5.lose") metne sızmasın
+const HAM_ANAHTAR = /\b(wev|evj|ev|npct|npca|npci|npclife|flav|kan|mem|seed|prof|chip|rumor|sans|sk|cember|ah|kd|hesap|saga|bl|epoch|crown|horse|fsig|cb|mev|pp|soc)\.[A-Za-zçğıöşüÇĞİÖŞÜ0-9_]+(\.[A-Za-zçğıöşü0-9_]+)*/;
 const LANGS = ["tr", "en", "es", "pt", "ar", "ru"]; const R = (a) => a[Math.floor(Math.random() * a.length)];
 const HAYAT = +(process.argv[2] || 40); let sorun = 0, toplam = 0; const ornek = []; const goruldu = new Set();
 for (let h = 0; h < HAYAT; h++) {
@@ -27,7 +29,7 @@ for (let h = 0; h < HAYAT; h++) {
         toplam++;
         const female = s.player.gender === "kadın";
         const x = renderEvt(e.k, e.text, e.p, L, (k) => tFor(L, k), female);
-        if (!x || /%[0-9a-z]|undefined|NaN|\[object/.test(x)) { sorun++; if (ornek.length < 12) ornek.push(`${L} ${e.k}: ${String(x).slice(0, 90)}`); }
+        if (!x || /%[0-9a-z]|undefined|NaN|\[object/.test(x) || HAM_ANAHTAR.test(x)) { sorun++; if (ornek.length < 12) ornek.push(`${L} ${e.k}: ${String(x).slice(0, 90)}`); }
       }
     }
   }
