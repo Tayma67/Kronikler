@@ -2243,6 +2243,16 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): AySatiri {
 
 // Yeni evladın adı: kardeşleriyle aynı ad konmaz (evlat bilgisi ada göre tutulur — iki 'Mert' karışır).
 function cocukAdi(p: Player): string { const bos = CHILD.filter((n) => !p.children.includes(n)); return bos.length ? rnd(bos) : rnd(CHILD); }
+// Evlilikte doğum: iki doğum arası en az bir yıl; doğurganlık yaşla (35'ten sonra) ve evlat sayısıyla azalır; eşle bağ güçlüyse
+// biraz artar, ihmal edilmiş evlilikte yarıya iner. Böylece her hayat aynı kalabalıkta bitmez ve ocağa gösterilen ilgi soya yansır.
+export function dogumOlasiligi(s: GameState): number {
+  const p = s.player; const meta = p.child_meta || [];
+  const son = meta.length ? Math.max(...meta.map((m) => m.born ?? -1e9)) : -1e9; if (s.turn - son < 12) return 0;
+  const yas = p.age < 35 ? 1 : p.age < 42 ? 0.55 : 0.2;
+  const sayi = Math.max(0, 1 - p.children.length * 0.2);
+  const bag = (p.spouse_bond ?? 50) >= 60 ? 1.2 : (p.spouse_bond ?? 50) < 30 || ihmalDurumu(s).es ? 0.5 : 1;
+  return 0.035 * yas * sayi * bag;
+}
 function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   const p = s.player; if (p.dead) return; // ayın erken bir adımında ölen oyuncuya o ay hayat olayı yazılmaz
   if (p.age === 13 && p.profession === "işsiz") {
@@ -2337,7 +2347,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50) || s.story?.active?.id === "gec_sevda"; // aktif sevda yayı da bir kur — görücü araya girmesin
   if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { p.married = true; p.married_turn = s.turn; p.spouse_bond = 35; oyuncuEvlenKisi(s, esBulVeyaKur(s)); const name = p.spouse_name!; p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); { const mv2 = chance(0.5); push(s, "evlilik", mv2 ? `Davul üç gün sustu susmadı; ${name} ile aynı ocağın başına oturdunuz. Evin eşiği o gün iki kez öpüldü.` : `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: mv2 ? "evj.marry2" : "evj.marry", p: [esParam(s)] }); } }
-  if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(0.07)) { const c = cocukAdi(p); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); evlatKisiKur(s, c, p.spouse_id); { const bv2 = chance(0.5); push(s, "doğum", bv2 ? `Eve bir nefes daha katıldı: ${c}. Beşik baş köşeye kuruldu; o gece kimse erken uyumadı.` : `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: bv2 ? "evj.childBorn2" : "evj.childBorn", p: [c] }); } }
+  if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(dogumOlasiligi(s))) { const c = cocukAdi(p); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); evlatKisiKur(s, c, p.spouse_id); { const bv2 = chance(0.5); push(s, "doğum", bv2 ? `Eve bir nefes daha katıldı: ${c}. Beşik baş köşeye kuruldu; o gece kimse erken uyumadı.` : `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: bv2 ? "evj.childBorn2" : "evj.childBorn", p: [c] }); } }
   affairTick(s); // yasak ilişki: ateş soğur, piç doğabilir, ifşa yuvarlanır (evli/bekâr sonuçları exposeAffair'de)
   betrothalTick(s); // evli birine kesilen söz: aylar içinde boşanıp evlenir ya da vazgeçer
   // Evlilik yıldönümü: her 12 ayda bir ocak tazelenir — otomatik, küçük, farm'sız (eski kayıtta married_turn yoksa sessizce atlanır).
