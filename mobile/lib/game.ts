@@ -2162,6 +2162,11 @@ export function donumAni(e: GameEvent): boolean {
   if (e.scope !== "makro") return true;
   const k = e.k || ""; return DONUM_MAKRO.some((x) => k.startsWith(x));
 }
+// Son N ayda kroniğe düşmüş, verilen önekle başlayan olay anahtarları (tekrar önleme).
+function sonAnahtarlar(s: GameState, onek: string, ay: number): Set<string> {
+  const out = new Set<string>(); for (let i = s.history.length - 1; i >= 0 && s.history[i].day >= s.turn - ay; i--) { const k = s.history[i].k; if (k && k.startsWith(onek)) out.add(k); }
+  return out;
+}
 function push(s: GameState, type: string, text: string, scope: "kişisel" | "makro" = "kişisel", landmark = false, loc?: { k: string; p?: EvtParam[] }) {
   s.hseq = (s.hseq || 0) + 1;
   const ev: GameEvent = { day: s.turn, type, text, scope, landmark, k: loc?.k, p: loc?.p, q: s.hseq };
@@ -2436,7 +2441,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // ── NPC'nin başlattığı anlar (Aşama 3): dost sofraya çağırır, hasım dile düşürür ya da malına dokunur — her biri görüşünün
   // en ağır sebebiyle anılır (döküm motorla aynı). Oyuncu tetiklemez, farm edilemez.
   if (!p.dead && p.age >= 13 && chance(0.05)) {
-    const ids = Object.keys(s.relationships || {}).filter((id) => Math.abs(relWith(s, id)) >= 30);
+    const ocak = new Set<string>([...(p.married && p.spouse_id ? [p.spouse_id] : []), ...evlatKimlikleri(p).filter((x) => { const e = nufusOf(s).k[x]; return !!e && worldYears(s) - e.dy < 18; })]); // eş ve küçük evlat zaten aynı sofrada
+    const ids = Object.keys(s.relationships || {}).filter((id) => Math.abs(relWith(s, id)) >= 30 && !ocak.has(id));
     const id = ids.length ? rnd(ids) : null;
     const k = id ? nufusOf(s).k[id] : undefined;
     if (id && k && k.ol == null && k.loc === p.location_name && worldYears(s) - k.dy >= 13) { // yalnız aynı yerleşimdekiler kapına gelir
@@ -2711,9 +2717,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   // ── Ocak kedisi: kapıya kendi gelen yoldaş — huyu, ömrü, işi ve vedası kendine özgü ──
   if (!p.dead && !p.pet && p.age >= 10 && !inJail(p) && chance(0.015)) {
-    const adlar = ["Duman", "Pamuk", "Sarman", "Tekir", "Boncuk", "Fındık", "Zeytin", "Kömür"];
     const huylar = ["avci", "sokulgan", "tembel", "nazli"];
-    const ad = adlar[Math.floor(Math.random() * adlar.length)];
+    const ad = evcilAd(s, "kedi");
     p.pet = { n: ad, born: s.turn, bond: 10, huy: huylar[Math.floor(Math.random() * huylar.length)], span: 132 + Math.floor(Math.random() * 61) }; // ömür 11-16 yıl: her kedininki kendine
     push(s, "gunluk", `Kapının önünde sırılsıklam bir kedi yavrusu duruyordu; bir tas süt koydun, sabah hâlâ oradaydı. Ocağın artık bir yoldaşı var: ${ad}.`, "kişisel", true, { k: "evj.catArrive", p: [ad] });
   } else if (!p.dead && p.pet) {
@@ -2758,8 +2763,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   // ── Çoban köpeği: bir komşu çoban yavru tutuşturur — yolun ve kapının bekçisi, ömrü kediden kısa, sadakati ondan gür ──
   if (!p.dead && !p.dog && p.age >= 12 && !inJail(p) && chance(0.012)) {
-    const adlar = ["Karabaş", "Çomar", "Aslan", "Pars", "Bozkır", "Kurt"];
-    const ad = adlar[Math.floor(Math.random() * adlar.length)];
+    const ad = evcilAd(s, "kopek");
     p.dog = { n: ad, born: s.turn, bond: 12, span: 120 + Math.floor(Math.random() * 37) }; // ömür 10-13 yıl
     push(s, "gunluk", `Komşu çoban kucağına tombul bir yavru tutuşturdu: al, bu senin artık. Adını ${ad} koydun; ilk gece kapının dibinde yattı.`, "kişisel", true, { k: "evj.dogArrive", p: [ad] });
   } else if (!p.dead && p.dog) {
@@ -2786,7 +2790,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   // ── At kısmeti: yaralı/başıboş bir atı sırf gönlünle iyileştirip yoldaş edinirsin — atın da kapıya geleni olur (satın alma değil, nadir) ──
   if (!p.dead && !p.horse && p.age >= 14 && !inJail(p) && chance(0.006)) {
-    p.horse = true; p.horse_name = rnd(HORSE_NAMES); p.reputation = Math.min(100, p.reputation + 1);
+    p.horse = true; p.horse_name = evcilAd(s, "at"); p.reputation = Math.min(100, p.reputation + 1);
     push(s, "yolculuk", `Yol kenarında ayağı sakat, sahibi belirsiz bir at buldun; kimse sahiplenmedi. Haftalarca merhemle, sabırla iyileştirdin. Şimdi ${p.horse_name} adıyla senin peşinden geliyor — kimi yoldaş parayla değil, emekle kazanılır.`, "kişisel", true, { k: "evj.horseArrive", p: [p.horse_name] });
   }
   // ── İki yoldaş bir ocakta: kedi ile köpek aynı evde — biri içerinin, biri dışarının nöbetçisi ──
@@ -2847,7 +2851,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
       push(s, "nemesis", kz ? `${n.name} çarşıda herkesin içinde seni kanlı diye andı.` : `${n.name} kapına bir kefen bıraktı; dökülen kan unutulmadı.`, "kişisel", false, { k: kz ? "kan.taciz1" : "kan.taciz0", p: [nemAd(s, n), ok ? knParam(ok) : ""] });
     } else if (s.story.nemesis && chance(0.10)) {
       const n = s.story.nemesis; const na = nemAd(s, n);
-      const nemIdx = Math.floor(Math.random() * 6);
+      const yakinda = sonAnahtarlar(s, "evj.nem", 12); const bos = [0, 1, 2, 3, 4, 5].filter((i) => !yakinda.has("evj.nem" + i));
+      const nemIdx = bos.length ? rnd(bos) : Math.floor(Math.random() * 6); // aynı musallat satırı yılda bir kez
       let txt: string; let nemP: EvtParam[];
       if (nemIdx === 0) { p.reputation = Math.max(-100, p.reputation - 4); txt = `${n.name} arkandan kuyunu kazıyor; itibarın sarsıldı.`; nemP = [na]; }
       else if (nemIdx === 1) { const loss = Math.min(p.money, 8); p.money -= loss; txt = `${n.name}'ın adamları malına dokundu (−${loss} akçe).`; nemP = [na, loss]; }
@@ -5183,6 +5188,16 @@ export const TRAVEL_ROUTES: { id: TravelRoute; label: string; desc: string }[] =
 // At satın alma — bir kez; hızlı/güvenli "at ile" yolculuğunu açar.
 export const HORSE_COST = 200;
 export const HORSE_NAMES = ["Doru", "Yağız", "Kır", "Al", "Boz", "Demir", "Rüzgâr", "Yıldız", "Şahin", "Karayel", "Poyraz", "Kınalı", "Ceylan", "Tayfun", "Turna", "Bulut"];
+// Evcil hayvan adları oyunun diliyle konur (Rusça dünyada köpeğin adı Çomar değil Полкан olur); eski kayıtlardaki adlar korunur.
+const EVCIL_AD: Record<string, { kedi: string[]; kopek: string[]; at: string[] }> = {
+  tr: { kedi: ["Duman", "Pamuk", "Sarman", "Tekir", "Boncuk", "Fındık", "Zeytin", "Kömür"], kopek: ["Karabaş", "Çomar", "Aslan", "Pars", "Bozkır", "Kurt"], at: HORSE_NAMES },
+  en: { kedi: ["Smoky", "Snowball", "Ginger", "Tabby", "Button", "Hazel", "Olive", "Sooty"], kopek: ["Blackie", "Shep", "Lion", "Rex", "Rover", "Wolf"], at: ["Bay", "Chestnut", "Grey", "Storm", "Thunder", "Star", "Falcon", "Swift", "Ember", "Cloud"] },
+  es: { kedi: ["Humo", "Copito", "Canela", "Atigrado", "Botón", "Avellana", "Oliva", "Carbón"], kopek: ["Negro", "Canelo", "León", "Tigre", "Lobo", "Centinela"], at: ["Bayo", "Castaño", "Tordo", "Lucero", "Relámpago", "Estrella", "Halcón", "Viento", "Centella", "Nube"] },
+  pt: { kedi: ["Fumo", "Floco", "Canela", "Malhado", "Botão", "Avelã", "Azeitona", "Carvão"], kopek: ["Farrusco", "Tejo", "Leão", "Pirata", "Lobo", "Sultão"], at: ["Baio", "Castanho", "Russo", "Luzeiro", "Relâmpago", "Estrela", "Falcão", "Vento", "Faísca", "Nuvem"] },
+  ar: { kedi: ["مشمش", "سكّر", "زعفران", "نمّور", "لؤلؤة", "بندق", "زيتونة", "فحمة"], kopek: ["أسود", "حارس", "سبع", "نمر", "ذيب", "وفي"], at: ["أشقر", "أدهم", "أشهب", "برق", "نجمة", "صقر", "ريح", "سهم", "غيمة", "عاصفة"] },
+  ru: { kedi: ["Дымок", "Пушок", "Рыжик", "Барсик", "Бусинка", "Орешек", "Мурзик", "Уголёк"], kopek: ["Полкан", "Шарик", "Барбос", "Дружок", "Серко", "Волчок"], at: ["Гнедко", "Буран", "Сивка", "Ветерок", "Звёздочка", "Сокол", "Вихрь", "Уголёк", "Туман", "Орлик"] },
+};
+const evcilAd = (s: GameState, tur: "kedi" | "kopek" | "at") => rnd((EVCIL_AD[s.dil || "tr"] || EVCIL_AD.tr)[tur]);
 // At rehini: sarraf atı rehin alır — hızlı akçe; altı ay içinde %25 fazlasıyla kurtarılmazsa yular sarrafın olur.
 export function horsePawnValue(s: GameState): number { return Math.round(HORSE_COST * 0.6 * inflationFactor(s)); }
 export function horseRedeemCost(p: Player): number { return Math.round((p.horse_pawn?.amount || 0) * 1.25); }
@@ -5211,7 +5226,7 @@ export function redeemHorse(prev: GameState): GameState {
 export function buyHorse(prev: GameState): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || p.horse || p.money < HORSE_COST) return s; // çocuğa at satılmaz
-  p.money -= HORSE_COST; p.horse = true; p.horse_name = rnd(HORSE_NAMES); p.reputation = Math.min(100, p.reputation + 2);
+  p.money -= HORSE_COST; p.horse = true; p.horse_name = evcilAd(s, "at"); p.reputation = Math.min(100, p.reputation + 2);
   { const hv = chance(0.5); push(s, "yolculuk", hv ? `${p.horse_name} ilk gece tavlada huysuzlandı, sabaha avucundan yem yedi; yol arkadaşlığı böyle başlar.` : `${p.horse_name} adında sağlam bir at aldın; artık yollar daha kısa ve emniyetli.`, "kişisel", true, { k: hv ? "horse.named2" : "horse.named", p: [p.horse_name] }); }
   return s;
 }
@@ -7185,7 +7200,7 @@ export function spendWithSpouse(prev: GameState): GameState {
   p.health = Math.min(100, p.health + 2); p.hunger = Math.max(0, p.hunger - 3);
   const sn: EvtParam = esParam(s);
   // Derin bağın kendi anı: yıllar geçmiş, bağ 85+ ise ara sıra mizaç ötesi bir sükût sahnesi (uzun evliliğin ödülü)
-  if ((p.spouse_bond || 0) >= 85 && Math.random() < 0.35) {
+  if ((p.spouse_bond || 0) >= 85 && Math.random() < 0.35 && !sonAnahtarlar(s, "evj.spouseDeep", 12).size) {
     push(s, "evlilik", `${p.spouse_name || "Eşin"} ile söze gerek kalmadan bir öğle geçti; bir bakış bir cümleyi tamamladı. Yıllar iki nefesi tek nefes yapmış.`, "kişisel", false, { k: "evj.spouseDeep", p: [sn] });
   } else {
     push(s, "evlilik", `${p.spouse_name || "Eşin"} ile baş başa bir gün geçirdiniz; bağınız pekişti.`, "kişisel", false, { k: (Math.random() < 0.5 ? "evj.spouseTime2." : "evj.spouseTime3.") + miz, p: [sn] });
@@ -10151,7 +10166,7 @@ export function craft(prev: GameState, id: string): GameState {
 export function migrate(s: GameState): GameState {
   const p: any = s.player || {};
   if (p.faction === undefined) p.faction = null;
-  if (p.horse && !p.horse_name) p.horse_name = rnd(HORSE_NAMES); // eski kayıt: at adları sonradan geldi — adsız at cümleyi bozmasın
+  if (p.horse && !p.horse_name) p.horse_name = evcilAd(s, "at"); // eski kayıt: at adları sonradan geldi — adsız at cümleyi bozmasın
   if (!p.faction_standing) p.faction_standing = {};
   if (!p.inventory) p.inventory = {};
   if (!p.properties) p.properties = [];

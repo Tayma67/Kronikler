@@ -67,6 +67,8 @@ Kanonik Türkçe anahtar/oyun-mantığı korunur; yalnızca **gösterim** yerell
   çözülür). Oyuncunun evlatları ve torunları oyunun dilindeki ad havuzundan ad alır (`s.dil`; İspanyolca dünyada Kerem
   doğmaz). Sohbet/teklif satırlarındaki kişi adları nüfus kaydına bağlıdır; dil değişince kronik de değişir.
 - **Arapça para birimi:** tek yazım: أقجة.
+- **Evcil hayvanlar:** kedi, köpek ve at adları da oyunun dilinde konur (Rusçada Полкан, İspanyolcada Lucero); eski kayıttaki adlar korunur.
+- **İspanyolca/Portekizce kadın oyuncu (ek):** yol, mektep, kefalet ve hastalık satırlarına 30 dişil varyant daha ("volviste empapada", "foste fiadora"); Portekizcede tek "você" satırı "tu"ya çevrildi.
 
 ## Yapı notları
 - Yeni blok ekle → `lib/i18n.tsx`'te const tanımla → `DICT_BUILDERS`'ın 6 dil kurucusuna `...BLOK.xx` ekle.
