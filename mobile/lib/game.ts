@@ -3322,7 +3322,7 @@ function tickDynasties(s: GameState, announce: boolean) {
     const offers = s.dynastyOffers || [];
     const allied = s.allied_houses || [];
     const friends = rivals.filter((h) => (h.tutum ?? 0) >= 35 && !offers.some((o) => o.houseId === h.id) && !allied.includes(h.id));
-    if (friends.length && Math.random() < 0.08) {
+    if (friends.length && p.age >= 16 && Math.random() < 0.08) { // çocuğa hane ittifakı önerilmez
       const h = friends[Math.floor(Math.random() * friends.length)];
       const canMarry = !p.married && p.age >= 16 && p.age < 55;
       const type: "ittifak" | "evlilik" = canMarry && Math.random() < 0.45 ? "evlilik" : "ittifak";
