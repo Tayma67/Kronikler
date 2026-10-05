@@ -333,6 +333,13 @@ nesil ekranı evlilik/evlat ya da 16 yaş ile açılır. Menünün altında tek 
 Çocuk menüsü 22 satırdan 14'e iniyor. Bu sırada bulunan hata da kapandı: çocuk mülk satın alabiliyordu (tapu artık
 16 yaşından küçüğe verilmiyor; miras kalan mülk elde kalır).
 
+**Tekrar eden satırlar (ilke 3) — aile ihmali kademeli:** ihmal edilen eş, anne-baba ve evlat için aynı cümle her
+yıl tekrar ediyordu (ihmal eden bir hayatta ~90 satır). Artık 1. yıl uyarır, 2. yıl derinleşir ("sofrada yerini
+beklemiyor"), 3. yıl kopuşu söyler ("aynı çatı altında iki yabancı"); sonrasında bağ sessizce aşınır ve üç yılda bir
+hatırlatılır (~27 satır, hiçbiri art arda tekrar etmez). Süren ihmal Açık hesaplarda tek satırdır ("Ocağın küsüyor").
+İhmal edilen eşle yıldönümü artık "ateşi hâlâ sıcak" demiyor ve bağı ısıtmıyor. Yakın çemberde kalabalık aile
+(5+ evlat) en ağır hasmı dışarıda bırakamaz: ona her zaman bir yer ayrılır.
+
 **Faz 4 — Ölçüm:**
 - **Oynanış denetimi betiği** (`scripts/_smoke/oynanis.cjs`): Bölüm 9.10'daki ölçütleri yüzlerce simüle hayatta
   ölçer; dengeye ya da tempoya dokunan her dalgada koşulur. İlk koşu bugünkü değerleri kayda geçirir ve hedefleri
