@@ -2553,6 +2553,10 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
         ...(!p.mother_dead ? [{ text: "Annen bir masal anlattı; kahramanı sendin.", k: "mem.tale" }] : []), // yetim çocuğa annesinin masalı yazılmaz
         { text: "Bir sokak köpeğiyle dost oldun, peşinden ayrılmadı.", k: "mem.dog" },
         { text: "Bir büyüğün elini izleyip zanaatı merak ettin.", k: "mem.craft", fn: () => { p.skill_xp.crafting += 8; p.skills.crafting = skillLevel(p.skill_xp.crafting); } },
+        { text: "Yağmurdan sonra su birikintilerinde taş sektirdin; ayakkabıların çamur, yüreğin bayram.", k: "mem.kidRain" },
+        { text: "Damda yatıp yıldız saydın; sayı her gece başka çıktı.", k: "mem.kidStars" },
+        { text: "Fırından yeni çıkmış ekmeğin ucunu yolda yedin; eve yarım somun vardı, kimse kızmadı.", k: "mem.kidBread" },
+        { text: "Karanlık ahırdan bir ses geldi; korka korka baktın — yeni doğmuş bir buzağıymış.", k: "mem.kidFear", fn: () => addStatXp(s, "strength", 2) },
       );
     } else if (p.age < 25) {
       mem.push(
@@ -2619,8 +2623,10 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     if (p.father_dead && p.father) mem.push({ text: `Babandan kalan eski aleti eline aldın; sapındaki aşınma tam ${p.father}'in avucunun yeri. Bir zanaat, bir ad, bir de bu iz kaldı ondan.`, k: "mem.fatherGrave", p: [p.father] });
     const son = new Set(s.history.filter((e) => e.day >= s.turn - 24 && e.k?.startsWith("mem.")).map((e) => e.k)); // iki yıl içinde aynı anı yinelenmez
     const tazeMem = mem.filter((x) => !son.has(x.k));
-    const m = rnd(tazeMem.length ? tazeMem : mem); m.fn?.();
-    push(s, p.age < 13 ? "cocukluk" : "gunluk", m.text, "kişisel", false, { k: m.k, p: m.p });
+    if (tazeMem.length) { // hepsi yakın zamanda yaşandıysa bu ay anı gelmez (aynı anı iki yıl içinde yinelenmez)
+      const m = rnd(tazeMem); m.fn?.();
+      push(s, p.age < 13 ? "cocukluk" : "gunluk", m.text, "kişisel", false, { k: m.k, p: m.p });
+    }
   }
   if (chance(0.05)) { const g = 5 + Math.floor(Math.random() * 20); p.money += g; const fv = chance(0.5); push(s, "gunluk", fv ? `Heybenin dibinde unutulmuş ${g} akçe çıktı; ne zaman düştüğünü kimse bilmiyor.` : `Yolda ${g} akçe buldun.`, "kişisel", false, { k: fv ? "evj.foundCoin2" : "evj.foundCoin", p: [g] }); }
   if (chance(0.04)) {

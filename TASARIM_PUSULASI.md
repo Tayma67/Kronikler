@@ -454,7 +454,7 @@ haritasındadır. Hedeflerin bir kısmı bugünkü değerler ölçüldükten son
 | Bunalma ayı | Aynı ayda 3'ten fazla büyük karar/tehdit | ~0 |
 | Ölü karar | Her koşulda baskın seçeneği olan seçimler | 0 |
 | Geri çağırma oranı | Sebebini söyleyen gecikmeli sonuçlar | %100 |
-| Tekrar oranı | Ayın getirdiği önemli satırlardan son iki yılda aynen (anahtar + kişi) görülmüş olanlar | Ölçülüp azaltılır (%19,8 → %7,5; mevsim satırları önemli sayılmaz) |
+| Tekrar oranı | Ayın getirdiği önemli satırlardan son iki yılda aynen (anahtar + kişi) görülmüş olanlar | Ölçülüp azaltılır (%19,8 → %7,5 → %6,6; mevsim satırları önemli sayılmaz; anı, iş olayı ve hasım satırı yakın zamanda çıktıysa yeniden seçilmez) |
 | Açık gerilim sayısı | Aynı anda görünür açık hesap | ≤5 |
 | Sarmal oranı | 5 yılda çöküşten çıkamayan hayatlar | Ölçülüp düşük tutulacak |
 | Ayna ayrışması | Yardımsever ve zalim karakterin kasabadaki görünümü | Zıt yönlerde |
