@@ -44,6 +44,15 @@ Kanonik Türkçe anahtar/oyun-mantığı korunur; yalnızca **gösterim** yerell
      konvansiyonu. Karışık-dil olmaması için TOPLU bitirmek tercih edilir.
 2. Şehir/rakip hanedan adları (world.ts HOUSE_NAMES), AD/SOYAD havuzları — özel ad; çevrilmez.
 
+## Rusça dilbilgisi (uygulandı)
+- **Ad çekimi:** `renderEvt` Rusçada edattan sonra gelen kişi adını doğru hâle çeker (`ruApplyCases`, `ruAdCekim`):
+  у/от/для/в пользу → ilgi, к → yönelme, с/между/над → araç, о/при → bulunma ("с Натальей Плотниковой",
+  "у Алексея Медведева", "Между Любовью Громовой и Олегом…"). Yalnız kişi parametrelerine ve Kiril ad metnine dokunur;
+  hane adı, sayı, yer ve Latin harfli adlar olduğu gibi kalır. "за" belirsiz olduğundan çekimlenmez.
+- **Kadın oyuncu:** oyuncuya eril geçmiş zamanla hitap eden 414 kalıba `.f` varyantı eklendi (kural + elle gözden
+  geçirme; özne başka biriyse — он/она, никто, ad, tırnak — fiil değişmez). Yeni Rusça metin yazarken oyuncuya
+  hitap eden geçmiş zaman ya şimdiki zamanla kurulur ya da `.f` varyantıyla birlikte eklenir.
+
 ## Yapı notları
 - Yeni blok ekle → `lib/i18n.tsx`'te const tanımla → `DICT_BUILDERS`'ın 6 dil kurucusuna `...BLOK.xx` ekle.
 - Her batch sonrası: `npx tsc --noEmit` + `npx expo export --platform android` ile doğrula.
