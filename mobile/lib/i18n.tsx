@@ -2,7 +2,7 @@
 // Eksik anahtar Türkçe'ye, o da yoksa anahtarın kendisine düşer (oyun hiç bozulmaz).
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Lang, LANGS, placeName, careerTitleL, professionNameL, goalL, NAME_POOLS, soyadCinsli } from "./locale-data";
+import { Lang, LANGS, placeName, careerTitleL, professionNameL, goalL, goalDoneL, NAME_POOLS, soyadCinsli } from "./locale-data";
 
 const KEY = "kronikler_lang_v1";
 
@@ -3162,7 +3162,7 @@ const HOUSE_POOLS_I: Record<Lang, string[]> = {
   ar: ["بنو غُراب","آل الصقر","بنو الحديد","بنو الذئب","آل النجم","بنو الفولاذ","آل الأسد","بنو الأرض","آل الفضّة","بنو النسر","آل البلّوط","بنو الثور","بنو الدلب","آل البرونز"],
   ru: ["Воронцовы","Соколовы","Железновы","Волковы","Звездины","Стальновы","Львовы","Земцовы","Серебровы","Орловы","Дубовы","Турановы","Вязовы","Бронзовы"],
 };
-export type EvtParam = string | number | { lk: string } | { i: string } | { pl: string } | { c: [string, number] } | { pr: string } | { q: string } | { route: string[] } | { fn: [number, "erkek" | "kadın"] } | { prl: string } | { il: string } | { tk: string } | { tq: string } | { kn: ["erkek" | "kadın", number, number, number, number, string, string?] } | { kf: ["erkek" | "kadın", number, number, string?] } | { pt2: string } | { fc: string } | { wc: number } | { hn: number } | { bl: string } | { enc: string } | { opp: string } | { mev: string } | { wevt: string } | { wevw: string } | { wevl: string } | { cr: string } | { wd: number } | { wds: number[] } | { wai: string } | { invl: string } | { edul: string } | { statk: string } | { ftl: string } | { goalk: string } | { sfx: string } | { stt: string } | { dreamk: string } | { crk: string } | { ach: string } | { fq: string };
+export type EvtParam = string | number | { lk: string } | { i: string } | { pl: string } | { c: [string, number] } | { pr: string } | { q: string } | { route: string[] } | { fn: [number, "erkek" | "kadın"] } | { prl: string } | { il: string } | { tk: string } | { tq: string } | { kn: ["erkek" | "kadın", number, number, number, number, string, string?] } | { kf: ["erkek" | "kadın", number, number, string?] } | { pt2: string } | { fc: string } | { wc: number } | { hn: number } | { bl: string } | { enc: string } | { opp: string } | { mev: string } | { wevt: string } | { wevw: string } | { wevl: string } | { cr: string } | { wd: number } | { wds: number[] } | { wai: string } | { invl: string } | { edul: string } | { statk: string } | { ftl: string } | { goalk: string } | { sfx: string } | { stt: string } | { dreamk: string } | { crk: string } | { ach: string } | { fq: string } | { goald: string };
 // Cümle içi küçük harf (Türkçe İ/I doğru iner; motorların yerel ayar desteğine güvenilmez).
 export function kucukHarf(str: string, lang: Lang): string { return (lang === "tr" ? str.replace(/İ/g, "i").replace(/I/g, "ı") : str).toLowerCase(); }
 function resolveEvtParam(v: EvtParam | undefined, lang: Lang, t: (k: string) => string, female = false): string {
@@ -3207,6 +3207,7 @@ function resolveEvtParam(v: EvtParam | undefined, lang: Lang, t: (k: string) => 
     if ("statk" in v) return t("statn." + v.statk); // özellik adı (stat-XP)
     if ("ftl" in v) return t("fac." + v.ftl + ".tl"); // fraksiyon görev etiketi
     if ("goalk" in v) return goalL(v.goalk, lang); // NPC amacı (TR ifadeden çözülür)
+    if ("goald" in v) return goalDoneL(v.goald, lang); // gerçekleşmiş amaç
     if ("sfx" in v) { if (!v.sfx) return ""; if (female) { const fv = t(v.sfx + ".f"); if (fv !== v.sfx + ".f") return fv; } return t(v.sfx); } // koşullu ek cümle (anahtarlı; dişil varyant varsa o)
     if ("stt" in v) return t("stt." + v.stt); // yerleşim kademesi adı (mezra/köy/kasaba/şehir)
     if ("dreamk" in v) return t("dream." + v.dreamk); // çocukluk hayali adı (combat/trade/crafting/social)

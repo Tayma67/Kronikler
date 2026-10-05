@@ -832,7 +832,7 @@ function npcLifeTick(s: GameState) {
     k.gd = true;
     s.relationships[k.id] = Math.min(100, (s.relationships[k.id] || 0) + 10);
     p.reputation = Math.min(100, p.reputation + 2);
-    push(s, "dunya_olayi", `${kisiAdi(k, "tr")} yıllardır kovaladığı hayaline kavuştu — senin desteğinle. Adın hayır duayla anılıyor.`, "kişisel", true, { k: "npclife.goalDone", p: [knParam(k), { goalk: hayalOf(k) }] });
+    push(s, "dunya_olayi", `${kisiAdi(k, "tr")} yıllardır kovaladığı hayaline kavuştu — senin desteğinle. Adın hayır duayla anılıyor.`, "kişisel", true, { k: "npclife.goalDone", p: [knParam(k), { goald: hayalOf(k) }] });
     break; // yılda en çok bir murat haberi
   }
   // NPC'ler kendi hayalini kendisi de kovalar: yılda ~yüzde 45 şansla bir yetişkin kendi emeğiyle muradına erer (dünya oyuncusuz da yaşar).
@@ -846,7 +846,7 @@ function npcLifeTick(s: GameState) {
       if (hy === "bir dükkân açmanın hayalini kuruyor" || hy === "kervan ticaretine atılmak istiyor") k.prof = "tüccar";
       else if (hy === "ustabaşı olmak istiyor") k.usta = true;
       const known = tanidik(k.id) || gloc === p.location_name;
-      push(s, "dunya_olayi", `${gloc}'te ${kisiAdi(k, "tr")} yıllardır kovaladığı hayaline kendi emeğiyle kavuştu: ${hy}.`, known ? "kişisel" : "makro", false, { k: "npclife.goalSelf", p: [knParam(k), { goalk: hy }, { pl: gloc }] });
+      push(s, "dunya_olayi", `${gloc}'te ${kisiAdi(k, "tr")} yıllardır kovaladığı hayaline kendi emeğiyle kavuştu: ${hy}.`, known ? "kişisel" : "makro", false, { k: "npclife.goalSelf", p: [knParam(k), { goald: hy }, { pl: gloc }] });
     }
   }
 }
