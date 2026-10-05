@@ -405,7 +405,7 @@ export default function Dashboard() {
       {p.dead && (() => {
         const eul = eulogy(state);
         const diedYear = cal.year;
-        const profLine = p.profession !== "işsiz" ? applyParams(t("eul.lived"), [careerTitleL(p.profession, kariyerXp(p), lang)]) : "";
+        const profLine = p.profession !== "işsiz" ? applyParams(t("eul.lived"), [careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")]) : "";
         // Lakap: ep.<id>, kadınsa dişil varyant (ep.<id>.f) varsa onu kullan.
         const epLabel = eul.epithet ? (() => { const fk = "ep." + eul.epithet + ".f"; const fv = t(fk); return p.gender === "kadın" && fv !== fk ? fv : t("ep." + eul.epithet); })() : "";
         // Hayatın özeti: en büyük üç an (kendi cümleleriyle) ve ardında kalan insanlar (ilke 9: doruk ve son)
@@ -452,7 +452,7 @@ export default function Dashboard() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
                 {profGi && <GameIcon name={profGi} size={13} color={C.gold} />}
                 <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.gold, textAlign: "center" }}>
-                  {p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, kariyerXp(p), lang)}
+                  {p.profession === "işsiz" ? t("misc.jobless") : careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")}
                 </Text>
               </View>
             </View>

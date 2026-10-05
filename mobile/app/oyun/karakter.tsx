@@ -219,7 +219,7 @@ export default function Karakter() {
               <Text style={{ fontFamily: F.display, fontSize: 19, color: C.goldBright, letterSpacing: 0.5 }}>{lakapliAd(p.name, p.lakap, p.gender === "kadın", t)}</Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
                 <GameIcon name="ilerle" size={11} color={C.gold} />
-                <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim }}>{hasCareer ? careerTitleL(p.profession, kariyerXp(p), lang) : t("misc.jobless")}</Text>
+                <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentDim }}>{hasCareer ? careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın") : t("misc.jobless")}</Text>
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 3, marginTop: 1 }}>
                 <Badge text={`${p.age} ${t("misc.age").toUpperCase()}`} />

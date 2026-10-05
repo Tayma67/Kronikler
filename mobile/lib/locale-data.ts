@@ -102,7 +102,7 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
   },
   pt: {
     çiftçi:{name:"Agricultor",tiers:["Jornaleiro","Agricultor","Proprietário"]}, demirci:{name:"Ferreiro",tiers:["Aprendiz de ferreiro","Ferreiro","Mestre ferreiro"]},
-    tüccar:{name:"Mercador",tiers:["Vendedor ambulante","Mercador","Grande mercador"]}, balıkçı:{name:"Pescador",tiers:["Rederiro","Pescador","Mestre"]},
+    tüccar:{name:"Mercador",tiers:["Vendedor ambulante","Mercador","Grande mercador"]}, balıkçı:{name:"Pescador",tiers:["Redeiro","Pescador","Mestre"]},
     avcı:{name:"Caçador",tiers:["Rastreador","Caçador","Mestre caçador"]}, marangoz:{name:"Carpinteiro",tiers:["Aprendiz","Carpinteiro","Mestre carpinteiro"]},
     çoban:{name:"Pastor",tiers:["Pastorinho","Pastor","Dono do rebanho"]}, fırıncı:{name:"Padeiro",tiers:["Amassador","Padeiro","Mestre padeiro"]},
     asker:{name:"Soldado",tiers:["Recruta","Soldado","Cabo","Cavaleiro"]}, müzisyen:{name:"Músico",tiers:["Aprendiz de bardo","Músico","Mestre menestrel"]},
@@ -145,9 +145,16 @@ export function professionNameL(id: string, lang: Lang, kadin = false): string {
   if (kadin) { const f = PROF_F[lang]?.[id]; if (f) return f; }
   return (PROF_L10N[lang]?.[id] || PROF_L10N.tr[id])?.name || id;
 }
-export function careerTitleL(id: string, careerXp: number, lang: Lang): string {
+// Kadın oyuncunun kariyer unvanları (kademe sayısı taban ile aynı).
+const TIERS_F: Partial<Record<Lang, Record<string, string[]>>> = {
+  es: {"çiftçi": ["Jornalera", "Granjera", "Terrateniente"], "demirci": ["Aprendiz de herrera", "Herrera", "Maestra herrera"], "tüccar": ["Buhonera", "Mercader", "Gran mercader"], "balıkçı": ["Redera", "Pescadora", "Patrona"], "avcı": ["Rastreadora", "Cazadora", "Maestra cazadora"], "marangoz": ["Aprendiz", "Carpintera", "Maestra carpintera"], "çoban": ["Zagala", "Pastora", "Dueña del rebaño"], "fırıncı": ["Amasadora", "Panadera", "Maestra panadera"], "müzisyen": ["Aprendiz de juglaresa", "Música", "Maestra juglaresa"], "şifacı": ["Herbolaria", "Sanadora", "Médica"], "katip": ["Novicia", "Escriba", "Escriba de la corte"], "kuyumcu": ["Aprendiz", "Joyera", "Maestra joyera"], "dokumacı": ["Aprendiz", "Tejedora", "Maestra tejedora"], "hancı": ["Sirvienta", "Posadera", "Dueña de posada"], "çocuk": ["Niña"], "işsiz": ["Desempleada"]},
+  pt: {"çiftçi": ["Jornaleira", "Agricultora", "Proprietária"], "demirci": ["Aprendiz de ferreira", "Ferreira", "Mestra ferreira"], "tüccar": ["Vendedora ambulante", "Mercadora", "Grande mercadora"], "balıkçı": ["Redeira", "Pescadora", "Mestra"], "avcı": ["Rastreadora", "Caçadora", "Mestra caçadora"], "marangoz": ["Aprendiz", "Carpinteira", "Mestra carpinteira"], "çoban": ["Pastorinha", "Pastora", "Dona do rebanho"], "fırıncı": ["Amassadora", "Padeira", "Mestra padeira"], "asker": ["Recruta", "Soldado", "Cabo", "Cavaleira"], "müzisyen": ["Aprendiz de barda", "Música", "Mestra menestrel"], "şifacı": ["Ervanária", "Curandeira", "Médica"], "katip": ["Noviça", "Escrivã", "Escrivã da corte"], "kuyumcu": ["Aprendiz", "Joalheira", "Mestra joalheira"], "dokumacı": ["Aprendiz", "Tecedeira", "Mestra tecedeira"], "hancı": ["Serva", "Estalajadeira", "Dona da estalagem"], "işsiz": ["Desempregada"]},
+  ar: {"çiftçi": ["أجيرة", "مزارعة", "مالكة أرض"], "demirci": ["صبية الحدّاد", "حدّادة", "حدّادة ماهرة"], "tüccar": ["بائعة متجوّلة", "تاجرة", "كبيرة التجّار"], "balıkçı": ["شبّاكة", "صيّادة", "ريّسة"], "avcı": ["كشّافة", "صيّادة", "صيّادة ماهرة"], "marangoz": ["صبية", "نجّارة", "نجّارة ماهرة"], "çoban": ["صبية الرعي", "راعية", "صاحبة قطيع"], "fırıncı": ["عجّانة", "خبّازة", "كبيرة الخبّازات"], "asker": ["مجنّدة", "جندية", "عريفة", "فارسة"], "müzisyen": ["شاعرة متدرّبة", "موسيقية", "أستاذة العزف"], "şifacı": ["عشّابة", "معالجة", "طبيبة"], "katip": ["مبتدئة", "كاتبة", "كاتبة الديوان"], "kuyumcu": ["صبية", "صائغة", "صائغة ماهرة"], "dokumacı": ["صبية", "نسّاجة", "نسّاجة ماهرة"], "hancı": ["خادمة", "صاحبة خان", "مالكة الخان"], "çocuk": ["طفلة"], "çırak": ["صبية"], "işsiz": ["عاطلة"]},
+};
+export function careerTitleL(id: string, careerXp: number, lang: Lang, kadin = false): string {
   const p = PROF_L10N[lang]?.[id] || PROF_L10N.tr[id]; if (!p) return id;
   const tier = Math.min(p.tiers.length - 1, Math.floor(careerXp / 30));
+  const f = kadin ? TIERS_F[lang]?.[id] : undefined; if (f && f.length === p.tiers.length) return f[tier];
   return p.tiers[tier];
 }
 

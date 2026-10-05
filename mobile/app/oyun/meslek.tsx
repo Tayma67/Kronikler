@@ -43,11 +43,11 @@ export default function Meslek() {
         {(() => {
           const d = sinavDurumu(state);
           if (!d || p.profession === "işsiz") return null;
-          const hedefUnvan = careerTitleL(p.profession, d.hedef * 30, lang);
+          const hedefUnvan = careerTitleL(p.profession, d.hedef * 30, lang, p.gender === "kadın");
           const durum = d.zirve ? t("ahi.top") : d.hazir ? t("ahi.ready") : d.bekleAy > 0 ? applyParams(t("ahi.cool"), [d.bekleAy], lang) : applyParams(t("ahi.wait"), [d.hizmetAy], lang);
           return (
             <Panel title={t("ahi.title")}>
-              <Text style={{ fontFamily: F.display, fontSize: 14, color: C.gold }}>{careerTitleL(p.profession, kariyerXp(p), lang)}{!d.zirve ? `  →  ${hedefUnvan}` : ""}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 14, color: C.gold }}>{careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")}{!d.zirve ? `  →  ${hedefUnvan}` : ""}</Text>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: d.hazir ? C.goldBright : C.parchmentDim, marginTop: 4, lineHeight: 19 }}>{durum}</Text>
               {(p.sinav_gecme || p.sinav_kalma) ? <Text style={{ fontFamily: F.serif, fontSize: 12, color: C.parchmentMuted, marginTop: 4 }}>{applyParams(t("ahi.record"), [p.sinav_gecme || 0, p.sinav_kalma || 0], lang)}</Text> : null}
               {d.hazir && (
@@ -177,7 +177,7 @@ export default function Meslek() {
 
         {curPr && (
           <Panel title={professionNameL(p.profession, lang)} right={<Pill text={`${tierIdx + 1}/${curPr.tiers.length}`} />}>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 8 }}>{careerTitleL(p.profession, kariyerXp(p), lang)}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.gold, marginBottom: 8 }}>{careerTitleL(p.profession, kariyerXp(p), lang, p.gender === "kadın")}</Text>
             <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
               {((PROF_L10N[lang] || PROF_L10N.tr)[p.profession]?.tiers || curPr.tiers).map((tt, i) => (
                 <Text key={i} style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: i <= tierIdx ? C.gold : C.parchmentMuted, borderWidth: 1, borderColor: i <= tierIdx ? "rgba(201,168,76,0.5)" : C.border, borderRadius: 5, paddingHorizontal: 6, paddingVertical: 3 }}>{tt.toUpperCase()}</Text>

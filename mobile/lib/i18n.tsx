@@ -3174,7 +3174,7 @@ function resolveEvtParam(v: EvtParam | undefined, lang: Lang, t: (k: string) => 
   if (typeof v === "object") {
     if ("i" in v) return t("it." + v.i);
     if ("pl" in v) return placeName(v.pl, lang);
-    if ("c" in v) return careerTitleL(v.c[0], v.c[1], lang);
+    if ("c" in v) return careerTitleL(v.c[0], v.c[1], lang, female);
     if ("pr" in v) return professionNameL(v.pr, lang);
     if ("prl" in v) return kucukHarf(professionNameL(v.prl, lang, !!v.k), lang); // cümle içinde meslek adı (küçük harf)
     if ("il" in v) return kucukHarf(t("it." + v.il), lang); // cümle içinde mal adı (küçük harf)
