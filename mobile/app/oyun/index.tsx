@@ -697,7 +697,7 @@ export default function Dashboard() {
         const chips: { icon: string; label: string }[] = [];
         if ((p.stall_until ?? 0) > state.turn) chips.push({ icon: "banner", label: applyParams(t("dash.fx.stall"), [(p.stall_until ?? 0) - state.turn]) });
         if ((p.iltizam_until ?? 0) > state.turn) chips.push({ icon: "scales", label: applyParams(t("dash.fx.iltizam"), [(p.iltizam_until ?? 0) - state.turn]) });
-        if ((p.winter_stock_until ?? 0) >= state.turn) chips.push({ icon: "wheat", label: applyParams(t("dash.fx.kiler"), [(p.winter_stock_until ?? 0) - state.turn]) });
+        if ((p.winter_stock_until ?? 0) > state.turn) chips.push({ icon: "wheat", label: applyParams(t("dash.fx.kiler"), [(p.winter_stock_until ?? 0) - state.turn]) }); // "0 ay" kalan kiler gösterilmez
         if (p.horse_pawn) chips.push({ icon: "hourglass", label: applyParams(t("dash.fx.rehin"), [Math.max(0, p.horse_pawn.until - state.turn)]) });
         const fal = (p.properties || []).find((pr) => pr.fallow_until !== undefined);
         if (fal) chips.push({ icon: "leaf", label: applyParams(t("dash.fx.nadas"), [Math.max(0, (fal.fallow_until ?? 0) - state.turn)]) });

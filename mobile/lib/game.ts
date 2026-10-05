@@ -2227,7 +2227,7 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): AySatiri {
     if (ev.length) { const k = rnd(ev); pool.push({ k: cins(k, "flav.aEvlat"), text: `Evladın ${kisiIlkAd(k)} dizine oturup bir masal istedi; sesin yetene dek anlattın.`, p: [kfParam(k)] }); }
   }
   if (cal.season === "Kış") pool.push({ k: "flav.kis1", text: "Soğuk sert geçti; ocağın başında ısındın." }, { k: "flav.kis2", text: "Kar yolları kapadı, evde kaldın." }, { k: "flav.kis3", text: "Uzun kış gecesinde bir hikâye dinledin; soba çıtırdadı." });
-  if (cal.season === "Kış" && (s.player.winter_stock_until ?? 0) >= s.turn) pool.push({ k: "flav.kis4", text: "Dışarıda tipi, içeride dolu kiler: kavurma tavada, odun sobada. Kış bu evden alacağını alamadı." });
+  if (cal.season === "Kış" && (s.player.winter_stock_until ?? -1) >= s.turn) pool.push({ k: "flav.kis4", text: "Dışarıda tipi, içeride dolu kiler: kavurma tavada, odun sobada. Kış bu evden alacağını alamadı." });
   if (cal.season === "İlkbahar") pool.push({ k: "flav.ilk1", text: "Tarlalar yeşerdi, içine umut düştü." }, { k: "flav.ilk2", text: "Kuşlar döndü; köy canlandı." }, { k: "flav.ilk3", text: "İlk yağmur toprağı uyandırdı; ıslak yollarda yürüdün." });
   if (cal.season === "Yaz") pool.push({ k: "flav.yaz1", text: "Sıcak günlerde gölgede dinlendin." }, { k: "flav.yaz2", text: "Hasada yardım ettin." }, { k: "flav.yaz3", text: "Çeşme başında serinleyip komşularla hâl hatır sordun." });
   if (cal.season === "Sonbahar") pool.push({ k: "flav.son1", text: "Yapraklar döküldü; kışa hazırlık başladı." }, { k: "flav.son2", text: "Pazarda son ürünler satıldı." }, { k: "flav.son3", text: "Bağ bozumu telaşı; sepetler üzümle doldu." });
@@ -2932,7 +2932,7 @@ export function advance(prev: GameState, n = 1): GameState {
     const child = s.player.age < 13;
     // Çocuğu ailesi besler: açlık daha yavaş düşer ve dipte aile karnını doyurur.
     const seasonMult = ({ "İlkbahar": 1.0, "Yaz": 1.1, "Sonbahar": 0.9, "Kış": 1.3 } as Record<string, number>)[cal.season] ?? 1; // 4 mevsim eğrisi (Vercel season_hunger_mult)
-    const seasonMultEff = cal.season === "Kış" && (s.player.winter_stock_until ?? 0) >= s.turn ? 0.95 : seasonMult; // dolu kiler: kış açlığı yaz gibi geçer
+    const seasonMultEff = cal.season === "Kış" && (s.player.winter_stock_until ?? -1) >= s.turn ? 0.95 : seasonMult; // dolu kiler: kış açlığı yaz gibi geçer
     const stamReduce = child ? 0 : Math.min(0.3, effStat(s.player, "stamina") * 0.03); // dayanıklılık açlığı yavaşlatır (Vercel stamina_hunger_reduction)
     const tutumluReduce = !child && hasPerk(s.player, "tutumlu") ? 0.15 : 0; // tutumlu: kıt kanaat geçinir — açlık daha yavaş düşer
     const drop = Math.max(child ? 2 : 3, Math.round((child ? 4 : 8) * seasonMultEff * (1 - Math.min(0.45, stamReduce + tutumluReduce))));
@@ -3892,7 +3892,7 @@ export function stockWinter(prev: GameState): GameState {
   const season = currentCalendar(s.turn).season;
   if (p.dead || p.age < 16 || inJail(p)) return s;
   if (season !== "Sonbahar" && season !== "Kış") return s; // kışlık güzden istiflenir
-  if ((p.winter_stock_until ?? 0) >= s.turn) return s; // kiler zaten dolu
+  if ((p.winter_stock_until ?? -1) >= s.turn) return s; // kiler zaten dolu
   const cost = winterStockCost(s);
   if (p.money < cost) return s;
   p.money -= cost;
