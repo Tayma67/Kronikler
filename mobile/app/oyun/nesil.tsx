@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, continueAsHeir, heirPreview, EDU_TRACKS, eduLevel, setChildEducation, childNature, favorChild, addDowry } from "../../lib/game";
+import { INVESTMENTS, WILL_STYLES, LAST_WORDS, investInChild, continueAsHeir, heirPreview, EDU_TRACKS, eduLevel, setChildEducation, childNature, evlatKadinMi, favorChild, addDowry } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
 import { useI18n } from "../../lib/i18n";
@@ -46,7 +46,7 @@ export default function Nesil() {
                 <GameIcon name="baby" size={16} color={C.gold} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment }}>{c}</Text>
-                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.sage, marginTop: 1 }}>{t("nat." + childNature(c, p.generation))}{p.child_bond?.[c] != null ? ` · ${t("char.bond")} ${p.child_bond[c]}` : ""}</Text>
+                  <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: C.sage, marginTop: 1 }}>{(() => { const nk = "nat." + childNature(c, p.generation); const kv = t(nk + ".k"); return evlatKadinMi(c) && kv !== nk + ".k" ? kv : t(nk); })()}{p.child_bond?.[c] != null ? ` · ${t("char.bond")} ${p.child_bond[c]}` : ""}</Text>
                   <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim, marginTop: 2 }}>{t("nes.preview").replace("%1", String(pv.points)).replace("%2", String(pv.money)).replace("%3", String(pv.rep))}</Text>
                 </View>
                 {(p.child_invests?.[c]?.length || 0) > 0 && <Text style={{ fontFamily: F.serif, fontSize: 10, color: C.goldDim }}>{p.child_invests[c].length} {t("nes.invests")}</Text>}

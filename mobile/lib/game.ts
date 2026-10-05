@@ -2097,7 +2097,8 @@ const CHILD_I: Record<string, string[]> = {
   ru: ["Иван", "Пётр", "Глеб", "Анна", "Борис", "Ольга", "Фёдор", "Марфа", "Олег", "Дарья"],
 };
 const evlatHavuzu = (s: GameState) => CHILD_I[s.dil || "tr"] || CHILD;
-const CHILD_F = new Set(Object.values(CHILD_I).flatMap((l) => [l[3], l[5], l[7], l[9]])); // kız adları — vâris cinsiyeti adından türetilir (portre/metin tutarlılığı)
+const CHILD_F = new Set(Object.values(CHILD_I).flatMap((l) => [l[3], l[5], l[7], l[9]]));
+export const evlatKadinMi = (ad: string) => CHILD_F.has(ad); // evladın cinsiyeti adından (vâris ekranı dişil etiketler için) // kız adları — vâris cinsiyeti adından türetilir (portre/metin tutarlılığı)
 
 const rnd = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 const chance = (p: number) => Math.random() < p;
