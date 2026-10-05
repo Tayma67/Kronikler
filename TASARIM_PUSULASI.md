@@ -342,6 +342,8 @@ hatırlatılır (~27 satır, hiçbiri art arda tekrar etmez). Süren ihmal Açı
 Tekrar ölçütü (`oynanis.cjs`) eklendi ve en çok tekrar edenler düzeltildi: kasabaya yerleşen ve doğan bebek artık
 adıyla geliyor (tanışılabilir gerçek kişi), bir yıl içinde ikinci hastalık "yine" diye ve hekimi göstererek anlatılıyor,
 eşin nâmına tepkisi iki yılda bir söyleniyor (bağ etkisi sürüyor), çocuklukta "yeni bir şey öğrendin" üç ağızla geliyor.
+Çocukluğun ay satırları (masal, oyun, ebeveynin işi) ve kronik eklem sızısı çeşitlendi; mevsim satırları çocuklukta da
+Günlük sekmesinde kalıyor (Önemli'yi kişiler doldurur).
 
 **Faz 4 — Ölçüm:**
 - **Oynanış denetimi betiği** (`scripts/_smoke/oynanis.cjs`): Bölüm 9.10'daki ölçütleri yüzlerce simüle hayatta
@@ -452,7 +454,7 @@ haritasındadır. Hedeflerin bir kısmı bugünkü değerler ölçüldükten son
 | Bunalma ayı | Aynı ayda 3'ten fazla büyük karar/tehdit | ~0 |
 | Ölü karar | Her koşulda baskın seçeneği olan seçimler | 0 |
 | Geri çağırma oranı | Sebebini söyleyen gecikmeli sonuçlar | %100 |
-| Tekrar oranı | Ayın getirdiği önemli satırlardan son iki yılda aynen (anahtar + kişi) görülmüş olanlar | Ölçülüp azaltılır (%19,8 → %13,5; kalan çoğu çocukluğun ay satırları) |
+| Tekrar oranı | Ayın getirdiği önemli satırlardan son iki yılda aynen (anahtar + kişi) görülmüş olanlar | Ölçülüp azaltılır (%19,8 → %7,5; mevsim satırları önemli sayılmaz) |
 | Açık gerilim sayısı | Aynı anda görünür açık hesap | ≤5 |
 | Sarmal oranı | 5 yılda çöküşten çıkamayan hayatlar | Ölçülüp düşük tutulacak |
 | Ayna ayrışması | Yardımsever ve zalim karakterin kasabadaki görünümü | Zıt yönlerde |

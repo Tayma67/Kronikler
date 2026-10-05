@@ -2174,11 +2174,12 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): AySatiri {
   const kardesler = (p.sibling_ids || []).map((id) => yakin(id)).filter((k): k is Kisi => !!k);
   const meslek = (k: Kisi) => { const m = npcAgeProfession(k.prof, yasOf(k, wy)); return m && m !== "işsiz" && NPC_PROFS.includes(m) ? m : null; };
   if (child) {
-    if (anne) pool.push({ k: "flav.cTaleAnne", text: `Annen ${kisiIlkAd(anne)} ocağın başında bir masal anlattı; sonunu duymadan uyuyakaldın.`, p: [kfParam(anne)] });
-    else if (baba) pool.push({ k: "flav.cTaleBaba", text: `Baban ${kisiIlkAd(baba)} akşam bir masal anlattı; gece devlerle perilerle doldu.`, p: [kfParam(baba)] });
+    const cv = (k: string, n: number) => { const v = Math.floor(Math.random() * n); return v ? k + ".v" + (v + 1) : k; }; // sahnenin çeşidi (tekrar önleme sahneye bakar, çeşit metni tazeler)
+    if (anne) pool.push({ k: cv("flav.cTaleAnne", 3), text: `Annen ${kisiIlkAd(anne)} ocağın başında bir masal anlattı; sonunu duymadan uyuyakaldın.`, p: [kfParam(anne)] });
+    else if (baba) pool.push({ k: cv("flav.cTaleBaba", 3), text: `Baban ${kisiIlkAd(baba)} akşam bir masal anlattı; gece devlerle perilerle doldu.`, p: [kfParam(baba)] });
     else { const ih = Object.values(pop.k).filter((k) => k.ol == null && k.loc === p.location_name && yasOf(k, wy) >= 60); if (ih.length) { const k = rnd(ih); pool.push({ k: cins(k, "flav.cTaleNine"), text: `Mahallenin yaşlısı ${kisiIlkAd(k)} kapı önünde eski zaman masalları anlattı.`, p: [kfParam(k)] }); } }
     const isci = baba && meslek(baba) ? baba : anne && meslek(anne) ? anne : undefined;
-    if (isci && p.age >= 8) pool.push({ k: isci === baba ? "flav.cIsBaba" : "flav.cIsAnne", text: `${isci === baba ? "Baban" : "Annen"} ${kisiIlkAd(isci)} seni işine götürdü; bir ${meslek(isci)} nasıl çalışır, gözünle gördün.`, p: [kfParam(isci), { prl: meslek(isci)! }] });
+    if (isci && p.age >= 8) pool.push({ k: cv(isci === baba ? "flav.cIsBaba" : "flav.cIsAnne", 2), text: `${isci === baba ? "Baban" : "Annen"} ${kisiIlkAd(isci)} seni işine götürdü; bir ${meslek(isci)} nasıl çalışır, gözünle gördün.`, p: [kfParam(isci), { prl: meslek(isci)! }] });
     const yol = p.child_friend ? yakin(p.child_friend.id) : undefined;
     if (yol) { const v = Math.floor(Math.random() * 3); const YT = ["dere boyunda taş sektirdiniz", "bostandan erik aşırdınız; bekçi görmeden kaçtınız", "çatıya çıkıp yıldızları saydınız; ikiniz de sayıyı şaşırdınız"];
       pool.push({ k: cins(yol, "flav.cYoldas" + (v ? ".v" + (v + 1) : "")), text: `Can yoldaşın ${kisiIlkAd(yol)} ile ${YT[v]}.`, p: [kfParam(yol)] }); }
@@ -2194,7 +2195,7 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): AySatiri {
       else if (ky <= p.age - 2 && ky >= 3) pool.push({ k: cins(k, "flav.cKardesKucuk"), text: `Küçük kardeşin ${kisiIlkAd(k)} peşinden hiç ayrılmadı; ona sapan atmayı öğrettin.`, p: [kfParam(k)] });
       else if (ky >= 4) pool.push({ k: cins(k, "flav.cKardesKavga"), text: `Kardeşin ${kisiIlkAd(k)} ile avluda kavga ettiniz; akşam sofrasında barıştınız.`, p: [kfParam(k)] });
     }
-    pool.push({ k: "flav.cPlay", text: "Sokakta oyun oynadın." });
+    pool.push({ k: cv("flav.cPlay", 3), text: "Sokakta oyun oynadın." });
   } else {
     pool.push({ k: "flav.aWork", text: "Gününü işinle geçirdin." }, { k: "flav.aMarket", text: "Çarşıda dolaştın." }, { k: "flav.aRest", text: "Bir gününü dinlenip dua ederek geçirdin." }, { k: "flav.aCoin", text: "Kesendeki akçeleri sayıp yarını düşündün." });
     const komsu = Object.values(pop.k).filter((k) => k.ol == null && k.loc === p.location_name && yasOf(k, wy) >= 16 && s.relationships[k.id] !== undefined && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && (s.relationships[k.id] ?? 0) > -20); // husumetli komşuyla kapı önü sohbeti olmaz
@@ -2587,7 +2588,8 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.chronic && !p.dead) {
     if (p.chronic.k === "eklem") {
       if (chance(0.5)) p.health = Math.max(1, p.health - 1); // yarı sızıntı — ama alevlenme daha sık
-      if (chance(0.12)) { const w = 3 + Math.floor(Math.random() * 3); p.health = Math.max(1, p.health - w); push(s, "hastalik", `Eklemler tutuldu; birkaç gün merdiven düşman oldu (−${w} sağlık).`, "kişisel", false, { k: "evj.eklemFlare", p: [w] }); }
+      if (chance(0.12)) { const w = 3 + Math.floor(Math.random() * 3); p.health = Math.max(1, p.health - w); const son = [...s.history].reverse().find((e) => /^evj\.eklemFlare/.test(e.k || ""))?.k; const ak = ["evj.eklemFlare", "evj.eklemFlare2", "evj.eklemFlare3"].filter((k) => k !== son); // üç ağız, bir öncekini tekrar etmez
+        push(s, "hastalik", `Eklemler tutuldu; birkaç gün merdiven düşman oldu (−${w} sağlık).`, "kişisel", false, { k: rnd(ak), p: [w] }); }
     } else {
       p.health = Math.max(1, p.health - 1);
       if (chance(0.08)) { const w = 4 + Math.floor(Math.random() * 3); p.health = Math.max(1, p.health - w); push(s, "hastalik", `Eski öksürük alevlendi; birkaç gün nefessiz kaldın (−${w} sağlık).`, "kişisel", false, { k: "evj.chronicFlare", p: [w] }); }
@@ -3058,7 +3060,7 @@ export function advance(prev: GameState, n = 1): GameState {
       if (jp.jail!.left <= 0) { jp.jail = null; jp.jail_freed = (jp.jail_freed || 0) + 1; jp.reputation = Math.max(-100, jp.reputation - 1); push(s, "suç", `Cezan doldu; zindan kapısı gün ışığına açıldı. Diyar seni unutmamış ama gözler bir süre üstünde.`, "kişisel", true, { k: "jail.released" }); }
       else { const JAIL_M_TR = ["Zindanda bir ay daha geçti; duvara bir çentik daha.", "Mazgaldan bir güvercin süzüldü; kırıntını paylaştın, gün biraz kısaldı.", "Yan hücrenin ihtiyarı duvara vura vura eski bir türkü tıklattı; sen de tempo tuttun."]; const jmi = Math.floor(Math.random() * JAIL_M_TR.length); push(s, "suç", JAIL_M_TR[jmi], "kişisel", false, { k: jmi === 0 ? "jail.month" : "jail.month" + jmi, p: [jp.jail!.left] }); }
     }
-    if (!s.player.dead && !inJail(s.player)) { const mf = monthlyFlavor(s, cal); if (mf.tanis && s.relationships[mf.tanis] === undefined) s.relationships[mf.tanis] = 0; push(s, s.player.age < 13 ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k, p: mf.p }); } // tanış: sokakta tanışılan yaşıt artık tanıdık
+    if (!s.player.dead && !inJail(s.player)) { const mf = monthlyFlavor(s, cal); if (mf.tanis && s.relationships[mf.tanis] === undefined) s.relationships[mf.tanis] = 0; push(s, s.player.age < 13 && !/^flav\.(kis|ilk|yaz|son)\d/.test(mf.k) ? "cocukluk" : "gunluk", mf.text, "kişisel", false, { k: mf.k, p: mf.p }); } // tanış: sokakta tanışılan yaşıt artık tanıdık · mevsim satırı çocuklukta da günlükte kalır (önemli değil)
     if (i === n - 1) { s.micro = null; if (!s.player.dead && s.player.age >= 6 && chance(0.12)) { const mp = s.player.age >= 13 ? MICRO_IDS : MICRO_KID_IDS; s.micro = { id: mp[Math.floor(Math.random() * mp.length)] }; } } // mikro an: yok sayılırsa ertesi ay kaybolur (çocuğa çocuk anı)
     crownCampaignTick(s); // Sefer 2.0: ordu her ay yol alır (yürüyüş → kuşatma → hüküm)
     rakipTick(s); // çarşıdaki rakip: hüneri büyür, hamle yapar, yıllık bayrak yarışı vakti
