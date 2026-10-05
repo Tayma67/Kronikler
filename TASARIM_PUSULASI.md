@@ -286,6 +286,14 @@ Bir özellik ancak şu altı sorunun hepsine "evet" ise yapılır:
 - Pencereler tek bir sıraya bağlanır: aynı anda tek pencere, ayda en çok bir büyük karar; küçük kartlar ay
   özetine iner.
 
+**Faz 1 durumu (uygulandı):** dönüm noktası penceresi yalnız oyuncuya değen anlarda açılıyor (`donumAni`);
+teklif/hesap ayında kart çıkmıyor, kişisel büyük an ayında rastgele kart çıkmıyor; iki destan paneli sıraya girdi;
+ana ekranda en çok 5 satırlık **Açık hesaplar** (`acikHesaplar`); günlüğün varsayılanı **Önemli** (`onemliMi`);
+hoş geldin penceresi yerine tek cümlelik şerit. Ölçüm (`oynanis.cjs`, 40–60 hayat): ayda pencere 1,2 → 0,79,
+bunalma ayı %4,2 → %0,2; dönüm noktası pencerelerinin %83'ünü oluşturan dünya haberleri artık pencere açmıyor;
+30 yaşındaki örnek günlükte "Önemli" 157 kişisel satırı 45'e indiriyor. Gerçek boş ay oranı %27 — bunu Faz 2
+dolduracak. Meslek çeşitliliği düşük (makul oyuncu 4 mesleğe ulaşıyor): meslek kapıları ayrıca incelenecek.
+
 **Faz 2 — Karar kartları:** derin sistemler (helallik, diyet, kardeş isteği, borç, kefalet, can borcu) ana ekrana
 "bir insan kapında" kartı olarak gelir. Her sonuç metni geri çağırma cümlesi taşır.
 
