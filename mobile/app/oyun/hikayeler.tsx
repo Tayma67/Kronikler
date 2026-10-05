@@ -12,9 +12,9 @@ import { BackLabel, PageHeader, Panel, SectionHead, ScreenFresk } from "../../li
 export default function Hikayeler() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
-  const { t } = useI18n();
-  // i18n anahtarı varsa onu, yoksa arc'ın kendi (TR) verisini kullan.
-  const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
+  const { t, tg } = useI18n();
+  // i18n anahtarı varsa onu, yoksa arc'ın kendi (TR) verisini kullan; kadın oyuncuya .f varyantı.
+  const gt = (key: string, fb: string) => { const v = tg(key, state?.player.gender === "kadın"); return v === key ? fb : v; };
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const st = state.story;

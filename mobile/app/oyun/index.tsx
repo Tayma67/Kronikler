@@ -99,7 +99,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { state, doWork, doEat, resetGame, apply, mpMode } = useGame();
   const { snapshot: mpSnapshot } = useMp();
-  const { t, lang } = useI18n();
+  const { t, tg, lang } = useI18n();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
   const [freshMark, setFreshMark] = useState<null | { from: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + olay sırası eşiği (q > from)
   const [yearReport, setYearReport] = useState<GameEvent | null>(null); // yıl dönümü karnesi (yaş günü ritüeli)
@@ -863,7 +863,7 @@ export default function Dashboard() {
                 </Pressable>
               ))}
             </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{t("child.spent")}</Text>}
+            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{tg("child.spent", p.gender === "kadın")}</Text>}
           </View>
         );
       })()}
@@ -970,7 +970,7 @@ export default function Dashboard() {
                 </Pressable>
               ))}
             </View>
-            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{t("child.spent")}</Text>}
+            {!can && <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted, marginTop: 8 }}>{tg("child.spent", p.gender === "kadın")}</Text>}
           </View>
         );
       })()}

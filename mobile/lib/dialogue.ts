@@ -18,12 +18,13 @@ export const INTENTS: Intent[] = [
 export interface ConvResult { line: string; moodDelta: number; relDelta: number; memory: string; }
 
 // Algı selamı: halkın seni görüşü (feared/beloved...) sohbet açılışına yansır. Anahtar yoksa boş döner (ham anahtar sızmaz).
-export function perceptionGreeting(lang: Lang, key: string): string {
+export function perceptionGreeting(lang: Lang, key: string, female = false): string {
   const base = "pp.greet." + key;
+  const al = (k: string): string | null => { if (female) { const f = tFor(lang, k + ".f"); if (f !== k + ".f") return f; } const v = tFor(lang, k); return v !== k ? v : null; }; // kadın oyuncuya .f ("Bienvenida, señora")
   const roll = Math.random(); // üç ağız: aynı algının farklı selamları
-  if (roll < 0.34) { const alt = tFor(lang, base + ".c"); if (alt !== base + ".c") return alt; }
-  if (roll < 0.67) { const alt = tFor(lang, base + ".b"); if (alt !== base + ".b") return alt; }
-  const v = tFor(lang, base); return v === base ? "" : v;
+  if (roll < 0.34) { const alt = al(base + ".c"); if (alt) return alt; }
+  if (roll < 0.67) { const alt = al(base + ".b"); if (alt) return alt; }
+  return al(base) || "";
 }
 
 function moodTier(m: number): "küs" | "soğuk" | "nötr" | "sıcak" | "neşeli" {

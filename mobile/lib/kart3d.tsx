@@ -156,8 +156,8 @@ function EtkiIzi({ c }: { c: Choice }) {
 }
 
 function KaderKarti({ dilemma, onChoose, female }: { dilemma: Dilemma; onChoose: (c: Choice, i: number) => void; female?: boolean }) {
-  const { t } = useI18n();
-  const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
+  const { t, tg } = useI18n();
+  const gt = (key: string, fb: string) => { const v = tg(key, !!female); return v === key ? fb : v; }; // kadın oyuncuya .f varyantı
   // Sonuç metni: kadın oyuncuda dişil varyant (.f) varsa o — günlükteki renderEvt ile aynı kural.
   const sonuc = (i: number) => { const c = dilemma.choices[i]; const k = c.rk || "dil." + dilemma.id + ".r" + i; if (female) { const fv = t(k + ".f"); if (fv !== k + ".f") return fv; } return gt(k, c.result); };
   const etiket = (i: number) => gt("dil." + dilemma.id + ".c" + i, dilemma.choices[i].label);

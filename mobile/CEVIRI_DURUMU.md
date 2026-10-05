@@ -52,6 +52,9 @@ Kanonik Türkçe anahtar/oyun-mantığı korunur; yalnızca **gösterim** yerell
 - **Kadın oyuncu:** oyuncuya eril geçmiş zamanla hitap eden 414 kalıba `.f` varyantı eklendi (kural + elle gözden
   geçirme; özne başka biriyse — он/она, никто, ad, tırnak — fiil değişmez). Yeni Rusça metin yazarken oyuncuya
   hitap eden geçmiş zaman ya şimdiki zamanla kurulur ya da `.f` varyantıyla birlikte eklenir.
+- **İspanyolca/Portekizce/Arapça kadın oyuncu:** oyuncuya eril sıfatla hitap eden kalıplara `.f` eklendi (es 25, pt 41,
+  ar 15: "acabarás cansada", "ficaste ferida", "أنتِ متزوجة", "¡Bienvenida, señora!"). Arayüzde oyuncuya hitap eden metin
+  `tg(anahtar, kadınMı)` ile yazılır (kader kartı ve hikâye seçenekleri, sohbet selamı, uyarılar).
 
 ## Yapı notları
 - Yeni blok ekle → `lib/i18n.tsx`'te const tanımla → `DICT_BUILDERS`'ın 6 dil kurucusuna `...BLOK.xx` ekle.

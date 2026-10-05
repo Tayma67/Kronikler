@@ -103,7 +103,7 @@ export default function NpcDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, apply } = useGame();
-  const { lang, t } = useI18n();
+  const { lang, t, tg } = useI18n();
   const [line, setLine] = useState<string>("");
   const [lineDelta, setLineDelta] = useState<number>(0);
   const [giftOpen, setGiftOpen] = useState(false);
@@ -343,7 +343,7 @@ export default function NpcDetail() {
               <GameIcon name="lyre" size={16} color={tone} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.serif, fontSize: 14, color: tone }}>{forbidden ? t("affair.flirtBtn") : t("npca.flirtBtn")}</Text>
-                {forbidden ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.ember, marginTop: 1 }}>{state.player.married ? t("affair.warnMarried") : t("affair.warnTheirs")}</Text> : null}
+                {forbidden ? <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.ember, marginTop: 1 }}>{state.player.married ? tg("affair.warnMarried", state.player.gender === "kadın") : t("affair.warnTheirs")}</Text> : null}
               </View>
               <SansRozet yuzde={teklifSansi(state, npc, "flort").yuzde} acik={sansAcik === "flort"} onPress={() => setSansAcik(sansAcik === "flort" ? null : "flort")} />
             </Pressable>

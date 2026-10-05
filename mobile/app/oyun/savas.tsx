@@ -29,7 +29,7 @@ function HpBar({ label, hp, max, color }: { label: string; hp: number; max: numb
 export default function Savas() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
-  const { t, lang } = useI18n();
+  const { t, tg, lang } = useI18n();
   const [diyetAcik, setDiyetAcik] = useState(false);
   // i18n anahtarı yoksa encounter'ın kendi (TR) verisini kullan.
   const gt = (key: string, fb: string) => { const v = t(key); return v === key ? fb : v; };
@@ -202,7 +202,7 @@ export default function Savas() {
         {tooWeak && !p.dead && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(168,52,52,0.1)", borderWidth: 1, borderColor: "rgba(168,52,52,0.45)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
             <GameIcon name="saglik" size={15} color={C.blood} />
-            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, lineHeight: 17 }}>{t("cb.tooWeak")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, lineHeight: 17 }}>{tg("cb.tooWeak", state.player.gender === "kadın")}</Text>
           </View>
         )}
         {p.age < 13 && !p.dead && (

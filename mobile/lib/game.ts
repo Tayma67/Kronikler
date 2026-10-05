@@ -4715,7 +4715,7 @@ export function talkWith(prev: GameState, npc: NPC, intent: string, lang: string
   if (intent === "hosbes") {
     const pp = publicPerception(s);
     if (pp.key !== "unknown" && pp.key !== "neutral" && Math.random() < 0.35) {
-      const g = perceptionGreeting(lang as any, pp.key);
+      const g = perceptionGreeting(lang as any, pp.key, s.player.gender === "kadın");
       if (g) line = g + " " + line;
     }
   }

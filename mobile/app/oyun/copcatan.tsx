@@ -15,7 +15,7 @@ import { C, F } from "../../lib/theme";
 export default function Copcatan() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state, apply } = useGame();
-  const { lang, t } = useI18n();
+  const { lang, t, tg } = useI18n();
   const [ageF, setAgeF] = useState<"all" | "young" | "mid" | "old">("all");
   const [wealthF, setWealthF] = useState<number>(-1); // -1 hepsi, 0/1/2 servet
   const suitors = useMemo(() => (state ? arrangedSuitors(state, lang) : []), [state?.pop, state?.seed, lang, state?.player.location_name, state?.turn, state?.player.married]);
@@ -50,7 +50,7 @@ export default function Copcatan() {
 
         {p.married ? (
           <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 22, alignItems: "center", marginTop: 8 }}>
-            <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center" }}>{t("cc.married")}</Text>
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 13, color: C.parchmentMuted, textAlign: "center" }}>{tg("cc.married", state.player.gender === "kadın")}</Text>
           </View>
         ) : (
           <>
