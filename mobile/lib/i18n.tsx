@@ -123,7 +123,7 @@ const _goalTR: Dict = { "npc.helpGoal":"Amacına Yardım Et", "npc.exploitGoal":
 const NPCGOAL: Record<Lang, Dict> = {
   tr: _goalTR,
   en: { "npc.helpGoal":"Help Their Goal", "npc.exploitGoal":"Exploit Their Goal" },
-  es: { "npc.helpGoal":"Ayuda a Su Meta", "npc.exploitGoal":"Explota Su Meta" }, pt: { "npc.helpGoal":"Ajuda a Sua Meta", "npc.exploitGoal":"Explora a Sua Meta" }, ar: { "npc.helpGoal":"ساعد هدفه", "npc.exploitGoal":"استغلّ هدفه" }, ru: { "npc.helpGoal":"Помочь его цели", "npc.exploitGoal":"Использовать его цель" },
+  es: { "npc.helpGoal":"Ayuda a Su Meta", "npc.exploitGoal":"Explota Su Meta" }, pt: { "npc.helpGoal":"Ajuda a Sua Meta", "npc.exploitGoal":"Explora a Sua Meta" }, ar: { "npc.helpGoal":"العون على تحقيق المراد", "npc.exploitGoal":"استغلال المراد" }, ru: { "npc.helpGoal":"Помочь с мечтой", "npc.exploitGoal":"Сыграть на мечте" },
 };
 // Pano kanca/bağlam şeritleri (sıradaki hedef + diyar savaşı).
 const DASH3: Record<Lang, Dict> = {

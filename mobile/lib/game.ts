@@ -4883,6 +4883,7 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
 export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
   const s = clone(prev); const p = s.player;
   if (p.dead || p.age < 13 || !npc.goal) return s; // hedefi kalmayanın umudu da istismar edilemez
+  if ((p.married && p.spouse_id === npc.id) || oyuncuAkrabasi(p, npc.id)) return s; // eşin ve kanından olanın umudu istismar edilmez
   // Tur başına tek istismar — yoksa farklı NPC'ler üstünden aynı turda sınırsız para farm'lanır.
   if (p.exploit_turn === s.turn) { push(s, "sohbet", `Bu ay birini daha kandırmaya kalkışmak nam yapar; biraz beklemelisin.`, "kişisel", false, { k: "evj.exploitWait" }); return s; }
   const rel = relWith(s, npc.id);
