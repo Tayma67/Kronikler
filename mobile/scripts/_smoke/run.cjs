@@ -54,7 +54,7 @@ for (let i = 0; i < LIVES; i++) {
           else if (nm && Math.random() < 0.04) s = g.reconcileNemesis(s);
           const npcs2 = g.npcsOf(s); if (npcs2.length && Math.random() < 0.05) { const nn = R(npcs2); if (g.helalUygun(s, nn.id)) s = g.helallikIste(s, nn, Math.random() < 0.5); }
         } catch (e) { errors++; if (errors <= 5) console.log("HESAP HATASI:", e.message); }
-        try { if (s.npcTeklif && Math.random() < 0.6) s = g.npcTeklifYanit(s, Math.random() < 0.5); } catch (e) { errors++; if (errors <= 5) console.log("TEKLİF HATASI:", e.message); } // NPC'nin kendi teklifi (dünürcü/borç)
+        try { if (!s.npcTeklif && Math.random() < 0.15) s = g.kapiyaGelen(s); if (s.npcTeklif && Math.random() < 0.6) s = g.npcTeklifYanit(s, Math.random() < 0.5, Math.random() < 0.5 ? 0 : 1); } catch (e) { errors++; if (errors <= 5) console.log("TEKLİF HATASI:", e.message); } // NPC'nin kendi teklifi (dünürcü/borç)
         try { // çırak: usta olunca al, çoğu zaman ders ver (bazen ihmal et → kaçış yolu da koşar)
           if (g.cirakAlabilir(s.player, s.turn) && Math.random() < 0.15) s = g.cirakAl(s, R([0, 1, 2]));
           if (g.cirakDersHazir(s) && Math.random() < 0.6) s = g.cirakDers(s);

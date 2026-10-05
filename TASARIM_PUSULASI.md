@@ -294,6 +294,12 @@ bunalma ayı %4,2 → %0,2; dönüm noktası pencerelerinin %83'ünü oluşturan
 30 yaşındaki örnek günlükte "Önemli" 157 kişisel satırı 45'e indiriyor. Gerçek boş ay oranı %27 — bunu Faz 2
 dolduracak. Meslek çeşitliliği düşük (makul oyuncu 4 mesleğe ulaşıyor): meslek kapıları ayrıca incelenecek.
 
+**Faz 2 durumu (ilk dalga uygulandı):** kart çıkmayan ayların yarısında "kapıdaki insan" gelir: düğün, cenaze,
+kefalet (sonucu 6–18 ay sonra huya göre), hakemlik (haklı taraf gizli; zekâ sezdirir) ve imece (NUFUS.md). Boş ay
+(yetişkinlik) %27 → %19, bunalma %0,2'de kaldı. Meslek kapıları ölçüldü: hedefli oyuncu 13–18 yaşında mesleğine
+ulaşıyor; ehil olunan meslek ve dağıtılmamış özellik puanı açık hesaplarda. Sırada: çocukluk boş ayları (%28) ve
+derin sistemlerin (helallik, diyet, can borcu) kart olarak gelmesi.
+
 **Faz 2 — Karar kartları:** derin sistemler (helallik, diyet, kardeş isteği, borç, kefalet, can borcu) ana ekrana
 "bir insan kapında" kartı olarak gelir. Her sonuç metni geri çağırma cümlesi taşır.
 

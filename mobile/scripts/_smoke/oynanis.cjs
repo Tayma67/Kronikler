@@ -14,7 +14,7 @@ const g = require(paket); fs.unlinkSync(giris);
 
 const LIVES = parseInt(process.env.OYN_LIVES || "80", 10);
 const R = (a) => a[Math.floor(Math.random() * a.length)];
-const KART_IKILEM = 0.28, KART_FIRSAT = 0.22; // index.tsx ile aynı (aylık zar)
+const KART_IKILEM = 0.28, KART_FIRSAT = 0.22, KART_KAPI = 0.25; // index.tsx ile aynı (aylık zar; kapı kartı boş kalan ayın yarısında denenir)
 
 // Açık gerilimler: oyuncunun "aklında tutması gereken" süren hesaplar.
 function acikGerilim(s) {
@@ -34,7 +34,7 @@ function acikGerilim(s) {
   return n;
 }
 
-const T = { dunyaHaberi: 0, ay: 0, bos: 0, bunalma: 0, pencere: 0, karar: 0, buyukKarar: 0, olay: 0, landmark: 0, gerilimTop: 0, gerilim5ustu: 0, gerilimMax: 0, cocukAy: 0, cocukBos: 0 };
+const T = { kapi: {}, dunyaHaberi: 0, ay: 0, bos: 0, bunalma: 0, pencere: 0, karar: 0, buyukKarar: 0, olay: 0, landmark: 0, gerilimTop: 0, gerilim5ustu: 0, gerilimMax: 0, cocukAy: 0, cocukBos: 0 };
 const hayatAy = [], hayatKarar = [], olumYasi = [], meslekler = {}, enBuyuk = {}; let sarmal = 0, ilkKararAy = [];
 for (let h = 0; h < LIVES; h++) {
   let s = g.newGame("Sim", "Oyuncu", Math.random() < 0.5 ? "erkek" : "kadın");
@@ -69,9 +69,10 @@ for (let h = 0; h < LIVES; h++) {
       if (fest) { pencere++; karar++; buyuk++; const i = Math.floor(Math.random() * fest.choices.length); s = g.applyDilemma(s, fest.choices[i].delta, fest.choices[i].result, fest.id + ":" + i, true); }
       else if (!land.length) { const r = Math.random();
         if (r < KART_IKILEM) { const d = g.pickDilemma(s); if (d) { pencere++; karar++; buyuk++; const i = Math.floor(Math.random() * d.choices.length); s = g.applyDilemma(s, d.choices[i].delta, d.choices[i].result, d.id + ":" + i); } }
-        else if (r < KART_IKILEM + KART_FIRSAT) { const l = g.opportunitiesFor(s); if (l.length) { pencere++; karar++; s = g.resolveOpportunity(s, R(l), Math.random() < 0.5); } } }
+        else if (r < KART_IKILEM + KART_FIRSAT) { const l = g.opportunitiesFor(s); if (l.length) { pencere++; karar++; s = g.resolveOpportunity(s, R(l), Math.random() < 0.5); } }
+        else if (r < KART_IKILEM + KART_FIRSAT + KART_KAPI) { s = g.kapiyaGelen(s); if (s.npcTeklif && s.npcTeklif.turn === s.turn) T.kapi[s.npcTeklif.tur] = (T.kapi[s.npcTeklif.tur] || 0) + 1; } }
     }
-    if (s.npcTeklif && s.npcTeklif.turn === s.turn) { pencere++; karar++; buyuk++; s = g.npcTeklifYanit(s, Math.random() < 0.5); }
+    if (s.npcTeklif && s.npcTeklif.turn === s.turn) { pencere++; karar++; buyuk++; s = g.npcTeklifYanit(s, Math.random() < 0.75, Math.random() < 0.5 ? 0 : 1); }
     if (s.hesap) { pencere++; karar++; buyuk++; s = g.hesapKarari(s, Math.random() < 0.3); }
     if (s.micro) { karar++; s = g.resolveMicro(s, Math.random() < 0.5 ? 0 : 1); }
     if (s.saga && s.saga.scene) { karar++; buyuk++; try { s = g.resolveSaga(s, Math.floor(Math.random() * (g.SAGA_CHOICES[s.saga.scene] || 2))); } catch (e) {} }
@@ -116,4 +117,5 @@ console.log(`  Açık gerilim ort. ${sonuc.ortGerilim} · 5'i aşan ay %${sonuc.
 console.log(`  Tempo: hayat medyan ${sonuc.hayatAyMedyan} ay, ${sonuc.hayatKararMedyan} karar · ilk karar ${sonuc.ilkKararAyMedyan}. ayda`);
 console.log(`  Ölüm yaşı medyan ${sonuc.olumYasiMedyan} · çöküş sarmalı %${sonuc.sarmalYuzde}`);
 console.log(`  Çeşitlilik: ${sonuc.meslekSayisi} meslek, entropi ${sonuc.meslekCesitliligi} bit (${Object.entries(meslekler).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + " " + v).join(", ")})`);
+console.log(`  Kapıya gelen kartlar: ${Object.entries(T.kapi).map(([k, v]) => k + " " + v).join(", ") || "yok"}`);
 console.log(`  En sık dönüm noktası türleri: ${sonuc.enSikDonum.map(([k, v]) => k + " " + v).join(", ")}`);

@@ -26,6 +26,8 @@ export interface Player {
   mother_seed?: number; father_seed?: number; spouse_seed?: number; // kültürel isim için tohum (dile göre çözülür)
   spouse_id?: string; mother_id?: string; father_id?: string; // yaşayan nüfustaki gerçek kişiler (eş, anne, baba): ad, yaş ve ölüm oradan gelir
   child_ids?: Record<string, string>; // evlat adı → nüfustaki kişi (ocakta büyür; sen yaşarken evden ayrılmaz)
+  kefaletler?: { id: string; tutar: number; vade: number }[]; // kefil olduğun borçlar (vadesinde borçlu huyuna göre öder; ödemezse sen ödersin)
+  kapi_son?: Record<string, number>; kapi_tur?: Record<string, number>; // kapı kartı türlerinin son geliş turu (aynı tür art arda gelmesin; kefil 2 yılda, imece yılda bir) // kapına kart getiren kişiler: aynı kişi iki yıl içinde yeniden gelmez
   alacaklar?: { id: string; tutar: number; vade: number; uzatildi?: boolean }[]; // NPC'lere verilen borçlar (vadesinde huyuna göre ödenir)
   miras_bekle?: { id: string; tutar: number }; // ebeveyn mirasında payını isteyecek kardeş (bekleyen başka teklif bitince gelir)
   kardes_istek?: Record<string, number>; // kardeşin son yardım isteği (tur) — aynı kardeş dört yılda bir ister
@@ -557,7 +559,7 @@ function nufusKorunan(s: GameState): Set<string> {
   if (p.child_friend) k.add(p.child_friend.id);
   if (p.apprentice) k.add(p.apprentice.id);
   for (const x of s.kanDefteri || []) { k.add(x.id); if (x.olen) k.add(x.olen); }
-  for (const id of [s.story?.nemesis?.id, s.story?.nemesis?.olen, s.hesap?.id, p.katil]) if (id) k.add(id);
+  for (const id of [s.story?.nemesis?.id, s.story?.nemesis?.olen, s.hesap?.id, p.katil, s.npcTeklif?.ek, ...(p.kefaletler || []).map((x) => x.id)]) if (id) k.add(id);
   for (const id of [p.spouse_id, p.mother_id, p.father_id, p.betrothed?.id, p.affair?.id, s.npcTeklif?.id, ...evlatKimlikleri(p), ...(p.sibling_ids || []), ...(p.alacaklar || []).map((a) => a.id), p.rakip?.id, p.cirak?.id]) if (id) k.add(id);
   return k;
 }
@@ -1143,6 +1145,7 @@ function npcTeklifTiki(s: GameState) {
     s.npcTeklif = undefined;
   }
   alacakTiki(s);
+  kefaletTiki(s);
   mirasIstegi(s);
   if (s.npcTeklif || p.dead || p.age < 16) return;
   const wy = worldYears(s); const pop = nufusOf(s);
@@ -1186,11 +1189,12 @@ function mirasIstegi(s: GameState) {
   push(s, "sohbet", `Kardeşin ${kisiAdi(k, "tr")} mirastan payını istiyor: ${m.tutar} akçe.`, "kişisel", true, { k: k.g === "kadın" ? "npct.miras.k" : "npct.miras", p: [kfParam(k), m.tutar] });
 }
 // Bekleyen teklife cevap (kabul/ret). Şart değiştiyse (kişi evlendi, öldü, para yetmiyor) teklif sessizce düşer.
-export function npcTeklifYanit(prev: GameState, kabul: boolean): GameState {
+export function npcTeklifYanit(prev: GameState, kabul: boolean, secim?: 0 | 1): GameState {
   const s = clone(prev); const p = s.player; const t = s.npcTeklif; if (!t || p.dead) return s;
   s.npcTeklif = undefined;
   const k = nufusOf(s).k[t.id]; if (!k || k.ol != null) return s;
   const kp = knParam(k); const nm = kisiAdi(k, "tr");
+  if (t.tur === "dugun" || t.tur === "cenaze" || t.tur === "kefil" || t.tur === "hakem" || t.tur === "imece") { kapiYaniti(s, t, k, kabul, secim); return s; }
   if (t.tur === "kardes" || t.tur === "miras") { // kardeşe yardım / mirasta kardeş payı: verirsen kesenden çıkar, vermezsen kardeşin unutmaz
     const kk = (key: string) => (k.g === "kadın" ? key + ".k" : key); const kf = kfParam(k); const tutar = t.tutar || 0;
     const yardim = t.tur === "kardes";
@@ -1218,6 +1222,106 @@ export function npcTeklifYanit(prev: GameState, kabul: boolean): GameState {
   remember(s, { id: t.id, name: nm }, "yardim"); bumpNam(p, "comert", 2);
   push(s, "sohbet", `${tutar} akçe borç verdin: alan ${nm}.`, "kişisel", false, { k: "npct.borcVer", p: [kp, tutar, t.ay || 12] });
   return s;
+}
+// ── Kapıdaki insan (TASARIM_PUSULASI Faz 2): boş geçecek bir ayda kasabadan gerçek biri bir kararla kapına gelir.
+// Mahallenin yaşam döngüsü (düğün, cenaze), kefalet ve hakemlik — Mauss (vermek/almak/karşılık), Osmanlı kefaleti ve
+// mahallenin uyuşmazlık çözümü. Her kart bir kişiye bağlı; bedeli ve karşılığı huyuna göre şekillenir. Aynı kişi iki yılda bir.
+export function kapiyaGelen(prev: GameState): GameState {
+  const s = clone(prev); const p = s.player;
+  if (s.npcTeklif || s.hesap || p.dead || p.age < 16 || inJail(p)) return s;
+  const pop = nufusOf(s); const wy = worldYears(s); const son = p.kapi_son || {};
+  const taze = (id: string) => s.turn - (son[id] ?? -999) >= 24;
+  const uygun = (k: Kisi) => k.ol == null && k.loc === p.location_name && wy - k.dy >= 16 && k.es !== OYUNCU && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && taze(k.id);
+  const yerde = Object.values(pop.k).filter((k) => k.loc === p.location_name);
+  const aday: { w: number; t: NonNullable<GameState["npcTeklif"]> }[] = [];
+  const infl = inflationFactor(s);
+  for (const k of yerde) {
+    if (uygun(k) && k.ey === wy && k.es) aday.push({ w: 2 + Math.max(0, relWith(s, k.id)) / 30, t: { id: k.id, tur: "dugun", tutar: Math.round((8 + Math.floor(Math.random() * 9)) * infl), turn: s.turn } });
+    if (k.ol != null && wy - k.ol <= 1 && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id) { const y = kanYakinlari(pop, k).map((x) => x.k).find(uygun); if (y) aday.push({ w: 2, t: { id: y.id, tur: "cenaze", tutar: Math.round((5 + Math.floor(Math.random() * 6)) * infl), turn: s.turn, ek: k.id } }); }
+    const rel = relWith(s, k.id); const tanir = s.relationships[k.id] != null || !!s.npc_state?.[k.id];
+    if (uygun(k) && tanir && rel >= 0 && !p.kefaletler?.length) { const tutar = Math.round((30 + Math.floor(Math.random() * 41)) * infl); if (p.money >= tutar) aday.push({ w: 0.08 + Math.min(0.3, rel / 100), t: { id: k.id, tur: "kefil", tutar, turn: s.turn } }); } // süren kefaletin varken yenisi gelmez
+    if (uygun(k) && rel >= -10 && wy - k.dy <= 65) aday.push({ w: 0.12, t: { id: k.id, tur: "imece", turn: s.turn } }); // imece: komşu harman/dam/duvar için el ister
+    if (uygun(k)) for (const h of k.hasim || []) { const o = pop.k[h]; if (o && h > k.id && uygun(o)) aday.push({ w: 2, t: { id: k.id, tur: "hakem", turn: s.turn, ek: o.id, hakli: Math.random() < 0.5 ? 0 : 1 } }); }
+  }
+  if (!aday.length) return s;
+  const turSon = p.kapi_tur || {}; const ARA: Record<string, number> = { kefil: 24, imece: 12 };
+  for (const x of aday) { const g0 = s.turn - (turSon[x.t.tur] ?? -999); if (g0 < (ARA[x.t.tur] || 0)) x.w = 0; else if (g0 < 6) x.w *= 0.3; } // tür arası bekleme + aynı tür art arda gelmesin
+  if (!aday.some((x) => x.w > 0)) return s;
+  let r = Math.random() * aday.reduce((a, x) => a + x.w, 0); let sec = aday[0];
+  for (const x of aday) { r -= x.w; if (r <= 0) { sec = x; break; } }
+  const t = sec.t; s.npcTeklif = t;
+  const yeni: Record<string, number> = {}; for (const [id, tu] of Object.entries(son)) if (s.turn - tu < 24) yeni[id] = tu;
+  yeni[t.id] = s.turn; if (t.ek) yeni[t.ek] = s.turn; p.kapi_son = yeni; p.kapi_tur = { ...turSon, [t.tur]: s.turn };
+  const k = pop.k[t.id]; const e = t.ek ? pop.k[t.ek] : undefined;
+  if (t.tur === "dugun") push(s, "sohbet", `${kisiAdi(k, "tr")} evleniyor; düğüne davetlisin.`, "kişisel", false, { k: "npct.dugun", p: [knParam(k), t.tutar!] });
+  else if (t.tur === "cenaze" && e) push(s, "sohbet", `${kisiAdi(e, "tr")} vefat etti; ${kisiAdi(k, "tr")} taziyeye gelmeni bekliyor.`, "kişisel", false, { k: "npct.cenaze", p: [knParam(k), knParam(e), t.tutar!] });
+  else if (t.tur === "kefil") push(s, "sohbet", `${kisiAdi(k, "tr")} bir borç için kefil arıyor.`, "kişisel", false, { k: "npct.kefil", p: [knParam(k), t.tutar!] });
+  else if (t.tur === "hakem" && e) push(s, "sohbet", `${kisiAdi(k, "tr")} ile ${kisiAdi(e, "tr")} hakemliğini istiyor.`, "kişisel", false, { k: "npct.hakem", p: [knParam(k), knParam(e)] });
+  else if (t.tur === "imece") push(s, "sohbet", `${kisiAdi(k, "tr")} imece kuruyor.`, "kişisel", false, { k: "npct.imece", p: [knParam(k)] });
+  return s;
+}
+// Kapı kartının metni (pencere ve sınama için tek kaynak): anahtar + parametreler.
+export function kapiMetni(s: GameState): { k: string; p: EvtParam[] } | null {
+  const t = s.npcTeklif; if (!t) return null; const pop = nufusOf(s); const k = pop.k[t.id]; const e = t.ek ? pop.k[t.ek] : undefined; if (!k) return null;
+  if (t.tur === "dugun") return { k: "npct.dugun", p: [knParam(k), t.tutar || 0] };
+  if (t.tur === "cenaze" && e) return { k: "npct.cenaze", p: [knParam(k), knParam(e), t.tutar || 0] };
+  if (t.tur === "kefil") return { k: "npct.kefil", p: [knParam(k), t.tutar || 0] };
+  if (t.tur === "hakem" && e) return { k: "npct.hakem", p: [knParam(k), knParam(e)] };
+  if (t.tur === "imece") return { k: "npct.imece", p: [knParam(k)] };
+  return null;
+}
+// Hakemlikte sezgi: zekâsı keskin olan (6+) haklı tarafı sezer; ötekiler yalnız huylara ve kendi gönlüne bakarak karar verir.
+export function hakemIpucu(s: GameState): EvtParam | null {
+  const t = s.npcTeklif; if (!t || t.tur !== "hakem" || effStat(s.player, "intelligence") < 6) return null;
+  const k = nufusOf(s).k[(t.hakli ?? 0) === 0 ? t.id : t.ek!]; return k ? knParam(k) : null;
+}
+function kapiYaniti(s: GameState, t: NonNullable<GameState["npcTeklif"]>, k: Kisi, kabul: boolean, secim?: 0 | 1) {
+  const p = s.player; const pop = nufusOf(s); const kp = knParam(k); const nm = kisiAdi(k, "tr"); const tutar = t.tutar || 0;
+  const an = (x: Kisi, tur: string) => remember(s, { id: x.id, name: kisiAdi(x, "tr") }, tur);
+  if (t.tur === "dugun") {
+    if (kabul && p.money >= tutar) { p.money -= tutar; an(k, "dugun"); const es = k.es ? pop.k[k.es] : undefined; if (es && es.ol == null) an(es, "dugun"); bumpNam(p, "comert", 1); push(s, "sohbet", `${nm} düğününde takını taktın.`, "kişisel", false, { k: "npct.dugunGit", p: [kp, tutar] }); }
+    else if (!kabul) { an(k, "tatsiz_konu"); push(s, "sohbet", `${nm} düğününe gitmedin.`, "kişisel", false, { k: "npct.dugunGitme", p: [kp] }); }
+    return;
+  }
+  if (t.tur === "cenaze") {
+    const o = t.ek ? pop.k[t.ek] : undefined; const op: EvtParam = o ? knParam(o) : "";
+    if (kabul && p.money >= tutar) { p.money -= tutar; an(k, "yardim"); bumpNam(p, "dindar", 1); push(s, "sohbet", `${nm} acısında yanındaydın.`, "kişisel", false, { k: "npct.cenazeGit", p: [kp, op] }); }
+    else if (!kabul) { an(k, "yuz_cevirme"); push(s, "sohbet", `${nm} acısında yanında olmadın.`, "kişisel", false, { k: "npct.cenazeGitme", p: [kp, op] }); }
+    return;
+  }
+  if (t.tur === "imece") { // bir günün gider, yorulursun; komşunun minneti kalır (gitmemek göze batar)
+    if (kabul) { p.hunger = Math.max(0, p.hunger - 20); p.health = Math.max(1, p.health - 2); an(k, "yardim"); p.reputation = Math.min(100, p.reputation + 1); push(s, "sohbet", `${nm} imecesinde akşama dek çalıştın.`, "kişisel", false, { k: "npct.imeceGit", p: [kp] }); }
+    else { an(k, "rahatsizlik"); push(s, "sohbet", `${nm} imecesine katılmadın.`, "kişisel", false, { k: "npct.imeceGitme", p: [kp] }); }
+    return;
+  }
+  if (t.tur === "kefil") {
+    if (kabul) { an(k, "kefalet"); (p.kefaletler = p.kefaletler || []).push({ id: k.id, tutar, vade: s.turn + 6 + Math.floor(Math.random() * 13) }); push(s, "sohbet", `${nm} için kefil oldun.`, "kişisel", false, { k: "npct.kefilOl", p: [kp, tutar] }); }
+    else { s.relationships[k.id] = Math.max(-100, (s.relationships[k.id] || 0) - 3); push(s, "sohbet", `${nm} için kefil olmadın.`, "kişisel", false, { k: "npct.kefilRed", p: [kp] }); }
+    return;
+  }
+  if (t.tur === "hakem") {
+    const b = t.ek ? pop.k[t.ek] : undefined; if (!b || b.ol != null) return;
+    if (!kabul || secim == null) { push(s, "sohbet", `${nm} ile ${kisiAdi(b, "tr")} arasına girmedin.`, "kişisel", false, { k: "npct.hakemRed", p: [kp, knParam(b)] }); return; }
+    const w = secim === 0 ? k : b; const l = secim === 0 ? b : k;
+    an(w, "hakem_lehte"); an(l, "hakem_aleyhte");
+    if (huyGrubu(huyOf(l)) === "ilkeli") { const m = npcStateOf(s, l.id).anilar?.slice(-1)[0]; if (m && m.tur === "hakem_aleyhte") m.yuk = Math.round(m.yuk * 0.5); } // ilkeli olan hakem kararına boyun eğer
+    if ((t.hakli ?? 0) === secim) { p.honor = Math.min(100, p.honor + 2); p.reputation = Math.min(100, p.reputation + 2); push(s, "sohbet", `${kisiAdi(w, "tr")} lehine karar verdin; haklıydı.`, "kişisel", false, { k: "npct.hakemHakli", p: [knParam(w), knParam(l)] }); }
+    else { p.honor = Math.max(0, p.honor - 2); p.reputation = Math.max(-100, p.reputation - 2); push(s, "sohbet", `${kisiAdi(w, "tr")} lehine karar verdin; haklı olan öbürüydü.`, "kişisel", false, { k: "npct.hakemHaksiz", p: [knParam(w), knParam(l)] }); }
+  }
+}
+// Vadesi gelen kefalet: borçlu huyuna göre öder; ödemezse kefil öder; o da ödeyemezse kefalet bozulur (sonuç sebebini söyler).
+function kefaletTiki(s: GameState) {
+  const p = s.player; if (!p.kefaletler?.length || p.dead) return;
+  const pop = nufusOf(s); const kalan: NonNullable<Player["kefaletler"]> = [];
+  for (const a of p.kefaletler) {
+    if (s.turn < a.vade) { kalan.push(a); continue; }
+    const k = pop.k[a.id]; const kp: EvtParam = k ? knParam(k) : "";
+    const huy = k ? huyOf(k) : ""; const sans = k && k.ol == null ? (["mert", "dindar", "sabırlı", "cömert", "ciddi"].includes(huy) ? 0.85 : ["kurnaz", "hırslı", "aceleci"].includes(huy) ? 0.5 : 0.7) : 0;
+    if (k && Math.random() < sans) { remember(s, { id: k.id, name: kisiAdi(k, "tr") }, "yardim"); p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 1); push(s, "sohbet", `Kefil olduğun ${kisiAdi(k, "tr")} borcunu ödedi.`, "kişisel", false, { k: "npct.kefilOdedi", p: [kp, a.tutar] }); }
+    else if (p.money >= a.tutar) { p.money -= a.tutar; p.reputation = Math.min(100, p.reputation + 1); push(s, "sohbet", `Kefil olduğun borç ödenmedi; ${a.tutar} akçeyi sen ödedin.`, "kişisel", true, { k: "npct.kefilOdemedi", p: [kp, a.tutar] }); }
+    else { p.money = 0; p.reputation = Math.max(-100, p.reputation - 5); p.honor = Math.max(0, p.honor - 3); push(s, "sohbet", `Kefil olduğun borç ödenmedi; sen de ödeyemedin.`, "kişisel", true, { k: "npct.kefilBatti", p: [kp, a.tutar] }); }
+  }
+  p.kefaletler = kalan.length ? kalan : undefined;
 }
 // Vadesi gelen alacak: huyuna göre ödenir; ödenmezse bir yıl mühlet, sonra batar. Borçlu ölürse alacak mezara gider.
 function alacakTiki(s: GameState) {
@@ -1477,7 +1581,7 @@ export interface GameState {
   hseq?: number; // son olay sırası (her push'ta artar, vârise de geçer)
   kanDefteri?: KanKaydi[]; // kan davası: canını aldığın (ya da bağışladığın) kişilerden doğan, sırası gelince karşına çıkacak hesaplar
   hesap?: { id: string; turn: number; olen?: string; yak?: KanYak; nesil?: number; kt?: number }; // yendiğin gerçek hasım yerde: bağışla ya da canını al (karar bekliyor)
-  npcTeklif?: { id: string; tur: "dunur" | "borc" | "kardes" | "miras"; tutar?: number; ay?: number; turn: number }; // bir NPC'nin sana kendi kararıyla yaptığı bekleyen teklif
+  npcTeklif?: { id: string; tur: "dunur" | "borc" | "kardes" | "miras" | "dugun" | "cenaze" | "kefil" | "hakem" | "imece"; tutar?: number; ay?: number; turn: number; ek?: string; hakli?: 0 | 1 }; // ek: ikinci kişi (cenazede ölen, hakemlikte öbür taraf) · hakli: hakemlikte haklı taraf (0: id, 1: ek) // bir NPC'nin sana kendi kararıyla yaptığı bekleyen teklif
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
   story: StoryProgress;

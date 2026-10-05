@@ -362,3 +362,22 @@ unutuyordu (atanın iyiliği de zulmü de sıfırlanıyordu), (4) "velinimet" to
 - **Vâris:** bekleyen yeminler ve süren kanlı hasım vârise geçer ("atanın döktüğü kan sana geçti"); vâris 14 yaşından
   sonra onlarla yüzleşir. Atayı hesaplaşmada öldüren kanlı ise kanını almıştır, vârise gelmez; ama vâris onu
   "atamın katili" diye bilir (ilişki −60) ve büyüyünce hasmı olabilir. Kroniğe "o hesap şimdi senin" diye düşer.
+
+## Kapıdaki insan — boş aylara gerçek kişilerden kararlar (uygulandı)
+
+Ana ekranın aylık zarında kart çıkmayan ayların yarısında (`kapiyaGelen`) kasabadan gerçek biri bir kararla gelir.
+Aynı kişi iki yıl içinde, kefil isteği iki yılda bir, imece yılda bir kereden sık gelmez; aynı tür art arda gelmez.
+- **Düğün** (bu yıl evlenen komşu): takıyla gidersen (8–16 akçe) gelin ve damat "düğünümüzde yanımdaydı" (+20) der;
+  gitmezsen yerinin boşluğu konuşulur (−4).
+- **Cenaze** (son bir yılda ölen birinin yakını): taziyeye gidersen (5–10 akçe) "darda yardım etti" (+20), dindarlık
+  +1; gitmezsen "yüzünü çevirdi" (−14, kalıcıya yakın).
+- **Kefalet** (seni tanıyan biri, 30–70 akçe): kabul bedava görünür ama 6–18 ay sonra borçlu huyuna göre öder
+  (dürüst %80–85, çıkarcı %50–55); ödemezse sen ödersin (itibar +1, söz tutuldu); paran yetmezse kefalet bozulur
+  (itibar −5, şeref −3). Sonuç sebebini söyleyerek düşer: "Kefil olduğun X …".
+- **Hakemlik** (birbirine hasım iki komşu): bir tarafı seçersin; kazanan +12, kaybeden −12 hatırlar (ilkeli
+  kaybeden yarısı kadar). Haklı taraf gizlidir; zekân 6+ ise sezersin. Haklının yanında durursan şeref ve itibar +2,
+  haksızın yanında durursan −2. Karışmamak da bir seçenektir.
+- **İmece** (komşu harman/dam/duvar için el ister): bir gün ve yorgunluk (tokluk −20, sağlık −2) karşılığı "darda
+  yardım etti" (+20), itibar +1; gitmezsen küçük bir kırgınlık (−3).
+Ölçüm (40 hayat, `oynanis.cjs`): yetişkinlikte boş ay %27 → %19; hayat başına ortalama imece ~24, kefil ~18,
+hakemlik ~9, cenaze ~8, düğün ~5.

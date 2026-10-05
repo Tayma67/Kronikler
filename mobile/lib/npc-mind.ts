@@ -79,6 +79,9 @@ export const MEMORY_TYPES: Record<string, MemSpec> = {
   yuz_karasi:     { yuk: -25, unutma: 0.995, skandal: 0.5, nam: null },   // bağışlandı ama yenilgiyi yüz karası saydı
   diyet:          { yuk: +12, unutma: 0.99, skandal: 0.3, nam: null },    // kan bedelini ödedi, dava kapandı
   barisma:        { yuk: +12, unutma: 0.99, skandal: 0.3, nam: "mert" },  // amansız hasımken barıştı
+  kefalet:        { yuk: +10, unutma: 0.99, skandal: 0.0, nam: "comert" }, // borcuna kefil oldu
+  hakem_lehte:    { yuk: +12, unutma: 0.99, skandal: 0.3, nam: null },    // hakemlikte benden yana karar verdi
+  hakem_aleyhte:  { yuk: -12, unutma: 0.99, skandal: 0.3, nam: null },    // hakemlikte aleyhime karar verdi
 };
 
 export const NAM_TRAITS = ["comert", "zalim", "capkin", "dindar", "mert"];
