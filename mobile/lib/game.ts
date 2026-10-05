@@ -4113,7 +4113,10 @@ function rollWorkEvent(s: GameState) {
   const p = s.player;
   const profKey = WORK_EVENTS[p.profession] ? p.profession : "_";
   const pool = WORK_EVENTS[profKey];
-  const vi = Math.floor(Math.random() * pool.length);
+  const yakin = new Set<string>(); // son 4 ayda yaşanan iş olayı tekrar seçilmez (torbadan çeker gibi)
+  for (let i = s.history.length - 1; i >= 0 && s.history[i].day >= s.turn - 4; i--) { const w = s.history[i].p?.[0]; if (w && typeof w === "object" && "wevt" in w) yakin.add(w.wevt); }
+  const adaylar = pool.map((_, i) => i).filter((i) => !yakin.has(i > 0 ? profKey + "." + i : profKey));
+  const vi = adaylar.length ? rnd(adaylar) : Math.floor(Math.random() * pool.length);
   const ev = pool[vi];
   const wevKey = vi > 0 ? profKey + "." + vi : profKey; // varyant 0 eski anahtarları kullanır — eski kayıt olayları çözülmeye devam eder
   const ok = Math.random() < 0.4 + effStat(p, ev.stat) * 0.06;
