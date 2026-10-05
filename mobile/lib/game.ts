@@ -8103,6 +8103,13 @@ export function acikHesaplar(s: GameState): AcikHesap[] {
   const r = rakipAktif(p);
   if (r) out.push(r.yaris != null ? { k: "ah.rakipVakit", p: [rkAd(r)], ikon: "trophy", git: "/oyun/meslek", agirlik: 75 } : { k: "ah.rakip", p: [rkAd(r), r.galip, r.maglup, Math.max(0, r.next - s.turn)], ikon: "trophy", git: "/oyun/meslek", agirlik: 35 });
   for (const a of p.alacaklar || []) { const ay = a.vade - s.turn; const k = kp(a.id); if (k && ay <= 3) out.push({ k: "ah.alacak", p: [k, a.tutar, Math.max(0, ay)], ikon: "coins", agirlik: 30 }); }
+  // Önündeki yol: ehil olduğun daha iyi bir meslek (yalnız açık kapılı işte ya da işsizken) ve dağıtılmamış özellik puanı
+  if (p.age >= 13 && !inJail(p) && (p.profession === "işsiz" || ACIK_MESLEK.includes(p.profession))) {
+    const cur = professionById(p.profession)?.base ?? 0;
+    const iyi = PROFS.filter((id) => id !== p.profession && !ACIK_MESLEK.includes(id) && (professionById(id)?.base ?? 0) > cur && meslegeUygun(s, id)).sort((a, b) => (professionById(b)?.base ?? 0) - (professionById(a)?.base ?? 0))[0];
+    if (iyi) out.push({ k: "ah.ehil", p: [{ prl: iyi }], ikon: "meslek", git: "/oyun/meslek", agirlik: 25 });
+  }
+  if (p.stat_points > 0) out.push({ k: "ah.puan", p: [p.stat_points], ikon: "karakter", git: "/oyun/karakter", agirlik: 20 });
   return out.sort((a, b) => b.agirlik - a.agirlik).slice(0, 5);
 }
 // Günlükte "önemli": oyuncunun kendi hayatına ait olaylar ve ona değen dünya olayları. Mevsim/renk satırları, fısıltılar,

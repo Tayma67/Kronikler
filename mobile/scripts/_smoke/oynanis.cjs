@@ -39,6 +39,7 @@ const hayatAy = [], hayatKarar = [], olumYasi = [], meslekler = {}, enBuyuk = {}
 for (let h = 0; h < LIVES; h++) {
   let s = g.newGame("Sim", "Oyuncu", Math.random() < 0.5 ? "erkek" : "kadın");
   let ay = 0, kararSay = 0, dip = 0, sarmalda = false, ilkKarar = null, seen = s.hseq || 0, guard = 0;
+  const hedef = R(g.ALL_PROFS.filter((x) => x !== "işsiz")); const hedefSart = g.meslekSarti(hedef);
   while (!s.player.dead && s.player.age < 85 && guard++ < 1100) {
     const p = s.player;
     // Makul oyuncu: karnını doyurur, çalışır, çocukken oynar, gençken uğraşır, ara sıra insanlarla konuşur.
@@ -46,7 +47,9 @@ for (let h = 0; h < LIVES; h++) {
     if (p.age >= 13 && p.profession !== "işsiz" && s.player.hunger >= 30) s = g.work(s);
     try { if (p.age < 13 && Math.random() < 0.6) { const r = g.childAction(s, R(["oyun", "yardim", "yaramazlik", "kesif"])); if (r && r.state) s = r.state; } } catch (e) {}
     try { if (p.age >= 13 && p.age < 18 && Math.random() < 0.5) { const r = g.youthAction(s, R(["usta", "akran", "gonul", "huner"])); if (r && !r.blocked) s = r.state; } } catch (e) {}
-    try { if (p.age >= 14 && p.age <= 35 && Math.random() < 0.03) s = g.changeProfession(s, R(g.ALL_PROFS)); } catch (e) {} // yolunu arayan oyuncu (uygun değilse oyun reddeder)
+    // Hedefini seçen oyuncu: özellik puanlarını hedef mesleğin özelliğine basar ve uygun olunca o mesleğe geçer (ölçüm: hedefli oyuncu 13–18 yaşında ulaşıyor)
+    while (s.player.stat_points > 0 && s.player.stats[hedefSart.stat] < g.statCapOf(s.player)) s = g.allocateStat(s, hedefSart.stat);
+    try { if (p.age >= 13 && s.player.profession !== hedef && Math.random() < 0.2) s = g.changeProfession(s, hedef); } catch (e) {}
     try { if (p.age >= 13 && Math.random() < 0.25) { const ns = g.npcsOf(s); if (ns.length) { const r = g.talkWith(s, R(ns), R(["hosbes", "iltifat", "dert", "is", "aile"])); if (r && r.state) s = r.state; } } } catch (e) {}
     // Ay ilerler; ardından ana ekranın göstereceği her şey sayılır.
     s = g.advance(s, 1); ay++; T.ay++;
