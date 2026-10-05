@@ -3152,12 +3152,12 @@ export function applyParams(str: string, p?: (string | number)[], lang?: Lang): 
 // Günlük/olay parametreleri — etiketli isimler render anında dile çözülür:
 //  { i: "demir" } → eşya adı · { pl: "Yenişehir" } → yer adı · { c: ["çiftçi", 5] } → meslek unvanı · { pr: "çiftçi" } → meslek adı
 const HOUSE_POOLS_I: Record<Lang, string[]> = {
-  tr: ["Karaoğulları","Akhanlılar","Demiroğulları","Şahinoğulları","Bozkurtlar","Yıldızoğulları","Çelikhanlar","Aslanoğulları","Toprakoğulları","Gümüşhanlılar","Kayıoğulları","Doğanoğulları"],
-  en: ["Blackmane","Ironhold","Falconcrest","Greywolf","Starhaven","Steelborn","Lionheart","Earthford","Silverhall","Hawkwind","Oakenshield","Ravenscar"],
-  es: ["Casa Cuervo","Casa Halcón","Casa de Hierro","Casa Lobo","Casa Estrella","Casa Acero","Casa León","Casa Tierra","Casa Plata","Casa Águila","Casa Roble","Casa Toro"],
-  pt: ["Casa Corvo","Casa Falcão","Casa do Ferro","Casa Lobo","Casa Estrela","Casa Aço","Casa Leão","Casa Terra","Casa Prata","Casa Águia","Casa Carvalho","Casa Touro"],
-  ar: ["بنو غُراب","آل الصقر","بنو الحديد","بنو الذئب","آل النجم","بنو الفولاذ","آل الأسد","بنو الأرض","آل الفضّة","بنو النسر","آل البلّوط","بنو الثور"],
-  ru: ["Воронцовы","Соколовы","Железновы","Волковы","Звездины","Стальновы","Львовы","Земцовы","Серебровы","Орловы","Дубовы","Турановы"],
+  tr: ["Karaoğulları","Akhanlılar","Demiroğulları","Şahinoğulları","Bozkurtlar","Yıldızoğulları","Çelikhanlar","Aslanoğulları","Toprakoğulları","Gümüşhanlılar","Kayıoğulları","Doğanoğulları","Çınaroğulları","Tunçhanlar"],
+  en: ["Blackmane","Ironhold","Falconcrest","Greywolf","Starhaven","Steelborn","Lionheart","Earthford","Silverhall","Hawkwind","Oakenshield","Ravenscar","Elmswood","Bronzegate"],
+  es: ["Casa Cuervo","Casa Halcón","Casa de Hierro","Casa Lobo","Casa Estrella","Casa Acero","Casa León","Casa Tierra","Casa Plata","Casa Águila","Casa Roble","Casa Toro","Casa Olmo","Casa Bronce"],
+  pt: ["Casa Corvo","Casa Falcão","Casa do Ferro","Casa Lobo","Casa Estrela","Casa Aço","Casa Leão","Casa Terra","Casa Prata","Casa Águia","Casa Carvalho","Casa Touro","Casa Olmo","Casa Bronze"],
+  ar: ["بنو غُراب","آل الصقر","بنو الحديد","بنو الذئب","آل النجم","بنو الفولاذ","آل الأسد","بنو الأرض","آل الفضّة","بنو النسر","آل البلّوط","بنو الثور","بنو الدلب","آل البرونز"],
+  ru: ["Воронцовы","Соколовы","Железновы","Волковы","Звездины","Стальновы","Львовы","Земцовы","Серебровы","Орловы","Дубовы","Турановы","Вязовы","Бронзовы"],
 };
 export type EvtParam = string | number | { lk: string } | { i: string } | { pl: string } | { c: [string, number] } | { pr: string } | { q: string } | { route: string[] } | { fn: [number, "erkek" | "kadın"] } | { prl: string } | { il: string } | { tk: string } | { tq: string } | { kn: ["erkek" | "kadın", number, number, number, number, string, string?] } | { kf: ["erkek" | "kadın", number, number, string?] } | { pt2: string } | { fc: string } | { wc: number } | { hn: number } | { bl: string } | { enc: string } | { opp: string } | { mev: string } | { wevt: string } | { wevw: string } | { wevl: string } | { cr: string } | { wd: number } | { wds: number[] } | { wai: string } | { invl: string } | { edul: string } | { statk: string } | { ftl: string } | { goalk: string } | { sfx: string } | { stt: string } | { dreamk: string } | { crk: string };
 // Cümle içi küçük harf (Türkçe İ/I doğru iner; motorların yerel ayar desteğine güvenilmez).

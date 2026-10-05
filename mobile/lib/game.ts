@@ -1266,13 +1266,14 @@ export function kapiyaGelen(prev: GameState): GameState {
   const yerde = Object.values(pop.k).filter((k) => k.loc === p.location_name);
   const aday: { w: number; t: NonNullable<GameState["npcTeklif"]> }[] = [];
   const infl = inflationFactor(s);
+  const saygin = p.reputation >= 0 && (p.nam?.zalim || 0) < 40; // hakemlik ancak sözü dinlenen birine teklif edilir (iki taraf da sana küs değilse)
   for (const k of yerde) {
     if (uygun(k) && k.ey === wy && k.es) aday.push({ w: 2 + Math.max(0, relWith(s, k.id)) / 30, t: { id: k.id, tur: "dugun", tutar: Math.round((8 + Math.floor(Math.random() * 9)) * infl), turn: s.turn } });
     if (k.ol != null && wy - k.ol <= 1 && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && taze(k.id) && !(s.kapi_cenaze || []).includes(k.id)) { const y = kanYakinlari(pop, k).map((x) => x.k).find(uygun); if (y) aday.push({ w: 2, t: { id: y.id, tur: "cenaze", tutar: Math.round((5 + Math.floor(Math.random() * 6)) * infl), turn: s.turn, ek: k.id } }); }
     const rel = relWith(s, k.id); const tanir = s.relationships[k.id] != null || !!s.npc_state?.[k.id];
     if (uygun(k) && tanir && rel >= 0 && !p.kefaletler?.length) { const tutar = Math.round((30 + Math.floor(Math.random() * 41)) * infl); if (p.money >= tutar) aday.push({ w: 0.08 + Math.min(0.3, rel / 100), t: { id: k.id, tur: "kefil", tutar, turn: s.turn } }); } // süren kefaletin varken yenisi gelmez
     if (uygun(k) && rel >= -10 && wy - k.dy <= 65) aday.push({ w: 0.12, t: { id: k.id, tur: "imece", turn: s.turn, sebep: IMECE_MEVSIM[currentCalendar(s.turn).season] } }); // imece: komşu harman/dam/duvar için el ister
-    if (uygun(k)) for (const h of k.hasim || []) { const o = pop.k[h]; if (o && h > k.id && uygun(o)) aday.push({ w: 2, t: { id: k.id, tur: "hakem", turn: s.turn, ek: o.id, hakli: Math.random() < 0.5 ? 0 : 1 } }); }
+    if (uygun(k) && saygin) for (const h of k.hasim || []) { const o = pop.k[h]; if (o && h > k.id && uygun(o) && relWith(s, k.id) >= -10 && relWith(s, o.id) >= -10) aday.push({ w: 2, t: { id: k.id, tur: "hakem", turn: s.turn, ek: o.id, hakli: Math.random() < 0.5 ? 0 : 1 } }); }
     // Helalleşme: aranızda kırgınlık olan biri kendisi gelir — yaşlıysa "kırgın gitmeyeyim" diye çağırtır; ilkeli/sıcak huyluysa
     // eski kırgınlığı (son kötü anı en az iki yıl önce) bayramda bitirmek ister.
     if (uygun(k) && helalUygun(s, k.id)) {

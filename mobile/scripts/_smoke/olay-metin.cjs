@@ -29,7 +29,7 @@ for (let h = 0; h < HAYAT; h++) {
         toplam++;
         const female = s.player.gender === "kadın";
         const x = renderEvt(e.k, e.text, e.p, L, (k) => tFor(L, k), female);
-        if (!x || /%[0-9a-z]|undefined|NaN|\[object/.test(x) || HAM_ANAHTAR.test(x)) { sorun++; if (ornek.length < 12) ornek.push(`${L} ${e.k}: ${String(x).slice(0, 90)}`); }
+        if (!x || /%[0-9a-z]|undefined|NaN|\[object/.test(x) || HAM_ANAHTAR.test(x) || /^\s|\s\s|\(\s*\)/.test(x)) { sorun++; if (ornek.length < 12) ornek.push(`${L} ${e.k}: ${String(x).slice(0, 90)}`); }
       }
     }
   }
