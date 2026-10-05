@@ -28,8 +28,10 @@ Aşağıdaki kurallar geçmiş oturumlarda kullanıcıyla kesinleşti; **tartı�
 
 ## Tasarım pusulası (bağlayıcı)
 
-Depo kökündeki `TASARIM_PUSULASI.md`, oyuncu psikolojisi, toplum bilimi ve mobil verilere dayanan **10 ilke** ile
-**yeni özellik süzgecini** içerir. Her yeni özellik ya da değişiklik bu süzgeçten geçmeden yazılmaz: karar oyuncuya
+Depo kökündeki `TASARIM_PUSULASI.md`, oyuncu psikolojisi, toplum bilimi ve mobil verilere dayanan **10 ilke**,
+**oynanış kuralları ve ölçütleri** (Bölüm 9) ile **yeni özellik süzgecini** içerir. Pusula yalnız arayüz için değil,
+**oynanış için de** bağlayıcıdır: mekanik, denge, tempo, sonuçların zamanlaması, karakter davranışı, ekonomi ve
+zorluk dahil her değişiklik bu süzgeçten geçmeden yazılmaz ve ilgili oynanış ölçütleri simülasyonla ölçülür: karar oyuncuya
 ana akışta gelir, sonuç sebebini söyler, aynı anda en çok 5 açık gerilim, göstergeler dört sermayeye bağlanır,
 etik çizgi (zamanlayıcı/kayıp cezası/parayla atlama yok) aşılmaz. Öncelik sırası pusuladaki yol haritasıdır
 (önce sadeleştirme ve görünürlük, sonra yeni sistem).

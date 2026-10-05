@@ -1,12 +1,13 @@
-# Kronikler Tasarım Pusulası — Oyuncu Psikolojisi, Toplum Bilimi ve Mobil Gerçekler
+# Kronikler Tasarım ve Oynanış Pusulası — Oyuncu Psikolojisi, Toplum Bilimi ve Mobil Gerçekler
 
-> **Bu belge bağlayıcıdır.** Yeni bir özellik yazılmadan, eskisi değiştirilmeden önce buradaki ilkeler ve
-> "yeni özellik süzgeci" (Bölüm 7) uygulanır. Amaç oyunu daha karmaşık değil, **daha anlamlı** yapmak:
+> **Bu belge bağlayıcıdır ve yalnız arayüz için değil, oynanış için de geçerlidir.** Mekanik, denge, tempo,
+> sonuçların zamanlaması, karakterlerin davranışı, ekonomi ve zorluk dahil her değişiklikte buradaki ilkeler,
+> oynanış kuralları (Bölüm 9) ve "yeni özellik süzgeci" (Bölüm 7) uygulanır. Amaç oyunu daha karmaşık değil, **daha anlamlı** yapmak:
 > derinlik oyuncuya kendiliğinden gelmeli, oyuncu onu aramak zorunda kalmamalı.
 >
 > Kapsam: (1) mobil oyuncunun gerçekleri (veri), (2) oyuncu psikolojisi, (3) oyunun içindeki toplumu gerçekçi
 > kurmak için sosyoloji ("toplum mühendisliği": kasabanın nasıl işlediği), (4) etik çizgi, (5) Kronikler'in
-> bugünkü teşhisi, (6) ilkeler, (7) süzgeç, (8) yol haritası ve ölçüm. Önceki araştırmalar (ARASTIRMA.md: his,
+> bugünkü teşhisi, (6) ilkeler, (7) süzgeç, (8) yol haritası ve ölçüm, (9) oynanış kuralları ve ölçütleri. Önceki araştırmalar (ARASTIRMA.md: his,
 > anlatı, denge; HIS_ARASTIRMASI.md: game feel) tekrarlanmaz; bu belge onların üstüne kurulur.
 
 ---
@@ -28,7 +29,9 @@
    anlarıdır.
 9. **Bağlılık evet, bağımlılık hayır.** Merak, anlam ve sevgiyle bağlarız; zamanlayıcı, kayıp cezası ve parayla
    atlatma yok.
-10. **Ölçmeden "eğlenceli" deme.** Gerçek oyuncu testi ve cihazda kalan basit oturum kaydı olmadan tasarım
+10. **Kurallar oynanışı da bağlar.** Her karar ilginç olmalı (baskın seçenek yok), sonuç üç zamanda yankılanmalı
+    (hemen, birkaç yıl sonra, nesiller sonra) ve kayıp telafi edilebilmeli (Bölüm 9).
+11. **Ölçmeden "eğlenceli" deme.** Gerçek oyuncu testi ve cihazda kalan basit oturum kaydı olmadan tasarım
     kararlarının doğru olup olmadığı bilinemez.
 
 ---
@@ -268,6 +271,8 @@ Bir özellik ancak şu altı sorunun hepsine "evet" ise yapılır:
 4. Gösterge ve ekran sayısını artırmadan yapılabilir mi? (İlke 4, 5)
 5. Gerçek bir toplumsal ya da psikolojik bulguya dayanıyor mu? (Bölüm 2–3)
 6. Etik çizgiyi aşmıyor mu? (Bölüm 4)
+7. Oynanış ölçütlerini (Bölüm 9.10) bozmuyor mu? Oyunun dengesine, temposuna ya da sonuçlarına dokunan her
+   değişiklikte ilgili ölçütler simülasyonla ölçülür.
 
 ## 8. Yol haritası ve ölçüm
 
@@ -288,6 +293,9 @@ Bir özellik ancak şu altı sorunun hepsine "evet" ise yapılır:
 merkezi yakın çember olur; düşmanlık sistemleri oyuncuya tek bir "hasımların" görünümünde sunulur.
 
 **Faz 4 — Ölçüm:**
+- **Oynanış denetimi betiği** (`scripts/_smoke/oynanis.cjs`): Bölüm 9.10'daki ölçütleri yüzlerce simüle hayatta
+  ölçer; dengeye ya da tempoya dokunan her dalgada koşulur. İlk koşu bugünkü değerleri kayda geçirir ve hedefleri
+  kesinleştirir. (Bu, gerçek oyuncu testine başlamadan önce de yapılabilir.)
 - **Gerçek oyuncu testi:** 3–5 kişi, ilk 20 dakika, sesli düşünerek. Sorular: ilk ne zaman sıkıldı, neyi anlamadı,
   neyi merak etti, nerede bıraktı.
 - **Cihazda kalan oturum kaydı** (isteğe bağlı, dışarı gönderilmez): ilk karara kadar geçen süre, oturum başına
@@ -298,6 +306,103 @@ merkezi yakın çember olur; düşmanlık sistemleri oyuncuya tek bir "hasımlar
 **Faz 5 — Yeni toplum sistemleri (yalnız süzgeçten geçerse):** kefalet ve mahalle meclisi (3.7), Mauss'a dayalı
 borç defteri (3.3), hane asabiyesi (3.6), kadı gücüne bağlı şeref kültürü (3.5), zayıf bağlardan gelen fırsatlar
 (3.8).
+
+## 9. Oynanış kuralları — araştırmanın oyunun kendisine uygulanması
+
+> Bölüm 2–4'teki bulgular yalnız ekranı değil, **oyunun kurallarını** da belirler. Her kural: dayandığı bulgu →
+> oynanışta ne demek → motorda nerede → nasıl ölçülür.
+
+### 9.1 Her karar ilginç olmalı (Sid Meier)
+"Oyun, bir dizi ilginç karardır." Oyuncu her zaman aynı seçeneği seçiyorsa ya da rastgele seçiyorsa karar ilginç
+değildir.
+- **Kural:** her seçimde en az iki seçenek *bazı koşullarda* en iyisi olmalı. Hiçbir seçenek her durumda baskın
+  olamaz; bedelsiz iyilik de bedelsiz kötülük de yoktur (iyilik para ve zaman yer, kötülük düşman ve söylenti üretir).
+- **Motorda:** ikilemler, hesap anı, helallik/diyet, teklif yanıtları, gençlik ve yetişkin eylemleri.
+- **Ölçüt:** simülasyonda her seçeneğin sonuç dağılımı karşılaştırılır. Bir seçenek tüm hedeflerde (para, nam,
+  can, ilişki) ötekini geçiyorsa karar *ölü* sayılır ve düzeltilir.
+
+### 9.2 Akış: zorluk ile ustalık dengede (Csikszentmihalyi; GameFlow)
+Akış, açık hedef, anında geri bildirim ve yetenekle orantılı zorluk olduğunda doğar. Fazla kolay sıkar, fazla zor
+bunaltır.
+- **Kural:** hayatın her evresinin bir **açık hedefi** olur (çocukluk: aileye ve yoldaşa bağlanmak; gençlik: usta
+  ve meslek; yetişkinlik: ocak, nam ve servet; yaşlılık: miras ve vâris). Zorluk evreyle ve oyuncunun gücüyle
+  birlikte artar. Güçlenen oyuncuya daha büyük hasımlar ve kararlar gelir, zayıf düşene toparlanma yolu açılır.
+- **Ölçüt:** "boş ay oranı" (anlamlı karar ya da görünür sonuç olmayan aylar) ve "bunalma ayı" (aynı ay 3'ten fazla
+  büyük karar ya da tehdit).
+
+### 9.3 Sonucun üç zamanı
+Kahneman'ın doruk–son kuralı ve geri çağırma ilkesi, sonucun *ne zaman* ve *nasıl* geldiğinin, ne olduğu kadar
+önemli olduğunu söyler.
+- **Kural:** önemli her eylemin sonucu üç zamanda yankılanır:
+  - **Hemen (aynı ay):** görünür bir geri bildirim (sayı ve tek cümle).
+  - **Orta vade (1–5 yıl):** o kişi ya da çevresi hatırlar ve karşılık verir (can borcu, kara çalma, kardeş isteği).
+  - **Uzun vade (nesil):** kasaba ve hane hatırlar (nesil hafızası, kan, eser).
+- Orta ve uzun vadeli yankı **sebebini söyleyerek** gelir: "X yıl önce …".
+- **Ölçüt:** "geri çağırma oranı": gecikmeli sonuç olaylarının yüzde kaçı sebebini (kişi + geçmiş eylem) taşıyor.
+  Hedef: %100.
+
+### 9.4 Kişi tutarlı, toplum gerçekçi davranır (Bölüm 3)
+- **Huy tutarlılığı:** bir karakter aynı durumda huyuna göre aynı yöne meyleder. Rastgelelik var ama huyun yönünü
+  tersine çeviremez.
+- **Karşılıklılık:** iyilik minnet, kötülük kin doğurur ve ikisi de silinmeden önce bir kez karşılık arar (Mauss).
+- **İtibarın yayılması:** haber önce yakın çembere, sonra kasabaya, sonra bölgeye yayılır. Seni tanıyan, duyduğuna
+  daha az inanır (Nowak–Sigmund, Dunbar).
+- **Düzen ve şeref:** kadının ve valinin gücü arttıkça kan davası ve zorbalık azalır. Uzak ve sahipsiz yerlerde
+  artar (Nisbett–Cohen).
+- **Kapasite:** bir karakter de sınırsız ilişki kuramaz. Dostluk ve hasımlık az sayıda kişide yoğunlaşır.
+- **Ölçüt:** `karakter-ayna.cjs` (yardımsever ve zalim iki karakter ayrışmalı) ve huy gruplarının tepki
+  dağılımları.
+
+### 9.5 Kayıp gerçek ama telafi edilebilir
+Kayıptan kaçınma, riskin anlamlı olmasını sağlar. Ama telafisi imkânsız kayıp oyuncuyu küstürür.
+- **Kural:** her büyük kaybın bir **dönüş yolu** olur: helallik, diyet, barış, yeniden başlama, vâris. Ölüm sarmalına
+  hafif bir fren konur (çok düşene kasabanın merhameti, akraba yardımı).
+- **Ölçüt:** "sarmal oranı": hayatların yüzde kaçı çöküşten (para, can, itibar) 5 yıl içinde çıkamıyor. Ölüm yaşı
+  dağılımı (smoke çıktısı) erken ölümlerle şişmemeli.
+
+### 9.6 Başarısızlık hikâye üretir
+Rogue Legacy ve Crusader Kings'te kötü sonuç oyunun sonu değil, yeni hikâyenin başıdır.
+- **Kural:** zindan, iflas, dulluk, kan davası ve sürgün yeni seçenekler ve yeni insanlar açar. Oyuncu "her şey
+  bitti" değil "şimdi ne olacak?" der.
+- **Ölçüt:** bir kötü olaydan sonraki 12 ay içinde açılan yeni karar ya da ilişki sayısı.
+
+### 9.7 Tempo: bir hayat kaç dakika?
+Ortanca oturum 3–3,5 dakika (Bölüm 1). Bir hayat çok uzun sürerse vâris ve nesil (oyunun en özgün kısmı) hiç
+görülmez.
+- **Kural:** sakin yıllar hızlı geçer ("olaya dek ilerlet"), önemli yıllar yavaşlar. İlk hayatın ilk 10 dakikasında
+  en az bir anlamlı karar ve bir bağ kurulur. İlk vâris devri makul sayıda oturumda görülebilmelidir.
+- **Ölçüt:** bir hayat boyunca gereken dokunuş sayısı ve karar sayısı. Hedefler ölçülerek konur; ilk adım bugünkü
+  değerleri ölçmektir.
+
+### 9.8 Farm yok, sömürü yok
+Değişken ödül merak yaratır, ama tekrarla sağılabilen ödül oynanışı öldürür (Bölüm 4).
+- **Kural:** para, nam ya da ilişki veren her eylem ay kilidi, azalan getiri ya da tek seferlik izle sınırlıdır.
+  Ödül her zaman bir bedelle ya da riskle gelir.
+- **Ölçüt:** smoke ve hedefli simler. "Aynı eylemi her ay tekrarlayan" bir strateji öteki stratejileri geçmemeli.
+
+### 9.9 Tekrar oynanabilirlik
+BitLife ve Crusader Kings'in gücü, iki hayatın birbirine benzememesidir.
+- **Kural:** başlangıç koşulları (yer, aile, kardeşler, huy) ve dünyanın kişileri her hayatta farklıdır. Aynı
+  strateji farklı hayatlarda farklı sonuç verir.
+- **Ölçüt:** hayatlar arası sonuç çeşitliliği (meslek, servet, ölüm yaşı, en büyük olayın türü).
+
+### 9.10 Oynanış ölçütleri tablosu
+
+Oyunun dengesine, temposuna ya da sonuçlarına dokunan her dalgada ilgili ölçütler simülasyonla ölçülür. Henüz
+otomatik ölçülmeyenler için bir **oynanış denetimi** betiği (`scripts/_smoke/oynanis.cjs`) yazılması yol
+haritasındadır. Hedeflerin bir kısmı bugünkü değerler ölçüldükten sonra kesinleşecek.
+
+| Ölçüt | Ne ölçer | Hedef |
+|---|---|---|
+| Boş ay oranı | Anlamlı karar ya da görünür sonuç olmayan aylar | Ölçülüp azaltılacak |
+| Bunalma ayı | Aynı ayda 3'ten fazla büyük karar/tehdit | ~0 |
+| Ölü karar | Her koşulda baskın seçeneği olan seçimler | 0 |
+| Geri çağırma oranı | Sebebini söyleyen gecikmeli sonuçlar | %100 |
+| Açık gerilim sayısı | Aynı anda görünür açık hesap | ≤5 |
+| Sarmal oranı | 5 yılda çöküşten çıkamayan hayatlar | Ölçülüp düşük tutulacak |
+| Ayna ayrışması | Yardımsever ve zalim karakterin kasabadaki görünümü | Zıt yönlerde |
+| Hayat başına dokunuş/karar | Tempo | Ölçülüp hedeflenecek |
+| Hayatlar arası çeşitlilik | Tekrar oynanabilirlik | Ölçülüp korunacak |
 
 ---
 
@@ -334,6 +439,11 @@ borç defteri (3.3), hane asabiyesi (3.6), kadı gücüne bağlı şeref kültü
 - [Asabiyye (Wikipedia)](https://en.wikipedia.org/wiki/Asabiyyah)
 - [İstanbul Tarihi — Surety (Kefalet) and Inspection Registers of Istanbul](https://istanbultarihi.ist/509-surety-kefalet-and-inspection-registers-of-istanbul)
 - [The Strength of Weak Ties (Wikipedia)](https://en.wikipedia.org/wiki/Interpersonal_ties)
+
+**Oynanış**
+- [Sid Meier — Interesting Decisions (GDC 2012, Game Developer)](https://www.gamedeveloper.com/design/gdc-2012-sid-meier-on-how-to-see-games-as-sets-of-interesting-decisions)
+- [Sweetser ve Wyeth (2005) — GameFlow: A Model for Evaluating Player Enjoyment in Games](https://www.researchgate.net/publication/220686347_GameFlow_A_Model_for_Evaluating_Player_Enjoyment_in_Games)
+- [Jenova Chen — Flow in Games (MFA tezi)](https://www.jenovachen.com/flowingames/Flow_in_games_final.pdf)
 
 **Etik**
 - [Zagal, Björk, Lewis (2013) — Dark Patterns in the Design of Games](https://www.semanticscholar.org/paper/Dark-patterns-in-the-design-of-games-Zagal-Bj%C3%B6rk/19a241378b06d868eb5f6b76027172c3aaca86f4)
