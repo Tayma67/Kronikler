@@ -39,6 +39,7 @@ export interface NufusCtx {
 }
 
 // ── İsim ──
+const AD_DILLERI: Lang[] = ["tr", "en", "es", "pt", "ar", "ru"];
 export function kisiIlkAd(k: Kisi, lang: Lang = "tr"): string {
   if (k.ad) return k.ad;
   const pool = NAME_POOLS[lang] || NAME_POOLS.tr; const arr = k.g === "erkek" ? pool.m : pool.f;
@@ -261,6 +262,8 @@ export function nufusYil(pop: Nufus, ctx: NufusCtx, o: YilOpts): NufusOlay[] {
       qk: rIx(QUIRKS, rng), gl: rIx(GOALS, rng), ns: Math.floor(rng() * 1e9), baba: baba.id, anne: anne.id,
     };
     if (baba.sa) c.sa = baba.sa; else if (baba.sf != null) c.sf = baba.sf; else c.ss = baba.ss ?? Math.floor(rng() * 1e9); // soyadı babadan (oyuncu ailesinin yazılı soyadı dahil)
+    const aile = [anne, baba, ...(anne.cocuk || []).map((x) => pop.k[x]).filter((x): x is Kisi => !!x && x.ol == null)];
+    for (let d = 0; d < 12 && AD_DILLERI.some((L) => { const ad = kisiIlkAd(c, L); return aile.some((x) => kisiIlkAd(x, L) === ad); }); d++) c.ns = Math.floor(rng() * 1e9); // anne-babasının ya da yaşayan kardeşinin adı konmaz
     pop.k[id] = c; (anne.cocuk = anne.cocuk || []).push(id); (baba.cocuk = baba.cocuk || []).push(id);
     sayim[anne.loc] = (sayim[anne.loc] || 0) + 1;
     out.push({ t: "dogum", id, anne: anne.id, baba: baba.id });

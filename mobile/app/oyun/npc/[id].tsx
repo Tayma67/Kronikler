@@ -176,7 +176,7 @@ export default function NpcDetail() {
               <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.goldDim, marginBottom: 6 }}>{t("gorus.title")}</Text>
               {g.kalemler.map((it, i) => (
                 <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, paddingVertical: 3 }}>
-                  <Text style={{ flex: 1, fontFamily: it.k === "gorus.ani" ? F.serifItalic : F.serif, fontSize: 12, color: C.parchmentDim, lineHeight: 17 }}>{it.k === "gorus.ani" ? "«" + t("mem.remember." + it.tur) + "»" : t(it.k)}</Text>
+                  <Text style={{ flex: 1, fontFamily: it.k === "gorus.ani" ? F.serifItalic : F.serif, fontSize: 12, color: C.parchmentDim, lineHeight: 17 }}>{it.k === "gorus.ani" ? "«" + tg("mem.remember." + it.tur, state?.player.gender === "kadın") + "»" : t(it.k)}</Text>
                   <Text style={{ fontFamily: F.display, fontSize: 11.5, color: it.v > 0 ? C.sage : C.blood, minWidth: 34, textAlign: "right" }}>{it.v > 0 ? "+" + it.v : it.v}</Text>
                 </View>
               ))}
@@ -409,7 +409,7 @@ export default function NpcDetail() {
             {tops.map((m, i) => (
               <View key={i} style={{ flexDirection: "row", gap: 7, marginBottom: 5, alignItems: "flex-start" }}>
                 <GameIcon name={m.travma ? "skull" : m.yon > 0 ? "prayer-beads" : "crossed-swords"} size={11} color={m.travma ? C.blood : m.yon > 0 ? C.sage : C.blood} />
-                <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12.5, color: m.travma ? C.blood : C.parchmentDim, lineHeight: 17 }}>{t("mem.remember." + m.tur)}{m.travma ? ` — ${t("npc.trauma")}` : ""}</Text>
+                <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 12.5, color: m.travma ? C.blood : C.parchmentDim, lineHeight: 17 }}>{tg("mem.remember." + m.tur, state?.player.gender === "kadın")}{m.travma ? ` — ${t("npc.trauma")}` : ""}</Text>
               </View>
             ))}
           </View>

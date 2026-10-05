@@ -543,7 +543,7 @@ function ilkKardeslerKur(s: GameState) {
     const yas = yaslar.splice(Math.floor(Math.random() * yaslar.length), 1)[0];
     const g: Cins = Math.random() < 0.5 ? "erkek" : "kadın";
     const k = yeniGelen(pop, wy, anne.loc, g, yas, Math.random);
-    kardesAdiAyir(k, ids.map((x) => pop.k[x]), ilk);
+    kardesAdiAyir(k, [...ids.map((x) => pop.k[x]), anne, baba], ilk); // kardeşler birbirinden, oyuncudan ve anne-babadan ayrı ad alır
     if (p.surname) k.sa = p.surname; else if (baba.sf != null) k.sf = baba.sf; else k.ss = baba.ss;
     if (yas >= 14 && Math.random() < 0.5) k.prof = g === "erkek" ? baba.prof : anne.prof; // büyükler çoğu kez ocağın işine girmiştir
     k.anne = anne.id; k.baba = baba.id; (anne.cocuk = anne.cocuk || []).push(k.id); (baba.cocuk = baba.cocuk || []).push(k.id);
@@ -594,6 +594,8 @@ function yasitKur(s: GameState): Kisi {
 // Olay parametresi: kişinin adı her dilde kendi kaydından çözülür (tam ad / yalnız ilk ad).
 export const knParam = (k: Kisi): EvtParam => (k.ad ? { kn: [k.g, k.af ?? -1, k.ns ?? 0, k.sf ?? -1, k.ss ?? 0, k.sa || "", k.ad] } : { kn: [k.g, k.af ?? -1, k.ns ?? 0, k.sf ?? -1, k.ss ?? 0, k.sa || ""] });
 export const kfParam = (k: Kisi): EvtParam => (k.ad ? { kf: [k.g, k.af ?? -1, k.ns ?? 0, k.ad] } : { kf: [k.g, k.af ?? -1, k.ns ?? 0] });
+// NPC adı olay parametresi: nüfusta kaydı varsa dile göre çözülen ad (dil değişince kronik de değişir), yoksa düz ad.
+const npcP = (s: GameState, npc: { id: string; name: string }): EvtParam => { const k = nufusOf(s).k[npc.id]; return k ? knParam(k) : npc.name; };
 // Oyuncunun kendi anne/babası mı (kur, flört, görücü adayı olamaz).
 export function oyuncuAkrabasi(p: Player, id: string): boolean {
   return id === p.mother_id || id === p.father_id || (!!p.child_ids && Object.values(p.child_ids).includes(id)) || !!p.sibling_ids?.includes(id);
@@ -788,7 +790,7 @@ function npcLifeTick(s: GameState) {
         pr.workers = pr.workers.filter((w) => w !== o.id);
         push(s, "mülk", `İşçin ${ad(o.id)} vefat etti; mülkünde bir yer boşaldı.`, "kişisel", false, { k: "npclife.workerDied", p: [prm(o.id), { pt2: pr.type }] });
       }
-      if (!olumHaberi && tanidik(o.id)) { olumHaberi = true; push(s, "dunya_olayi", `${ad(o.id)} bu dünyadan göçtü; tanıdık bir yüz eksildi.`, "kişisel", true, { k: "npclife.deathKnown", p: [prm(o.id)] }); }
+      if (!olumHaberi && tanidik(o.id)) { olumHaberi = true; push(s, "dunya_olayi", `${ad(o.id)} bu dünyadan göçtü; tanıdık bir yüz eksildi.`, "kişisel", true, { k: "npclife.deathKnown" + (pop.k[o.id]?.g === "kadın" ? ".k" : ""), p: [prm(o.id)] }); }
     } else if (o.t === "evlilik") {
       const gn = p.gonul && (o.a === p.gonul || o.b === p.gonul) ? p.gonul : null;
       if (gn && !p.dead) { p.gonul = undefined; if (p.age >= 30) continue; push(s, "olgunluk", `İlk gönlün ${ad(gn)} başkasıyla evlendi; düğün sesleri sana uzak geldi.`, "kişisel", true, { k: gk(gn, "genc.gonulEvlendi"), p: [prf(gn)] }); continue; } // yıllar geçtiyse (30+) ilk gönlün düğünü sessizce geçer
@@ -1665,6 +1667,7 @@ export interface GameState {
   newsSeenTurn?: number; // haberler ekranının son görüldüğü tur (menü rozeti için; opsiyonel — eski kayıtlar dokunulmadan çalışır)
   relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean; goalHelped?: boolean; goalDone?: boolean; gname?: string; goalk?: string; usta?: boolean; prof?: string }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
   pop?: Nufus; // yaşayan nüfus: kalıcı kişiler ve aileler (NUFUS.md)
+  dil?: string; // oyunun dili (yeni evlat ve torun adları bu dilde konur; arayüz dili değişince güncellenir)
   hseq?: number; // son olay sırası (her push'ta artar, vârise de geçer)
   kanDefteri?: KanKaydi[]; // kan davası: canını aldığın (ya da bağışladığın) kişilerden doğan, sırası gelince karşına çıkacak hesaplar
   hesap?: { id: string; turn: number; olen?: string; yak?: KanYak; nesil?: number; kt?: number }; // yendiğin gerçek hasım yerde: bağışla ya da canını al (karar bekliyor)
@@ -2083,7 +2086,17 @@ const PROF_SKILL: Record<string, "combat" | "trade" | "crafting" | "social"> = {
 const SPOUSE_K = ["Ayşe","Fatma","Zeynep","Emine","Hatice","Elif","Nur","Reyhan"];
 const SPOUSE_E = ["Mehmet","Ahmet","Mustafa","Hasan","Hüseyin","İbrahim","Osman","Yusuf"];
 const CHILD = ["Ali","Veli","Can","Ece","Mert","Naz","Kerem","Defne","Arda","Mira"];
-const CHILD_F = new Set(["Ece", "Naz", "Defne", "Mira"]); // kız adları — vâris cinsiyeti adından türetilir (portre/metin tutarlılığı)
+// Evlat adları oyunun diliyle konur (İspanyolca dünyada Kerem doğmaz); her dilde kız adları aynı sıradadır (3, 5, 7, 9).
+const CHILD_I: Record<string, string[]> = {
+  tr: CHILD,
+  en: ["Thomas", "William", "John", "Alice", "Henry", "Agnes", "Edmund", "Matilda", "Robert", "Joan"],
+  es: ["Diego", "Rodrigo", "Martín", "Elvira", "Gonzalo", "Blanca", "Fernando", "Leonor", "Alonso", "Inés"],
+  pt: ["João", "Afonso", "Rui", "Beatriz", "Nuno", "Leonor", "Pedro", "Inês", "Gonçalo", "Teresa"],
+  ar: ["علي", "عمر", "حسن", "فاطمة", "يوسف", "زينب", "خالد", "مريم", "سليم", "ليلى"],
+  ru: ["Иван", "Пётр", "Глеб", "Анна", "Борис", "Ольга", "Фёдор", "Марфа", "Олег", "Дарья"],
+};
+const evlatHavuzu = (s: GameState) => CHILD_I[s.dil || "tr"] || CHILD;
+const CHILD_F = new Set(Object.values(CHILD_I).flatMap((l) => [l[3], l[5], l[7], l[9]])); // kız adları — vâris cinsiyeti adından türetilir (portre/metin tutarlılığı)
 
 const rnd = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 const chance = (p: number) => Math.random() < p;
@@ -2242,7 +2255,12 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): AySatiri {
 }
 
 // Yeni evladın adı: kardeşleriyle aynı ad konmaz (evlat bilgisi ada göre tutulur — iki 'Mert' karışır).
-function cocukAdi(p: Player): string { const bos = CHILD.filter((n) => !p.children.includes(n)); return bos.length ? rnd(bos) : rnd(CHILD); }
+function cocukAdi(s: GameState): string {
+  const p = s.player; const h = evlatHavuzu(s); const es = p.spouse_id ? s.pop?.k[p.spouse_id] : undefined;
+  const yasak = new Set([...p.children, oyuncuIlkAd(p), ...(es ? [kisiIlkAd(es, (s.dil || "tr") as Lang)] : [])]); // kardeşinin, anne ya da babasının adı konmaz
+  const bos = h.filter((n) => !yasak.has(n)); const bos2 = h.filter((n) => !p.children.includes(n));
+  return rnd(bos.length ? bos : bos2.length ? bos2 : h);
+}
 // Evlilikte doğum: iki doğum arası en az bir yıl; doğurganlık yaşla (35'ten sonra) ve evlat sayısıyla azalır; eşle bağ güçlüyse
 // biraz artar, ihmal edilmiş evlilikte yarıya iner. Böylece her hayat aynı kalabalıkta bitmez ve ocağa gösterilen ilgi soya yansır.
 export function dogumOlasiligi(s: GameState): number {
@@ -2347,7 +2365,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   // Görücü usulü evlilik — yalnızca FALLBACK: oyuncu birini kur yapıyorsa (ilişki ≥50) araya girmez, geç başlar, seyrektir.
   const courting = Object.values(s.relationships || {}).some((v) => (v as number) >= 50) || s.story?.active?.id === "gec_sevda"; // aktif sevda yayı da bir kur — görücü araya girmesin
   if (!p.married && !courting && p.age >= 24 && p.age < 55 && chance(0.035 + p.fame / 2000)) { p.married = true; p.married_turn = s.turn; p.spouse_bond = 35; oyuncuEvlenKisi(s, esBulVeyaKur(s)); const name = p.spouse_name!; p.widowed = false; p.reputation = Math.min(100, p.reputation + 5); { const mv2 = chance(0.5); push(s, "evlilik", mv2 ? `Davul üç gün sustu susmadı; ${name} ile aynı ocağın başına oturdunuz. Evin eşiği o gün iki kez öpüldü.` : `Ailelerin görüşmesiyle ${name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: mv2 ? "evj.marry2" : "evj.marry", p: [esParam(s)] }); } }
-  if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(dogumOlasiligi(s))) { const c = cocukAdi(p); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); evlatKisiKur(s, c, p.spouse_id); { const bv2 = chance(0.5); push(s, "doğum", bv2 ? `Eve bir nefes daha katıldı: ${c}. Beşik baş köşeye kuruldu; o gece kimse erken uyumadı.` : `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: bv2 ? "evj.childBorn2" : "evj.childBorn", p: [c] }); } }
+  if (p.married && p.age >= 18 && p.age < 50 && p.children.length < 5 && chance(dogumOlasiligi(s))) { const c = cocukAdi(s); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn }); evlatKisiKur(s, c, p.spouse_id); { const bv2 = chance(0.5); push(s, "doğum", bv2 ? `Eve bir nefes daha katıldı: ${c}. Beşik baş köşeye kuruldu; o gece kimse erken uyumadı.` : `Bir evladın dünyaya geldi: ${c}.`, "kişisel", true, { k: bv2 ? "evj.childBorn2" : "evj.childBorn", p: [c] }); } }
   affairTick(s); // yasak ilişki: ateş soğur, piç doğabilir, ifşa yuvarlanır (evli/bekâr sonuçları exposeAffair'de)
   betrothalTick(s); // evli birine kesilen söz: aylar içinde boşanıp evlenir ya da vazgeçer
   // Evlilik yıldönümü: her 12 ayda bir ocak tazelenir — otomatik, küçük, farm'sız (eski kayıtta married_turn yoksa sessizce atlanır).
@@ -2392,7 +2410,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   // ── Torun anları: oyuncu yaşlanınca (52+) ve yetişkin evladı varken torun doğar; torunla anlar gönül ferahlatır (additive) ──
   if (p.age >= 52 && p.children.length >= 1 && (p.grandchildren?.length || 0) < 8 && chance(0.06) && yetiskinEvlatVar(s)) { // torun ancak yetişkin evlattan olur
-    const gc = rnd(CHILD); if (!p.grandchildren) p.grandchildren = []; p.grandchildren.push(gc);
+    const gc = rnd(evlatHavuzu(s)); if (!p.grandchildren) p.grandchildren = []; p.grandchildren.push(gc);
     p.reputation = Math.min(100, p.reputation + 2);
     { const gv2 = chance(0.5); push(s, "doğum", gv2 ? `Ocağın üçüncü halkası: ${gc}. Kulağına ilk adı sen fısıldadın; ad senden eski, torun senden genç.` : `Bir torunun dünyaya geldi: ${gc}. Soyun sürüyor.`, "kişisel", true, { k: gv2 ? "evj.grandchildBorn2" : "evj.grandchildBorn", p: [gc] }); }
   }
@@ -2871,7 +2889,7 @@ function claimAchievements(s: GameState) {
       p.claimed.push(a.id);
       p.stat_points += 1;
       p.fame = Math.min(100, p.fame + 2);
-      push(s, "basarim", `Başarım açıldı: ${a.name} (+1 özellik puanı).`, "kişisel", false, { k: "ev.ach", p: [a.name] });
+      push(s, "basarim", `Başarım açıldı: ${a.name} (+1 özellik puanı).`, "kişisel", false, { k: "ev.ach", p: [{ ach: a.id }] });
     }
   }
 }
@@ -4761,8 +4779,8 @@ export function giftTo(prev: GameState, npc: NPC, itemId: string): GameState {
   ns.memories.push(`${ITEMS[itemId]?.name || "Bir hediye"} hediye ettin.`);
   if (ns.memories.length > 8) ns.memories = ns.memories.slice(-8);
   remember(s, npc, (ITEMS[itemId]?.buy || 0) >= 25 ? "comert_hediye" : "hediye");
-  if (jewel) push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir takı"} taktın; gözleri parladı, eli uzun süre üstünde gezindi.`, "kişisel", false, { k: "evj.giftJewel", p: [npc.name, { i: itemId }] });
-  else { const gv = chance(0.5); push(s, "sohbet", gv ? `${npc.name} hediyeni evirip çevirdi, sonra bağrına bastı: "Bunu hak edecek ne yaptım?"` : `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`, "kişisel", false, { k: gv ? "evj.gift2" : "evj.gift", p: [npc.name, { i: itemId }] }); }
+  if (jewel) push(s, "sohbet", `${npc.name}'a ${ITEMS[itemId]?.name || "bir takı"} taktın; gözleri parladı, eli uzun süre üstünde gezindi.`, "kişisel", false, { k: "evj.giftJewel", p: [npcP(s, npc), { i: itemId }] });
+  else { const gv = chance(0.5); push(s, "sohbet", gv ? `${npc.name} hediyeni evirip çevirdi, sonra bağrına bastı: "Bunu hak edecek ne yaptım?"` : `${npc.name}'a ${ITEMS[itemId]?.name || "bir hediye"} verdin. Çok sevindi.`, "kişisel", false, { k: gv ? "evj.gift2" : "evj.gift", p: [npcP(s, npc), { i: itemId }] }); }
   return s;
 }
 
@@ -4793,7 +4811,7 @@ export function takeApprentice(prev: GameState, npc: NPC): GameState {
   }
   p.apprentice = { id: npc.id, name: npc.name, months: 0, skill: bestSkillOf(p) };
   s.relationships[npc.id] = Math.max(-100, Math.min(100, (s.relationships[npc.id] || 0) + 10));
-  push(s, "çıraklık", `${npc.name}'i yanına çırak aldın; hünerini bir gence aktaracaksın.`, "kişisel", true, { k: "evj.apr.taken", p: [npc.name] });
+  push(s, "çıraklık", `${npc.name}'i yanına çırak aldın; hünerini bir gence aktaracaksın.`, "kişisel", true, { k: "evj.apr.taken", p: [npcP(s, npc)] });
   return s;
 }
 export function mentorApprentice(prev: GameState): GameState {
@@ -4843,7 +4861,7 @@ export function helpNpcGoal(prev: GameState, npc: NPC): GameState {
   { const k = nufusHazirla(s).k[npc.id]; if (k) k.gh = true; }
   // Velinimet tohumu: bu iyilik yıllar sonra keseyle ve itibarla döner (nesil aşabilir). Yalnız taze yardımda (azalan getiri; aynı NPC'ye spam ile tohum farmı önlenir).
   if (fresh) sowSeed(s, { kaynak: "velinimet", hmin: 24, hmax: 96, agirlik: "buyuk", nesil: true, etki: { money: 90, reputation: 6 }, npcName: npc.name, npcId: npc.id });
-  push(s, "sohbet", `${npc.name}'in "${npc.goal}" derdine ${GOAL_HELP_COST} akçeyle omuz verdin; sana minnettar kaldı.`, "kişisel", true, { k: "evj.helpGoal", p: [npc.name, { goalk: npc.goal }, GOAL_HELP_COST] });
+  push(s, "sohbet", `${npc.name}'in "${npc.goal}" derdine ${GOAL_HELP_COST} akçeyle omuz verdin; sana minnettar kaldı.`, "kişisel", true, { k: "evj.helpGoal", p: [npcP(s, npc), { goalk: npc.goal }, GOAL_HELP_COST] });
   return s;
 }
 export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
@@ -4853,7 +4871,7 @@ export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
   if (p.exploit_turn === s.turn) { push(s, "sohbet", `Bu ay birini daha kandırmaya kalkışmak nam yapar; biraz beklemelisin.`, "kişisel", false, { k: "evj.exploitWait" }); return s; }
   const rel = relWith(s, npc.id);
   // Sana güvenmeyen kanmaz — bu, istismarın tekrar tekrar farm'lanmasını engeller.
-  if (rel <= -25) { push(s, "sohbet", `${npc.name} sana zaten güvenmiyor; oyununa gelmez.`, "kişisel", false, { k: "evj.distrust", p: [npc.name] }); return s; }
+  if (rel <= -25) { push(s, "sohbet", `${npc.name} sana zaten güvenmiyor; oyununa gelmez.`, "kişisel", false, { k: "evj.distrust", p: [npcP(s, npc)] }); return s; }
   p.exploit_turn = s.turn;
   // Kazanç güvene bağlı: ne kadar çok güveniyorsa o kadar koparırsın (ve o güveni yakarsın).
   const gain = Math.round(8 + Math.max(0, rel) * 0.4 + Math.random() * 10);
@@ -4868,7 +4886,7 @@ export function exploitNpcGoal(prev: GameState, npc: NPC): GameState {
   remember(s, npc, "somuru"); // skandal anı → ileride dedikoduya dönüşür
   // İstismar tohumu: kullandığın kişi güçlenince geri döner (nesil aşabilir).
   sowSeed(s, { kaynak: "somuru_intikam", hmin: 36, hmax: 144, agirlik: "orta", nesil: true, etki: { reputation: -5, money: -25 }, npcName: npc.name, npcId: npc.id });
-  push(s, "sohbet", `${npc.name}'in "${npc.goal}" umudunu istismar edip ${gain} akçe kopardın; sana diş biledi.`, "kişisel", true, { k: "evj.exploitGoal", p: [npc.name, { goalk: npc.goal }, gain] });
+  push(s, "sohbet", `${npc.name}'in "${npc.goal}" umudunu istismar edip ${gain} akçe kopardın; sana diş biledi.`, "kişisel", true, { k: "evj.exploitGoal", p: [npcP(s, npc), { goalk: npc.goal }, gain] });
   return s;
 }
 
@@ -4886,14 +4904,14 @@ export function proposeMarriage(prev: GameState, npc: NPC): GameState {
     // Evli birine teklif: kabul eder ama önce kendi ocağını dağıtması gerekir — söz kesilir, evlilik aylar sonra (betrothalTick).
     p.betrothed = { id: npc.id, name: npc.name, seed: locSeed(npc.id), gender: npc.gender, months: 0 };
     bumpNam(p, "capkin", 3);
-    push(s, "sohbet", `${npc.name} yüzü kızararak baktı: "Gönlüm seninle ama önce kendi ocağımı dağıtmam lazım. Bana biraz zaman ver." Söz kesildi; şimdi bekleme sırası sende.`, "kişisel", true, { k: "evj.betrothWait", p: [npc.name] });
+    push(s, "sohbet", `${npc.name} yüzü kızararak baktı: "Gönlüm seninle ama önce kendi ocağımı dağıtmam lazım. Bana biraz zaman ver." Söz kesildi; şimdi bekleme sırası sende.`, "kişisel", true, { k: "evj.betrothWait", p: [npcP(s, npc)] });
   } else if (ok) {
     p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(relWith(s, npc.id) || 40))); { const k = nufusHazirla(s).k[npc.id]; if (k && k.ol == null) oyuncuEvlenKisi(s, k); else { p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); } } p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
     bumpNam(p, "capkin", 5);
     push(s, "evlilik", `${npc.name} ile evlendin — yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [esParam(s)] });
   } else {
     s.relationships[npc.id] = Math.max(-100, (s.relationships[npc.id] || 0) - 8);
-    push(s, "sohbet", `${npc.name} teklifini şimdilik geri çevirdi. Vakit ister.`, "kişisel", false, { k: "evj.proposeNo", p: [npc.name] });
+    push(s, "sohbet", `${npc.name} teklifini şimdilik geri çevirdi. Vakit ister.`, "kişisel", false, { k: "evj.proposeNo" + (npc.gender === "kadın" ? ".k" : ""), p: [npcP(s, npc)] });
   }
   return s;
 }
@@ -4953,7 +4971,7 @@ export function proposeArranged(prev: GameState, npc: NPC): GameState {
     p.married = true; p.married_turn = s.turn; p.spouse_bond = Math.max(30, Math.min(80, Math.round(relWith(s, npc.id) || 40))); { const k = nufusHazirla(s).k[npc.id]; if (k && k.ol == null) oyuncuEvlenKisi(s, k); else { p.spouse_name = npc.name; p.spouse_seed = locSeed(npc.id); p.spouse_mizac = mizacFromTrait(npc.trait, locSeed(npc.id)); } } p.widowed = false; p.reputation = Math.min(100, p.reputation + 5);
     push(s, "evlilik", `${npc.name} ile görücü usulü evlendin — iki aile görüştü, yeni bir ocak kuruldu.`, "kişisel", true, { k: "evj.marryNpc", p: [esParam(s)] });
   } else {
-    push(s, "sohbet", `${npc.name}'in ailesi teklifi şimdilik geri çevirdi; çöpçatan başka kapı çalacak.`, "kişisel", false, { k: "evj.proposeNo", p: [npc.name] });
+    push(s, "sohbet", `Görücüler eli boş döndü: ${npc.name} tarafı teklifi şimdilik geri çevirdi; çöpçatan başka kapı çalacak.`, "kişisel", false, { k: "evj.matchNo", p: [npcP(s, npc)] });
   }
   return s;
 }
@@ -4970,7 +4988,7 @@ export function insultNpc(prev: GameState, npc: NPC): GameState {
   p.honor = Math.max(0, p.honor - 2);
   remember(s, npc, "hakaret");
   witnessScandal(s, "hakaret", 0.4); // tanık varsa dedikodu kaynağı
-  push(s, "sohbet", `${npc.name}'a ağzına geleni söyledin; aranıza duvar girdi (−${drop} ilişki).`, "kişisel", false, { k: "npca.insult", p: [npc.name, drop] });
+  push(s, "sohbet", `${npc.name}'a ağzına geleni söyledin; aranıza duvar girdi (−${drop} ilişki).`, "kişisel", false, { k: "npca.insult", p: [npcP(s, npc), drop] });
   return s;
 }
 export function canFlirt(p: Player, npc: NPC, rel: number): boolean {
@@ -5006,14 +5024,14 @@ export function flirtWith(prev: GameState, npc: NPC): GameState {
       if (!p.affair || p.affair.id !== npc.id) p.affair = { id: npc.id, name: npc.name, seed: locSeed(npc.id), gender: npc.gender, heat: 0, months: 0, theirs: npcSeededMarried(npc) };
       p.affair.heat = Math.min(100, p.affair.heat + up);
       if (p.married && p.spouse_bond !== undefined) p.spouse_bond = Math.max(0, p.spouse_bond - 6); // ihanet ocağı soğutur (meşru flörtten ağır)
-      push(s, "sohbet", `${npc.name} ile gizlice buluştun; aranızdaki yasak ateş büyüdü. Kimse görmesin diye dua ettin (+${up}).`, "kişisel", false, { k: "affair.flirtWin", p: [npc.name, up] });
+      push(s, "sohbet", `${npc.name} ile gizlice buluştun; aranızdaki yasak ateş büyüdü. Kimse görmesin diye dua ettin (+${up}).`, "kişisel", false, { k: "affair.flirtWin", p: [npcP(s, npc), up] });
     } else {
       bumpNam(p, "capkin", 3);
-      push(s, "sohbet", `${npc.name} ile gönül eğlendirdin; arana kıvılcım düştü (+${up} ilişki).`, "kişisel", false, { k: "npca.flirtWin", p: [npc.name, up] });
+      push(s, "sohbet", `${npc.name} ile gönül eğlendirdin; arana kıvılcım düştü (+${up} ilişki).`, "kişisel", false, { k: "npca.flirtWin", p: [npcP(s, npc), up] });
     }
   } else {
     s.relationships[npc.id] = Math.max(-100, taban - 5); ns.mood = Math.max(-100, ns.mood - 6);
-    push(s, "sohbet", `${npc.name} yüz vermedi; mahcup oldun.`, "kişisel", false, { k: "npca.flirtLose", p: [npc.name] });
+    push(s, "sohbet", `${npc.name} yüz vermedi; mahcup oldun.`, "kişisel", false, { k: "npca.flirtLose", p: [npcP(s, npc)] });
   }
   return s;
 }
@@ -5031,7 +5049,7 @@ function affairTick(s: GameState) {
   const fertile = p.gender === "erkek" ? p.age < 62 : p.age < 48;
   if (a.heat >= 40 && fertile && (p.bastards || 0) < 3 && chance(0.02 + (a.heat / 100) * 0.03)) {
     p.bastards = (p.bastards || 0) + 1;
-    const c = cocukAdi(p); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn, bastard: true }); evlatKisiKur(s, c, a.id);
+    const c = cocukAdi(s); p.children.push(c); (p.child_meta = p.child_meta || []).push({ n: c, born: s.turn, bastard: true }); evlatKisiKur(s, c, a.id);
     a.heat = Math.min(100, a.heat + 35);
     push(s, "doğum", `Yasak ilişkinizden bir çocuk dünyaya geldi: ${c}. ${a.name} ile olan bu sır artık saklanamayacak kadar büyük.`, "kişisel", true, { k: "affair.bastard", p: [c, a.name] });
   }
@@ -5083,10 +5101,10 @@ export function gossipAbout(prev: GameState, npc: NPC): GameState {
   const ok = sansTut(s, npc, "dedikodu");
   if (ok) {
     s.relationships[npc.id] = Math.max(-100, rel - 4); ns.mood = Math.max(-100, ns.mood - 4); bumpNam(p, "zalim", 2);
-    push(s, "sohbet", `${npc.name} hakkında diller döktürdün; namı sarsıldı.`, "kişisel", false, { k: "npca.gossipWin", p: [npc.name] });
+    push(s, "sohbet", `${npc.name} hakkında diller döktürdün; namı sarsıldı.`, "kişisel", false, { k: "npca.gossipWin", p: [npcP(s, npc)] });
   } else {
     s.relationships[npc.id] = Math.max(-100, rel - 12); ns.mood = Math.max(-100, ns.mood - 14); remember(s, npc, "hakaret");
-    push(s, "sohbet", `Dedikodun ${npc.name}'in kulağına gitti; sana diş biledi (−12 ilişki).`, "kişisel", false, { k: "npca.gossipLose", p: [npc.name] });
+    push(s, "sohbet", `Dedikodun ${npc.name}'in kulağına gitti; sana diş biledi (−12 ilişki).`, "kişisel", false, { k: "npca.gossipLose", p: [npcP(s, npc)] });
   }
   return s;
 }
@@ -5119,10 +5137,10 @@ export function helallikIste(prev: GameState, npc: NPC, bedel = false): GameStat
     for (const m of ns.anilar || []) if (m.yuk < 0) m.yuk = Math.round(m.yuk * 0.4 * 1000) / 1000; // kırgınlık solar (travma izi kalır ama hafifler)
     remember(s, npc, "helallik"); p.honor = Math.min(100, p.honor + 2); bumpNam(p, "dindar", 1);
     if (bedel) p.money -= cost;
-    push(s, "sohbet", `${npc.name} helallik verdi; aranızdaki kırgınlık hafifledi.`, "kişisel", true, { k: bedel ? "npca.helalOkBedel" : "npca.helalOk", p: [npc.name, cost] });
+    push(s, "sohbet", `${npc.name} helallik verdi; aranızdaki kırgınlık hafifledi.`, "kişisel", true, { k: bedel ? "npca.helalOkBedel" : "npca.helalOk", p: [npcP(s, npc), cost] });
   } else {
     s.relationships[npc.id] = Math.max(-100, (s.relationships[npc.id] || 0) - 2);
-    push(s, "sohbet", `${npc.name} helallik vermedi.`, "kişisel", false, { k: bedel ? "npca.helalRedBedel" : "npca.helalRed", p: [npc.name, gorusSebebi(s, npc.id, -1)] });
+    push(s, "sohbet", `${npc.name} helallik vermedi.`, "kişisel", false, { k: bedel ? "npca.helalRedBedel" : "npca.helalRed", p: [npcP(s, npc), gorusSebebi(s, npc.id, -1)] });
   }
   return s;
 }
@@ -5135,7 +5153,7 @@ export function giveMoneyTo(prev: GameState, npc: NPC): GameState {
   const up = rel < 70 ? 9 : 3; // azalan getiri
   s.relationships[npc.id] = Math.min(100, rel + up); ns.mood = Math.max(-100, Math.min(100, ns.mood + 10));
   p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 3); remember(s, npc, "hediye");
-  push(s, "sohbet", `${npc.name}'in avucuna ${GIVE_MONEY_AMT} akçe sıkıştırdın; duası seninle.`, "kişisel", false, { k: "npca.money", p: [npc.name, GIVE_MONEY_AMT] });
+  push(s, "sohbet", `${npc.name}'in avucuna ${GIVE_MONEY_AMT} akçe sıkıştırdın; duası seninle.`, "kişisel", false, { k: "npca.money", p: [npcP(s, npc), GIVE_MONEY_AMT] });
   return s;
 }
 
@@ -6845,6 +6863,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, pop: heirPop, relationships: Object.fromEntries([...kardesIds, ...Object.keys(ataHatira).filter((id) => Math.abs(ataHatira[id]) >= 15)].map((id) => [id, 0])), dynasty, // atasını güçlü hatırlayan seni de tanır
     ata_hatira: Object.keys(ataHatira).length ? ataHatira : undefined, soy_nam: Object.values(soyNam).some((v) => v > 0) ? soyNam : undefined, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
+    dil: prev.dil, // torunların adı da aynı dilde
     hseq: prev.hseq, // olay sırası kesintisiz sürer (ekranlar yeni olayı bununla tanır)
     kanDefteri: kanMiras(prev, heirPop), // dökülen kan vârise geçer: yemin eden yaşıyorsa hesap kapanmadı
     feud: prev.feud ? { houseId: prev.feud.houseId, nameIdx: prev.feud.nameIdx, stage: prev.feud.stage, heat: Math.round(prev.feud.heat / 2) } : undefined,
@@ -8653,7 +8672,7 @@ function claimFamilyQuests(s: GameState) {
     if (q.reward.fame) p.fame = Math.min(100, p.fame + q.reward.fame);
     if (q.reward.rep) p.reputation = Math.min(100, p.reputation + q.reward.rep);
     if (q.reward.statPt) p.stat_points += q.reward.statPt;
-    push(s, "aile_gorevi", `Aile görevi tamamlandı: ${q.title}.`, "kişisel", true, { k: "evj.familyQuest", p: [q.title] });
+    push(s, "aile_gorevi", `Aile görevi tamamlandı: ${q.title}.`, "kişisel", true, { k: "evj.familyQuest", p: [{ fq: q.id }] });
   }
 }
 

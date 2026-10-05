@@ -19,7 +19,7 @@ export default function Mahalle() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, apply } = useGame();
-  const { lang, t } = useI18n();
+  const { lang, t, tg } = useI18n();
   const [sonuc, setSonuc] = useState<string>("");
   const yerler = useMemo(() => (state ? mahalle(state, lang) : null), [state?.pop, state?.turn, state?.player.location_name, lang]);
   const goz = useMemo(() => (state ? kasabaGozu(state) : null), [state]); // kasabanın gözünde: huy gruplarına göre bakış ve sebep
@@ -63,7 +63,7 @@ export default function Mahalle() {
               <View key={g.grup} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 5, borderTopWidth: 1, borderTopColor: C.border }}>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchment }}>{t("huy.grup." + g.grup)} <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>· {g.n}</Text></Text>
-                  {g.sebep ? <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("mh.goz.sebep")}: {g.sebep === "gorus.ani" && g.sebepTur ? "«" + t("mem.remember." + g.sebepTur) + "»" : t(g.sebep)}</Text> : null}
+                  {g.sebep ? <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t("mh.goz.sebep")}: {g.sebep === "gorus.ani" && g.sebepTur ? "«" + tg("mem.remember." + g.sebepTur, state?.player.gender === "kadın") + "»" : t(g.sebep)}</Text> : null}
                 </View>
                 <Text style={{ fontFamily: F.display, fontSize: 14, width: 44, textAlign: "right", color: g.ort >= 20 ? C.sage : g.ort <= -20 ? C.blood : C.parchmentDim }}>{g.ort > 0 ? "+" + g.ort : g.ort}</Text>
               </View>

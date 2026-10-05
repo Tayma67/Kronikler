@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { oturumGecis } from "./oturum";
+import { useI18n } from "./i18n";
 import { GameState, newGame, advance, eat, work, achievementsOf, WorkStyle , migrate } from "./game";
 export { migrate }; // MP ekranı ve testler store üzerinden erişmeye devam eder
 
@@ -44,6 +45,8 @@ const GameContext = createContext<Ctx | null>(null);
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<GameState | null>(null);
+  // Oyunun dili kayda yazılır (yeni evlatların adı bu dilde konur); oturum sayacına eylem diye geçmez.
+  const { lang } = useI18n(); const langRef = useRef(lang); langRef.current = lang;
   const [loading, setLoading] = useState(true);
   const [mpMode, setMpMode] = useState(false);
   const mpRef = useRef(false); // persist gating senkron okuma için
@@ -80,6 +83,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (saveTimer.current) return;
     saveTimer.current = setTimeout(() => { saveTimer.current = null; const x = pending.current; pending.current = null; if (x) persistWithBackup(x); }, 1200);
   }, []);
+  // Arayüz dili değişince (ya da dili yazılmamış eski kayıt açılınca) kayda işlenir.
+  useEffect(() => {
+    if (!state || mpRef.current || state.dil === lang) return;
+    setState((cur) => { if (!cur || cur.dil === lang) return cur; const n = { ...cur, dil: lang }; schedulePersist(n); return n; });
+  }, [lang, state?.dil, schedulePersist]);
   // Uygulama arka plana alınınca / kapanırken bekleyen kaydı hemen diske yaz.
   useEffect(() => {
     const sub = AppState.addEventListener("change", (st) => { if (st !== "active") flush(); });
@@ -99,7 +107,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const startGame = useCallback(async (first: string, surname: string, gender: "erkek" | "kadın") => {
     if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; } pending.current = null;
-    const s = newGame(first, surname, gender);
+    const s = { ...newGame(first, surname, gender), dil: langRef.current };
     setState(s);
     try { await AsyncStorage.setItem(KEY, JSON.stringify(s)); } catch {}
   }, []);

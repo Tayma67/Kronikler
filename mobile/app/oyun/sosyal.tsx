@@ -7,7 +7,7 @@ import { useGame } from "../../lib/store";
 import { SOCIAL_AXES, socialTierIndex, hostFeast, giveAlms, sadakaTasi, intimidate, factionById, NAM_META, rumorAction, playerDominantNam } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
-import { useI18n, applyParams } from "../../lib/i18n";
+import { useI18n, renderEvt } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { playTap } from "../../lib/sound";
 import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
@@ -126,7 +126,7 @@ export default function Sosyal() {
           const rumors = state.player_rumors || [];
           if (!rumors.length) return <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, marginBottom: 6 }}>{t("rum.none")}</Text>;
           return [...rumors].reverse().map((r) => {
-            const txt = applyParams(t("rumor." + r.tur + "." + r.vi), [p.name, r.kaynak], lang);
+            const txt = renderEvt("rumor." + r.tur + "." + r.vi, "", [p.name, r.kaynak], lang, t, p.gender === "kadın"); // kadın oyuncuya dişil söylenti, Rusçada ad çekimi
             const cost = 15 * Math.round(r.siddet);
             return (
               <View key={r.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: r.yon > 0 ? "rgba(124,160,90,0.35)" : "rgba(160,60,60,0.35)", borderLeftWidth: 3, borderLeftColor: r.yon > 0 ? C.sage : C.blood, borderRadius: 10, padding: 12, marginBottom: 8 }}>

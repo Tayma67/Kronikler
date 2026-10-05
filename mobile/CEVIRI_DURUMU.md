@@ -49,12 +49,24 @@ Kanonik Türkçe anahtar/oyun-mantığı korunur; yalnızca **gösterim** yerell
   у/от/для/в пользу → ilgi, к → yönelme, с/между/над → araç, о/при → bulunma ("с Натальей Плотниковой",
   "у Алексея Медведева", "Между Любовью Громовой и Олегом…"). Yalnız kişi parametrelerine ve Kiril ad metnine dokunur;
   hane adı, sayı, yer ve Latin harfli adlar olduğu gibi kalır. "за" belirsiz olduğundan çekimlenmez.
+- **Açık hâl işareti:** edatsız yapılarda kalıp ismin hâlini kendisi söyler: `%1:р` ilgi, `%1:в` belirtme, `%1:д` yönelme,
+  `%1:т` araç, `%1:п` bulunma ("Долг %1:р" → "Долг Добрыни Гончарова", "щадишь %1:в" → "щадишь Марию Соколову",
+  "с женой %1:т" → "с женой Марфой"). İşaret yalnız `renderEvt` yolunda çekimlenir; `applyParams` işareti siler.
+  "Дом %1" önündeki çoğul hane adı da ilgi hâline geçer ("Дом Волковых").
+- **NPC cinsiyeti:** ölen/teklifi reddeden kişi kadınsa `.k` varyantı ("покинула", "رحلت"); iki kişiyi birlikte anan
+  satırlar (dostluk, doğum, hayal) cinsiyetsiz kurulur.
 - **Kadın oyuncu:** oyuncuya eril geçmiş zamanla hitap eden 414 kalıba `.f` varyantı eklendi (kural + elle gözden
   geçirme; özne başka biriyse — он/она, никто, ad, tırnak — fiil değişmez). Yeni Rusça metin yazarken oyuncuya
   hitap eden geçmiş zaman ya şimdiki zamanla kurulur ya da `.f` varyantıyla birlikte eklenir.
 - **İspanyolca/Portekizce/Arapça kadın oyuncu:** oyuncuya eril sıfatla hitap eden kalıplara `.f` eklendi (es 25, pt 41,
   ar 15: "acabarás cansada", "ficaste ferida", "أنتِ متزوجة", "¡Bienvenida, señora!"). Arayüzde oyuncuya hitap eden metin
   `tg(anahtar, kadınMı)` ile yazılır (kader kartı ve hikâye seçenekleri, sohbet selamı, uyarılar).
+- **Söylentiler:** oyuncu hakkındaki söylentiler `renderEvt` ile yazılır; kadın oyuncuya 72 dişil söylenti varyantı
+  (tr 1, en 2, es 7, pt 4, ar 31, ru 27).
+- **Kronikteki adlar:** başarım ve aile görevi adları anahtarla saklanır (`{ ach }`, `{ fq }`; eski kayıttaki Türkçe ad
+  çözülür). Oyuncunun evlatları ve torunları oyunun dilindeki ad havuzundan ad alır (`s.dil`; İspanyolca dünyada Kerem
+  doğmaz). Sohbet/teklif satırlarındaki kişi adları nüfus kaydına bağlıdır; dil değişince kronik de değişir.
+- **Arapça para birimi:** tek yazım: أقجة.
 
 ## Yapı notları
 - Yeni blok ekle → `lib/i18n.tsx`'te const tanımla → `DICT_BUILDERS`'ın 6 dil kurucusuna `...BLOK.xx` ekle.
