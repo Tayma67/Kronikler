@@ -16,7 +16,7 @@ import { HesapModal } from "../../lib/hesap-ui";
 import { careerTitleL, placeName } from "../../lib/locale-data";
 import { currentCalendar } from "../../lib/calendar";
 import { heroImage } from "../../lib/assets";
-import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre, TutorialModal } from "../../lib/ui";
+import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre } from "../../lib/ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameIcon } from "../../lib/icons";
 import { useI18n, applyParams, renderEvt, lakapliAd, lakapAdi } from "../../lib/i18n";
@@ -377,7 +377,6 @@ export default function Dashboard() {
           </Modal>
         );
       })()}
-      <TutorialModal visible={showTut} title={t("sp.tut.title")} bullets={[t("sp.tut.b1"), t("sp.tut.b2"), t("sp.tut.b3"), t("sp.tut.b4"), t("sp.tut.b5"), t("sp.tut.b6")]} gotLabel={t("sp.tut.got")} onClose={closeTut} />
 
       {/* Mersiye — hayatın duygusal kapanışı */}
       {p.dead && (() => {
@@ -487,6 +486,17 @@ export default function Dashboard() {
         );
       })()}
       {/* İLK ADIMLAR yol haritası kartı kullanıcı isteğiyle kaldırıldı (ana sayfada yer kaplamasın). */}
+
+      {/* İlk açılış: metin duvarı yerine tek cümlelik, akışı kesmeyen şerit — oyuncu hemen ilk kararını verir (TASARIM_PUSULASI 2.5) */}
+      {showTut && !p.dead && (
+        <View style={{ marginHorizontal: 12, marginTop: 8, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.45)", backgroundColor: "rgba(201,168,76,0.08)" }}>
+          <GameIcon name="scroll" size={16} color={C.gold} />
+          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 12.5, color: C.parchment, lineHeight: 18 }}>{t("sp.tut.kisa")}</Text>
+          <Pressable onPress={() => { hap("tap"); closeTut(); }} hitSlop={10} style={{ paddingHorizontal: 6, paddingVertical: 2 }}>
+            <Text style={{ fontFamily: F.display, fontSize: 14, color: C.goldDim }}>×</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* Açık hesaplar: aklında tutman gereken süren hesaplar (en çok 5; kim, ne istiyor, ne zaman) — TASARIM_PUSULASI ilke 4 */}
       {!p.dead && (() => {
