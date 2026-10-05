@@ -3166,7 +3166,7 @@ const HOUSE_POOLS_I: Record<Lang, string[]> = {
   ar: ["بنو غُراب","آل الصقر","بنو الحديد","بنو الذئب","آل النجم","بنو الفولاذ","آل الأسد","بنو الأرض","آل الفضّة","بنو النسر","آل البلّوط","بنو الثور","بنو الدلب","آل البرونز"],
   ru: ["Воронцовы","Соколовы","Железновы","Волковы","Звездины","Стальновы","Львовы","Земцовы","Серебровы","Орловы","Дубовы","Турановы","Вязовы","Бронзовы"],
 };
-export type EvtParam = string | number | { lk: string } | { i: string } | { pl: string } | { c: [string, number] } | { pr: string } | { q: string } | { route: string[] } | { fn: [number, "erkek" | "kadın"] } | { prl: string } | { il: string } | { tk: string } | { tq: string } | { kn: ["erkek" | "kadın", number, number, number, number, string, string?] } | { kf: ["erkek" | "kadın", number, number, string?] } | { pt2: string } | { fc: string } | { wc: number } | { hn: number } | { bl: string } | { enc: string } | { opp: string } | { mev: string } | { wevt: string } | { wevw: string } | { wevl: string } | { cr: string } | { wd: number } | { wds: number[] } | { wai: string } | { invl: string } | { edul: string } | { statk: string } | { ftl: string } | { goalk: string } | { sfx: string } | { stt: string } | { dreamk: string } | { crk: string } | { ach: string } | { fq: string } | { goald: string };
+export type EvtParam = string | number | { lk: string } | { i: string } | { pl: string } | { c: [string, number] } | { pr: string } | { q: string } | { route: string[] } | { fn: [number, "erkek" | "kadın"] } | { prl: string; k?: 1 } | { il: string } | { tk: string } | { tq: string } | { kn: ["erkek" | "kadın", number, number, number, number, string, string?] } | { kf: ["erkek" | "kadın", number, number, string?] } | { pt2: string } | { fc: string } | { wc: number } | { hn: number } | { bl: string } | { enc: string } | { opp: string } | { mev: string } | { wevt: string } | { wevw: string } | { wevl: string } | { cr: string } | { wd: number } | { wds: number[] } | { wai: string } | { invl: string } | { edul: string } | { statk: string } | { ftl: string } | { goalk: string } | { sfx: string } | { stt: string } | { dreamk: string } | { crk: string } | { ach: string } | { fq: string } | { goald: string };
 // Cümle içi küçük harf (Türkçe İ/I doğru iner; motorların yerel ayar desteğine güvenilmez).
 export function kucukHarf(str: string, lang: Lang): string { return (lang === "tr" ? str.replace(/İ/g, "i").replace(/I/g, "ı") : str).toLowerCase(); }
 function resolveEvtParam(v: EvtParam | undefined, lang: Lang, t: (k: string) => string, female = false): string {
@@ -3176,7 +3176,7 @@ function resolveEvtParam(v: EvtParam | undefined, lang: Lang, t: (k: string) => 
     if ("pl" in v) return placeName(v.pl, lang);
     if ("c" in v) return careerTitleL(v.c[0], v.c[1], lang);
     if ("pr" in v) return professionNameL(v.pr, lang);
-    if ("prl" in v) return kucukHarf(professionNameL(v.prl, lang), lang); // cümle içinde meslek adı (küçük harf)
+    if ("prl" in v) return kucukHarf(professionNameL(v.prl, lang, !!v.k), lang); // cümle içinde meslek adı (küçük harf)
     if ("il" in v) return kucukHarf(t("it." + v.il), lang); // cümle içinde mal adı (küçük harf)
     if ("tk" in v) return kucukHarf(t(v.tk), lang); // çevrilmiş etiket (cümle içi)
     if ("tq" in v) { let q = t(v.tq); if (female) { const fq = t(v.tq + ".f"); if (fq !== v.tq + ".f") q = fq; } return "«" + q + "»"; } // kişinin kendi sözü (anı; oyuncu kadınsa dişil)
