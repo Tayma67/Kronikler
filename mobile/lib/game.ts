@@ -1947,6 +1947,15 @@ export function applyTemperament(prev: GameState, id: string): GameState {
 }
 
 // loc: dilden bağımsız çeviri anahtarı + parametreler (sayı/id). Gösterimde çözülür; yoksa text (TR) yedeği.
+// Dönüm noktası penceresi (doruk anı) yalnız oyuncunun kendi hayatına değen olaylar için açılır: kişisel her büyük an
+// ve oyuncuyu doğrudan ilgilendiren dünya olayları (kendi davası, ona kurulan tuzak, ona gelen teklif, çağ değişimi).
+// Başka hanelerin savaşları ve uzak kasabaların olayları kroniğe ve ay özetine düşer, pencere açmaz (TASARIM_PUSULASI 2.4, 3.1).
+const DONUM_MAKRO = ["evj.feud.", "bl.", "evj.enemyPlot", "evj.plot", "evj.houseAllyOffer", "epoch.", "crown.", "kan.", "saga."];
+export function donumAni(e: GameEvent): boolean {
+  if (!e.landmark || e.type === "ölüm" || e.type === "nesil_devri" || e.type === "yıl_dönümü") return false;
+  if (e.scope !== "makro") return true;
+  const k = e.k || ""; return DONUM_MAKRO.some((x) => k.startsWith(x));
+}
 function push(s: GameState, type: string, text: string, scope: "kişisel" | "makro" = "kişisel", landmark = false, loc?: { k: string; p?: EvtParam[] }) {
   s.hseq = (s.hseq || 0) + 1;
   s.history.push({ day: s.turn, type, text, scope, landmark, k: loc?.k, p: loc?.p, q: s.hseq });

@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, npcTeklifYanit, youthAction, GencAct, gonulAdayi } from "../../lib/game";
+import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, npcTeklifYanit, youthAction, GencAct, gonulAdayi, donumAni } from "../../lib/game";
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
 import { rakipKartVerisi } from "../../lib/rakip-ui";
@@ -170,6 +170,7 @@ export default function Dashboard() {
     if (state && y != null && yarisAcilan.current !== y && r?.meydan !== y) { yarisAcilan.current = y; setYarisK(rakipKartVerisi(state, t, lang, true)); }
   }, [state?.player.rakip?.yaris]);
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
+  const rollSeq = useRef<number>(state?.hseq ?? 0); // son kart zarından bu yana düşen olaylar: bu ay büyük bir an yaşandıysa kart çıkmaz
   const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; const isFest = !!dilemma && dilemma.id.startsWith("fest_"); if (dilemma) { const k = "dil." + dilemma.id + ".r" + i; const v = t(k); res = v === k ? c.result : v; } apply((s) => applyDilemma(s, c.delta, res, sk, isFest, dilemma ? "dil." + dilemma.id + ".r" + i : undefined)); setDilemma(null); };
   const onResolveOpp = (success: boolean) => { if (!opp) return; hap("advance"); apply((s) => resolveOpportunity(s, opp, success)); setOpp(null); };
 
@@ -177,10 +178,16 @@ export default function Dashboard() {
     if (!state) return;
     if (state.turn > lastRolledTurn.current) {
       lastRolledTurn.current = state.turn;
-      if (!state.player.dead && !inJail(state.player) && !dilemma && !opp) { // hücrede sokak sahnesi/fırsat çalınmaz
+      // Ayda tek büyük karar (TASARIM_PUSULASI ilke 2): bu ay bir insanın teklifi ya da hesap anı varsa kart açılmaz;
+      // kişisel bir dönüm noktası yaşandıysa rastgele ikilem/fırsat da açılmaz (o ayın sahnesi zaten var). Şenlik yılda tek
+      // aydır; yalnız aynı ay gerçek bir karar bekliyorsa o yıl kaçar.
+      const rs = rollSeq.current; rollSeq.current = state.hseq ?? 0;
+      const kararVar = !!state.hesap || state.npcTeklif?.turn === state.turn;
+      const buyukAn = state.history.some((e) => (e.q ?? 0) > rs && donumAni(e));
+      if (!kararVar && !state.player.dead && !inJail(state.player) && !dilemma && !opp) { // hücrede sokak sahnesi/fırsat çalınmaz
         const fest = pickFestival(state); // şenlik ayı: yılın nabzı rastgele olaydan önce gelir (yılda bir; ay geçerse gelecek yıla)
         if (fest) { setDilemma(fest); playChime(); }
-        else {
+        else if (!buyukAn) {
           const roll = Math.random();
           if (roll < 0.28) { const d = pickDilemma(state); if (d) { setDilemma(d); playSaz(); } }
           else if (roll < 0.50) { const list = opportunitiesFor(state); if (list.length) setOpp(list[Math.floor(Math.random() * list.length)]); }
@@ -197,7 +204,7 @@ export default function Dashboard() {
     if (seen === null || q < seen) { seenSeq.current = q; return; } // kayıt yeni yüklendi ya da yeni oyun: eski olaylar yeniden açılmaz
     if (q > seen) {
       const fresh = h.filter((e) => (e.q ?? 0) > seen);
-      const land = [...fresh].reverse().find((e) => e.landmark && e.type !== "ölüm" && e.type !== "nesil_devri" && e.type !== "yıl_dönümü");
+      const land = [...fresh].reverse().find(donumAni); // yalnız oyuncuya değen büyük an pencere açar (dünya haberleri ay özetinde)
       const yr = [...fresh].reverse().find((e) => e.type === "yıl_dönümü");
       if (land) setMilestone(land);
       if (yr) setYearReport(yr); // bağımsız: aynı ayda büyük an varsa karne onun kapanışını bekler (render guard'ı !milestone)
@@ -521,7 +528,7 @@ export default function Dashboard() {
       })()}
 
       {/* Kan Defteri — nesiller aşan dava destanı sahnesi (panoda bekler) */}
-      {!p.dead && state.bloodline?.scene && (() => {
+      {!p.dead && state.bloodline?.scene && !state.saga?.scene && (() => { // iki destan paneli aynı anda değil: kan defteri sahnesi Kül Yemini'nin ardından gelir (sahne bekler)
         const sc = state.bloodline!.scene!;
         const n = BL_CHOICES[sc] || 2;
         return (
