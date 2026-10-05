@@ -103,7 +103,7 @@ export default function Iliskiler() {
                     <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: pl.id === guestId ? C.gold : C.parchment }}>
                       {pl.name}{pl.id === guestId ? ` ${t("mp.you")}` : ""}{pl.crowned ? " ♔" : ""}
                     </Text>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(pl.profession, lang)} · {pl.age}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(pl.profession, lang, pl.gender === "kadın")} · {pl.age}</Text>
                   </View>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: pl.online ? C.sage : C.parchmentDim }} />
                 </View>
@@ -154,7 +154,7 @@ export default function Iliskiler() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <GameIcon name="iliskiler" size={13} color={C.gold} />
                 <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("cember.baslik")}</Text>
-                <Pill text={`${cember.length} ${t("rel.people")}`} tone={C.gold} />
+                <Pill text={`${cember.length} ${t(cember.length === 1 ? "rel.person" : "rel.people")}`} tone={C.gold} />
               </View>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("cember.not")}</Text>
             </View>
@@ -169,7 +169,7 @@ export default function Iliskiler() {
                         <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{n.name}</Text>
                         <Pill text={t(rol)} tone={tone} />
                       </View>
-                      <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(n.profession, lang)} · {n.age}{uzak ? ` · ${placeName(loc, lang)}` : ""}</Text>
+                      <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(n.profession, lang, n.gender === "kadın")} · {n.age}{uzak ? ` · ${placeName(loc, lang)}` : ""}</Text>
                       <RelBand score={v} />
                     </View>
                     <Text style={{ fontFamily: F.display, fontSize: 13, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted, width: 34, textAlign: "right" }}>{v > 0 ? "+" + v : v}</Text>
@@ -191,7 +191,7 @@ export default function Iliskiler() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: list.length ? 1 : 0, borderBottomColor: C.border, backgroundColor: b.tone + "10" }}>
               <View style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: b.tone, transform: [{ rotate: "45deg" }] }} />
               <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: b.tone, textTransform: "uppercase" }}>{t("relb." + b.id)}</Text>
-              <Pill text={`${list.length} ${t("rel.people")}`} tone={b.tone} />
+              <Pill text={`${list.length} ${t(list.length === 1 ? "rel.person" : "rel.people")}`} tone={b.tone} />
             </View>
             {/* Gövde */}
             <View style={{ padding: list.length ? 10 : 12 }}>
@@ -202,7 +202,7 @@ export default function Iliskiler() {
                   <Portre age={n.age} gender={n.gender} size={37} ring={false} seed={n.id} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{n.name}</Text>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(n.profession, lang)} · {n.age}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(n.profession, lang, n.gender === "kadın")} · {n.age}</Text>
                     <RelBand score={v} />
                   </View>
                   <Text style={{ fontFamily: F.display, fontSize: 13, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted, width: 34, textAlign: "right" }}>{v > 0 ? "+" + v : v}</Text>

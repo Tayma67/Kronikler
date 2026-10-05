@@ -134,7 +134,15 @@ export const PROF_L10N: Record<Lang, Record<string, ProfL>> = {
     çocuk:{name:"Ребёнок",tiers:["Ребёнок"]}, çırak:{name:"Подмастерье",tiers:["Подмастерье"]}, işsiz:{name:"Безработный",tiers:["Безработный"]},
   },
 };
-export function professionNameL(id: string, lang: Lang): string {
+// Kadın biçimli meslek adları (İspanyolca, Portekizce, Arapça, Rusça); karşılığı olmayan meslekte taban ad kullanılır.
+const PROF_F: Partial<Record<Lang, Record<string, string>>> = {
+  es: {"çiftçi": "Granjera", "demirci": "Herrera", "balıkçı": "Pescadora", "avcı": "Cazadora", "marangoz": "Carpintera", "çoban": "Pastora", "fırıncı": "Panadera", "müzisyen": "Música", "şifacı": "Sanadora", "kuyumcu": "Joyera", "dokumacı": "Tejedora", "hancı": "Posadera", "çocuk": "Niña", "işsiz": "Desempleada"},
+  pt: {"çiftçi": "Agricultora", "demirci": "Ferreira", "tüccar": "Mercadora", "balıkçı": "Pescadora", "avcı": "Caçadora", "marangoz": "Carpinteira", "çoban": "Pastora", "fırıncı": "Padeira", "müzisyen": "Música", "şifacı": "Curandeira", "katip": "Escrivã", "kuyumcu": "Joalheira", "dokumacı": "Tecedeira", "hancı": "Estalajadeira", "işsiz": "Desempregada"},
+  ar: {"çiftçi": "مزارعة", "demirci": "حدّادة", "tüccar": "تاجرة", "balıkçı": "صيّادة سمك", "avcı": "صيّادة", "marangoz": "نجّارة", "çoban": "راعية", "fırıncı": "خبّازة", "asker": "جندية", "müzisyen": "موسيقية", "şifacı": "معالجة", "katip": "كاتبة", "kuyumcu": "صائغة", "dokumacı": "نسّاجة", "hancı": "صاحبة خان", "çocuk": "طفلة", "çırak": "صبية", "işsiz": "عاطلة"},
+  ru: {"çiftçi": "Крестьянка", "tüccar": "Торговка", "balıkçı": "Рыбачка", "avcı": "Охотница", "çoban": "Пастушка", "şifacı": "Знахарка", "dokumacı": "Ткачиха", "hancı": "Трактирщица", "işsiz": "Безработная"},
+};
+export function professionNameL(id: string, lang: Lang, kadin = false): string {
+  if (kadin) { const f = PROF_F[lang]?.[id]; if (f) return f; }
   return (PROF_L10N[lang]?.[id] || PROF_L10N.tr[id])?.name || id;
 }
 export function careerTitleL(id: string, careerXp: number, lang: Lang): string {

@@ -264,7 +264,7 @@ export default function Mulkler() {
                               <Portre age={nn.age} gender={nn.gender} size={26} ring={false} seed={nn.id} />
                               <View style={{ flex: 1, minWidth: 0 }}>
                                 <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 12, color: C.parchment }}>{nn.name}</Text>
-                                <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted }}>{professionNameL(nn.profession, lang)} · {nn.age}</Text>
+                                <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted }}>{professionNameL(nn.profession, lang, nn.gender === "kadın")} · {nn.age}</Text>
                               </View>
                               <Text style={{ fontFamily: F.display, fontSize: 10, color: C.sage }}>{t("mulk.prod")} ×{workerProductivity(nn, pr.type).toFixed(1)}</Text>
                             </Pressable>

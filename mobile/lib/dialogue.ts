@@ -63,7 +63,7 @@ export function converse(npc: NPC, mood: number, rel: number, charisma: number, 
     return { line: pick("dlg.dert.open", 4), moodDelta: 10, relDelta: 8, memory: L("dlg.dert.open.m") };
   }
   if (intent === "is") {
-    const pn = professionNameL(npc.profession, lang);
+    const pn = professionNameL(npc.profession, lang, npc.gender === "kadın");
     const line = (hitch ? pick("dlg.is.cold", 3) : pick("dlg.is.warm", 3)).split("%p").join(pn);
     return { line, moodDelta: hitch ? 1 : 4, relDelta: hitch ? 1 : 3, memory: L("dlg.is.m") };
   }

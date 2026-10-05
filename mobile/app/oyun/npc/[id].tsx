@@ -150,7 +150,7 @@ export default function NpcDetail() {
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 17, color: C.parchment, letterSpacing: 0.5 }}>{npc.name}</Text>
-            <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 1 }}>{prof.olu ? t("npc.late") : professionNameL(npc.profession, lang)} · {npc.age} {t("misc.age")}</Text>
+            <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 1 }}>{prof.olu ? t("npc.late") : professionNameL(npc.profession, lang, npc.gender === "kadın")} · {npc.age} {t("misc.age")}</Text>
             {!prof.olu && !prof.burada ? <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.goldDim, marginTop: 2 }}>{t("npc.livesIn").replace("%1", placeName(npc.loc || "", lang))}</Text> : null}
             <RelBand score={v} />
           </View>
@@ -218,7 +218,7 @@ export default function NpcDetail() {
                 <View style={{ opacity: tt.olu ? 0.45 : 1 }}><Portre age={tt.who!.age} gender={tt.who!.gender} size={32} ring={false} seed={tt.who!.id} /></View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 13, color: tt.olu ? C.parchmentMuted : C.parchment }}>{tt.who!.name}</Text>
-                  <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{tt.olu ? t("npc.late") : professionNameL(tt.who!.profession, lang)} · {tt.who!.age}{!tt.olu && tt.uzak ? " · " + placeName(tt.who!.loc || "", lang) : ""}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{tt.olu ? t("npc.late") : professionNameL(tt.who!.profession, lang, tt.who!.gender === "kadın")} · {tt.who!.age}{!tt.olu && tt.uzak ? " · " + placeName(tt.who!.loc || "", lang) : ""}</Text>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 5, borderWidth: 1, borderColor: meta.tone + "55", backgroundColor: meta.tone + "14" }}>
                   <GameIcon name={meta.icon} size={11} color={meta.tone} />

@@ -74,7 +74,7 @@ export default function Copcatan() {
                   <Portre age={n.age} gender={n.gender} size={40} ring={false} seed={n.id} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{n.name}</Text>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(n.profession, lang)} · {n.age}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(n.profession, lang, n.gender === "kadın")} · {n.age}</Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 }}>
                       <GameIcon name="akce" size={9} color={tcol} /><Text style={{ fontFamily: F.display, fontSize: 9, color: tcol }}>{wealthLabel(tier)}</Text>
                       <Text style={{ fontFamily: F.display, fontSize: 9, color: C.goldDim, marginLeft: 6 }}>{t("sans.toplam")} %{teklifSansi(state, n, "gorucu").yuzde}</Text>
