@@ -67,6 +67,13 @@ Kanonik Türkçe anahtar/oyun-mantığı korunur; yalnızca **gösterim** yerell
   çözülür). Oyuncunun evlatları ve torunları oyunun dilindeki ad havuzundan ad alır (`s.dil`; İspanyolca dünyada Kerem
   doğmaz). Sohbet/teklif satırlarındaki kişi adları nüfus kaydına bağlıdır; dil değişince kronik de değişir.
 - **Arapça para birimi:** tek yazım: أقجة.
+- **Tekil/çoğul:** "%1 hijo(s)", "%1 mes(es)" gibi parantezli kalıplar `cogulCoz` ile sayıya göre çözülür (1 hijo / 5 hijos,
+  há 1 mês / 3 meses); `applyParams` ve `renderEvt` ikisi de uygular. Yüzdeler `yuzdeL` ile dile göre yazılır.
+- **Kadın biçimli meslek ve unvan:** NPC meslek adı `professionNameL(id, lang, kadın)` (es/pt/ar/ru), oyuncunun kariyer
+  unvanı `careerTitleL(…, kadın)` (es/pt/ar) ve kronikteki meslek değişimi `{ prl, k: 1 }` ile dişil yazılır. Eşin
+  mizacı `mizac.*.k`, torun `evj.gc*.k`.
+- **Mersiye:** `renderEvt` üzerinden yazılır (eşin adı nüfus kaydından, Rusça çekim, çoğul çözümü); kadın ata için
+  ru 36, ar 37, es/pt 4 dişil satır.
 - **Evcil hayvanlar:** kedi, köpek ve at adları da oyunun dilinde konur (Rusçada Полкан, İspanyolcada Lucero); eski kayıttaki adlar korunur.
 - **İspanyolca/Portekizce kadın oyuncu (ek):** yol, mektep, kefalet ve hastalık satırlarına 30 dişil varyant daha ("volviste empapada", "foste fiadora"); Portekizcede tek "você" satırı "tu"ya çevrildi.
 
