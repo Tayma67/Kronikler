@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, npcTeklifYanit, youthAction, GencAct, gonulAdayi, donumAni } from "../../lib/game";
+import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, npcTeklifYanit, youthAction, GencAct, gonulAdayi, donumAni, acikHesaplar, onemliMi } from "../../lib/game";
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
 import { rakipKartVerisi } from "../../lib/rakip-ui";
@@ -109,7 +109,7 @@ export default function Dashboard() {
   const [yarisK, setYarisK] = useState<SinavKartiVeri | null>(null);
   const yarisAcilan = useRef<number | null>(null);
   const [ach, setAch] = useState<{ name: string; icon: string } | null>(null);
-  const [tab, setTab] = useState<"gunluk" | "dunya">("gunluk");
+  const [tab, setTab] = useState<"onemli" | "gunluk" | "dunya">("onemli"); // önemli: kendi hayatın + sana değen dünya olayları (renk satırları "günlük"te)
   const [guideHidden, setGuideHidden] = useState(false);
   useEffect(() => { AsyncStorage.getItem("kronikler_fs_hidden").then((v) => { if (v === "1") setGuideHidden(true); }).catch(() => {}); }, []);
   const hideGuide = () => { setGuideHidden(true); AsyncStorage.setItem("kronikler_fs_hidden", "1").catch(() => {}); };
@@ -249,7 +249,7 @@ export default function Dashboard() {
   // geçmiş 250'ye dayanırken her aksiyonda 250 kartı yeniden çizip pano kasmasını önler;
   // tam geçmiş "Tümünü gör" → Tarih ekranında). Render maliyeti geçmiş büyüse de sabit kalır.
   const reversed = state.history.map((e, hIdx) => ({ e, hIdx })).reverse();
-  const events = reversed.filter(({ e }) => (tab === "dunya" ? e.scope === "makro" : e.scope !== "makro")).slice(0, DASH_EVENTS);
+  const events = reversed.filter(({ e }) => (tab === "onemli" ? onemliMi(e) : tab === "dunya" ? e.scope === "makro" : e.scope !== "makro")).slice(0, DASH_EVENTS);
 
   const EventCard = ({ e, hIdx, last }: { e: GameEvent; hIdx: number; last: boolean }) => {
     const cfg = EVT[e.type] || DEFAULT_EVT;
@@ -488,6 +488,23 @@ export default function Dashboard() {
       })()}
       {/* İLK ADIMLAR yol haritası kartı kullanıcı isteğiyle kaldırıldı (ana sayfada yer kaplamasın). */}
 
+      {/* Açık hesaplar: aklında tutman gereken süren hesaplar (en çok 5; kim, ne istiyor, ne zaman) — TASARIM_PUSULASI ilke 4 */}
+      {!p.dead && (() => {
+        const ah = acikHesaplar(state); if (!ah.length) return null;
+        return (
+          <View style={{ marginHorizontal: 12, marginTop: 8, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: C.border, backgroundColor: "rgba(255,255,255,0.02)" }}>
+            <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.goldDim, textTransform: "uppercase", marginBottom: 4 }}>{t("ah.baslik")}</Text>
+            {ah.map((x, i) => (
+              <Pressable key={i} disabled={!x.git} onPress={() => { if (x.git) { hap("tap"); router.push(x.git as never); } }} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 5, borderTopWidth: i ? 1 : 0, borderTopColor: C.border }}>
+                <GameIcon name={x.ikon} size={13} color={x.agirlik >= 70 ? C.blood : C.parchmentDim} />
+                <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 12.5, color: C.parchment, lineHeight: 17 }}>{renderEvt(x.k, "", x.p, lang, t, p.gender === "kadın")}</Text>
+                {x.git ? <Text style={{ color: C.goldDim, fontSize: 12 }}>›</Text> : null}
+              </Pressable>
+            ))}
+          </View>
+        );
+      })()}
+
       {/* Zindan: ağır suçun bedeli — süre dolana ya da gardiyan sussuzlanana dek çoğu kapı kilitli */}
       {!p.dead && inJail(p) && (() => {
         const cost = jailBribeCost(state);
@@ -711,10 +728,10 @@ export default function Dashboard() {
           </View>
           {/* Sekmeler */}
           <View style={{ flexDirection: "row", gap: 6, paddingVertical: 9 }}>
-            {([["gunluk", "roman", t("dash.tabJournal")], ["dunya", "haberler", t("dash.tabWorld")]] as const).map(([k, ic, lbl]) => {
+            {([["onemli", "star", t("dash.tabImportant")], ["gunluk", "roman", t("dash.tabJournal")], ["dunya", "haberler", t("dash.tabWorld")]] as const).map(([k, ic, lbl]) => {
               const active = tab === k;
               return (
-                <Pressable key={k} onPress={() => { hap("tap"); setTab(k as "gunluk" | "dunya"); }} style={{
+                <Pressable key={k} onPress={() => { hap("tap"); setTab(k); }} style={{
                   flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, paddingVertical: 7, borderRadius: 7,
                   borderWidth: 1, borderColor: active ? "rgba(201,168,76,0.45)" : C.border,
                   backgroundColor: active ? "rgba(201,168,76,0.14)" : "rgba(255,255,255,0.02)",
@@ -748,16 +765,16 @@ export default function Dashboard() {
           {events.length === 0 ? (
             <View style={{ alignItems: "center", paddingVertical: 30 }}>
               <View style={{ width: 54, height: 54, borderRadius: 27, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.borderHi, backgroundColor: "rgba(201,168,76,0.06)" }}>
-                <GameIcon name={tab === "gunluk" ? "roman" : "haberler"} size={26} color={C.goldDim} />
+                <GameIcon name={tab !== "dunya" ? "roman" : "haberler"} size={26} color={C.goldDim} />
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14, alignSelf: "stretch", paddingHorizontal: 34 }}>
                 <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.4 }} />
                 <View style={{ width: 5, height: 5, backgroundColor: C.gold, transform: [{ rotate: "45deg" }] }} />
                 <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.4 }} />
               </View>
-              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.5, marginTop: 12 }}>{tab === "gunluk" ? t("dash.emptyTitle") : t("dash.worldEmptyTitle")}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 13, color: C.parchment, letterSpacing: 0.5, marginTop: 12 }}>{tab !== "dunya" ? t("dash.emptyTitle") : t("dash.worldEmptyTitle")}</Text>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchmentMuted, textAlign: "center", lineHeight: 19, marginTop: 6, paddingHorizontal: 18 }}>
-                {tab === "gunluk" ? t("dash.empty") : t("dash.worldEmpty")}
+                {tab !== "dunya" ? t("dash.empty") : t("dash.worldEmpty")}
               </Text>
               <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1, color: C.goldDim, marginTop: 12, textAlign: "center" }}>{t("dash.emptyHint")}</Text>
             </View>

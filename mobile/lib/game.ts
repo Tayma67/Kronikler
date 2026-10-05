@@ -8079,6 +8079,41 @@ function kanMiras(prev: GameState, pop: Nufus): KanKaydi[] | undefined {
   if (n?.id && n.olen && n.id !== prev.player.katil && yasar(n.id)) out.push({ id: n.id, tur: "kan", olen: n.olen, yak: n.yak, turn: -t0, vade: 0, nesil: n.nesil || 1, kt: (n.kt ?? 0) - t0 });
   return out.length ? out : undefined;
 }
+// ── Açık hesaplar (TASARIM_PUSULASI ilke 4): oyuncunun aklında tutması gereken süren hesaplar — kim, ne istiyor, ne zaman.
+// Ağırlığa göre sıralı, en çok 5. Ana ekranda tek panel; her satır kişiyle ve süreyle söylenir.
+export interface AcikHesap { k: string; p: EvtParam[]; ikon: string; git?: string; agirlik: number }
+export function acikHesaplar(s: GameState): AcikHesap[] {
+  const p = s.player; if (p.dead) return [];
+  const pop = nufusOf(s); const wy = worldYears(s); const out: AcikHesap[] = [];
+  const kp = (id?: string): EvtParam | null => { const k = id ? pop.k[id] : undefined; return k ? knParam(k) : null; };
+  // zindan ana ekranda kendi panelinde (burada tekrar edilmez)
+  const n = s.story?.nemesis;
+  if (n) { const o = n.olen ? kp(n.olen) : null; out.push(o ? { k: "ah.kanli", p: [nemAd(s, n), o], ikon: "crossed-swords", git: "/oyun/savas", agirlik: 90 } : { k: "ah.hasim", p: [nemAd(s, n), n.power], ikon: "crossed-swords", git: "/oyun/savas", agirlik: 85 }); }
+  for (const x of s.kanDefteri || []) {
+    if (x.tur === "canborcu") continue; const k = pop.k[x.id]; if (!k || k.ol != null) continue;
+    if (x.tur === "yuzkarasi") { out.push({ k: "ah.yuzkarasi", p: [knParam(k)], ikon: "skull", git: "/oyun/savas", agirlik: 60 }); continue; }
+    const yas = wy - k.dy; const o = kp(x.olen) || "";
+    out.push(yas < 16 ? { k: "ah.yeminCocuk", p: [knParam(k), o, 16 - yas], ikon: "tombstone", git: "/oyun/savas", agirlik: 55 } : { k: "ah.yemin", p: [knParam(k), o], ikon: "tombstone", git: "/oyun/savas", agirlik: 80 });
+  }
+  if (s.feud) out.push({ k: "ah.feud", p: [{ hn: s.feud.nameIdx }, s.feud.stage], ikon: "crossed-swords", agirlik: 70 });
+  if ((p.debt || 0) > 0) out.push({ k: "ah.borc", p: [Math.round(p.debt!)], ikon: "akce", git: "/oyun/pazar", agirlik: 65 });
+  if (p.affair) out.push({ k: "ah.sevgili", p: [Math.round(p.affair.heat)], ikon: "ring", agirlik: 50 });
+  if (p.betrothed) out.push({ k: "ah.soz", p: [kp(p.betrothed.id) || p.betrothed.name], ikon: "ring", agirlik: 45 });
+  if (p.married && !p.widowed && (p.spouse_bond ?? 50) < 30) out.push({ k: "ah.esSoguk", p: [esParam(s)], ikon: "iliskiler", git: "/oyun/iliskiler", agirlik: 40 });
+  const r = rakipAktif(p);
+  if (r) out.push(r.yaris != null ? { k: "ah.rakipVakit", p: [rkAd(r)], ikon: "trophy", git: "/oyun/meslek", agirlik: 75 } : { k: "ah.rakip", p: [rkAd(r), r.galip, r.maglup, Math.max(0, r.next - s.turn)], ikon: "trophy", git: "/oyun/meslek", agirlik: 35 });
+  for (const a of p.alacaklar || []) { const ay = a.vade - s.turn; const k = kp(a.id); if (k && ay <= 3) out.push({ k: "ah.alacak", p: [k, a.tutar, Math.max(0, ay)], ikon: "coins", agirlik: 30 }); }
+  return out.sort((a, b) => b.agirlik - a.agirlik).slice(0, 5);
+}
+// Günlükte "önemli": oyuncunun kendi hayatına ait olaylar ve ona değen dünya olayları. Mevsim/renk satırları, fısıltılar,
+// piyasa ve uzak dünya haberleri "hepsi"nde kalır (aile ihmali gibi kişisel uyarılar her zaman önemlidir).
+const SINYALSIZ = new Set(["gunluk", "fisilti", "piyasa", "dunya"]);
+export function onemliMi(e: GameEvent): boolean {
+  if (donumAni(e)) return true;
+  if (e.scope === "makro") return false;
+  if (SINYALSIZ.has(e.type)) return /hmal/.test(e.k || "");
+  return true;
+}
 // Diyet: kanlı hasma kan bedeli teklif et. Kabul şansı huyuna, yakınlığına, geçen zamana, dökülen kanın sayısına ve senin nâmına bağlı.
 export function diyetBedeli(s: GameState): number { const n = s.story?.nemesis; return Math.round((80 + 40 * Math.max(1, n?.nesil || 1)) * inflationFactor(s)); }
 export function diyetSansi(s: GameState): { yuzde: number; kalemler: SansKalemi[] } {
