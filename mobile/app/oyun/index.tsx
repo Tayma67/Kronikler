@@ -101,7 +101,7 @@ export default function Dashboard() {
   const { snapshot: mpSnapshot } = useMp();
   const { t, lang } = useI18n();
   const [milestone, setMilestone] = useState<GameEvent | null>(null);
-  const [freshMark, setFreshMark] = useState<null | { from: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + tarihçe indeksi eşiği
+  const [freshMark, setFreshMark] = useState<null | { from: number; n: number }>(null); // "bu ay" özeti: son ilerlemede düşen olay sayısı + olay sırası eşiği (q > from)
   const [yearReport, setYearReport] = useState<GameEvent | null>(null); // yıl dönümü karnesi (yaş günü ritüeli)
   const [dilemma, setDilemma] = useState<Dilemma | null>(null);
   const [opp, setOpp] = useState<Opportunity | null>(null);
@@ -118,7 +118,7 @@ export default function Dashboard() {
   const [coinsOn, setCoinsOn] = useState(false);
   const coinTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevMoney = useRef<number>(state?.player.money ?? 0);
-  const seenLen = useRef<number>(state?.history.length ?? 0);
+  const seenSeq = useRef<number | null>(state ? state.hseq ?? 0 : null); // görülen son olay sırası (null: kayıt henüz yüklenmedi)
   const [showEulogy, setShowEulogy] = useState(false);
   const [workStyle, setWorkStyle] = useState<WorkStyle>("normal");
   const wasDead = useRef<boolean>(state?.player.dead ?? false);
@@ -193,18 +193,19 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!state) return;
-    const h = state.history;
-    if (h.length > seenLen.current) {
-      const fresh = h.slice(seenLen.current);
+    const h = state.history; const q = state.hseq ?? 0; const seen = seenSeq.current;
+    if (seen === null || q < seen) { seenSeq.current = q; return; } // kayıt yeni yüklendi ya da yeni oyun: eski olaylar yeniden açılmaz
+    if (q > seen) {
+      const fresh = h.filter((e) => (e.q ?? 0) > seen);
       const land = [...fresh].reverse().find((e) => e.landmark && e.type !== "ölüm" && e.type !== "nesil_devri" && e.type !== "yıl_dönümü");
       const yr = [...fresh].reverse().find((e) => e.type === "yıl_dönümü");
       if (land) setMilestone(land);
       if (yr) setYearReport(yr); // bağımsız: aynı ayda büyük an varsa karne onun kapanışını bekler (render guard'ı !milestone)
       // 2+ gelişme varsa "bu ay" şeridi: çok olaylı aylarda hiçbir şey sessizce kaybolmasın.
-      setFreshMark(fresh.length >= 2 ? { from: seenLen.current, n: fresh.length } : null);
+      setFreshMark(fresh.length >= 2 ? { from: seen, n: fresh.length } : null);
     }
-    seenLen.current = h.length;
-  }, [state?.history.length]);
+    seenSeq.current = q;
+  }, [state?.hseq]);
 
   if (!state) return <LoadingScreen />;
   const p = state.player;
@@ -277,7 +278,7 @@ export default function Dashboard() {
               {land && <GameIcon name="castle" size={9} color={C.goldBright} />}
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-              {freshMark && hIdx >= freshMark.from && <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.goldBright }} />}
+              {freshMark && (e.q ?? 0) > freshMark.from && <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.goldBright }} />}
               <Text style={{ fontFamily: F.serifItalic, fontSize: 9.5, color: C.parchmentMuted }}>{timeAgo(e.day)}</Text>
             </View>
           </View>
@@ -729,7 +730,7 @@ export default function Dashboard() {
                 <Text style={{ flex: 1, fontFamily: F.display, fontSize: 10.5, letterSpacing: 0.5, color: C.goldBright }}>{applyParams(t("dash.monthDigest"), [freshMark.n])}</Text>
               </View>
               {/* Ay parşömeni: sayı değil hikâye — bu ayın son 3 gelişmesi tek satırlık özetlerle (kaybolan aylar bitti) */}
-              {state.history.slice(freshMark.from).slice(-3).map((e, i) => (
+              {state.history.filter((e) => (e.q ?? 0) > freshMark.from).slice(-3).map((e, i) => (
                 <Text key={i} numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchment, marginTop: i === 0 ? 6 : 3 }}>
                   • {renderEvt(e.k, e.text, e.p, lang, t, state.player.gender === "kadın")}
                 </Text>

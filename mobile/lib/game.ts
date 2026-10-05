@@ -1003,7 +1003,7 @@ function setWarCooldown(s: GameState, a: string, b: string, turns: number) { if 
 // Loncaya katılım eşiği (karizmatik hüneri %20 indirir). UI ile çekirdek tutarlı olsun diye.
 export function joinThreshold(p: Player, f: Faction): number { return p.perks.includes("karizmatik") ? Math.round(f.joinRep * 0.8) : f.joinRep; }
 
-export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; }
+export interface GameEvent { day: number; type: string; text: string; scope: "kişisel" | "makro"; landmark?: boolean; k?: string; p?: EvtParam[]; q?: number; } // q: olay sırası (artan; ekranlar "yeni olay"ı bununla tanır — kronik 250'de kırpılınca uzunluk artmaz)
 export interface DynastyRecord { generation: number; name: string; profession: string; diedAge: number; fame: number; reputation: number; faction: string | null; note: string; noteK?: string; causeK?: string; } // noteK: kitabe kimliği (6 dile çevrilir); note eski kayıtlar için TR yedek; causeK: ölüm nedeni kodu
 export interface NpcState { mood: number; memories: string[]; anilar?: Memory[]; int_turn?: number; act_turns?: Record<string, number>; rel_gain_turn?: number; rel_gain_amt?: number; }
 // int_turn (eski): tek blok kilit — artık kullanılmıyor, eski kayıtlar için duruyor.
@@ -1474,6 +1474,7 @@ export interface GameState {
   newsSeenTurn?: number; // haberler ekranının son görüldüğü tur (menü rozeti için; opsiyonel — eski kayıtlar dokunulmadan çalışır)
   relationships: Record<string, number>; world: { ready: boolean; npcEvo?: Record<string, { dead?: boolean; age?: number; married?: boolean; goalHelped?: boolean; goalDone?: boolean; gname?: string; goalk?: string; usta?: boolean; prof?: string }>; npcBorn?: NPC[]; npcYears?: number; inflation?: number; marketLeverUntil?: number; mkt?: Record<string, number> };
   pop?: Nufus; // yaşayan nüfus: kalıcı kişiler ve aileler (NUFUS.md)
+  hseq?: number; // son olay sırası (her push'ta artar, vârise de geçer)
   kanDefteri?: KanKaydi[]; // kan davası: canını aldığın (ya da bağışladığın) kişilerden doğan, sırası gelince karşına çıkacak hesaplar
   hesap?: { id: string; turn: number; olen?: string; yak?: KanYak; nesil?: number; kt?: number }; // yendiğin gerçek hasım yerde: bağışla ya da canını al (karar bekliyor)
   npcTeklif?: { id: string; tur: "dunur" | "borc" | "kardes" | "miras"; tutar?: number; ay?: number; turn: number }; // bir NPC'nin sana kendi kararıyla yaptığı bekleyen teklif
@@ -1947,7 +1948,8 @@ export function applyTemperament(prev: GameState, id: string): GameState {
 
 // loc: dilden bağımsız çeviri anahtarı + parametreler (sayı/id). Gösterimde çözülür; yoksa text (TR) yedeği.
 function push(s: GameState, type: string, text: string, scope: "kişisel" | "makro" = "kişisel", landmark = false, loc?: { k: string; p?: EvtParam[] }) {
-  s.history.push({ day: s.turn, type, text, scope, landmark, k: loc?.k, p: loc?.p });
+  s.hseq = (s.hseq || 0) + 1;
+  s.history.push({ day: s.turn, type, text, scope, landmark, k: loc?.k, p: loc?.p, q: s.hseq });
 }
 function clone(s: GameState): GameState {
   // structuredClone (Hermes destekli) JSON round-trip'ten belirgin hızlı — geç nesillerde dokunma gecikmesini azaltır.
@@ -6601,6 +6603,7 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     turn: 0, seed: Math.floor(Math.random() * 1e9), world: { ready: true, npcYears: (prev.world?.npcYears || 0) + Math.floor(prev.turn / 12), inflation: prev.world?.inflation || 1 }, pop: heirPop, relationships: Object.fromEntries([...kardesIds, ...Object.keys(ataHatira).filter((id) => Math.abs(ataHatira[id]) >= 15)].map((id) => [id, 0])), dynasty, // atasını güçlü hatırlayan seni de tanır
     ata_hatira: Object.keys(ataHatira).length ? ataHatira : undefined, soy_nam: Object.values(soyNam).some((v) => v > 0) ? soyNam : undefined, npc_state: {}, saga: prev.saga ? { ...prev.saga, scene: null, declined: 0 } : null, rivals: prev.rivals ? prev.rivals.map((h) => ({ ...h, tutum: Math.round((h.tutum ?? 0) / 2) })) : undefined,
     // Kan davası NESLE GEÇER (adı üstünde): ısı yarılanır (yeni kuşakta kor küllenir ama sönmez), aylık hamle hakkı tazelenir.
+    hseq: prev.hseq, // olay sırası kesintisiz sürer (ekranlar yeni olayı bununla tanır)
     kanDefteri: kanMiras(prev, heirPop), // dökülen kan vârise geçer: yemin eden yaşıyorsa hesap kapanmadı
     feud: prev.feud ? { houseId: prev.feud.houseId, nameIdx: prev.feud.nameIdx, stage: prev.feud.stage, heat: Math.round(prev.feud.heat / 2) } : undefined,
     bloodline: prev.bloodline ? { ...prev.bloodline, gen: prev.bloodline.gen + 1, scene: "bl_devir", act_turn: 0, opened: Math.max(0, prev.bloodline.opened - prev.turn), path: [...prev.bloodline.path] } : undefined, // KAN DEFTERİ vârise geçer: yeni kuşak, devir sahnesi

@@ -39,7 +39,7 @@ export function RealmSession() {
       // Çapraz-oyuncu olayları Hayat Günlüğü'ne düşsün (siyasi büyük anlar nişanlı) — bilinmeyen tür güvenle fallback'e düşer.
       for (const e of mine.events) {
         const big = e.k.startsWith("mp.sefer.") || e.k.startsWith("mp.award.") || e.k === "mp.reis.elected";
-        ns.history.push({ day: ns.turn, type: "hanedan_haber", text: "", scope: "kişisel", landmark: big, k: e.k, p: e.p } as any);
+        ns.hseq = (ns.hseq || 0) + 1; ns.history.push({ day: ns.turn, type: "hanedan_haber", text: "", scope: "kişisel", landmark: big, k: e.k, p: e.p, q: ns.hseq } as any); // q: ekran yeni olayı sırayla tanır
       }
     }
     apply(() => ns);
@@ -51,7 +51,7 @@ export function RealmSession() {
   useEffect(() => {
     if (!mpMode || !missed || !missed.length || !guestId || !sRef.current) return;
     const ns = applyTickEvents(sRef.current, missed);
-    for (const e of missed) ns.history.push({ day: ns.turn, type: "hanedan_haber", text: "", scope: "kişisel", landmark: false, k: e.k, p: e.p } as any);
+    for (const e of missed) { ns.hseq = (ns.hseq || 0) + 1; ns.history.push({ day: ns.turn, type: "hanedan_haber", text: "", scope: "kişisel", landmark: false, k: e.k, p: e.p, q: ns.hseq } as any); }
     apply(() => ns);
     clearMissed();
     syncPlayer(mePublic(guestId, ns, false));

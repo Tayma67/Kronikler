@@ -42,19 +42,20 @@ export default function Sosyal() {
   const { state, apply } = useGame();
   const { t, lang } = useI18n();
   const [res, setRes] = useState<null | { text: string; tick: number }>(null);
-  const seen = useRef<number>(state?.history.length ?? 0);
+  const seen = useRef<number | null>(state ? state.hseq ?? 0 : null); // görülen son olay sırası
 
   // Sosyal eylem sonucunu anlık şerit olarak yansıt.
   useEffect(() => {
     if (!state) return;
-    const h = state.history;
-    if (h.length > seen.current) {
-      const fresh = h.slice(seen.current);
+    const h = state.history; const q = state.hseq ?? 0; const sn = seen.current;
+    if (sn === null || q < sn) { seen.current = q; return; }
+    if (q > sn) {
+      const fresh = h.filter((e) => (e.q ?? 0) > sn);
       const ev = [...fresh].reverse().find((e) => e.type === "sosyal");
       if (ev) setRes({ text: ev.text, tick: Date.now() });
     }
-    seen.current = h.length;
-  }, [state?.history.length]);
+    seen.current = q;
+  }, [state?.hseq]);
 
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;

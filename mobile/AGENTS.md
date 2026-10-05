@@ -26,6 +26,17 @@ Aşağıdaki kurallar geçmiş oturumlarda kullanıcıyla kesinleşti; **tartı�
 - **MP paritesi:** `mobile/lib/mp/protocol.ts` ↔ `server/src/protocol.ts` bayt-bayt aynı kalır.
 - **Tema disiplini:** renk/font yalnız `lib/theme.ts` jetonlarından (C/F). Yeni ham hex ekleme; gerekirse jetonlaştır.
 
+## Tasarım pusulası (bağlayıcı)
+
+Depo kökündeki `TASARIM_PUSULASI.md`, oyuncu psikolojisi, toplum bilimi ve mobil verilere dayanan **10 ilke** ile
+**yeni özellik süzgecini** içerir. Her yeni özellik ya da değişiklik bu süzgeçten geçmeden yazılmaz: karar oyuncuya
+ana akışta gelir, sonuç sebebini söyler, aynı anda en çok 5 açık gerilim, göstergeler dört sermayeye bağlanır,
+etik çizgi (zamanlayıcı/kayıp cezası/parayla atlama yok) aşılmaz. Öncelik sırası pusuladaki yol haritasıdır
+(önce sadeleştirme ve görünürlük, sonra yeni sistem).
+
+Kronik (`s.history`) 250 kayıtta kırpılır; ekranlar yeni olayı **uzunluktan değil olay sırasından** (`e.q`,
+`s.hseq`) tanır. Yeni bir "yeni olay" dinleyicisi yazarken bu kalıp kullanılır.
+
 ## Dalga doğrulama hattı (her game.ts değişikliğinde ZORUNLU sıra)
 
 1. **Kuru koşu:** yama betiğini dosya kopyaları üzerinde çalıştır (anchor assert'leri patlarsa gerçek dosyaya dokunma).
