@@ -98,8 +98,9 @@ function AdvanceFab({ bottom }: { bottom: number }) {
           </Pressable>
         </Animated.View>
         {/* Çekirdek eylem ikon-only kalmasın: mikro etiket (a11y metniyle aynı anahtar) */}
-        <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 1.2, color: C.goldDim, marginTop: 3, textTransform: "uppercase" }}>{t("a11y.advance")}</Text>
-        <Text style={{ fontFamily: F.serifItalic, fontSize: 7.5, color: C.parchmentMuted, marginTop: 1 }}>{t("adv.ffHint")}</Text>
+        {/* Uzun dillerde (AVANZAR EL MES) etiket yandaki sekme simgelerine taşmasın: düğme sütununa sığdırılır */}
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ width: 100, textAlign: "center", fontFamily: F.display, fontSize: 8, letterSpacing: 0.8, color: C.goldDim, marginTop: 3, textTransform: "uppercase" }}>{t("adv.kisa")}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ width: 100, textAlign: "center", fontFamily: F.serifItalic, fontSize: 7.5, color: C.parchmentMuted, marginTop: 1 }}>{t("adv.ffKisa")}</Text>
       </View>
     </View>
   );

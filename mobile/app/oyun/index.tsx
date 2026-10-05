@@ -458,11 +458,11 @@ export default function Dashboard() {
             </View>
 
             {/* Sağ: itibar rozeti */}
-            <View style={{ alignItems: "center", gap: 3, width: 52 }}>
+            <View style={{ alignItems: "center", gap: 3, width: 64 }}>
               <View style={{ width: 38, height: 38, borderRadius: 8, backgroundColor: "rgba(8,5,2,0.72)", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.45)", alignItems: "center", justifyContent: "center" }}>
                 <GameIcon name="crown" size={18} color={C.gold} />
               </View>
-              <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 6.5, letterSpacing: 0.6, color: C.parchmentMuted, textAlign: "center" }}>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontFamily: F.display, fontSize: 6.5, letterSpacing: 0.3, color: C.parchmentMuted, textAlign: "center" }}>
                 {t(fameRepKey(fame))}
               </Text>
               <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: "rgba(8,5,2,0.8)", borderWidth: 1.5, borderColor: "rgba(201,168,76,0.4)", alignItems: "center", justifyContent: "center" }}>
