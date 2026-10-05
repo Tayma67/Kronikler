@@ -1,5 +1,5 @@
 import { View, Text, Pressable, Alert, Switch, ScrollView, Share, TextInput } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
@@ -12,6 +12,10 @@ import { ScreenFresk } from "../../lib/ui";
 import { isReduceMotion, setReduceMotion } from "../../lib/perf";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
+import { oturumOzeti, oturumSil, OturumOzeti } from "../../lib/oturum";
+
+// Oturum kaydındaki ekran adı → ekranın kendi başlığı
+const EKRAN_ADI: Record<string, string> = { index: "tab.home", karakter: "tab.character", iliskiler: "tab.relations", menu: "tab.menu", copcatan: "cc.title" };
 
 export default function Ayarlar() {
   const insets = useSafeAreaInsets(); const router = useRouter();
@@ -25,6 +29,9 @@ export default function Ayarlar() {
   const toggleHaptics = async (v: boolean) => { setHaptics(v); await setHapticsEnabled(v); if (v) hap("selection"); };
   const [reduceM, setReduceM] = useState(isReduceMotion());
   const [restoreOpen, setRestoreOpen] = useState(false);
+  const [oturum, setOturum] = useState<OturumOzeti | null>(null);
+  useEffect(() => { oturumOzeti().then(setOturum).catch(() => {}); }, []);
+  const ekranAdi = (ad: string) => t(EKRAN_ADI[ad] || "scr." + ad);
   const [restoreText, setRestoreText] = useState("");
   const doRestore = () => {
     const raw = restoreText.trim(); if (!raw) return;
@@ -139,6 +146,29 @@ export default function Ayarlar() {
             </Pressable>
           </View>
         )}
+        {/* Oturum kaydı: yalnız bu cihazda; gerçek oyuncu testinde nerede takıldığını gösterir (TASARIM_PUSULASI Faz 4) */}
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+          <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: C.parchment }}>{t("oturum.baslik")}</Text>
+          <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("oturum.not")}</Text>
+          {!oturum || !oturum.n ? (
+            <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim, marginTop: 10 }}>{t("oturum.bos")}</Text>
+          ) : (
+            <View style={{ marginTop: 10, gap: 5 }}>
+              {([["oturum.n", oturum.n], ["oturum.sure", oturum.sureDk], ["oturum.ilk", oturum.ilkEylemSn ?? "—"], ["oturum.eylem", oturum.eylem], ["oturum.dk", oturum.dkBasinaEylem], ["oturum.ay", oturum.ay]] as [string, number | string][]).map(([k, v]) => (
+                <View key={k} style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ fontFamily: F.serif, fontSize: 12.5, color: C.parchmentMuted }}>{t(k)}</Text>
+                  <Text style={{ fontFamily: F.display, fontSize: 12.5, color: C.parchment }}>{v}</Text>
+                </View>
+              ))}
+              {([["oturum.ekran", oturum.ekranlar], ["oturum.birak", oturum.birakilan]] as [string, [string, number][]][]).filter(([, l]) => l.length).map(([k, l]) => (
+                <Text key={k} style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginTop: 3 }}>{t(k)}: {l.map(([ad, n]) => `${ekranAdi(ad)} (${n})`).join(" · ")}</Text>
+              ))}
+              <Pressable onPress={() => { hap("tap"); oturumSil().then(() => oturumOzeti().then(setOturum)); }} style={{ alignSelf: "flex-start", marginTop: 8, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: C.border }}>
+                <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: C.parchmentMuted }}>{t("oturum.sil")}</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
         <Pressable onPress={reset} style={{ paddingVertical: 14, borderRadius: 9, borderWidth: 1, borderColor: "rgba(200,64,64,0.4)", backgroundColor: "rgba(200,64,64,0.08)", alignItems: "center" }}>
           <Text style={{ fontFamily: F.display, fontSize: 13, letterSpacing: 1.5, color: C.blood }}>{t("settings.newLife")}</Text>
         </Pressable>

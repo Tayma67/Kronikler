@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
-import { npcsOf, relWith, yoldasAdi, yoldasDurumu, kisiProfil } from "../../lib/game";
+import { npcsOf, relWith, yoldasAdi, yoldasDurumu, kisiProfil, yakinCember } from "../../lib/game";
 import { useI18n, applyParams } from "../../lib/i18n";
 import { professionNameL, placeName } from "../../lib/locale-data";
 import { Portre, ScreenFresk } from "../../lib/ui";
@@ -61,15 +61,15 @@ export default function Iliskiler() {
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   // Bölgedeki herkes görünür — tanışmadıkların da (ilişki 0) "tanış" bandında çıkar ki üzerine tıklayıp tanışabilesin.
   // Ailen (anne-baba, eş, evlatlar, kardeşler) kendi panelinde; bantlar ailenin dışındakileri sıralar.
-  const pl = state.player;
-  const rolOf = (id: string): string | null => id === pl.mother_id ? "char.mother" : id === pl.father_id ? "char.father" : id === pl.spouse_id ? "char.spouse" : pl.child_ids && Object.values(pl.child_ids).includes(id) ? "tie.evlat" : pl.sibling_ids?.includes(id) ? "tie.kardes" : null;
-  const aile = npcs.map((n) => ({ n, v: relWith(state, n.id), rol: rolOf(n.id) })).filter((x): x is { n: typeof x.n; v: number; rol: string } => !!x.rol);
-  const all = npcs.filter((n) => !rolOf(n.id)).map((n) => ({ n, v: relWith(state, n.id) }));
+  // Yakın çember (en çok 15 kişi, nerede olurlarsa olsunlar) en üstte; bantlar çemberin dışında kalan yöre halkını sıralar.
+  const cember = yakinCember(state, lang);
+  const cemberde = new Set(cember.map((x) => x.npc.id));
+  const all = npcs.filter((n) => !cemberde.has(n.id)).map((n) => ({ n, v: relWith(state, n.id) }));
   const grouped = BANDS.map((b) => ({
     b,
     list: all.filter(({ v }) => bandOf(v).id === b.id).sort((a, z) => Math.abs(z.v) - Math.abs(a.v)),
   }));
-  const total = all.length + aile.length;
+  const total = all.length + cember.length;
 
   return (
     <ScreenFresk style={{ paddingTop: insets.top }}>
@@ -125,7 +125,7 @@ export default function Iliskiler() {
         ) : null}
 
         {/* Çocukluk yoldaşı ("can dostu") — panodan buraya taşındı; ömürlük dost ya da rakip olabilir */}
-        {state.player.child_friend ? (() => {
+        {state.player.child_friend && !cemberde.has(state.player.child_friend.id) ? (() => {
           const cf = state.player.child_friend!; const nm = yoldasAdi(state, lang) || "";
           const d = yoldasDurumu(state.player);
           const rival = d === "rakip" || (d === "cocuk" && (cf.feud || 0) > cf.bond); const tone = rival ? C.blood : C.roseDim;
@@ -148,25 +148,34 @@ export default function Iliskiler() {
           );
         })() : null}
 
-        {aile.length ? (
+        {cember.length ? (
           <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(201,168,76,0.08)" }}>
-              <GameIcon name="hanedan" size={13} color={C.gold} />
-              <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("char.family")}</Text>
-              <Pill text={`${aile.length} ${t("rel.people")}`} tone={C.gold} />
+            <View style={{ paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: "rgba(201,168,76,0.08)" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <GameIcon name="iliskiler" size={13} color={C.gold} />
+                <Text style={{ flex: 1, fontFamily: F.display, fontSize: 12, letterSpacing: 1.5, color: C.gold, textTransform: "uppercase" }}>{t("cember.baslik")}</Text>
+                <Pill text={`${cember.length} ${t("rel.people")}`} tone={C.gold} />
+              </View>
+              <Text style={{ fontFamily: F.serifItalic, fontSize: 11, color: C.parchmentMuted, marginTop: 3 }}>{t("cember.not")}</Text>
             </View>
             <View style={{ padding: 10 }}>
-              {aile.map(({ n, v, rol }) => (
-                <Pressable key={n.id} onPress={() => router.push(`/oyun/npc/${n.id}`)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}>
-                  <Portre age={n.age} gender={n.gender} size={37} ring={false} seed={n.id} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{n.name}</Text>
-                    <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{t(rol)} · {professionNameL(n.profession, lang)} · {n.age}</Text>
-                    <RelBand score={v} />
-                  </View>
-                  <Text style={{ fontFamily: F.display, fontSize: 13, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted, width: 34, textAlign: "right" }}>{v > 0 ? "+" + v : v}</Text>
-                </Pressable>
-              ))}
+              {cember.map(({ npc: n, v, rol, uzak, loc }) => {
+                const tone = rol === "cember.kanli" || rol === "cember.hasim" ? C.blood : rol === "cember.rakip" ? C.ember : rol.startsWith("char.") || /^cember\.(es|evlat|kardes)/.test(rol) ? C.gold : C.sage;
+                return (
+                  <Pressable key={n.id} onPress={() => router.push(`/oyun/npc/${n.id}`)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}>
+                    <Portre age={n.age} gender={n.gender} size={37} ring={false} seed={n.id} />
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.serif, fontSize: 14, color: C.parchment }}>{n.name}</Text>
+                        <Pill text={t(rol)} tone={tone} />
+                      </View>
+                      <Text numberOfLines={1} style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.parchmentMuted }}>{professionNameL(n.profession, lang)} · {n.age}{uzak ? ` · ${placeName(loc, lang)}` : ""}</Text>
+                      <RelBand score={v} />
+                    </View>
+                    <Text style={{ fontFamily: F.display, fontSize: 13, color: v >= 20 ? C.sage : v <= -20 ? C.blood : C.parchmentMuted, width: 34, textAlign: "right" }}>{v > 0 ? "+" + v : v}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
         ) : null}
@@ -176,7 +185,7 @@ export default function Iliskiler() {
             <Text style={{ fontFamily: F.display, fontSize: 14, color: C.parchment, letterSpacing: 0.5 }}>{t("rel.noneTitle")}</Text>
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, textAlign: "center", marginTop: 7, lineHeight: 18 }}>{t("rel.noneBody")}</Text>
           </View>
-        ) : grouped.map(({ b, list }) => (
+        ) : grouped.filter(({ list }) => list.length || !cember.length).map(({ b, list }) => ( // çember doluyken boş bantlar gizlenir (dostun çemberdeyken "dost yok" demesin)
           <View key={b.id} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: b.tone + "30", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
             {/* Panel başlığı */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderBottomWidth: list.length ? 1 : 0, borderBottomColor: C.border, backgroundColor: b.tone + "10" }}>

@@ -314,6 +314,18 @@ ayrı bir "ömür defterinde" (en çok 12, türden en çok üç; ilkler kalır) 
 **Faz 3 — Dört sermaye ve yakın çember:** göstergeler dört sermayede toplanır; ilişkiler ekranının ve ana ekranın
 merkezi yakın çember olur; düşmanlık sistemleri oyuncuya tek bir "hasımların" görünümünde sunulur.
 
+**Faz 3 durumu (uygulandı):** karakter ekranının başında **Dört sermaye** (`sermayeler`): servet (akçe, mülk,
+borç; logaritmik), çevre (dostlar, iyi bakanlar, aile, lonca/müttefik, hasımlar eksi), zanaat (beceriler, kademe,
+zekâ), nam (itibar, şeref, şöhret, biraz korku). Her biri 0–100; dokununca kalem kalem nereden geldiği görünür ve en
+zayıf sermaye için tek cümlelik yol önerilir (çevirme stratejisi: akçe → düğün/kefalet → çevre → iş → akçe).
+İlişkiler ekranının başında **Yakın çember** (`yakinCember`, en çok 15 kişi, Dunbar'ın destek halkası): ocak (eş,
+anne-baba, evlatlar, kardeşler; uzaktakiler yerleşim adıyla), rolü olanlar (söz, usta, çırak, rakip, can yoldaşı,
+kanlı, can borçlusu, kefil olunan, borçlu), sonra görüşü en güçlü dostlar ve hasımlar; en ağır üç hasım her zaman
+yer bulur. Kanlı, meslek rakibi ve hasım aynı listede kırmızı/kor etiketle durduğu için ayrı bir "hasımların"
+ekranı açılmadı — çember bu görünümü üstleniyor. Ana ekranın merkezi zaten Açık hesaplar (kişiye bağlı satırlar);
+oraya ikinci bir liste eklenmedi (ilke 4: açık gerilim en çok 3–5). Bantlar çemberin dışındaki yöre halkını sıralar; çember
+doluyken boş bantlar gizlenir.
+
 **Faz 4 — Ölçüm:**
 - **Oynanış denetimi betiği** (`scripts/_smoke/oynanis.cjs`): Bölüm 9.10'daki ölçütleri yüzlerce simüle hayatta
   ölçer; dengeye ya da tempoya dokunan her dalgada koşulur. İlk koşu bugünkü değerleri kayda geçirir ve hedefleri
@@ -322,6 +334,9 @@ merkezi yakın çember olur; düşmanlık sistemleri oyuncuya tek bir "hasımlar
   neyi merak etti, nerede bıraktı.
 - **Cihazda kalan oturum kaydı** (isteğe bağlı, dışarı gönderilmez): ilk karara kadar geçen süre, oturum başına
   karar sayısı, oturum uzunluğu, hangi ekranların açıldığı, hangi ayda bırakıldığı.
+  *Uygulandı:* `lib/oturum.ts` — oturum uygulama öne gelince başlar, arka plana gidince kapanır; süre, ilerletilen
+  ay, eylem sayısı (ayı ilerletmeyen her durum değişikliği), ilk eyleme kadar geçen saniye, açılan ekranlar ve
+  bırakılan ekran tutulur (son 40 oturum, yalnız cihazda). Ayarlar ekranında ortancalarla özetlenir ve silinebilir.
 - **Hedefler:** ilk anlamlı karar < 60 sn; her 3 dakikada ≥1 karar ya da görünür sonuç. D1 için ortancanın (%22–27)
   belirgin üstü hedeflenir, üst segment (%40+) ufuktur.
 

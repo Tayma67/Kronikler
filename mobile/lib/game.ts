@@ -8252,6 +8252,62 @@ export function onemliMi(e: GameEvent): boolean {
   if (SINYALSIZ.has(e.type)) return /hmal/.test(e.k || "");
   return true;
 }
+// ── Dört sermaye (TASARIM_PUSULASI 3.4, Bourdieu): servet (ekonomik), çevre (sosyal), zanaat (kültürel), nam (sembolik).
+// Her biri 0–100; kalemler motorun gerçek değerlerinden. Oyunun stratejisi bunları birbirine çevirmektir:
+// akçe düğüne/kefalete/hediyeye → çevre; çevre iş/teklif/borca → akçe; zanaat kazanca ve peştamala → nam; nam kapılara → çevre.
+export type SermayeId = "para" | "cevre" | "bilgi" | "nam";
+export function sermayeler(s: GameState): { id: SermayeId; deger: number; kalemler: SansKalemi[] }[] {
+  const p = s.player; const infl = inflationFactor(s); const pop = nufusOf(s);
+  const topla = (id: SermayeId, ks: [string, number][]) => { const kalemler = ks.map(([k, v]) => ({ k, v: Math.round(v) })).filter((x) => x.v); const t = kalemler.reduce((a, x) => a + x.v, 0); return { id, deger: Math.max(0, Math.min(100, t)), kalemler }; };
+  // Servet: akçe + emanet + mülk − borç, logaritmik (ilk akçeler çok, sonrakiler az değer katar)
+  const mulk = (p.properties || []).reduce((a, pr) => a + (PROPERTY_TYPES[pr.type]?.cost || 0) * infl * 0.8, 0);
+  const nakit = p.money + (p.deposit || 0); const borc = p.debt || 0;
+  const puan = (v: number) => 25 * Math.log10(1 + Math.max(0, v) / (10 * infl));
+  const toplamPuan = puan(nakit + mulk - borc); const nakitPuan = puan(nakit); const mulkPuan = Math.max(0, puan(nakit + mulk) - nakitPuan);
+  const para = topla("para", [["sk.akce", nakitPuan], ["sk.mulk", mulkPuan], ["sk.borc", toplamPuan - nakitPuan - mulkPuan]]);
+  // Çevre: gerçek insanlarla bağlar (görüş), aile, lonca ve müttefik haneler
+  let dost = 0, iyi = 0, hasim = 0;
+  for (const id of new Set([...Object.keys(s.relationships || {}), ...Object.keys(s.npc_state || {})])) { const k = pop.k[id]; if (!k || k.ol != null) continue; const g0 = relWith(s, id); if (g0 >= 30) dost++; else if (g0 >= 10) iyi++; else if (g0 <= -30) hasim++; }
+  const evlat = evlatKimlikleri(p).filter((id) => pop.k[id] && pop.k[id].ol == null).length;
+  const aile = (p.married && !p.widowed ? (p.spouse_bond ?? 50) / 10 : 0) + Math.min(10, evlat * 2) + (!p.mother_dead || !p.father_dead ? (p.parent_bond ?? 45) / 20 : 0);
+  const cevre = topla("cevre", [["sk.dost", Math.min(56, dost * 7)], ["sk.tanidik", Math.min(20, iyi * 2)], ["sk.aile", aile], ["sk.lonca", (p.faction ? 8 : 0) + Math.min(10, (s.allied_houses?.length || 0) * 5)], ["sk.hasim", -Math.min(30, hasim * 4)]]);
+  // Zanaat: en güçlü beceri, öteki beceriler, meslekte kademe, zekâ
+  const bec = [p.skills.combat, p.skills.trade, p.skills.crafting, p.skills.social].sort((a, b) => b - a);
+  const bilgi = topla("bilgi", [["sk.beceri", bec[0] * 5 + Math.min(30, bec[1] + bec[2] + bec[3])], ["sk.kademe", kademeOf(p) * 6], ["sk.zeka", effStat(p, "intelligence")]]);
+  // Nam: itibar, şeref, şöhret ve (biraz) korku
+  const nam = topla("nam", [["sk.itibar", ((p.reputation + 100) / 2) * 0.4], ["sk.seref", p.honor * 0.3], ["sk.sohret", p.fame * 0.25], ["sk.korku", p.fear * 0.05]]);
+  return [para, cevre, bilgi, nam];
+}
+// ── Yakın çember (TASARIM_PUSULASI 3.4, Dunbar): hayatını gerçekten belirleyen en çok 15 kişi — nerede olurlarsa olsunlar.
+// Sıra: ocak (eş, anne-baba, evlat, kardeş), sonra rolü olanlar (söz, usta, çırak, rakip, can yoldaşı, kanlı, can borçlusu, kefil olunan, borçlu),
+// sonra görüşü en güçlü dostlar ve hasımlar. Bant listeleri bu kişileri tekrar göstermez.
+export const CEMBER_MAX = 15;
+export function yakinCember(s: GameState, lang: Lang = "tr"): { npc: NPC; rol: string; v: number; uzak: boolean; loc: string }[] {
+  const p = s.player; const pop = nufusOf(s); const wy = worldYears(s);
+  const sira: [string, string][] = []; const gor = new Set<string>();
+  const ekle = (id: string | undefined, rol: string) => { if (!id || gor.has(id)) return; const k = pop.k[id]; if (!k || k.ol != null) return; gor.add(id); sira.push([id, rol]); };
+  const cins = (id: string, rol: string) => (pop.k[id]?.g === "kadın" ? rol + ".k" : rol); // eş/evlat/kardeş birçok dilde cinsiyetle söylenir
+  if (p.married && p.spouse_id) ekle(p.spouse_id, cins(p.spouse_id, "cember.es"));
+  ekle(p.mother_id, "char.mother"); ekle(p.father_id, "char.father");
+  for (const id of evlatKimlikleri(p)) ekle(id, cins(id, "cember.evlat"));
+  for (const id of p.sibling_ids || []) ekle(id, cins(id, "cember.kardes"));
+  ekle(p.betrothed?.id, "cember.soz");
+  ekle(p.usta_id, "cember.usta"); ekle(p.cirak?.id, "cember.cirak");
+  if (p.rakip && !p.rakip.bitti) ekle(p.rakip.id, "cember.rakip");
+  const yd = yoldasDurumu(p); if (p.child_friend && yd !== "ayrildi") ekle(p.child_friend.id, yd === "rakip" ? "cember.rakip" : "cember.yoldas");
+  ekle(s.story?.nemesis?.id, "cember.kanli");
+  for (const x of s.kanDefteri || []) ekle(x.id, x.tur === "canborcu" ? "cember.canborcu" : "cember.kanli");
+  for (const x of p.kefaletler || []) ekle(x.id, "cember.kefil");
+  for (const x of p.alacaklar || []) ekle(x.id, "cember.borclu");
+  const geri: { id: string; v: number }[] = [];
+  for (const id of new Set([...Object.keys(s.relationships || {}), ...Object.keys(s.npc_state || {})])) { if (gor.has(id)) continue; const k = pop.k[id]; if (!k || k.ol != null) continue; const v = relWith(s, id); if (Math.abs(v) >= 30) geri.push({ id, v }); }
+  geri.sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
+  // En ağır üç hasım yer bulur (dost kalabalığı düşmanı gölgelemesin); kalan yerler bağın gücüne göre.
+  const ayrik = new Set(geri.filter((x) => x.v < 0).slice(0, Math.min(3, Math.max(0, CEMBER_MAX - sira.length))).map((x) => x.id));
+  let bos = CEMBER_MAX - sira.length - ayrik.size;
+  for (const x of geri) { if (!ayrik.has(x.id)) { if (bos <= 0) continue; bos--; } ekle(x.id, x.v > 0 ? "cember.dost" : "cember.hasim"); }
+  return sira.slice(0, CEMBER_MAX).map(([id, rol]) => { const k = pop.k[id]; return { npc: kisiNpc(k, wy, lang), rol, v: relWith(s, id), uzak: k.loc !== p.location_name, loc: k.loc }; });
+}
 // Diyet: kanlı hasma kan bedeli teklif et. Kabul şansı huyuna, yakınlığına, geçen zamana, dökülen kanın sayısına ve senin nâmına bağlı.
 export function diyetBedeli(s: GameState): number { const n = s.story?.nemesis; return Math.round((80 + 40 * Math.max(1, n?.nesil || 1)) * inflationFactor(s)); }
 export function diyetSansi(s: GameState): { yuzde: number; kalemler: SansKalemi[] } {

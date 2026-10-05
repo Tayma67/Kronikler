@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { oturumGecis } from "./oturum";
 import { GameState, newGame, advance, eat, work, achievementsOf, WorkStyle , migrate } from "./game";
 export { migrate }; // MP ekranı ve testler store üzerinden erişmeye devam eder
 
@@ -90,6 +91,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setState((cur) => {
       if (!cur) return cur;
       const next = fn(cur);
+      if (next !== cur) oturumGecis(cur.turn, next.turn, next.player.age); // cihazda kalan oturum kaydı (yalnız bu cihazda)
       schedulePersist(next);
       return next;
     });

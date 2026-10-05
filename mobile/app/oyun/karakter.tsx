@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { aileUyesi, kisiProfil, yoldasAdi, yoldasDurumu, ustamKim, useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail, tendPet, tendDog, kariyerXp } from "../../lib/game";
+import { sermayeler, SermayeId, aileUyesi, kisiProfil, yoldasAdi, yoldasDurumu, ustamKim, useItem, allocateStat, Stats, pendingPerkCount, equipItem, unequipItem, careerTier, professionById, recognition, publicPerception, atHome, combatPower, armorDefense, attireScore, socialPresence, martialLoad, isTwoHanded, equippedQualityMult, QUALITY_LABEL, statXpOf, statXpForNext, statTierKey, spouseMizac, spendWithSpouse, tendChild, visitParents, visitHealer, healerCost, visitHamam, hamamCost, inJail, tendPet, tendDog, kariyerXp } from "../../lib/game";
 import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider, ScreenFresk } from "../../lib/ui";
@@ -172,6 +172,7 @@ export default function Karakter() {
   const { state, apply } = useGame();
   const { lang, t } = useI18n();
   const [tab, setTab] = useState<"ozellikler" | "dunya" | "seruven">("ozellikler");
+  const [sermayeAcik, setSermayeAcik] = useState<SermayeId | null>(null);
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   const p = state.player;
   const inv = Object.keys(p.inventory).filter((k) => p.inventory[k] > 0);
@@ -395,6 +396,43 @@ export default function Karakter() {
         {/* ── ÖZELLİKLER ── */}
         {tab === "ozellikler" && (
           <>
+            {/* Dört sermaye (TASARIM_PUSULASI 3.4): servet, çevre, zanaat, nam — dokununca neyin katkı verdiği; en zayıfı için yol */}
+            {(() => {
+              const sm = sermayeler(state); const zayif = [...sm].sort((a, b) => a.deger - b.deger)[0];
+              const RENK: Record<SermayeId, string> = { para: C.gold, cevre: C.sage, bilgi: C.azure, nam: C.ember };
+              const IKON: Record<SermayeId, string> = { para: "akce", cevre: "iliskiler", bilgi: "meslek", nam: "crown" };
+              const acik = sm.find((x) => x.id === sermayeAcik);
+              return (
+                <Card>
+                  <SectionHead title={t("sermaye.baslik")} />
+                  <View style={{ flexDirection: "row", gap: 7 }}>
+                    {sm.map((x) => (
+                      <Pressable key={x.id} onPress={() => { hap("tap"); setSermayeAcik(sermayeAcik === x.id ? null : x.id); }} style={{ flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 9, borderWidth: 1, borderColor: sermayeAcik === x.id ? RENK[x.id] : C.border, backgroundColor: "rgba(255,255,255,0.02)" }}>
+                        <GameIcon name={IKON[x.id]} size={15} color={RENK[x.id]} />
+                        <Text style={{ fontFamily: F.display, fontSize: 18, color: C.parchment, marginTop: 4 }}>{x.deger}</Text>
+                        <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1, color: C.parchmentMuted, marginTop: 2 }}>{t("sermaye." + x.id).toUpperCase()}</Text>
+                        <View style={{ alignSelf: "stretch", height: 3, marginHorizontal: 10, marginTop: 6, borderRadius: 2, backgroundColor: C.border }}>
+                          <View style={{ width: `${x.deger}%`, height: 3, borderRadius: 2, backgroundColor: RENK[x.id] }} />
+                        </View>
+                      </Pressable>
+                    ))}
+                  </View>
+                  {acik && acik.kalemler.length ? (
+                    <View style={{ marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: C.border }}>
+                      {acik.kalemler.map((k, i) => (
+                        <View key={i} style={{ flexDirection: "row", paddingVertical: 2 }}>
+                          <Text style={{ flex: 1, fontFamily: F.serif, fontSize: 12, color: C.parchmentDim }}>{t(k.k)}</Text>
+                          <Text style={{ fontFamily: F.display, fontSize: 11.5, color: k.v > 0 ? C.sage : C.blood }}>{k.v > 0 ? "+" + k.v : k.v}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, lineHeight: 17, marginTop: 10 }}>{t("sermaye.ipucu." + zayif.id)}</Text>
+                  )}
+                </Card>
+              );
+            })()}
+
             <Card>
               <SectionHead title={t("char.attrs")} right={canAdd ? <Text style={{ fontFamily: F.display, fontSize: 9, color: C.gold, letterSpacing: 1 }}>{p.stat_points} {t("char.points").toUpperCase()}</Text> : undefined} />
               <View style={{ flexDirection: "row", gap: 7 }}>

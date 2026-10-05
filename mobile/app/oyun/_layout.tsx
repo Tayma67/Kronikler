@@ -1,4 +1,4 @@
-import { Tabs, useRouter } from "expo-router";
+import { Tabs, useRouter, usePathname } from "expo-router";
 import { View, Pressable, Text } from "react-native";
 import Svg, { Defs, RadialGradient, Stop, Rect } from "react-native-svg";
 import { useEffect, useState } from "react";
@@ -12,6 +12,7 @@ import { useMp } from "../../lib/mp/store";
 import { mePublic } from "../../lib/mp/world";
 import { CountdownSecs } from "../../lib/mp/countdown";
 import { advanceUntilEvent } from "../../lib/game";
+import { oturumEkran } from "../../lib/oturum";
 
 const pf = (s: string, ...a: (string | number)[]) => a.reduce<string>((acc, v, i) => acc.replace("%" + (i + 1), String(v)), s);
 import { StatDeltaOverlay } from "../../lib/feel";
@@ -153,6 +154,8 @@ export default function OyunLayout() {
   const { mpMode, exitMp } = useGame();
   const { leave } = useMp();
   const router = useRouter();
+  const yol = usePathname();
+  useEffect(() => { const ad = yol.replace(/^\/oyun\/?/, "").split("/")[0] || "index"; oturumEkran(ad); }, [yol]); // cihazda kalan oturum kaydı
   return (
     <View style={{ flex: 1 }}>
       <Tabs screenOptions={{
