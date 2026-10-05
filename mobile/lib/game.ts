@@ -1268,7 +1268,7 @@ export function kapiyaGelen(prev: GameState): GameState {
   const infl = inflationFactor(s);
   for (const k of yerde) {
     if (uygun(k) && k.ey === wy && k.es) aday.push({ w: 2 + Math.max(0, relWith(s, k.id)) / 30, t: { id: k.id, tur: "dugun", tutar: Math.round((8 + Math.floor(Math.random() * 9)) * infl), turn: s.turn } });
-    if (k.ol != null && wy - k.ol <= 1 && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id) { const y = kanYakinlari(pop, k).map((x) => x.k).find(uygun); if (y) aday.push({ w: 2, t: { id: y.id, tur: "cenaze", tutar: Math.round((5 + Math.floor(Math.random() * 6)) * infl), turn: s.turn, ek: k.id } }); }
+    if (k.ol != null && wy - k.ol <= 1 && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && taze(k.id) && !(s.kapi_cenaze || []).includes(k.id)) { const y = kanYakinlari(pop, k).map((x) => x.k).find(uygun); if (y) aday.push({ w: 2, t: { id: y.id, tur: "cenaze", tutar: Math.round((5 + Math.floor(Math.random() * 6)) * infl), turn: s.turn, ek: k.id } }); }
     const rel = relWith(s, k.id); const tanir = s.relationships[k.id] != null || !!s.npc_state?.[k.id];
     if (uygun(k) && tanir && rel >= 0 && !p.kefaletler?.length) { const tutar = Math.round((30 + Math.floor(Math.random() * 41)) * infl); if (p.money >= tutar) aday.push({ w: 0.08 + Math.min(0.3, rel / 100), t: { id: k.id, tur: "kefil", tutar, turn: s.turn } }); } // süren kefaletin varken yenisi gelmez
     if (uygun(k) && rel >= -10 && wy - k.dy <= 65) aday.push({ w: 0.12, t: { id: k.id, tur: "imece", turn: s.turn, sebep: IMECE_MEVSIM[currentCalendar(s.turn).season] } }); // imece: komşu harman/dam/duvar için el ister
@@ -1297,6 +1297,7 @@ export function kapiyaGelen(prev: GameState): GameState {
   let r = Math.random() * aday.reduce((a, x) => a + x.w, 0); let sec = aday[0];
   for (const x of aday) { r -= x.w; if (r <= 0) { sec = x; break; } }
   const t = sec.t; s.npcTeklif = t;
+  if (t.tur === "cenaze" && t.ek) s.kapi_cenaze = [...(s.kapi_cenaze || []), t.ek].slice(-30); // aynı ölü için başka bir yakın yeniden taziyeye çağırmaz
   const yeni: Record<string, number> = {}; for (const [id, tu] of Object.entries(son)) if (s.turn - tu < 24) yeni[id] = tu;
   yeni[t.id] = s.turn; if (t.ek) yeni[t.ek] = s.turn; p.kapi_son = yeni; p.kapi_tur = { ...turSon, [t.tur]: s.turn };
   const k = pop.k[t.id]; const e = t.ek ? pop.k[t.ek] : undefined;
@@ -1666,6 +1667,7 @@ export interface GameState {
   hseq?: number; // son olay sırası (her push'ta artar, vârise de geçer)
   kanDefteri?: KanKaydi[]; // kan davası: canını aldığın (ya da bağışladığın) kişilerden doğan, sırası gelince karşına çıkacak hesaplar
   hesap?: { id: string; turn: number; olen?: string; yak?: KanYak; nesil?: number; kt?: number }; // yendiğin gerçek hasım yerde: bağışla ya da canını al (karar bekliyor)
+  kapi_cenaze?: string[]; // taziye kartı gelmiş ölüler (aynı cenaze iki kez kapıya gelmez)
   npcTeklif?: { id: string; tur: "dunur" | "borc" | "kardes" | "miras" | "dugun" | "cenaze" | "kefil" | "hakem" | "imece" | "canborcu" | "helal" | "araci"; tutar?: number; ay?: number; turn: number; ek?: string; hakli?: 0 | 1; alt?: "olum" | "bayram"; sebep?: string }; // ek: ikinci kişi (cenazede ölen, hakemlikte öbür taraf, aracılıkta kanlın) · alt: helalleşmenin vesilesi · sebep: borcun/imecenin gerçek sebebi · hakli: hakemlikte haklı taraf (0: id, 1: ek) // bir NPC'nin sana kendi kararıyla yaptığı bekleyen teklif
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
@@ -1932,6 +1934,7 @@ function locEventTick(s: GameState) {
 }
 // Oyuncu olaylı bir şehirdeyse doğrudan hisseder (veba→sağlık, panayır→kazanç, kuraklık→açlık, eşkıya→korku).
 function locEventPersonal(s: GameState) {
+  if (s.player.dead) return;
   for (const e of s.locEvents || []) {
     if (e.loc !== s.player.location_name || e.until <= s.turn) continue;
     if (e.type === "veba" && chance(0.15)) { const h = 6 + Math.floor(Math.random() * 8); s.player.health = Math.max(1, s.player.health - h); push(s, "saglik", `${e.loc}'deki veba sana da bulaştı; halsiz düştün (−${h} sağlık).`, "kişisel", false, { k: "lev.veba.hit", p: [h] }); }
@@ -2240,7 +2243,7 @@ function monthlyFlavor(s: GameState, cal: CalendarInfo): AySatiri {
 // Yeni evladın adı: kardeşleriyle aynı ad konmaz (evlat bilgisi ada göre tutulur — iki 'Mert' karışır).
 function cocukAdi(p: Player): string { const bos = CHILD.filter((n) => !p.children.includes(n)); return bos.length ? rnd(bos) : rnd(CHILD); }
 function rollLifeEvents(s: GameState, cal: CalendarInfo) {
-  const p = s.player;
+  const p = s.player; if (p.dead) return; // ayın erken bir adımında ölen oyuncuya o ay hayat olayı yazılmaz
   if (p.age === 13 && p.profession === "işsiz") {
     // Çocukluk hayali meslek seçimini etkiler: %45 ihtimalle hayalinin yoluna düşersin.
     // Meslek hak edilir: çocuklukta emek vermeyen ancak açık kapılı işlere (çoban/çiftçi/balıkçı) düşer.
@@ -2487,7 +2490,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
     const bond = (d: number) => { p.spouse_bond = Math.max(0, Math.min(100, (p.spouse_bond || 0) + d)); };
     if (p.health < 45) { p.health = Math.min(100, p.health + (miz === "sefkatli" ? 9 : 6)); bond(2); push(s, "evlilik", `Hastalığında ${p.spouse_name} başucundan ayrılmadı; biraz toparlandın.`, "kişisel", false, { k: "evj.spouseCare", p: [sn] }); }
     else if (p.money < 20 || (p.debt || 0) > 0) { const help = Math.round((15 + Math.floor(Math.random() * 20)) * (miz === "caliskan" ? 1.6 : 1)); p.money += help; bond(2); push(s, "evlilik", `Sıkışınca ${p.spouse_name} çeyizinden bir şey bozdurdu; eve biraz akçe girdi.`, "kişisel", false, { k: "evj.spouseHelp", p: [sn, help] }); }
-    else { let r = Math.random();
+    else if (!ihmalDurumu(s).es) { let r = Math.random(); // ihmal edilen eşle "huzurlu akşam" anlatılmaz (ihmal satırıyla çelişmesin); başucunda durmak ve darlıkta el uzatmak sürer
       if (miz === "sefkatli") r *= 0.7;              // şefkatli → daha çok huzurlu akşam
       else if (miz === "dikbasli") r = 0.4 + r * 0.4; // dik başlı → daha çok atışma (sonra barışma)
       if (r < 0.4) { p.health = Math.min(100, p.health + (miz === "sefkatli" ? 5 : 3)); p.reputation = Math.min(100, p.reputation + 1); bumpNam(p, "comert", 1); if (miz === "dindar") bumpNam(p, "dindar", 1); bond(2); push(s, "evlilik", `${p.spouse_name} ile sessiz, huzurlu bir akşam geçirdiniz; "iyi ki varsın" dedin.`, "kişisel", false, { k: "evj.spouseCalm", p: [sn] }); }
@@ -2851,7 +2854,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
 
 // Yeni tamamlanan başarımları ödüllendir (tek seferlik): +1 özellik puanı + şöhret.
 function claimAchievements(s: GameState) {
-  const p = s.player; if (!p.claimed) p.claimed = [];
+  const p = s.player; if (p.dead) return; if (!p.claimed) p.claimed = []; // ölüye başarım ödülü verilmez
   for (const { a, done } of achievementsOf(s)) {
     if (done && !p.claimed.includes(a.id)) {
       p.claimed.push(a.id);
@@ -6902,6 +6905,9 @@ export function continueAsHeir(prev: GameState, willId = "esit", heirName?: stri
     ns.history.push({ day: 0, type: "nesil_devri", text: `${p.dog.n} tabutun ardından mezara kadar yürüdü; üç gün eşikten ayrılmadı. Dördüncü gün başını yeni sahibinin dizine koydu: nöbet devam ediyor.`, scope: "kişisel", landmark: false, k: "evj.dogHeir", p: [p.dog.n] });
   }
   oyuncuAilesiKur(ns); // vârisin yaşayan anne/babası (atanın eşi ya da adından ibaret ebeveyn) gerçek kişi olur
+  // Devralınan başarı kazanılmış sayılmaz: vârisin ilk gününde zaten sağlanan başarımlar (miras akçe, mülk…) sessizce
+  // alınmış işaretlenir; vâris yeni başarımları kendi emeğiyle açar. "Hanedan Kuruldu" yalnız ilk vâriste bir kez kutlanır.
+  ns.player.claimed = achievementsOf(ns).filter((x) => x.done && !(x.a.id === "hanedan" && ns.player.generation === 2)).map((x) => x.a.id);
   return ns;
 }
 
@@ -8628,7 +8634,7 @@ export function familyQuestsOf(s: GameState): { q: FamilyQuest; done: boolean; c
 }
 // Tamamlanan aile görevlerini ödüllendir (advance içinde, ay sonunda çağrılır).
 function claimFamilyQuests(s: GameState) {
-  const p = s.player; if (!p.fq_claimed) p.fq_claimed = [];
+  const p = s.player; if (p.dead) return; if (!p.fq_claimed) p.fq_claimed = []; // ölünün aile görevi kapanmaz (vâris kendi görevlerini açar)
   for (const q of FAMILY_QUESTS) {
     if (p.age < q.minAge || p.fq_claimed.includes(q.id) || !q.done(s)) continue;
     p.fq_claimed.push(q.id);
