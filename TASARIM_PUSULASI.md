@@ -297,8 +297,9 @@ dolduracak. Meslek çeşitliliği düşük (makul oyuncu 4 mesleğe ulaşıyor):
 **Faz 2 durumu (ilk dalga uygulandı):** kart çıkmayan ayların yarısında "kapıdaki insan" gelir: düğün, cenaze,
 kefalet (sonucu 6–18 ay sonra huya göre), hakemlik (haklı taraf gizli; zekâ sezdirir) ve imece (NUFUS.md). Boş ay
 (yetişkinlik) %27 → %19, bunalma %0,2'de kaldı. Meslek kapıları ölçüldü: hedefli oyuncu 13–18 yaşında mesleğine
-ulaşıyor; ehil olunan meslek ve dağıtılmamış özellik puanı açık hesaplarda. Sırada: çocukluk boş ayları (%28) ve
-derin sistemlerin (helallik, diyet, can borcu) kart olarak gelmesi.
+ulaşıyor; ehil olunan meslek ve dağıtılmamış özellik puanı açık hesaplarda. Derin sistemler de kart olarak geliyor (uygulandı): can
+borcunu ödemeye gelen (al ya da "borcun yok" de), helalleşmeye gelen kırgın (yaşlıysa ölüm döşeğinden, ilkeliyse
+bayramda) ve kanlı hasmınla diyet için araya giren mahalle büyüğü (hatırı şansı +20 artırır, şans kartta yazar).
 Ölçüm düzeltmeleri: çocukluk/gençlik uğraşları da karar sayılıyor (çocuklukta boş ay gerçekte %11–12); geri çağırma
 oranı ölçülüyor ve %100 (kişiye bağlı sonuçlar kişiyi adıyla, ikilemden doğan tohumlar eylemin kendisini anıyor);
 tohum sonuçlarında kişi adı artık her dilde kaydından yazılıyor (önce ekildiği dildeki metin taşınıyordu).
@@ -325,6 +326,12 @@ yer bulur. Kanlı, meslek rakibi ve hasım aynı listede kırmızı/kor etiketle
 ekranı açılmadı — çember bu görünümü üstleniyor. Ana ekranın merkezi zaten Açık hesaplar (kişiye bağlı satırlar);
 oraya ikinci bir liste eklenmedi (ilke 4: açık gerilim en çok 3–5). Bantlar çemberin dışındaki yöre halkını sıralar; çember
 doluyken boş bantlar gizlenir.
+
+**İlke 7 (kademeli açılım) menüde uygulandı:** 13 yaşından küçük oyuncunun menüsünde meslek, atölye, örgütler,
+meclis, savaş ve suç görünmez (savaş, peşinde bir hasım varsa görünür); mülkler 16 yaşında (ya da miras kalınca),
+nesil ekranı evlilik/evlat ya da 16 yaş ile açılır. Menünün altında tek cümle: "Büyüdükçe yeni kapılar açılacak."
+Çocuk menüsü 22 satırdan 14'e iniyor. Bu sırada bulunan hata da kapandı: çocuk mülk satın alabiliyordu (tapu artık
+16 yaşından küçüğe verilmiyor; miras kalan mülk elde kalır).
 
 **Faz 4 — Ölçüm:**
 - **Oynanış denetimi betiği** (`scripts/_smoke/oynanis.cjs`): Bölüm 9.10'daki ölçütleri yüzlerce simüle hayatta

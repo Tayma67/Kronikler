@@ -58,6 +58,7 @@ for (let h = 0; h < LIVES; h++) {
     try { if (p.age >= 13 && Math.random() < 0.25) { const ns = g.npcsOf(s); if (ns.length) { const r = g.talkWith(s, R(ns), R(["hosbes", "iltifat", "dert", "is", "aile"])); if (r && r.state) s = r.state; } } } catch (e) {}
     // Ay ilerler; ardından ana ekranın göstereceği her şey sayılır.
     s = g.advance(s, 1); ay++; T.ay++;
+    if (s.npcTeklif && s.npcTeklif.turn === s.turn && ['canborcu', 'kardes', 'miras', 'dunur', 'borc'].includes(s.npcTeklif.tur)) T.kapi[s.npcTeklif.tur] = (T.kapi[s.npcTeklif.tur] || 0) + 1; // ayın kendisinden gelen kapı (can borcu, kardeş, miras, dünür, borç)
     const yeni = s.history.filter((e) => (e.q || 0) > seen); seen = s.hseq || seen;
     let pencere = 0, karar = secim, buyuk = 0;
     const land = yeni.filter(g.donumAni); // pencere açan büyük an (index.tsx ile aynı kural)
@@ -126,5 +127,5 @@ console.log(`  Açık gerilim ort. ${sonuc.ortGerilim} · 5'i aşan ay %${sonuc.
 console.log(`  Tempo: hayat medyan ${sonuc.hayatAyMedyan} ay, ${sonuc.hayatKararMedyan} karar · ilk karar ${sonuc.ilkKararAyMedyan}. ayda`);
 console.log(`  Ölüm yaşı medyan ${sonuc.olumYasiMedyan} · çöküş sarmalı %${sonuc.sarmalYuzde}`);
 console.log(`  Çeşitlilik: ${sonuc.meslekSayisi} meslek, entropi ${sonuc.meslekCesitliligi} bit (${Object.entries(meslekler).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + " " + v).join(", ")})`);
-console.log(`  Kapıya gelen kartlar: ${Object.entries(T.kapi).map(([k, v]) => k + " " + v).join(", ") || "yok"}`);
+console.log(`  Kapıya gelenler: ${Object.entries(T.kapi).map(([k, v]) => k + " " + v).join(", ") || "yok"}`);
 console.log(`  En sık dönüm noktası türleri: ${sonuc.enSikDonum.map(([k, v]) => k + " " + v).join(", ")}`);

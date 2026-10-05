@@ -2,7 +2,7 @@ import { View, Text, Pressable, Alert, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { pendingPerkCount, playerWar, sinavDurumu } from "../../lib/game";
+import { pendingPerkCount, playerWar, sinavDurumu, MULK_YAS, GameState } from "../../lib/game";
 import { useI18n } from "../../lib/i18n";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
@@ -11,22 +11,24 @@ import { ScreenFresk } from "../../lib/ui";
 const SEC_KEY: Record<string, string> = { "Geçim": "sec.livelihood", "Güç & Mevki": "sec.power", "Diyar & Soy": "sec.realm", "Kayıt & Anı": "sec.records" };
 const SEC_ICON: Record<string, string> = { "Geçim": "meslek", "Güç & Mevki": "orgutler", "Diyar & Soy": "sehir", "Kayıt & Anı": "tarih" };
 
-type Item = { to: string; icon: string };
+type Item = { to: string; icon: string; acik?: (s: GameState) => boolean };
+// Kademeli açılım (TASARIM_PUSULASI ilke 7): ekran oyuncunun hayatına değince menüye girer — çocuk menüsü sade kalır.
+const RESIT = (s: GameState) => s.player.age >= 13 || s.player.dead;
 const SECTIONS: { title: string; items: Item[] }[] = [
   { title: "Geçim", items: [
-    { to: "/oyun/meslek", icon: "meslek" },
+    { to: "/oyun/meslek", acik: RESIT, icon: "meslek" },
     { to: "/oyun/pazar", icon: "pazar" },
-    { to: "/oyun/atolye", icon: "meslek" },
-    { to: "/oyun/mulkler", icon: "mulkler" },
+    { to: "/oyun/atolye", acik: RESIT, icon: "meslek" },
+    { to: "/oyun/mulkler", acik: (s) => s.player.age >= MULK_YAS || s.player.properties.length > 0 || s.player.dead, icon: "mulkler" },
     { to: "/oyun/gorevler", icon: "scroll-open" },
     { to: "/oyun/mektep", icon: "mektep" },
     { to: "/oyun/beceriler", icon: "karakter" },
   ]},
   { title: "Güç & Mevki", items: [
-    { to: "/oyun/orgutler", icon: "orgutler" },
-    { to: "/oyun/sosyal", icon: "sosyal" },
-    { to: "/oyun/savas", icon: "savas" },
-    { to: "/oyun/suc", icon: "suc" },
+    { to: "/oyun/orgutler", acik: RESIT, icon: "orgutler" },
+    { to: "/oyun/sosyal", acik: RESIT, icon: "sosyal" },
+    { to: "/oyun/savas", acik: (s) => RESIT(s) || !!s.story?.nemesis, icon: "savas" },
+    { to: "/oyun/suc", acik: RESIT, icon: "suc" },
   ]},
   { title: "Diyar & Soy", items: [
     { to: "/oyun/sehir", icon: "sehir" },
@@ -34,7 +36,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     { to: "/oyun/harita", icon: "map" },
     { to: "/oyun/haberler", icon: "haberler" },
     { to: "/oyun/hanedan", icon: "hanedan" },
-    { to: "/oyun/nesil", icon: "dogum" },
+    { to: "/oyun/nesil", acik: (s) => s.player.dead || s.player.married || s.player.children.length > 0 || s.player.age >= 16, icon: "dogum" },
   ]},
   { title: "Kayıt & Anı", items: [
     { to: "/oyun/hikayeler", icon: "roman" },
@@ -83,7 +85,7 @@ export default function Menu() {
         <View style={{ flex: 1, height: 1, backgroundColor: C.goldDim, opacity: 0.6 }} />
       </View>
 
-      {SECTIONS.map((sec) => (
+      {SECTIONS.map((sec) => ({ ...sec, items: sec.items.filter((m) => !state || !m.acik || m.acik(state)) })).filter((sec) => sec.items.length).map((sec) => (
         <View key={sec.title} style={{ marginTop: 14 }}>
           {/* Bölüm başlığı: ikon + etiket + altın çizgi */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 9, paddingHorizontal: 2 }}>
@@ -120,6 +122,9 @@ export default function Menu() {
         </View>
       ))}
 
+      {state && SECTIONS.some((sec) => sec.items.some((m) => m.acik && !m.acik(state))) ? (
+        <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchmentMuted, textAlign: "center", marginTop: 16 }}>{t("menu.buyudukce")}</Text>
+      ) : null}
       <View style={{ height: 18 }} />
       {/* MP'de "Yeni Hayat" gizli: resetGame no-op ama navigasyon yeni-oyun ekranına düşürüp SP kaydını ezdirebilirdi. */}
       {!mpMode && (

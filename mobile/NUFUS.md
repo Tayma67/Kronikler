@@ -381,3 +381,14 @@ Aynı kişi iki yıl içinde, kefil isteği iki yılda bir, imece yılda bir ker
   yardım etti" (+20), itibar +1; gitmezsen küçük bir kırgınlık (−3).
 Ölçüm (40 hayat, `oynanis.cjs`): yetişkinlikte boş ay %27 → %19; hayat başına ortalama imece ~24, kefil ~18,
 hakemlik ~9, cenaze ~8, düğün ~5.
+
+Derin sistemler de kapıdan gelir (menüde beklemez):
+- **Can borcu** (canını bağışladığın kişi, vadesi gelince): keseyi (25–50 akçe) alırsan hesap kapanır; "borcun yok"
+  dersen ömürlük minnet (görüş en az +30, "darda yardım etti"), şeref +2, mertlik +2 ve bir dönüm noktası.
+- **Helalleşme** (aranızda kırgınlık olan biri kendisi gelir): 70 yaşını geçmişse "kırgın gitmeyeyim" diye çağırtır
+  (kabul: kırgınlık %70 solar, dönüm noktası; gitmezsen o ve evlatları unutmaz); ilkeli, sıcak ya da dindar huyluysa
+  ve son kötü anı en az iki yıl önceyse bayram sabahı elini uzatır. Yılda bir kereden sık gelmez.
+- **Diyet aracısı** (kanlı hasmın varken, kan en az 18 ay önce döküldüyse, kesen diyete yetiyorsa): mahallenin
+  55 yaşını geçmiş, iki tarafa da akraba olmayan bir büyüğü araya girer (dindar/sabırlı huylular önce). Hatırı diyet
+  şansına +20 ekler (en çok %90; kart şansı gösterir); kabul edilmezse para gitmez. Aracıyı geri çevirmek ona küçük
+  bir kırgınlık bırakır. İki yılda bir.

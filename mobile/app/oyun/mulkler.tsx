@@ -4,7 +4,7 @@ import Svg, { Polyline, Polygon, Defs, LinearGradient, Stop, Rect } from "react-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
-import { buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard, setFallow, hireKahya, fireKahya, kahyaWage, siraGunu } from "../../lib/game";
+import { MULK_YAS, buyProperty, repairProperty, repairCost, upgradeProperty, propUpgradeCost, PROP_MAX_LEVEL, PROPERTY_TYPES, propBuyCost, propWorkerSlots, townNpcsOf, workerProductivity, hireWorker, fireWorker, setTenant, setGuard, setFallow, hireKahya, fireKahya, kahyaWage, siraGunu } from "../../lib/game";
 import { placeName, professionNameL } from "../../lib/locale-data";
 import { mulkImage, MULK_BOS, MULK_HERO } from "../../lib/assets";
 import { C, F } from "../../lib/theme";
@@ -281,10 +281,11 @@ export default function Mulkler() {
 
         {/* Bu şehirde satın al — 6 tip illüstrasyonlu (sarmalı: dar ekranda 3+3) */}
         <Panel title={`${t("mulk.buyHere")} · ${placeName(here, lang)}`}>
+          {p.age < MULK_YAS ? <Text style={{ fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentMuted, marginBottom: 8 }}>{applyParams(t("mulk.yasKucuk"), [MULK_YAS])}</Text> : null}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             {Object.entries(PROPERTY_TYPES).map(([id, ty]) => {
               const cost = propBuyCost(state, id);
-              const can = p.money >= cost;
+              const can = p.money >= cost && p.age >= MULK_YAS;
               return (
                 <View key={id} style={{ flexBasis: "31%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 9, overflow: "hidden" }}>
                   <Image source={mulkImage(id)} style={{ width: "100%", height: 42 }} resizeMode="cover" />
