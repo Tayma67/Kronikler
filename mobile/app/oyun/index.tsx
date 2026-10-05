@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { useMp } from "../../lib/mp/store";
 import { realmYearMonth } from "../../lib/mp/world";
-import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, npcTeklifYanit, youthAction, GencAct, gonulAdayi, donumAni, acikHesaplar, onemliMi, kapiyaGelen, kapiMetni, hakemIpucu } from "../../lib/game";
+import { applyDilemma, rakipYarisi, tezgahKart, tezgahHuner, tezgahHunerStat, tezgahSans, tezgahBasari, resolveTezgah, TEZGAH_HUNER, careerTitle, achievementsOf, GameEvent, opportunitiesFor, resolveOpportunity, resolveMicro, resolveSaga, resolveBloodline, BL_CHOICES, BL_COST, SAGA_CHOICES, SAGA_COST, resolveDivan, inJail, jailBribeCost, bribeJailer, Opportunity, publicPerception, atHome, eulogy, WorkStyle, familyQuestsOf, playerWar, beylikName, childAction, ChildAct, elderAction, ElderAct, adultAction, AdultAct, ADULT_TRAINER_COST, studyEnergy, maxStudyEnergy, STUDY_COST, playEnergy, maxPlayEnergy, PLAY_COST, canWork, kariyerXp, kisiProfil, gorus, gorusSebebi, npcTeklifYanit, youthAction, GencAct, gonulAdayi, donumAni, acikHesaplar, onemliMi, kapiyaGelen, kapiMetni, hakemIpucu, hayatOzeti, kisiOf, knParam } from "../../lib/game";
 import { pickDilemma, pickFestival, Dilemma, Choice } from "../../lib/events";
 import { SinavKartiModal, SinavKartiVeri } from "../../lib/kart3d";
 import { rakipKartVerisi } from "../../lib/rakip-ui";
@@ -406,9 +406,17 @@ export default function Dashboard() {
         const profLine = p.profession !== "işsiz" ? applyParams(t("eul.lived"), [careerTitleL(p.profession, kariyerXp(p), lang)]) : "";
         // Lakap: ep.<id>, kadınsa dişil varyant (ep.<id>.f) varsa onu kullan.
         const epLabel = eul.epithet ? (() => { const fk = "ep." + eul.epithet + ".f"; const fv = t(fk); return p.gender === "kadın" && fv !== fk ? fv : t("ep." + eul.epithet); })() : "";
+        // Hayatın özeti: en büyük üç an (kendi cümleleriyle) ve ardında kalan insanlar (ilke 9: doruk ve son)
+        const oz = hayatOzeti(state); const kad = p.gender === "kadın";
+        const kp = (id: string) => { const k = kisiOf(state, id); return k ? knParam(k) : ""; };
+        const hayatAnlari = oz.anlar.map((e) => renderEvt(e.k, e.text, e.p, lang, t, kad));
+        const hayatInsanlari = [
+          ...(oz.ananlar.length === 2 ? [renderEvt("eul.ananlar", "", [kp(oz.ananlar[0]), kp(oz.ananlar[1])], lang, t, kad)] : oz.ananlar.length === 1 ? [renderEvt("eul.anan", "", [kp(oz.ananlar[0])], lang, t, kad)] : []),
+          ...(oz.hasim ? [renderEvt("eul.unutmayan", "", [kp(oz.hasim)], lang, t, kad)] : []),
+        ];
         return (
           <EulogyModal visible={showEulogy} name={p.name} epithet={epLabel} bornYear={diedYear - p.age} diedYear={diedYear} age={p.age}
-            professionLine={profLine} lines={eul.lines.map((l) => { const kad = p.gender === "kadın"; const fk = l.k + ".f"; const fv = t(fk); return applyParams(kad && fv !== fk ? fv : t(l.k), (l.p || []).map((v) => (typeof v === "object" ? lakapAdi(v.lk, kad, t) : v))); })} close={t("dynnote." + eul.close)} hasHeir={p.children.length > 0}
+            professionLine={profLine} lines={[...eul.lines.map((l) => { const kad = p.gender === "kadın"; const fk = l.k + ".f"; const fv = t(fk); return applyParams(kad && fv !== fk ? fv : t(l.k), (l.p || []).map((v) => (typeof v === "object" ? lakapAdi(v.lk, kad, t) : v))); })]} ozet={{ baslik: t("eul.anlar").replace(/:\s*$/, ""), anlar: hayatAnlari, insanlar: hayatInsanlari }} close={t("dynnote." + eul.close)} hasHeir={p.children.length > 0}
             onReel={() => { setShowEulogy(false); router.push("/oyun/tarih?cine=1"); }}
             onChronicle={() => { setShowEulogy(false); router.push("/oyun/roman"); }}
             onContinue={() => { setShowEulogy(false); if (p.children.length > 0) router.push("/oyun/nesil"); else { resetGame(); router.replace("/yeni-oyun"); } }} />

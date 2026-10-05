@@ -1,4 +1,4 @@
-import { View, Image, ImageBackground, Modal, Text, Pressable, TextInput, ViewStyle, StyleProp, TextStyle, Share } from "react-native";
+import { View, Image, ImageBackground, Modal, Text, Pressable, TextInput, ViewStyle, StyleProp, TextStyle, Share, ScrollView } from "react-native";
 import { useEffect, useState, useRef } from "react";
 import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, useDerivedValue, withTiming, withSpring, withRepeat, withSequence, ZoomIn, FadeIn, FadeInUp, FadeInDown } from "react-native-reanimated";
 import { portreImage } from "./assets";
@@ -191,9 +191,10 @@ export function DilemmaModal({ dilemma, onChoose, female }: { dilemma: Dilemma |
 }
 
 // Sinematik mersiye / vefat ekranı — bir hayatın duygusal kapanışı.
-export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, professionLine, lines, close, hasHeir, onChronicle, onContinue, onReel }: {
+export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, professionLine, lines, close, hasHeir, onChronicle, onContinue, onReel, ozet }: {
   visible: boolean; name: string; epithet: string; bornYear: number; diedYear: number; age: number;
   professionLine: string; lines: string[]; close: string; hasHeir: boolean; onChronicle: () => void; onContinue: () => void; onReel?: () => void;
+  ozet?: { baslik: string; anlar: string[]; insanlar: string[] }; // hayatın özeti: en büyük anlar (kendi cümleleriyle) + ardında kalan insanlar
 }) {
   const { t } = useI18n();
   const body = [professionLine, ...lines].filter(Boolean);
@@ -204,7 +205,8 @@ export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, p
   };
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => {}}>
-      <View style={{ flex: 1, backgroundColor: "rgba(4,3,2,0.975)", alignItems: "center", justifyContent: "center", paddingHorizontal: 28, paddingVertical: 40 }}>
+      <View style={{ flex: 1, backgroundColor: "rgba(4,3,2,0.975)" }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 28, paddingVertical: 40 }}>
         <Animated.View entering={FadeIn.duration(700)} style={{ alignItems: "center", width: "100%", maxWidth: 400 }}>
           <Animated.View entering={FadeInDown.duration(600).delay(150)}><GameIcon name="tombstone" size={32} color={C.parchmentMuted} /></Animated.View>
           <Animated.Text entering={FadeInDown.duration(600).delay(300)} style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 5, color: C.goldDim, marginTop: 12 }}>{t("eul.eyebrow")}</Animated.Text>
@@ -215,6 +217,17 @@ export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, p
           <Animated.Text entering={FadeIn.duration(800).delay(1000)} style={{ color: C.gold, marginVertical: 16 }}>❧ ⚜ ❧</Animated.Text>
 
           <Animated.Text entering={FadeIn.duration(900).delay(1150)} style={{ fontFamily: F.serif, fontSize: 14.5, color: C.parchmentDim, textAlign: "center", lineHeight: 23 }}>{body.join(" ")}</Animated.Text>
+          {ozet && (ozet.anlar.length > 0 || ozet.insanlar.length > 0) && (
+            <Animated.View entering={FadeIn.duration(900).delay(1300)} style={{ alignSelf: "stretch", marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border }}>
+              {ozet.anlar.length > 0 && <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 2, color: C.goldDim, textAlign: "center", marginBottom: 6 }}>{ozet.baslik.toUpperCase()}</Text>}
+              {ozet.anlar.map((x, i) => (
+                <Text key={i} style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment, textAlign: "center", lineHeight: 19, marginBottom: 8 }}>❧ {x}</Text>
+              ))}
+              {ozet.insanlar.map((x, i) => (
+                <Text key={"i" + i} style={{ fontFamily: F.serif, fontSize: 13, color: C.parchmentDim, textAlign: "center", lineHeight: 20, marginTop: i ? 2 : 4 }}>{x}</Text>
+              ))}
+            </Animated.View>
+          )}
           <Animated.Text entering={FadeIn.duration(900).delay(1500)} style={{ fontFamily: F.serifItalic, fontSize: 15, color: C.gold, textAlign: "center", lineHeight: 23, marginTop: 14 }}>{close}</Animated.Text>
 
           <Animated.View entering={FadeIn.duration(700).delay(1800)} style={{ marginTop: 18 }}>
@@ -238,6 +251,7 @@ export function EulogyModal({ visible, name, epithet, bornYear, diedYear, age, p
             </Pressable>
           </Animated.View>
         </Animated.View>
+        </ScrollView>
       </View>
     </Modal>
   );

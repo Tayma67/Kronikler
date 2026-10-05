@@ -140,6 +140,7 @@ export interface Player {
   bargain_buy_turn?: number; bargain_sell_turn?: number; // pazarlık ayda birer kez (sınırsız arbitraj + XP farm'ı kapalı)
   dilemma_turn?: number; // ikilem sonucu turda bir kez uygulanır (çift tık / yarış koruması)
   prestige_turn?: number; // ayda tek hayrat işi (hekim/imaret spam'ı kapalı)
+  omur_anlari?: GameEvent[]; // ömür defteri: en çok 12 büyük kişisel an (kronik kırpılsa da mersiyeye kalır)
   katil?: string; // oyuncunun canını alan gerçek kişi (vâris bu hesabı devralır)
   reconcile_turn?: number; // ayda tek barış girişimi (hasım keseyle ay boyu sağılamaz)
   train_turn?: number; // ayda tek talim dersi (beceri farmı kapalı)
@@ -2064,7 +2065,14 @@ export function donumAni(e: GameEvent): boolean {
 }
 function push(s: GameState, type: string, text: string, scope: "kişisel" | "makro" = "kişisel", landmark = false, loc?: { k: string; p?: EvtParam[] }) {
   s.hseq = (s.hseq || 0) + 1;
-  s.history.push({ day: s.turn, type, text, scope, landmark, k: loc?.k, p: loc?.p, q: s.hseq });
+  const ev: GameEvent = { day: s.turn, type, text, scope, landmark, k: loc?.k, p: loc?.p, q: s.hseq };
+  s.history.push(ev);
+  // Ömür defteri: büyük kişisel anlar kroniğin kırpılmasından korunur (mersiye bir hayatın tamamını anabilsin)
+  if (landmark && scope !== "makro" && (AN_ONEM[type] ?? 0) >= 4 && !(loc?.k || "").startsWith("evj.anniv") && !(loc?.k || "").startsWith("evj.grandchild")) {
+    const d = (s.player.omur_anlari = s.player.omur_anlari || []);
+    if (d.filter((x) => x.type === type).length < 3) d.push(ev); // her türden ilk üçü (ilk evlilik, ilk evlatlar…): defter ömrün farklı yüzlerini taşısın
+    if (d.length > 12) { let en = 0; for (let i = 1; i < d.length; i++) if ((AN_ONEM[d[i].type] ?? 0) < (AN_ONEM[d[en].type] ?? 0)) en = i; d.splice(en, 1); } // en hafif (eşitse en eski) an düşer
+  }
 }
 function clone(s: GameState): GameState {
   // structuredClone (Hermes destekli) JSON round-trip'ten belirgin hızlı — geç nesillerde dokunma gecikmesini azaltır.
@@ -6483,6 +6491,23 @@ export function deathEpithet(s: GameState): string {
 // Hayatı dokuyan 2-4 cümle. Satırlar {k,p} olarak döner; index.tsx render anında 6 dile çevirir
 // (epithet/close kalıcı DynastyRecord'da saklandığından TR bırakılır).
 export interface EulLine { k: string; p?: (string | number | { lk: string })[]; } // {lk}: lakap kimliği (gösterimde dile + cinsiyete çevrilir)
+// Hayatın özeti (mersiye — TASARIM_PUSULASI ilke 9, doruk ve son): ömrün en büyük üç kişisel anı (zaman sırasıyla) ve
+// ardında bıraktığı insanlar — hayırla anacak en yakın iki kişi (aile dışı) ve unutmayacak bir hasım.
+const AN_ONEM: Record<string, number> = { evlilik: 5, kan_davası: 5, doğum: 4, nemesis: 4, pestamal: 4, terfi: 4, taht: 5, savaş_zafer: 3, tohum: 3, rakip: 3, sinav: 2, cocukluk: 1 };
+export function hayatOzeti(s: GameState): { anlar: GameEvent[]; ananlar: string[]; hasim?: string } {
+  const p = s.player; const gorulen = new Set<number>(); // ömür defteri + kronik (aynı olay iki kez sayılmaz)
+  const kisisel = [...(p.omur_anlari || []), ...s.history].filter((e) => { if (e.q != null) { if (gorulen.has(e.q)) return false; gorulen.add(e.q); } return donumAni(e) && e.scope !== "makro" && !(e.k || "").startsWith("evj.anniv"); }); // yıldönümleri mersiyenin kendi cümlesinde zaten anılır
+  const agirlik = (e: GameEvent) => ((e.k || "").startsWith("evj.grandchild") ? 2 : AN_ONEM[e.type] ?? 2); // torun sayısı mersiyede; tek torun doğumu büyük an sayılmaz
+  const sirali = kisisel.map((e, i) => ({ e, i, w: agirlik(e) + i / 10000 })).sort((a, b) => b.w - a.w);
+  const anlar: GameEvent[] = []; const turler = new Set<string>();
+  for (const x of sirali) { if (anlar.length >= 3) break; if (turler.has(x.e.type) && sirali.some((y) => !turler.has(y.e.type) && !anlar.includes(y.e))) continue; anlar.push(x.e); turler.add(x.e.type); } // aynı türden üç an değil, bir ömrün farklı yüzleri
+  anlar.sort((a, b) => (a.q ?? a.day) - (b.q ?? b.day));
+  const pop = nufusOf(s); const aile = new Set<string>([...evlatKimlikleri(p), ...(p.sibling_ids || []), p.spouse_id, p.mother_id, p.father_id].filter((x): x is string => !!x));
+  const kisiler = Object.keys({ ...(s.relationships || {}), ...(s.npc_state || {}) }).filter((id) => pop.k[id] && pop.k[id].ol == null && !aile.has(id)).map((id) => ({ id, g: relWith(s, id) }));
+  const ananlar = kisiler.filter((x) => x.g >= 30).sort((a, b) => b.g - a.g).slice(0, 2).map((x) => x.id);
+  const hasim = kisiler.filter((x) => x.g <= -30).sort((a, b) => a.g - b.g)[0]?.id;
+  return { anlar, ananlar, hasim };
+}
 export function eulogy(s: GameState): { epithet: string; lines: EulLine[]; close: string } {
   const p = s.player; const n = p.nam || ({} as Nam);
   const lines: EulLine[] = [];

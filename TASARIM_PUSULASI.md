@@ -303,6 +303,11 @@ derin sistemlerin (helallik, diyet, can borcu) kart olarak gelmesi.
 oranı ölçülüyor ve %100 (kişiye bağlı sonuçlar kişiyi adıyla, ikilemden doğan tohumlar eylemin kendisini anıyor);
 tohum sonuçlarında kişi adı artık her dilde kaydından yazılıyor (önce ekildiği dildeki metin taşınıyordu).
 
+**İlke 9 (doruk ve son) uygulandı:** mersiye artık istatistikten öte o hayatı anlatıyor — "ömrünün en büyük anları"
+(en çok üç, farklı türlerden, kendi cümleleriyle; evlilik, ilk evlat, kan davası, peştamal, taht…) ve ardında kalan
+insanlar (hayırla anacak iki kişi, unutmayacak bir hasım). Kronik 80 dönüm noktasında kırpıldığı için büyük anlar
+ayrı bir "ömür defterinde" (en çok 12, türden en çok üç; ilkler kalır) korunuyor. Mersiye penceresi kaydırılabilir.
+
 **Faz 2 — Karar kartları:** derin sistemler (helallik, diyet, kardeş isteği, borç, kefalet, can borcu) ana ekrana
 "bir insan kapında" kartı olarak gelir. Her sonuç metni geri çağırma cümlesi taşır.
 
