@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useGame } from "../../lib/store";
 import { placeKind, recognition, publicPerception, atHome, regionOf, defaultRealm, factionById, beylikName, citySpecialtyIdx, buyIltizam, iltizamCost } from "../../lib/game";
 import { cityInfo } from "../../lib/world";
-import { useI18n, applyParams } from "../../lib/i18n";
+import { useI18n, yuzdeL, applyParams } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
@@ -65,7 +65,7 @@ export default function Sehir() {
             <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.parchment, marginTop: 2 }}>{t("percept." + pp.key)}</Text>
           </View>
           <View style={{ alignItems: "flex-end" }}>
-            <Text style={{ fontFamily: F.display, fontSize: 16, color: home ? C.sage : C.frost }}>%{Math.round(pp.recog * 100)}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 16, color: home ? C.sage : C.frost }}>{yuzdeL(Math.round(pp.recog * 100), lang)}</Text>
             <Text style={{ fontFamily: F.display, fontSize: 8, letterSpacing: 0.5, color: C.parchmentMuted }}>{t("soc.recog").toUpperCase()}</Text>
           </View>
         </View>

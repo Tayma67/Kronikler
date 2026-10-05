@@ -27,7 +27,7 @@ import { generateDynasties, houseName as rivalHouseName, localFirstName } from "
 import { professionNameL, placeName } from "../../lib/locale-data";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
-import { useI18n, applyParams, renderEvt } from "../../lib/i18n";
+import { useI18n, yuzdeL, applyParams, renderEvt } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { BackLabel, PageHeader, ScreenFresk } from "../../lib/ui";
 
@@ -413,7 +413,7 @@ export default function Hanedan() {
             {up.next && (
               <Text style={{ fontFamily: F.serifItalic, fontSize: 10, color: up.ok ? C.goldDim : C.ember, marginTop: 7 }}>
                 {up.ok
-                  ? t("set.req").replace("%1", String(SETTLE_TIER[up.next].props)).replace("%2", `%${SETTLE_TIER[up.next].dev}`)
+                  ? t("set.req").replace("%1", String(SETTLE_TIER[up.next].props)).replace("%2", yuzdeL(SETTLE_TIER[up.next].dev, lang))
                   : up.reason === "dev" ? t("set.up.dev") : up.reason === "prop" ? `${t("set.up.prop")} (${propsInLoc(state, st.loc || "")}/${SETTLE_TIER[up.next].props})` : t("set.up.gold")}
               </Text>
             )}

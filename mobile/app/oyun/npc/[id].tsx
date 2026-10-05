@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
 import { kisiProfil, kisiCevresi, gorus, teklifSansi, helalUygun, helalBedeli, helalSansi, helallikIste, talkWith, giftTo, proposeMarriage, canCourt, helpNpcGoal, exploitNpcGoal, GOAL_HELP_COST, relWith, insultNpc, flirtWith, gossipAbout, giveMoneyTo, canFlirt, flirtIsForbidden, npcSeededMarried, GIVE_MONEY_AMT, martialLoad, canTakeApprentice, takeApprentice, mentorApprentice, APPRENTICE_MONTHS } from "../../../lib/game";
-import { useI18n, kucukHarf } from "../../../lib/i18n";
+import { useI18n, yuzdeL, kucukHarf } from "../../../lib/i18n";
 import { hap } from "../../../lib/haptics";
 import { INTENTS, moodKey } from "../../../lib/dialogue";
 import { topMemories } from "../../../lib/npc-mind";
@@ -37,13 +37,15 @@ const TIE_ORDER: TieKind[] = ["es", "ebeveyn", "evlat", "kardes", "dost", "rakip
 
 // Teklif şansı rozeti (dokununca döküm açılır) — yüzde ve kalemler motorun zar attığı değerle birebir.
 function SansRozet({ yuzde, acik, onPress }: { yuzde: number; acik: boolean; onPress: () => void }) {
+  const { lang } = useI18n();
   return (
     <Pressable onPress={onPress} hitSlop={8} style={{ paddingVertical: 3, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: (acik ? C.gold : C.goldDim) + "88", backgroundColor: acik ? "rgba(201,168,76,0.14)" : "transparent" }}>
-      <Text style={{ fontFamily: F.display, fontSize: 11, color: yuzde >= 60 ? C.sage : yuzde <= 25 ? C.blood : C.gold }}>%{yuzde}</Text>
+      <Text style={{ fontFamily: F.display, fontSize: 11, color: yuzde >= 60 ? C.sage : yuzde <= 25 ? C.blood : C.gold }}>{yuzdeL(yuzde, lang)}</Text>
     </Pressable>
   );
 }
 function SansDokum({ kalemler, yuzde, t }: { kalemler: { k: string; v: number }[]; yuzde: number; t: (k: string) => string }) {
+  const { lang } = useI18n();
   return (
     <View style={{ paddingHorizontal: 14, paddingBottom: 10, paddingTop: 2 }}>
       <Text style={{ fontFamily: F.display, fontSize: 8.5, letterSpacing: 1.5, color: C.goldDim, marginBottom: 4 }}>{t("sans.title")}</Text>
@@ -55,7 +57,7 @@ function SansDokum({ kalemler, yuzde, t }: { kalemler: { k: string; v: number }[
       ))}
       <View style={{ flexDirection: "row", paddingTop: 4, marginTop: 3, borderTopWidth: 1, borderTopColor: C.border }}>
         <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, color: C.parchment }}>{t("sans.toplam")}</Text>
-        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.gold }}>%{yuzde}</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.gold }}>{yuzdeL(yuzde, lang)}</Text>
       </View>
     </View>
   );

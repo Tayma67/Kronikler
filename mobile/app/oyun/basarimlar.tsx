@@ -5,7 +5,7 @@ import { useGame } from "../../lib/store";
 import { achievementsOf } from "../../lib/game";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, yuzdeL } from "../../lib/i18n";
 import { BackLabel, PageHeader, Pill, ScreenFresk } from "../../lib/ui";
 
 // Sayısal eşikli başarımlar için istemci-yanı ilerleme oranı (0-1) — "az kaldı" hissi.
@@ -28,7 +28,7 @@ const PROG: Record<string, (s: any) => number> = {
 export default function Basarimlar() {
   const insets = useSafeAreaInsets(); const router = useRouter();
   const { state } = useGame();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   if (!state) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   // Bir kez kazanılan rozet kazanılmış kalır: koşul sonradan bozulsa da (kervan vardı, mülk satıldı,
   // eşik yükseldi) claimed listesindeki başarım kilitli görünmez.
@@ -63,7 +63,7 @@ export default function Basarimlar() {
                     <View style={{ width: `${Math.round((prog ?? 0) * 100)}%`, height: "100%", backgroundColor: C.gold }} />
                   </View>
                 </View>
-                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.goldDim }}>%{Math.round((prog ?? 0) * 100)}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 10, color: C.goldDim }}>{yuzdeL(Math.round((prog ?? 0) * 100), lang)}</Text>
               </View>
             ))}
           </View>

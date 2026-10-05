@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGame } from "../../../lib/store";
 import { inJail, travelBy, buyHorse, HORSE_COST, placeKind, TRAVEL_ROUTES, beylikOf, GOV_TITLE, isGovernor, canRunForGovernor, runForGovernor, govReqRep, govLegOf, shoreUpLegitimacy, GOV_SHORE_COST, govTaxOf, govHappyOf, govTreasuryOf, GOV_TAX_PRESETS, setGovTax, investTreasury, GOV_INVEST_COST, locEventsAt, LOC_EVENT_TYPES, citySpecialtyIdx, GOV_EDICTS, canIssueEdict, issueEdict, edictCooldownLeft, GOV_WORKS, canFundWork, fundWork, worksOf } from "../../../lib/game";
 import { cityInfo, marketGoods, locSeed } from "../../../lib/world";
-import { useI18n, applyParams } from "../../../lib/i18n";
+import { useI18n, yuzdeL, applyParams } from "../../../lib/i18n";
 import { placeName } from "../../../lib/locale-data";
 import { C, F } from "../../../lib/theme";
 import { GameIcon } from "../../../lib/icons";
@@ -104,7 +104,7 @@ export default function DiyarDetay() {
                   return (
                     <Pressable key={tp.id} disabled={!here} onPress={() => apply((s) => setGovTax(s, name, tp.rate))} style={{ flex: 1, paddingVertical: 8, borderRadius: 8, borderWidth: 1, alignItems: "center", borderColor: on ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: on ? "rgba(201,168,76,0.12)" : C.card, opacity: here ? 1 : 0.6 }}>
                       <Text style={{ fontFamily: F.display, fontSize: 10, color: on ? C.gold : C.parchment }}>{lbl}</Text>
-                      <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.parchmentMuted }}>%{tp.rate}</Text>
+                      <Text style={{ fontFamily: F.serif, fontSize: 9, color: C.parchmentMuted }}>{yuzdeL(tp.rate, lang)}</Text>
                     </Pressable>
                   );
                 })}

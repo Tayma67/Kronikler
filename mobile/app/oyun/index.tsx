@@ -19,7 +19,7 @@ import { heroImage } from "../../lib/assets";
 import { MilestoneModal, DilemmaModal, OpportunityModal, AchievementToast, EulogyModal, PressableScale, Portre } from "../../lib/ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GameIcon } from "../../lib/icons";
-import { useI18n, applyParams, renderEvt, lakapliAd, lakapAdi } from "../../lib/i18n";
+import { useI18n, yuzdeL, applyParams, renderEvt, lakapliAd, lakapAdi } from "../../lib/i18n";
 import { playTap, playChime, playSaz, playNey } from "../../lib/sound";
 import { hap } from "../../lib/haptics";
 import { C, F } from "../../lib/theme";
@@ -494,7 +494,7 @@ export default function Dashboard() {
           <Pressable onPress={() => router.push("/oyun/karakter")} style={{ marginHorizontal: 12, marginTop: 8, paddingVertical: 7, paddingHorizontal: 11, borderRadius: 8, borderWidth: 1, borderColor: home ? "rgba(127,166,106,0.3)" : "rgba(111,160,192,0.3)", backgroundColor: "rgba(8,5,2,0.4)", flexDirection: "row", alignItems: "center", gap: 8 }}>
             <GameIcon name={home ? "sehir" : "firsatlar"} size={13} color={home ? C.sage : C.frost} />
             <Text style={{ flex: 1, fontFamily: F.serifItalic, fontSize: 11.5, color: C.parchmentDim }} numberOfLines={1}>{t("percept." + pp.key)}</Text>
-            <Text style={{ fontFamily: F.display, fontSize: 9, color: home ? C.sage : C.frost }}>%{Math.round(pp.recog * 100)}</Text>
+            <Text style={{ fontFamily: F.display, fontSize: 9, color: home ? C.sage : C.frost }}>{yuzdeL(Math.round(pp.recog * 100), lang)}</Text>
           </Pressable>
         );
       })()}

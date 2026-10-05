@@ -9,7 +9,7 @@ import { startBattle, stepBattle, MOVES, STANCES, BattleState, Move, Stance, CbL
 import { playVictory, playWarDrum, playClash, playDefeat } from "../../lib/sound";
 import { GameIcon } from "../../lib/icons";
 import { C, F } from "../../lib/theme";
-import { useI18n, applyParams, kucukHarf } from "../../lib/i18n";
+import { useI18n, yuzdeL, applyParams, kucukHarf } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { FloatingNumber, Slash } from "../../lib/fx";
 import { BackLabel, PageHeader, ProgressBar, ScreenFresk } from "../../lib/ui";
@@ -240,7 +240,7 @@ export default function Savas() {
                       <Text style={{ fontFamily: F.display, fontSize: 11, color: canPeace ? C.sage : C.parchmentMuted, letterSpacing: 1 }}>{applyParams(t("cb.diyet"), [pcost])}</Text>
                     </Pressable>
                     <Pressable onPress={() => setDiyetAcik(!diyetAcik)} hitSlop={8} style={{ alignSelf: "center", paddingVertical: 3, paddingHorizontal: 8, borderRadius: 7, borderWidth: 1, borderColor: (diyetAcik ? C.gold : C.goldDim) + "88", backgroundColor: diyetAcik ? "rgba(201,168,76,0.14)" : "transparent" }}>
-                      <Text style={{ fontFamily: F.display, fontSize: 11, color: ds!.yuzde >= 60 ? C.sage : ds!.yuzde <= 25 ? C.blood : C.gold }}>%{ds!.yuzde}</Text>
+                      <Text style={{ fontFamily: F.display, fontSize: 11, color: ds!.yuzde >= 60 ? C.sage : ds!.yuzde <= 25 ? C.blood : C.gold }}>{yuzdeL(ds!.yuzde, lang)}</Text>
                     </Pressable>
                   </View>
                   {diyetAcik ? (
@@ -254,7 +254,7 @@ export default function Savas() {
                       ))}
                       <View style={{ flexDirection: "row", paddingTop: 4, marginTop: 3, borderTopWidth: 1, borderTopColor: C.border }}>
                         <Text style={{ flex: 1, fontFamily: F.display, fontSize: 11, color: C.parchment }}>{t("sans.toplam")}</Text>
-                        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.gold }}>%{ds!.yuzde}</Text>
+                        <Text style={{ fontFamily: F.display, fontSize: 11.5, color: C.gold }}>{yuzdeL(ds!.yuzde, lang)}</Text>
                       </View>
                     </View>
                   ) : null}

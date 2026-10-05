@@ -7,7 +7,7 @@ import { PLACES, BEYLIKS, regionOf } from "../../lib/game";
 import { cityInfo } from "../../lib/world";
 import { placeName } from "../../lib/locale-data";
 import { MAP_HERO } from "../../lib/assets";
-import { useI18n } from "../../lib/i18n";
+import { useI18n, yuzdeL } from "../../lib/i18n";
 import { C, F } from "../../lib/theme";
 import { GameIcon } from "../../lib/icons";
 import { BackLabel } from "../../lib/ui";
@@ -163,8 +163,8 @@ export default function Harita() {
           <View style={{ flexDirection: "row", flexWrap: "wrap", paddingVertical: 4 }}>
             {[
               { i: "family", l: t("diyar.pop"), v: s.pop.toLocaleString("tr"), c: C.parchment },
-              { i: "wheat", l: t("diyar.prosperity"), v: "%" + s.avgRef, c: C.sage },
-              { i: "shield", l: t("diyar.security"), v: "%" + s.avgSec, c: C.parchment },
+              { i: "wheat", l: t("diyar.prosperity"), v: yuzdeL(s.avgRef, lang), c: C.sage },
+              { i: "shield", l: t("diyar.security"), v: yuzdeL(s.avgSec, lang), c: C.parchment },
               { i: "crossed-swords", l: t("diyar.army"), v: s.ordu.toLocaleString("tr"), c: C.parchment },
               { i: "coins", l: t("diyar.treasury"), v: s.hazine.toLocaleString("tr"), c: C.gold },
               { i: "banner", l: t("diyar.units"), v: String(s.total), c: C.parchment },
