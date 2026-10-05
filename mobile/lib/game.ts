@@ -6636,7 +6636,7 @@ export function deathEpithet(s: GameState): string {
 }
 // Hayatı dokuyan 2-4 cümle. Satırlar {k,p} olarak döner; index.tsx render anında 6 dile çevirir
 // (epithet/close kalıcı DynastyRecord'da saklandığından TR bırakılır).
-export interface EulLine { k: string; p?: (string | number | { lk: string })[]; } // {lk}: lakap kimliği (gösterimde dile + cinsiyete çevrilir)
+export interface EulLine { k: string; p?: EvtParam[]; } // {lk}: lakap kimliği (gösterimde dile + cinsiyete çevrilir)
 // Hayatın özeti (mersiye — TASARIM_PUSULASI ilke 9, doruk ve son): ömrün en büyük üç kişisel anı (zaman sırasıyla) ve
 // ardında bıraktığı insanlar — hayırla anacak en yakın iki kişi (aile dışı) ve unutmayacak bir hasım.
 const AN_ONEM: Record<string, number> = { evlilik: 5, kan_davası: 5, doğum: 4, nemesis: 4, pestamal: 4, terfi: 4, taht: 5, savaş_zafer: 3, tohum: 3, rakip: 3, sinav: 2, cocukluk: 1 };
@@ -6693,10 +6693,10 @@ export function eulogy(s: GameState): { epithet: string; lines: EulLine[]; close
   const settleN = s.settlements?.length || 0;
   if (settleN) lines.push({ k: "eul.holdSettle", p: [settleN] });
   // Aile
-  if (p.children.length) lines.push(p.spouse_name ? { k: "eul.familySpouse", p: [p.spouse_name, p.children.length] } : { k: "eul.familyChildren", p: [p.children.length] });
+  if (p.children.length) lines.push(p.spouse_name ? { k: "eul.familySpouse", p: [esParam(s), p.children.length] } : { k: "eul.familyChildren", p: [p.children.length] });
   else lines.push({ k: "eul.noHeir" });
   // Kırk yılı devirmiş ocak: yaşayan evliliğin en uzun hâli mersiyede ayrı anılır (Altın Ocak yankısı)
-  if (p.married && p.spouse_name && p.married_turn !== undefined && (s.turn - p.married_turn) >= 480) lines.push({ k: "eul.longMarriage", p: [p.spouse_name] });
+  if (p.married && p.spouse_name && p.married_turn !== undefined && (s.turn - p.married_turn) >= 480) lines.push({ k: "eul.longMarriage", p: [esParam(s)] });
   // Torunlar
   const gcN = p.grandchildren?.length || 0;
   if (gcN > 0) lines.push({ k: "eul.grandchildren", p: [gcN] });
