@@ -1381,13 +1381,15 @@ function seedKarari(s: GameState, t: Seed): "bic" | "sol" | { k: string; rep?: n
   }
   return "bic";
 }
+// Tohumun kişisi: kaydı duruyorsa her dilde kendi adıyla (geri çağırma kişiyi doğru adla anar), yoksa ekildiği andaki adıyla.
+function tohumKisi(s: GameState, t: Seed): EvtParam { const k = t.npcId ? nufusOf(s).k[t.npcId] : undefined; return k ? knParam(k) : t.npcName || ""; }
 function germinateSeed(s: GameState, t: Seed) {
   s.seeds = (s.seeds || []).filter((x) => x.id !== t.id);
   const p = s.player;
   if (t.etki?.money) p.money = Math.max(0, p.money + t.etki.money);
   if (t.etki?.reputation) p.reputation = Math.max(-100, Math.min(100, p.reputation + t.etki.reputation));
   if (t.etki?.health) p.health = Math.max(1, Math.min(100, p.health + t.etki.health));
-  push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", true, { k: "seed." + t.kaynak, p: [t.npcName || "", p.name] });
+  push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", true, { k: "seed." + t.kaynak, p: [tohumKisi(s, t), p.name] });
 }
 function seedTick(s: GameState) {
   const seeds = s.seeds; if (!seeds || !seeds.length) return;
@@ -1409,7 +1411,7 @@ function tohumSonucu(s: GameState, t: Seed): boolean {
   s.seeds = (s.seeds || []).filter((x) => x.id !== t.id);
   if (karar === "sol") return false;
   if (karar.rep) s.player.reputation = Math.min(100, s.player.reputation + karar.rep);
-  push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", false, { k: karar.k, p: [t.npcName || ""] });
+  push(s, "tohum", `Geçmiş kapını çaldı.`, "kişisel", false, { k: karar.k, p: [tohumKisi(s, t)] });
   return true;
 }
 // (Nesil devri tohum aktarımı continueAsHeir içinde: sadece nesil aşabilenler kalır.)

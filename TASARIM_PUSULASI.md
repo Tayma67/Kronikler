@@ -299,6 +299,9 @@ kefalet (sonucu 6–18 ay sonra huya göre), hakemlik (haklı taraf gizli; zekâ
 (yetişkinlik) %27 → %19, bunalma %0,2'de kaldı. Meslek kapıları ölçüldü: hedefli oyuncu 13–18 yaşında mesleğine
 ulaşıyor; ehil olunan meslek ve dağıtılmamış özellik puanı açık hesaplarda. Sırada: çocukluk boş ayları (%28) ve
 derin sistemlerin (helallik, diyet, can borcu) kart olarak gelmesi.
+Ölçüm düzeltmeleri: çocukluk/gençlik uğraşları da karar sayılıyor (çocuklukta boş ay gerçekte %11–12); geri çağırma
+oranı ölçülüyor ve %100 (kişiye bağlı sonuçlar kişiyi adıyla, ikilemden doğan tohumlar eylemin kendisini anıyor);
+tohum sonuçlarında kişi adı artık her dilde kaydından yazılıyor (önce ekildiği dildeki metin taşınıyordu).
 
 **Faz 2 — Karar kartları:** derin sistemler (helallik, diyet, kardeş isteği, borç, kefalet, can borcu) ana ekrana
 "bir insan kapında" kartı olarak gelir. Her sonuç metni geri çağırma cümlesi taşır.
