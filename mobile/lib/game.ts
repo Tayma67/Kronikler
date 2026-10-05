@@ -803,11 +803,12 @@ function npcLifeTick(s: GameState) {
         push(s, "doğum", `Ocağa bir bebek sesi düştü: kardeşin ${ad(o.id)} dünyaya geldi.`, "kişisel", true, { k: gk(o.id, "evj.siblingBorn"), p: [prf(o.id)] }); continue;
       }
       const bilinen = tanidik(o.anne) ? o.anne : tanidik(o.baba) ? o.baba : null;
-      if (dogumHaberi < 2 && bilinen) { dogumHaberi++; push(s, "dunya_olayi", `${ad(bilinen)}'in bir evladı dünyaya geldi.`, "kişisel", false, { k: "npclife.birth", p: [prm(bilinen)] }); }
+      if (dogumHaberi < 2 && bilinen) { dogumHaberi++; const bebek = pop.k[o.id]; push(s, "dunya_olayi", `${ad(bilinen)}'in bir evladı dünyaya geldi.`, "kişisel", false, bebek ? { k: "npclife.birthAd", p: [prm(bilinen), kfParam(bebek)] } : { k: "npclife.birth", p: [prm(bilinen)] }); } // bebeğin adıyla: aynı ocağa ikinci evlat aynı cümleyle gelmesin
     } else if (o.t === "goc" && kardes(o.id) && !evlenen.has(o.id) && !p.dead) {
       push(s, "dunya_olayi", `Kardeşin ${ad(o.id)} yükünü sarıp ${o.nereye} yoluna düştü; artık orada yaşayacak.`, "kişisel", false, { k: gk(o.id, "evj.siblingMoved"), p: [prf(o.id), { pl: o.nereye }] });
     } else if (o.t === "gelen" && o.nereye === p.location_name) {
-      push(s, "dunya_olayi", `${p.location_name}'e yeni biri yerleşti; çarşıda tanımadık bir yüz var.`, "kişisel", false, { k: "npclife.newcomer", p: [{ pl: p.location_name }] });
+      const gk0 = pop.k[o.id]; // gelenin kendisi: adıyla (tanışılabilir gerçek bir kişi)
+      push(s, "dunya_olayi", `${p.location_name}'e yeni biri yerleşti; çarşıda tanımadık bir yüz var.`, "kişisel", false, gk0 ? { k: "npclife.newcomerAd", p: [{ pl: p.location_name }, knParam(gk0)] } : { k: "npclife.newcomer", p: [{ pl: p.location_name }] });
     }
   }
   ailedenIhmal(s); // ilgi görmeyen eş, anne-baba ve çocuklar yıllar içinde soğur
@@ -891,10 +892,13 @@ function esTepkisi(s: GameState, e: Kisi) {
   if (n.comert >= 30) ad.push(grp === "cikarci" ? ["evj.esSavurgan", -2] : grp === "cekingen" ? ["evj.esComert", 2] : ["evj.esComert", 3]);
   if (n.dindar >= 30 && huy === "dindar") ad.push(["evj.esDindar", 3]);
   if (!ad.length || Math.random() >= 0.6) return;
-  ad.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])); const [key, d] = ad[0];
+  ad.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+  // Aynı tepki iki yıl içinde yeniden söylenmez: bağ yine etkilenir ama kroniğe ancak yeni bir tepki düşer.
+  const yakin = new Set(s.history.filter((x) => x.day >= s.turn - 24 && /^evj\.es/.test(x.k || "")).map((x) => (x.k || "").replace(/\.k$/, "")));
+  const [key, d] = ad.find(([k]) => !yakin.has(k)) || ad[0]; const sessiz = yakin.has(key);
   p.spouse_bond = Math.max(0, Math.min(100, (p.spouse_bond ?? 40) + d));
   const kk = (k: string) => (e.g === "kadın" ? k + ".k" : k);
-  push(s, "evlilik", `Eşin ${kisiAdi(e, "tr")} nâmına göre sana bakıyor.`, "kişisel", false, { k: kk(key), p: [kfParam(e)] });
+  if (!sessiz) push(s, "evlilik", `Eşin ${kisiAdi(e, "tr")} nâmına göre sana bakıyor.`, "kişisel", false, { k: kk(key), p: [kfParam(e)] });
   // Sevgisi tükenen eş (çıkarcı değilse) ocağı terk edebilir — yıllarca biriken soğukluğun son durağı.
   if (d < 0 && (p.spouse_bond ?? 40) <= 8 && grp !== "cikarci" && Math.random() < 0.25) {
     nufusOyuncuEsiAyril(s); p.married = false; p.widowed = false; p.spouse_bond = undefined; p.spouse_mizac = undefined; p.spouse_name = null; p.spouse_seed = undefined; p.married_turn = undefined;
@@ -2267,7 +2271,7 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (p.age >= 60 && fate("60")) { const w = whoAmIId(); push(s, "kader", `Altmışını devirdin. Saçlar ağardı, geçmişin gölgesi uzadı. Ömrün akşamında ${WHOAMI_TR[w]} olarak anılıyorsun — geriye ne bırakacaksın?`, "kişisel", true, { k: "evj.fate60", p: [{ wai: w }] }); }
   if (p.age >= 70 && fate("70")) { const w = whoAmIId(); p.reputation = Math.min(100, p.reputation + 6); push(s, "kader", `Yetmişine vardın — az kimseye nasip olan bir ömür. Torunlar dizinin dibinde, diyar seni ${WHOAMI_TR[w]} olarak biliyor; yaşın sana hürmet getiriyor.`, "kişisel", true, { k: "evj.fate70", p: [{ wai: w }] }); }
   if (p.age >= 80 && fate("80")) { const w = whoAmIId(); p.fame = Math.min(100, p.fame + 8); push(s, "kader", `Sekseni devirdin. Çağın canlı tanığısın; senin gördüklerini gören kalmadı. Adın ${WHOAMI_TR[w]} olmanın ötesinde, bir efsane gibi anılıyor.`, "kişisel", true, { k: "evj.fate80", p: [{ wai: w }] }); }
-  if (p.age < 13 && chance(0.10)) { p.stat_points += 1; push(s, "cocukluk", "Yeni bir şeyler öğrendin (özellik puanı kazandın).", "kişisel", false, { k: "ev.cocukluk" }); } // %25→%10: mektep grinderi 18'inden önce dört statı da maxlayamasın (ihtiyaç ~34 puan, eski musluk 100+ veriyordu)
+  if (p.age < 13 && chance(0.10)) { p.stat_points += 1; const son = [...s.history].reverse().find((e) => /^ev\.cocukluk/.test(e.k || ""))?.k?.replace(/\.f$/, ""); const ak = ["ev.cocukluk", "ev.cocukluk2", "ev.cocukluk3"].filter((k) => k !== son); push(s, "cocukluk", "Yeni bir şeyler öğrendin (özellik puanı kazandın).", "kişisel", false, { k: rnd(ak) }); } // üç ağız, bir öncekini tekrar etmez // %25→%10: mektep grinderi 18'inden önce dört statı da maxlayamasın (ihtiyaç ~34 puan, eski musluk 100+ veriyordu)
   // ── Çocukluk dönüm anıları: 8/10/12 yaşında bir kez tetiklenen, ize bırakan anlar (bazıları yoldaşı anar) ──
   if (p.age >= 8 && p.age < 13 && fate("child8")) {
     addStatXp(s, "intelligence", 8); p.health = Math.min(100, p.health + 4);
@@ -2567,7 +2571,9 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   }
   if (chance(0.05)) { const g = 5 + Math.floor(Math.random() * 20); p.money += g; const fv = chance(0.5); push(s, "gunluk", fv ? `Heybenin dibinde unutulmuş ${g} akçe çıktı; ne zaman düştüğünü kimse bilmiyor.` : `Yolda ${g} akçe buldun.`, "kişisel", false, { k: fv ? "evj.foundCoin2" : "evj.foundCoin", p: [g] }); }
   if (chance(0.04)) {
-    p.health = Math.max(0, p.health - 12); { const sv = chance(0.5); push(s, "hastalik", sv ? "Soğuk kemiğe işledi; birkaç gün yorgan, sıcak çorba ve komşu duasıyla geçti." : "Hastalandın, birkaç gün yatakta kaldın.", "kişisel", false, { k: sv ? "evj.sick2" : "evj.sick" }); }
+    p.health = Math.max(0, p.health - 12);
+    { const yine = s.history.some((e) => e.day >= s.turn - 12 && /^evj\.sick/.test(e.k || "")); const sv = chance(0.5); // bir yıl içinde ikinci kez: "yine" — ve yol göster
+      push(s, "hastalik", yine ? "Yine yatağa düştün; geçen hastalığın izi silinmeden." : sv ? "Soğuk kemiğe işledi; birkaç gün yorgan, sıcak çorba ve komşu duasıyla geçti." : "Hastalandın, birkaç gün yatakta kaldın.", "kişisel", false, { k: yine ? (s.history.some((e) => e.day >= s.turn - 24 && e.k === "evj.sickAgain") ? "evj.sickAgain2" : "evj.sickAgain") : sv ? "evj.sick2" : "evj.sick" }); }
     // Düşkün bünyede hastalık yerleşebilir: kronik öksürük — hekim tedavisi ister, kendiliğinden geçmez.
     if (!p.chronic && p.age >= 35 && p.health < 45 && chance(0.25)) { p.chronic = { k: "oksuruk", since: s.turn }; push(s, "hastalik", "Öksürük yakanı bırakmadı; göğsüne yerleşti. Hekim yüzü görmeden geçmeyecek.", "kişisel", true, { k: "evj.chronicStart" }); }
   }

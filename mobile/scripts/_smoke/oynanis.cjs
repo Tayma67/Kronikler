@@ -38,11 +38,11 @@ function acikGerilim(s) {
 const GECIKMELI = ["seed.", "kan.canBorcu", "kan.donus", "kan.davaci", "kan.buyudu", "kan.miras", "kan.babaKatili", "npct.kefilOd", "npct.kefilBatti", "npct.borcOdendi", "npct.borcGecikti", "npct.borcBatti", "npci.savundu"]; // (nesil hafızası olayları kasabanın toplu anısıdır; anılan kişi atanın kendisi — ölçüm dışı)
 // İkilemden doğan tohumların metni eylemin kendisini geri çağırır ("o yangın gecesi…"): adsız da olsa sebebini söyler.
 const IKILEM_TOHUM = new Set(Object.values(g.DILEMMA_SEEDS || {}).map((x) => "seed." + x.kaynak));
-const T = { kisisiz: {}, gecikmeli: 0, geriCagiran: 0, kapi: {}, dunyaHaberi: 0, ay: 0, bos: 0, bunalma: 0, pencere: 0, karar: 0, buyukKarar: 0, olay: 0, landmark: 0, gerilimTop: 0, gerilim5ustu: 0, gerilimMax: 0, cocukAy: 0, cocukBos: 0 };
+const T = { kisisiz: {}, gecikmeli: 0, geriCagiran: 0, kapi: {}, dunyaHaberi: 0, ay: 0, bos: 0, bunalma: 0, pencere: 0, karar: 0, buyukKarar: 0, olay: 0, landmark: 0, gerilimTop: 0, gerilim5ustu: 0, gerilimMax: 0, cocukAy: 0, cocukBos: 0, kisisel: 0, tekrar: 0, tekrarKey: {} };
 const hayatAy = [], hayatKarar = [], olumYasi = [], meslekler = {}, enBuyuk = {}; let sarmal = 0, ilkKararAy = [];
 for (let h = 0; h < LIVES; h++) {
   let s = g.newGame("Sim", "Oyuncu", Math.random() < 0.5 ? "erkek" : "kadın");
-  let ay = 0, kararSay = 0, dip = 0, sarmalda = false, ilkKarar = null, seen = s.hseq || 0, guard = 0;
+  const goruldu = new Map(); let ay = 0, kararSay = 0, dip = 0, sarmalda = false, ilkKarar = null, seen = s.hseq || 0, guard = 0;
   const hedef = R(g.ALL_PROFS.filter((x) => x !== "işsiz")); const hedefSart = g.meslekSarti(hedef);
   while (!s.player.dead && s.player.age < 85 && guard++ < 1100) {
     const p = s.player;
@@ -57,6 +57,7 @@ for (let h = 0; h < LIVES; h++) {
     try { if (p.age >= 13 && s.player.profession !== hedef && Math.random() < 0.2) s = g.changeProfession(s, hedef); } catch (e) {}
     try { if (p.age >= 13 && Math.random() < 0.25) { const ns = g.npcsOf(s); if (ns.length) { const r = g.talkWith(s, R(ns), R(["hosbes", "iltifat", "dert", "is", "aile"])); if (r && r.state) s = r.state; } } } catch (e) {}
     // Ay ilerler; ardından ana ekranın göstereceği her şey sayılır.
+    const ayBasi = s.hseq || 0; // ayın kendisinin ürettiği olaylar bundan sonra (oyuncunun eylem dönütleri hariç)
     s = g.advance(s, 1); ay++; T.ay++;
     if (s.npcTeklif && s.npcTeklif.turn === s.turn && ['canborcu', 'kardes', 'miras', 'dunur', 'borc'].includes(s.npcTeklif.tur)) T.kapi[s.npcTeklif.tur] = (T.kapi[s.npcTeklif.tur] || 0) + 1; // ayın kendisinden gelen kapı (can borcu, kardeş, miras, dünür, borç)
     const yeni = s.history.filter((e) => (e.q || 0) > seen); seen = s.hseq || seen;
@@ -66,6 +67,7 @@ for (let h = 0; h < LIVES; h++) {
     if (land.length) pencere++; // dönüm noktası penceresi (ayın en yenisi)
     if (yeni.some((e) => e.type === "yıl_dönümü")) pencere++; // yıl karnesi
     T.olay += yeni.length; T.landmark += land.length;
+    for (const e of yeni) { if (e.scope === "makro" || !e.k || (e.q || 0) <= ayBasi || !g.onemliMi(e)) continue; T.kisisel++; const imza = e.k + "|" + JSON.stringify(e.p || []); const once = goruldu.get(imza); if (once != null && s.turn - once <= 24) { T.tekrar++; T.tekrarKey[e.k] = (T.tekrarKey[e.k] || 0) + 1; } goruldu.set(imza, s.turn); } // aynı satır (anahtar + parametreler) iki yıl içinde yeniden
     for (const e of yeni) if (GECIKMELI.some((x) => (e.k || "").startsWith(x))) { T.gecikmeli++; if ((e.p || []).some((v) => v && typeof v === "object" && ("kn" in v || "kf" in v || "fn" in v)) || IKILEM_TOHUM.has(e.k)) T.geriCagiran++; else T.kisisiz[e.k] = (T.kisisiz[e.k] || 0) + 1; }
     for (const e of land) enBuyuk[e.type] = (enBuyuk[e.type] || 0) + 1;
     const ger = acikGerilim(s); T.gerilimTop += ger; if (ger > 5) T.gerilim5ustu++; T.gerilimMax = Math.max(T.gerilimMax, ger); // kararlar verilmeden önce
@@ -127,5 +129,6 @@ console.log(`  Açık gerilim ort. ${sonuc.ortGerilim} · 5'i aşan ay %${sonuc.
 console.log(`  Tempo: hayat medyan ${sonuc.hayatAyMedyan} ay, ${sonuc.hayatKararMedyan} karar · ilk karar ${sonuc.ilkKararAyMedyan}. ayda`);
 console.log(`  Ölüm yaşı medyan ${sonuc.olumYasiMedyan} · çöküş sarmalı %${sonuc.sarmalYuzde}`);
 console.log(`  Çeşitlilik: ${sonuc.meslekSayisi} meslek, entropi ${sonuc.meslekCesitliligi} bit (${Object.entries(meslekler).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + " " + v).join(", ")})`);
+console.log(`  Tekrar: ayın getirdiği önemli satırların %${yuzde(T.tekrar, T.kisisel)}'i son iki yılda aynen görülmüştü · en çok: ${Object.entries(T.tekrarKey).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => k + " " + v).join(", ")}`);
 console.log(`  Kapıya gelenler: ${Object.entries(T.kapi).map(([k, v]) => k + " " + v).join(", ") || "yok"}`);
 console.log(`  En sık dönüm noktası türleri: ${sonuc.enSikDonum.map(([k, v]) => k + " " + v).join(", ")}`);
