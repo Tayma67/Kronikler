@@ -322,7 +322,7 @@ export default function Dashboard() {
         const kardesTur = tk.tur === "kardes" || tk.tur === "miras"; // kardeşin isteği: anahtar kardeşin cinsine göre, adı ilk adıyla
         const km = kapiMetni(state); // kapıdaki insan kartı (düğün, cenaze, kefalet, hakemlik)
         const metin = km ? renderEvt(km.k, "", km.p, lang, t, p.gender === "kadın") : kardesTur ? renderEvt("npct." + tk.tur + (pr.npc.gender === "kadın" ? ".k" : ""), "", [pr.npc.name.split(" ")[0], tk.tutar || 0], lang, t, p.gender === "kadın")
-          : renderEvt(tk.tur === "dunur" ? "npct.dunur" : "npct.borc", "", tk.tur === "dunur" ? [pr.npc.name] : [pr.npc.name, tk.tutar || 0, tk.ay || 12], lang, t, p.gender === "kadın");
+          : renderEvt(tk.tur === "dunur" ? "npct.dunur" : "npct.borc" + (tk.sebep ? "." + tk.sebep : ""), "", tk.tur === "dunur" ? [pr.npc.name] : [pr.npc.name, tk.tutar || 0, tk.ay || 12], lang, t, p.gender === "kadın");
         const yetmez = tk.tur !== "dunur" && tk.tur !== "kefil" && tk.tur !== "hakem" && tk.tur !== "imece" && tk.tur !== "canborcu" && p.money < (tk.tutar || 0); // kesede yoksa verilemez (ret her zaman açık)
         const ipucu = hakemIpucu(state); const bAdi = tk.tur === "hakem" && tk.ek ? kisiProfil(state, tk.ek, lang)?.npc.name || "" : "";
         const redEt = tk.tur === "dugun" || tk.tur === "cenaze" || tk.tur === "imece" || (tk.tur === "helal" && tk.alt === "olum") ? t("npct.gitme") : tk.tur === "hakem" ? t("npct.karisma") : tk.tur === "canborcu" ? t("npct.canborcuHelalBtn") : tk.tur === "araci" ? t("npct.araciRedBtn") : t("npct.red");

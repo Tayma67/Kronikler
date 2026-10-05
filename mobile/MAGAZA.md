@@ -1,6 +1,6 @@
 # Mağaza Tanıtım Paketi (Play Store / doğrudan paylaşım)
 
-Paket adı: `com.kronikler.app` · Kategori: Simülasyon / Rol Yapma · Yaş: PEGI 12 önerisi
+Paket adı: `com.kronikler.app` · Kategori: Simülasyon / Rol Yapma · Yaş: PEGI 16 / Teen (yasak ilişki, suç, kan davası ve kumar benzetimi metinde var; kullanıcı kararı)
 (savaş/ölüm teması metinsel; kumar gerçek para içermez, kan/şiddet görseli yok, satın alım yok, reklam yok, internet izni yalnız isteğe bağlı MP)
 
 ## Kısa açıklama (80 karakter sınırı)

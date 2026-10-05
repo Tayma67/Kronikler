@@ -382,6 +382,11 @@ Aynı kişi iki yıl içinde, kefil isteği iki yılda bir, imece yılda bir ker
 Ölçüm (40 hayat, `oynanis.cjs`): yetişkinlikte boş ay %27 → %19; hayat başına ortalama imece ~24, kefil ~18,
 hakemlik ~9, cenaze ~8, düğün ~5.
 
+Borç isteğinin bir sebebi vardır ve kişinin gerçek hâlinden seçilir: evladının düğünü, ocağa düşen ölüm, kötü hasat
+(çiftçi/çoban/balıkçı/avcı), dükkân (zanaatkâr ve tüccar), zar borcu (kurnaz/aceleci/hırslı huy) ya da darlık. Sebep
+geri ödemeyi belirler: dükkân borcu %10 daha sık ve fazlasıyla döner, zar borcu %25 daha az döner (simde %87 / %77 / %53).
+İmecenin işi mevsimden gelir: yazın harman, güzün dam aktarma, baharda duvar, kışın odun.
+
 Derin sistemler de kapıdan gelir (menüde beklemez):
 - **Can borcu** (canını bağışladığın kişi, vadesi gelince): keseyi (25–50 akçe) alırsan hesap kapanır; "borcun yok"
   dersen ömürlük minnet (görüş en az +30, "darda yardım etti"), şeref +2, mertlik +2 ve bir dönüm noktası.
