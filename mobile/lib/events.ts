@@ -1,7 +1,7 @@
 // İkilemler — ay ilerlerken çıkan anlatısal seçimler. Saf veri; etki applyDilemma ile uygulanır.
-import { GameState, Delta, Player } from "./game";
+import { GameState, Delta, Player, effStat } from "./game";
 
-export interface Choice { label: string; delta: Delta; result: string; rk?: string; sans?: number; } // rk: sonuç metni anahtarı (riskli yolun kötü sonucu) · sans: görünür başarı şansı %
+export interface Choice { label: string; delta: Delta; result: string; rk?: string; sans?: number; risk?: { taban: number; ticaret?: number; zeka?: number; kayip: Delta; metin: string }; gercek?: Delta; } // rk: sonuç metni anahtarı (riskli yolun kötü sonucu) · sans: görünür başarı şansı % · risk: kart açılırken zar atılır (şans = taban + ticaret×beceri + zekâ×stat), tutmazsa kayıp uygulanır · gercek: uygulanacak delta (delta kartta gösterilen)
 export interface Dilemma {
   id: string; title: string; text: string; icon: string;
   when?: (p: Player) => boolean;
@@ -216,7 +216,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Kanadı kırık bir kuş yuvadan düşmüş, çırpınıyor.",
     when: (p) => p.age < 13,
     choices: [
-      { label: "Bağrına bas, iyileştir", delta: { honor: 4, nam: { dindar: 2 } }, result: "Günlerce besledin; kanadı tutunca gökyüzüne saldın. İçin ısındı." },
+      { label: "Bağrına bas, iyileştir", delta: { honor: 4, hunger: -5, nam: { dindar: 2 } }, result: "Günlerce besledin; kanadı tutunca gökyüzüne saldın. İçin ısındı." },
       { label: "Doğaya bırak", delta: {}, result: "Kaderine bıraktın; tabiatın işine karışmadın." },
     ],
   },
@@ -272,7 +272,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => p.age >= 13,
     choices: [
       { label: "Sohbetine kulak ver", delta: { honor: 4, nam: { dindar: 3 } }, result: "Birkaç hikmet sözü gönlüne işledi; içine bir huzur doldu." },
-      { label: "Yoluna devam et", delta: {}, result: "Selam verip geçtin; aklın işindeydi." },
+      { label: "Yoluna devam et", delta: { money: 4 }, result: "Selam verip geçtin; aklın işindeydi." },
     ],
   },
   {
@@ -290,7 +290,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => p.age >= 14,
     choices: [
       { label: "Anlattıklarını dinle", delta: { stat_points: 1 }, result: "Savaş hilelerini dinledin; bir şeyler öğrendin (özellik puanı)." },
-      { label: "Vaktin yok", delta: {}, result: "Başınla selam verip geçtin." },
+      { label: "Vaktin yok", delta: { money: 4 }, result: "Başınla selam verip geçtin." },
     ],
   },
   {
@@ -363,7 +363,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => p.age >= 50,
     choices: [
       { label: "Hikâyeni anlat", delta: { honor: 4, reputation: 2 }, result: "Geçmişini anlattın; gözleri parladı, adın bir kuşak daha yaşayacak." },
-      { label: "Geçiştir", delta: {}, result: "'Çok şey yaşadım' deyip geçtin; kimi sır mezara gider." },
+      { label: "Geçiştir", delta: { health: 2 }, result: "'Çok şey yaşadım' deyip geçtin; kimi sır mezara gider." },
     ],
   },
   {
@@ -442,7 +442,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Bir tüccar, kervana ortak olursan kârı katlayacağını söylüyor. Ya da batarsın.",
     when: (p) => p.age >= 16 && p.money >= 40,
     choices: [
-      { label: "Yatırım yap (−40)", delta: { money: 10, reputation: 3 }, result: "Kervan sağ döndü; yatırdığın 40 akçe geri geldi, üstüne kâr ve itibar." },
+      { label: "Yatırım yap (−40)", delta: { money: 25, reputation: 3 }, risk: { taban: 45, ticaret: 4, zeka: 1, kayip: { money: -40 }, metin: "Kervan yolda eşkıyaya uğradı; yatırdığın 40 akçe kumda kaldı. Tüccar boynunu büktü, sen kesene baktın." }, result: "Kervan sağ döndü; yatırdığın 40 akçe geri geldi, üstüne kâr ve itibar." },
       { label: "Riske girme", delta: {}, result: "Teklifi geri çevirdin. Belki de doğrusu buydu." },
     ],
   },
@@ -451,7 +451,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Yorgun bir derviş, bir gece konukluk karşılığında hikmetli sözler vaat ediyor.",
     when: (p) => p.age >= 13,
     choices: [
-      { label: "Konuk et", delta: { stat_points: 1, honor: 4 }, result: "Dervişin sohbetinden bir şeyler öğrendin (özellik puanı kazandın)." },
+      { label: "Konuk et", delta: { stat_points: 1, honor: 4, money: -6 }, result: "Dervişin sohbetinden bir şeyler öğrendin (özellik puanı kazandın)." },
       { label: "Geri çevir", delta: {}, result: "Kapını açmadın; derviş sessizce uzaklaştı." },
     ],
   },
@@ -478,7 +478,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => p.age >= 14,
     choices: [
       { label: "Annesini bul", delta: { honor: 8, reputation: 4 }, result: "Çocuğu ailesine kavuşturdun; dualarını aldın." },
-      { label: "Görmezden gel", delta: { honor: -3 }, result: "Acelen vardı, yoluna devam ettin." },
+      { label: "Görmezden gel", delta: { honor: -3, money: 4 }, result: "Acelen vardı, yoluna devam ettin." },
     ],
   },
   {
@@ -486,7 +486,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Hanın loş köşesinde zar atılıyor. Talihini denemek ister misin?",
     when: (p) => p.age >= 16 && p.money >= 20,
     choices: [
-      { label: "Oyna (−20 akçe)", delta: { money: 5 }, result: "Zar senden yana döndü; ortaya koyduğun parayı kurtardın, üstüne biraz kâr." },
+      { label: "Oyna (−20 akçe)", delta: { money: 15 }, risk: { taban: 40, kayip: { money: -20 }, metin: "Zar bu kez yüzüne gülmedi; ortaya koyduğun 20 akçe başkasının kesesine girdi." }, result: "Zar senden yana döndü; ortaya koyduğun parayı kurtardın, üstüne biraz kâr." },
       { label: "Uzak dur", delta: {}, result: "Kumarın sonu hüsran, dedin ve geçtin." },
     ],
   },
@@ -514,7 +514,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => p.age >= 13 && p.age < 30,
     choices: [
       { label: "Kabul et", delta: { stat_points: 1 }, result: "Ustanın yanında çok şey öğrendin." },
-      { label: "Kendi yolum var", delta: {}, result: "Nazikçe reddettin." },
+      { label: "Kendi yolum var", delta: { nam: { mert: 2 } }, result: "Nazikçe reddettin." },
     ],
   },
   {
@@ -531,7 +531,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Soğuk bir gecede kapına bir yetim sığındı.",
     when: (p) => p.age >= 18,
     choices: [
-      { label: "İçeri al, doyur", delta: { honor: 10, reputation: 5 }, result: "Yetimi koruyup kolladın; vicdanın aydınlandı." },
+      { label: "İçeri al, doyur", delta: { honor: 10, reputation: 5, money: -8 }, result: "Yetimi koruyup kolladın; vicdanın aydınlandı." },
       { label: "Geri çevir", delta: { honor: -6 }, result: "Kapını açmadın; o gece uykun kaçtı." },
     ],
   },
@@ -551,7 +551,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "İki aile bir tarla yüzünden bıçak çekecek; adil bilindiğini duymuşlar, araya girmeni istiyorlar.",
     when: (p) => p.age >= 18 && (p.reputation >= 35 || p.honor >= 45),
     choices: [
-      { label: "Arabuluculuk yap", delta: { reputation: 6, honor: 6, fame: 3 }, result: "İki tarafı uzlaştırdın; sözün diyarda ağırlık kazandı." },
+      { label: "Arabuluculuk yap", delta: { reputation: 6, honor: 6, fame: 3, health: -3 }, result: "İki tarafı uzlaştırdın; sözün diyarda ağırlık kazandı." },
       { label: "Karışmam", delta: { reputation: -4 }, result: "Geri durdun; 'demek o kadar da saygın değilmiş' dediler." },
     ],
   },
@@ -598,7 +598,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Çocuklar meydanda topaç çeviriyor, seni de çağırıyorlar.",
     when: (p) => p.age < 13,
     choices: [
-      { label: "Oyuna katıl", delta: { honor: 1 }, result: "Doyasıya oynadın; akşama dek gülüşün eksilmedi." },
+      { label: "Oyuna katıl", delta: { honor: 1, hunger: -6 }, result: "Doyasıya oynadın; akşama dek gülüşün eksilmedi." },
       { label: "Kenarda izle", delta: {}, result: "Uzaktan izlemekle yetindin; içinde bir buruğluk kaldı." },
     ],
   },
@@ -617,7 +617,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => p.age >= 9 && p.age < 13,
     choices: [
       { label: "Hevesle oku", delta: { stat_points: 1, nam: { dindar: 3 } }, result: "Harfleri söktün; yeni bir dünya aralandı (özellik puanı)." },
-      { label: "İlgilenme", delta: {}, result: "Kitabı geri verdin; oyun aklındaydı." },
+      { label: "İlgilenme", delta: { health: 2 }, result: "Kitabı geri verdin; oyun aklındaydı." },
     ],
   },
 
@@ -668,7 +668,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => p.age >= 58,
     choices: [
       { label: "Ömründen anlat", delta: { fame: 3, honor: 3 }, result: "Yaşadıklarını anlattın; sözlerin gençlerin hafızasına kazındı." },
-      { label: "Yorgunum, başka zaman", delta: {}, result: "Gözlerin ağırdı; ocağın başında dalıp gittin." },
+      { label: "Yorgunum, başka zaman", delta: { health: 2 }, result: "Gözlerin ağırdı; ocağın başında dalıp gittin." },
     ],
   },
   {
@@ -723,7 +723,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Bir kervanbaşı, ticaret aklına güvenip seni ortaklığa çağırıyor — büyük kâr, büyük risk.",
     when: (p) => p.age >= 18 && p.money >= 60 && (p.skills?.trade || 0) >= 2,
     choices: [
-      { label: "Ortak ol (−60)", delta: { money: 30, fame: 5, reputation: 4 }, result: "Kervan kârla döndü; koyduğun 60 akçe geri geldi, üstüne kâr, şöhret ve itibar." },
+      { label: "Ortak ol (−60)", delta: { money: 45, fame: 5, reputation: 4 }, risk: { taban: 38, ticaret: 4, zeka: 1, kayip: { money: -60 }, metin: "Kervan çölde yolunu şaşırdı, develerin yarısı döndü; koyduğun 60 akçeden geriye bir şey kalmadı." }, result: "Kervan kârla döndü; koyduğun 60 akçe geri geldi, üstüne kâr, şöhret ve itibar." },
       { label: "Riske girme", delta: {}, result: "Temkinli davrandın; fırsat geçti ama kesen yerinde." },
     ],
   },
@@ -741,7 +741,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Aç bir yetim, kapında çıraklık ve bir tas çorba diliyor.",
     when: (p) => p.age >= 22 && p.profession !== "işsiz",
     choices: [
-      { label: "Yanına al, öğret", delta: { honor: 8, reputation: 5, nam: { comert: 5 } }, result: "Çırağına sanatını öğrettin; hem ona hem adına hayır oldu." },
+      { label: "Yanına al, öğret", delta: { honor: 8, reputation: 5, money: -10, nam: { comert: 5 } }, result: "Çırağına sanatını öğrettin; hem ona hem adına hayır oldu." },
       { label: "Geri çevir", delta: { honor: -3 }, result: "Kapını açmadın; çocuk başını önüne eğip gitti." },
     ],
   },
@@ -770,7 +770,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Bir tüccar, fiyatların yakında fırlayacağını fısıldıyor — şimdi alırsan vurur musun?",
     when: (p) => p.age >= 16 && p.money >= 40 && (p.skills?.trade || 0) >= 1,
     choices: [
-      { label: "Stok yap, riske gir (−35)", delta: { money: 25, reputation: 2 }, result: "Söylenti doğru çıktı; harcadığın 35 akçe geri geldi, üstüne kâr." },
+      { label: "Stok yap, riske gir (−35)", delta: { money: 30, reputation: 2 }, risk: { taban: 40, ticaret: 3, zeka: 2, kayip: { money: -35 }, metin: "Söylenti boş çıktı; aldığın mal ambarda kaldı, 35 akçe yok pahasına elden çıktı." }, result: "Söylenti doğru çıktı; harcadığın 35 akçe geri geldi, üstüne kâr." },
       { label: "Güvenme, geç", delta: {}, result: "Temkinli kaldın; söylenti bu kez boş çıktı, iyi ki girmedin." },
     ],
   },
@@ -807,7 +807,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Varlıklı bir bey kapına geldi: yalnız usta ellerden çıkacak, ince işçilik isteyen bir sipariş için seni arıyor.",
     when: (p) => p.skills.crafting >= 5,
     choices: [
-      { label: "Siparişi al (zahmetli)", delta: { money: 35, reputation: 5, honor: 3 }, result: "Geceni gündüzüne kattın; ortaya çıkan eser beyi mest etti, adın ustalıkla anıldı." },
+      { label: "Siparişi al (zahmetli)", delta: { money: 35, reputation: 5, honor: 3, health: -4 }, result: "Geceni gündüzüne kattın; ortaya çıkan eser beyi mest etti, adın ustalıkla anıldı." },
       { label: "Vaktim yok", delta: {}, result: "Bey omuz silkip başka kapı aradı." },
     ],
   },
@@ -1071,7 +1071,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => !!p.pet,
     choices: [
       { label: "Kediyi çocuğa bırak", delta: { honor: 2, reputation: 1 }, result: "Çocuk kediyi kucaklayıp gitti; üç gün sonra kedi pencerende belirdi. Kediler sahibini kendi seçer — artık iki evi, iki tası var; çocukla da kapıda selamınız." },
-      { label: "Bu ev onun evi, de", delta: { honor: -1 }, result: "Çocuk dudağı titreyerek gitti. Kedi o gece yine kayboldu; iki gün sonra bıyıkları tuzlu döndü. Kimseye sormadan iki evi birden idare ediyor; sen bilmiyormuş gibi yapıyorsun." },
+      { label: "Bu ev onun evi, de", delta: { honor: -1, health: 1 }, result: "Çocuk dudağı titreyerek gitti. Kedi o gece yine kayboldu; iki gün sonra bıyıkları tuzlu döndü. Kimseye sormadan iki evi birden idare ediyor; sen bilmiyormuş gibi yapıyorsun." },
     ],
   },
   // ── İnsan ilişkisi ikilemleri ──
@@ -1080,7 +1080,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Çocukluk arkadaşın soluk soluğa geldi: bir tüccara borçlanmış, kefil olmazsan zindanı boylayacak. Gözlerinde eski günlerin sıcaklığı, sesinde yeni bir titreme var. Kâğıt ve kalem masada.",
     when: (p) => p.age >= 18 && p.age < 45,
     choices: [
-      { label: "İmzala, dostuna güven", delta: { honor: 3, reputation: 1 }, result: "Mührünü bastın. Arkadaşın iki yıl dişini sıktı, kuruşu kuruşuna ödedi; borcun son günü kapına bir sini baklava ile geldi. Kimi dostluk faiziyle geri döner." },
+      { label: "İmzala, dostuna güven", delta: { honor: 3, reputation: 1 }, risk: { taban: 65, kayip: { money: -30, honor: 3 }, metin: "Mührünü bastın. Arkadaşın işinde battı; alacaklılar kapını çaldı ve borcun bir kısmını sen ödedin. Dostluk yerinde, kese hafif." }, result: "Mührünü bastın. Arkadaşın iki yıl dişini sıktı, kuruşu kuruşuna ödedi; borcun son günü kapına bir sini baklava ile geldi. Kimi dostluk faiziyle geri döner." },
       { label: "Sarıl ama imzalama", delta: { honor: -1 }, result: "'Kesemi açarım ama mührümü basamam' dedin, eline birkaç akçe sıkıştırdın. Arkadaşın anladı ama gözü doldu; o günden sonra selamınız var, sohbetiniz eskisi gibi değil." },
     ],
   },
@@ -1270,7 +1270,7 @@ export const FESTIVALS: { month: number; variants: Dilemma[] }[] = [
         text: "Harmandan dönen son araba yolda dingilini kırdı; akşam iniyor, saplar yolda kalmış.",
         when: (p) => p.age >= 14,
         choices: [
-          { label: "Omuz ver, arabayı kurtar", delta: { reputation: 2, nam: { mert: 1 } }, result: "Dingil bağlandı, saplar ambara girdi; arabacı hakkını helal etti, harman tam kapandı." },
+          { label: "Omuz ver, arabayı kurtar", delta: { reputation: 2, health: -2, nam: { mert: 1 } }, result: "Dingil bağlandı, saplar ambara girdi; arabacı hakkını helal etti, harman tam kapandı." },
           { label: "Köye haber sal", delta: { reputation: 1 }, result: "Köyden el geldi, yük paylaşıldı; sen koşturan ayak oldun, adın anıldı." },
         ],
       },
@@ -1368,5 +1368,18 @@ export function pickDilemma(s: GameState): Dilemma | null {
   // Kimliğe tepki veren olaylar daha ağırlıklı: dünyanın seni tanıdığı hissi.
   const weighted: Dilemma[] = [];
   for (const d of pool) { const w = d.identity ? 3 : 1; for (let i = 0; i < w; i++) weighted.push(d); }
-  return weighted[Math.floor(Math.random() * weighted.length)];
+  return riskiCoz(p, weighted[Math.floor(Math.random() * weighted.length)]);
+}
+// Riskli seçenek (ölü karar olmasın): şans kartta görünür, zar kart açılırken atılır. Kartın etki izi iki ihtimali birlikte gösterir
+// (sonucu ele vermesin); tutmazsa kayıp deltası ve kendi sonuç metni (dil.<id>.r<i>x) uygulanır.
+export function riskiCoz(p: Player, d: Dilemma): Dilemma {
+  if (!d.choices.some((c) => c.risk)) return d;
+  return { ...d, choices: d.choices.map((c, i) => {
+    const r = c.risk; if (!r) return c;
+    const sans = Math.max(10, Math.min(90, Math.round(r.taban + (r.ticaret || 0) * (p.skills?.trade || 0) + (r.zeka || 0) * effStat(p, "intelligence"))));
+    const ok = Math.random() * 100 < sans;
+    const goster = { ...c.delta } as Record<string, unknown>;
+    for (const [k, v] of Object.entries(r.kayip)) if (typeof v === "number" && Math.abs(v) > Math.abs((goster[k] as number) || 0)) goster[k] = v;
+    return { ...c, sans, delta: goster as Delta, gercek: ok ? c.delta : r.kayip, rk: ok ? undefined : "dil." + d.id + ".r" + i + "x", result: ok ? c.result : r.metin };
+  }) };
 }

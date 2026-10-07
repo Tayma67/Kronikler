@@ -2231,6 +2231,20 @@ export function donumAni(e: GameEvent): boolean {
   const k = e.k || ""; return DONUM_MAKRO.some((x) => k.startsWith(x));
 }
 // Son N ayda kroniğe düşmüş, verilen önekle başlayan olay anahtarları (tekrar önleme).
+// Hastalığın sebebi (günlükte TR yedek metin; 6 dil i18n'de).
+const SICK_MEVSIM: Record<string, string> = { "Kış": "kis", "İlkbahar": "bahar", "Yaz": "yaz", "Sonbahar": "guz" };
+const SICK_PROF: Record<string, string> = { "balıkçı": "balikci", demirci: "demirci", "çiftçi": "ciftci", "çoban": "coban", "fırıncı": "firinci", asker: "asker", "dokumacı": "dokumaci" };
+const SICK_TR: Record<string, string> = {
+  "evj.sickAgain": "Yine yatağa düştün; geçen hastalığın izi silinmeden.", "evj.sickAgain2": "Hastalık yakanı bırakmıyor; hekime görünmenin vakti.",
+  "evj.sick": "Hastalandın, birkaç gün yatakta kaldın.", "evj.sick2": "Soğuk kemiğe işledi; birkaç gün yorgan, sıcak çorba ve komşu duasıyla geçti.",
+  "evj.sick.kis": "Kış ayazı göğsüne oturdu; birkaç gün ocak başında öksürerek yattın.", "evj.sick.bahar": "Bahar rüzgârına aldandın; terliyken üşüdün, sesin kısıldı, birkaç gün yattın.",
+  "evj.sick.yaz": "Yaz sıcağında bozuk su içtin; karın sancısıyla birkaç gün yattın.", "evj.sick.guz": "Güz yağmurunda sırılsıklam kaldın; ateşin çıktı, birkaç gün yattın.",
+  "evj.sick.aclik": "Aç kalan beden direnemedi; birkaç gün yataktan kalkamadın. Önce karın doymalı.",
+  "evj.sick.p.balikci": "Ağ başında saatlerce ıslak kaldın; ateş bastı, kayık birkaç gün kıyıda bekledi.", "evj.sick.p.demirci": "Ocağın dumanı ciğerine doldu; birkaç gün öksürükle yattın, örs sustu.",
+  "evj.sick.p.ciftci": "Tarlada güneş başına vurdu; başın zonklayarak birkaç gün gölgede yattın.", "evj.sick.p.coban": "Otlakta yağmurla rüzgâr arasında kaldın; sürü komşuya emanet, sen birkaç gün yattın.",
+  "evj.sick.p.firinci": "Fırının harıyla dışarının ayazı arasında gidip geldin; göğsün tutuldu, birkaç gün yattın.", "evj.sick.p.asker": "Kışlanın kalabalığında bir humma dolaştı; sen de nasibini aldın, birkaç gün revirde yattın.",
+  "evj.sick.p.dokumaci": "Tezgâh başında eğilmekten belin tutuldu; birkaç gün kalkamadın.",
+};
 function sonAnahtarlar(s: GameState, onek: string, ay: number): Set<string> {
   const out = new Set<string>(); for (let i = s.history.length - 1; i >= 0 && s.history[i].day >= s.turn - ay; i--) { const k = s.history[i].k; if (k && k.startsWith(onek)) out.add(k); }
   return out;
@@ -2701,8 +2715,12 @@ function rollLifeEvents(s: GameState, cal: CalendarInfo) {
   if (chance(0.05)) { const g = 5 + Math.floor(Math.random() * 20); p.money += g; const fv = chance(0.5); push(s, "gunluk", fv ? `Heybenin dibinde unutulmuş ${g} akçe çıktı; ne zaman düştüğünü kimse bilmiyor.` : `Yolda ${g} akçe buldun.`, "kişisel", false, { k: fv ? "evj.foundCoin2" : "evj.foundCoin", p: [g] }); }
   if (chance(0.04)) {
     p.health = Math.max(0, p.health - 12);
-    { const yine = s.history.some((e) => e.day >= s.turn - 12 && /^evj\.sick/.test(e.k || "")); const sv = chance(0.5); // bir yıl içinde ikinci kez: "yine" — ve yol göster
-      push(s, "hastalik", yine ? "Yine yatağa düştün; geçen hastalığın izi silinmeden." : sv ? "Soğuk kemiğe işledi; birkaç gün yorgan, sıcak çorba ve komşu duasıyla geçti." : "Hastalandın, birkaç gün yatakta kaldın.", "kişisel", false, { k: yine ? (s.history.some((e) => e.day >= s.turn - 24 && e.k === "evj.sickAgain") ? "evj.sickAgain2" : "evj.sickAgain") : sv ? "evj.sick2" : "evj.sick" }); }
+    { const yine = s.history.some((e) => e.day >= s.turn - 12 && /^evj\.sick/.test(e.k || "")); const yakin = sonAnahtarlar(s, "evj.sick", 36); // bir yıl içinde ikinci kez: "yine" — ve yol göster
+      // Sebebi söyleyen hastalık: mevsim, zanaat, açlık; son üç yılda anlatılan sebep yinelenmez (öğüt de iki kez söylendiyse susar).
+      let k = yine && !s.history.some((e) => e.day >= s.turn - 24 && e.k === "evj.sickAgain") ? "evj.sickAgain" : yine && !s.history.some((e) => e.day >= s.turn - 24 && e.k === "evj.sickAgain2") ? "evj.sickAgain2" : "";
+      if (!k) { const pr = SICK_PROF[p.profession]; const havuz = [p.hunger < 30 ? "evj.sick.aclik" : "", "evj.sick." + SICK_MEVSIM[currentCalendar(s.turn).season], pr ? "evj.sick.p." + pr : "", "evj.sick", "evj.sick2"].filter((x) => x && !yakin.has(x));
+        k = havuz[0] === "evj.sick.aclik" ? havuz[0] : havuz.length ? rnd(havuz) : "evj.sick"; }
+      push(s, "hastalik", SICK_TR[k] || "Hastalandın, birkaç gün yatakta kaldın.", "kişisel", false, { k }); }
     // Düşkün bünyede hastalık yerleşebilir: kronik öksürük — hekim tedavisi ister, kendiliğinden geçmez.
     if (!p.chronic && p.age >= 35 && p.health < 45 && chance(0.25)) { p.chronic = { k: "oksuruk", since: s.turn }; push(s, "hastalik", "Öksürük yakanı bırakmadı; göğsüne yerleşti. Hekim yüzü görmeden geçmeyecek.", "kişisel", true, { k: "evj.chronicStart" }); }
   }

@@ -171,7 +171,7 @@ export default function Dashboard() {
   }, [state?.player.rakip?.yaris]);
   const lastRolledTurn = useRef<number>(state?.turn ?? 0);
   const rollSeq = useRef<number>(state?.hseq ?? 0); // son kart zarından bu yana düşen olaylar: bu ay büyük bir an yaşandıysa kart çıkmaz
-  const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; const isFest = !!dilemma && dilemma.id.startsWith("fest_"); if (dilemma) { const k = "dil." + dilemma.id + ".r" + i; const v = t(k); res = v === k ? c.result : v; } apply((s) => applyDilemma(s, c.delta, res, sk, isFest, dilemma ? "dil." + dilemma.id + ".r" + i : undefined)); setDilemma(null); };
+  const onChoose = (c: Choice, i: number) => { hap("selection"); let res = c.result; const sk = dilemma ? dilemma.id + ":" + i : undefined; const isFest = !!dilemma && dilemma.id.startsWith("fest_"); const rk = dilemma ? c.rk || "dil." + dilemma.id + ".r" + i : undefined; if (rk) { const v = t(rk); res = v === rk ? c.result : v; } apply((s) => applyDilemma(s, c.gercek || c.delta, res, sk, isFest, rk)); setDilemma(null); };
   const onResolveOpp = (success: boolean) => { if (!opp) return; hap("advance"); apply((s) => resolveOpportunity(s, opp, success)); setOpp(null); };
 
   useEffect(() => {

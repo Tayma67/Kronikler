@@ -77,7 +77,7 @@ for (let h = 0; h < LIVES; h++) {
       const fest = g.pickFestival(s);
       if (fest) { pencere++; karar++; buyuk++; const i = Math.floor(Math.random() * fest.choices.length); s = g.applyDilemma(s, fest.choices[i].delta, fest.choices[i].result, fest.id + ":" + i, true); }
       else if (!land.length) { const r = Math.random();
-        if (r < KART_IKILEM) { const d = g.pickDilemma(s); if (d) { pencere++; karar++; buyuk++; const i = Math.floor(Math.random() * d.choices.length); s = g.applyDilemma(s, d.choices[i].delta, d.choices[i].result, d.id + ":" + i); } }
+        if (r < KART_IKILEM) { const d = g.pickDilemma(s); if (d) { pencere++; karar++; buyuk++; const i = Math.floor(Math.random() * d.choices.length); s = g.applyDilemma(s, d.choices[i].gercek || d.choices[i].delta, d.choices[i].result, d.id + ":" + i); } }
         else if (r < KART_IKILEM + KART_FIRSAT) { const l = g.opportunitiesFor(s); if (l.length) { pencere++; karar++; s = g.resolveOpportunity(s, R(l), Math.random() < 0.5); } }
         else if (r < KART_IKILEM + KART_FIRSAT + KART_KAPI) { s = g.kapiyaGelen(s); if (s.npcTeklif && s.npcTeklif.turn === s.turn) T.kapi[s.npcTeklif.tur] = (T.kapi[s.npcTeklif.tur] || 0) + 1; } }
     }

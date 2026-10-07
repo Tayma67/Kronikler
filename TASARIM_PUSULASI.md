@@ -466,7 +466,7 @@ haritasındadır. Hedeflerin bir kısmı bugünkü değerler ölçüldükten son
 |---|---|---|
 | Boş ay oranı | Anlamlı karar ya da görünür sonuç olmayan aylar | Ölçülüp azaltılacak |
 | Bunalma ayı | Aynı ayda 3'ten fazla büyük karar/tehdit | ~0 |
-| Ölü karar | Her koşulda baskın seçeneği olan seçimler | 0 |
+| Ölü karar | Her koşulda baskın seçeneği olan seçimler | 0 (`olu-karar.cjs`; ilk ölçüm 143 kartta 21 → 0: "riske gir" kartları hep kazanıyordu, artık görünür şanslı gerçek risk; "dinle / geç" kartlarında geçmenin de küçük bir kazancı, iyiliğin de bir bedeli var) |
 | Geri çağırma oranı | Sebebini söyleyen gecikmeli sonuçlar | %100 |
 | Tekrar oranı | Ayın getirdiği önemli satırlardan son iki yılda aynen (anahtar + kişi) görülmüş olanlar | Ölçülüp azaltılır (%19,8 → %7,5 → %6,6; mevsim satırları önemli sayılmaz; anı, iş olayı ve hasım satırı yakın zamanda çıktıysa yeniden seçilmez) |
 | Açık gerilim sayısı | Aynı anda görünür açık hesap | ≤5 |
