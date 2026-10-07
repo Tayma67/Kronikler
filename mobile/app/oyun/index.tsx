@@ -339,7 +339,7 @@ export default function Dashboard() {
                 <Text style={{ fontFamily: F.display, fontSize: 16, color: C.parchment, marginTop: 8, textAlign: "center" }}>{pr.npc.name}</Text>
                 <Text style={{ fontFamily: F.serif, fontSize: 14, color: C.parchmentDim, lineHeight: 21, marginTop: 10, textAlign: "center" }}>{metin}</Text>
                 {tk.tur !== "hakem" ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.goldDim, lineHeight: 18, marginTop: 8, textAlign: "center" }}>{neden}</Text> : null}
-                {araciYuzde != null ? <Text style={{ fontFamily: F.display, fontSize: 12, color: araciYuzde >= 60 ? C.sage : araciYuzde <= 25 ? C.blood : C.gold, marginTop: 8, textAlign: "center" }}>{t("npct.araciSans")}: %{araciYuzde}</Text> : null}
+                {araciYuzde != null ? <Text style={{ fontFamily: F.display, fontSize: 12, color: araciYuzde >= 60 ? C.sage : araciYuzde <= 25 ? C.blood : C.gold, marginTop: 8, textAlign: "center" }}>{t("npct.araciSans")}: {yuzdeL(araciYuzde, lang)}</Text> : null}
                 {ipucu ? <Text style={{ fontFamily: F.serifItalic, fontSize: 12, color: C.sage, lineHeight: 18, marginTop: 8, textAlign: "center" }}>{renderEvt("npct.hakemIpucu", "", [ipucu], lang, t, p.gender === "kadın")}</Text> : null}
                 {tk.tur === "hakem" ? (
                   <View style={{ gap: 8, marginTop: 16, alignSelf: "stretch" }}>

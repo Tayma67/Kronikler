@@ -9,7 +9,7 @@ import { ITEMS, localFirstName } from "../../lib/world";
 import { armaImage } from "../../lib/assets";
 import { Portre, ProgressBar, GoldDivider, ScreenFresk } from "../../lib/ui";
 import { GameIcon } from "../../lib/icons";
-import { useI18n, applyParams, lakapAdi, lakapliAd } from "../../lib/i18n";
+import { useI18n, applyParams, lakapAdi, lakapliAd, yuzdeL } from "../../lib/i18n";
 import { hap } from "../../lib/haptics";
 import { playWater, playPurr, playBark } from "../../lib/sound";
 import { placeName, professionNameL, careerTitleL } from "../../lib/locale-data";
@@ -460,7 +460,7 @@ export default function Karakter() {
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontFamily: F.serifItalic, fontSize: 12.5, color: C.parchment }}>{t("percept." + pp.key)}</Text>
                       <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 0.5, color: C.parchmentMuted, marginTop: 2 }}>
-                        {(atHome(p) ? t("soc.home") : t("soc.away"))} · {t("soc.recog")}: %{Math.round(pp.recog * 100)}
+                        {(atHome(p) ? t("soc.home") : t("soc.away"))} · {t("soc.recog")}: {yuzdeL(Math.round(pp.recog * 100), lang)}
                       </Text>
                     </View>
                   </View>

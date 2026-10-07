@@ -96,7 +96,7 @@ export default function DiyarDetay() {
                 </Pressable>
               )}
               {/* Vergi oranı (tradeoff: gelir/hazine ↔ memnuniyet) */}
-              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted, marginTop: 14, marginBottom: 5 }}>{t("gov.tax").toUpperCase()} · %{govTaxOf(state.player, name)}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 9, letterSpacing: 1.5, color: C.parchmentMuted, marginTop: 14, marginBottom: 5 }}>{t("gov.tax").toUpperCase()} · {yuzdeL(govTaxOf(state.player, name), lang)}</Text>
               <View style={{ flexDirection: "row", gap: 6 }}>
                 {GOV_TAX_PRESETS.map((tp) => {
                   const on = govTaxOf(state.player, name) === tp.rate;

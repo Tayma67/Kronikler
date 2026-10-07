@@ -1081,7 +1081,7 @@ export const DILEMMAS: Dilemma[] = [
     when: (p) => p.age >= 18 && p.age < 45,
     choices: [
       { label: "İmzala, dostuna güven", delta: { honor: 3, reputation: 1 }, risk: { taban: 65, kayip: { money: -30, honor: 3 }, metin: "Mührünü bastın. Arkadaşın işinde battı; alacaklılar kapını çaldı ve borcun bir kısmını sen ödedin. Dostluk yerinde, kese hafif." }, result: "Mührünü bastın. Arkadaşın iki yıl dişini sıktı, kuruşu kuruşuna ödedi; borcun son günü kapına bir sini baklava ile geldi. Kimi dostluk faiziyle geri döner." },
-      { label: "Sarıl ama imzalama", delta: { honor: -1 }, result: "'Kesemi açarım ama mührümü basamam' dedin, eline birkaç akçe sıkıştırdın. Arkadaşın anladı ama gözü doldu; o günden sonra selamınız var, sohbetiniz eskisi gibi değil." },
+      { label: "Sarıl ama imzalama", delta: { honor: -1, money: -5 }, result: "'Kesemi açarım ama mührümü basamam' dedin, eline birkaç akçe sıkıştırdın. Arkadaşın anladı ama gözü doldu; o günden sonra selamınız var, sohbetiniz eskisi gibi değil." },
     ],
   },
   {

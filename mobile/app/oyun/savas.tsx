@@ -114,7 +114,7 @@ export default function Savas() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="crossed-swords" size={11} color={C.parchmentDim} /><Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.parchmentDim }}>{pw}</Text></View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="shield" size={11} color={C.azure} /><Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.azure }}>{armorDefense(p)}</Text></View>
           {hasShield(p) ? (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="kite" size={11} color={C.sage} /><Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.sage }}>{t("cb.block")} %{Math.round(shieldBlockChance(p, stance === "savunmaci") * 100)}</Text></View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><GameIcon name="kite" size={11} color={C.sage} /><Text style={{ fontFamily: F.display, fontSize: 9.5, color: C.sage }}>{t("cb.block")} {yuzdeL(Math.round(shieldBlockChance(p, stance === "savunmaci") * 100), lang)}</Text></View>
           ) : null}
         </View>
         <Animated.View style={[{ paddingHorizontal: 20, position: "relative" }, shakeStyle]}>

@@ -214,7 +214,7 @@ export default function Hanedan() {
                 <Text style={{ fontFamily: F.display, fontSize: 11, letterSpacing: 0.5, color: backing ? C.sage : C.blood }}>{backing ? "✓ " : "✕ "}{t("thr.backing")}</Text>
               </View>
               <Text style={{ fontFamily: F.serifItalic, fontSize: 10.5, color: C.ember, lineHeight: 16, marginTop: 9 }}>⚠ {t("thr.risk")}</Text>
-              {claimable && <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, marginTop: 8 }}>{t("thr.odds")}: %{Math.round(throneOdds(state) * 100)} · {t("thr.cost")} {THRONE_COST} ⚜</Text>}
+              {claimable && <Text style={{ fontFamily: F.display, fontSize: 10, color: C.gold, marginTop: 8 }}>{t("thr.odds")}: {yuzdeL(Math.round(throneOdds(state) * 100), lang)} · {t("thr.cost")} {THRONE_COST} ⚜</Text>}
               <Pressable onPress={doClaim} disabled={!claimable} style={{ marginTop: 10, paddingVertical: 13, borderRadius: 9, alignItems: "center", borderWidth: 1.5, borderColor: claimable ? "rgba(201,168,76,0.6)" : C.border, backgroundColor: claimable ? C.gold : C.bg }}>
                 <Text style={{ fontFamily: F.display, fontSize: 12, letterSpacing: 1, color: claimable ? C.inkOnGold : C.parchmentMuted }}>{claimable ? t("thr.claim") : t("thr.need")}</Text>
               </Pressable>
@@ -293,7 +293,7 @@ export default function Hanedan() {
                   })}
                 </View>
                 {/* Sefer */}
-                <Text style={sub}>{t("crown.campaign").toUpperCase()}{targets.length ? ` · ${t("crown.odds")} %${Math.round(campaignOdds(state) * 100)} · ${CAMPAIGN_COST} ⚜` : ""}</Text>
+                <Text style={sub}>{t("crown.campaign").toUpperCase()}{targets.length ? ` · ${t("crown.odds")} ${yuzdeL(Math.round(campaignOdds(state) * 100), lang)} · ${CAMPAIGN_COST} ⚜` : ""}</Text>
                 {state.crownCampaign && (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 7, borderWidth: 1, borderColor: "rgba(200,64,64,0.5)", backgroundColor: "rgba(200,64,64,0.08)", borderRadius: 9, padding: 10, marginBottom: 8 }}>
                     <GameIcon name="crossed-swords" size={13} color={C.ember} />
@@ -393,7 +393,7 @@ export default function Hanedan() {
                 <GameIcon name="house" size={13} color={C.sage} />
                 <Text numberOfLines={1} style={{ fontFamily: F.display, fontSize: 13.5, color: C.parchment }}>{st.name} <Text style={{ fontSize: 10, color: C.goldDim }}>· {t("stt." + tier)}{here ? ` · ${here}` : ""}</Text></Text>
               </View>
-              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.sage }}>{t("set.dev")} %{st.dev}</Text>
+              <Text style={{ fontFamily: F.display, fontSize: 11, color: C.sage }}>{t("set.dev")} {yuzdeL(st.dev, lang)}</Text>
             </View>
             <View style={{ height: 5, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.08)", marginTop: 7, overflow: "hidden" }}>
               <View style={{ width: `${st.dev}%`, height: 5, backgroundColor: C.sage, borderRadius: 3 }} />

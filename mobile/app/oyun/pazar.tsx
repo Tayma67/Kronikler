@@ -6,7 +6,7 @@ import { useGame } from "../../lib/store";
 import { buyItem, buyPrice, sellItem, launchCaravan, caravanPremium, rentStall, stallCost, stallActive, stockWinter, winterStockCost, pawnHorse, redeemHorse, horsePawnValue, horseRedeemCost, negotiatedBuy, negotiatedSell, bargainBase, bargainSellBase, bargainChance, marketPrice, econKey, goodPriceMult, MARKET_EVENTS, bestQualityTier, QUALITY_LABEL, sellerPersonaOf, factionLocalFavor, goodMarketTag, goodTrend, citySpecialtyIdx, loanCapacity, loanRate, borrow, repay, depositCoin, withdrawCoin, DEPOSIT_ANNUAL_YIELD, giveZekat, zekatDue, zekatAvailable } from "../../lib/game";
 import { marketGoods, locSeed } from "../../lib/world";
 import { currentCalendar } from "../../lib/calendar";
-import { useI18n, applyParams } from "../../lib/i18n";
+import { useI18n, applyParams, yuzdeL } from "../../lib/i18n";
 import { placeName } from "../../lib/locale-data";
 import { hap } from "../../lib/haptics";
 import { playCoin } from "../../lib/sound";
@@ -340,7 +340,7 @@ export default function Pazar() {
               {/* Emanet (safekeeping): âtıl serveti sarrafta sakla — yağma/hırsızlıktan emin, küçük getiri */}
               <View style={{ height: 1, backgroundColor: C.border, marginVertical: 11 }} />
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentDim, textTransform: "uppercase" }}>{t("paz.deposit")} · %{Math.round(DEPOSIT_ANNUAL_YIELD * 100)}/{t("paz.perYear")}</Text>
+                <Text style={{ fontFamily: F.display, fontSize: 10, letterSpacing: 1, color: C.parchmentDim, textTransform: "uppercase" }}>{t("paz.deposit")} · {yuzdeL(Math.round(DEPOSIT_ANNUAL_YIELD * 100), lang)}/{t("paz.perYear")}</Text>
                 {dep > 0 ? <Text style={{ fontFamily: F.display, fontSize: 12, color: C.sage }}>{t("paz.depBal")}: {dep} ⚜</Text> : null}
               </View>
               {(p.money > 0 || dep > 0) ? (
