@@ -200,6 +200,10 @@ Komşular birbirinin malına ve davranışına kefil olur. Kefili olmayan kişi 
 Yeni fırsatlar (iş, evlilik, haber) çoğu zaman yakın dostlardan değil, uzak tanıdıklardan gelir.
 - **Yapılacak:** han, çarşı, yolculuk gibi yerlerde edinilen tanıdıklar zaman zaman iş, dünür ya da haber getirsin.
   Hem gerçekçi hem keşfi ödüllendiren bir döngü.
+- **Durum (ilk dalga uygulandı):** "tanıdık" kapı kartı — görüşü ılık (5–45), akraba ve yakın dost olmayan eski bir
+  tanıdık (çoğu kez başka bir kasabadan) zanaatına birkaç haftalık iş haberi getirir. Kabul: kese (~2 aylık kazanç),
+  kariyer tecrübesi, tanıdıkla bağ ılır; yorgunluk bedeli. Ret cezasız (zayıf bağ). En az 36 ayda bir; simde kapı
+  kartlarının ~%17'si. Sıradaki: dünür ve haber getiren tanıdık.
 
 ## 4. Etik çizgi — bağlılık evet, bağımlılık hayır
 
