@@ -4,6 +4,8 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before 
 
 # Konveyör El Kitabı (devir notu — her ajan/model için bağlayıcı)
 
+> Önce depo kökündeki `OTURUM_HAFIZASI.md`'yi oku: kullanıcının son kararları, geçerli dal ve açık işler orada.
+
 Bu oyun "dalga" (Dalga NN) adı verilen küçük, tam doğrulanmış artışlarla geliştirilir.
 Aşağıdaki kurallar geçmiş oturumlarda kullanıcıyla kesinleşti; **tartışmasız uygulanır**.
 
