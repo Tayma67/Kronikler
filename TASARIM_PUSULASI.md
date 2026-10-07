@@ -204,7 +204,9 @@ Yeni fırsatlar (iş, evlilik, haber) çoğu zaman yakın dostlardan değil, uza
   tanıdık (çoğu kez başka bir kasabadan) zanaatına birkaç haftalık iş haberi getirir. Kabul: kese (~2 aylık kazanç),
   kariyer tecrübesi, tanıdıkla bağ ılır; yorgunluk bedeli. Ret cezasız (zayıf bağ). En az 36 ayda bir; simde kapı
   kartlarının ~%17'si. Uzak kasabadaki tanıdık yarı yarıya **pazar haberi** de getirir: kendi kasabasında kıt olan ve
-  orada buradakinden en az %25 pahalı satılan mal (simde ortanca 1,7 kat); "aklımda tutarım" dersen 6 ay açık hesaplarda durur.
+  orada buradakinden en az %25 pahalı satılan mal (simde ortanca 1,7 kat); "aklımda tutarım" dersen 6 ay açık hesaplarda durur. Bekâr oyuncuya ise tanıdık kendi
+  kasabasından yaşı denk, bekâr birini **tanıştırır**: kabulde görüş +20 ve güzel bir ilk sohbet anısı; evlilik yine
+  olağan kur akışıyla (12 ay açık hesapta).
 
 ## 4. Etik çizgi — bağlılık evet, bağımlılık hayır
 
