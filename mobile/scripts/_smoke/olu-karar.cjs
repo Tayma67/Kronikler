@@ -2,13 +2,14 @@
 // yenen (hiçbir yerde geride kalmayan, en az bir yerde öne geçen) seçenek var mı? Hedef: 0.
 // Karşılaştırılamaz sayılanlar: gizli tohumlu seçim (sonucu yıllar sonra döner), yönü bağlama göre değişen değerler
 // (korku, zalim/çapkın nâmı, eşya). Riskli seçenekte (risk) iki sonucun ikisi de öbürünü yenmeli ya da ikisi de yenilmeli.
+// Hikâye yaylarında yalnız aynı yere varan (ikisi de biten ya da aynı sahneye geçen) seçenekler karşılaştırılır.
 // Kullanım: node scripts/_smoke/olu-karar.cjs   → "ÖLÜ KARAR: TEMİZ" ya da liste (exit 1)
 const { execSync } = require("child_process");
 const os = require("os"); const fs = require("fs"); const path = require("path");
 const mobile = path.join(__dirname, "..", "..");
 const giris = path.join(os.tmpdir(), `kronikler-olu-giris-${process.pid}.ts`);
 const paket = path.join(os.tmpdir(), `kronikler-olu-${process.pid}.cjs`);
-fs.writeFileSync(giris, `export { DILEMMAS, FESTIVALS } from ${JSON.stringify(path.join(mobile, "lib/events"))};\nexport { DILEMMA_SEEDS } from ${JSON.stringify(path.join(mobile, "lib/game"))};\n`);
+fs.writeFileSync(giris, `export { DILEMMAS, FESTIVALS } from ${JSON.stringify(path.join(mobile, "lib/events"))};\nexport { ARCS } from ${JSON.stringify(path.join(mobile, "lib/arcs"))};\nexport { DILEMMA_SEEDS } from ${JSON.stringify(path.join(mobile, "lib/game"))};\n`);
 execSync(`npx esbuild ${giris} --bundle --platform=node --format=cjs --outfile=${paket} --log-level=error`, { cwd: mobile, stdio: "inherit" });
 const B = require(paket); fs.unlinkSync(giris); fs.unlinkSync(paket);
 
@@ -31,6 +32,11 @@ for (const dl of kartlar) {
     if (a.sonuc.every((x) => b.sonuc.every((y) => yener(x, y)))) out.push(`${dl.id}: [${a.i}] "${a.label}" ${JSON.stringify(a.sonuc)}  ≻  [${b.i}] "${b.label}" ${JSON.stringify(b.sonuc)}`);
   }
 }
-console.log(`${kartlar.length} kart tarandı (ikilem ${B.DILEMMAS.length}, şenlik ${kartlar.length - B.DILEMMAS.length})`);
+let sahne = 0;
+for (const arc of B.ARCS) for (const st of Object.values(arc.stages)) { sahne++;
+  const ch = st.choices.map((c, i) => ({ i, label: c.label, next: c.next, v: vec(c.delta) }));
+  for (const a of ch) for (const b of ch) if (a !== b && a.next === b.next && yener(a.v, b.v)) out.push(`${arc.id}.${st.id}: [${a.i}] "${a.label}" ${JSON.stringify(a.v)}  ≻  [${b.i}] "${b.label}" ${JSON.stringify(b.v)} (ikisi de → ${a.next})`);
+}
+console.log(`${kartlar.length} kart tarandı (ikilem ${B.DILEMMAS.length}, şenlik ${kartlar.length - B.DILEMMAS.length}) · ${sahne} yay sahnesi`);
 if (out.length) { console.log(out.join("\n")); console.log(`ÖLÜ KARAR: ${out.length} kart`); process.exit(1); }
 console.log("ÖLÜ KARAR: TEMİZ (0 kart)");

@@ -26,7 +26,7 @@ export const ARCS: Arc[] = [
       ]},
       s2b: { id: "s2b", text: "Gece ozan kapına geldi; koynundan yıpranmış bir defter çıkarıp bir sayfayı gösterdi: ustanın el yazısı, kenarında nişanı. Sonra sazını sana uzattı — bir geceliğine emanet.", choices: [
         { label: "Emaneti kabul et, sabah geri ver", result: "Sabah sazı geri verdin; ozan üç nota çaldı — adının heceleri. O günden sonra meydandan her geçişinde o üç nota duyulur oldu.", delta: { reputation: 3, honor: 3 }, next: "end" },
-        { label: "Sazı alma, duayla uğurla", result: "Sazı almadın; ozan başıyla selamlayıp yola düştü. Ertesi yıl bir kervancı haber getirdi: ozan artık iki sazla geziyormuş — birinin adı senin adınmış.", delta: { honor: 1 }, next: "end" },
+        { label: "Sazı alma, duayla uğurla", result: "Sazı almadın; ozan başıyla selamlayıp yola düştü. Ertesi yıl bir kervancı haber getirdi: ozan artık iki sazla geziyormuş — birinin adı senin adınmış.", delta: { honor: 1, fame: 3 }, next: "end" },
       ]},
     },
   },
@@ -45,7 +45,7 @@ export const ARCS: Arc[] = [
         { label: "Bekir'in sus payını al, dosya kapansın", result: "Bekir'in kesesi ağırdı, sözü kısa: 'Kül soğudu, karıştırma.' Dosya kapandı; Musa'nın sırtındaki leke kaldı. Un yine öğütülüyor ama sen o değirmenden ekmek yiyemiyorsun.", delta: { money: 70, honor: -5, fear: 1 }, next: "end" },
       ]},
       s2b: { id: "s2b", text: "Yeni çark dönerken Musa eski taşın kırığını temele gömdü: 'Unutmayalım diye.' Sonra sana döndü: 'Değirmeni kaldırdın, sağ ol. Ama adım hâlâ küllü. Bir gece nöbet tut benimle — yakan geri gelir, derler.'", choices: [
-        { label: "Geceyi değirmende bekle", result: "Üçüncü gece ayak sesi geldi: elinde yağ tenekesiyle komşu vadinin değirmencisi — müşteri kaçıyordu diye kıymış. Kadıya teslim edildi; Musa'nın adı meydanda yıkandı.", delta: { fame: 5, reputation: 4 }, next: "end" },
+        { label: "Geceyi değirmende bekle", result: "Üçüncü gece ayak sesi geldi: elinde yağ tenekesiyle komşu vadinin değirmencisi — müşteri kaçıyordu diye kıymış. Kadıya teslim edildi; Musa'nın adı meydanda yıkandı.", delta: { fame: 5, reputation: 4, health: -3 }, next: "end" },
         { label: "Fısıltı zamanla ölür, karışma", result: "Nöbete kalmadın; kundakçı da dönmedi. Fısıltı öldü ölmesine — ama Musa selamı artık başını kaldırmadan veriyor.", delta: { reputation: -2 }, next: "end" },
       ]},
     },
@@ -122,7 +122,7 @@ export const ARCS: Arc[] = [
       ]},
       s2: { id: "s2", text: "İlk kervan geldi; gece yarısı avludan zil sesi yükseldi — ama avlu bomboş. Sabah kervanbaşı gülümsedi: 'Eski hancının katırı. Ölmüş ama vazgeçmemiş. Yem koyun, huzur bulur.'", choices: [
         { label: "Her akşam bir avuç yem koy", result: "Yemlik sabahları hep boş bulundu; ziller o geceden sonra ninni gibi çaldı. 'Zilli Han' yolun bereketi oldu — kervanlar sırf hikâyesi için konakladı.", delta: { money: 60, fame: 6, reputation: 4 }, next: "end" },
-        { label: "Hurafeye karnım tok — zilleri söktür", result: "Ziller sustu, avlu gerçekten ıssızlaştı. Han işledi işlemesine — ama o kış bazı kervanlar uzun yolu seçti; ateşin başında anlatacak hikâye kalmamıştı.", delta: { money: 20, fame: 2 }, next: "end" },
+        { label: "Hurafeye karnım tok — zilleri söktür", result: "Ziller sustu, avlu gerçekten ıssızlaştı. Han işledi işlemesine — ama o kış bazı kervanlar uzun yolu seçti; ateşin başında anlatacak hikâye kalmamıştı.", delta: { money: 20, fame: 2, nam: { mert: 2 } }, next: "end" },
       ]},
       s2b: { id: "s2b", text: "Satın alan tüccar hanı zar meclisine çevirdi; kapısında kavga eksik olmuyor. Ve herkes oraya hâlâ 'senin hanın' diyor.", choices: [
         { label: "Geri satın almayı öner (−120)", result: "Tüccar önce güldü, sonra keseyi görünce sustu. Han temizlendi, ocak yeniden yandı; köy bu kez kapıya ekmek bıraktı.", delta: { money: -120, honor: 6, reputation: 4 }, next: "end" },
@@ -142,7 +142,7 @@ export const ARCS: Arc[] = [
       ]},
       s2: { id: "s2", text: "Sordun: 'Babanın sana çocukken bıraktığı nişan neydi?' Biri sustu, kem küm etti; öteki gülümsedi: 'Nişan değil, iz — kulağımın ardındaki yanık. Ocağından kor düşmüştü.'", choices: [
         { label: "Keseyi iz sahibine ver", result: "Mühür oğlunun elinde kırıldı: içinden bir çıraklık belgesi ve iki altın çıktı. Altınları sana uzattı: 'Emanete sadakatin ücreti.'", delta: { money: 20, honor: 6, reputation: 4 }, next: "end" },
-        { label: "Yine de kadıya taşı", result: "Kadı da aynı izi buldu; hüküm senin gördüğünün aynısıydı. Mahkeme harcı keseden çıktı ama adın 'ihtiyatlı' diye anıldı.", delta: { honor: 3, reputation: 2 }, next: "end" },
+        { label: "Yine de kadıya taşı", result: "Kadı da aynı izi buldu; hüküm senin gördüğünün aynısıydı. Mahkeme harcı keseden çıktı ama adın 'ihtiyatlı' diye anıldı.", delta: { honor: 3, reputation: 5, money: -5 }, next: "end" },
       ]},
       s2b: { id: "s2b", text: "Keseyi verdiğin adam bir hafta içinde şehirden kayboldu. Gerçek oğul kapına geldi; elinde babasının son mektubu: 'Emaneti komşuma bıraktım.' Gözlerine bakmak zor.", choices: [
         { label: "Zararı kendi kesenden öde", result: "Altın gitti ama yüz kaldı. Oğlan parayı almak istemedi; sen dayattın. Kapıdan çıkarken 'babam yanılmamış' dedi — bu, altından pahalıydı.", delta: { money: -60, honor: 4 }, next: "end" },
@@ -181,7 +181,7 @@ export const ARCS: Arc[] = [
         { label: "Tek başına ara", result: "Aylarca boş yere aradın; iz bulamadın.", delta: { honor: 0 }, next: "end" },
       ]},
       s2: { id: "s2", text: "Harita seni ıssız bir mağaraya götürdü. İçeride bir sandık — ama tavan çatırdıyor.", choices: [
-        { label: "Riski göze al", result: "Son anda sandığı kaptın; içi altın doluydu!", delta: { money: 120, fame: 6 }, next: "end" },
+        { label: "Riski göze al", result: "Son anda sandığı kaptın; içi altın doluydu!", delta: { money: 120, fame: 6, health: -8 }, next: "end" },
         { label: "Geri çekil", result: "Canını riske atmadın; eli boş ama sağ döndün.", next: "end" },
       ]},
     },
@@ -225,15 +225,15 @@ export const ARCS: Arc[] = [
     start: "s1",
     stages: {
       s1: { id: "s1", text: "Köpeğin üç gündür yok; tası dolu, eşik boş. Pazarda bir fısıltı dolaşıyor: vadiden köpek toplayan biri varmış, gece yarıları terk edilmiş kervansarayın çukurunda tazı dövüştürüyormuş.", choices: [
-        { label: "İzi kendin sür", result: "Nal izleri ve sürüklenme çizgisi seni terk edilmiş kervansaraya götürdü; avludan boğuk havlamalar geliyor. Kalbin ağzında — içlerinden biri tanıdık.", delta: {}, next: "s2" },
+        { label: "İzi kendin sür", result: "Nal izleri ve sürüklenme çizgisi seni terk edilmiş kervansaraya götürdü; avludan boğuk havlamalar geliyor. Kalbin ağzında — içlerinden biri tanıdık.", delta: { hunger: -8 }, next: "s2" },
         { label: "Tellal tut, ödül koy (−15)", result: "Tellalın sesi üç mahalle öteye ulaştı; akşam bir çoban çocuğu kapına geldi: kervansarayda havlamalar duymuş, ürkütücü adamlar görmüş.", delta: { money: -15 }, next: "s2" },
       ]},
       s2: { id: "s2", text: "Kervansaray avlusunda meşale ışığı: ortada çukur, kenarda kafesler — birinde senin köpeğin. Dövüştürücü kalın sesle konuştu: Mal artık benim. İstersen bedelini öde, istersen çukurun kenarından seyret.", choices: [
         { label: "Bedeli öde, yoldaşını kurtar (−40)", result: "Keseyi fırlattın; kafes açıldı. Köpeğin önce sana değil, çukurdaki yaralı tazıya koştu — yaladı, sonra yanına döndü. İkiniz de arkanıza bakmadan çıktınız.", delta: { money: -40, honor: 2 }, next: "s3" },
-        { label: "Kadının zaptiyeleriyle bas", result: "Gece yarısı zaptiyelerle döndünüz; çukur dağıtıldı, kafesler açıldı, dövüştürücü zindanı boyladı. Kargaşada köpeğin bir bıçak sıyrığı aldı — yarası kapanır, korkusu değil.", delta: { honor: 4, reputation: 3, fame: 2 }, next: "s3" },
+        { label: "Kadının zaptiyeleriyle bas", result: "Gece yarısı zaptiyelerle döndünüz; çukur dağıtıldı, kafesler açıldı, dövüştürücü zindanı boyladı. Kargaşada köpeğin bir bıçak sıyrığı aldı — yarası kapanır, korkusu değil.", delta: { honor: 4, reputation: 3, fame: 2, health: -3 }, next: "s3" },
       ]},
       s3: { id: "s3", text: "Dönüş yolunda köpeğin her on adımda durup sana baktı; geldiğine hâlâ inanamıyor gibi. Kapıda bir karar bekliyor: çukurdan kurtulan öteki tazı da peşinizden gelmiş, yolun karşısına oturmuş.", choices: [
-        { label: "Ona da bir tas koy", result: "Tası eşiğin yanına koydun; tazı yaklaşmadı ama gitmedi de. Artık mahallenin köpeği o — kimsenin değil, herkesin. Kapının önünden her geçişinde kuyruğu bir kez sallanıyor: sana.", delta: { reputation: 2, honor: 2 }, next: "end" },
+        { label: "Ona da bir tas koy", result: "Tası eşiğin yanına koydun; tazı yaklaşmadı ama gitmedi de. Artık mahallenin köpeği o — kimsenin değil, herkesin. Kapının önünden her geçişinde kuyruğu bir kez sallanıyor: sana.", delta: { reputation: 2, honor: 2, money: -3 }, next: "end" },
         { label: "Kapıyı kapat; ocak, ocaktır", result: "Kapıyı kapattın; tazı sabaha karşı gitmişti. Köpeğin üç gece eşikte yattı, kapıya değil yola bakarak. Hayat devam etti — yalnız bazı akşamlar uzaktan bir havlama geliyor, köpeğinin kulakları dikiliyor.", delta: {}, next: "end" },
       ]},
     },
@@ -249,7 +249,7 @@ ARCS.push(
     stages: {
       s1: { id: "s1", text: "Bir bey kızına/oğluna gönül verdin ama aileler arasında uçurum var. Aracı bir ihtiyar yol gösteriyor.", choices: [
         { label: "Şiirle gönlünü kazan", result: "Yazdığın beyitler dilden dile dolaştı; kapı aralandı.", delta: { fame: 4 }, next: "s2" },
-        { label: "Servetinle etkile", result: "Cömert hediyelerle ailenin gözüne girdin.", delta: { money: -30 }, next: "s2" },
+        { label: "Servetinle etkile", result: "Cömert hediyelerle ailenin gözüne girdin.", delta: { money: -30, reputation: 4 }, next: "s2" },
       ]},
       s2: { id: "s2", text: "Buluşma ayarlandı ama bir rakip de aynı kişinin peşinde. Ne yaparsın?", choices: [
         { label: "Mertçe yarış", result: "Onurunla yarıştın ve kalbi kazandın.", delta: { honor: 8, reputation: 6, fame: 6 }, next: "end" },
@@ -356,7 +356,7 @@ ARCS.push(
         { label: "Uzaktan saygı duy", result: "Eşikte durdun; niyetini içinde tuttun.", delta: {}, next: "end" },
       ]},
       s2: { id: "s2", text: "Şeyhin müridlerinden biri tekke malını çalıyor. Sırrı öğrendin.", choices: [
-        { label: "Şeyhe bildir", result: "Hırsızı ifşa ettin; tekkenin itibarını kurtardın, şeyhin gözdesi oldun.", delta: { honor: 10, fame: 6, reputation: 6 }, next: "end" },
+        { label: "Şeyhe bildir", result: "Hırsızı ifşa ettin; tekkenin itibarını kurtardın, şeyhin gözdesi oldun.", delta: { honor: 10, fame: 6, reputation: 6, health: -2 }, next: "end" },
         { label: "Sus, karışma", result: "Sır sende kaldı; huzurun biraz gölgelendi.", delta: { honor: -3 }, next: "end" },
       ]},
     },
@@ -372,7 +372,7 @@ ARCS.push(
         { label: "Geri çekil, inkâr et", result: "Meseleyi örtbas ettin; fısıltılar yavaşça dindi.", delta: { reputation: -2 }, next: "end" },
       ]},
       s2: { id: "s2", text: "Ailenin reisi seni karşısına aldı: ya nikâh ya da diyarı terk.", choices: [
-        { label: "Nikâhı iste", result: "Mertçe talip oldun; gönüller birleşti, dedikodu duaya döndü.", delta: { honor: 8, reputation: 6, fame: 6 }, next: "end" },
+        { label: "Nikâhı iste", result: "Mertçe talip oldun; gönüller birleşti, dedikodu duaya döndü.", delta: { honor: 8, reputation: 6, fame: 6, money: -40, marry: true }, next: "end" },
         { label: "Diyarı bir süre terk et", result: "Ortalık yatışana dek uzaklaştın; itibarın yara aldı.", delta: { reputation: -8, fame: 3 }, next: "end" },
       ]},
     },
@@ -424,7 +424,7 @@ ARCS.push(
     start: "s1",
     stages: {
       s1: { id: "s1", text: "Bir yabancı, çocukken ayrı düştüğün kardeşin olduğunu söylüyor. Gözleri tanıdık ama sözleri şüpheli.", choices: [
-        { label: "Bağrına bas", result: "İnandın, kucakladın; bir akraban daha oldu, gönlün ısındı.", delta: { honor: 5, reputation: 3 }, next: "s2" },
+        { label: "Bağrına bas", result: "İnandın, kucakladın; bir akraban daha oldu, gönlün ısındı.", delta: { honor: 5, reputation: 3, money: -10 }, next: "s2" },
         { label: "Önce sına", result: "Sorular sordun, geçmişi yokladın; temkinin yerindeydi.", delta: {}, next: "s2" },
       ]},
       s2: { id: "s2", text: "Bir süre sonra 'kardeşin' senden borç istedi; niyeti belirsiz.", choices: [
@@ -456,7 +456,7 @@ ARCS.push(
     start: "s1",
     stages: {
       s1: { id: "s1", text: "Tedavi ettiğin bir hasta öldü; ailesi seni suçluyor, kalabalık galeyanda.", choices: [
-        { label: "Sakince hakikati anlat", result: "Bilginle açıkladın; çoğu ikna oldu, töhmet dağıldı.", delta: { honor: 6, reputation: 5 }, next: "end" },
+        { label: "Sakince hakikati anlat", result: "Bilginle açıkladın; çoğu ikna oldu, töhmet dağıldı.", delta: { honor: 6, reputation: 5, health: -3 }, next: "end" },
         { label: "Suçu kabullen, diyet öde (−30)", result: "Tartışmayı para ile kapattın; huzur döndü ama için buruk.", delta: { money: -30, honor: 2 }, next: "end" },
       ]},
     },
