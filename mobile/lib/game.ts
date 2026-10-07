@@ -1229,7 +1229,7 @@ export function npcTeklifYanit(prev: GameState, kabul: boolean, secim?: 0 | 1): 
   s.npcTeklif = undefined;
   const k = nufusOf(s).k[t.id]; if (!k || k.ol != null) return s;
   const kp = knParam(k); const nm = kisiAdi(k, "tr");
-  if (t.tur === "dugun" || t.tur === "cenaze" || t.tur === "kefil" || t.tur === "hakem" || t.tur === "imece" || t.tur === "canborcu" || t.tur === "helal" || t.tur === "araci" || t.tur === "tanidik") { kapiYaniti(s, t, k, kabul, secim); return s; }
+  if (t.tur === "dugun" || t.tur === "cenaze" || t.tur === "kefil" || t.tur === "hakem" || t.tur === "imece" || t.tur === "canborcu" || t.tur === "helal" || t.tur === "araci" || t.tur === "tanidik" || t.tur === "mahkeme") { kapiYaniti(s, t, k, kabul, secim); return s; }
   if (t.tur === "kardes" || t.tur === "miras") { // kardeşe yardım / mirasta kardeş payı: verirsen kesenden çıkar, vermezsen kardeşin unutmaz
     const kk = (key: string) => (k.g === "kadın" ? key + ".k" : key); const kf = kfParam(k); const tutar = t.tutar || 0;
     const yardim = t.tur === "kardes";
@@ -1305,6 +1305,12 @@ export function kapiyaGelen(prev: GameState): GameState {
       .sort((a, b) => (["dindar", "sabırlı"].includes(huyOf(b) || "") ? 1 : 0) - (["dindar", "sabırlı"].includes(huyOf(a) || "") ? 1 : 0) || relWith(s, b.id) - relWith(s, a.id))[0];
     if (buyuk) aday.push({ w: 2, t: { id: buyuk.id, tur: "araci", tutar: diyetBedeli(s), ek: nk.id, turn: s.turn } });
   }
+  // Kadının daveti (pusula 3.5): asayişin güçlü olduğu yerde kadı, hanelerin kan davasını mahkemeye çekmek ister. Haberi bir mahalle büyüğü getirir.
+  const fd = s.feud; const asy = fd ? asayisOf(s, p.location_name) : 0;
+  if (fd && asy >= 55) {
+    const ulak = yerde.filter((k) => uygun(k) && wy - k.dy >= 40 && relWith(s, k.id) >= -10).sort((a, b) => (["dindar", "sabırlı"].includes(huyOf(b) || "") ? 1 : 0) - (["dindar", "sabırlı"].includes(huyOf(a) || "") ? 1 : 0))[0];
+    if (ulak) aday.push({ w: (asy - 45) / 15, t: { id: ulak.id, tur: "mahkeme", sebep: fd.houseId, hn: fd.nameIdx, turn: s.turn } });
+  }
   // Zayıf bağ (Granovetter, pusula 3.8): yakın dost olmayan eski bir tanıdık — başka bir kasabada da olabilir — zanaatına iş haberi getirir.
   if (p.profession !== "işsiz" && p.profession !== "çocuk" && p.age >= 18) {
     const tanidiklar = Object.keys(s.relationships || {}).map((id) => pop.k[id]).filter((k): k is Kisi => !!k && k.ol == null && wy - k.dy >= 18 && !oyuncuAkrabasi(p, k.id) && k.id !== p.spouse_id && k.es !== OYUNCU && taze(k.id) && relWith(s, k.id) >= 5 && relWith(s, k.id) <= 45);
@@ -1320,7 +1326,7 @@ export function kapiyaGelen(prev: GameState): GameState {
     }
   }
   if (!aday.length) return s;
-  const turSon = p.kapi_tur || {}; const ARA: Record<string, number> = { kefil: 24, imece: 12, helal: 12, araci: 24, tanidik: 36 };
+  const turSon = p.kapi_tur || {}; const ARA: Record<string, number> = { kefil: 24, imece: 12, helal: 12, araci: 24, tanidik: 36, mahkeme: 24 };
   for (const x of aday) { const g0 = s.turn - (turSon[x.t.tur] ?? -999); if (g0 < (ARA[x.t.tur] || 0)) x.w = 0; else if (g0 < 6) x.w *= 0.3; } // tür arası bekleme + aynı tür art arda gelmesin
   if (!aday.some((x) => x.w > 0)) return s;
   let r = Math.random() * aday.reduce((a, x) => a + x.w, 0); let sec = aday[0];
@@ -1339,6 +1345,7 @@ export function kapiyaGelen(prev: GameState): GameState {
   else if (t.tur === "tanidik" && t.alt === "tanistir" && e) push(s, "sohbet", `Eski bir tanıdığın ${kisiAdi(k, "tr")} seni ${kisiAdi(e, "tr")} ile tanıştırmak istiyor.`, "kişisel", false, { k: "npct.tanistir" + (k.g === "kadın" ? ".k" : ""), p: [knParam(k), { pl: t.sebep || p.location_name }, knParam(e)] });
   else if (t.tur === "tanidik" && t.alt === "haber") push(s, "sohbet", `Eski bir tanıdığın ${kisiAdi(k, "tr")} ${t.sebep}'de ${t.mal} kıtlığı olduğunu haber verdi.`, "kişisel", false, { k: "npct.tanidikHaber" + (k.g === "kadın" ? ".k" : ""), p: [knParam(k), { pl: t.sebep || p.location_name }, { il: t.mal || "" }] });
   else if (t.tur === "tanidik") push(s, "sohbet", `Eski bir tanıdığın ${kisiAdi(k, "tr")} ${t.sebep}'de iş haberi yolladı.`, "kişisel", false, { k: "npct.tanidikIs" + (k.g === "kadın" ? ".k" : ""), p: [knParam(k), { pl: t.sebep || p.location_name }, t.tutar || 0] });
+  else if (t.tur === "mahkeme") push(s, "kan_davası", `${kisiAdi(k, "tr")} kadının davetini getirdi: kan davası mahkemeye taşınsın mı?`, "kişisel", false, { k: "npct.mahkeme", p: [knParam(k), { pl: p.location_name }, { hn: t.hn ?? 0 }] });
   else if (t.tur === "araci" && e) push(s, "kan_davası", `${kisiAdi(k, "tr")}, ${kisiAdi(e, "tr")} ile diyetle barışmanı öneriyor.`, "kişisel", false, { k: "npct.araci", p: [knParam(k), knParam(e), t.tutar!] });
   return s;
 }
@@ -1353,6 +1360,7 @@ export function kapiMetni(s: GameState): { k: string; p: EvtParam[] } | null {
   if (t.tur === "canborcu") return { k: "npct.canborcu", p: [knParam(k), t.tutar || 0] };
   if (t.tur === "helal") return { k: t.alt === "olum" ? "npct.helalOlum" : "npct.helalBayram", p: [knParam(k)] };
   if (t.tur === "araci" && e) return { k: "npct.araci", p: [knParam(k), knParam(e), t.tutar || 0] };
+  if (t.tur === "mahkeme") return { k: "npct.mahkeme", p: [knParam(k), { pl: s.player.location_name }, { hn: t.hn ?? 0 }] };
   if (t.tur === "tanidik" && t.alt === "tanistir" && e) return { k: "npct.tanistir" + (k.g === "kadın" ? ".k" : ""), p: [knParam(k), { pl: t.sebep || s.player.location_name }, knParam(e)] };
   if (t.tur === "tanidik" && t.alt === "haber") return { k: "npct.tanidikHaber" + (k.g === "kadın" ? ".k" : ""), p: [knParam(k), { pl: t.sebep || s.player.location_name }, { il: t.mal || "" }] };
   if (t.tur === "tanidik") return { k: "npct.tanidikIs" + (k.g === "kadın" ? ".k" : ""), p: [knParam(k), { pl: t.sebep || s.player.location_name }, t.tutar || 0] };
@@ -1406,6 +1414,15 @@ function kapiYaniti(s: GameState, t: NonNullable<GameState["npcTeklif"]>, k: Kis
       s.relationships[e.id] = Math.max(-100, (s.relationships[e.id] || 0) - 3);
       push(s, "kan_davası", `${kisiAdi(e, "tr")}, ${nm} hatırına bile diyeti kabul etmedi.`, "kişisel", false, { k: "npct.araciBos", p: [kp, knParam(e)] });
     }
+    return;
+  }
+  if (t.tur === "mahkeme") { // adalet mi şeref mi: hükme razı olan davayı kapatır (nam artar, şeref biraz iner); reddeden şerefini kollar, ateş harlanır
+    const f = s.feud; if (!f || f.houseId !== t.sebep) return; // dava o arada kapandıysa düşer
+    const h = ensureRivals(s).find((x) => x.id === f.houseId); const yer: EvtParam = { pl: p.location_name }; const hn: EvtParam = { hn: f.nameIdx };
+    if (kabul) { s.feud = null; if (h) h.tutum = -30; p.honor = Math.max(0, p.honor - 3); p.reputation = Math.min(100, p.reputation + 3); s.relationships[k.id] = Math.min(100, (s.relationships[k.id] || 0) + 2);
+      push(s, "kan_davası", `${p.location_name} kadısı hükmünü verdi; dava kapandı.`, "kişisel", true, { k: "npct.mahkemeOk", p: [kp, yer, hn] }); }
+    else { p.honor = Math.min(100, p.honor + 2); f.heat = Math.min(100, f.heat + 6); bumpNam(p, "mert", 1);
+      push(s, "kan_davası", `Kadının davetini geri çevirdin; hesabını kendin göreceksin.`, "kişisel", false, { k: "npct.mahkemeRed", p: [kp, yer, hn] }); }
     return;
   }
   if (t.tur === "tanidik" && t.alt === "tanistir") { // tanıştırma: görüş +20 ve iyi bir ilk sohbet anısı; evlilik olağan kur akışıyla
@@ -1722,7 +1739,7 @@ export interface GameState {
   kanDefteri?: KanKaydi[]; // kan davası: canını aldığın (ya da bağışladığın) kişilerden doğan, sırası gelince karşına çıkacak hesaplar
   hesap?: { id: string; turn: number; olen?: string; yak?: KanYak; nesil?: number; kt?: number }; // yendiğin gerçek hasım yerde: bağışla ya da canını al (karar bekliyor)
   kapi_cenaze?: string[]; // taziye kartı gelmiş ölüler (aynı cenaze iki kez kapıya gelmez)
-  npcTeklif?: { id: string; tur: "dunur" | "borc" | "kardes" | "miras" | "dugun" | "cenaze" | "kefil" | "hakem" | "imece" | "canborcu" | "helal" | "araci" | "tanidik"; tutar?: number; ay?: number; turn: number; ek?: string; hakli?: 0 | 1; alt?: "olum" | "bayram" | "haber" | "tanistir"; sebep?: string; mal?: string }; // ek: ikinci kişi (cenazede ölen, hakemlikte öbür taraf, aracılıkta kanlın) · alt: helalleşmenin vesilesi · sebep: borcun/imecenin gerçek sebebi · hakli: hakemlikte haklı taraf (0: id, 1: ek) // bir NPC'nin sana kendi kararıyla yaptığı bekleyen teklif
+  npcTeklif?: { id: string; tur: "dunur" | "borc" | "kardes" | "miras" | "dugun" | "cenaze" | "kefil" | "hakem" | "imece" | "canborcu" | "helal" | "araci" | "tanidik" | "mahkeme"; tutar?: number; ay?: number; turn: number; ek?: string; hakli?: 0 | 1; alt?: "olum" | "bayram" | "haber" | "tanistir"; sebep?: string; mal?: string; hn?: number }; // ek: ikinci kişi (cenazede ölen, hakemlikte öbür taraf, aracılıkta kanlın) · alt: helalleşmenin vesilesi · sebep: borcun/imecenin gerçek sebebi · hakli: hakemlikte haklı taraf (0: id, 1: ek) // bir NPC'nin sana kendi kararıyla yaptığı bekleyen teklif
   dynasty: DynastyRecord[];
   npc_state: Record<string, NpcState>;
   story: StoryProgress;
@@ -3491,11 +3508,13 @@ function tickFeud(s: GameState, rivals: RivalHouse[]) {
   if (p.dead) return;
   if (!s.feud) {
     // Tutuşma: derin husumetli bir hane (tutum ≤ -45) davayı başlatabilir.
+    // Sıklık yerin asayişine bağlı (pusula 3.5): kadının sözü geçmeyen yerde şeref kendi hakkını arar, düzenli şehirde seyrek tutuşur.
     const bitter = rivals.filter((h) => (h.tutum ?? 0) <= -45);
-    if (bitter.length && Math.random() < 0.08) {
+    const asy = bitter.length ? asayisOf(s, p.location_name) : 50;
+    if (bitter.length && Math.random() < 0.08 * Math.max(0.5, Math.min(1.5, 1.6 - asy / 80))) {
       const h = bitter[Math.floor(Math.random() * bitter.length)];
       s.feud = { houseId: h.id, nameIdx: h.nameIdx, stage: 1, heat: 0 };
-      push(s, "kan_davası", `${h.name} ile aranızda kan davası başladı; iki ocak arasına ateş düştü.`, "makro", true, { k: "evj.feud.start", p: [{ hn: h.nameIdx }] });
+      push(s, "kan_davası", `${h.name} ile aranızda kan davası başladı; iki ocak arasına ateş düştü.`, "makro", true, { k: asy < 40 ? "evj.feud.startSahipsiz" : "evj.feud.start", p: [{ hn: h.nameIdx }] });
     }
     return;
   }
@@ -3539,6 +3558,12 @@ function tickFeud(s: GameState, rivals: RivalHouse[]) {
     h.tutum = -25;
     push(s, "kan_davası", `Aksakallılar araya girdi: ${h.name} ile dava yorgunluktan söndü; kor küllendi ama unutulmadı.`, "makro", true, { k: "evj.feud.elders", p: [{ hn: h.nameIdx }] });
   }
+}
+// Asayiş: yerin güvenliği + süren olaylar (eşkıya, isyan, düğün…) + valisiysen meşruiyetin. Kan davasının sıklığını ve kadının araya girmesini belirler.
+export function asayisOf(s: GameState, loc: string): number {
+  let v = cityInfo(loc, placeKind(loc)).security + cityFx(s, loc).sec;
+  if (isGovernor(s.player, loc)) v += Math.round((govLegOf(s.player, loc) - 50) / 4);
+  return Math.max(0, Math.min(100, v));
 }
 // Sulh bedeli: hanenin gururu + çağın parası.
 export function feudPeaceCost(s: GameState): number {

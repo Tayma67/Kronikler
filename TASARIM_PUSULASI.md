@@ -178,6 +178,13 @@ hayatta kalma aracıdır; kan davası ve hakarete sert karşılık bu ortamda ge
 - **Yapılacak:** kan davasının sıklığı **kadının ve valinin gücüne** bağlansın. Adaletin işlediği şehirde davalar
   azalır, uzak köylerde çoğalır. Oyuncu vali olunca "adalet mi, şeref mi" ikilemini yaşar. Böylece kan davası
   süs değil, toplumun düzenine bağlı bir sonuç olur.
+- **Durum (uygulandı):** yerin **asayişi** (`asayisOf`: şehrin güvenliği + süren eşkıya/isyan/düğün olayları +
+  valisiysen meşruiyetin) davanın tutuşma sıklığını belirliyor: husumetli hane varken asayişi en düşük beş yerde dava
+  ortalama 9,6 ayda, en yüksek beş yerde 22,9 ayda tutuşuyor. Asayişi zayıf yerde başlangıç cümlesi sebebi söylüyor
+  ("kadının sözünün geçmediği bu yerde"). Asayişi 55 ve üstü yerde **kadının daveti** kapı kartı gelir (en çok iki
+  yılda bir): bir mahalle büyüğü kadının davayı mahkemeye çekmek istediğini getirir. Hükme razı olan davayı kapatır
+  (nam +3, şeref −3, husumet sürer ama kan durur); "hesabımı kendim görürüm" diyen şerefini kollar (şeref +2, mertlik),
+  ateş harlanır. Vali olan oyuncu asayiş yatırımıyla meşruiyetini artırdıkça kendi şehrinde bu dengeyi değiştirir.
 
 ### 3.6 Asabiye ve nesil döngüsü (İbn Haldun)
 Bir hanedanın ömrü yaklaşık 120 yıl, yani 3–4 nesildir. Birinci nesil değerleri kurar, ikinci sürdürür, üçüncü
